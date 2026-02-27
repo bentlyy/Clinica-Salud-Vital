@@ -1,0 +1,3 @@
+El backend está implementado como un monolito modular en Node.js, desplegado localmente mediante contenedores para simular un entorno productivo. La separación por dominios (auth, doctores, reservas) permite evolucionar la arquitectura hacia microservicios de forma incremental.
+
+El entorno local se orquesta con Docker Compose, preparando el proyecto para un despliegue futuro en Amazon Web Services sin cambios estructurales significativos.

@@ -1,0 +1,11 @@
+CREATE TABLE doctors (
+  id SERIAL PRIMARY KEY,
+  name TEXT NOT NULL,
+  specialty TEXT NOT NULL,
+  email TEXT UNIQUE NOT NULL
+);
+CREATE TABLE users (
+  id SERIAL PRIMARY KEY,
+  email TEXT UNIQUE NOT NULL,
+  password TEXT NOT NULL
+);
