@@ -1,9 +1,12 @@
 import express from 'express';
 import cors from 'cors';
 import 'dotenv/config';
+import { pool } from './shared/db.js';
 
 import doctorRoutes from './modules/doctor/doctor.routes.js';
 import authRoutes from './modules/auth/auth.routes.js';
+import bookingRoutes from './modules/booking/booking.routes.js';
+
 
 const app = express();
 app.use(cors());
@@ -11,6 +14,7 @@ app.use(express.json());
 
 app.use('/api/doctors', doctorRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/bookings', bookingRoutes);
 
 app.get('/health', async (req, res) => {
   try {
@@ -21,7 +25,8 @@ app.get('/health', async (req, res) => {
   }
 });
 
+const PORT = process.env.PORT || 3000;
 
-app.listen(process.env.PORT, () => {
-  console.log(`API running on http://localhost:${process.env.PORT}`);
+app.listen(PORT, () => {
+  console.log(`API running on http://localhost:${PORT}`);
 });
