@@ -1,18 +1,24 @@
+-- 🔹 USERS
+CREATE TABLE users (
+  id SERIAL PRIMARY KEY,
+  email TEXT UNIQUE NOT NULL,
+  password TEXT NOT NULL,
+  role TEXT DEFAULT 'user',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- 🔹 DOCTORS
 CREATE TABLE doctors (
   id SERIAL PRIMARY KEY,
   name TEXT NOT NULL,
   specialty TEXT NOT NULL,
-  email TEXT UNIQUE NOT NULL,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+  email TEXT, -- opcional, ya existe en users
+  user_id INT UNIQUE,
 
--- 🔹 USERS (pacientes por ahora)
-CREATE TABLE users (
-  id SERIAL PRIMARY KEY,
-  email TEXT UNIQUE NOT NULL,
-  password TEXT NOT NULL,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  CONSTRAINT fk_doctor_user
+    FOREIGN KEY (user_id)
+    REFERENCES users(id)
+    ON DELETE SET NULL
 );
 
 -- 🔹 BOOKINGS
@@ -27,7 +33,6 @@ CREATE TABLE bookings (
 
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
-  -- 🔥 Relaciones (más estrictas)
   CONSTRAINT fk_doctor
     FOREIGN KEY (doctor_id)
     REFERENCES doctors(id)
@@ -38,11 +43,31 @@ CREATE TABLE bookings (
     REFERENCES users(id)
     ON DELETE CASCADE,
 
-  -- 🔥 Evita doble reserva (CRÍTICO)
-  CONSTRAINT unique_booking UNIQUE (doctor_id, date, time)
+  -- 🔥 evita doble reserva
+  CONSTRAINT unique_booking UNIQUE (doctor_id, date, time),
+
+  -- 🔥 evita reservas en el pasado
+  CONSTRAINT check_future_date CHECK (date >= CURRENT_DATE)
 );
 
--- 🔥 Índices para rendimiento
+-- 🔹 AVAILABILITY (🔥 NUEVO)
+CREATE TABLE doctor_availability (
+  id SERIAL PRIMARY KEY,
+
+  doctor_id INT NOT NULL,
+  day_of_week INT NOT NULL, -- 0 domingo - 6 sábado
+
+  start_time TIME NOT NULL,
+  end_time TIME NOT NULL,
+
+  CONSTRAINT fk_doctor_availability
+    FOREIGN KEY (doctor_id)
+    REFERENCES doctors(id)
+    ON DELETE CASCADE
+);
+
+-- 🔥 ÍNDICES
 CREATE INDEX idx_bookings_doctor ON bookings(doctor_id);
 CREATE INDEX idx_bookings_user ON bookings(user_id);
 CREATE INDEX idx_bookings_date ON bookings(date);
+CREATE INDEX idx_availability_doctor ON doctor_availability(doctor_id);
