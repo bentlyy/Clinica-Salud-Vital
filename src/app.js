@@ -2,6 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import 'dotenv/config';
 import { pool } from './shared/db.js';
+import { startReminderJob } from './jobs/reminder.job.js';
+
 
 import doctorRoutes from './modules/doctor/doctor.routes.js';
 import authRoutes from './modules/auth/auth.routes.js';
@@ -31,3 +33,5 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`API running on http://localhost:${PORT}`);
 });
+
+startReminderJob();
