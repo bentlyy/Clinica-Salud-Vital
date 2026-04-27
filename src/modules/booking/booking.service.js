@@ -23,34 +23,51 @@ export const getAllBookings = async () => {
 
 export const createBooking = async ({ doctor_id, user_id, date, time }) => {
   try {
+    // 🔥 1. Validaciones básicas
     if (!doctor_id || !user_id || !date || !time) {
       throw new Error('Missing required fields');
     }
 
-    // 🔥 Validar formato hora
+    // 🔥 2. Validar formato hora
     const timeRegex = /^([0-1]\d|2[0-3]):([0-5]\d)$/;
     if (!timeRegex.test(time)) {
       throw new Error('Invalid time format (HH:MM)');
     }
 
-    // 🔥 Validar horario laboral
+    // 🔥 3. Validar horario general (fallback)
     const hour = parseInt(time.split(':')[0]);
     if (hour < 8 || hour >= 18) {
       throw new Error('Outside working hours (08:00 - 18:00)');
     }
 
-    // 🔥 Validar doctor
+    // 🔥 4. Validar doctor
     const doctor = await doctorService.getDoctorById(doctor_id);
     if (!doctor) throw new Error('Doctor not found');
 
-    // 🔥 Validar user (extra seguridad)
+    // 🔥 5. VALIDAR DISPONIBILIDAD REAL (NUEVO 🔥)
+    const day = new Date(date).getDay();
+
+    const availability = await pool.query(
+      `SELECT 1 FROM doctor_availability
+       WHERE doctor_id = $1
+       AND day_of_week = $2
+       AND start_time <= $3
+       AND end_time > $3`,
+      [doctor_id, day, time]
+    );
+
+    if (availability.rows.length === 0) {
+      throw new Error('Doctor not available at this time');
+    }
+
+    // 🔥 6. Validar user
     const user = await pool.query(
       'SELECT id FROM users WHERE id = $1',
       [user_id]
     );
     if (user.rows.length === 0) throw new Error('User not found');
 
-    // 🔥 Insert (la DB maneja duplicados con UNIQUE)
+    // 🔥 7. Insert (DB maneja duplicados con UNIQUE)
     const result = await pool.query(
       `INSERT INTO bookings (doctor_id, user_id, date, time)
        VALUES ($1, $2, $3, $4)
@@ -103,28 +120,17 @@ export const getBookingsByUser = async (user_id) => {
 
 export const deleteBooking = async (booking_id, user_id) => {
   try {
-    // 🔥 1. Verificar que el booking exista
-    const booking = await pool.query(
-      'SELECT * FROM bookings WHERE id = $1',
-      [booking_id]
+    // 🔥 DELETE seguro (dueño + existencia)
+    const result = await pool.query(
+      `DELETE FROM bookings 
+       WHERE id = $1 AND user_id = $2
+       RETURNING *`,
+      [booking_id, user_id]
     );
 
-    if (booking.rows.length === 0) {
-      throw new Error('Booking not found');
+    if (result.rows.length === 0) {
+      throw new Error('Booking not found or unauthorized');
     }
-
-    const existingBooking = booking.rows[0];
-
-    // 🔥 2. Validar dueño
-    if (existingBooking.user_id !== user_id) {
-      throw new Error('Unauthorized to delete this booking');
-    }
-
-    // 🔥 3. Eliminar
-    await pool.query(
-      'DELETE FROM bookings WHERE id = $1',
-      [booking_id]
-    );
 
     return { message: 'Booking cancelled successfully' };
 
