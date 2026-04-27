@@ -39,3 +39,19 @@ export const cancelBooking = async (req, res) => {
     res.status(400).json({ error: error.message });
   }
 };
+
+export const getAvailableSlots = async (req, res) => {
+  try {
+    const { doctor_id, date, duration } = req.query;
+
+    const slots = await bookingService.getAvailableSlots(
+      doctor_id,
+      date,
+      parseInt(duration) || 30
+    );
+
+    res.json(slots);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
