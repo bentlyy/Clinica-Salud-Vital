@@ -52,11 +52,15 @@ export const login = async ({ email, password }) => {
   }
 
   // 🔥 generar token
-  const token = jwt.sign(
-    { id: user.id, email: user.email },
-    JWT_SECRET,
-    { expiresIn: '1d' }
-  );
+ const token = jwt.sign(
+  { 
+    id: user.id, 
+    email: user.email,
+    role: user.role   // 🔥 importante
+  },
+  JWT_SECRET,
+  { expiresIn: '1d' }
+);
 
   return { token };
 };
