@@ -1,78 +1,41 @@
-import { pool } from '../../shared/db.js';
+import * as bookingService from './booking.service.js';
 
-export const getBookings = async (req, res) => {
+export const createBooking = async (req, res) => {
   try {
-    const result = await pool.query(`
-      SELECT 
-        b.*, 
-        d.name as doctor_name,
-        u.email as user_email
-      FROM bookings b
-      JOIN doctors d ON b.doctor_id = d.id
-      JOIN users u ON b.user_id = u.id
-      ORDER BY b.date, b.time
-    `);
+    const booking = await bookingService.createBooking({
+      doctor_id: req.body.doctor_id,
+      date: req.body.date,
+      time: req.body.time,
+      user_id: req.user.id // 🔥 viene del middleware
+    });
 
-    res.json(result.rows);
+    res.status(201).json(booking);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(400).json({ error: error.message });
   }
 };
 
-export const createBooking = async (req, res) => {
-  const { doctor_id, user_id, date, time } = req.body;
-
+export const getMyBookings = async (req, res) => {
   try {
-    if (!doctor_id || !user_id || !date || !time) {
-      return res.status(400).json({ error: 'Missing fields' });
-    }
+    const userId = req.user.id;
 
-    // 🔥 validar doctor
-    const doctor = await pool.query(
-      'SELECT id FROM doctors WHERE id = $1',
-      [doctor_id]
-    );
+    const bookings = await bookingService.getBookingsByUser(userId);
 
-    if (doctor.rows.length === 0) {
-      return res.status(404).json({ error: 'Doctor not found' });
-    }
-
-    // 🔥 validar usuario
-    const user = await pool.query(
-      'SELECT id FROM users WHERE id = $1',
-      [user_id]
-    );
-
-    if (user.rows.length === 0) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-
-    // 🔥 evitar doble reserva
-    const existing = await pool.query(
-      `SELECT 1 FROM bookings 
-       WHERE doctor_id = $1 AND date = $2 AND time = $3`,
-      [doctor_id, date, time]
-    );
-
-    if (existing.rows.length > 0) {
-      return res.status(409).json({
-        error: 'Doctor already booked at this time'
-      });
-    }
-
-    // 🔥 crear
-    const result = await pool.query(
-      `INSERT INTO bookings (doctor_id, user_id, date, time)
-       VALUES ($1, $2, $3, $4)
-       RETURNING *`,
-      [doctor_id, user_id, date, time]
-    );
-
-    res.status(201).json(result.rows[0]);
-
+    res.json(bookings);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export const cancelBooking = async (req, res) => {
+  try {
+    const bookingId = parseInt(req.params.id);
+    const userId = req.user.id;
+
+    const result = await bookingService.deleteBooking(bookingId, userId);
+
+    res.json(result);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
   }
 };
