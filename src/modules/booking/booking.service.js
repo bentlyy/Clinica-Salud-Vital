@@ -1,0 +1,1 @@
+import * as doctorService from '../doctor/doctor.service.js';
