@@ -280,3 +280,20 @@ export const getAvailableSlots = async (doctor_id, date, duration = 30) => {
     });
   });
 };
+
+export const getBookingsByDoctor = async (doctor_id) => {
+  const result = await pool.query(`
+    SELECT 
+      b.id,
+      b.date,
+      b.time,
+      b.duration,
+      u.email AS patient_email
+    FROM bookings b
+    JOIN users u ON b.user_id = u.id
+    WHERE b.doctor_id = $1
+    ORDER BY b.date, b.time
+  `, [doctor_id]);
+
+  return result.rows;
+};
