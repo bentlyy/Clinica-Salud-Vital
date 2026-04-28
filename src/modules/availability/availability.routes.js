@@ -11,16 +11,16 @@ import { authorizeRoles } from '../../middlewares/role.middleware.js';
 
 const router = Router();
 
-// 🔥 ver disponibilidad de un doctor (público)
-router.get('/:id', getAvailabilityByDoctor);
-
-// 🔥 ver mi disponibilidad (doctor logeado)
+// 🔥 ver mi disponibilidad (doctor logeado) — debe ir ANTES de /:id
 router.get(
   '/me',
   authMiddleware,
   authorizeRoles('doctor'),
   getMyAvailability
 );
+
+// 🔥 ver disponibilidad de un doctor (público)
+router.get('/:id', getAvailabilityByDoctor);
 
 // 🔥 crear disponibilidad (solo doctor)
 router.post(
