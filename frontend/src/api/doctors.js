@@ -1,6 +1,8 @@
-import api from './axios';
+import axios from 'axios';
 
-export const getDoctorBookings = async () => {
-  const res = await api.get('/bookings/doctor');
+const API = 'http://localhost:3000/api';
+
+export const getDoctors = async () => {
+  const res = await axios.get(`${API}/doctors/public`);
   return res.data;
 };
