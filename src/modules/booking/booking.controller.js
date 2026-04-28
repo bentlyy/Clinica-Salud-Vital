@@ -55,3 +55,19 @@ export const getAvailableSlots = async (req, res) => {
     res.status(400).json({ error: error.message });
   }
 };
+
+export const getDoctorBookings = async (req, res) => {
+  try {
+    const doctor = await doctorService.getDoctorByUserId(req.user.id);
+
+    if (!doctor) {
+      return res.status(404).json({ error: 'Doctor profile not found' });
+    }
+
+    const bookings = await bookingService.getBookingsByDoctor(doctor.id);
+
+    res.json(bookings);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
