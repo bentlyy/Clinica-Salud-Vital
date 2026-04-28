@@ -13,7 +13,10 @@ const router = Router();
 // 🔥 admin ve todos
 router.get('/', authMiddleware, authorizeRoles('admin'), getDoctors);
 
-// 🔥 solo admin crea doctor
+// 🔥 público (pacientes ven doctores)
+router.get('/public', getDoctors);
+
+// 🔥 admin crea doctor
 router.post('/', authMiddleware, authorizeRoles('admin'), createDoctor);
 
 // 🔥 doctor ve su perfil
