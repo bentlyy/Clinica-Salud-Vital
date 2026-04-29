@@ -4,7 +4,6 @@ import { getExceptions, createException } from '../api/exceptions';
 
 const days = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 
-// genera horas tipo 08:00 → 18:00
 const generateHours = () => {
   const hours = [];
   for (let h = 8; h < 18; h++) {
@@ -18,23 +17,36 @@ export default function DoctorCalendarPage() {
   const [availability, setAvailability] = useState([]);
   const [exceptions, setExceptions] = useState([]);
 
+  const [mode, setMode] = useState('available'); // 🔥 clave
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
   const hours = generateHours();
 
   const fetchData = async () => {
-    const [a, e] = await Promise.all([
-      getAvailability(),
-      getExceptions()
-    ]);
+    try {
+      setLoading(true);
+      setError(null);
 
-    setAvailability(a);
-    setExceptions(e);
+      const [a, e] = await Promise.all([
+        getAvailability(),
+        getExceptions()
+      ]);
+
+      setAvailability(a);
+      setExceptions(e);
+
+    } catch {
+      setError('Error cargando calendario');
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
     fetchData();
   }, []);
 
-  // 🔥 verificar disponibilidad
   const isAvailable = (day, time) => {
     return availability.some(a =>
       a.day_of_week === day &&
@@ -43,7 +55,6 @@ export default function DoctorCalendarPage() {
     );
   };
 
-  // 🔥 verificar bloqueo
   const isBlocked = (day, time) => {
     return exceptions.some(e => {
       const d = new Date(e.date).getDay();
@@ -60,37 +71,6 @@ export default function DoctorCalendarPage() {
     });
   };
 
-  // 🔥 click celda
-  const handleClick = async (day, time) => {
-    const action = prompt('1 = Disponible, 2 = Bloquear');
-
-    try {
-      if (action === '1') {
-        await createAvailability({
-          day_of_week: day,
-          start_time: time,
-          end_time: add30(time)
-        });
-      }
-
-      if (action === '2') {
-        const date = getNextDate(day);
-
-        await createException({
-          date,
-          start_time: time,
-          end_time: add30(time)
-        });
-      }
-
-      await fetchData();
-
-    } catch (err) {
-      alert(err.response?.data?.error || 'Error');
-    }
-  };
-
-  // 🔥 helpers
   const add30 = (time) => {
     const [h, m] = time.split(':').map(Number);
     const d = new Date();
@@ -107,54 +87,103 @@ export default function DoctorCalendarPage() {
     return next.toISOString().split('T')[0];
   };
 
+  const handleClick = async (day, time) => {
+    try {
+      if (mode === 'available') {
+        await createAvailability({
+          day_of_week: day,
+          start_time: time,
+          end_time: add30(time)
+        });
+      }
+
+      if (mode === 'blocked') {
+        const date = getNextDate(day);
+
+        await createException({
+          date,
+          start_time: time,
+          end_time: add30(time)
+        });
+      }
+
+      await fetchData();
+
+    } catch (err) {
+      setError(err.response?.data?.error || 'Error');
+    }
+  };
+
   return (
     <div>
       <h2>Calendario Doctor</h2>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '80px repeat(7, 1fr)' }}>
-        
-        {/* header */}
-        <div></div>
-        {days.map((d, i) => (
-          <div key={i} style={{ textAlign: 'center', fontWeight: 'bold' }}>
-            {d}
-          </div>
-        ))}
+      {/* 🔥 CONTROLES */}
+      <div style={{ marginBottom: 15 }}>
+        <button onClick={() => setMode('available')}>
+          🟢 Disponible
+        </button>
 
-        {/* grid */}
-        {hours.map((hour) => (
-          <>
-            {/* hora */}
-            <div key={hour}>{hour}</div>
-
-            {days.map((_, dayIndex) => {
-              const available = isAvailable(dayIndex, hour);
-              const blocked = isBlocked(dayIndex, hour);
-
-              let bg = '#eee';
-              if (available) bg = '#4CAF50';
-              if (blocked) bg = '#f44336';
-
-              return (
-                <div
-                  key={`${dayIndex}-${hour}`}
-                  onClick={() => handleClick(dayIndex, hour)}
-                  style={{
-                    border: '1px solid #ccc',
-                    height: '30px',
-                    cursor: 'pointer',
-                    background: bg
-                  }}
-                />
-              );
-            })}
-          </>
-        ))}
+        <button
+          onClick={() => setMode('blocked')}
+          style={{ marginLeft: 10 }}
+        >
+          🔴 Bloquear
+        </button>
       </div>
 
-      <p>
-        🟢 Disponible | 🔴 Bloqueado | Gris = vacío
-      </p>
+      {/* 🔥 ERROR */}
+      {error && (
+        <div style={{ background: '#f44336', color: '#fff', padding: 10 }}>
+          {error}
+        </div>
+      )}
+
+      {loading && <p>Cargando...</p>}
+
+      {!loading && (
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: '80px repeat(7, 1fr)'
+        }}>
+          <div></div>
+          {days.map((d, i) => (
+            <div key={i} style={{ textAlign: 'center', fontWeight: 'bold' }}>
+              {d}
+            </div>
+          ))}
+
+          {hours.map((hour) => (
+            <div key={hour + '-row'} style={{ display: 'contents' }}>
+              <div>{hour}</div>
+
+              {days.map((_, dayIndex) => {
+                const available = isAvailable(dayIndex, hour);
+                const blocked = isBlocked(dayIndex, hour);
+
+                let bg = '#eee';
+                if (available) bg = '#4CAF50';
+                if (blocked) bg = '#f44336';
+
+                return (
+                  <div
+                    key={`${dayIndex}-${hour}`}
+                    onClick={() => handleClick(dayIndex, hour)}
+                    style={{
+                      border: '1px solid #ccc',
+                      height: '30px',
+                      cursor: 'pointer',
+                      background: bg
+                    }}
+                  />
+                );
+              })}
+            </div>
+          ))}
+        </div>
+      )}
+
+      <p>🟢 Disponible | 🔴 Bloqueado</p>
     </div>
   );
 }
