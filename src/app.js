@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import { seedAdmin } from './seed/admin.seed.js';
 import 'dotenv/config';
 import { pool } from './shared/db.js';
 import { startReminderJob } from './jobs/reminder.job.js';
@@ -30,8 +31,20 @@ app.get('/health', async (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 
-app.listen(PORT, () => {
-  console.log(`API running on http://localhost:${PORT}`);
-});
+const startServer = async () => {
+  try {
+    await seedAdmin(); // 🔥 crea admin si no existe
 
-startReminderJob();
+    app.listen(PORT, () => {
+      console.log(`API running on http://localhost:${PORT}`);
+    });
+
+    startReminderJob();
+
+  } catch (error) {
+    console.error('Error starting server:', error);
+    process.exit(1);
+  }
+};
+
+startServer();
