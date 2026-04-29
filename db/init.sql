@@ -12,16 +12,22 @@ CREATE TABLE doctors (
   id SERIAL PRIMARY KEY,
   name TEXT NOT NULL,
   specialty TEXT NOT NULL,
-  email TEXT, -- opcional (el real está en users)
+  email TEXT,
   user_id INT UNIQUE,
+
+  -- 🔥 NUEVO: duración de slots (15, 30, 45, etc)
+  slot_duration INT DEFAULT 30,
 
   CONSTRAINT fk_doctor_user
     FOREIGN KEY (user_id)
     REFERENCES users(id)
-    ON DELETE SET NULL
+    ON DELETE SET NULL,
+
+  -- 🔥 validación pro
+  CONSTRAINT check_slot_duration CHECK (slot_duration IN (15, 30, 45, 60))
 );
 
--- 🔹 BOOKINGS (🔥 actualizado con duration)
+-- 🔹 BOOKINGS
 CREATE TABLE bookings (
   id SERIAL PRIMARY KEY,
 
@@ -32,7 +38,6 @@ CREATE TABLE bookings (
   time TIME NOT NULL,
   duration INT DEFAULT 30,
 
-  -- 🔥 NUEVO: control de recordatorios
   reminder_1h_sent BOOLEAN DEFAULT FALSE,
   reminder_24h_sent BOOLEAN DEFAULT FALSE,
 
@@ -49,6 +54,7 @@ CREATE TABLE bookings (
     ON DELETE CASCADE,
 
   CONSTRAINT unique_booking UNIQUE (doctor_id, date, time),
+
   CONSTRAINT check_future_date CHECK (date >= CURRENT_DATE),
   CONSTRAINT check_duration CHECK (duration > 0 AND duration <= 480)
 );
@@ -58,7 +64,7 @@ CREATE TABLE doctor_availability (
   id SERIAL PRIMARY KEY,
 
   doctor_id INT NOT NULL,
-  day_of_week INT NOT NULL, -- 0 domingo - 6 sábado
+  day_of_week INT NOT NULL,
 
   start_time TIME NOT NULL,
   end_time TIME NOT NULL,
@@ -68,11 +74,10 @@ CREATE TABLE doctor_availability (
     REFERENCES doctors(id)
     ON DELETE CASCADE,
 
-  -- 🔥 validación básica
   CONSTRAINT check_time_range CHECK (start_time < end_time)
 );
 
--- 🔹 (🔥 OPCIONAL PERO PRO) EXCEPCIONES / BLOQUEOS
+-- 🔹 EXCEPTIONS
 CREATE TABLE doctor_exceptions (
   id SERIAL PRIMARY KEY,
 
@@ -99,4 +104,3 @@ CREATE INDEX idx_availability_doctor ON doctor_availability(doctor_id);
 
 CREATE INDEX idx_exceptions_doctor ON doctor_exceptions(doctor_id);
 CREATE INDEX idx_exceptions_date ON doctor_exceptions(date);
-
