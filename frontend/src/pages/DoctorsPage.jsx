@@ -9,7 +9,10 @@ export default function DoctorsPage() {
   const [date, setDate] = useState('');
   const [slots, setSlots] = useState([]);
   const [selectedTime, setSelectedTime] = useState(null);
+
+  const [loadingDoctors, setLoadingDoctors] = useState(true);
   const [loadingSlots, setLoadingSlots] = useState(false);
+  const [error, setError] = useState(null);
 
   const navigate = useNavigate();
 
@@ -20,35 +23,37 @@ export default function DoctorsPage() {
         const data = await getDoctors();
         setDoctors(data);
       } catch {
-        alert('Error cargando doctores');
+        setError('Error cargando doctores');
+      } finally {
+        setLoadingDoctors(false);
       }
     };
 
     fetchDoctors();
   }, []);
 
-  // 🔥 cargar slots
-  const handleLoadSlots = async (doctorId) => {
-    if (!date) {
-      alert('Selecciona una fecha');
-      return;
-    }
+  // 🔥 cargar slots automáticamente
+  useEffect(() => {
+    if (!selectedDoctor || !date) return;
 
-    try {
-      setLoadingSlots(true);
+    const loadSlots = async () => {
+      try {
+        setLoadingSlots(true);
+        setError(null);
 
-      const data = await getAvailableSlots(doctorId, date);
+        const data = await getAvailableSlots(selectedDoctor, date);
+        setSlots(data);
+        setSelectedTime(null);
 
-      setSlots(data);
-      setSelectedDoctor(doctorId);
-      setSelectedTime(null); // 🔥 reset selección
+      } catch {
+        setError('Error cargando horarios');
+      } finally {
+        setLoadingSlots(false);
+      }
+    };
 
-    } catch {
-      alert('Error cargando horarios');
-    } finally {
-      setLoadingSlots(false);
-    }
-  };
+    loadSlots();
+  }, [selectedDoctor, date]);
 
   // 🔥 reservar
   const handleBooking = async () => {
@@ -59,21 +64,19 @@ export default function DoctorsPage() {
         time: selectedTime
       });
 
-      alert('Reserva creada ✅');
-
       // 🔥 refresh slots
       const updated = await getAvailableSlots(selectedDoctor, date);
       setSlots(updated);
       setSelectedTime(null);
 
     } catch (err) {
-      alert(err.response?.data?.error || 'Error al reservar');
+      setError(err.response?.data?.error || 'Error al reservar');
     }
   };
 
   return (
     <div>
-      <h2>Doctors</h2>
+      <h2>Reservar hora</h2>
 
       {/* 🔥 navegación */}
       <button onClick={() => navigate('/my-bookings')}>
@@ -82,73 +85,108 @@ export default function DoctorsPage() {
 
       <hr />
 
-      {/* 🔥 seleccionar fecha */}
-      <div>
+      {/* 🔥 ERROR */}
+      {error && (
+        <div style={{
+          background: '#f44336',
+          color: '#fff',
+          padding: '10px',
+          marginBottom: '10px'
+        }}>
+          {error}
+        </div>
+      )}
+
+      {/* 🔥 FECHA */}
+      <div style={{ marginBottom: '20px' }}>
         <label>Selecciona fecha:</label>
+        <br />
         <input
           type="date"
           value={date}
           onChange={(e) => {
             setDate(e.target.value);
-            setSlots([]); // 🔥 limpiar slots si cambia fecha
+            setSlots([]);
             setSelectedTime(null);
           }}
         />
       </div>
 
+      {/* 🔥 DOCTORES */}
+      <h3>Selecciona un doctor</h3>
+
+      {loadingDoctors && <p>Cargando doctores...</p>}
+
+      <div style={{ display: 'grid', gap: '10px' }}>
+        {doctors.map((doc) => (
+          <div
+            key={doc.id}
+            onClick={() => setSelectedDoctor(doc.id)}
+            style={{
+              border: selectedDoctor === doc.id
+                ? '2px solid #4CAF50'
+                : '1px solid #ccc',
+              padding: '10px',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              background: selectedDoctor === doc.id ? '#e8f5e9' : '#fff'
+            }}
+          >
+            <h4>{doc.name}</h4>
+            <p>{doc.specialty}</p>
+          </div>
+        ))}
+      </div>
+
       <hr />
 
-      {/* 🔥 lista doctores */}
-      {doctors.map((doc) => (
-        <div key={doc.id} style={{ marginBottom: '20px' }}>
-          <h3>{doc.name}</h3>
-          <p>{doc.specialty}</p>
-
-          <button onClick={() => handleLoadSlots(doc.id)}>
-            Ver horarios
-          </button>
-        </div>
-      ))}
-
-      <hr />
-
-      {/* 🔥 loading */}
-      {loadingSlots && <p>Cargando horarios...</p>}
-
-      {/* 🔥 slots */}
-      {slots.length > 0 && (
+      {/* 🔥 SLOTS */}
+      {selectedDoctor && date && (
         <div>
           <h3>Horarios disponibles</h3>
 
-          {slots.map((slot) => (
-            <button
-              key={slot}
-              onClick={() => setSelectedTime(slot)}
-              style={{
-                margin: '5px',
-                padding: '8px',
-                cursor: 'pointer',
-                background: selectedTime === slot ? '#4CAF50' : '#ddd'
-              }}
-            >
-              {slot}
-            </button>
-          ))}
+          {loadingSlots && <p>Cargando horarios...</p>}
 
-          <div style={{ marginTop: '10px' }}>
+          {!loadingSlots && slots.length === 0 && (
+            <p>No hay horarios disponibles</p>
+          )}
+
+          <div style={{ display: 'flex', flexWrap: 'wrap' }}>
+            {slots.map((slot) => (
+              <button
+                key={slot}
+                onClick={() => setSelectedTime(slot)}
+                style={{
+                  margin: '5px',
+                  padding: '8px',
+                  cursor: 'pointer',
+                  borderRadius: '4px',
+                  border: '1px solid #ccc',
+                  background: selectedTime === slot ? '#4CAF50' : '#eee',
+                  color: selectedTime === slot ? '#fff' : '#000'
+                }}
+              >
+                {slot}
+              </button>
+            ))}
+          </div>
+
+          <div style={{ marginTop: '15px' }}>
             <button
               disabled={!selectedTime}
               onClick={handleBooking}
+              style={{
+                padding: '10px 20px',
+                background: '#4CAF50',
+                color: '#fff',
+                border: 'none',
+                cursor: selectedTime ? 'pointer' : 'not-allowed'
+              }}
             >
               Reservar
             </button>
           </div>
         </div>
-      )}
-
-      {/* 🔥 sin slots */}
-      {selectedDoctor && slots.length === 0 && !loadingSlots && (
-        <p>No hay horarios disponibles</p>
       )}
     </div>
   );
