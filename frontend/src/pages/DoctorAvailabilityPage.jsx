@@ -45,38 +45,96 @@ export default function DoctorAvailabilityPage() {
     fetchAvailability();
   }, []);
 
-  // 🔥 validar solapamiento
-  const isOverlapping = () => {
+  // 🔥 generar bloques de 30 min
+  const generateSlots = (start, end) => {
+    const slots = [];
+    let current = start;
+
+    while (current < end) {
+      const next = add30(current);
+
+      slots.push({
+        start_time: current,
+        end_time: next
+      });
+
+      current = next;
+    }
+
+    return slots;
+  };
+
+  const add30 = (time) => {
+    const [h, m] = time.split(':').map(Number);
+    const d = new Date();
+    d.setHours(h);
+    d.setMinutes(m + 30);
+    return d.toTimeString().slice(0, 5);
+  };
+
+  // 🔥 evitar duplicados
+  const exists = (day, start, end) => {
     return availability.some(a =>
       a.day_of_week === day &&
-      !(endTime <= a.start_time || startTime >= a.end_time)
+      a.start_time === start &&
+      a.end_time === end
     );
   };
 
-  // 🔥 crear
+  // 🔥 crear manual
   const handleCreate = async () => {
     if (startTime >= endTime) {
-      return setError('La hora de inicio debe ser menor a la de fin');
-    }
-
-    if (isOverlapping()) {
-      return setError('Este horario se solapa con uno existente');
+      return setError('Hora inválida');
     }
 
     try {
       setCreating(true);
       setError(null);
 
-      await createAvailability({
-        day_of_week: day,
-        start_time: startTime,
-        end_time: endTime
-      });
+      const slots = generateSlots(startTime, endTime);
+
+      for (const slot of slots) {
+        if (exists(day, slot.start_time, slot.end_time)) continue;
+
+        await createAvailability({
+          day_of_week: day,
+          start_time: slot.start_time,
+          end_time: slot.end_time
+        });
+      }
 
       await fetchAvailability();
 
     } catch (err) {
-      setError(err.response?.data?.error || 'Error al crear');
+      setError(err.response?.data?.error || 'Error');
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  // 🔥 DEFAULT VIERNES 08:00 - 17:00
+  const handleGenerateDefault = async () => {
+    try {
+      setCreating(true);
+      setError(null);
+
+      const friday = 5; // 🔥 viernes
+      const slots = generateSlots('08:00', '17:00');
+
+      for (const slot of slots) {
+        if (exists(friday, slot.start_time, slot.end_time)) continue;
+
+        await createAvailability({
+          day_of_week: friday,
+          start_time: slot.start_time,
+          end_time: slot.end_time
+        });
+      }
+
+      await fetchAvailability();
+
+    } catch {
+      setError('Error generando horario');
     } finally {
       setCreating(false);
     }
@@ -99,12 +157,18 @@ export default function DoctorAvailabilityPage() {
     <div>
       <h2>Disponibilidad</h2>
 
-      {/* 🔥 ERROR */}
       {error && (
         <div style={{ background: '#f44336', color: '#fff', padding: 10 }}>
           {error}
         </div>
       )}
+
+      {/* 🔥 BOTÓN DEFAULT */}
+      <div style={{ marginBottom: 20 }}>
+        <button onClick={handleGenerateDefault} disabled={creating}>
+          Generar viernes 08:00 - 17:00
+        </button>
+      </div>
 
       {/* 🔥 FORM */}
       <div style={{
@@ -115,7 +179,7 @@ export default function DoctorAvailabilityPage() {
       }}>
         <h3>Agregar horario</h3>
 
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '10px' }}>
           <select value={day} onChange={(e) => setDay(Number(e.target.value))}>
             {days.map((d, i) => (
               <option key={i} value={i}>{d}</option>
@@ -134,11 +198,8 @@ export default function DoctorAvailabilityPage() {
             onChange={(e) => setEndTime(e.target.value)}
           />
 
-          <button
-            onClick={handleCreate}
-            disabled={creating}
-          >
-            {creating ? 'Agregando...' : 'Agregar'}
+          <button onClick={handleCreate} disabled={creating}>
+            {creating ? 'Generando...' : 'Agregar'}
           </button>
         </div>
       </div>
@@ -154,14 +215,7 @@ export default function DoctorAvailabilityPage() {
 
       <div style={{ display: 'grid', gap: '10px' }}>
         {availability.map((a) => (
-          <div
-            key={a.id}
-            style={{
-              border: '1px solid #ccc',
-              padding: 10,
-              borderRadius: 6
-            }}
-          >
+          <div key={a.id} style={{ border: '1px solid #ccc', padding: 10 }}>
             <p><strong>{days[a.day_of_week]}</strong></p>
             <p>{a.start_time} → {a.end_time}</p>
 
