@@ -42,6 +42,7 @@ export const login = async ({ email, password }) => {
   );
 
   const user = result.rows[0];
+
   if (!user) {
     throw new Error('Invalid credentials');
   }
@@ -51,16 +52,23 @@ export const login = async ({ email, password }) => {
     throw new Error('Invalid credentials');
   }
 
-  // 🔥 generar token
- const token = jwt.sign(
-  { 
-    id: user.id, 
-    email: user.email,
-    role: user.role   // 🔥 importante
-  },
-  JWT_SECRET,
-  { expiresIn: '1d' }
-);
+  const token = jwt.sign(
+    { 
+      id: user.id, 
+      email: user.email,
+      role: user.role || 'user' // 🔥 fallback
+    },
+    JWT_SECRET,
+    { expiresIn: '1d' }
+  );
 
-  return { token };
+  // 🔥 IMPORTANTE: devolver user
+  return {
+    token,
+    user: {
+      id: user.id,
+      email: user.email,
+      role: user.role || 'user'
+    }
+  };
 };
