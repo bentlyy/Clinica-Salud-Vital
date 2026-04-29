@@ -3,7 +3,7 @@ version: '3.8'
 services:
   api:
     build: .
-    command: sh wait-for-it.sh
+    command: npm run dev
     volumes:
       - .:/app
       - /app/node_modules
