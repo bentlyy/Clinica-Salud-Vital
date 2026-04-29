@@ -30,23 +30,15 @@ export const createBooking = async ({ doctor_id, user_id, date, time, duration =
       throw new Error('Missing required fields');
     }
 
-    const timeRegex = /^([0-1]\d|2[0-3]):([0-5]\d)$/;
-    if (!timeRegex.test(time)) {
-      throw new Error('Invalid time format (HH:MM)');
-    }
-
-    if (duration <= 0 || duration > 480) {
-      throw new Error('Invalid duration');
-    }
-
     const doctor = await doctorService.getDoctorById(doctor_id);
     if (!doctor) throw new Error('Doctor not found');
 
     const day = new Date(date).getDay();
 
-    // 🔥 availability
+    // 🔥 MULTI-BLOQUE availability
     const availability = await pool.query(
-      `SELECT start_time, end_time FROM doctor_availability
+      `SELECT start_time, end_time 
+       FROM doctor_availability
        WHERE doctor_id = $1 AND day_of_week = $2`,
       [doctor_id, day]
     );
@@ -55,16 +47,19 @@ export const createBooking = async ({ doctor_id, user_id, date, time, duration =
       throw new Error('Doctor not available on this day');
     }
 
-    const { start_time, end_time } = availability.rows[0];
-
     const start = new Date(`1970-01-01T${time}`);
     const end = new Date(start);
     end.setMinutes(end.getMinutes() + duration);
 
-    const startLimit = new Date(`1970-01-01T${start_time}`);
-    const endLimit = new Date(`1970-01-01T${end_time}`);
+    // 🔥 validar contra TODOS los bloques
+    const isInsideAnyBlock = availability.rows.some(a => {
+      const startLimit = new Date(`1970-01-01T${a.start_time}`);
+      const endLimit = new Date(`1970-01-01T${a.end_time}`);
 
-    if (start < startLimit || end > endLimit) {
+      return start >= startLimit && end <= endLimit;
+    });
+
+    if (!isInsideAnyBlock) {
       throw new Error('Outside doctor availability');
     }
 
@@ -90,7 +85,7 @@ export const createBooking = async ({ doctor_id, user_id, date, time, duration =
       }
     }
 
-    // 🔥 solapamiento
+    // 🔥 solapamiento bookings
     const overlap = await pool.query(
       `SELECT 1 FROM bookings
        WHERE doctor_id = $1
@@ -107,7 +102,7 @@ export const createBooking = async ({ doctor_id, user_id, date, time, duration =
       throw new Error('Time slot overlaps with another booking');
     }
 
-    // 🔥 obtener email usuario (antes de insert para evitar doble query después)
+    // 🔥 email usuario
     const userResult = await pool.query(
       'SELECT email FROM users WHERE id = $1',
       [user_id]
@@ -119,7 +114,7 @@ export const createBooking = async ({ doctor_id, user_id, date, time, duration =
 
     const userEmail = userResult.rows[0].email;
 
-    // 🔥 insert
+    // 🔥 insert booking
     const result = await pool.query(
       `INSERT INTO bookings (doctor_id, user_id, date, time, duration)
        VALUES ($1, $2, $3, $4, $5)
@@ -129,7 +124,7 @@ export const createBooking = async ({ doctor_id, user_id, date, time, duration =
 
     const booking = result.rows[0];
 
-    // 🔥 EMAIL (NO BLOQUEANTE)
+    // 🔥 email async
     sendEmail({
       to: userEmail,
       subject: 'Confirmación de reserva',
@@ -185,66 +180,63 @@ export const deleteBooking = async (booking_id, user_id) => {
     throw new Error('Booking not found or unauthorized');
   }
 
-  const booking = result.rows[0];
-
-  // 🔥 obtener email
-  const userResult = await pool.query(
-    'SELECT email FROM users WHERE id = $1',
-    [user_id]
-  );
-
-  if (userResult.rows.length > 0) {
-    const email = userResult.rows[0].email;
-
-    sendEmail({
-      to: email,
-      subject: 'Reserva cancelada',
-      html: `
-        <h3>Reserva cancelada</h3>
-        <p>Tu cita del ${booking.date} a las ${booking.time} fue cancelada.</p>
-      `
-    }).catch(console.error);
-  }
-
   return { message: 'Booking cancelled successfully' };
 };
 
-export const getAvailableSlots = async (doctor_id, date, duration = 30) => {
+export const getAvailableSlots = async (doctor_id, date) => {
+  if (!doctor_id || !date) {
+    throw new Error('doctor_id and date are required');
+  }
+
   const day = new Date(date).getDay();
 
+  // 🔥 MULTI BLOQUE
   const availabilityResult = await pool.query(
     `SELECT start_time, end_time
      FROM doctor_availability
-     WHERE doctor_id = $1 AND day_of_week = $2`,
+     WHERE doctor_id = $1 AND day_of_week = $2
+     ORDER BY start_time`,
     [doctor_id, day]
   );
 
   if (availabilityResult.rows.length === 0) return [];
 
-  const { start_time, end_time } = availabilityResult.rows[0];
+  // 🔥 duración dinámica
+  const doctorResult = await pool.query(
+    `SELECT slot_duration FROM doctors WHERE id = $1`,
+    [doctor_id]
+  );
 
-  let current = new Date(`1970-01-01T${start_time}`);
-  const end = new Date(`1970-01-01T${end_time}`);
+  const duration = doctorResult.rows[0]?.slot_duration || 30;
 
-  const slots = [];
+  const addMinutes = (time, mins) => {
+    const d = new Date(`1970-01-01T${time}`);
+    d.setMinutes(d.getMinutes() + mins);
+    return d.toTimeString().slice(0, 5);
+  };
 
-  while (current < end) {
-    const slotStart = new Date(current);
-    const slotEnd = new Date(current);
-    slotEnd.setMinutes(slotEnd.getMinutes() + duration);
+  let slots = [];
 
-    if (slotEnd > end) break;
+  for (const block of availabilityResult.rows) {
+    let current = block.start_time;
 
-    slots.push(slotStart.toTimeString().slice(0, 5));
-    current.setMinutes(current.getMinutes() + 15);
+    while (true) {
+      const next = addMinutes(current, duration);
+      if (next > block.end_time) break;
+
+      slots.push(current);
+      current = next;
+    }
   }
 
+  // 🔥 bookings
   const booked = await pool.query(
     `SELECT time, duration FROM bookings
      WHERE doctor_id = $1 AND date = $2`,
     [doctor_id, date]
   );
 
+  // 🔥 exceptions
   const exceptions = await pool.query(
     `SELECT * FROM doctor_exceptions
      WHERE doctor_id = $1 AND date = $2`,
@@ -271,13 +263,17 @@ export const getAvailableSlots = async (doctor_id, date, duration = 30) => {
     }
 
     // ❌ bookings
-    return !booked.rows.some(b => {
+    for (const b of booked.rows) {
       const bStart = new Date(`1970-01-01T${b.time}`);
       const bEnd = new Date(bStart);
       bEnd.setMinutes(bEnd.getMinutes() + b.duration);
 
-      return slotStart < bEnd && slotEnd > bStart;
-    });
+      if (slotStart < bEnd && slotEnd > bStart) {
+        return false;
+      }
+    }
+
+    return true;
   });
 };
 
