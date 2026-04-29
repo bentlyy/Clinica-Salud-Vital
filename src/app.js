@@ -5,7 +5,6 @@ import 'dotenv/config';
 import { pool } from './shared/db.js';
 import { startReminderJob } from './jobs/reminder.job.js';
 
-
 import doctorRoutes from './modules/doctor/doctor.routes.js';
 import authRoutes from './modules/auth/auth.routes.js';
 import bookingRoutes from './modules/booking/booking.routes.js';
@@ -31,14 +30,33 @@ app.get('/health', async (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 
+const waitForDB = async () => {
+  while (true) {
+    try {
+      await pool.query('SELECT 1');
+      console.log('✅ DB conectada');
+      break;
+    } catch (err) {
+      console.log('⏳ Esperando DB...');
+      await new Promise(res => setTimeout(res, 2000));
+    }
+  }
+};
+
 const startServer = async () => {
   try {
-    await seedAdmin(); // 🔥 crea admin si no existe
+    // 🔥 1. esperar DB
+    await waitForDB();
 
+    // 🔥 2. ahora sí seed
+    await seedAdmin();
+
+    // 🔥 3. levantar server
     app.listen(PORT, () => {
       console.log(`API running on http://localhost:${PORT}`);
     });
 
+    // 🔥 4. iniciar cron
     startReminderJob();
 
   } catch (error) {
