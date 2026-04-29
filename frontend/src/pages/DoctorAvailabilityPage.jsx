@@ -22,18 +22,51 @@ export default function DoctorAvailabilityPage() {
   const [startTime, setStartTime] = useState('09:00');
   const [endTime, setEndTime] = useState('17:00');
 
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [creating, setCreating] = useState(false);
+
   const fetchAvailability = async () => {
-    const data = await getAvailability();
-    setAvailability(data);
+    try {
+      setLoading(true);
+      setError(null);
+
+      const data = await getAvailability();
+      setAvailability(data);
+
+    } catch {
+      setError('Error cargando disponibilidad');
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
     fetchAvailability();
   }, []);
 
-  // 🔥 crear bloque
+  // 🔥 validar solapamiento
+  const isOverlapping = () => {
+    return availability.some(a =>
+      a.day_of_week === day &&
+      !(endTime <= a.start_time || startTime >= a.end_time)
+    );
+  };
+
+  // 🔥 crear
   const handleCreate = async () => {
+    if (startTime >= endTime) {
+      return setError('La hora de inicio debe ser menor a la de fin');
+    }
+
+    if (isOverlapping()) {
+      return setError('Este horario se solapa con uno existente');
+    }
+
     try {
+      setCreating(true);
+      setError(null);
+
       await createAvailability({
         day_of_week: day,
         start_time: startTime,
@@ -41,68 +74,103 @@ export default function DoctorAvailabilityPage() {
       });
 
       await fetchAvailability();
+
     } catch (err) {
-      alert(err.response?.data?.error || 'Error');
+      setError(err.response?.data?.error || 'Error al crear');
+    } finally {
+      setCreating(false);
     }
   };
 
   // 🔥 eliminar
   const handleDelete = async (id) => {
-    if (!confirm('Eliminar bloque?')) return;
+    const ok = window.confirm('¿Eliminar este bloque?');
+    if (!ok) return;
 
-    await deleteAvailability(id);
-    setAvailability((prev) => prev.filter(a => a.id !== id));
+    try {
+      await deleteAvailability(id);
+      setAvailability(prev => prev.filter(a => a.id !== id));
+    } catch {
+      setError('Error eliminando');
+    }
   };
 
   return (
     <div>
       <h2>Disponibilidad</h2>
 
-      {/* 🔥 CREAR */}
-      <div style={{ border: '1px solid #ccc', padding: 10 }}>
+      {/* 🔥 ERROR */}
+      {error && (
+        <div style={{ background: '#f44336', color: '#fff', padding: 10 }}>
+          {error}
+        </div>
+      )}
+
+      {/* 🔥 FORM */}
+      <div style={{
+        border: '1px solid #ccc',
+        padding: 15,
+        borderRadius: 8,
+        marginBottom: 20
+      }}>
         <h3>Agregar horario</h3>
 
-        <select value={day} onChange={(e) => setDay(Number(e.target.value))}>
-          {days.map((d, i) => (
-            <option key={i} value={i}>{d}</option>
-          ))}
-        </select>
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+          <select value={day} onChange={(e) => setDay(Number(e.target.value))}>
+            {days.map((d, i) => (
+              <option key={i} value={i}>{d}</option>
+            ))}
+          </select>
 
-        <input
-          type="time"
-          value={startTime}
-          onChange={(e) => setStartTime(e.target.value)}
-        />
+          <input
+            type="time"
+            value={startTime}
+            onChange={(e) => setStartTime(e.target.value)}
+          />
 
-        <input
-          type="time"
-          value={endTime}
-          onChange={(e) => setEndTime(e.target.value)}
-        />
+          <input
+            type="time"
+            value={endTime}
+            onChange={(e) => setEndTime(e.target.value)}
+          />
 
-        <button onClick={handleCreate}>
-          Agregar
-        </button>
+          <button
+            onClick={handleCreate}
+            disabled={creating}
+          >
+            {creating ? 'Agregando...' : 'Agregar'}
+          </button>
+        </div>
       </div>
-
-      <hr />
 
       {/* 🔥 LISTA */}
       <h3>Horarios actuales</h3>
 
-      {availability.length === 0 && <p>No tienes horarios</p>}
+      {loading && <p>Cargando...</p>}
 
-      {availability.map((a) => (
-        <div key={a.id} style={{ border: '1px solid #ccc', margin: 10, padding: 10 }}>
-          <p><strong>Día:</strong> {days[a.day_of_week]}</p>
-          <p><strong>Desde:</strong> {a.start_time}</p>
-          <p><strong>Hasta:</strong> {a.end_time}</p>
+      {!loading && availability.length === 0 && (
+        <p>No tienes horarios</p>
+      )}
 
-          <button onClick={() => handleDelete(a.id)}>
-            Eliminar
-          </button>
-        </div>
-      ))}
+      <div style={{ display: 'grid', gap: '10px' }}>
+        {availability.map((a) => (
+          <div
+            key={a.id}
+            style={{
+              border: '1px solid #ccc',
+              padding: 10,
+              borderRadius: 6
+            }}
+          >
+            <p><strong>{days[a.day_of_week]}</strong></p>
+            <p>{a.start_time} → {a.end_time}</p>
+
+            <button onClick={() => handleDelete(a.id)}>
+              Eliminar
+            </button>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

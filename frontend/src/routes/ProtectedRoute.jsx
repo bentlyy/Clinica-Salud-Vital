@@ -4,12 +4,23 @@ import { Navigate } from 'react-router-dom';
 export default function ProtectedRoute({ children, role }) {
   const { user, loading } = useAuth();
 
-  if (loading) return <p>Loading...</p>;
+  // 🔄 loading más limpio
+  if (loading) {
+    return (
+      <div style={{ padding: '20px' }}>
+        <p>Cargando sesión...</p>
+      </div>
+    );
+  }
 
-  if (!user) return <Navigate to="/" />;
+  // 🔒 no autenticado
+  if (!user) {
+    return <Navigate to="/" replace />;
+  }
 
+  // 🚫 sin permisos
   if (role && user.role !== role) {
-    return <Navigate to="/" />;
+    return <Navigate to="/" replace />;
   }
 
   return children;
