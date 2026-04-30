@@ -1,0 +1,221 @@
+# 🏥 Clinic Booking App
+
+Sistema de reserva de citas médicas con panel para doctores, gestión de disponibilidad y recordatorios automáticos por email.
+
+---
+
+## 🚀 Stack
+
+| Capa | Tecnología |
+|------|-----------|
+| Frontend | React 19 + Vite + MUI + FullCalendar |
+| Backend | Node.js + Express 5 |
+| Base de datos | PostgreSQL 15 |
+| Auth | JWT |
+| Email | Nodemailer (Gmail) |
+| Infraestructura | Docker + Docker Compose |
+
+---
+
+## 📋 Funcionalidades
+
+### Pacientes
+- Registro e inicio de sesión
+- Ver listado de doctores por especialidad
+- Reservar hora seleccionando fecha y horario disponible
+- Ver y cancelar reservas propias
+- Recordatorios por email (1h y 24h antes de la cita)
+
+### Doctores
+- Panel con agenda de próximas citas
+- Gestión de disponibilidad semanal (bloques horarios por día)
+- Calendario visual para bloquear horarios (excepciones)
+- Duración de slot configurable (15 / 30 / 45 / 60 min)
+
+### Admin
+- Crear doctores y asignarlos a usuarios
+
+---
+
+## 🗂️ Estructura del proyecto
+
+```
+├── src/
+│   ├── modules/
+│   │   ├── auth/
+│   │   ├── booking/
+│   │   ├── doctor/
+│   │   ├── availability/
+│   │   └── exception/
+│   ├── middlewares/
+│   ├── shared/           # DB pool, email service
+│   ├── seed/             # Datos iniciales
+│   ├── jobs/             # Cron de recordatorios
+│   └── app.js
+├── frontend/
+│   └── src/
+│       ├── api/
+│       ├── components/
+│       ├── context/
+│       ├── pages/
+│       └── routes/
+├── db/
+│   └── init.sql
+└── docker-compose.yml
+```
+
+---
+
+## ⚙️ Instalación y uso
+
+### Requisitos
+
+- [Docker](https://www.docker.com/) y Docker Compose instalados
+
+### 1. Clonar el repositorio
+
+```bash
+git clone https://github.com/tu-usuario/clinic-booking-app.git
+cd clinic-booking-app
+```
+
+### 2. Configurar variables de entorno
+
+Edita el archivo `.env` en la raíz del proyecto:
+
+```env
+DATABASE_URL=postgresql://postgres:postgres@db:5432/clinic
+PORT=3000
+jwt_secret=tu_clave_secreta_aqui
+EMAIL_USER=tu_email@gmail.com
+EMAIL_PASS=tu_app_password_de_gmail
+```
+
+> **Nota:** Para el envío de emails con Gmail necesitas generar una [App Password](https://myaccount.google.com/apppasswords) con la verificación en dos pasos activada.
+
+### 3. Levantar los servicios
+
+```bash
+docker compose up --build
+```
+
+Esto levanta tres contenedores: `clinic-api` (puerto 3000), `clinic-frontend` (puerto 5173) y `clinic-db` (PostgreSQL).
+
+### 4. Acceder a la app
+
+| Servicio | URL |
+|----------|-----|
+| Frontend | http://localhost:5173 |
+| API | http://localhost:3000 |
+| Health check | http://localhost:3000/health |
+
+---
+
+## 👤 Usuarios de prueba (seed)
+
+Al iniciar por primera vez se crean automáticamente:
+
+| Rol | Email | Contraseña |
+|-----|-------|-----------|
+| Admin | admin@clinic.com | REPLACED_PASSWORD |
+| Doctor | juan@clinic.com | REPLACED_PASSWORD |
+| Doctor | maria@clinic.com | REPLACED_PASSWORD |
+| Doctor | carlos@clinic.com | REPLACED_PASSWORD |
+| Doctor | ana@clinic.com | REPLACED_PASSWORD |
+| Paciente | user1@clinic.com | REPLACED_PASSWORD |
+| Paciente | user2@clinic.com | REPLACED_PASSWORD |
+| Paciente | user3@clinic.com | REPLACED_PASSWORD |
+
+---
+
+## 🔌 API Endpoints
+
+### Auth
+```
+POST /api/auth/register
+POST /api/auth/login
+```
+
+### Doctores
+```
+GET  /api/doctors/public
+GET  /api/doctors/me        (doctor)
+POST /api/doctors           (admin)
+```
+
+### Reservas
+```
+POST   /api/bookings
+GET    /api/bookings/me
+DELETE /api/bookings/:id
+GET    /api/bookings/available-slots?doctor_id=&date=
+GET    /api/bookings/doctor  (doctor)
+```
+
+### Disponibilidad
+```
+GET    /api/availability/me
+GET    /api/availability/:doctorId
+POST   /api/availability
+DELETE /api/availability/:id
+```
+
+### Excepciones (bloqueos)
+```
+GET    /api/exceptions/me
+POST   /api/exceptions
+DELETE /api/exceptions/:id
+```
+
+---
+
+## 🗄️ Esquema de base de datos
+
+```
+users ──────────┬──── doctors ────┬──── doctor_availability
+                │                 │
+                │                 └──── doctor_exceptions
+                │
+                └──── bookings
+```
+
+Las tablas principales son `users`, `doctors`, `bookings`, `doctor_availability` y `doctor_exceptions`. El esquema completo está en `db/init.sql`.
+
+---
+
+## 🔄 Reset de base de datos
+
+Para limpiar todos los datos y ejecutar el seed desde cero:
+
+```bash
+docker compose down -v
+docker compose up --build
+```
+
+---
+
+## 📬 Recordatorios por email
+
+Un job cron se ejecuta cada 5 minutos y envía emails automáticos a los pacientes:
+
+- **24 horas antes** de la cita
+- **1 hora antes** de la cita
+
+Cada recordatorio se marca como enviado en la base de datos para evitar duplicados.
+
+---
+
+## 🛠️ Desarrollo local (sin Docker)
+
+```bash
+# Backend
+npm install
+npm run dev
+
+# Frontend (en otra terminal)
+cd frontend
+npm install
+npm run dev
+```
+
+Asegúrate de tener PostgreSQL corriendo localmente y actualiza `DATABASE_URL` en `.env`.
