@@ -9,6 +9,7 @@ import doctorRoutes from './modules/doctor/doctor.routes.js';
 import authRoutes from './modules/auth/auth.routes.js';
 import bookingRoutes from './modules/booking/booking.routes.js';
 import availabilityRoutes from './modules/availability/availability.routes.js';
+import exceptionRoutes from './modules/exception/exception.routes.js'; // ✅ added
 
 const app = express();
 app.use(cors());
@@ -18,6 +19,7 @@ app.use('/api/doctors', doctorRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/availability', availabilityRoutes);
+app.use('/api/exceptions', exceptionRoutes); // ✅ added - was missing, broke DoctorCalendarPage
 
 app.get('/health', async (req, res) => {
   try {
@@ -45,18 +47,13 @@ const waitForDB = async () => {
 
 const startServer = async () => {
   try {
-    // 🔥 1. esperar DB
     await waitForDB();
-
-    // 🔥 2. ahora sí seed
     await seedAdmin();
 
-    // 🔥 3. levantar server
     app.listen(PORT, () => {
       console.log(`API running on http://localhost:${PORT}`);
     });
 
-    // 🔥 4. iniciar cron
     startReminderJob();
 
   } catch (error) {
