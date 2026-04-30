@@ -24,6 +24,12 @@ export const getAllBookings = async () => {
   return result.rows;
 };
 
+// 🔥 Fix: parse date parts directly to avoid timezone shift
+const getDayOfWeek = (dateStr) => {
+  const [year, month, day] = dateStr.split('-').map(Number);
+  return new Date(year, month - 1, day).getDay();
+};
+
 export const createBooking = async ({ doctor_id, user_id, date, time, duration = 30 }) => {
   try {
     if (!doctor_id || !user_id || !date || !time) {
@@ -33,9 +39,9 @@ export const createBooking = async ({ doctor_id, user_id, date, time, duration =
     const doctor = await doctorService.getDoctorById(doctor_id);
     if (!doctor) throw new Error('Doctor not found');
 
-    const day = new Date(date).getDay();
+    // ✅ Fixed: use local date parsing to avoid UTC timezone shift
+    const day = getDayOfWeek(date);
 
-    // 🔥 MULTI-BLOQUE availability
     const availability = await pool.query(
       `SELECT start_time, end_time 
        FROM doctor_availability
@@ -51,11 +57,9 @@ export const createBooking = async ({ doctor_id, user_id, date, time, duration =
     const end = new Date(start);
     end.setMinutes(end.getMinutes() + duration);
 
-    // 🔥 validar contra TODOS los bloques
     const isInsideAnyBlock = availability.rows.some(a => {
       const startLimit = new Date(`1970-01-01T${a.start_time}`);
       const endLimit = new Date(`1970-01-01T${a.end_time}`);
-
       return start >= startLimit && end <= endLimit;
     });
 
@@ -63,7 +67,6 @@ export const createBooking = async ({ doctor_id, user_id, date, time, duration =
       throw new Error('Outside doctor availability');
     }
 
-    // 🔥 exceptions
     const exceptions = await pool.query(
       `SELECT * FROM doctor_exceptions
        WHERE doctor_id = $1 AND date = $2`,
@@ -85,7 +88,6 @@ export const createBooking = async ({ doctor_id, user_id, date, time, duration =
       }
     }
 
-    // 🔥 solapamiento bookings
     const overlap = await pool.query(
       `SELECT 1 FROM bookings
        WHERE doctor_id = $1
@@ -102,7 +104,6 @@ export const createBooking = async ({ doctor_id, user_id, date, time, duration =
       throw new Error('Time slot overlaps with another booking');
     }
 
-    // 🔥 email usuario
     const userResult = await pool.query(
       'SELECT email FROM users WHERE id = $1',
       [user_id]
@@ -114,7 +115,6 @@ export const createBooking = async ({ doctor_id, user_id, date, time, duration =
 
     const userEmail = userResult.rows[0].email;
 
-    // 🔥 insert booking
     const result = await pool.query(
       `INSERT INTO bookings (doctor_id, user_id, date, time, duration)
        VALUES ($1, $2, $3, $4, $5)
@@ -124,7 +124,6 @@ export const createBooking = async ({ doctor_id, user_id, date, time, duration =
 
     const booking = result.rows[0];
 
-    // 🔥 email async
     sendEmail({
       to: userEmail,
       subject: 'Confirmación de reserva',
@@ -141,11 +140,9 @@ export const createBooking = async ({ doctor_id, user_id, date, time, duration =
     if (error.code === '23505') {
       throw new Error('This time slot is already booked');
     }
-
     if (error.code === '23503') {
       throw new Error('Invalid doctor or user');
     }
-
     throw error.message ? error : new Error('Database error');
   }
 };
@@ -188,9 +185,9 @@ export const getAvailableSlots = async (doctor_id, date) => {
     throw new Error('doctor_id and date are required');
   }
 
-  const day = new Date(date).getDay();
+  // ✅ Fixed: use local date parsing to avoid UTC timezone shift
+  const day = getDayOfWeek(date);
 
-  // 🔥 MULTI BLOQUE
   const availabilityResult = await pool.query(
     `SELECT start_time, end_time
      FROM doctor_availability
@@ -201,7 +198,6 @@ export const getAvailableSlots = async (doctor_id, date) => {
 
   if (availabilityResult.rows.length === 0) return [];
 
-  // 🔥 duración dinámica
   const doctorResult = await pool.query(
     `SELECT slot_duration FROM doctors WHERE id = $1`,
     [doctor_id]
@@ -218,25 +214,23 @@ export const getAvailableSlots = async (doctor_id, date) => {
   let slots = [];
 
   for (const block of availabilityResult.rows) {
-    let current = block.start_time;
+    let current = block.start_time.slice(0, 5); // normalize HH:MM
 
     while (true) {
       const next = addMinutes(current, duration);
-      if (next > block.end_time) break;
+      if (next > block.end_time.slice(0, 5)) break;
 
       slots.push(current);
       current = next;
     }
   }
 
-  // 🔥 bookings
   const booked = await pool.query(
     `SELECT time, duration FROM bookings
      WHERE doctor_id = $1 AND date = $2`,
     [doctor_id, date]
   );
 
-  // 🔥 exceptions
   const exceptions = await pool.query(
     `SELECT * FROM doctor_exceptions
      WHERE doctor_id = $1 AND date = $2`,
@@ -248,7 +242,6 @@ export const getAvailableSlots = async (doctor_id, date) => {
     const slotEnd = new Date(slotStart);
     slotEnd.setMinutes(slotEnd.getMinutes() + duration);
 
-    // ❌ exceptions
     for (const ex of exceptions.rows) {
       if (ex.is_full_day) return false;
 
@@ -262,7 +255,6 @@ export const getAvailableSlots = async (doctor_id, date) => {
       }
     }
 
-    // ❌ bookings
     for (const b of booked.rows) {
       const bStart = new Date(`1970-01-01T${b.time}`);
       const bEnd = new Date(bStart);
