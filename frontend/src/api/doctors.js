@@ -6,6 +6,6 @@ export const getDoctors = async () => {
 };
 
 export const getDoctorBookings = async () => {
-  const res = await api.get('/doctor/bookings/me');
+  const res = await api.get('/bookings/doctor'); // ✅ fixed: was '/doctor/bookings/me'
   return res.data;
 };
