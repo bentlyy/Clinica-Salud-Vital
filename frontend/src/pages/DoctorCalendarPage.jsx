@@ -1,45 +1,46 @@
 import { useEffect, useState } from 'react';
-import { getAvailability, createAvailability } from '../api/availability';
+import FullCalendar from '@fullcalendar/react';
+import timeGridPlugin from '@fullcalendar/timegrid';
+import interactionPlugin from '@fullcalendar/interaction';
+
+import { getAvailability } from '../api/availability';
 import { getExceptions, createException } from '../api/exceptions';
 
-const days = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
-
-const generateHours = () => {
-  const hours = [];
-  for (let h = 8; h < 18; h++) {
-    hours.push(`${h.toString().padStart(2, '0')}:00`);
-    hours.push(`${h.toString().padStart(2, '0')}:30`);
-  }
-  return hours;
-};
-
 export default function DoctorCalendarPage() {
-  const [availability, setAvailability] = useState([]);
-  const [exceptions, setExceptions] = useState([]);
-
-  const [mode, setMode] = useState('available'); // 🔥 clave
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  const hours = generateHours();
+  const [events, setEvents] = useState([]);
 
   const fetchData = async () => {
     try {
-      setLoading(true);
-      setError(null);
-
-      const [a, e] = await Promise.all([
+      const [availability, exceptions] = await Promise.all([
         getAvailability(),
         getExceptions()
       ]);
 
-      setAvailability(a);
-      setExceptions(e);
+      // 🔥 convertir disponibilidad a eventos
+      const availabilityEvents = availability.map(a => ({
+        daysOfWeek: [a.day_of_week],
+        startTime: a.start_time,
+        endTime: a.end_time,
+        display: 'background',
+        color: '#4CAF50'
+      }));
 
-    } catch {
-      setError('Error cargando calendario');
-    } finally {
-      setLoading(false);
+      // 🔥 excepciones (bloqueos)
+      const exceptionEvents = exceptions.map(e => ({
+        start: e.start_time
+          ? `${e.date}T${e.start_time}`
+          : `${e.date}`,
+        end: e.end_time
+          ? `${e.date}T${e.end_time}`
+          : `${e.date}`,
+        display: 'background',
+        color: '#f44336'
+      }));
+
+      setEvents([...availabilityEvents, ...exceptionEvents]);
+
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -47,143 +48,39 @@ export default function DoctorCalendarPage() {
     fetchData();
   }, []);
 
-  const isAvailable = (day, time) => {
-    return availability.some(a =>
-      a.day_of_week === day &&
-      a.start_time <= time &&
-      a.end_time > time
-    );
-  };
-
-  const isBlocked = (day, time) => {
-    return exceptions.some(e => {
-      const d = new Date(e.date).getDay();
-
-      if (d !== day) return false;
-
-      if (e.is_full_day) return true;
-
-      if (e.start_time && e.end_time) {
-        return e.start_time <= time && e.end_time > time;
-      }
-
-      return false;
-    });
-  };
-
-  const add30 = (time) => {
-    const [h, m] = time.split(':').map(Number);
-    const d = new Date();
-    d.setHours(h);
-    d.setMinutes(m + 30);
-    return d.toTimeString().slice(0, 5);
-  };
-
-  const getNextDate = (day) => {
-    const today = new Date();
-    const diff = (day - today.getDay() + 7) % 7;
-    const next = new Date();
-    next.setDate(today.getDate() + diff);
-    return next.toISOString().split('T')[0];
-  };
-
-  const handleClick = async (day, time) => {
+  // 🔥 click en slot → bloquear
+  const handleSelect = async (info) => {
     try {
-      if (mode === 'available') {
-        await createAvailability({
-          day_of_week: day,
-          start_time: time,
-          end_time: add30(time)
-        });
-      }
+      await createException({
+        date: info.startStr.split('T')[0],
+        start_time: info.startStr.split('T')[1]?.slice(0,5),
+        end_time: info.endStr.split('T')[1]?.slice(0,5)
+      });
 
-      if (mode === 'blocked') {
-        const date = getNextDate(day);
-
-        await createException({
-          date,
-          start_time: time,
-          end_time: add30(time)
-        });
-      }
-
-      await fetchData();
+      fetchData();
 
     } catch (err) {
-      setError(err.response?.data?.error || 'Error');
+      console.error(err);
     }
   };
 
   return (
     <div>
-      <h2>Calendario Doctor</h2>
+      <h2>Calendario Profesional</h2>
 
-      {/* 🔥 CONTROLES */}
-      <div style={{ marginBottom: 15 }}>
-        <button onClick={() => setMode('available')}>
-          🟢 Disponible
-        </button>
+      <FullCalendar
+        plugins={[timeGridPlugin, interactionPlugin]}
+        initialView="timeGridWeek"
+        selectable={true}
+        select={handleSelect}
 
-        <button
-          onClick={() => setMode('blocked')}
-          style={{ marginLeft: 10 }}
-        >
-          🔴 Bloquear
-        </button>
-      </div>
+        slotDuration="00:30:00" // 🔥 30 min por defecto
+        allDaySlot={false}
 
-      {/* 🔥 ERROR */}
-      {error && (
-        <div style={{ background: '#f44336', color: '#fff', padding: 10 }}>
-          {error}
-        </div>
-      )}
+        events={events}
 
-      {loading && <p>Cargando...</p>}
-
-      {!loading && (
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: '80px repeat(7, 1fr)'
-        }}>
-          <div></div>
-          {days.map((d, i) => (
-            <div key={i} style={{ textAlign: 'center', fontWeight: 'bold' }}>
-              {d}
-            </div>
-          ))}
-
-          {hours.map((hour) => (
-            <div key={hour + '-row'} style={{ display: 'contents' }}>
-              <div>{hour}</div>
-
-              {days.map((_, dayIndex) => {
-                const available = isAvailable(dayIndex, hour);
-                const blocked = isBlocked(dayIndex, hour);
-
-                let bg = '#eee';
-                if (available) bg = '#4CAF50';
-                if (blocked) bg = '#f44336';
-
-                return (
-                  <div
-                    key={`${dayIndex}-${hour}`}
-                    onClick={() => handleClick(dayIndex, hour)}
-                    style={{
-                      border: '1px solid #ccc',
-                      height: '30px',
-                      cursor: 'pointer',
-                      background: bg
-                    }}
-                  />
-                );
-              })}
-            </div>
-          ))}
-        </div>
-      )}
-
-      <p>🟢 Disponible | 🔴 Bloqueado</p>
+        height="auto"
+      />
     </div>
   );
 }
