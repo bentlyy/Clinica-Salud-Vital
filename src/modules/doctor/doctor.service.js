@@ -53,7 +53,7 @@ export const createDoctor = async ({ name, specialty, email, user_id }) => {
     // 🔥 crear disponibilidad automática (Lunes a Viernes)
     for (let day = 1; day <= 5; day++) {
       await client.query(
-        `INSERT INTO availability (doctor_id, day_of_week, start_time, end_time)
+        ` INSERT INTO doctor_availability (doctor_id, day_of_week, start_time, end_time)
          VALUES ($1, $2, $3, $4)`,
         [doctor.id, day, '09:00', '17:00']
       );
