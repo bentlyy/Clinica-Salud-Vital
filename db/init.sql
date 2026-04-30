@@ -15,7 +15,7 @@ CREATE TABLE doctors (
   email TEXT,
   user_id INT UNIQUE,
 
-  -- 🔥 NUEVO: duración de slots (15, 30, 45, etc)
+  -- 🔥 duración de slots configurable
   slot_duration INT DEFAULT 30,
 
   CONSTRAINT fk_doctor_user
@@ -23,7 +23,7 @@ CREATE TABLE doctors (
     REFERENCES users(id)
     ON DELETE SET NULL,
 
-  -- 🔥 validación pro
+  -- 🔥 validación de valores permitidos
   CONSTRAINT check_slot_duration CHECK (slot_duration IN (15, 30, 45, 60))
 );
 
@@ -64,7 +64,7 @@ CREATE TABLE doctor_availability (
   id SERIAL PRIMARY KEY,
 
   doctor_id INT NOT NULL,
-  day_of_week INT NOT NULL,
+  day_of_week INT NOT NULL, -- 0 domingo - 6 sábado
 
   start_time TIME NOT NULL,
   end_time TIME NOT NULL,
@@ -77,7 +77,7 @@ CREATE TABLE doctor_availability (
   CONSTRAINT check_time_range CHECK (start_time < end_time)
 );
 
--- 🔹 EXCEPTIONS
+-- 🔹 EXCEPTIONS (bloqueos)
 CREATE TABLE doctor_exceptions (
   id SERIAL PRIMARY KEY,
 
@@ -95,7 +95,7 @@ CREATE TABLE doctor_exceptions (
     ON DELETE CASCADE
 );
 
--- 🔥 ÍNDICES
+-- 🔥 ÍNDICES (performance)
 CREATE INDEX idx_bookings_doctor ON bookings(doctor_id);
 CREATE INDEX idx_bookings_user ON bookings(user_id);
 CREATE INDEX idx_bookings_date ON bookings(date);
