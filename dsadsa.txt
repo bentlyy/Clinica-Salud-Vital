@@ -5,8 +5,13 @@ services:
     command: npm run dev
     ports:
       - "3000:3000"
+    volumes:
+      - .:/app
+      - /app/node_modules
     env_file:
       - .env
+    environment:
+      - CHOKIDAR_USEPOLLING=true
     depends_on:
       - db
 
@@ -16,6 +21,12 @@ services:
     command: npm run dev
     ports:
       - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+      - WATCHPACK_POLLING=true
     depends_on:
       - api
 
@@ -23,6 +34,8 @@ services:
     image: postgres:15
     container_name: clinic-db
     restart: always
+    ports:
+      - "5432:5432"
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
