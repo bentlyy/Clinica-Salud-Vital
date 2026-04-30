@@ -12,11 +12,12 @@ export default function DoctorsPage() {
 
   const [loadingDoctors, setLoadingDoctors] = useState(true);
   const [loadingSlots, setLoadingSlots] = useState(false);
+  const [submitting, setSubmitting] = useState(false); // ✅ prevents double-click
   const [error, setError] = useState(null);
+  const [successMsg, setSuccessMsg] = useState(null);
 
   const navigate = useNavigate();
 
-  // 🔥 cargar doctores
   useEffect(() => {
     const fetchDoctors = async () => {
       try {
@@ -28,11 +29,9 @@ export default function DoctorsPage() {
         setLoadingDoctors(false);
       }
     };
-
     fetchDoctors();
   }, []);
 
-  // 🔥 cargar slots automáticamente
   useEffect(() => {
     if (!selectedDoctor || !date) return;
 
@@ -40,11 +39,11 @@ export default function DoctorsPage() {
       try {
         setLoadingSlots(true);
         setError(null);
+        setSuccessMsg(null);
 
         const data = await getAvailableSlots(selectedDoctor, date);
         setSlots(data);
         setSelectedTime(null);
-
       } catch {
         setError('Error cargando horarios');
       } finally {
@@ -55,22 +54,27 @@ export default function DoctorsPage() {
     loadSlots();
   }, [selectedDoctor, date]);
 
-  // 🔥 reservar
+  // ✅ Guard against double-click / double-submit
   const handleBooking = async () => {
-    try {
-      await createBooking({
-        doctor_id: selectedDoctor,
-        date,
-        time: selectedTime
-      });
+    if (submitting) return;
 
-      // 🔥 refresh slots
+    try {
+      setSubmitting(true);
+      setError(null);
+      setSuccessMsg(null);
+
+      await createBooking({ doctor_id: selectedDoctor, date, time: selectedTime });
+
+      setSuccessMsg('✅ Reserva realizada con éxito');
+
+      // Refresh slots to show the booked one as unavailable
       const updated = await getAvailableSlots(selectedDoctor, date);
       setSlots(updated);
       setSelectedTime(null);
-
     } catch (err) {
       setError(err.response?.data?.error || 'Error al reservar');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -78,41 +82,37 @@ export default function DoctorsPage() {
     <div>
       <h2>Reservar hora</h2>
 
-      {/* 🔥 navegación */}
-      <button onClick={() => navigate('/my-bookings')}>
-        Ver mis reservas
-      </button>
+      <button onClick={() => navigate('/my-bookings')}>Ver mis reservas</button>
 
       <hr />
 
-      {/* 🔥 ERROR */}
       {error && (
-        <div style={{
-          background: '#f44336',
-          color: '#fff',
-          padding: '10px',
-          marginBottom: '10px'
-        }}>
+        <div style={{ background: '#f44336', color: '#fff', padding: '10px', marginBottom: '10px' }}>
           {error}
         </div>
       )}
 
-      {/* 🔥 FECHA */}
+      {successMsg && (
+        <div style={{ background: '#4CAF50', color: '#fff', padding: '10px', marginBottom: '10px' }}>
+          {successMsg}
+        </div>
+      )}
+
       <div style={{ marginBottom: '20px' }}>
-        <label>Selecciona fecha:</label>
-        <br />
+        <label>Selecciona fecha:</label><br />
         <input
           type="date"
           value={date}
+          min={new Date().toISOString().split('T')[0]} // ✅ prevent past dates in UI
           onChange={(e) => {
             setDate(e.target.value);
             setSlots([]);
             setSelectedTime(null);
+            setSuccessMsg(null);
           }}
         />
       </div>
 
-      {/* 🔥 DOCTORES */}
       <h3>Selecciona un doctor</h3>
 
       {loadingDoctors && <p>Cargando doctores...</p>}
@@ -121,15 +121,18 @@ export default function DoctorsPage() {
         {doctors.map((doc) => (
           <div
             key={doc.id}
-            onClick={() => setSelectedDoctor(doc.id)}
+            onClick={() => {
+              setSelectedDoctor(doc.id);
+              setSlots([]);
+              setSelectedTime(null);
+              setSuccessMsg(null);
+            }}
             style={{
-              border: selectedDoctor === doc.id
-                ? '2px solid #4CAF50'
-                : '1px solid #ccc',
+              border: selectedDoctor === doc.id ? '2px solid #4CAF50' : '1px solid #ccc',
               padding: '10px',
               borderRadius: '6px',
               cursor: 'pointer',
-              background: selectedDoctor === doc.id ? '#e8f5e9' : '#fff'
+              background: selectedDoctor === doc.id ? '#e8f5e9' : '#fff',
             }}
           >
             <h4>{doc.name}</h4>
@@ -140,7 +143,6 @@ export default function DoctorsPage() {
 
       <hr />
 
-      {/* 🔥 SLOTS */}
       {selectedDoctor && date && (
         <div>
           <h3>Horarios disponibles</h3>
@@ -148,7 +150,7 @@ export default function DoctorsPage() {
           {loadingSlots && <p>Cargando horarios...</p>}
 
           {!loadingSlots && slots.length === 0 && (
-            <p>No hay horarios disponibles</p>
+            <p>No hay horarios disponibles para esta fecha</p>
           )}
 
           <div style={{ display: 'flex', flexWrap: 'wrap' }}>
@@ -163,7 +165,7 @@ export default function DoctorsPage() {
                   borderRadius: '4px',
                   border: '1px solid #ccc',
                   background: selectedTime === slot ? '#4CAF50' : '#eee',
-                  color: selectedTime === slot ? '#fff' : '#000'
+                  color: selectedTime === slot ? '#fff' : '#000',
                 }}
               >
                 {slot}
@@ -173,17 +175,18 @@ export default function DoctorsPage() {
 
           <div style={{ marginTop: '15px' }}>
             <button
-              disabled={!selectedTime}
+              disabled={!selectedTime || submitting} // ✅ disabled while submitting
               onClick={handleBooking}
               style={{
                 padding: '10px 20px',
                 background: '#4CAF50',
                 color: '#fff',
                 border: 'none',
-                cursor: selectedTime ? 'pointer' : 'not-allowed'
+                cursor: selectedTime && !submitting ? 'pointer' : 'not-allowed',
+                opacity: submitting ? 0.6 : 1,
               }}
             >
-              Reservar
+              {submitting ? 'Reservando...' : 'Reservar'}
             </button>
           </div>
         </div>

@@ -5,7 +5,8 @@ export const getDoctors = async () => {
   return res.data;
 };
 
+// ✅ Fixed: was '/doctor/bookings/me' which doesn't exist
 export const getDoctorBookings = async () => {
-  const res = await api.get('/bookings/doctor'); // ✅ fixed: was '/doctor/bookings/me'
+  const res = await api.get('/bookings/doctor');
   return res.data;
 };

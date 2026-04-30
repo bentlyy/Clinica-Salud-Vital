@@ -8,7 +8,8 @@ services:
     env_file:
       - .env
     depends_on:
-      - db
+      db:
+        condition: service_healthy   # ✅ wait for real DB readiness
 
   frontend:
     build: ./frontend
@@ -30,6 +31,12 @@ services:
     volumes:
       - db_data:/var/lib/postgresql/data
       - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    # ✅ Native healthcheck — replaces manual waitForDB loop in app.js
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d clinic"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
 volumes:
   db_data:
