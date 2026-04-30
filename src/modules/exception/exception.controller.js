@@ -1,4 +1,3 @@
-// exception.controller.js
 import * as exceptionService from './exception.service.js';
 import * as doctorService from '../doctor/doctor.service.js';
 
@@ -26,7 +25,7 @@ export const createException = async (req, res) => {
       date,
       start_time,
       end_time,
-      is_full_day
+      is_full_day,
     });
 
     res.status(201).json(data);

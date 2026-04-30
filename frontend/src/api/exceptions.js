@@ -10,6 +10,7 @@ export const createException = async (data) => {
   return res.data;
 };
 
+// ✅ Was missing — needed by DoctorCalendarPage to unblock slots
 export const deleteException = async (id) => {
   const res = await api.delete(`/exceptions/${id}`);
   return res.data;
