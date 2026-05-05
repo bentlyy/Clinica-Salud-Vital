@@ -1,6 +1,8 @@
 services:
   api:
-    build: .
+    build:
+      context: .
+      target: production
     container_name: clinic-api
     ports:
       - "3000:3000"
@@ -9,6 +11,15 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    volumes:
+      - api_logs:/app/logs
+    restart: unless-stopped
 
   frontend:
     build: ./frontend
@@ -19,11 +30,12 @@ services:
       - ./frontend/.env
     depends_on:
       - api
+    restart: unless-stopped
 
   db:
-    image: postgres:15
+    image: postgres:15-alpine
     container_name: clinic-db
-    restart: always
+    restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
@@ -39,3 +51,4 @@ services:
 
 volumes:
   db_data:
+  api_logs:
