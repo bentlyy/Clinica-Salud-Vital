@@ -2,36 +2,35 @@ import { pool } from '../../shared/db.js';
 import * as doctorService from '../doctor/doctor.service.js';
 import { sendEmail } from '../../shared/email.service.js';
 import { bookingConfirmationTemplate } from './booking.email.js';
+import jwt from 'jsonwebtoken';
+import { validateRut, cleanRut, formatRut } from '../../shared/rut.js';
 
-// ✅ Parse date locally to avoid UTC timezone shift (e.g. Chile UTC-3 reads wrong day)
 const getDayOfWeek = (dateStr) => {
   const [year, month, day] = dateStr.split('-').map(Number);
   return new Date(year, month - 1, day).getDay();
 };
 
-// ✅ Validate date string format YYYY-MM-DD
 const isValidDate = (dateStr) => /^\d{4}-\d{2}-\d{2}$/.test(dateStr);
-
-// ✅ Validate time string format HH:MM
 const isValidTime = (timeStr) => /^\d{2}:\d{2}$/.test(timeStr);
 
 export const getAllBookings = async () => {
   const result = await pool.query(`
-    SELECT 
-      b.id, b.date, b.time, b.duration,
+    SELECT
+      b.id, b.date, b.time, b.duration, b.status, b.confirmed,
       d.id AS doctor_id, d.name AS doctor_name, d.specialty,
-      u.id AS user_id, u.email AS user_email
+      u.id AS user_id, u.email AS user_email,
+      b.guest_rut, b.guest_name, b.guest_email
     FROM bookings b
     JOIN doctors d ON b.doctor_id = d.id
-    JOIN users u ON b.user_id = u.id
+    LEFT JOIN users u ON b.user_id = u.id
+    WHERE b.status != 'cancelled'
     ORDER BY b.date, b.time
     LIMIT 500
-  `); // ✅ basic pagination guard
+  `);
   return result.rows;
 };
 
-export const createBooking = async ({ doctor_id, user_id, date, time, duration = 30 }) => {
-  // ✅ Input validation
+export const createBooking = async ({ doctor_id, user_id, date, time, duration = 30, rut, name, phone }) => {
   if (!doctor_id || !user_id || !date || !time) throw new Error('Missing required fields');
   if (!isValidDate(date)) throw new Error('Invalid date format, use YYYY-MM-DD');
   if (!isValidTime(time)) throw new Error('Invalid time format, use HH:MM');
@@ -42,8 +41,6 @@ export const createBooking = async ({ doctor_id, user_id, date, time, duration =
   try {
     await client.query('BEGIN');
 
-    // ✅ Lock the doctor's bookings row to prevent race conditions
-    // Any concurrent transaction trying to book the same doctor+date will wait here
     await client.query(
       `SELECT pg_advisory_xact_lock(hashtext($1::text || $2))`,
       [doctor_id, date]
@@ -52,7 +49,18 @@ export const createBooking = async ({ doctor_id, user_id, date, time, duration =
     const doctor = await doctorService.getDoctorById(doctor_id);
     if (!doctor) throw new Error('Doctor not found');
 
-    const day = getDayOfWeek(date); // ✅ timezone-safe
+    const userResult = await client.query(
+      'SELECT email, rut, phone, blocked_until FROM users WHERE id = $1',
+      [user_id]
+    );
+    if (userResult.rows.length === 0) throw new Error('User not found');
+
+    const user = userResult.rows[0];
+    if (user.blocked_until && new Date(user.blocked_until) > new Date()) {
+      throw new Error('Your account is blocked due to unconfirmed appointments. Please wait before booking again.');
+    }
+
+    const day = getDayOfWeek(date);
 
     const availability = await client.query(
       `SELECT start_time, end_time FROM doctor_availability
@@ -88,10 +96,9 @@ export const createBooking = async ({ doctor_id, user_id, date, time, duration =
       }
     }
 
-    // ✅ Check overlaps inside the transaction (after lock)
     const overlap = await client.query(
       `SELECT 1 FROM bookings
-       WHERE doctor_id = $1 AND date = $2
+       WHERE doctor_id = $1 AND date = $2 AND status != 'cancelled'
        AND (
          (time <= $3 AND (time + (duration || ' minutes')::interval) > $3)
          OR ($3 <= time AND ($3::time + ($4 || ' minutes')::interval) > time)
@@ -99,29 +106,34 @@ export const createBooking = async ({ doctor_id, user_id, date, time, duration =
       [doctor_id, date, time, duration]
     );
 
-    if (overlap.rows.length > 0) throw new Error('Time slot overlaps with another booking');
+    if (overlap.rows.length > 0) throw new Error('This time slot is already booked');
 
-    const userResult = await client.query(
-      'SELECT email FROM users WHERE id = $1',
-      [user_id]
+    const confirmToken = jwt.sign(
+      { user_id, doctor_id, date, time },
+      process.env.JWT_SECRET,
+      { expiresIn: '7d' }
     );
-    if (userResult.rows.length === 0) throw new Error('User not found');
 
     const result = await client.query(
-      `INSERT INTO bookings (doctor_id, user_id, date, time, duration)
-       VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-      [doctor_id, user_id, date, time, duration]
+      `INSERT INTO bookings (doctor_id, user_id, date, time, duration, confirmation_token)
+       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+      [doctor_id, user_id, date, time, duration, confirmToken]
     );
 
     await client.query('COMMIT');
 
     const booking = result.rows[0];
 
-    // ✅ Send email after commit (non-blocking, won't affect booking result)
     sendEmail({
-      to: userResult.rows[0].email,
-      subject: 'Confirmación de reserva',
-      html: bookingConfirmationTemplate({ doctor: doctor.name, date, time }),
+      to: user.email,
+      subject: 'Confirma tu cita médica',
+      html: bookingConfirmationTemplate({
+        doctor: doctor.name,
+        date,
+        time,
+        confirmToken,
+        frontendUrl: process.env.FRONTEND_URL,
+      }),
     }).catch(err => console.error('Email error (non-critical):', err));
 
     return booking;
@@ -138,23 +150,25 @@ export const createBooking = async ({ doctor_id, user_id, date, time, duration =
 
 export const getBookingsByUser = async (user_id) => {
   const result = await pool.query(`
-    SELECT b.id, b.date, b.time, b.duration, d.name AS doctor_name, d.specialty
+    SELECT b.id, b.date, b.time, b.duration, b.status, b.confirmed,
+           d.name AS doctor_name, d.specialty
     FROM bookings b
     JOIN doctors d ON b.doctor_id = d.id
-    WHERE b.user_id = $1
+    WHERE b.user_id = $1 AND b.status != 'cancelled'
     ORDER BY b.date, b.time
   `, [user_id]);
   return result.rows;
 };
 
 export const deleteBooking = async (booking_id, user_id) => {
-  // ✅ Validate IDs are numbers to prevent injection via params
   if (!Number.isInteger(booking_id) || !Number.isInteger(user_id)) {
     throw new Error('Invalid booking id');
   }
 
   const result = await pool.query(
-    `DELETE FROM bookings WHERE id = $1 AND user_id = $2 RETURNING *`,
+    `UPDATE bookings SET status = 'cancelled'
+     WHERE id = $1 AND user_id = $2
+     RETURNING *`,
     [booking_id, user_id]
   );
 
@@ -167,7 +181,7 @@ export const getAvailableSlots = async (doctor_id, date) => {
   if (!doctor_id || !date) throw new Error('doctor_id and date are required');
   if (!isValidDate(date)) throw new Error('Invalid date format, use YYYY-MM-DD');
 
-  const day = getDayOfWeek(date); // ✅ timezone-safe
+  const day = getDayOfWeek(date);
 
   const availabilityResult = await pool.query(
     `SELECT start_time, end_time FROM doctor_availability
@@ -202,7 +216,7 @@ export const getAvailableSlots = async (doctor_id, date) => {
   }
 
   const booked = await pool.query(
-    `SELECT time, duration FROM bookings WHERE doctor_id = $1 AND date = $2`,
+    `SELECT time, duration FROM bookings WHERE doctor_id = $1 AND date = $2 AND status != 'cancelled'`,
     [doctor_id, date]
   );
 
@@ -238,10 +252,12 @@ export const getAvailableSlots = async (doctor_id, date) => {
 
 export const getBookingsByDoctor = async (doctor_id) => {
   const result = await pool.query(`
-    SELECT b.id, b.date, b.time, b.duration, u.email AS patient_email
+    SELECT b.id, b.date, b.time, b.duration, b.status, b.confirmed,
+           u.email AS patient_email,
+           b.guest_name, b.guest_email, b.guest_phone, b.guest_rut
     FROM bookings b
-    JOIN users u ON b.user_id = u.id
-    WHERE b.doctor_id = $1
+    LEFT JOIN users u ON b.user_id = u.id
+    WHERE b.doctor_id = $1 AND b.status != 'cancelled'
     ORDER BY b.date, b.time
   `, [doctor_id]);
   return result.rows;
