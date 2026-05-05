@@ -27,6 +27,7 @@
     "jsonwebtoken": "^9.0.3",
     "node-cron": "^4.2.1",
     "nodemailer": "^8.0.7",
+    "pdfkit": "^0.18.0",
     "pg": "^8.18.0",
     "winston": "^3.19.0",
     "xss-clean": "^0.1.4",
