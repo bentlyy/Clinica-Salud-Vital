@@ -10,6 +10,7 @@ import { seedAdmin } from './seed/admin.seed.js';
 import { pool } from './shared/db.js';
 import { startReminderJob } from './jobs/reminder.job.js';
 import { startConfirmationJob } from './jobs/confirmation.job.js';
+import { securityMiddleware } from './middlewares/security.middleware.js';
 import { requestLogger } from './middlewares/requestLogger.middleware.js';
 import { errorHandler, notFoundHandler } from './middlewares/errorHandler.middleware.js';
 import { logger } from './utils/logger.js';
@@ -27,6 +28,11 @@ const __dirname = dirname(__filename);
 
 const app = express();
 
+app.use(helmet({
+  contentSecurityPolicy: false,
+  crossOriginEmbedderPolicy: false,
+}));
+
 const allowedOrigins = [
   'http://localhost:5173',
   process.env.FRONTEND_URL,
@@ -43,7 +49,8 @@ app.use(cors({
   credentials: true,
 }));
 
-app.use(express.json());
+app.use(express.json({ limit: '10kb' }));
+app.use(hpp());
 app.use(requestLogger);
 
 const globalLimiter = rateLimit({
