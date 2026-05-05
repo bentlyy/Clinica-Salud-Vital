@@ -19,6 +19,9 @@ import {
   createPrescription,
   updatePrescription,
   deletePrescription,
+  searchCie10,
+  getCie10ByCode,
+  getCie10Categories,
 } from './clinical-record.controller.js';
 
 const router = Router();
@@ -36,5 +39,9 @@ router.get('/:record_id/prescriptions', authorize('doctor', 'admin'), validate(c
 router.post('/prescriptions', authorize('doctor'), validate(prescriptionSchema), createPrescription);
 router.put('/prescriptions/:id', authorize('doctor'), validate(prescriptionSchema.partial()), updatePrescription);
 router.delete('/prescriptions/:id', authorize('doctor'), deletePrescription);
+
+router.get('/cie10/search', authorize('doctor', 'admin'), searchCie10);
+router.get('/cie10/categories', authorize('doctor', 'admin'), getCie10Categories);
+router.get('/cie10/:code', authorize('doctor', 'admin'), getCie10ByCode);
 
 export default router;
