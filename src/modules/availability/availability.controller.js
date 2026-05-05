@@ -1,94 +1,41 @@
 import * as availabilityService from './availability.service.js';
 import * as doctorService from '../doctor/doctor.service.js';
+import { asyncHandler } from '../../middlewares/asyncHandler.middleware.js';
+import { NotFoundError, BadRequestError } from '../../utils/errors.js';
 
-// 🔥 PUBLICO → ver disponibilidad de un doctor (para pacientes)
-export const getAvailabilityByDoctor = async (req, res) => {
-  try {
-    const doctorId = parseInt(req.params.id);
+export const getAvailabilityByDoctor = asyncHandler(async (req, res) => {
+  const data = await availabilityService.getAvailabilityByDoctor(req.params.id);
+  res.json(data);
+});
 
-    if (!doctorId) {
-      return res.status(400).json({ error: 'Invalid doctor id' });
-    }
+export const getMyAvailability = asyncHandler(async (req, res) => {
+  const doctor = await doctorService.getDoctorByUserId(req.user.id);
+  if (!doctor) throw new NotFoundError('Doctor profile not found');
 
-    const data = await availabilityService.getAvailabilityByDoctor(doctorId);
+  const data = await availabilityService.getAvailabilityByDoctor(doctor.id);
+  res.json(data);
+});
 
-    res.json(data);
+export const createAvailability = asyncHandler(async (req, res) => {
+  const { day_of_week, start_time, end_time } = req.body;
 
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
+  const doctor = await doctorService.getDoctorByUserId(req.user.id);
+  if (!doctor) throw new NotFoundError('Doctor profile not found');
 
-// 🔥 DOCTOR LOGEADO → su propia disponibilidad
-export const getMyAvailability = async (req, res) => {
-  try {
-    const doctor = await doctorService.getDoctorByUserId(req.user.id);
+  const availability = await availabilityService.createAvailability({
+    doctor_id: doctor.id,
+    day_of_week,
+    start_time,
+    end_time,
+  });
 
-    if (!doctor) {
-      return res.status(404).json({ error: 'Doctor profile not found' });
-    }
+  res.status(201).json(availability);
+});
 
-    const data = await availabilityService.getAvailabilityByDoctor(doctor.id);
+export const deleteAvailability = asyncHandler(async (req, res) => {
+  const doctor = await doctorService.getDoctorByUserId(req.user.id);
+  if (!doctor) throw new NotFoundError('Doctor profile not found');
 
-    res.json(data);
-
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
-
-// 🔥 CREAR DISPONIBILIDAD (seguro, sin doctor_id en body)
-export const createAvailability = async (req, res) => {
-  try {
-    const { day_of_week, start_time, end_time } = req.body;
-
-    if (day_of_week === undefined || !start_time || !end_time) {
-      return res.status(400).json({ error: 'Missing required fields' });
-    }
-
-    const doctor = await doctorService.getDoctorByUserId(req.user.id);
-
-    if (!doctor) {
-      return res.status(404).json({ error: 'Doctor profile not found' });
-    }
-
-    const availability = await availabilityService.createAvailability({
-      doctor_id: doctor.id, // 🔥 SIEMPRE desde backend
-      day_of_week,
-      start_time,
-      end_time
-    });
-
-    res.status(201).json(availability);
-
-  } catch (error) {
-    res.status(400).json({ error: error.message });
-  }
-};
-
-// 🔥 ELIMINAR DISPONIBILIDAD (seguro)
-export const deleteAvailability = async (req, res) => {
-  try {
-    const availabilityId = parseInt(req.params.id);
-
-    if (!availabilityId) {
-      return res.status(400).json({ error: 'Invalid availability id' });
-    }
-
-    const doctor = await doctorService.getDoctorByUserId(req.user.id);
-
-    if (!doctor) {
-      return res.status(404).json({ error: 'Doctor profile not found' });
-    }
-
-    const result = await availabilityService.deleteAvailability(
-      availabilityId,
-      doctor.id
-    );
-
-    res.json(result);
-
-  } catch (error) {
-    res.status(400).json({ error: error.message });
-  }
-};
+  const result = await availabilityService.deleteAvailability(req.params.id, doctor.id);
+  res.json(result);
+});

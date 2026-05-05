@@ -10,6 +10,7 @@ import { seedAdmin } from './seed/admin.seed.js';
 import { pool } from './shared/db.js';
 import { startReminderJob } from './jobs/reminder.job.js';
 import { startConfirmationJob } from './jobs/confirmation.job.js';
+import { errorHandler, notFoundHandler } from './middlewares/errorHandler.middleware.js';
 
 import doctorRoutes from './modules/doctor/doctor.routes.js';
 import authRoutes from './modules/auth/auth.routes.js';
@@ -76,10 +77,8 @@ app.get('/health', async (req, res) => {
   }
 });
 
-app.use((err, req, res, _next) => {
-  console.error('Unhandled error:', err);
-  res.status(500).json({ error: 'Internal server error' });
-});
+app.use(notFoundHandler);
+app.use(errorHandler);
 
 const PORT = process.env.PORT || 3000;
 

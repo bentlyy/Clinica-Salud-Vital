@@ -1,50 +1,37 @@
 import * as exceptionService from './exception.service.js';
 import * as doctorService from '../doctor/doctor.service.js';
+import { asyncHandler } from '../../middlewares/asyncHandler.middleware.js';
+import { NotFoundError } from '../../utils/errors.js';
 
-export const getMyExceptions = async (req, res) => {
-  try {
-    const doctor = await doctorService.getDoctorByUserId(req.user.id);
-    if (!doctor) return res.status(404).json({ error: 'Doctor profile not found' });
+export const getMyExceptions = asyncHandler(async (req, res) => {
+  const doctor = await doctorService.getDoctorByUserId(req.user.id);
+  if (!doctor) throw new NotFoundError('Doctor profile not found');
 
-    const data = await exceptionService.getExceptionsByDoctor(doctor.id);
-    res.json(data);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
+  const data = await exceptionService.getExceptionsByDoctor(doctor.id);
+  res.json(data);
+});
 
-export const createException = async (req, res) => {
-  try {
-    const { date, start_time, end_time, is_full_day } = req.body;
+export const createException = asyncHandler(async (req, res) => {
+  const { date, start_time, end_time, is_full_day } = req.body;
 
-    const doctor = await doctorService.getDoctorByUserId(req.user.id);
-    if (!doctor) return res.status(404).json({ error: 'Doctor profile not found' });
+  const doctor = await doctorService.getDoctorByUserId(req.user.id);
+  if (!doctor) throw new NotFoundError('Doctor profile not found');
 
-    const data = await exceptionService.createException({
-      doctor_id: doctor.id,
-      date,
-      start_time,
-      end_time,
-      is_full_day,
-    });
+  const data = await exceptionService.createException({
+    doctor_id: doctor.id,
+    date,
+    start_time,
+    end_time,
+    is_full_day,
+  });
 
-    res.status(201).json(data);
-  } catch (error) {
-    res.status(400).json({ error: error.message });
-  }
-};
+  res.status(201).json(data);
+});
 
-export const deleteException = async (req, res) => {
-  try {
-    const doctor = await doctorService.getDoctorByUserId(req.user.id);
-    if (!doctor) return res.status(404).json({ error: 'Doctor profile not found' });
+export const deleteException = asyncHandler(async (req, res) => {
+  const doctor = await doctorService.getDoctorByUserId(req.user.id);
+  if (!doctor) throw new NotFoundError('Doctor profile not found');
 
-    const data = await exceptionService.deleteException(
-      parseInt(req.params.id),
-      doctor.id
-    );
-    res.json(data);
-  } catch (error) {
-    res.status(400).json({ error: error.message });
-  }
-};
+  const data = await exceptionService.deleteException(req.params.id, doctor.id);
+  res.json(data);
+});
