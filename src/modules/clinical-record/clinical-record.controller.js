@@ -1,5 +1,6 @@
 import * as clinicalRecordService from './clinical-record.service.js';
 import * as prescriptionService from './prescription.service.js';
+import * as cie10Service from './cie10.service.js';
 import * as doctorService from '../doctor/doctor.service.js';
 import { asyncHandler } from '../../middlewares/asyncHandler.middleware.js';
 import { NotFoundError, BadRequestError } from '../../utils/errors.js';
@@ -128,4 +129,27 @@ export const deletePrescription = asyncHandler(async (req, res) => {
 
   const result = await prescriptionService.deletePrescription(req.params.id, doctor.id);
   res.json(result);
+});
+
+export const searchCie10 = asyncHandler(async (req, res) => {
+  const { q, category, limit, offset } = req.query;
+
+  const results = await cie10Service.searchCie10({
+    query: q,
+    category,
+    limit: parseInt(limit) || 50,
+    offset: parseInt(offset) || 0,
+  });
+
+  res.json(results);
+});
+
+export const getCie10ByCode = asyncHandler(async (req, res) => {
+  const entry = await cie10Service.getCie10ByCode(req.params.code);
+  res.json(entry);
+});
+
+export const getCie10Categories = asyncHandler(async (req, res) => {
+  const categories = await cie10Service.getCie10Categories();
+  res.json(categories);
 });

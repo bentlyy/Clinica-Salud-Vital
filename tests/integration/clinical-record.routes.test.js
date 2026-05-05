@@ -112,3 +112,25 @@ describe('POST /api/clinical-records/prescriptions', () => {
     expect(res.body.error).toBe('Validation failed');
   });
 });
+
+describe('GET /api/clinical-records/cie10/search', () => {
+  it('returns 401 if not authenticated', async () => {
+    const res = await request(app).get('/api/clinical-records/cie10/search?q=A00');
+    expect(res.status).toBe(401);
+  });
+
+  it('returns 403 if role is user', async () => {
+    const res = await request(app)
+      .get('/api/clinical-records/cie10/search?q=A00')
+      .set('Authorization', `Bearer ${userToken}`);
+
+    expect(res.status).toBe(403);
+  });
+});
+
+describe('GET /api/clinical-records/cie10/categories', () => {
+  it('returns 401 if not authenticated', async () => {
+    const res = await request(app).get('/api/clinical-records/cie10/categories');
+    expect(res.status).toBe(401);
+  });
+});
