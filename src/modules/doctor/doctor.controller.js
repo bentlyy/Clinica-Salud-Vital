@@ -9,6 +9,21 @@ export const getDoctors = async (req, res) => {
   }
 };
 
+export const registerDoctor = async (req, res) => {
+  try {
+    const { name, specialty, email, rut, phone } = req.body;
+    const result = await doctorService.registerDoctor({ name, specialty, email, rut, phone });
+    res.status(201).json({
+      message: 'Doctor registrado correctamente. Credenciales enviadas por email.',
+      doctor: result.doctor,
+      tempPassword: result.credentials.tempPassword,
+      email: result.credentials.email,
+    });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
 export const createDoctor = async (req, res) => {
   try {
     const doctor = await doctorService.createDoctor(req.body);

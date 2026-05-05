@@ -1,6 +1,7 @@
 import { pool } from '../../shared/db.js';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import { validateRut, cleanRut, formatRut } from '../../shared/rut.js';
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
@@ -8,26 +9,35 @@ if (!JWT_SECRET) {
   throw new Error('JWT_SECRET environment variable is not set');
 }
 
-export const register = async ({ email, password }) => {
+export const register = async ({ email, password, rut, phone }) => {
   if (!email || !password) throw new Error('Email and password required');
 
-  // ✅ Basic email format validation
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(email)) throw new Error('Invalid email format');
 
-  // ✅ Minimum password length
   if (password.length < 8) throw new Error('Password must be at least 8 characters');
 
-  const hashedPassword = await bcrypt.hash(password, 12); // ✅ rounds: 12 instead of 10
+  let formattedRut = null;
+  if (rut) {
+    const cleaned = cleanRut(rut);
+    if (!validateRut(cleaned)) throw new Error('RUT inválido');
+    formattedRut = formatRut(cleaned);
+  }
+
+  const hashedPassword = await bcrypt.hash(password, 12);
 
   try {
     const result = await pool.query(
-      `INSERT INTO users (email, password) VALUES ($1, $2) RETURNING id, email`,
-      [email, hashedPassword]
+      `INSERT INTO users (email, password, rut, phone) VALUES ($1, $2, $3, $4) RETURNING id, email, rut, phone`,
+      [email, hashedPassword, formattedRut, phone || null]
     );
     return result.rows[0];
   } catch (error) {
-    if (error.code === '23505') throw new Error('Email already exists');
+    if (error.code === '23505') {
+      if (error.detail?.includes('email')) throw new Error('Email already exists');
+      if (error.detail?.includes('rut')) throw new Error('RUT ya registrado');
+      throw new Error('Email or RUT already exists');
+    }
     throw new Error('Error creating user');
   }
 };

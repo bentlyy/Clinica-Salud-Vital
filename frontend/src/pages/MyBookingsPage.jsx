@@ -1,47 +1,27 @@
 import { useEffect, useState } from 'react';
 import { getMyBookings, deleteBooking } from '../api/bookings';
+import { useNavigate } from 'react-router-dom';
 
 export default function MyBookingsPage() {
   const [bookings, setBookings] = useState([]);
-
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
   const [cancellingId, setCancellingId] = useState(null);
-
-  // 🔥 cargar reservas
-  const fetchBookings = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const data = await getMyBookings();
-      setBookings(data);
-
-    } catch (err) {
-      setError('Error cargando reservas');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const navigate = useNavigate();
 
   useEffect(() => {
-    fetchBookings();
+    getMyBookings()
+      .then(setBookings)
+      .catch(() => setError('Error cargando reservas'))
+      .finally(() => setLoading(false));
   }, []);
 
-  // 🔥 cancelar
   const handleCancel = async (id) => {
-    const confirmCancel = window.confirm('¿Cancelar esta reserva?');
-    if (!confirmCancel) return;
-
+    if (!window.confirm('¿Cancelar esta reserva?')) return;
     try {
       setCancellingId(id);
-
       await deleteBooking(id);
-
-      // 🔥 actualización optimista
       setBookings((prev) => prev.filter((b) => b.id !== id));
-
     } catch (err) {
       setError(err.response?.data?.error || 'Error al cancelar');
     } finally {
@@ -50,69 +30,53 @@ export default function MyBookingsPage() {
   };
 
   return (
-    <div>
-      <h2>Mis Reservas</h2>
+    <div className="page-container">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+        <h1>Mis Reservas</h1>
+        <button onClick={() => navigate('/booking')} className="btn btn-primary">
+          Nueva Reserva
+        </button>
+      </div>
 
-      {/* 🔥 ERROR */}
-      {error && (
-        <div
-          style={{
-            background: '#f44336',
-            color: '#fff',
-            padding: '10px',
-            marginBottom: '10px'
-          }}
-        >
-          {error}
+      {error && <div className="alert alert-error">{error}</div>}
+
+      {loading && <p style={{ color: 'var(--text-muted)' }}>Cargando...</p>}
+
+      {!loading && bookings.length === 0 && (
+        <div className="empty-state">
+          <div className="empty-state-icon">📋</div>
+          <h3>No tienes reservas activas</h3>
+          <p>Agenda tu primera cita médica ahora</p>
+          <button onClick={() => navigate('/booking')} className="btn btn-primary">Reservar Ahora</button>
         </div>
       )}
 
-      {/* 🔥 LOADING */}
-      {loading && <p>Cargando reservas...</p>}
-
-      {/* 🔥 VACÍO */}
-      {!loading && bookings.length === 0 && (
-        <p>No tienes reservas</p>
-      )}
-
-      {/* 🔥 LISTA */}
-      <div style={{ display: 'grid', gap: '10px' }}>
+      <div className="grid" style={{ gap: 12 }}>
         {bookings.map((b) => (
-          <div
-            key={b.id}
-            style={{
-              border: '1px solid #ccc',
-              padding: '15px',
-              borderRadius: '8px',
-              background: '#fafafa'
-            }}
-          >
-            <div style={{ marginBottom: '10px' }}>
-              <strong>{b.doctor_name}</strong>
-              <p style={{ margin: 0, color: '#666' }}>
-                {b.specialty}
-              </p>
+          <div key={b.id} className="card" style={{ padding: 20 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
+              <div>
+                <strong style={{ fontSize: 16 }}>{b.doctor_name}</strong>
+                <p style={{ margin: '2px 0 0', fontSize: 14 }}>{b.specialty}</p>
+              </div>
+              <span className={`badge ${b.confirmed ? 'badge-success' : b.status === 'cancelled' ? 'badge-danger' : 'badge-warning'}`}>
+                {b.confirmed ? 'Confirmada' : b.status === 'cancelled' ? 'Cancelada' : 'Pendiente'}
+              </span>
             </div>
-
-            <div style={{ marginBottom: '10px' }}>
-              <p><strong>Fecha:</strong> {b.date}</p>
-              <p><strong>Hora:</strong> {b.time}</p>
+            <div style={{ display: 'flex', gap: 16, fontSize: 14, color: 'var(--text-secondary)', marginBottom: 14 }}>
+              <span>📅 {b.date}</span>
+              <span>🕐 {b.time}</span>
+              <span>⏱ {b.duration} min</span>
             </div>
-
-            <button
-              onClick={() => handleCancel(b.id)}
-              disabled={cancellingId === b.id}
-              style={{
-                padding: '8px 12px',
-                background: '#f44336',
-                color: '#fff',
-                border: 'none',
-                cursor: 'pointer',
-                opacity: cancellingId === b.id ? 0.6 : 1
-              }}
-            >
-              {cancellingId === b.id ? 'Cancelando...' : 'Cancelar'}
-            </button>
+            {b.status !== 'cancelled' && (
+              <button
+                onClick={() => handleCancel(b.id)}
+                disabled={cancellingId === b.id}
+                className="btn btn-danger btn-sm"
+              >
+                {cancellingId === b.id ? 'Cancelando...' : 'Cancelar'}
+              </button>
+            )}
           </div>
         ))}
       </div>
