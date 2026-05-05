@@ -7,21 +7,20 @@ export const createBooking = async (req, res) => {
       doctor_id: req.body.doctor_id,
       date: req.body.date,
       time: req.body.time,
-      user_id: req.user.id // 🔥 viene del middleware
+      user_id: req.user.id,
+      duration: req.body.duration,
     });
 
     res.status(201).json(booking);
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    const status = error.message.includes('blocked') ? 403 : 400;
+    res.status(status).json({ error: error.message });
   }
 };
 
 export const getMyBookings = async (req, res) => {
   try {
-    const userId = req.user.id;
-
-    const bookings = await bookingService.getBookingsByUser(userId);
-
+    const bookings = await bookingService.getBookingsByUser(req.user.id);
     res.json(bookings);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -43,13 +42,9 @@ export const cancelBooking = async (req, res) => {
 
 export const getAvailableSlots = async (req, res) => {
   try {
-    const { doctor_id, date, duration } = req.query;
+    const { doctor_id, date } = req.query;
 
-    const slots = await bookingService.getAvailableSlots(
-      doctor_id,
-      date,
-      parseInt(duration) || 30
-    );
+    const slots = await bookingService.getAvailableSlots(doctor_id, date);
 
     res.json(slots);
   } catch (error) {

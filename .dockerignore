@@ -3,3 +3,11 @@ npm-debug.log
 Dockerfile
 docker-compose.yml
 .git
+.env
+frontend/
+dsadsa.txt
+*.md
+.vscode
+.idea
+dist
+coverage

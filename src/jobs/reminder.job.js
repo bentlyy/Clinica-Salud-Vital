@@ -2,7 +2,6 @@ import cron from 'node-cron';
 import { pool } from '../shared/db.js';
 import { sendEmail } from '../shared/email.service.js';
 
-// ✅ Retry helper — try up to `attempts` times before giving up
 const sendWithRetry = async (emailOptions, attempts = 3) => {
   for (let i = 1; i <= attempts; i++) {
     try {
@@ -10,7 +9,6 @@ const sendWithRetry = async (emailOptions, attempts = 3) => {
       return;
     } catch (err) {
       if (i === attempts) throw err;
-      // Exponential backoff: 2s, 4s, 8s ...
       await new Promise(r => setTimeout(r, 1000 * 2 ** i));
     }
   }
@@ -18,11 +16,16 @@ const sendWithRetry = async (emailOptions, attempts = 3) => {
 
 const sendReminders = async (windowStart, windowEnd, sentField, subjectLabel) => {
   const result = await pool.query(`
-    SELECT b.id, b.date, b.time, u.email, d.name AS doctor_name
+    SELECT b.id, b.date, b.time,
+           COALESCE(u.email, b.guest_email) AS email,
+           COALESCE(u.id, 0) AS user_id,
+           d.name AS doctor_name
     FROM bookings b
-    JOIN users u ON b.user_id = u.id
+    LEFT JOIN users u ON b.user_id = u.id
     JOIN doctors d ON b.doctor_id = d.id
     WHERE b.${sentField} = FALSE
+      AND b.status = 'pending'
+      AND b.confirmed = TRUE
       AND (b.date + b.time) BETWEEN NOW() + $1 AND NOW() + $2
   `, [windowStart, windowEnd]);
 
@@ -33,6 +36,7 @@ const sendReminders = async (windowStart, windowEnd, sentField, subjectLabel) =>
         subject: subjectLabel,
         html: `
           <h3>Recordatorio de cita</h3>
+          <p>Hola${booking.user_id > 0 ? '' : ', te recordamos tu cita:'}</p>
           <ul>
             <li><strong>Doctor:</strong> ${booking.doctor_name}</li>
             <li><strong>Fecha:</strong> ${booking.date}</li>
@@ -47,8 +51,7 @@ const sendReminders = async (windowStart, windowEnd, sentField, subjectLabel) =>
       );
 
     } catch (err) {
-      // ✅ Log failure but don't mark as sent — will retry next cron cycle
-      console.error(`❌ Reminder failed for booking ${booking.id} after retries:`, err.message);
+      console.error(`Reminder failed for booking ${booking.id}:`, err.message);
     }
   }
 };
@@ -70,7 +73,7 @@ export const startReminderJob = () => {
         '📅 Recordatorio: tienes una cita mañana'
       );
     } catch (error) {
-      console.error('💥 Reminder job global error:', error);
+      console.error('Reminder job global error:', error);
     }
   });
 };

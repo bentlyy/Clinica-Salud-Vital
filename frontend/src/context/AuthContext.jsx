@@ -7,7 +7,6 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // 🔥 INIT
   useEffect(() => {
     const token = localStorage.getItem('token');
     const savedUser = localStorage.getItem('user');
@@ -19,39 +18,28 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   }, []);
 
-  // 🔥 LOGIN
   const login = async (email, password) => {
-    try {
-      const res = await api.post('/auth/login', { email, password });
+    const res = await api.post('/auth/login', { email, password });
 
-      console.log('LOGIN RESPONSE:', res.data);
+    const { token, user } = res.data;
 
-      const { token, user } = res.data;
-
-      if (!token || !user) {
-        throw new Error('Invalid response from server');
-      }
-
-      localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify(user));
-
-      setUser(user);
-
-      return user;
-
-    } catch (error) {
-      console.error('LOGIN ERROR:', error);
-      throw error;
+    if (!token || !user) {
+      throw new Error('Invalid response from server');
     }
+
+    localStorage.setItem('token', token);
+    localStorage.setItem('user', JSON.stringify(user));
+
+    setUser(user);
+
+    return user;
   };
 
-  // 🔥 REGISTER
-  const register = async (email, password) => {
-    const res = await api.post('/auth/register', { email, password });
+  const register = async ({ email, password, rut, phone }) => {
+    const res = await api.post('/auth/register', { email, password, rut, phone });
     return res.data;
   };
 
-  // 🔥 LOGOUT
   const logout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');

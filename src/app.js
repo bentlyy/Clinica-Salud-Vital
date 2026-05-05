@@ -2,20 +2,28 @@ import express from 'express';
 import cors from 'cors';
 import rateLimit from 'express-rate-limit';
 import 'dotenv/config';
+import { fileURLToPath } from 'url';
+import { dirname, resolve } from 'path';
+import fs from 'fs';
 
 import { seedAdmin } from './seed/admin.seed.js';
 import { pool } from './shared/db.js';
 import { startReminderJob } from './jobs/reminder.job.js';
+import { startConfirmationJob } from './jobs/confirmation.job.js';
 
 import doctorRoutes from './modules/doctor/doctor.routes.js';
 import authRoutes from './modules/auth/auth.routes.js';
 import bookingRoutes from './modules/booking/booking.routes.js';
 import availabilityRoutes from './modules/availability/availability.routes.js';
 import exceptionRoutes from './modules/exception/exception.routes.js';
+import guestRoutes from './modules/guest/guest.routes.js';
+import confirmationRoutes from './modules/confirmation/confirmation.routes.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const app = express();
 
-// ✅ CORS restricted to frontend origin only
 const allowedOrigins = [
   'http://localhost:5173',
   process.env.FRONTEND_URL,
@@ -23,7 +31,6 @@ const allowedOrigins = [
 
 app.use(cors({
   origin: (origin, callback) => {
-    // allow server-to-server / curl in dev (no origin header)
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
@@ -35,7 +42,6 @@ app.use(cors({
 
 app.use(express.json());
 
-// ✅ Global rate limit — 100 req / 15 min per IP
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
@@ -45,7 +51,6 @@ const globalLimiter = rateLimit({
 });
 app.use(globalLimiter);
 
-// ✅ Stricter limit on auth routes — 10 attempts / 15 min
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 10,
@@ -59,6 +64,8 @@ app.use('/api/doctors', doctorRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/availability', availabilityRoutes);
 app.use('/api/exceptions', exceptionRoutes);
+app.use('/api/guest', guestRoutes);
+app.use('/api/confirmation', confirmationRoutes);
 
 app.get('/health', async (req, res) => {
   try {
@@ -69,7 +76,6 @@ app.get('/health', async (req, res) => {
   }
 });
 
-// ✅ Global error handler
 app.use((err, req, res, _next) => {
   console.error('Unhandled error:', err);
   res.status(500).json({ error: 'Internal server error' });
@@ -77,13 +83,30 @@ app.use((err, req, res, _next) => {
 
 const PORT = process.env.PORT || 3000;
 
+const runMigration = async () => {
+  const migrationPath = resolve(__dirname, '../db/migrate.sql');
+  if (!fs.existsSync(migrationPath)) return;
+
+  const checkResult = await pool.query(
+    `SELECT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'bookings' AND column_name = 'guest_rut')`
+  );
+
+  if (checkResult.rows[0].exists) {
+    console.log('✅ DB schema actualizado (sin migración necesaria)');
+    return;
+  }
+
+  const sql = fs.readFileSync(migrationPath, 'utf-8');
+  await pool.query(sql);
+  console.log('✅ Migración aplicada');
+};
+
 const startServer = async () => {
   try {
-    // Docker healthcheck now guarantees DB is ready before container starts,
-    // but keep a lightweight check as safety net for local dev without Docker
     await pool.query('SELECT 1');
     console.log('✅ DB conectada');
 
+    await runMigration();
     await seedAdmin();
 
     app.listen(PORT, () => {
@@ -91,6 +114,7 @@ const startServer = async () => {
     });
 
     startReminderJob();
+    startConfirmationJob();
   } catch (error) {
     console.error('Error starting server:', error);
     process.exit(1);
