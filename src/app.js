@@ -10,7 +10,9 @@ import { seedAdmin } from './seed/admin.seed.js';
 import { pool } from './shared/db.js';
 import { startReminderJob } from './jobs/reminder.job.js';
 import { startConfirmationJob } from './jobs/confirmation.job.js';
+import { requestLogger } from './middlewares/requestLogger.middleware.js';
 import { errorHandler, notFoundHandler } from './middlewares/errorHandler.middleware.js';
+import { logger } from './utils/logger.js';
 
 import doctorRoutes from './modules/doctor/doctor.routes.js';
 import authRoutes from './modules/auth/auth.routes.js';
@@ -42,6 +44,7 @@ app.use(cors({
 }));
 
 app.use(express.json());
+app.use(requestLogger);
 
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -91,31 +94,31 @@ const runMigration = async () => {
   );
 
   if (checkResult.rows[0].exists) {
-    console.log('✅ DB schema actualizado (sin migración necesaria)');
+    logger.info('DB schema actualizado (sin migración necesaria)');
     return;
   }
 
   const sql = fs.readFileSync(migrationPath, 'utf-8');
   await pool.query(sql);
-  console.log('✅ Migración aplicada');
+  logger.info('Migración aplicada');
 };
 
 const startServer = async () => {
   try {
     await pool.query('SELECT 1');
-    console.log('✅ DB conectada');
+    logger.info('DB conectada');
 
     await runMigration();
     await seedAdmin();
 
     app.listen(PORT, () => {
-      console.log(`API running on http://localhost:${PORT}`);
+      logger.info(`API running on http://localhost:${PORT}`);
     });
 
     startReminderJob();
     startConfirmationJob();
   } catch (error) {
-    console.error('Error starting server:', error);
+    logger.error('Error starting server', { error: error.message, stack: error.stack });
     process.exit(1);
   }
 };
