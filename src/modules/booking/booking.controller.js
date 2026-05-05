@@ -1,69 +1,42 @@
 import * as bookingService from './booking.service.js';
 import * as doctorService from '../doctor/doctor.service.js';
+import { asyncHandler } from '../../middlewares/asyncHandler.middleware.js';
+import { NotFoundError, BadRequestError } from '../../utils/errors.js';
 
-export const createBooking = async (req, res) => {
-  try {
-    const booking = await bookingService.createBooking({
-      doctor_id: req.body.doctor_id,
-      date: req.body.date,
-      time: req.body.time,
-      user_id: req.user.id,
-      duration: req.body.duration,
-    });
+export const createBooking = asyncHandler(async (req, res) => {
+  const booking = await bookingService.createBooking({
+    doctor_id: req.body.doctor_id,
+    date: req.body.date,
+    time: req.body.time,
+    user_id: req.user.id,
+    duration: req.body.duration,
+  });
 
-    res.status(201).json(booking);
-  } catch (error) {
-    const status = error.message.includes('blocked') ? 403 : 400;
-    res.status(status).json({ error: error.message });
+  res.status(201).json(booking);
+});
+
+export const getMyBookings = asyncHandler(async (req, res) => {
+  const bookings = await bookingService.getBookingsByUser(req.user.id);
+  res.json(bookings);
+});
+
+export const cancelBooking = asyncHandler(async (req, res) => {
+  const result = await bookingService.deleteBooking(req.params.id, req.user.id);
+  res.json(result);
+});
+
+export const getAvailableSlots = asyncHandler(async (req, res) => {
+  const slots = await bookingService.getAvailableSlots(req.query.doctor_id, req.query.date);
+  res.json(slots);
+});
+
+export const getDoctorBookings = asyncHandler(async (req, res) => {
+  const doctor = await doctorService.getDoctorByUserId(req.user.id);
+
+  if (!doctor) {
+    throw new NotFoundError('Doctor profile not found');
   }
-};
 
-export const getMyBookings = async (req, res) => {
-  try {
-    const bookings = await bookingService.getBookingsByUser(req.user.id);
-    res.json(bookings);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
-
-export const cancelBooking = async (req, res) => {
-  try {
-    const bookingId = parseInt(req.params.id);
-    const userId = req.user.id;
-
-    const result = await bookingService.deleteBooking(bookingId, userId);
-
-    res.json(result);
-  } catch (error) {
-    res.status(400).json({ error: error.message });
-  }
-};
-
-export const getAvailableSlots = async (req, res) => {
-  try {
-    const { doctor_id, date } = req.query;
-
-    const slots = await bookingService.getAvailableSlots(doctor_id, date);
-
-    res.json(slots);
-  } catch (error) {
-    res.status(400).json({ error: error.message });
-  }
-};
-
-export const getDoctorBookings = async (req, res) => {
-  try {
-    const doctor = await doctorService.getDoctorByUserId(req.user.id);
-
-    if (!doctor) {
-      return res.status(404).json({ error: 'Doctor profile not found' });
-    }
-
-    const bookings = await bookingService.getBookingsByDoctor(doctor.id);
-
-    res.json(bookings);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
+  const bookings = await bookingService.getBookingsByDoctor(doctor.id);
+  res.json(bookings);
+});

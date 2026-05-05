@@ -1,0 +1,126 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import request from 'supertest';
+import express from 'express';
+
+const { mockQuery } = vi.hoisted(() => ({
+  mockQuery: vi.fn(),
+}));
+
+vi.mock('../../src/shared/db.js', () => ({
+  pool: {
+    query: mockQuery,
+    connect: vi.fn(() => ({
+      query: vi.fn(),
+      release: vi.fn(),
+    })),
+    on: vi.fn(),
+  },
+}));
+
+vi.mock('bcrypt', () => ({
+  default: {
+    hash: vi.fn().mockResolvedValue('$2b$12$hashedpassword123'),
+    compare: vi.fn(),
+  },
+}));
+
+process.env.JWT_SECRET = 'test-secret-integration';
+process.env.FRONTEND_URL = 'http://localhost:5173';
+
+import bcrypt from 'bcrypt';
+import authRoutes from '../../src/modules/auth/auth.routes.js';
+import { errorHandler } from '../../src/middlewares/errorHandler.middleware.js';
+
+const app = express();
+app.use(express.json());
+app.use('/api/auth', authRoutes);
+app.use(errorHandler);
+
+beforeEach(() => {
+  vi.clearAllMocks();
+});
+
+describe('POST /api/auth/register', () => {
+  it('returns 201 with valid data', async () => {
+    mockQuery.mockResolvedValueOnce({
+      rows: [{ id: 1, email: 'newuser@test.com', rut: null, phone: null }],
+    });
+
+    const res = await request(app)
+      .post('/api/auth/register')
+      .send({ email: 'newuser@test.com', password: 'password123' });
+
+    expect(res.status).toBe(201);
+    expect(res.body.email).toBe('newuser@test.com');
+  });
+
+  it('returns 400 if email missing', async () => {
+    const res = await request(app)
+      .post('/api/auth/register')
+      .send({ password: 'password123' });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe('Validation failed');
+    expect(res.body.details).toBeDefined();
+  });
+
+  it('returns 400 if password too short', async () => {
+    const res = await request(app)
+      .post('/api/auth/register')
+      .send({ email: 'test@test.com', password: 'short' });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe('Validation failed');
+    expect(res.body.details[0]).toContain('8 characters');
+  });
+
+  it('returns 400 if email format invalid', async () => {
+    const res = await request(app)
+      .post('/api/auth/register')
+      .send({ email: 'not-email', password: 'password123' });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe('Validation failed');
+  });
+});
+
+describe('POST /api/auth/login', () => {
+  it('returns 200 with valid credentials', async () => {
+    bcrypt.compare.mockResolvedValueOnce(true);
+
+    mockQuery.mockResolvedValueOnce({
+      rows: [{ id: 1, email: 'test@test.com', password: 'hashed', role: 'user' }],
+    });
+
+    const res = await request(app)
+      .post('/api/auth/login')
+      .send({ email: 'test@test.com', password: 'password123' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.token).toBeDefined();
+    expect(res.body.user.id).toBe(1);
+  });
+
+  it('returns 400 if credentials invalid', async () => {
+    mockQuery.mockResolvedValueOnce({
+      rows: [{ id: 1, email: 'wrong@test.com', password: 'hashed', role: 'user' }],
+    });
+    bcrypt.compare.mockResolvedValueOnce(false);
+
+    const res = await request(app)
+      .post('/api/auth/login')
+      .send({ email: 'wrong@test.com', password: 'wrong' });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe('Invalid credentials');
+  });
+
+  it('returns 400 if email missing', async () => {
+    const res = await request(app)
+      .post('/api/auth/login')
+      .send({ password: 'password123' });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe('Validation failed');
+  });
+});
