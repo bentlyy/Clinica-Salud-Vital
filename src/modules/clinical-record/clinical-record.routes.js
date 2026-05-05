@@ -22,6 +22,7 @@ import {
   searchCie10,
   getCie10ByCode,
   getCie10Categories,
+  downloadPrescriptionPDF,
 } from './clinical-record.controller.js';
 
 const router = Router();
@@ -43,5 +44,7 @@ router.delete('/prescriptions/:id', authorize('doctor'), deletePrescription);
 router.get('/cie10/search', authorize('doctor', 'admin'), searchCie10);
 router.get('/cie10/categories', authorize('doctor', 'admin'), getCie10Categories);
 router.get('/cie10/:code', authorize('doctor', 'admin'), getCie10ByCode);
+
+router.get('/prescriptions/:id/pdf', authorize('doctor'), downloadPrescriptionPDF);
 
 export default router;

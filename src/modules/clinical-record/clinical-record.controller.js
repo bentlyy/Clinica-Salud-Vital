@@ -4,6 +4,7 @@ import * as cie10Service from './cie10.service.js';
 import * as doctorService from '../doctor/doctor.service.js';
 import { asyncHandler } from '../../middlewares/asyncHandler.middleware.js';
 import { NotFoundError, BadRequestError } from '../../utils/errors.js';
+import { generatePrescriptionPDF } from './prescription-pdf.service.js';
 
 export const getClinicalRecords = asyncHandler(async (req, res) => {
   const { patient_id, status } = req.query;
@@ -152,4 +153,21 @@ export const getCie10ByCode = asyncHandler(async (req, res) => {
 export const getCie10Categories = asyncHandler(async (req, res) => {
   const categories = await cie10Service.getCie10Categories();
   res.json(categories);
+});
+
+export const downloadPrescriptionPDF = asyncHandler(async (req, res) => {
+  const doctor = await doctorService.getDoctorByUserId(req.user.id);
+  if (!doctor) throw new NotFoundError('Doctor profile not found');
+
+  const prescription = await prescriptionService.getPrescriptionById(req.params.id);
+
+  if (prescription.doctor_id !== doctor.id) {
+    throw new BadRequestError('Access denied');
+  }
+
+  const pdfBuffer = await generatePrescriptionPDF(prescription.id);
+
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', `attachment; filename=receta-${prescription.id}.pdf`);
+  res.send(pdfBuffer);
 });
