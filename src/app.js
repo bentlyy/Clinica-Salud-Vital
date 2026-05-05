@@ -24,6 +24,7 @@ import guestRoutes from './modules/guest/guest.routes.js';
 import confirmationRoutes from './modules/confirmation/confirmation.routes.js';
 import clinicalRecordRoutes from './modules/clinical-record/clinical-record.routes.js';
 import auditRoutes from './modules/audit/audit.routes.js';
+import analyticsRoutes from './modules/analytics/analytics.routes.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -81,6 +82,7 @@ app.use('/api/guest', guestRoutes);
 app.use('/api/confirmation', confirmationRoutes);
 app.use('/api/clinical-records', clinicalRecordRoutes);
 app.use('/api/audit', auditRoutes);
+app.use('/api/analytics', analyticsRoutes);
 
 app.get('/health', async (req, res) => {
   try {
