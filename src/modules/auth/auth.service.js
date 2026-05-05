@@ -3,11 +3,13 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { validateRut, cleanRut, formatRut } from '../../shared/rut.js';
 
-const JWT_SECRET = process.env.JWT_SECRET;
-
-if (!JWT_SECRET) {
-  throw new Error('JWT_SECRET environment variable is not set');
-}
+const getJWTSecret = () => {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    throw new Error('JWT_SECRET environment variable is not set');
+  }
+  return secret;
+};
 
 export const register = async ({ email, password, rut, phone }) => {
   if (!email || !password) throw new Error('Email and password required');
@@ -56,7 +58,7 @@ export const login = async ({ email, password }) => {
 
   const token = jwt.sign(
     { id: user.id, email: user.email, role: user.role || 'user' },
-    JWT_SECRET,
+    getJWTSecret(),
     { expiresIn: '1d' }
   );
 
