@@ -2,23 +2,17 @@ import { pool } from '../../shared/db.js';
 import * as mlService from '../ml/ml.service.js';
 
 export const getDashboardStats = async () => {
-  const [totalPatients, totalDoctors, totalBookings, todayBookings, confirmedBookings, cancelledBookings] = await Promise.all([
-    pool.query('SELECT COUNT(*) FROM users WHERE role = $1', ['user']),
-    pool.query('SELECT COUNT(*) FROM doctors'),
-    pool.query('SELECT COUNT(*) FROM bookings WHERE status != $1', ['cancelled']),
-    pool.query('SELECT COUNT(*) FROM bookings WHERE date = CURRENT_DATE AND status != $1', ['cancelled']),
-    pool.query('SELECT COUNT(*) FROM bookings WHERE confirmed = true AND status != $1', ['cancelled']),
-    pool.query('SELECT COUNT(*) FROM bookings WHERE status = $1', ['cancelled']),
-  ]);
+  const result = await pool.query(`
+    SELECT
+      (SELECT COUNT(*) FROM users WHERE role = 'user')::int AS total_patients,
+      (SELECT COUNT(*) FROM doctors)::int AS total_doctors,
+      (SELECT COUNT(*) FROM bookings WHERE status != 'cancelled')::int AS total_bookings,
+      (SELECT COUNT(*) FROM bookings WHERE date = CURRENT_DATE AND status != 'cancelled')::int AS today_bookings,
+      (SELECT COUNT(*) FROM bookings WHERE confirmed = true AND status != 'cancelled')::int AS confirmed_bookings,
+      (SELECT COUNT(*) FROM bookings WHERE status = 'cancelled')::int AS cancelled_bookings
+  `);
 
-  return {
-    total_patients: parseInt(totalPatients.rows[0].count),
-    total_doctors: parseInt(totalDoctors.rows[0].count),
-    total_bookings: parseInt(totalBookings.rows[0].count),
-    today_bookings: parseInt(todayBookings.rows[0].count),
-    confirmed_bookings: parseInt(confirmedBookings.rows[0].count),
-    cancelled_bookings: parseInt(cancelledBookings.rows[0].count),
-  };
+  return result.rows[0];
 };
 
 export const getBookingsByMonth = async (months = 12) => {
