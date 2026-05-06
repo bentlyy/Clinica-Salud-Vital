@@ -17,7 +17,10 @@ router.post('/register', authMiddleware, authorizeRoles('admin'), validate(regis
 
 router.get('/', authMiddleware, authorizeRoles('admin'), getDoctors);
 
-router.get('/public', getDoctors);
+router.get('/public', (req, res, next) => {
+  res.set('Cache-Control', 'public, max-age=60');
+  next();
+}, getDoctors);
 
 router.post('/', authMiddleware, authorizeRoles('admin'), validate(createDoctorSchema), createDoctor);
 

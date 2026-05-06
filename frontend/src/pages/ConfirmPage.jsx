@@ -22,7 +22,7 @@ export default function ConfirmPage() {
 
   const icons = { loading: '⏳', success: '✅', error: '❌', info: 'ℹ️' };
   const titles = { loading: 'Confirmando...', success: 'Cita Confirmada', error: 'Error de Confirmación', info: 'Información' };
-  const colors = { success: 'var(--primary-700)', error: 'var(--danger-600)', info: '#B36B00' };
+  const colors = { success: 'var(--primary-700)', error: 'var(--danger-600)', info: 'var(--chart-warning)' };
 
   return (
     <div className="page-container" style={{ maxWidth: 500 }}>

@@ -1,8 +1,10 @@
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/useAuth';
+import { useTheme } from '../context/useTheme';
 
 export default function Navbar() {
   const { user, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
 
   return (
     <header className="clinic-navbar">
@@ -44,6 +46,10 @@ export default function Navbar() {
               <Link to="/register" className="btn btn-primary btn-sm">Crear Cuenta</Link>
             </>
           )}
+
+          <button onClick={toggleTheme} className="btn btn-ghost btn-sm theme-toggle" aria-label="Toggle theme">
+            {theme === 'light' ? '🌙' : '☀️'}
+          </button>
 
           {user && (
             <div className="navbar-user">

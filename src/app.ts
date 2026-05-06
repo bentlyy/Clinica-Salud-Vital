@@ -1,5 +1,6 @@
 import express, { Express, Request, Response } from 'express';
 import cors from 'cors';
+import compression from 'compression';
 import rateLimit from 'express-rate-limit';
 import 'dotenv/config';
 import { fileURLToPath } from 'url';
@@ -61,6 +62,8 @@ app.use(cors({
   },
   credentials: true,
 }));
+
+app.use(compression());
 
 app.use(express.json({ limit: '10kb' }));
 app.use(requestLogger);
