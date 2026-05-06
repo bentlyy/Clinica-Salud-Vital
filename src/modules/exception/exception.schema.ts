@@ -6,7 +6,7 @@ export const createExceptionSchema = z.object({
   start_time: z.string().regex(/^\d{2}:\d{2}$/, 'Invalid time format, use HH:MM').optional(),
   end_time: z.string().regex(/^\d{2}:\d{2}$/, 'Invalid time format, use HH:MM').optional(),
   is_full_day: z.boolean().optional().default(false),
-}).refine((data, ctx) => {
+}).superRefine((data, ctx) => {
   if (!data.is_full_day && (!data.start_time || !data.end_time)) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
@@ -21,7 +21,6 @@ export const createExceptionSchema = z.object({
       path: ['start_time'],
     });
   }
-  return data;
 });
 
 export const exceptionIdSchema = z.object({

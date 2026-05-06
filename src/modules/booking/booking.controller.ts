@@ -24,7 +24,7 @@ export const getMyBookings = asyncHandler(async (req, res) => {
 });
 
 export const cancelBooking = asyncHandler(async (req, res) => {
-  const result = await bookingService.deleteBooking(req.params.id, req.user.id);
+  const result = await bookingService.deleteBooking(Number(req.params.id), req.user.id);
   res.json(result);
 });
 

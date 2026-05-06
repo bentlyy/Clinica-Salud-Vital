@@ -199,7 +199,7 @@ export const getVitalSignsAnomalies = async () => {
         heartRate: parseInt(row.heartRate) || 70,
         heartRateAnomaly: mlResult.values?.heartRate > 100 || mlResult.values?.heartRate < 60,
         temperature: parseFloat(row.temperature) || 36.5,
-        tempAnomaly: mlResult.values?.temperature > 37.5 || mlResult.values?.temperature < 36,
+        tempAnomaly: mlResult.values?.temp > 37.5 || mlResult.values?.temp < 36,
         anomaly: mlResult.anomaly,
         mlScore: mlResult.score,
         warnings: mlResult.warnings

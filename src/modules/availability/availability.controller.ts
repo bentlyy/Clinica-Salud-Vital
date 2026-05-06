@@ -38,6 +38,6 @@ export const deleteAvailability = asyncHandler(async (req, res) => {
   const doctor = await doctorService.getDoctorByUserId(req.user.id);
   if (!doctor) throw new NotFoundError('Doctor profile not found');
 
-  const result = await availabilityService.deleteAvailability(req.params.id, doctor.id);
+  const result = await availabilityService.deleteAvailability(Number(req.params.id), doctor.id);
   res.json(result);
 });

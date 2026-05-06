@@ -31,9 +31,7 @@ interface VitalSignsData {
 }
 
 interface VitalSignsAnalysisData {
-  pressure: string;
-  heartRate: number;
-  temperature: number;
+  vitalSigns?: VitalSignsData;
 }
 
 interface SanitizedMLInput {
@@ -129,15 +127,15 @@ export const validateVitalSignsAnalysis = (data: VitalSignsAnalysisData): Valida
 
     if (vs.pressure) {
       const pressureRegex = /^(\d{2,3})\/(\d{2,3})$/;
-      if (!pressureRegex.test(vs.pressure)) {
-        errors.push('pressure debe tener formato sist�lica/diast�lica');
+      if (!pressureRegex.test(String(vs.pressure))) {
+        errors.push('pressure debe tener formato sistólica/diastólica');
       } else {
-        const [sys, dia] = vs.pressure.split('/').map(Number);
+        const [sys, dia] = String(vs.pressure).split('/').map(Number);
         if (sys < 60 || sys > 250) {
-          errors.push('presi�n sist�lica fuera de rango (60-250)');
+          errors.push('presión sistólica fuera de rango (60-250)');
         }
         if (dia < 40 || dia > 150) {
-          errors.push('presi�n diast�lica fuera de rango (40-150)');
+          errors.push('presión diastólica fuera de rango (40-150)');
         }
       }
     }
@@ -169,11 +167,12 @@ export const sanitizeMLInput = (data: Record<string, unknown>): SanitizedMLInput
     sanitized.chiefComplaint = sanitizeString(data.chiefComplaint);
   }
 
-  if (data.vitalSigns) {
+  if (data.vitalSigns && typeof data.vitalSigns === 'object') {
+    const vs = data.vitalSigns as Record<string, unknown>;
     sanitized.vitalSigns = {
-      pressure: data.vitalSigns?.pressure ? sanitizeString(data.vitalSigns.pressure) : undefined,
-      heartRate: data.vitalSigns?.heartRate,
-      temperature: data.vitalSigns?.temperature,
+      pressure: vs.pressure ? sanitizeString(String(vs.pressure)) : undefined,
+      heartRate: vs.heartRate as string | number | undefined,
+      temperature: vs.temperature as string | number | undefined,
     };
   }
 
