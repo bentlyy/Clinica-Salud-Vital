@@ -10,6 +10,7 @@ import DoctorPanel from '../pages/DoctorPanel';
 import DoctorAvailabilityPage from '../pages/DoctorAvailabilityPage';
 import DoctorCalendarPage from '../pages/DoctorCalendarPage';
 import RegisterDoctorPage from '../pages/RegisterDoctorPage';
+import AnalyticsPage from '../pages/AnalyticsPage';
 import ProtectedRoute from './ProtectedRoute';
 import Navbar from '../components/Navbar';
 
@@ -41,6 +42,7 @@ export default function AppRoutes() {
       <Route path="/doctor/calendar" element={<ProtectedRoute role="doctor"><AppLayout><DoctorCalendarPage /></AppLayout></ProtectedRoute>} />
 
       <Route path="/admin/register-doctor" element={<ProtectedRoute role="admin"><AppLayout><RegisterDoctorPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/admin/analytics" element={<ProtectedRoute role="admin"><AppLayout><AnalyticsPage /></AppLayout></ProtectedRoute>} />
     </Routes>
   );
 }

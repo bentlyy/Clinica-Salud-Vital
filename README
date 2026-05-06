@@ -115,16 +115,18 @@ Esto levanta tres contenedores: `clinic-api` (puerto 3000), `clinic-frontend` (p
 
 Al iniciar por primera vez se crean automáticamente:
 
-| Rol | Email | Contraseña |
-|-----|-------|-----------|
-| Admin | admin@clinic.com | REPLACED_PASSWORD |
-| Doctor | juan@clinic.com | REPLACED_PASSWORD |
-| Doctor | maria@clinic.com | REPLACED_PASSWORD |
-| Doctor | carlos@clinic.com | REPLACED_PASSWORD |
-| Doctor | ana@clinic.com | REPLACED_PASSWORD |
-| Paciente | user1@clinic.com | REPLACED_PASSWORD |
-| Paciente | user2@clinic.com | REPLACED_PASSWORD |
-| Paciente | user3@clinic.com | REPLACED_PASSWORD |
+| Rol | Email | Contraseña | RUT |
+|-----|-------|-----------|-----|
+| Admin | admin@clinic.com | REPLACED_PASSWORD | 20287886-5 |
+| Doctor | juan@clinic.com | REPLACED_PASSWORD | 11222333-9 |
+| Doctor | maria@clinic.com | REPLACED_PASSWORD | 14333444-7 |
+| Doctor | carlos@clinic.com | REPLACED_PASSWORD | 13444555-5 |
+| Doctor | ana@clinic.com | REPLACED_PASSWORD | 12555666-3 |
+| Paciente | user1@clinic.com | REPLACED_PASSWORD | 15666777-3 |
+| Paciente | user2@clinic.com | REPLACED_PASSWORD | 16777888-1 |
+| Paciente | user3@clinic.com | REPLACED_PASSWORD | 17888999-9 |
+
+> **Nota:** Todos los usuarios tienen RUT válido. Los usuarios registrados **no necesitan RUT** al hacer una reserva (se vincula a su cuenta). Las reservas de invitados (guest) sí requieren RUT.
 
 ---
 
@@ -146,10 +148,19 @@ POST /api/doctors           (admin)
 ### Reservas
 ```
 POST   /api/bookings
+POST   /api/bookings/guest
 GET    /api/bookings/me
+GET    /api/bookings/guest?rut=
 DELETE /api/bookings/:id
 GET    /api/bookings/available-slots?doctor_id=&date=
 GET    /api/bookings/doctor  (doctor)
+GET    /api/bookings/admin   (admin)
+DELETE /api/bookings/admin/:id  (admin)
+```
+
+### Analytics (admin)
+```
+GET    /api/analytics/summary   (admin)
 ```
 
 ### Disponibilidad

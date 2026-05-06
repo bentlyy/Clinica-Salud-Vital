@@ -10,7 +10,7 @@ export default function DoctorPanel() {
 
   useEffect(() => {
     getDoctorBookings()
-      .then(setBookings)
+      .then((res) => setBookings(Array.isArray(res) ? res : (res.data || [])))
       .catch(() => setError('Error cargando agenda'))
       .finally(() => setLoading(false));
   }, []);

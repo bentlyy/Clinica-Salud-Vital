@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth';
 
 export default function Navbar() {
   const { user, logout } = useAuth();
@@ -31,7 +31,10 @@ export default function Navbar() {
           )}
 
           {user?.role === 'admin' && (
-            <Link to="/admin/register-doctor" className="nav-link nav-link-accent">Registrar Doctor</Link>
+            <>
+              <Link to="/admin/analytics" className="nav-link">Análisis</Link>
+              <Link to="/admin/register-doctor" className="nav-link nav-link-accent">Registrar Doctor</Link>
+            </>
           )}
 
           {!user && (

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import FullCalendar from '@fullcalendar/react';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
@@ -8,18 +8,15 @@ import { getExceptions, createException, deleteException } from '../api/exceptio
 
 export default function DoctorCalendarPage() {
   const [events, setEvents] = useState([]);
-  const [exceptions, setExceptions] = useState([]);
   const [error, setError] = useState(null);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       setError(null);
       const [availability, exceptionList] = await Promise.all([
         getAvailability(),
         getExceptions(),
       ]);
-
-      setExceptions(exceptionList);
 
       const availabilityEvents = availability.map((a) => ({
         daysOfWeek: [a.day_of_week],
@@ -29,7 +26,6 @@ export default function DoctorCalendarPage() {
         color: '#4CAF50',
       }));
 
-      // ✅ Store exception id in event so we can delete from the UI
       const exceptionEvents = exceptionList.map((e) => ({
         id: `exc-${e.id}`,
         title: e.is_full_day ? '🚫 Día bloqueado' : '🚫 Bloqueado',
@@ -46,13 +42,13 @@ export default function DoctorCalendarPage() {
       setError('Error cargando calendario');
       console.error(err);
     }
-  };
-
-  useEffect(() => {
-    fetchData();
   }, []);
 
-  // Block a time range by clicking/dragging on the calendar
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
   const handleSelect = async (info) => {
     try {
       setError(null);
@@ -67,10 +63,9 @@ export default function DoctorCalendarPage() {
     }
   };
 
-  // ✅ Click on a blocked event to delete it (unblock)
   const handleEventClick = async (info) => {
     const exceptionId = info.event.extendedProps?.exceptionId;
-    if (!exceptionId) return; // background availability events have no id
+    if (!exceptionId) return;
 
     const ok = window.confirm('¿Desbloquear este horario?');
     if (!ok) return;
@@ -102,7 +97,7 @@ export default function DoctorCalendarPage() {
         initialView="timeGridWeek"
         selectable={true}
         select={handleSelect}
-        eventClick={handleEventClick} // ✅ allows unblocking
+        eventClick={handleEventClick}
         slotDuration="00:30:00"
         allDaySlot={false}
         events={events}
