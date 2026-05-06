@@ -29,7 +29,7 @@ export const createInvoice = async (data: any) => {
     const total = parseFloat(amount) + parseFloat(tax_amount) - parseFloat(discount_amount);
 
     const invoiceResult = await client.query(
-      'INSERT INTO invoices (invoice_number, patient_id, doctor_id, booking_id, concept, description, amount, tax_amount, discount_amount, total_amount, due_date, notes) VALUES (, , , , , , , , , , , ) RETURNING *',
+      'INSERT INTO invoices (invoice_number, patient_id, doctor_id, booking_id, concept, description, amount, tax_amount, discount_amount, total_amount, due_date, notes) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *',
       [invoiceNumber, patient_id, doctor_id, booking_id || null, concept, description || null, amount, tax_amount, discount_amount, total, due_date, notes || null]
     );
 
@@ -38,7 +38,7 @@ export const createInvoice = async (data: any) => {
     if (items && items.length > 0) {
       for (const item of items) {
         await client.query(
-          'INSERT INTO invoice_items (invoice_id, description, quantity, unit_price) VALUES (, , , )',
+          'INSERT INTO invoice_items (invoice_id, description, quantity, unit_price) VALUES ($1, $2, $3, $4)',
           [invoice.id, item.description, item.quantity, item.unit_price]
         );
       }
@@ -73,14 +73,14 @@ export const getInvoices = async ({ patient_id, doctor_id, status, start_date, e
 };
 
 export const getInvoiceById = async (id: number) => {
-  const result = await pool.query('SELECT * FROM invoices WHERE id = ', [id]);
+  const result = await pool.query('SELECT * FROM invoices WHERE id = $1', [id]);
   if (result.rows.length === 0) throw new NotFoundError('Invoice not found');
   return result.rows[0];
 };
 
 export const updateInvoiceStatus = async (id: number, status: string, paymentData?: any) => {
   const result = await pool.query(
-    'UPDATE invoices SET status = , payment_data = , updated_at = NOW() WHERE id =  RETURNING *',
+    'UPDATE invoices SET status = $1, payment_data = $2, updated_at = NOW() WHERE id = $3 RETURNING *',
     [status, paymentData ? JSON.stringify(paymentData) : null, id]
   );
   if (result.rows.length === 0) throw new NotFoundError('Invoice not found');
@@ -88,17 +88,17 @@ export const updateInvoiceStatus = async (id: number, status: string, paymentDat
 };
 
 export const deleteInvoice = async (id: number) => {
-  await pool.query('DELETE FROM invoice_items WHERE invoice_id = ', [id]);
-  const result = await pool.query('DELETE FROM invoices WHERE id =  RETURNING *', [id]);
+  await pool.query('DELETE FROM invoice_items WHERE invoice_id = $1', [id]);
+  const result = await pool.query('DELETE FROM invoices WHERE id = $1 RETURNING *', [id]);
   if (result.rows.length === 0) throw new NotFoundError('Invoice not found');
   return { message: 'Invoice deleted' };
 };
 
 export const getBillingStats = async () => {
   const [totalOutstanding, totalPaid, overdueCount] = await Promise.all([
-    pool.query('SELECT SUM(total_amount) AS total FROM invoices WHERE status = ', ['pending']),
-    pool.query('SELECT SUM(total_amount) AS total FROM invoices WHERE status = ', ['paid']),
-    pool.query('SELECT COUNT(*) AS count FROM invoices WHERE status =  AND due_date < CURRENT_DATE', ['pending']),
+    pool.query('SELECT SUM(total_amount) AS total FROM invoices WHERE status = $1', ['pending']),
+    pool.query('SELECT SUM(total_amount) AS total FROM invoices WHERE status = $1', ['paid']),
+    pool.query('SELECT COUNT(*) AS count FROM invoices WHERE status = $1 AND due_date < CURRENT_DATE', ['pending']),
   ]);
 
   return {
