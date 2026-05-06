@@ -1,6 +1,6 @@
 /**
- * Sistema de caché para ML
- * Usa Redis cuando esté disponible, fallback a memoria
+ * Sistema de cachï¿½ para ML
+ * Usa Redis cuando estï¿½ disponible, fallback a memoria
  */
 
 import type { Request, Response, NextFunction } from 'express';
@@ -141,7 +141,7 @@ export const cacheMiddleware = (ttl = 300000) => {
       const cached = await mlCache.get(cacheKey);
       if (cached && req.method === 'GET') {
         logger.debug(`[ML Cache] Hit: ${cacheKey}`);
-        return res.json({ ...cached, fromCache: true });
+        return res.json({ ...(cached as Record<string, unknown>), fromCache: true });
       }
     } catch (err) {
       logger.warn('[ML Cache] Error getting from cache:', (err as Error).message);

@@ -43,7 +43,7 @@ export const canAccessResource = (resource: string, action: string, ownerField =
     }
 
     if (permission.includes(':own') && req.params[ownerField]) {
-      if (parseInt(req.params[ownerField]) !== user_id && role !== 'admin') {
+      if (parseInt(String(req.params[ownerField])) !== user_id && role !== 'admin') {
         return res.status(403).json({ error: 'You can only access your own resources' });
       }
     }

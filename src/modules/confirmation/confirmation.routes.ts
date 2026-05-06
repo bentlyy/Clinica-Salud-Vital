@@ -1,11 +1,11 @@
 ﻿import { Router } from 'express';
 import { confirmBooking } from './confirmation.controller';
-import { validate } from '../../middlewares/validate.middleware';
+import { validateZod } from '../../middlewares/validate.middleware';
 import { confirmTokenSchema } from '../guest/guest.schema';
 
 const router = Router();
 
-router.post('/confirm', validate(confirmTokenSchema), confirmBooking);
+router.post('/confirm', validateZod(confirmTokenSchema), confirmBooking);
 
 export default router;
 
