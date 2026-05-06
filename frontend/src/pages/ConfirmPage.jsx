@@ -9,12 +9,13 @@ export default function ConfirmPage() {
   const [status, setStatus] = useState('loading');
   const [message, setMessage] = useState('');
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     if (!token) { setStatus('error'); setMessage('Token no proporcionado'); return; }
     confirmBooking(token)
       .then((r) => {
-        if (r.alreadyConfirmed) { setStatus('info'); setMessage('Esta cita ya fue confirmada anteriormente.'); }
-        else { setStatus('success'); setMessage('Tu cita ha sido confirmada correctamente.'); }
+        if (r.alreadyConfirmed) { setStatus('info'); setMessage('Esta cita ya fue confirmada anteriormente.'); return; }
+        setStatus('success'); setMessage('Tu cita ha sido confirmada correctamente.');
       })
       .catch(() => { setStatus('error'); setMessage('Error al confirmar la cita. El enlace puede estar vencido.'); });
   }, [token]);
