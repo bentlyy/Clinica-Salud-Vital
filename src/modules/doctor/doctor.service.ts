@@ -1,8 +1,11 @@
 import { pool } from '../../shared/db.js';
 import bcrypt from 'bcrypt';
+import crypto from 'crypto';
 import { sendEmail } from '../../shared/email.service.js';
 import { doctorCredentialsEmail } from './doctor.email.js';
 import { validateRut, cleanRut, formatRut } from '../../shared/rut.js';
+import { BadRequestError } from '../../utils/errors.js';
+import { logger } from '../../utils/logger.js';
 
 interface DoctorInput {
   name: string;
@@ -50,14 +53,14 @@ const generatePassword = (): string => {
   const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%';
   let password = '';
   for (let i = 0; i < 12; i++) {
-    password += chars.charAt(Math.floor(Math.random() * chars.length));
+    password += chars.charAt(crypto.randomInt(0, chars.length));
   }
   return password;
 };
 
 export const registerDoctor = async ({ name, specialty, email, rut, phone }: DoctorInput): Promise<{ doctor: Doctor; credentials: { email: string; tempPassword: string } }> => {
   if (!name || !specialty || !email) {
-    throw new Error('Nombre, especialidad y email son obligatorios');
+    throw new BadRequestError('Nombre, especialidad y email son obligatorios');
   }
 
   const client = await pool.connect();
@@ -66,20 +69,20 @@ export const registerDoctor = async ({ name, specialty, email, rut, phone }: Doc
     await client.query('BEGIN');
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) throw new Error('Email inválido');
+    if (!emailRegex.test(email)) throw new BadRequestError('Email inválido');
 
     let formattedRut: string | null = null;
     if (rut) {
       const cleaned = cleanRut(rut);
-      if (!validateRut(cleaned)) throw new Error('RUT inválido');
+      if (!validateRut(cleaned)) throw new BadRequestError('RUT inválido');
       formattedRut = formatRut(cleaned);
 
       const rutCheck = await client.query('SELECT 1 FROM users WHERE rut = $1', [formattedRut]);
-      if (rutCheck.rows.length > 0) throw new Error('RUT ya registrado');
+      if (rutCheck.rows.length > 0) throw new BadRequestError('RUT ya registrado');
     }
 
     const emailCheck = await client.query('SELECT 1 FROM users WHERE email = $1', [email]);
-    if (emailCheck.rows.length > 0) throw new Error('Email ya registrado');
+    if (emailCheck.rows.length > 0) throw new BadRequestError('Email ya registrado');
 
     const tempPassword = generatePassword();
     const hashedPassword = await bcrypt.hash(tempPassword, 12);
@@ -121,14 +124,14 @@ export const registerDoctor = async ({ name, specialty, email, rut, phone }: Doc
         password: tempPassword,
         loginUrl: process.env.FRONTEND_URL + '/login',
       }),
-    }).catch((err: unknown) => console.error('Doctor welcome email error:', err));
+    }).catch((err: unknown) => logger.error('Doctor welcome email error:', err));
 
     return { doctor, credentials: { email, tempPassword } };
 
   } catch (error: unknown) {
     await client.query('ROLLBACK');
     const pgError = error as { code?: string };
-    if (pgError.code === '23505') throw new Error('Doctor o usuario ya existe');
+    if (pgError.code === '23505') throw new BadRequestError('Doctor o usuario ya existe');
     throw error;
   } finally {
     client.release();
@@ -137,7 +140,7 @@ export const registerDoctor = async ({ name, specialty, email, rut, phone }: Doc
 
 export const createDoctor = async ({ name, specialty, email, user_id }: CreateDoctorInput): Promise<Doctor> => {
   if (!name || !specialty || !email || !user_id) {
-    throw new Error('Missing required fields');
+    throw new BadRequestError('Missing required fields');
   }
 
   const client = await pool.connect();
@@ -151,11 +154,11 @@ export const createDoctor = async ({ name, specialty, email, user_id }: CreateDo
     );
 
     if (user.rows.length === 0) {
-      throw new Error('User not found');
+      throw new BadRequestError('User not found');
     }
 
     if (user.rows[0].role !== 'doctor') {
-      throw new Error('User must have role doctor');
+      throw new BadRequestError('User must have role doctor');
     }
 
     const result = await client.query(
@@ -183,10 +186,9 @@ export const createDoctor = async ({ name, specialty, email, user_id }: CreateDo
     await client.query('ROLLBACK');
     const pgError = error as { code?: string };
     if (pgError.code === '23505') {
-      throw new Error('Doctor already exists for this user or email');
+      throw new BadRequestError('Doctor already exists for this user or email');
     }
-    const errMsg = error as { message?: string };
-    throw errMsg.message ? error : new Error('Database error');
+    throw error;
   } finally {
     client.release();
   }
