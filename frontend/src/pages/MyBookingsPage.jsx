@@ -11,7 +11,7 @@ export default function MyBookingsPage() {
 
   useEffect(() => {
     getMyBookings()
-      .then(setBookings)
+      .then((res) => setBookings(Array.isArray(res) ? res : (res.data || [])))
       .catch(() => setError('Error cargando reservas'))
       .finally(() => setLoading(false));
   }, []);

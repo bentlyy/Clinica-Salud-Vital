@@ -1,0 +1,11 @@
+{
+  "watch": ["src"],
+  "ext": "js,ts",
+  "ignore": ["src/**/*.test.js", "src/**/*.test.ts", "node_modules"],
+  "exec": "node --experimental-specifier-resolution=node",
+  "env": {
+    "NODE_ENV": "development"
+  },
+  "verbose": true,
+  "delay": 1000
+}

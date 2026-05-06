@@ -1,0 +1,51 @@
+import helmet from 'helmet';
+import hpp from 'hpp';
+import { logger } from '../utils/logger.js';
+
+const isProduction = process.env.NODE_ENV === 'production';
+
+export const securityMiddleware = [
+  helmet({
+    contentSecurityPolicy: isProduction ? {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        imgSrc: ["'self'", "data:", "https:"],
+        connectSrc: ["'self'"],
+        frameAncestors: ["'none'"],
+      },
+    } : false,
+    crossOriginEmbedderPolicy: false,
+    dnsPrefetchControl: true,
+    frameguard: {
+      action: isProduction ? 'deny' : 'sameorigin',
+    },
+    hsts: isProduction ? {
+      maxAge: 31536000,
+      includeSubDomains: true,
+      preload: true,
+    } : false,
+    noSniff: true,
+    referrerPolicy: false,
+    xssFilter: true,
+  }),
+  hpp(),
+];
+
+export const validateEnvSecurity = (): void => {
+  const jwtSecret = process.env.JWT_SECRET;
+  const defaultSecret = 'CHANGE_ME_USE_LONG_RANDOM_SECRET_IN_PRODUCTION';
+
+  if (!jwtSecret) {
+    throw new Error('JWT_SECRET no está definido en las variables de entorno');
+  }
+
+  if (jwtSecret === defaultSecret || jwtSecret.length < 32) {
+    logger.warn('⚠️ JWT_SECRET es débil o es el valor por defecto. En producción use un secreto de al menos 32 caracteres');
+  }
+
+  if (!isProduction) {
+    logger.warn('⚠️ Ejecutando en modo desarrollo - algunas protecciones de seguridad están deshabilitadas');
+  }
+};
