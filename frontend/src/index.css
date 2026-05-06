@@ -62,12 +62,101 @@
   --font-serif: 'Playfair Display', Georgia, serif;
 
   --transition: all 0.2s ease;
+
+  /* Chart colors */
+  --chart-blue: #0088FE;
+  --chart-green: #00C49F;
+  --chart-yellow: #FFBB28;
+  --chart-orange: #FF8042;
+  --chart-purple: #8884d8;
+  --chart-light-green: #82ca9d;
+  --chart-red: #DC3545;
+  --chart-success: #28A745;
+  --chart-warning: #FFC107;
+}
+
+[data-theme="dark"] {
+  --primary-50: #1a3a1a;
+  --primary-100: #2d5a2d;
+  --primary-500: #4CAF50;
+  --primary-600: #5cb85c;
+  --primary-700: #6dd66d;
+
+  --accent-50: #0a1e3d;
+  --accent-100: #0f2d5c;
+  --accent-500: #1976D2;
+  --accent-600: #2980E0;
+  --accent-700: #3a8ce8;
+
+  --gold-50: #3d3200;
+  --gold-500: #FFC107;
+  --gold-600: #ffd54f;
+
+  --danger-50: #3d0a0a;
+  --danger-500: #F44336;
+  --danger-600: #e57373;
+
+  --warning-50: #3d2a00;
+  --warning-500: #FF9800;
+
+  --gray-50: #0F172A;
+  --gray-100: #1E293B;
+  --gray-200: #334155;
+  --gray-300: #475569;
+  --gray-400: #64748B;
+  --gray-500: #94A3B8;
+  --gray-600: #CBD5E1;
+  --gray-700: #E2E8F0;
+  --gray-800: #F1F5F9;
+  --gray-900: #F8FAFC;
+
+  --bg-primary: #0F172A;
+  --bg-secondary: #1E293B;
+  --bg-dark: #020617;
+
+  --text-primary: #F8FAFC;
+  --text-secondary: #CBD5E1;
+  --text-muted: #94A3B8;
+  --text-light: #0F172A;
+
+  --border-light: #334155;
+  --border-medium: #475569;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -2px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -4px rgba(0, 0, 0, 0.3);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+
+  /* Chart colors - dark theme */
+  --chart-blue: #4A9EFF;
+  --chart-green: #00E6A7;
+  --chart-yellow: #FFD444;
+  --chart-orange: #FF9955;
+  --chart-purple: #A78BFA;
+  --chart-light-green: #6EE7B7;
+  --chart-red: #FF6B6B;
+  --chart-success: #34D399;
+  --chart-warning: #FBBF24;
 }
 
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+}
+
+html {
+  transition: color 0.3s ease, background-color 0.3s ease;
+}
+
+body {
+  font-family: var(--font-sans);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 body {

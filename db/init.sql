@@ -280,6 +280,10 @@ CREATE INDEX IF NOT EXISTS idx_exceptions_date   ON doctor_exceptions(date);
 CREATE INDEX IF NOT EXISTS idx_exceptions_doctor_date ON doctor_exceptions(doctor_id, date);
 
 CREATE INDEX IF NOT EXISTS idx_users_rut ON users(rut);
+CREATE INDEX IF NOT EXISTS idx_users_rut_clean ON users(REPLACE(REPLACE(rut, '.', ''), '-', '')) WHERE rut IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_bookings_user_date_status ON bookings(user_id, date, status);
+CREATE INDEX IF NOT EXISTS idx_bookings_doctor_date_status ON bookings(doctor_id, date, status);
+CREATE INDEX IF NOT EXISTS idx_clinical_records_doctor_status_date ON clinical_records(doctor_id, status, created_at DESC);
 
 CREATE INDEX IF NOT EXISTS idx_clinical_records_patient ON clinical_records(patient_id);
 CREATE INDEX IF NOT EXISTS idx_clinical_records_doctor ON clinical_records(doctor_id);

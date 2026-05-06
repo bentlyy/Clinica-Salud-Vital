@@ -1,99 +1,101 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/useAuth';
-
-const specialtiesData = [
-  {
-    id: 'cardiologia',
-    icon: '❤️',
-    name: 'Cardiología',
-    desc: 'Cuidado integral del corazón',
-    color: '#dc2626',
-    bgLight: '#fef2f2',
-    department: 'Departamento de Ciencias Cardiovasculares',
-    procedures: [
-      'Electrocardiograma (ECG)',
-      'Ecocardiograma Doppler',
-      'Prueba de esfuerzo',
-      'Holter de 24 horas',
-      'Cateterismo cardíaco',
-      'Control de hipertensión',
-    ],
-    doctors: [
-      { name: 'Dr. Roberto Méndez', sub: 'Cardiólogo Intervencionista' },
-      { name: 'Dra. Carolina Fuentes', sub: 'Arritmólogo' },
-    ],
-  },
-  {
-    id: 'dermatologia',
-    icon: '🔬',
-    name: 'Dermatología',
-    desc: 'Salud y estética de la piel',
-    color: '#9333ea',
-    bgLight: '#faf5ff',
-    department: 'Departamento de Dermatología y Estética',
-    procedures: [
-      'Dermatoscopia digital',
-      'Biopsia de piel',
-      'Tratamiento de acné',
-      'Cirugía de lunares',
-      'Crioterapia',
-      'Láser dermatológico',
-    ],
-    doctors: [
-      { name: 'Dra. Valentina Rojas', sub: 'Dermatóloga Clínica' },
-      { name: 'Dr. Felipe Contreras', sub: 'Cirujano Dermatológico' },
-    ],
-  },
-  {
-    id: 'neurologia',
-    icon: '🧠',
-    name: 'Neurología',
-    desc: 'Sistema nervioso y cerebro',
-    color: '#2563eb',
-    bgLight: '#eff6ff',
-    department: 'Departamento de Neurociencias',
-    procedures: [
-      'Electroencefalograma (EEG)',
-      'Resonancia magnética cerebral',
-      'Potenciales evocados',
-      'Tratamiento de migrañas',
-      'Evaluación de epilepsia',
-      'Neurorehabilitación',
-    ],
-    doctors: [
-      { name: 'Dr. Andrés Villalobos', sub: 'Neurólogo Clínico' },
-      { name: 'Dra. Paula Soto', sub: 'Neurofisióloga' },
-    ],
-  },
-  {
-    id: 'pediatria',
-    icon: '👶',
-    name: 'Pediatría',
-    desc: 'Atención médica infantil',
-    color: '#f59e0b',
-    bgLight: '#fffbeb',
-    department: 'Departamento de Pediatría y Adolescencia',
-    procedures: [
-      'Control de niño sano',
-      'Vacunación',
-      'Control de crecimiento',
-      'Tratamiento de infecciones',
-      'Alergias pediátricas',
-      'Orientación nutricional',
-    ],
-    doctors: [
-      { name: 'Dra. Camila Espinoza', sub: 'Pediatra General' },
-      { name: 'Dr. Matías Herrera', sub: 'Neonatólogo' },
-    ],
-  },
-];
+import { useTheme } from '../context/useTheme';
 
 export default function HomePage() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { theme } = useTheme();
   const [expandedSpecialty, setExpandedSpecialty] = useState(null);
   const [showReminderInfo, setShowReminderInfo] = useState(false);
+
+  const specialtiesData = [
+    {
+      id: 'cardiologia',
+      icon: '❤️',
+      name: 'Cardiología',
+      desc: 'Cuidado integral del corazón',
+      color: theme === 'dark' ? '#ef4444' : '#dc2626',
+      bgLight: theme === 'dark' ? 'rgba(239, 68, 68, 0.15)' : '#fef2f2',
+      department: 'Departamento de Ciencias Cardiovasculares',
+      procedures: [
+        'Electrocardiograma (ECG)',
+        'Ecocardiograma Doppler',
+        'Prueba de esfuerzo',
+        'Holter de 24 horas',
+        'Cateterismo cardíaco',
+        'Control de hipertensión',
+      ],
+      doctors: [
+        { name: 'Dr. Roberto Méndez', sub: 'Cardiólogo Intervencionista' },
+        { name: 'Dra. Carolina Fuentes', sub: 'Arritmóloga' },
+      ],
+    },
+    {
+      id: 'dermatologia',
+      icon: '🔬',
+      name: 'Dermatología',
+      desc: 'Salud y estética de la piel',
+      color: theme === 'dark' ? '#a855f7' : '#9333ea',
+      bgLight: theme === 'dark' ? 'rgba(168, 85, 247, 0.15)' : '#faf5ff',
+      department: 'Departamento de Dermatología y Estética',
+      procedures: [
+        'Dermatoscopia digital',
+        'Biopsia de piel',
+        'Tratamiento de acné',
+        'Cirugía de lunares',
+        'Crioterapia',
+        'Láser dermatológico',
+      ],
+      doctors: [
+        { name: 'Dra. Valentina Rojas', sub: 'Dermatóloga Clínica' },
+        { name: 'Dr. Felipe Contreras', sub: 'Cirujano Dermatológico' },
+      ],
+    },
+    {
+      id: 'neurologia',
+      icon: '🧠',
+      name: 'Neurología',
+      desc: 'Sistema nervioso y cerebro',
+      color: theme === 'dark' ? '#3b82f6' : '#2563eb',
+      bgLight: theme === 'dark' ? 'rgba(59, 130, 246, 0.15)' : '#eff6ff',
+      department: 'Departamento de Neurociencias',
+      procedures: [
+        'Electroencefalograma (EEG)',
+        'Resonancia magnética cerebral',
+        'Potenciales evocados',
+        'Tratamiento de migrañas',
+        'Evaluación de epilepsia',
+        'Neurorehabilitación',
+      ],
+      doctors: [
+        { name: 'Dr. Andrés Villalobos', sub: 'Neurólogo Clínico' },
+        { name: 'Dra. Paula Soto', sub: 'Neurofisióloga' },
+      ],
+    },
+    {
+      id: 'pediatria',
+      icon: '👶',
+      name: 'Pediatría',
+      desc: 'Atención médica infantil',
+      color: theme === 'dark' ? '#fbbf24' : '#f59e0b',
+      bgLight: theme === 'dark' ? 'rgba(251, 191, 36, 0.15)' : '#fffbeb',
+      department: 'Departamento de Pediatría y Adolescencia',
+      procedures: [
+        'Control de niño sano',
+        'Vacunación',
+        'Control de crecimiento',
+        'Tratamiento de infecciones',
+        'Alergias pediátricas',
+        'Orientación nutricional',
+      ],
+      doctors: [
+        { name: 'Dra. Camila Espinoza', sub: 'Pediatra General' },
+        { name: 'Dr. Matías Herrera', sub: 'Neonatólogo' },
+      ],
+    },
+  ];
 
   const toggleSpecialty = (id) => {
     setExpandedSpecialty(expandedSpecialty === id ? null : id);

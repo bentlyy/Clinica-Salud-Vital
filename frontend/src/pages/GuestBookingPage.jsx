@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTheme } from '../context/useTheme';
 import { getDoctors } from '../api/doctors';
 import { getAvailableSlots, createGuestBooking } from '../api/bookings';
 import { formatRut, validateRut, cleanRut } from '../utils/rut.js';
 
 export default function GuestBookingPage() {
+  const { theme } = useTheme();
   const [doctors, setDoctors] = useState([]);
   const [selectedDoctor, setSelectedDoctor] = useState(null);
   const [date, setDate] = useState('');
@@ -21,96 +23,56 @@ export default function GuestBookingPage() {
 
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const fetchDoctors = async () => {
-      try {
-        const data = await getDoctors();
-        setDoctors(data);
-      } catch {
-        setError('Error cargando doctores');
-      } finally {
-        setLoadingDoctors(false);
-      }
-    };
-    fetchDoctors();
-  }, []);
+  const isDark = theme === 'dark';
 
-  useEffect(() => {
-    if (!selectedDoctor || !date) return;
-
-    const loadSlots = async () => {
-      try {
-        setLoadingSlots(true);
-        setError(null);
-        setSuccessMsg(null);
-
-        const data = await getAvailableSlots(selectedDoctor, date);
-        setSlots(data);
-        setSelectedTime(null);
-      } catch {
-        setError('Error cargando horarios');
-      } finally {
-        setLoadingSlots(false);
-      }
-    };
-
-    loadSlots();
-  }, [selectedDoctor, date]);
-
-  const handleRutChange = (e) => {
-    setForm({ ...form, rut: formatRut(e.target.value) });
-    setError(null);
-  };
-
-  const handleBooking = async () => {
-    if (submitting) return;
-
-    if (!validateRut(cleanRut(form.rut))) {
-      setError('RUT inválido. Verifica el dígito verificador.');
-      return;
-    }
-
-    if (!form.email) {
-      setError('Email es obligatorio para enviarte la confirmación.');
-      return;
-    }
-
-    try {
-      setSubmitting(true);
-      setError(null);
-      setSuccessMsg(null);
-
-      await createGuestBooking({
-        doctor_id: selectedDoctor,
-        date,
-        time: selectedTime,
-        rut: cleanRut(form.rut),
-        name: form.name,
-        email: form.email,
-        phone: form.phone,
-      });
-
-      setSuccessMsg('Reserva creada. Revisa tu email para confirmar la cita.');
-      setSelectedTime(null);
-    } catch (err) {
-      setError(err.response?.data?.error || 'Error al reservar');
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const inputStyle = { width: '100%', padding: '10px 12px', border: '1px solid #ccc', borderRadius: 6, fontSize: 15, boxSizing: 'border-box' };
-  const labelStyle = { display: 'block', marginBottom: 6, fontWeight: 'bold', color: '#333' };
+  const inputStyle = { width: '100%', padding: '10px 12px', border: '1px solid var(--border-medium)', borderRadius: 6, fontSize: 15, boxSizing: 'border-box', background: 'var(--bg-secondary)', color: 'var(--text-primary)' };
+  const labelStyle = { display: 'block', marginBottom: 6, fontWeight: 'bold', color: 'var(--text-primary)' };
 
   return (
     <div style={{ maxWidth: 700, margin: '0 auto', padding: '20px' }}>
-      <h2 style={{ color: '#1976d2' }}>Reservar hora como invitado</h2>
-      <p style={{ color: '#666', marginBottom: 20 }}>Completa tus datos para reservar. Recibirás un email para confirmar tu cita.</p>
+      <h2 style={{ color: 'var(--accent-600)' }}>Reservar hora como invitado</h2>
+      <p style={{ color: 'var(--text-secondary)', marginBottom: 20 }}>Completa tus datos para reservar. Recibirás un email para confirmar tu cita.</p>
 
       {error && (
-        <div style={{ background: '#ffebee', color: '#c62828', padding: 10, borderRadius: 6, marginBottom: 16 }}>
+        <div style={{ background: 'var(--danger-50)', color: 'var(--danger-600)', padding: 10, borderRadius: 6, marginBottom: 16 }}>
           {error}
         </div>
+      )}
+
+      {successMsg && (
+        <div style={{ background: 'var(--primary-50)', color: 'var(--primary-700)', padding: 10, borderRadius: 6, marginBottom: 16 }}>
+          {successMsg}
+          <br />
+          <button onClick={() => navigate('/my-bookings/guest')} style={{ marginTop: 8, padding: '6px 12px', background: 'var(--primary-500)', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer' }}>
+            Ver mis reservas por RUT
+          </button>
+        </div>
+      )}
+
+      <div style={{ background: 'var(--bg-secondary)', padding: 20, borderRadius: 12, marginBottom: 20 }}>
+        <h3 style={{ marginTop: 0 }}>Tus datos</h3>
+
+        <div style={{ marginBottom: 14 }}>
+          <label style={labelStyle}>RUT <span style={{ color: 'var(--danger-500)' }}>*</span></label>
+          <input value={form.rut} onChange={handleRutChange} placeholder="12.345.678-5" style={inputStyle} />
+        </div>
+
+        <div style={{ marginBottom: 14 }}>
+          <label style={labelStyle}>Nombre (opcional)</label>
+          <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Tu nombre completo" style={inputStyle} />
+        </div>
+
+        <div style={{ marginBottom: 14 }}>
+          <label style={labelStyle}>Email <span style={{ color: 'var(--danger-500)' }}>*</span></label>
+          <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="tu@email.com" style={inputStyle} />
+          <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>Necesario para enviarte el link de confirmación</span>
+        </div>
+
+        <div style={{ marginBottom: 0 }}>
+          <label style={labelStyle}>Teléfono (opcional)</label>
+          <input type="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="+56 9 1234 5678" style={inputStyle} />
+        </div>
+      </div>
       )}
 
       {successMsg && (
