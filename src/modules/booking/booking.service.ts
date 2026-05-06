@@ -4,6 +4,8 @@ import { sendEmail } from '../../shared/email.service.js';
 import { bookingConfirmationTemplate } from './booking.email.js';
 import jwt from 'jsonwebtoken';
 import { getJWTSecret } from '../../shared/jwt.js';
+import { BadRequestError, NotFoundError } from '../../utils/errors.js';
+import { logger } from '../../utils/logger.js';
 
 interface BookingInput {
   doctor_id: number;
@@ -71,15 +73,15 @@ export const getAllBookings = async ({ page = 1, limit = 50 }: PaginationOptions
 };
 
 export const createBooking = async ({ doctor_id, user_id, date, time, duration = 30 }: BookingInput): Promise<unknown> => {
-  if (!doctor_id || !user_id || !date || !time) throw new Error('Missing required fields');
-  if (!isValidDate(date)) throw new Error('Invalid date format, use YYYY-MM-DD');
-  if (!isValidTime(time)) throw new Error('Invalid time format, use HH:MM');
-  if (duration <= 0 || duration > 480) throw new Error('Duration must be between 1 and 480 minutes');
+  if (!doctor_id || !user_id || !date || !time) throw new BadRequestError('Missing required fields');
+  if (!isValidDate(date)) throw new BadRequestError('Invalid date format, use YYYY-MM-DD');
+  if (!isValidTime(time)) throw new BadRequestError('Invalid time format, use HH:MM');
+  if (duration <= 0 || duration > 480) throw new BadRequestError('Duration must be between 1 and 480 minutes');
 
   const bookingDate = new Date(date);
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  if (bookingDate < today) throw new Error('Cannot book appointments in the past');
+  if (bookingDate < today) throw new BadRequestError('Cannot book appointments in the past');
 
   const client = await pool.connect();
 
@@ -92,21 +94,21 @@ export const createBooking = async ({ doctor_id, user_id, date, time, duration =
     );
 
     const doctor = await doctorService.getDoctorById(doctor_id);
-    if (!doctor) throw new Error('Doctor not found');
+    if (!doctor) throw new NotFoundError('Doctor not found');
 
     if (doctor.slot_duration && duration > doctor.slot_duration) {
-      throw new Error(`Duration cannot exceed doctor's slot duration of ${doctor.slot_duration} minutes`);
+      throw new BadRequestError(`Duration cannot exceed doctor's slot duration of ${doctor.slot_duration} minutes`);
     }
 
     const userResult = await client.query(
       'SELECT email, rut, phone, blocked_until FROM users WHERE id = $1',
       [user_id]
     );
-    if (userResult.rows.length === 0) throw new Error('User not found');
+    if (userResult.rows.length === 0) throw new NotFoundError('User not found');
 
     const user = userResult.rows[0];
     if (user.blocked_until && new Date(user.blocked_until) > new Date()) {
-      throw new Error('Your account is blocked due to unconfirmed appointments. Please wait before booking again.');
+      throw new BadRequestError('Your account is blocked due to unconfirmed appointments. Please wait before booking again.');
     }
 
     const day = getDayOfWeek(date);
@@ -117,7 +119,7 @@ export const createBooking = async ({ doctor_id, user_id, date, time, duration =
       [doctor_id, day]
     );
 
-    if (availability.rows.length === 0) throw new Error('Doctor not available on this day');
+    if (availability.rows.length === 0) throw new BadRequestError('Doctor not available on this day');
 
     const start = new Date(`1970-01-01T${time}`);
     const end = new Date(start);
@@ -129,7 +131,7 @@ export const createBooking = async ({ doctor_id, user_id, date, time, duration =
       return start >= startLimit && end <= endLimit;
     });
 
-    if (!isInsideAnyBlock) throw new Error('Outside doctor availability');
+    if (!isInsideAnyBlock) throw new BadRequestError('Outside doctor availability');
 
     const exceptions = await client.query(
       `SELECT * FROM doctor_exceptions WHERE doctor_id = $1 AND date = $2`,
@@ -137,11 +139,11 @@ export const createBooking = async ({ doctor_id, user_id, date, time, duration =
     );
 
     for (const ex of exceptions.rows) {
-      if (ex.is_full_day) throw new Error('Doctor not available (full day blocked)');
+      if (ex.is_full_day) throw new BadRequestError('Doctor not available (full day blocked)');
       if (ex.start_time && ex.end_time) {
         const exStart = new Date(`1970-01-01T${ex.start_time}`);
         const exEnd = new Date(`1970-01-01T${ex.end_time}`);
-        if (start < exEnd && end > exStart) throw new Error('Time blocked by doctor');
+        if (start < exEnd && end > exStart) throw new BadRequestError('Time blocked by doctor');
       }
     }
 
@@ -155,7 +157,7 @@ export const createBooking = async ({ doctor_id, user_id, date, time, duration =
       [doctor_id, date, time, duration]
     );
 
-    if (overlap.rows.length > 0) throw new Error('This time slot is already booked');
+    if (overlap.rows.length > 0) throw new BadRequestError('This time slot is already booked');
 
     const confirmToken = jwt.sign(
       { user_id, doctor_id, date, time },
@@ -183,17 +185,16 @@ export const createBooking = async ({ doctor_id, user_id, date, time, duration =
         confirmToken,
         frontendUrl: process.env.FRONTEND_URL,
       }),
-    }).catch((err: unknown) => console.error('Email error (non-critical):', err));
+    }).catch((err: unknown) => logger.error('Email error (non-critical):', err));
 
     return booking;
 
   } catch (error: unknown) {
     await client.query('ROLLBACK');
     const pgError = error as { code?: string };
-    if (pgError.code === '23505') throw new Error('This time slot is already booked');
-    if (pgError.code === '23503') throw new Error('Invalid doctor or user');
-    const errMsg = error as { message?: string };
-    throw errMsg.message ? error : new Error('Database error');
+    if (pgError.code === '23505') throw new BadRequestError('This time slot is already booked');
+    if (pgError.code === '23503') throw new BadRequestError('Invalid doctor or user');
+    throw error;
   } finally {
     client.release();
   }
@@ -229,7 +230,7 @@ export const getBookingsByUser = async (user_id: number, { page = 1, limit = 20 
 
 export const deleteBooking = async (booking_id: number, user_id: number): Promise<{ message: string }> => {
   if (!Number.isInteger(booking_id) || !Number.isInteger(user_id)) {
-    throw new Error('Invalid booking id');
+    throw new BadRequestError('Invalid booking id');
   }
 
   const result = await pool.query(
@@ -239,14 +240,14 @@ export const deleteBooking = async (booking_id: number, user_id: number): Promis
     [booking_id, user_id]
   );
 
-  if (result.rows.length === 0) throw new Error('Booking not found or unauthorized');
+  if (result.rows.length === 0) throw new NotFoundError('Booking not found or unauthorized');
 
   return { message: 'Booking cancelled successfully' };
 };
 
 export const getAvailableSlots = async (doctor_id: number, date: string): Promise<string[]> => {
-  if (!doctor_id || !date) throw new Error('doctor_id and date are required');
-  if (!isValidDate(date)) throw new Error('Invalid date format, use YYYY-MM-DD');
+  if (!doctor_id || !date) throw new BadRequestError('doctor_id and date are required');
+  if (!isValidDate(date)) throw new BadRequestError('Invalid date format, use YYYY-MM-DD');
 
   const day = getDayOfWeek(date);
 

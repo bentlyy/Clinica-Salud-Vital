@@ -1,10 +1,11 @@
-﻿import { pool } from '../shared/db';
+﻿import { pool } from '../shared/db.js';
 import bcrypt from 'bcrypt';
+import { logger } from '../utils/logger.js';
 
 export const seedAdmin = async (): Promise<void> => {
   const exists = await pool.query('SELECT 1 FROM users WHERE role = $1 LIMIT 1', ['admin']);
   if (exists.rows.length > 0) {
-    console.log('Seed ya ejecutado');
+    logger.info('Seed ya ejecutado');
     return;
   }
 
@@ -56,5 +57,5 @@ export const seedAdmin = async (): Promise<void> => {
     );
   }
 
-  console.log('Seed completo: admin, doctores (con disponibilidad) y pacientes creados');
+  logger.info('Seed completo: admin, doctores (con disponibilidad) y pacientes creados');
 };

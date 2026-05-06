@@ -1,10 +1,11 @@
 import pg from 'pg';
+import { logger } from './logger.js';
 
 const { Pool } = pg;
 
 export interface PoolConfig {
   connectionString: string | undefined;
-  ssl: boolean;
+  ssl: boolean | { rejectUnauthorized: boolean };
 }
 
 export const pool = new Pool({
@@ -16,11 +17,11 @@ export const pool = new Pool({
 });
 
 pool.on('connect', () => {
-  console.log('DB connected');
+  logger.info('DB connected');
 });
 
 pool.on('error', (err: Error) => {
-  console.error('Unexpected error on idle client', err);
+  logger.error('Unexpected error on idle client', err);
 });
 
 export const query = pool.query.bind(pool);

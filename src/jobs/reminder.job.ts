@@ -1,6 +1,8 @@
 ﻿import cron from 'node-cron';
 import { pool } from '../shared/db.js';
 import { sendEmail } from '../shared/email.service.js';
+import { logger } from '../utils/logger.js';
+import { BadRequestError } from '../utils/errors.js';
 
 interface BookingRow {
   id: number;
@@ -18,6 +20,8 @@ interface EmailOptions {
   html: string;
 }
 
+const VALID_SENT_FIELDS = ['reminder_1h_sent', 'reminder_24h_sent'];
+
 const sendWithRetry = async (emailOptions: EmailOptions, attempts = 3): Promise<void> => {
   for (let i = 1; i <= attempts; i++) {
     try {
@@ -31,6 +35,10 @@ const sendWithRetry = async (emailOptions: EmailOptions, attempts = 3): Promise<
 };
 
 const sendReminders = async (intervalStart: string, intervalEnd: string, sentField: string, subjectLabel: string): Promise<void> => {
+  if (!VALID_SENT_FIELDS.includes(sentField)) {
+    throw new BadRequestError(`Invalid sentField: ${sentField}`);
+  }
+
   const result = await pool.query(`
     SELECT b.id, b.date, b.time,
            COALESCE(u.email, b.guest_email) AS email,
@@ -43,8 +51,8 @@ const sendReminders = async (intervalStart: string, intervalEnd: string, sentFie
     WHERE b.${sentField} = FALSE
       AND b.status = 'pending'
       AND (b.confirmed = TRUE OR b.confirmed = FALSE)
-      AND (b.date + b.time) BETWEEN NOW() + INTERVAL '${intervalStart}' AND NOW() + INTERVAL '${intervalEnd}'
-  `);
+      AND (b.date + b.time) BETWEEN NOW() + INTERVAL '1 minutes' * $1 AND NOW() + INTERVAL '1 minutes' * $2
+  `, [parseIntervalToMinutes(intervalStart), parseIntervalToMinutes(intervalEnd)]);
 
   for (const booking of result.rows as BookingRow[]) {
     const needsConfirmation = !booking.confirmed;
@@ -69,14 +77,23 @@ const sendReminders = async (intervalStart: string, intervalEnd: string, sentFie
         [booking.id]
       );
     } catch (err) {
-      console.error(`Reminder failed for booking ${booking.id}:`, (err as Error).message);
+      logger.error(`Reminder failed for booking ${booking.id}:`, err);
     }
   }
 };
 
+const parseIntervalToMinutes = (interval: string): number => {
+  const match = interval.match(/^(\d+)\s*(hours?|minutes?|h|m)$/i);
+  if (!match) return 0;
+  const value = parseInt(match[1]);
+  const unit = match[2].toLowerCase();
+  if (unit.startsWith('h')) return value * 60;
+  return value;
+};
+
 export const startReminderJob = (): void => {
   cron.schedule('*/5 * * * *', async () => {
-    console.log('Checking reminders...');
+    logger.info('Checking reminders...');
     try {
       await sendReminders(
         '55 minutes',
@@ -91,7 +108,7 @@ export const startReminderJob = (): void => {
         'Recordatorio: tienes una cita mañana'
       );
     } catch (error) {
-      console.error('Reminder job global error:', error);
+      logger.error('Reminder job global error:', error);
     }
   });
 };
