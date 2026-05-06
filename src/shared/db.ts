@@ -1,5 +1,6 @@
 import pg from 'pg';
 import { logger } from './logger.js';
+import type { Logger } from 'winston';
 
 const { Pool } = pg;
 

@@ -624,7 +624,7 @@ export const trainDemandForecastModel = async (): Promise<TrainingResult> => {
     const stdDev = Math.sqrt(variance);
 
     const windowSize = 7;
-    const sequences: number[][][] = [];
+    const sequences: number[][] = [];
     const targets: number[] = [];
 
     for (let i = windowSize; i < values.length; i++) {
@@ -1094,7 +1094,7 @@ export const trainAllModels = async (): Promise<TrainAllResults> => {
     results.totalDuration = Date.now() - startTime;
 
     logger.info('[ML] All models trained:', results);
-    return results;
+    return results as unknown as Record<string, TrainingResult>;
   } catch (err) {
     logger.error('[ML] Error training all models:', (err as Error).message);
     return { ...results, error: (err as Error).message, partial: results };
@@ -1115,7 +1115,7 @@ export const savePrediction = async (
   options?: { doctorId?: number; userId?: number; bookingId?: number }
 ): Promise<void> => {
   try {
-    const confidence = (result as PredictionResult).confidence || 'low';
+    const confidence = (result as unknown as PredictionResult).confidence || 'low';
     await pool.query(
       `INSERT INTO ml_prediction_history 
        (model_type, input_data, prediction_result, confidence, doctor_id, user_id, booking_id)
