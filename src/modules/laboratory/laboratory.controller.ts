@@ -67,7 +67,7 @@ export const getLabRequests = asyncHandler(async (req, res) => {
 });
 
 export const getLabRequestById = asyncHandler(async (req, res) => {
-  const request = await laboratoryService.getLabRequestById(req.params.id);
+  const request = await laboratoryService.getLabRequestById(Number(req.params.id));
 
   if (req.user.role === 'user' && request.patient_id !== req.user.id) {
     throw new BadRequestError('Access denied');
@@ -83,17 +83,17 @@ export const createLabRequest = asyncHandler(async (req, res) => {
 
 export const updateLabRequestStatus = asyncHandler(async (req, res) => {
   const { status } = req.body;
-  const request = await laboratoryService.updateLabRequestStatus(req.params.id, status);
+  const request = await laboratoryService.updateLabRequestStatus(Number(req.params.id), status);
   res.json(request);
 });
 
 export const updateLabRequestItemResult = asyncHandler(async (req, res) => {
   const { result_value, result_notes } = req.body;
-  const item = await laboratoryService.updateLabRequestItemResult(req.params.item_id, result_value, result_notes);
+  const item = await laboratoryService.updateLabRequestItemResult(Number(req.params.item_id), result_value, result_notes);
   res.json(item);
 });
 
 export const cancelLabRequest = asyncHandler(async (req, res) => {
-  const result = await laboratoryService.cancelLabRequest(req.params.id, req.user.id, req.user.role);
+  const result = await laboratoryService.cancelLabRequest(Number(req.params.id), req.user.id, req.user.role);
   res.json(result);
 });

@@ -1,6 +1,6 @@
 ﻿import { Router } from 'express';
 import { authMiddleware, authorize } from '../../middlewares/auth.middleware';
-import { validate } from '../../middlewares/validate.middleware';
+import { validateZod } from '../../middlewares/validate.middleware';
 import {
   createClinicalRecordSchema,
   updateClinicalRecordSchema,
@@ -30,15 +30,15 @@ const router = Router();
 router.use(authMiddleware);
 
 router.get('/', authorize('doctor', 'admin'), getClinicalRecords);
-router.get('/:id', authorize('doctor', 'admin', 'user'), validate(clinicalRecordIdSchema, 'params'), getClinicalRecordById);
-router.get('/patient/:patient_id', authorize('doctor', 'admin', 'user'), validate(patientIdSchema, 'params'), getClinicalRecordsByPatient);
-router.post('/', authorize('doctor'), validate(createClinicalRecordSchema), createClinicalRecord);
-router.put('/:id', authorize('doctor'), validate(updateClinicalRecordSchema), updateClinicalRecord);
-router.delete('/:id', authorize('doctor'), validate(clinicalRecordIdSchema, 'params'), deleteClinicalRecord);
+router.get('/:id', authorize('doctor', 'admin', 'user'), validateZod(clinicalRecordIdSchema, 'params'), getClinicalRecordById);
+router.get('/patient/:patient_id', authorize('doctor', 'admin', 'user'), validateZod(patientIdSchema, 'params'), getClinicalRecordsByPatient);
+router.post('/', authorize('doctor'), validateZod(createClinicalRecordSchema), createClinicalRecord);
+router.put('/:id', authorize('doctor'), validateZod(updateClinicalRecordSchema), updateClinicalRecord);
+router.delete('/:id', authorize('doctor'), validateZod(clinicalRecordIdSchema, 'params'), deleteClinicalRecord);
 
-router.get('/:record_id/prescriptions', authorize('doctor', 'admin'), validate(clinicalRecordIdSchema, 'params'), getPrescriptionsByRecord);
-router.post('/prescriptions', authorize('doctor'), validate(prescriptionSchema), createPrescription);
-router.put('/prescriptions/:id', authorize('doctor'), validate(prescriptionSchema.partial()), updatePrescription);
+router.get('/:record_id/prescriptions', authorize('doctor', 'admin'), validateZod(clinicalRecordIdSchema, 'params'), getPrescriptionsByRecord);
+router.post('/prescriptions', authorize('doctor'), validateZod(prescriptionSchema), createPrescription);
+router.put('/prescriptions/:id', authorize('doctor'), validateZod(prescriptionSchema.partial()), updatePrescription);
 router.delete('/prescriptions/:id', authorize('doctor'), deletePrescription);
 
 router.get('/cie10/search', authorize('doctor', 'admin'), searchCie10);

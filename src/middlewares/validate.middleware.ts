@@ -11,7 +11,7 @@ export interface ValidationSchema {
   [key: string]: ValidationRule;
 }
 
-export type ZodValidationSchema = ZodSchema | Record<string, unknown>;
+export type ZodValidationSchema = ZodSchema;
 
 export const validate = (schema: ValidationSchema) => {
   return (req: Request, res: Response, next: NextFunction) => {
@@ -46,17 +46,17 @@ export const validate = (schema: ValidationSchema) => {
   };
 };
 
-export const validateZod = (schema: ZodValidationSchema) => {
+export const validateZod = (schema: ZodValidationSchema, source: 'body' | 'params' | 'query' = 'body') => {
   return (req: Request, res: Response, next: NextFunction) => {
     try {
-      const zodSchema = schema as ZodSchema;
-      zodSchema.parse(req.body);
+      const data = source === 'body' ? req.body : source === 'params' ? req.params : req.query;
+      schema.parse(data);
       next();
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ 
           error: 'Validation failed', 
-          details: error.issues.map(e => `${e.path.join('.')}: ${e.message}`) 
+          details: error.issues.map((e: z.ZodIssue) => `${e.path.join('.')}: ${e.message}`) 
         });
       }
       next(error);
