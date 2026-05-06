@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getDoctors } from '../api/doctors';
-import { getAvailableSlots, createGuestBooking } from '../api/bookings';
-import { useAuth } from '../context/AuthContext';
+import { getAvailableSlots, createGuestBooking, createBooking } from '../api/bookings';
+import { useAuth } from '../context/useAuth';
 import { formatRut, validateRut, cleanRut } from '../utils/rut.js';
 
 export default function BookingPage() {
@@ -24,7 +24,6 @@ export default function BookingPage() {
   });
 
   const [loadingDoctors, setLoadingDoctors] = useState(true);
-  const [loadingSlots, setLoadingSlots] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
@@ -41,12 +40,9 @@ export default function BookingPage() {
 
   useEffect(() => {
     if (!selectedDoctor || !date) return;
-    setLoadingSlots(true);
-    setError(null);
     getAvailableSlots(selectedDoctor, date)
       .then((data) => { setSlots(data); setSelectedTime(null); })
-      .catch(() => setError('Error cargando horarios'))
-      .finally(() => setLoadingSlots(false));
+      .catch(() => setError('Error cargando horarios'));
   }, [selectedDoctor, date]);
 
   const handleRutChange = (e) => {
@@ -72,15 +68,23 @@ export default function BookingPage() {
       setSubmitting(true);
       setError(null);
 
-      await createGuestBooking({
-        doctor_id: selectedDoctor,
-        date,
-        time: selectedTime,
-        rut: isGuest ? cleanRut(form.rut) : cleanRut(form.rut),
-        name: form.name,
-        email: form.email,
-        phone: form.phone,
-      });
+      if (isGuest) {
+        await createGuestBooking({
+          doctor_id: selectedDoctor,
+          date,
+          time: selectedTime,
+          rut: cleanRut(form.rut),
+          name: form.name,
+          email: form.email,
+          phone: form.phone,
+        });
+      } else {
+        await createBooking({
+          doctor_id: selectedDoctor,
+          date,
+          time: selectedTime,
+        });
+      }
 
       setSuccess(true);
     } catch (err) {
@@ -172,8 +176,7 @@ export default function BookingPage() {
           {selectedDoctor && date && (
             <div style={{ marginTop: 28 }}>
               <h3 style={{ fontSize: 16, color: 'var(--text-secondary)', marginBottom: 16, fontWeight: 500 }}>Horarios disponibles</h3>
-              {loadingSlots && <p style={{ color: 'var(--text-muted)' }}>Cargando horarios...</p>}
-              {!loadingSlots && slots.length === 0 && (
+              {slots.length === 0 && (
                 <div className="empty-state" style={{ padding: 24 }}>
                   <p>No hay horarios disponibles para esta fecha</p>
                 </div>

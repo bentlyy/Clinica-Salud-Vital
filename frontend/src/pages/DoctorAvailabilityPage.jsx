@@ -42,7 +42,15 @@ export default function DoctorAvailabilityPage() {
   };
 
   useEffect(() => {
-    fetchAvailability();
+    const loadData = async () => {
+      try {
+        const data = await getAvailability();
+        setAvailability(data);
+      } catch {
+        setError('Error cargando disponibilidad');
+      }
+    };
+    loadData();
   }, []);
 
   // 🔥 generar bloques de 30 min

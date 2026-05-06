@@ -1,27 +1,26 @@
 # Stage 1: Dependencies
-FROM node:22-alpine AS deps
+FROM node:20-alpine AS deps
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci --omit=dev
+RUN npm install
 
 # Stage 2: Builder
-FROM node:22-alpine AS builder
+FROM node:20-alpine AS builder
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci
+RUN npm install
 COPY . .
-RUN npm run test -- --coverage || true
 
 # Stage 3: Production
-FROM node:22-alpine AS production
+FROM node:20-alpine AS production
 WORKDIR /app
 
 # Create non-root user
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nodejs -u 1001
 
-# Copy dependencies from deps stage
-COPY --from=deps /app/node_modules ./node_modules
+# Copy dependencies from builder stage (includes dev dependencies)
+COPY --from=builder /app/node_modules ./node_modules
 
 # Copy application files
 COPY --from=builder /app/src ./src

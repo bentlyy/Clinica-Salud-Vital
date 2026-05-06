@@ -2,10 +2,12 @@
   "name": "clinic-backend",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "src/app.ts",
   "scripts": {
-    "dev": "nodemon src/app.js",
-    "start": "node src/app.js",
+    "dev": "tsx src/app.ts",
+    "start": "tsx src/app.ts",
+    "typecheck": "tsc --noEmit",
+    "build": "tsc",
     "test": "vitest run --coverage",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
@@ -16,12 +18,13 @@
   "license": "ISC",
   "type": "module",
   "dependencies": {
+    "@tensorflow/tfjs": "^4.22.0",
     "bcrypt": "^6.0.0",
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",
-    "express": "^5.2.1",
+    "express": "^4.21.0",
     "express-mongo-sanitize": "^2.2.0",
-    "express-rate-limit": "^7.5.0",
+    "express-rate-limit": "^6.10.0",
     "helmet": "^8.1.0",
     "hpp": "^0.2.3",
     "jsonwebtoken": "^9.0.3",
@@ -34,9 +37,18 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@types/bcrypt": "^5.0.2",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.1",
+    "@types/jsonwebtoken": "^9.0.7",
+    "@types/node": "^22.15.3",
+    "@types/nodemailer": "^6.4.17",
+    "@types/pg": "^8.11.11",
+    "@types/supertest": "^6.0.2",
     "@vitest/coverage-v8": "^4.1.5",
-    "nodemon": "^3.1.11",
+    "tsx": "^4.19.0",
     "supertest": "^7.2.2",
+    "typescript": "^5.8.3",
     "vitest": "^4.1.5"
   }
 }
