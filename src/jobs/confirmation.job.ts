@@ -1,11 +1,12 @@
 ﻿import cron from 'node-cron';
 import { pool } from '../shared/db.js';
+import { logger } from '../utils/logger.js';
 
 const BLOCK_DURATION_HOURS = 168; // 7 days
 
 export const startConfirmationJob = (): void => {
   cron.schedule('0 2 * * *', async () => {
-    console.log('Checking unconfirmed bookings for no-shows...');
+    logger.info('Checking unconfirmed bookings for no-shows...');
     try {
       const result = await pool.query(`
         SELECT b.id, b.date, b.time, b.user_id, b.guest_rut,
@@ -22,10 +23,10 @@ export const startConfirmationJob = (): void => {
           if (booking.user_id) {
             await pool.query(
               `UPDATE users
-               SET blocked_until = NOW() + interval '${BLOCK_DURATION_HOURS} hours',
+               SET blocked_until = NOW() + interval '1 hours' * $1,
                    no_show_count = no_show_count + 1
-               WHERE id = $1`,
-              [booking.user_id]
+               WHERE id = $2`,
+              [BLOCK_DURATION_HOURS, booking.user_id]
             );
           }
 
@@ -38,16 +39,16 @@ export const startConfirmationJob = (): void => {
             if (existingGuest.rows.length > 0) {
               await pool.query(
                 `UPDATE users
-                 SET blocked_until = NOW() + interval '${BLOCK_DURATION_HOURS} hours',
+                 SET blocked_until = NOW() + interval '1 hours' * $1,
                      no_show_count = no_show_count + 1
-                 WHERE rut = $1`,
-                [booking.guest_rut]
+                  WHERE rut = $2`,
+                [BLOCK_DURATION_HOURS, booking.guest_rut]
               );
             } else {
               await pool.query(
                 `INSERT INTO users (email, password, rut, role, blocked_until, no_show_count)
-                 VALUES ($1, $2, $3, 'guest', NOW() + interval '${BLOCK_DURATION_HOURS} hours', 1)`,
-                [booking.guest_email, 'N/A_GUEST', booking.guest_rut]
+                 VALUES ($1, $2, $3, 'guest', NOW() + interval '1 hours' * $4, 1)`,
+                [booking.guest_email, 'N/A_GUEST', booking.guest_rut, BLOCK_DURATION_HOURS]
               );
             }
           }
@@ -57,15 +58,15 @@ export const startConfirmationJob = (): void => {
             [booking.id]
           );
 
-          console.log(`Booking ${booking.id} marked as no-show`);
+          logger.info(`Booking ${booking.id} marked as no-show`);
         } catch (err) {
-          console.error(`Error processing no-show for booking ${booking.id}:`, (err as Error).message);
+          logger.error(`Error processing no-show for booking ${booking.id}:`, err);
         }
       }
 
-      console.log(`Processed ${result.rows.length} no-show(s)`);
+      logger.info(`Processed ${result.rows.length} no-show(s)`);
     } catch (error) {
-      console.error('Confirmation job global error:', error);
+      logger.error('Confirmation job global error:', error);
     }
   });
 };

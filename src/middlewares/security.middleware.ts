@@ -1,6 +1,7 @@
 import helmet from 'helmet';
 import hpp from 'hpp';
 import { logger } from '../utils/logger.js';
+import { UnauthorizedError } from '../utils/errors.js';
 
 const isProduction = process.env.NODE_ENV === 'production';
 
@@ -38,7 +39,7 @@ export const validateEnvSecurity = (): void => {
   const defaultSecret = 'CHANGE_ME_USE_LONG_RANDOM_SECRET_IN_PRODUCTION';
 
   if (!jwtSecret) {
-    throw new Error('JWT_SECRET no está definido en las variables de entorno');
+    throw new UnauthorizedError('JWT_SECRET no está definido en las variables de entorno');
   }
 
   if (jwtSecret === defaultSecret || jwtSecret.length < 32) {
