@@ -17,16 +17,16 @@ export const getDashboardStats = async () => {
 
 export const getBookingsByMonth = async (months = 12) => {
   const result = await pool.query(`
-    SELECT 
+    SELECT
       TO_CHAR(date, 'YYYY-MM') AS month,
       COUNT(*) AS total,
       COUNT(*) FILTER (WHERE confirmed = true) AS confirmed,
       COUNT(*) FILTER (WHERE status = 'cancelled') AS cancelled
     FROM bookings
-    WHERE date >= NOW() - INTERVAL '${months} months'
+    WHERE date >= NOW() - INTERVAL '1 months' * $1
     GROUP BY TO_CHAR(date, 'YYYY-MM')
     ORDER BY month
-  `);
+  `, [months]);
 
   return result.rows;
 };
@@ -119,15 +119,15 @@ export const getDemandForecast = async (days = 30) => {
     const forecast = await mlService.forecastDemand(days);
 
     const result = await pool.query(`
-      SELECT 
+      SELECT
         date::text AS date,
         COUNT(*) AS bookings
       FROM bookings
-      WHERE date >= NOW() - INTERVAL '${days} days'
+      WHERE date >= NOW() - INTERVAL '1 days' * $1
         AND status != 'cancelled'
       GROUP BY date
       ORDER BY date
-    `);
+    `, [days]);
 
     const historical = result.rows.map((row: any) => ({
       date: row.date,
@@ -141,9 +141,9 @@ export const getDemandForecast = async (days = 30) => {
     const result = await pool.query(`
       SELECT date::text AS date, COUNT(*) AS bookings
       FROM bookings
-      WHERE date >= NOW() - INTERVAL '${days} days' AND status != 'cancelled'
+      WHERE date >= NOW() - INTERVAL '1 days' * $1 AND status != 'cancelled'
       GROUP BY date ORDER BY date
-    `);
+    `, [days]);
     return result.rows.map((row: any) => ({
       date: row.date,
       bookings: parseInt(row.bookings),
