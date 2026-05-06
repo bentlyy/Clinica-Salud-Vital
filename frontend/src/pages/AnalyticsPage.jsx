@@ -1,8 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { useTheme } from '../context/useTheme';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell, AreaChart, Area } from 'recharts';
 import api from '../api/axios';
 
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
+const LIGHT_COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
+const DARK_COLORS = ['#4A9EFF', '#00E6A7', '#FFD444', '#FF9955', '#A78BFA', '#6EE7B7'];
 
 const tabs = [
   { id: 'noshow', label: 'No-Shows', icon: '⚠️' },
@@ -13,6 +15,7 @@ const tabs = [
 ];
 
 export default function AnalyticsPage() {
+  const { theme } = useTheme();
   const [activeTab, setActiveTab] = useState('noshow');
   const [loading, setLoading] = useState(true);
   const [modelStatus, setModelStatus] = useState({});
@@ -29,6 +32,8 @@ export default function AnalyticsPage() {
     fetchAllData();
     fetchModelStatus();
   }, []);
+
+  const colors = theme === 'dark' ? DARK_COLORS : LIGHT_COLORS;
 
   const fetchAllData = async () => {
     setLoading(true);
@@ -84,11 +89,6 @@ export default function AnalyticsPage() {
       setTraining(false);
     }
   };
-
-  // eslint-disable-next-line react-hooks/set-state-in-effect
-  useEffect(() => {
-    fetchAllData();
-  }, []);
 
   if (loading) {
     return (
@@ -173,18 +173,18 @@ export default function AnalyticsPage() {
           font-weight: 500;
         }
         .status-badge.success {
-          background: #D4EDDA;
-          color: #155724;
+          background: var(--primary-50);
+          color: var(--primary-700);
         }
         .status-badge.warning {
-          background: #FFF3CD;
-          color: #856404;
+          background: var(--warning-50);
+          color: var(--warning-500);
         }
         .analytics-tabs {
           display: flex;
           gap: 8px;
           margin-bottom: 24px;
-          border-bottom: 1px solid var(--border-color);
+          border-bottom: 1px solid var(--border-light);
           padding-bottom: 12px;
           flex-wrap: wrap;
         }
@@ -249,15 +249,15 @@ export default function AnalyticsPage() {
           margin-top: 4px;
         }
         .alert-card {
-          background: #FFF3CD;
-          border: 1px solid #FFC107;
+          background: var(--warning-50);
+          border: 1px solid var(--warning-500);
           border-radius: 8px;
           padding: 16px;
           margin: 12px 0;
         }
         .alert-card.danger {
-          background: #F8D7DA;
-          border-color: #DC3545;
+          background: var(--danger-50);
+          border-color: var(--danger-500);
         }
       `}</style>
     </div>
@@ -269,6 +269,9 @@ function NoShowsPanel({ data }) {
   const noShows = data.reduce((acc, d) => acc + d.noShows, 0);
   const rate = total > 0 ? ((noShows / total) * 100).toFixed(1) : 0;
 
+  const chartRed = theme === 'dark' ? '#FF6B6B' : '#DC3545';
+  const chartGreen = theme === 'dark' ? '#34D399' : '#28A745';
+
   return (
     <div>
       <div className="stats-grid">
@@ -277,11 +280,11 @@ function NoShowsPanel({ data }) {
           <div className="stat-label">Total Citas</div>
         </div>
         <div className="stat-card">
-          <div className="stat-value" style={{ color: '#DC3545' }}>{noShows}</div>
+          <div className="stat-value" style={{ color: chartRed }}>{noShows}</div>
           <div className="stat-label">No-Asistencias</div>
         </div>
         <div className="stat-card">
-          <div className="stat-value" style={{ color: rate > 15 ? '#DC3545' : '#28A745' }}>{rate}%</div>
+          <div className="stat-value" style={{ color: rate > 15 ? chartRed : chartGreen }}>{rate}%</div>
           <div className="stat-label">Tasa No-Show</div>
         </div>
       </div>
@@ -294,8 +297,8 @@ function NoShowsPanel({ data }) {
             <XAxis dataKey="doctor" tick={{ fontSize: 12 }} />
             <YAxis />
             <Tooltip />
-            <Bar dataKey="total" fill="#0088FE" name="Total Citas" />
-            <Bar dataKey="noShows" fill="#DC3545" name="No-Asistencias" />
+            <Bar dataKey="total" fill={colors[0]} name="Total Citas" />
+            <Bar dataKey="noShows" fill={chartRed} name="No-Asistencias" />
           </BarChart>
         </ResponsiveContainer>
       </div>
@@ -315,9 +318,9 @@ function NoShowsPanel({ data }) {
           </thead>
           <tbody>
             {data.slice(0, 5).map((d, i) => (
-              <tr key={i} style={{ borderBottom: '1px solid var(--border-color)' }}>
+              <tr key={i} style={{ borderBottom: '1px solid var(--border-light)' }}>
                 <td style={{ padding: 10 }}>{d.doctor}</td>
-                <td style={{ padding: 10, textAlign: 'right', color: d.noShows / d.total > 0.15 ? '#DC3545' : '#28A745' }}>
+                <td style={{ padding: 10, textAlign: 'right', color: d.noShows / d.total > 0.15 ? chartRed : chartGreen }}>
                   {((d.noShows / d.total) * 100).toFixed(1)}%
                 </td>
                 <td style={{ padding: 10, textAlign: 'right' }}>
@@ -343,7 +346,7 @@ function DiagnosesPanel({ data }) {
             <XAxis type="number" />
             <YAxis dataKey="diagnosis" type="category" width={150} tick={{ fontSize: 11 }} />
             <Tooltip />
-            <Bar dataKey="count" fill="#00C49F" name="Casos" />
+            <Bar dataKey="count" fill={colors[1]} name="Casos" />
           </BarChart>
         </ResponsiveContainer>
       </div>
@@ -355,10 +358,10 @@ function DiagnosesPanel({ data }) {
         </p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
           {data.slice(0, 6).map((d, i) => (
-            <div key={i} style={{ background: 'var(--bg-primary)', padding: 12, borderRadius: 8, border: '1px solid var(--border-color)' }}>
+            <div key={i} style={{ background: 'var(--bg-primary)', padding: 12, borderRadius: 8, border: '1px solid var(--border-light)' }}>
               <div style={{ fontWeight: 600, fontSize: 13 }}>{d.diagnosis}</div>
               <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{d.count} casos</div>
-              <div style={{ fontSize: 11, color: '#28A745', marginTop: 4 }}>CIE-10: {d.cie10 || 'N/A'}</div>
+              <div style={{ fontSize: 11, color: chartGreen, marginTop: 4 }}>CIE-10: {d.cie10 || 'N/A'}</div>
             </div>
           ))}
         </div>
@@ -380,7 +383,7 @@ function DemandPanel({ data }) {
           <div className="stat-label">Promedio/Día</div>
         </div>
         <div className="stat-card">
-          <div className="stat-value" style={{ color: '#FF8042' }}>
+          <div className="stat-value" style={{ color: colors[3] }}>
             {Math.max(...data.map(d => d.bookings))}
           </div>
           <div className="stat-label">Día Pico</div>
@@ -395,7 +398,7 @@ function DemandPanel({ data }) {
             <XAxis dataKey="date" tick={{ fontSize: 11 }} />
             <YAxis />
             <Tooltip />
-            <Area type="monotone" dataKey="bookings" stroke="#0088FE" fill="#0088FE" fillOpacity={0.3} name="Citas" />
+            <Area type="monotone" dataKey="bookings" stroke={colors[0]} fill={colors[0]} fillOpacity={0.3} name="Citas" />
           </AreaChart>
         </ResponsiveContainer>
       </div>
@@ -407,10 +410,10 @@ function DemandPanel({ data }) {
         </p>
         <div style={{ marginTop: 12 }}>
           {data.slice(0, 7).map((d, i) => (
-            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--border-color)' }}>
+            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--border-light)' }}>
               <span>{d.date}</span>
               <span style={{ fontWeight: 600 }}>{d.predicted || d.bookings} citas</span>
-              <span style={{ color: d.predicted && d.predicted > d.bookings ? '#DC3545' : '#28A745' }}>
+              <span style={{ color: d.predicted && d.predicted > d.bookings ? chartRed : chartGreen }}>
                 {d.predicted ? (d.predicted > d.bookings ? '↑ demanda' : '↓ normal') : 'actual'}
               </span>
             </div>
@@ -439,7 +442,7 @@ function SchedulesPanel({ data }) {
                   {['09:00', '10:00', '11:00', '14:00', '15:00', '16:00'].map((hour) => {
                     const hourData = dayData?.hours.find(h => h.time === hour);
                     const score = hourData?.score || 50;
-                    const bg = score > 70 ? '#28A745' : score > 40 ? '#FFC107' : '#DC3545';
+                    const bg = score > 70 ? chartGreen : score > 40 ? 'var(--chart-warning)' : chartRed;
                     return (
                       <div key={hour} style={{ flex: 1, padding: 8, background: bg, borderRadius: 4, textAlign: 'center', color: 'white', fontSize: 11 }}>
                         {hour}<br />{score}%
@@ -465,15 +468,15 @@ function SchedulesPanel({ data }) {
           </thead>
           <tbody>
             {data.slice(0, 5).map((d, i) => (
-              <tr key={i} style={{ borderBottom: '1px solid var(--border-color)' }}>
+              <tr key={i} style={{ borderBottom: '1px solid var(--border-light)' }}>
                 <td style={{ padding: 10 }}>{d.day}</td>
                 <td style={{ padding: 10 }}>{d.bestTime}</td>
                 <td style={{ padding: 10 }}>
                   <span style={{ 
                     padding: '4px 8px', 
                     borderRadius: 4, 
-                    background: d.occupancy > 70 ? '#F8D7DA' : '#D4EDDA',
-                    color: d.occupancy > 70 ? '#721c24' : '#155724'
+                    background: d.occupancy > 70 ? 'var(--danger-50)' : 'var(--primary-50)',
+                    color: d.occupancy > 70 ? 'var(--danger-600)' : 'var(--primary-700)'
                   }}>
                     {d.occupancy}%
                   </span>
@@ -497,11 +500,11 @@ function VitalsPanel({ data }) {
           <div className="stat-label">Registros Totales</div>
         </div>
         <div className="stat-card">
-          <div className="stat-value" style={{ color: '#DC3545' }}>{anomalies.length}</div>
+          <div className="stat-value" style={{ color: chartRed }}>{anomalies.length}</div>
           <div className="stat-label">Anomalías Detectadas</div>
         </div>
         <div className="stat-card">
-          <div className="stat-value" style={{ color: '#28A745' }}>{data.length - anomalies.length}</div>
+          <div className="stat-value" style={{ color: chartGreen }}>{data.length - anomalies.length}</div>
           <div className="stat-label">Normales</div>
         </div>
       </div>
@@ -517,9 +520,9 @@ function VitalsPanel({ data }) {
               <strong>Paciente ID: {d.patientId}</strong>
               <div style={{ marginTop: 8, fontSize: 13 }}>
                 <div>Fecha: {d.date}</div>
-                <div>Presión: {d.pressure} {d.pressureAnomaly && <span style={{ color: '#DC3545' }}>⚠️</span>}</div>
-                <div>Frecuencia Cardíaca: {d.heartRate} lpm {d.heartRateAnomaly && <span style={{ color: '#DC3545' }}>⚠️</span>}</div>
-                <div>Temperatura: {d.temperature}°C {d.tempAnomaly && <span style={{ color: '#DC3545' }}>⚠️</span>}</div>
+                <div>Presión: {d.pressure} {d.pressureAnomaly && <span style={{ color: chartRed }}>⚠️</span>}</div>
+                <div>Frecuencia Cardíaca: {d.heartRate} lpm {d.heartRateAnomaly && <span style={{ color: chartRed }}>⚠️</span>}</div>
+                <div>Temperatura: {d.temperature}°C {d.tempAnomaly && <span style={{ color: chartRed }}>⚠️</span>}</div>
               </div>
             </div>
           ))}
@@ -542,8 +545,8 @@ function VitalsPanel({ data }) {
               dataKey="value"
               label
             >
-              <Cell fill="#28A745" />
-              <Cell fill="#DC3545" />
+              <Cell fill={chartGreen} />
+              <Cell fill={chartRed} />
             </Pie>
             <Tooltip />
           </PieChart>
