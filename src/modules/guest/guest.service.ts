@@ -5,6 +5,8 @@ import { sendEmail } from '../../shared/email.service.js';
 import { guestConfirmationEmail } from './guest.email.js';
 import jwt from 'jsonwebtoken';
 import { getJWTSecret } from '../../shared/jwt.js';
+import { BadRequestError, NotFoundError } from '../../utils/errors.js';
+import { logger } from '../../utils/logger.js';
 
 interface GuestBookingInput {
   doctor_id: number;
@@ -37,17 +39,17 @@ export const checkRutBlocked = async (rut: string): Promise<boolean> => {
 
 export const createGuestBooking = async ({ doctor_id, date, time, duration = 30, rut, name, email, phone }: GuestBookingInput): Promise<unknown> => {
   if (!doctor_id || !date || !time || !rut || !email) {
-    throw new Error('Missing required fields');
+    throw new BadRequestError('Missing required fields');
   }
-  if (!validateRut(rut)) throw new Error('RUT inválido');
-  if (!isValidDate(date)) throw new Error('Formato de fecha inválido');
-  if (!isValidTime(time)) throw new Error('Formato de hora inválido');
+  if (!validateRut(rut)) throw new BadRequestError('RUT inválido');
+  if (!isValidDate(date)) throw new BadRequestError('Formato de fecha inválido');
+  if (!isValidTime(time)) throw new BadRequestError('Formato de hora inválido');
 
   const isBlocked = await checkRutBlocked(rut);
   if (isBlocked) {
     const result = await pool.query(`SELECT blocked_until FROM users WHERE rut = $1`, [rut]);
     const blockedUntil = new Date(result.rows[0].blocked_until).toLocaleDateString('es-CL');
-    throw new Error(`Tu RUT está bloqueado hasta el ${blockedUntil} por no confirmar citas anteriores.`);
+    throw new BadRequestError(`Tu RUT está bloqueado hasta el ${blockedUntil} por no confirmar citas anteriores.`);
   }
 
   const client = await pool.connect();
@@ -61,7 +63,7 @@ export const createGuestBooking = async ({ doctor_id, date, time, duration = 30,
     );
 
     const doctor = await doctorService.getDoctorById(doctor_id);
-    if (!doctor) throw new Error('Doctor no encontrado');
+    if (!doctor) throw new BadRequestError('Doctor no encontrado');
 
     const day = getDayOfWeek(date);
 
@@ -71,7 +73,7 @@ export const createGuestBooking = async ({ doctor_id, date, time, duration = 30,
       [doctor_id, day]
     );
 
-    if (availability.rows.length === 0) throw new Error('Doctor no disponible en este día');
+    if (availability.rows.length === 0) throw new BadRequestError('Doctor no disponible en este día');
 
     const start = new Date(`1970-01-01T${time}`);
     const end = new Date(start);
@@ -83,7 +85,7 @@ export const createGuestBooking = async ({ doctor_id, date, time, duration = 30,
       return start >= startLimit && end <= endLimit;
     });
 
-    if (!isInsideAnyBlock) throw new Error('Fuera del horario de disponibilidad');
+    if (!isInsideAnyBlock) throw new BadRequestError('Fuera del horario de disponibilidad');
 
     const exceptions = await client.query(
       `SELECT * FROM doctor_exceptions WHERE doctor_id = $1 AND date = $2`,
@@ -91,11 +93,11 @@ export const createGuestBooking = async ({ doctor_id, date, time, duration = 30,
     );
 
     for (const ex of exceptions.rows) {
-      if (ex.is_full_day) throw new Error('Doctor no disponible (día bloqueado)');
+      if (ex.is_full_day) throw new BadRequestError('Doctor no disponible (día bloqueado)');
       if (ex.start_time && ex.end_time) {
         const exStart = new Date(`1970-01-01T${ex.start_time}`);
         const exEnd = new Date(`1970-01-01T${ex.end_time}`);
-        if (start < exEnd && end > exStart) throw new Error('Horario bloqueado por el doctor');
+        if (start < exEnd && end > exStart) throw new BadRequestError('Horario bloqueado por el doctor');
       }
     }
 
@@ -109,7 +111,7 @@ export const createGuestBooking = async ({ doctor_id, date, time, duration = 30,
       [doctor_id, date, time, duration]
     );
 
-    if (overlap.rows.length > 0) throw new Error('Este horario ya está reservado');
+    if (overlap.rows.length > 0) throw new BadRequestError('Este horario ya está reservado');
 
     const formattedRut = formatRut(rut);
     const confirmToken = jwt.sign(
@@ -139,16 +141,16 @@ export const createGuestBooking = async ({ doctor_id, date, time, duration = 30,
         confirmToken,
         frontendUrl: process.env.FRONTEND_URL || 'http://localhost:5173',
       }),
-    }).catch((err: unknown) => console.error('Email error:', err));
+    }).catch((err: unknown) => logger.error('Email error:', err));
 
     return booking;
 
   } catch (error: unknown) {
-    await client.query('ROLLBACK');
+     await client.query('ROLLBACK');
     const pgError = error as { code?: string };
-    if (pgError.code === '23505') throw new Error('Este horario ya está reservado');
-    const errMsg = error as { message?: string };
-    throw errMsg.message ? error : new Error('Error en la base de datos');
+    if (pgError.code === '23505') throw new BadRequestError('Este horario ya está reservado');
+    if (error instanceof BadRequestError || error instanceof NotFoundError) throw error;
+    throw new BadRequestError((error as Error).message || 'Error en la base de datos');
   } finally {
     client.release();
   }
@@ -179,6 +181,6 @@ export const cancelGuestBooking = async (bookingId: number, userId: number): Pro
     [bookingId, userId]
   );
 
-  if (result.rows.length === 0) throw new Error('Reserva no encontrada');
+  if (result.rows.length === 0) throw new NotFoundError('Reserva no encontrada');
   return { message: 'Reserva cancelada correctamente' };
 };

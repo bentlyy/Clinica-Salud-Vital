@@ -1,4 +1,4 @@
-﻿import cron from 'node-cron';
+import cron from 'node-cron';
 import { pool } from '../shared/db.js';
 import { logger } from '../utils/logger.js';
 

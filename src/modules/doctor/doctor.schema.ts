@@ -1,4 +1,4 @@
-﻿import { z } from 'zod';
+import { z } from 'zod';
 
 export const registerDoctorSchema = z.object({
   name: z.string().min(1, 'Nombre es requerido').max(255),

@@ -1,4 +1,4 @@
-﻿// src/modules/auth/auth.routes.ts
+// src/modules/auth/auth.routes.ts
 import { Router } from 'express';
 import { register, login } from './auth.controller';
 import { validateZod } from '../../middlewares/validate.middleware';
