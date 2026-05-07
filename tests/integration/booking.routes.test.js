@@ -121,13 +121,15 @@ describe('GET /api/bookings/me', () => {
         { id: 1, date: '2025-01-15', time: '10:00', doctor_name: 'Dr. Test', specialty: 'General' },
       ],
     });
+    mockQuery.mockResolvedValueOnce({ rows: [{ count: '1' }] });
 
     const res = await request(app)
       .get('/api/bookings/me')
       .set('Authorization', `Bearer ${userToken}`);
 
     expect(res.status).toBe(200);
-    expect(Array.isArray(res.body)).toBe(true);
+    expect(res.body).toHaveProperty('data');
+    expect(Array.isArray(res.body.data)).toBe(true);
   });
 });
 
@@ -172,13 +174,15 @@ describe('GET /api/bookings/doctor', () => {
   it('returns bookings for doctor', async () => {
     mockQuery
       .mockResolvedValueOnce({ rows: [{ id: 1, name: 'Dr. Test', user_id: 2, email: 'doc@test.com' }] })
-      .mockResolvedValueOnce({ rows: [{ id: 1, date: '2025-01-15', time: '10:00', patient_email: 'test@test.com' }] });
+      .mockResolvedValueOnce({ rows: [{ id: 1, date: '2025-01-15', time: '10:00', patient_email: 'test@test.com' }] })
+      .mockResolvedValueOnce({ rows: [{ count: '1' }] });
 
     const res = await request(app)
       .get('/api/bookings/doctor')
       .set('Authorization', `Bearer ${doctorToken}`);
 
     expect(res.status).toBe(200);
-    expect(Array.isArray(res.body)).toBe(true);
+    expect(res.body).toHaveProperty('data');
+    expect(Array.isArray(res.body.data)).toBe(true);
   });
 });

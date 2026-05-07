@@ -1,4 +1,4 @@
-﻿import { Router } from 'express';
+import { Router } from 'express';
 import { authMiddleware, authorize } from '../../middlewares/auth.middleware';
 import { validateZod } from '../../middlewares/validate.middleware';
 import { createLabRequestSchema, labRequestIdSchema } from './laboratory.schema';

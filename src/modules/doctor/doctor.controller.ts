@@ -1,4 +1,4 @@
-﻿import * as doctorService from './doctor.service';
+import * as doctorService from './doctor.service';
 import { asyncHandler } from '../../middlewares/asyncHandler.middleware';
 import { NotFoundError } from '../../utils/errors';
 

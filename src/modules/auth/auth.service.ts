@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken';
 import { validateRut, cleanRut, formatRut } from '../../shared/rut.js';
 import { getJWTSecret } from '../../shared/jwt.js';
 import { UserRole } from '../../types/index.js';
+import { BadRequestError } from '../../utils/errors.js';
 
 interface RegisterParams {
   email: string;
@@ -69,7 +70,7 @@ export const login = async ({ email, password }: LoginParams): Promise<{ token: 
   const dummyHash = '$2b$12$invalidhashfortimingprotection000000000000000000000000';
   const isValid = await bcrypt.compare(password, user ? user.password : dummyHash);
 
-  if (!user || !isValid) throw new Error('Invalid credentials');
+  if (!user || !isValid) throw new BadRequestError('Invalid credentials');
 
   const token = jwt.sign(
     { id: user.id, email: user.email, role: user.role || 'user' },

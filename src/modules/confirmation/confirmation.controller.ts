@@ -1,4 +1,4 @@
-﻿import * as confirmationService from './confirmation.service';
+import * as confirmationService from './confirmation.service';
 import { asyncHandler } from '../../middlewares/asyncHandler.middleware';
 
 export const confirmBooking = asyncHandler(async (req, res) => {

@@ -1,5 +1,6 @@
 import { pool } from '../../shared/db.js';
 import * as mlService from '../ml/ml.service.js';
+import { logger } from '../../utils/logger.js';
 
 export const getDashboardStats = async () => {
   const result = await pool.query(`
@@ -137,7 +138,7 @@ export const getDemandForecast = async (days = 30) => {
 
     return [...historical, ...forecast];
   } catch (err) {
-    console.error('[Analytics] Error getting demand forecast:', err);
+    logger.error('[Analytics] Error getting demand forecast:', err);
     const result = await pool.query(`
       SELECT date::text AS date, COUNT(*) AS bookings
       FROM bookings
@@ -156,7 +157,7 @@ export const getOptimalSchedules = async () => {
     const schedules = await mlService.analyzeOptimalSchedules();
     return schedules;
   } catch (err) {
-    console.error('[Analytics] Error getting optimal schedules:', err);
+    logger.error('[Analytics] Error getting optimal schedules:', err);
     const days = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'];
     const bestTimes = ['10:00', '14:00', '09:00', '15:00', '11:00'];
     return days.map((day, i) => ({
@@ -208,7 +209,7 @@ export const getVitalSignsAnomalies = async () => {
 
     return analyzed;
   } catch (err) {
-    console.error('[Analytics] Error analyzing vital signs:', err);
+    logger.error('[Analytics] Error analyzing vital signs:', err);
     return [];
   }
 };

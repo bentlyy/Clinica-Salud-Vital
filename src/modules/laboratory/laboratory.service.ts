@@ -1,4 +1,4 @@
-﻿import { pool } from '../../shared/db';
+import { pool } from '../../shared/db.js';
 import { NotFoundError, BadRequestError } from '../../utils/errors';
 
 const generateRequestNumber = () => {
@@ -56,7 +56,7 @@ export const createLabRequest = async (data) => {
     const { patient_id, doctor_id, clinical_record_id, priority, notes, test_ids } = data;
 
     const requestResult = await client.query(
-      'INSERT INTO lab_requests (request_number, patient_id, doctor_id, clinical_record_id, priority, notes) VALUES (, , , , , ) RETURNING *',
+      'INSERT INTO lab_requests (request_number, patient_id, doctor_id, clinical_record_id, priority, notes) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
       [requestNumber, patient_id, doctor_id || null, clinical_record_id || null, priority || 'routine', notes || null]
     );
 
@@ -64,11 +64,11 @@ export const createLabRequest = async (data) => {
 
     if (test_ids && test_ids.length > 0) {
       for (const test_id of test_ids) {
-        const testResult = await client.query('SELECT id FROM lab_tests WHERE id =  AND active = true', [test_id]);
+        const testResult = await client.query('SELECT id FROM lab_tests WHERE id = $1 AND active = true', [test_id]);
         if (testResult.rows.length === 0) throw new BadRequestError('Lab test ' + test_id + ' not found or inactive');
 
         await client.query(
-          'INSERT INTO lab_request_items (lab_request_id, lab_test_id) VALUES (, )',
+          'INSERT INTO lab_request_items (lab_request_id, lab_test_id) VALUES ($1, $2)',
           [request.id, test_id]
         );
       }

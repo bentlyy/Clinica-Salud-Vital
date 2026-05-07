@@ -22,6 +22,20 @@ vi.mock('nodemailer', () => ({
 
 import * as bookingService from '../../src/modules/booking/booking.service.js';
 
+const futureDate = (() => {
+  const d = new Date();
+  d.setDate(d.getDate() + 7);
+  return d.toISOString().split('T')[0];
+})();
+
+const futureMonday = (() => {
+  const d = new Date();
+  const dayOfWeek = d.getDay();
+  const daysUntilMonday = dayOfWeek === 0 ? 1 : dayOfWeek === 1 ? 7 : 8 - dayOfWeek;
+  d.setDate(d.getDate() + daysUntilMonday);
+  return d.toISOString().split('T')[0];
+})();
+
 beforeEach(() => {
   vi.clearAllMocks();
   mockConnect.mockReturnValue(mockClient);
@@ -40,13 +54,13 @@ describe('bookingService.createBooking', () => {
 
   it('throws if time format invalid', async () => {
     await expect(bookingService.createBooking({
-      doctor_id: 1, user_id: 1, date: '2025-01-15', time: 'invalid',
+      doctor_id: 1, user_id: 1, date: futureDate, time: 'invalid',
     })).rejects.toThrow('Invalid time format');
   });
 
   it('throws if duration out of range', async () => {
     await expect(bookingService.createBooking({
-      doctor_id: 1, user_id: 1, date: '2025-01-15', time: '10:00', duration: 0,
+      doctor_id: 1, user_id: 1, date: futureDate, time: '10:00', duration: 0,
     })).rejects.toThrow('Duration must be between 1 and 480');
   });
 
@@ -55,7 +69,7 @@ describe('bookingService.createBooking', () => {
     mockQuery.mockResolvedValue({ rows: [] });
 
     await expect(bookingService.createBooking({
-      doctor_id: 999, user_id: 1, date: '2025-01-15', time: '10:00',
+      doctor_id: 999, user_id: 1, date: futureDate, time: '10:00',
     })).rejects.toThrow('Doctor not found');
   });
 
@@ -68,35 +82,31 @@ describe('bookingService.createBooking', () => {
     });
 
     await expect(bookingService.createBooking({
-      doctor_id: 1, user_id: 999, date: '2025-01-15', time: '10:00',
+      doctor_id: 1, user_id: 999, date: futureDate, time: '10:00',
     })).rejects.toThrow('User not found');
   });
 
   it('throws if user account is blocked', async () => {
-    const futureDate = new Date(Date.now() + 86400000).toISOString();
+    const futureBlockDate = new Date(Date.now() + 86400000).toISOString();
     mockQuery.mockResolvedValue({ rows: [{ id: 1, name: 'Dr. Test', specialty: 'General' }] });
 
-    let clientCallCount = 0;
     mockClient.query.mockImplementation((sql) => {
-      clientCallCount++;
       if (sql === 'BEGIN' || sql.includes('pg_advisory')) return Promise.resolve({});
       if (sql.includes('FROM users WHERE id')) {
-        return Promise.resolve({ rows: [{ email: 'test@test.com', blocked_until: futureDate }] });
+        return Promise.resolve({ rows: [{ email: 'test@test.com', blocked_until: futureBlockDate }] });
       }
       return Promise.resolve({ rows: [] });
     });
 
     await expect(bookingService.createBooking({
-      doctor_id: 1, user_id: 1, date: '2025-01-15', time: '10:00',
+      doctor_id: 1, user_id: 1, date: futureDate, time: '10:00',
     })).rejects.toThrow('blocked');
   });
 
   it('throws if doctor not available on that day', async () => {
     mockQuery.mockResolvedValue({ rows: [{ id: 1, name: 'Dr. Test', specialty: 'General' }] });
 
-    let clientCallCount = 0;
     mockClient.query.mockImplementation((sql) => {
-      clientCallCount++;
       if (sql === 'BEGIN' || sql.includes('pg_advisory')) return Promise.resolve({});
       if (sql.includes('FROM users WHERE id')) {
         return Promise.resolve({ rows: [{ email: 'test@test.com', blocked_until: null }] });
@@ -108,7 +118,7 @@ describe('bookingService.createBooking', () => {
     });
 
     await expect(bookingService.createBooking({
-      doctor_id: 1, user_id: 1, date: '2025-01-12', time: '10:00',
+      doctor_id: 1, user_id: 1, date: futureMonday, time: '10:00',
     })).rejects.toThrow('Doctor not available on this day');
   });
 });
@@ -119,11 +129,12 @@ describe('bookingService.getBookingsByUser', () => {
       { id: 1, date: '2025-01-15', time: '10:00', doctor_name: 'Dr. Test' },
     ];
     mockQuery.mockResolvedValueOnce({ rows: mockBookings });
+    mockQuery.mockResolvedValueOnce({ rows: [{ count: '1' }] });
 
     const result = await bookingService.getBookingsByUser(1);
 
-    expect(result).toHaveLength(1);
-    expect(result[0].doctor_name).toBe('Dr. Test');
+    expect(result.data).toHaveLength(1);
+    expect(result.data[0].doctor_name).toBe('Dr. Test');
   });
 });
 
@@ -160,7 +171,7 @@ describe('bookingService.getAvailableSlots', () => {
   it('returns empty if no availability', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [] });
 
-    const result = await bookingService.getAvailableSlots(1, '2025-01-15');
+    const result = await bookingService.getAvailableSlots(1, futureDate);
 
     expect(result).toEqual([]);
   });
@@ -172,7 +183,7 @@ describe('bookingService.getAvailableSlots', () => {
       .mockResolvedValueOnce({ rows: [] })
       .mockResolvedValueOnce({ rows: [] });
 
-    const result = await bookingService.getAvailableSlots(1, '2025-01-15');
+    const result = await bookingService.getAvailableSlots(1, futureDate);
 
     expect(result.length).toBeGreaterThan(0);
     expect(result[0]).toBe('09:00');
@@ -185,10 +196,11 @@ describe('bookingService.getBookingsByDoctor', () => {
       { id: 1, date: '2025-01-15', time: '10:00', patient_email: 'patient@test.com' },
     ];
     mockQuery.mockResolvedValueOnce({ rows: mockBookings });
+    mockQuery.mockResolvedValueOnce({ rows: [{ count: '1' }] });
 
     const result = await bookingService.getBookingsByDoctor(1);
 
-    expect(result).toHaveLength(1);
-    expect(result[0].patient_email).toBe('patient@test.com');
+    expect(result.data).toHaveLength(1);
+    expect(result.data[0].patient_email).toBe('patient@test.com');
   });
 });

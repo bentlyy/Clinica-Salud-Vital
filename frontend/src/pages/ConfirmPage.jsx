@@ -9,7 +9,6 @@ export default function ConfirmPage() {
   const [status, setStatus] = useState('loading');
   const [message, setMessage] = useState('');
 
-  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     if (!token) { setStatus('error'); setMessage('Token no proporcionado'); return; }
     confirmBooking(token)

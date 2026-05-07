@@ -1,4 +1,4 @@
-﻿import * as laboratoryService from './laboratory.service';
+import * as laboratoryService from './laboratory.service';
 import * as doctorService from '../doctor/doctor.service';
 import { asyncHandler } from '../../middlewares/asyncHandler.middleware';
 import { NotFoundError, BadRequestError } from '../../utils/errors';

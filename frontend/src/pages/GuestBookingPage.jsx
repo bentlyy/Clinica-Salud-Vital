@@ -23,10 +23,71 @@ export default function GuestBookingPage() {
 
   const navigate = useNavigate();
 
-  const isDark = theme === 'dark';
+
 
   const inputStyle = { width: '100%', padding: '10px 12px', border: '1px solid var(--border-medium)', borderRadius: 6, fontSize: 15, boxSizing: 'border-box', background: 'var(--bg-secondary)', color: 'var(--text-primary)' };
   const labelStyle = { display: 'block', marginBottom: 6, fontWeight: 'bold', color: 'var(--text-primary)' };
+
+  const handleRutChange = (e) => {
+    const raw = e.target.value;
+    const cleaned = cleanRut(raw);
+    if (cleaned.length <= 9) {
+      setForm({ ...form, rut: formatRut(cleaned) });
+    }
+  };
+
+  const handleBooking = async () => {
+    setSubmitting(true);
+    setError(null);
+    setSuccessMsg(null);
+    try {
+      const cleaned = cleanRut(form.rut);
+      if (!validateRut(cleaned)) {
+        setError('RUT inválido');
+        setSubmitting(false);
+        return;
+      }
+      await createGuestBooking({
+        doctor_id: selectedDoctor,
+        date,
+        time: selectedTime,
+        rut: cleaned,
+        name: form.name || undefined,
+        email: form.email,
+        phone: form.phone || undefined,
+      });
+      setSuccessMsg('Reserva creada. Revisa tu email para confirmar la cita.');
+      setForm({ rut: '', name: '', email: '', phone: '' });
+      setSelectedDoctor(null);
+      setDate('');
+      setSlots([]);
+      setSelectedTime(null);
+    } catch (err) {
+      setError(err.response?.data?.error || 'Error al reservar');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  useEffect(() => {
+    getDoctors().then((res) => {
+      setDoctors(res.data || []);
+      setLoadingDoctors(false);
+    }).catch(() => setLoadingDoctors(false));
+  }, []);
+
+  useEffect(() => {
+    if (selectedDoctor && date) {
+      setLoadingSlots(true);
+      getAvailableSlots(selectedDoctor, date).then((res) => {
+        setSlots(res.data || []);
+        setLoadingSlots(false);
+      }).catch(() => {
+        setSlots([]);
+        setLoadingSlots(false);
+      });
+    }
+  }, [selectedDoctor, date]);
 
   return (
     <div style={{ maxWidth: 700, margin: '0 auto', padding: '20px' }}>
@@ -66,42 +127,6 @@ export default function GuestBookingPage() {
           <label style={labelStyle}>Email <span style={{ color: 'var(--danger-500)' }}>*</span></label>
           <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="tu@email.com" style={inputStyle} />
           <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>Necesario para enviarte el link de confirmación</span>
-        </div>
-
-        <div style={{ marginBottom: 0 }}>
-          <label style={labelStyle}>Teléfono (opcional)</label>
-          <input type="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="+56 9 1234 5678" style={inputStyle} />
-        </div>
-      </div>
-      )}
-
-      {successMsg && (
-        <div style={{ background: '#e8f5e9', color: '#2e7d32', padding: 10, borderRadius: 6, marginBottom: 16 }}>
-          {successMsg}
-          <br />
-          <button onClick={() => navigate('/my-bookings/guest')} style={{ marginTop: 8, padding: '6px 12px', background: '#4CAF50', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer' }}>
-            Ver mis reservas por RUT
-          </button>
-        </div>
-      )}
-
-      <div style={{ background: '#f5f5f5', padding: 20, borderRadius: 12, marginBottom: 20 }}>
-        <h3 style={{ marginTop: 0 }}>Tus datos</h3>
-
-        <div style={{ marginBottom: 14 }}>
-          <label style={labelStyle}>RUT <span style={{ color: '#e53935' }}>*</span></label>
-          <input value={form.rut} onChange={handleRutChange} placeholder="12.345.678-5" style={inputStyle} />
-        </div>
-
-        <div style={{ marginBottom: 14 }}>
-          <label style={labelStyle}>Nombre (opcional)</label>
-          <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Tu nombre completo" style={inputStyle} />
-        </div>
-
-        <div style={{ marginBottom: 14 }}>
-          <label style={labelStyle}>Email <span style={{ color: '#e53935' }}>*</span></label>
-          <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="tu@email.com" style={inputStyle} />
-          <span style={{ fontSize: 12, color: '#888' }}>Necesario para enviarte el link de confirmación</span>
         </div>
 
         <div style={{ marginBottom: 0 }}>

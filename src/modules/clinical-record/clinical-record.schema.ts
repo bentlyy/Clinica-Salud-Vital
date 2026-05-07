@@ -1,4 +1,4 @@
-﻿import { z } from 'zod';
+import { z } from 'zod';
 
 export const vitalSignsSchema = z.object({
   blood_pressure: z.string().optional(),

@@ -1,4 +1,4 @@
-﻿import { pool } from '../../shared/db.js';
+import { pool } from '../../shared/db.js';
 
 export const getUserPermissions = async (user_id: number, role: string): Promise<string[]> => {
   const rolePermissions = await pool.query(
