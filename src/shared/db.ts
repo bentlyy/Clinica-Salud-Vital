@@ -8,9 +8,14 @@ export interface PoolConfig {
   ssl: boolean | { rejectUnauthorized: boolean };
 }
 
+const isInternalDb = (): boolean => {
+  const url = process.env.DATABASE_URL || '';
+  return url.includes('@db:') || url.includes('@localhost:') || url.includes('@127.0.0.1:');
+};
+
 export const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+  ssl: !isInternalDb() && process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
   max: 20,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 2000,

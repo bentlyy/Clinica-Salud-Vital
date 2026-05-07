@@ -1,6 +1,9 @@
 -- Billing Module Migration
+-- NOTE: invoices, invoice_items, payments, insurance_claims tables are already
+-- created by db/init.sql with a minimal schema. This migration adds the columns
+-- needed by the billing module service (billing.service.ts).
 
--- Invoices table
+-- Invoices table (create if running standalone; ALTER if init.sql already created it)
 CREATE TABLE IF NOT EXISTS invoices (
   id SERIAL PRIMARY KEY,
   invoice_number VARCHAR(50) UNIQUE NOT NULL,
@@ -24,6 +27,21 @@ CREATE TABLE IF NOT EXISTS invoices (
   updated_at TIMESTAMP DEFAULT NOW()
 );
 
+-- If invoices already exists from init.sql (minimal schema), add missing columns
+ALTER TABLE invoices ADD COLUMN IF NOT EXISTS invoice_number VARCHAR(50) UNIQUE;
+ALTER TABLE invoices ADD COLUMN IF NOT EXISTS doctor_id INTEGER REFERENCES doctors(id) ON DELETE SET NULL;
+ALTER TABLE invoices ADD COLUMN IF NOT EXISTS concept VARCHAR(255);
+ALTER TABLE invoices ADD COLUMN IF NOT EXISTS description TEXT;
+ALTER TABLE invoices ADD COLUMN IF NOT EXISTS tax_amount NUMERIC(10, 2) DEFAULT 0;
+ALTER TABLE invoices ADD COLUMN IF NOT EXISTS discount_amount NUMERIC(10, 2) DEFAULT 0;
+ALTER TABLE invoices ADD COLUMN IF NOT EXISTS total_amount NUMERIC(10, 2);
+ALTER TABLE invoices ADD COLUMN IF NOT EXISTS paid_at TIMESTAMP;
+ALTER TABLE invoices ADD COLUMN IF NOT EXISTS payment_method VARCHAR(50);
+ALTER TABLE invoices ADD COLUMN IF NOT EXISTS payment_reference VARCHAR(255);
+ALTER TABLE invoices ADD COLUMN IF NOT EXISTS notes TEXT;
+-- payment_data used by billing.service.ts updateInvoiceStatus
+ALTER TABLE invoices ADD COLUMN IF NOT EXISTS payment_data JSONB;
+
 -- Invoice items table
 CREATE TABLE IF NOT EXISTS invoice_items (
   id SERIAL PRIMARY KEY,
@@ -34,6 +52,11 @@ CREATE TABLE IF NOT EXISTS invoice_items (
   total_price NUMERIC(10, 2) NOT NULL,
   created_at TIMESTAMP DEFAULT NOW()
 );
+
+-- Add missing columns to invoice_items if created by init.sql
+ALTER TABLE invoice_items ADD COLUMN IF NOT EXISTS unit_price NUMERIC(10, 2);
+ALTER TABLE invoice_items ADD COLUMN IF NOT EXISTS total_price NUMERIC(10, 2);
+ALTER TABLE invoice_items ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT NOW();
 
 -- Payments table
 CREATE TABLE IF NOT EXISTS payments (
@@ -47,6 +70,12 @@ CREATE TABLE IF NOT EXISTS payments (
   metadata JSONB,
   created_at TIMESTAMP DEFAULT NOW()
 );
+
+-- Add missing columns to payments if created by init.sql
+ALTER TABLE payments ADD COLUMN IF NOT EXISTS payment_method VARCHAR(50);
+ALTER TABLE payments ADD COLUMN IF NOT EXISTS transaction_id VARCHAR(255);
+ALTER TABLE payments ADD COLUMN IF NOT EXISTS payment_date TIMESTAMP DEFAULT NOW();
+ALTER TABLE payments ADD COLUMN IF NOT EXISTS metadata JSONB;
 
 -- Insurance claims table
 CREATE TABLE IF NOT EXISTS insurance_claims (
@@ -64,6 +93,13 @@ CREATE TABLE IF NOT EXISTS insurance_claims (
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW()
 );
+
+-- Add missing columns to insurance_claims if created by init.sql
+ALTER TABLE insurance_claims ADD COLUMN IF NOT EXISTS claim_number VARCHAR(100);
+ALTER TABLE insurance_claims ADD COLUMN IF NOT EXISTS approved_amount NUMERIC(10, 2);
+ALTER TABLE insurance_claims ADD COLUMN IF NOT EXISTS submitted_at TIMESTAMP;
+ALTER TABLE insurance_claims ADD COLUMN IF NOT EXISTS response_at TIMESTAMP;
+ALTER TABLE insurance_claims ADD COLUMN IF NOT EXISTS notes TEXT;
 
 -- Indexes
 CREATE INDEX IF NOT EXISTS idx_invoices_patient ON invoices(patient_id);
