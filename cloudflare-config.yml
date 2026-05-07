@@ -2,8 +2,8 @@ tunnel: ${TUNNEL_ID}
 credentials-file: /etc/cloudflared/credentials.json
 
 ingress:
-  - hostname: clinic.tu-dominio.com
+  - hostname: ${TUNNEL_DOMAIN}
     service: http://frontend:5173
-  - hostname: clinic-api.tu-dominio.com
+  - hostname: api.${TUNNEL_DOMAIN}
     service: http://api:3000
   - service: http_status:404
