@@ -7,7 +7,7 @@ import { fileURLToPath } from 'url';
 import { dirname, resolve } from 'path';
 import fs from 'fs';
 
-import { seedAdmin } from './seed/admin.seed.js';
+import { seed, backfillInvoices } from './seed/seed.js';
 import { pool } from './shared/db.js';
 import { startReminderJob } from './jobs/reminder.job.js';
 import { startConfirmationJob } from './jobs/confirmation.job.js';
@@ -109,21 +109,38 @@ app.use(errorHandler);
 const PORT = process.env.PORT || 3000;
 
 const runMigration = async (): Promise<void> => {
-  const migrationPath = resolve(__dirname, '../db/migrate.sql');
-  if (!fs.existsSync(migrationPath)) return;
-
-  const checkResult = await pool.query(
-    `SELECT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'bookings' AND column_name = 'guest_rut')`
-  );
-
-  if (checkResult.rows[0].exists) {
-    logger.info('DB schema actualizado (sin migración necesaria)');
-    return;
+  const legacyPath = resolve(__dirname, '../db/migrate.sql');
+  if (fs.existsSync(legacyPath)) {
+    const checkResult = await pool.query(
+      `SELECT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'bookings' AND column_name = 'guest_rut')`
+    );
+    if (!checkResult.rows[0].exists) {
+      const sql = fs.readFileSync(legacyPath, 'utf-8');
+      await pool.query(sql);
+      logger.info('Migración legacy aplicada');
+    }
   }
 
-  const sql = fs.readFileSync(migrationPath, 'utf-8');
-  await pool.query(sql);
-  logger.info('Migración aplicada');
+  const migrationsDir = resolve(__dirname, '../db/migrations');
+  if (!fs.existsSync(migrationsDir)) return;
+
+  await pool.query(
+    `CREATE TABLE IF NOT EXISTS _migrations (id SERIAL PRIMARY KEY, name VARCHAR(255) UNIQUE NOT NULL, applied_at TIMESTAMP DEFAULT NOW())`
+  );
+
+  const migrationFiles = fs.readdirSync(migrationsDir)
+    .filter(f => f.endsWith('.sql'))
+    .sort();
+
+  for (const file of migrationFiles) {
+    const already = await pool.query('SELECT 1 FROM _migrations WHERE name = $1', [file]);
+    if (already.rows.length > 0) continue;
+
+    const sql = fs.readFileSync(resolve(migrationsDir, file), 'utf-8');
+    await pool.query(sql);
+    await pool.query('INSERT INTO _migrations (name) VALUES ($1)', [file]);
+    logger.info(`Migración ${file} aplicada`);
+  }
 };
 
 const startServer = async (): Promise<void> => {
@@ -134,7 +151,8 @@ const startServer = async (): Promise<void> => {
     logger.info('DB conectada');
 
     await runMigration();
-    await seedAdmin();
+    await seed();
+    await backfillInvoices();
 
     app.listen(PORT, () => {
       logger.info(`API running on http://localhost:${PORT}`);

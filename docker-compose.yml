@@ -51,6 +51,20 @@ services:
       timeout: 5s
       retries: 10
 
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: clinic-tunnel
+    command: tunnel --config /etc/cloudflared/config.yml run
+    env_file:
+      - .env
+    volumes:
+      - ./cloudflare-config.yml:/etc/cloudflared/config.yml
+      - ./cloudflare-credentials:/etc/cloudflared
+    depends_on:
+      - frontend
+      - api
+    restart: unless-stopped
+
 volumes:
   db_data:
   api_logs:
