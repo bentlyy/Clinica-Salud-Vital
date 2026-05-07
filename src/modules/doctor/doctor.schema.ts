@@ -15,7 +15,3 @@ export const createDoctorSchema = z.object({
   user_id: z.coerce.number().int().positive('user_id is required'),
 });
 
-export const doctorIdSchema = z.object({
-  id: z.coerce.number().int().positive(),
-});
-

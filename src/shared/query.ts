@@ -15,8 +15,3 @@ export const getQueryString = (query: Record<string, unknown>, key: string, def?
   return val ? String(val) : (def ?? '');
 };
 
-export const asStringArray = (val: unknown): string[] => {
-  if (Array.isArray(val)) return val.map(String);
-  if (val) return [String(val)];
-  return [];
-};

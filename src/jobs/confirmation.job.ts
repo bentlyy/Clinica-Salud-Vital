@@ -1,8 +1,12 @@
 import cron from 'node-cron';
+import bcrypt from 'bcrypt';
 import { pool } from '../shared/db.js';
 import { logger } from '../utils/logger.js';
 
 const BLOCK_DURATION_HOURS = 168; // 7 days
+
+// Pre-computed bcrypt hash so guest records have a valid hash (no login possible)
+const GUEST_DUMMY_HASH = bcrypt.hashSync('__no_guest_login__', 10);
 
 export const startConfirmationJob = (): void => {
   cron.schedule('0 2 * * *', async () => {
@@ -48,7 +52,7 @@ export const startConfirmationJob = (): void => {
               await pool.query(
                 `INSERT INTO users (email, password, rut, role, blocked_until, no_show_count)
                  VALUES ($1, $2, $3, 'guest', NOW() + interval '1 hours' * $4, 1)`,
-                [booking.guest_email, 'N/A_GUEST', booking.guest_rut, BLOCK_DURATION_HOURS]
+                [booking.guest_email, GUEST_DUMMY_HASH, booking.guest_rut, BLOCK_DURATION_HOURS]
               );
             }
           }

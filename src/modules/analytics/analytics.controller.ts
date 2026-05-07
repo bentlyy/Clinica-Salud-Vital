@@ -1,7 +1,7 @@
 import * as analyticsService from './analytics.service';
 import * as doctorService from '../doctor/doctor.service';
 import { asyncHandler } from '../../middlewares/asyncHandler.middleware';
-import { NotFoundError, BadRequestError } from '../../utils/errors';
+import { NotFoundError } from '../../utils/errors';
 import { getQueryInt } from '../../shared/query';
 
 export const getDashboardStats = asyncHandler(async (req, res) => {
