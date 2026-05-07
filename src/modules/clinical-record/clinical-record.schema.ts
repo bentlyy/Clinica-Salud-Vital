@@ -47,9 +47,4 @@ export const patientIdSchema = z.object({
   patient_id: z.coerce.number().int().positive(),
 });
 
-export const cie10CatalogSchema = z.object({
-  code: z.string().min(1).max(10),
-  description: z.string().min(1).max(500),
-  category: z.string().max(100).optional(),
-});
 

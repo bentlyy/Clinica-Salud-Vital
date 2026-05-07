@@ -31,6 +31,6 @@ export const cancelGuestBooking = asyncHandler(async (req: AuthRequest, res: Res
     res.status(401).json({ error: 'Authentication required' });
     return;
   }
-  const result = await guestService.cancelGuestBooking(Number(req.params.id), req.user.id);
+  const result = await guestService.cancelGuestBooking(Number(req.params.id), req.user.id, req.user.role);
   res.json(result);
 });

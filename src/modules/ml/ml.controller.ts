@@ -3,12 +3,12 @@
  * Endpoints para predicci�n y entrenamiento de modelos
  */
 
-import type { Request, Response, NextFunction } from 'express';
+import type { Request, Response } from 'express';
 import * as mlService from './ml.service';
 import * as validator from './ml.validator';
 import { asyncHandler } from '../../middlewares/asyncHandler.middleware';
 import { BadRequestError } from '../../utils/errors';
-import { mlMetricsMiddleware, getMLMetrics, resetMLMetrics } from './ml.middleware';
+import { mlMetricsMiddleware, getMLMetrics } from './ml.middleware';
 import { mlCache } from './ml.cache';
 import { logger } from '../../utils/logger';
 

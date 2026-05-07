@@ -1204,18 +1204,22 @@ export const getDemandForecastHistory = async (
   limit = 30
 ): Promise<Record<string, unknown>[]> => {
   try {
-    let query = `SELECT * FROM ml_demand_forecast`;
-    const params: (string | number)[] = [limit];
+    const params: (string | number)[] = [];
     
     if (startDate && endDate) {
-      query += ` WHERE forecast_date BETWEEN $1 AND $2 ORDER BY forecast_date DESC LIMIT $3`;
-      params.unshift(startDate, endDate);
-      params.pop();
-    } else {
-      query += ` ORDER BY forecast_date DESC LIMIT $1`;
+      params.push(startDate, endDate, limit);
+      const result = await pool.query(
+        `SELECT * FROM ml_demand_forecast WHERE forecast_date BETWEEN $1 AND $2 ORDER BY forecast_date DESC LIMIT $3`,
+        params
+      );
+      return result.rows;
     }
     
-    const result = await pool.query(query, params);
+    params.push(limit);
+    const result = await pool.query(
+      `SELECT * FROM ml_demand_forecast ORDER BY forecast_date DESC LIMIT $1`,
+      params
+    );
     return result.rows;
   } catch (err) {
     logger.error('[ML] Error getting forecast history:', (err as Error).message);

@@ -7,6 +7,7 @@ import jwt from 'jsonwebtoken';
 import { getJWTSecret } from '../../shared/jwt.js';
 import { BadRequestError, NotFoundError } from '../../utils/errors.js';
 import { logger } from '../../utils/logger.js';
+import { getDayOfWeek, isValidDate, isValidTime } from '../../shared/date.js';
 
 interface GuestBookingInput {
   doctor_id: number;
@@ -18,14 +19,6 @@ interface GuestBookingInput {
   email: string;
   phone?: string;
 }
-
-const getDayOfWeek = (dateStr: string): number => {
-  const [year, month, day] = dateStr.split('-').map(Number);
-  return new Date(year, month - 1, day).getDay();
-};
-
-const isValidDate = (dateStr: string): boolean => /^\d{4}-\d{2}-\d{2}$/.test(dateStr);
-const isValidTime = (timeStr: string): boolean => /^\d{2}:\d{2}$/.test(timeStr);
 
 export const checkRutBlocked = async (rut: string): Promise<boolean> => {
   const result = await pool.query(
@@ -173,10 +166,11 @@ export const getGuestBookingsByRut = async (rut: string): Promise<unknown[]> => 
   return result.rows;
 };
 
-export const cancelGuestBooking = async (bookingId: number, userId: number): Promise<{ message: string }> => {
+export const cancelGuestBooking = async (bookingId: number, userId: number, userRole?: string): Promise<{ message: string }> => {
+  const canCancelAny = userRole === 'admin' || userRole === 'doctor';
   const result = await pool.query(
     `UPDATE bookings SET status = 'cancelled'
-     WHERE id = $1 AND (user_id = $2 OR guest_rut IS NOT NULL)
+     WHERE id = $1 AND (user_id = $2${canCancelAny ? ' OR true' : ''})
      RETURNING *`,
     [bookingId, userId]
   );

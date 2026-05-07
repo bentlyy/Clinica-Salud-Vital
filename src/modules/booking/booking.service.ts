@@ -6,6 +6,7 @@ import jwt from 'jsonwebtoken';
 import { getJWTSecret } from '../../shared/jwt.js';
 import { BadRequestError, NotFoundError } from '../../utils/errors.js';
 import { logger } from '../../utils/logger.js';
+import { getDayOfWeek, isValidDate, isValidTime } from '../../shared/date.js';
 
 interface BookingInput {
   doctor_id: number;
@@ -22,14 +23,6 @@ interface PaginationOptions {
   page?: number;
   limit?: number;
 }
-
-const getDayOfWeek = (dateStr: string): number => {
-  const [year, month, day] = dateStr.split('-').map(Number);
-  return new Date(year, month - 1, day).getDay();
-};
-
-const isValidDate = (dateStr: string): boolean => /^\d{4}-\d{2}-\d{2}$/.test(dateStr);
-const isValidTime = (timeStr: string): boolean => /^\d{2}:\d{2}$/.test(timeStr);
 
 interface BookingData {
   data: unknown[];
