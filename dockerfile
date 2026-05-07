@@ -24,6 +24,7 @@ COPY --from=builder /app/node_modules ./node_modules
 
 # Copy application files
 COPY --from=builder /app/src ./src
+COPY --from=builder /app/db ./db
 COPY --from=builder /app/package*.json ./
 
 # Create logs directory and set permissions
