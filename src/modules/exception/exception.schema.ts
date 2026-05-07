@@ -1,4 +1,4 @@
-﻿import { z } from 'zod';
+import { z } from 'zod';
 
 export const createExceptionSchema = z.object({
   doctor_id: z.coerce.number().int().positive('doctor_id is required'),

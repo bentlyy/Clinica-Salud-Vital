@@ -1,4 +1,4 @@
-﻿import { pool } from '../shared/db.js';
+import { pool } from '../shared/db.js';
 import bcrypt from 'bcrypt';
 import { logger } from '../utils/logger.js';
 

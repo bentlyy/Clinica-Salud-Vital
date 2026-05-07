@@ -1,4 +1,4 @@
-﻿import * as billingService from './billing.service';
+import * as billingService from './billing.service';
 import * as doctorService from '../doctor/doctor.service';
 import { asyncHandler } from '../../middlewares/asyncHandler.middleware';
 import { NotFoundError, BadRequestError } from '../../utils/errors';

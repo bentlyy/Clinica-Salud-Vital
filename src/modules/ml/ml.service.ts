@@ -1,9 +1,9 @@
 /**
  * Servicio de Machine Learning / Deep Learning
- * Modelos: No-Shows, Diagn�sticos, Demanda, Signos Vitales
+ * Modelos: No-Shows, Diagnósticos, Demanda, Signos Vitales
  */
 
-import { pool } from '../../shared/db';
+import { pool } from '../../shared/db.js';
 import { logger } from '../../utils/logger';
 import { mlCache } from './ml.cache';
 import { trackTrainingMetric } from './ml.middleware';
@@ -824,7 +824,7 @@ export const analyzeOptimalSchedules = async (): Promise<ScheduleRecommendation[
       GROUP BY EXTRACT(DOW FROM date), EXTRACT(HOUR FROM time)
     `);
 
-    const days = ['Domingo', 'Lunes', 'Martes', 'Mi�rcoles', 'Jueves', 'Viernes', 'S�bado'];
+    const days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
     const hours = ['09:00', '10:00', '11:00', '12:00', '14:00', '15:00', '16:00', '17:00'];
 
     const scheduleData: Record<number, Record<string, { demand: number; noShowRate: number }>> = {};

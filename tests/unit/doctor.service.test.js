@@ -167,7 +167,7 @@ describe('doctorService.getDoctorById', () => {
 
     const result = await doctorService.getDoctorById(999);
 
-    expect(result).toBeUndefined();
+    expect(result).toBeNull();
   });
 });
 

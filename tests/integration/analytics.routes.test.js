@@ -43,7 +43,16 @@ beforeEach(() => {
 
 describe('GET /api/analytics/dashboard', () => {
   it('returns dashboard stats for admin', async () => {
-    mockQuery.mockResolvedValue({ rows: [{ count: '0' }] });
+    mockQuery.mockResolvedValue({
+      rows: [{
+        total_patients: 0,
+        total_doctors: 0,
+        total_bookings: 0,
+        today_bookings: 0,
+        confirmed_bookings: 0,
+        cancelled_bookings: 0,
+      }],
+    });
 
     const res = await request(app)
       .get('/api/analytics/dashboard')

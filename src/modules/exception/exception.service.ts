@@ -1,4 +1,5 @@
 import { pool } from '../../shared/db.js';
+import { BadRequestError, NotFoundError } from '../../utils/errors.js';
 
 interface ExceptionInput {
   doctor_id: number;
@@ -20,13 +21,13 @@ export const getExceptionsByDoctor = async (doctor_id: number): Promise<unknown[
 };
 
 export const createException = async ({ doctor_id, date, start_time, end_time, is_full_day = false }: ExceptionInput): Promise<unknown> => {
-  if (!doctor_id || !date) throw new Error('doctor_id and date are required');
-  if (!isValidDate(date)) throw new Error('Invalid date format, use YYYY-MM-DD');
+  if (!doctor_id || !date) throw new BadRequestError('doctor_id and date are required');
+  if (!isValidDate(date)) throw new BadRequestError('Invalid date format, use YYYY-MM-DD');
 
   if (!is_full_day) {
-    if (!start_time || !end_time) throw new Error('start_time and end_time required for partial blocks');
-    if (!isValidTime(start_time) || !isValidTime(end_time)) throw new Error('Invalid time format, use HH:MM');
-    if (start_time >= end_time) throw new Error('start_time must be before end_time');
+    if (!start_time || !end_time) throw new BadRequestError('start_time and end_time required for partial blocks');
+    if (!isValidTime(start_time) || !isValidTime(end_time)) throw new BadRequestError('Invalid time format, use HH:MM');
+    if (start_time >= end_time) throw new BadRequestError('start_time must be before end_time');
   }
 
   const result = await pool.query(
@@ -40,7 +41,7 @@ export const createException = async ({ doctor_id, date, start_time, end_time, i
 
 export const deleteException = async (exception_id: number, doctor_id: number): Promise<{ message: string }> => {
   if (!Number.isInteger(exception_id) || !Number.isInteger(doctor_id)) {
-    throw new Error('Invalid id');
+    throw new BadRequestError('Invalid id');
   }
 
   const result = await pool.query(
@@ -48,7 +49,7 @@ export const deleteException = async (exception_id: number, doctor_id: number): 
     [exception_id, doctor_id]
   );
 
-  if (result.rows.length === 0) throw new Error('Exception not found or unauthorized');
+  if (result.rows.length === 0) throw new NotFoundError('Exception not found or unauthorized');
 
   return { message: 'Exception deleted' };
 };

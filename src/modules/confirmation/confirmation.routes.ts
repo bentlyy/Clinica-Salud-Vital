@@ -1,4 +1,4 @@
-﻿import { Router } from 'express';
+import { Router } from 'express';
 import { confirmBooking } from './confirmation.controller';
 import { validateZod } from '../../middlewares/validate.middleware';
 import { confirmTokenSchema } from '../guest/guest.schema';

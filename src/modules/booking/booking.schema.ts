@@ -1,4 +1,4 @@
-﻿import { z } from 'zod';
+import { z } from 'zod';
 
 export const createBookingSchema = z.object({
   doctor_id: z.number().int().positive('doctor_id is required'),
