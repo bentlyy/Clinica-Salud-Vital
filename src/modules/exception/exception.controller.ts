@@ -32,7 +32,7 @@ export const deleteException = asyncHandler(async (req, res) => {
   const doctor = await doctorService.getDoctorByUserId(req.user.id);
   if (!doctor) throw new NotFoundError('Doctor profile not found');
 
-  const data = await exceptionService.deleteException(req.params.id, doctor.id);
+  const data = await exceptionService.deleteException(Number(req.params.id), doctor.id);
   res.json(data);
 });
 

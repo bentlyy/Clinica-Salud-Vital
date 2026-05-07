@@ -77,7 +77,7 @@ interface DiagnosisPrediction {
   error?: string;
 }
 
-interface ForecastResult {
+export interface ForecastResult {
   date: string;
   predicted: number;
   confidence: string;
@@ -1094,10 +1094,10 @@ export const trainAllModels = async (): Promise<TrainAllResults> => {
     results.totalDuration = Date.now() - startTime;
 
     logger.info('[ML] All models trained:', results);
-    return results as unknown as Record<string, TrainingResult>;
+    return results;
   } catch (err) {
     logger.error('[ML] Error training all models:', (err as Error).message);
-    return { ...results, error: (err as Error).message, partial: results };
+    return { ...results, error: (err as Error).message, partial: results } as unknown as TrainAllResults;
   }
 };
 
