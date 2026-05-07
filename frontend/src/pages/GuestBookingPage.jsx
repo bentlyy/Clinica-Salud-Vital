@@ -1,12 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useTheme } from '../context/useTheme';
 import { getDoctors } from '../api/doctors';
 import { getAvailableSlots, createGuestBooking } from '../api/bookings';
 import { formatRut, validateRut, cleanRut } from '../utils/rut.js';
 
 export default function GuestBookingPage() {
-  const { theme } = useTheme();
   const [doctors, setDoctors] = useState([]);
   const [selectedDoctor, setSelectedDoctor] = useState(null);
   const [date, setDate] = useState('');

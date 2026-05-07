@@ -1,5 +1,5 @@
 import { pool } from '../../shared/db';
-import { NotFoundError, BadRequestError } from '../../utils/errors';
+import { NotFoundError } from '../../utils/errors';
 
 const generateInvoiceNumber = () => {
   const year = new Date().getFullYear();
@@ -17,7 +17,21 @@ export interface InvoiceFilters {
   offset?: number;
 }
 
-export const createInvoice = async (data: any) => {
+interface InvoiceInput {
+  patient_id: number;
+  doctor_id?: number;
+  booking_id?: number;
+  concept: string;
+  description?: string;
+  amount: number;
+  tax_amount?: number;
+  discount_amount?: number;
+  due_date: string;
+  notes?: string;
+  items?: { description: string; quantity: number; unit_price: number }[];
+}
+
+export const createInvoice = async (data: InvoiceInput) => {
   const client = await pool.connect();
 
   try {
@@ -26,7 +40,7 @@ export const createInvoice = async (data: any) => {
     const invoiceNumber = generateInvoiceNumber();
     const { patient_id, doctor_id, booking_id, concept, description, amount, tax_amount = 0, discount_amount = 0, due_date, notes, items } = data;
 
-    const total = parseFloat(amount) + parseFloat(tax_amount) - parseFloat(discount_amount);
+    const total = Number(amount) + Number(tax_amount) - Number(discount_amount);
 
     const invoiceResult = await client.query(
       'INSERT INTO invoices (invoice_number, patient_id, doctor_id, booking_id, concept, description, amount, tax_amount, discount_amount, total_amount, due_date, notes) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *',
@@ -39,7 +53,7 @@ export const createInvoice = async (data: any) => {
       for (const item of items) {
         await client.query(
           'INSERT INTO invoice_items (invoice_id, description, quantity, unit_price) VALUES ($1, $2, $3, $4)',
-          [invoice.id, item.description, item.quantity, item.unit_price]
+          [invoice.id, item.description, String(item.quantity), String(item.unit_price)]
         );
       }
     }
@@ -78,7 +92,7 @@ export const getInvoiceById = async (id: number) => {
   return result.rows[0];
 };
 
-export const updateInvoiceStatus = async (id: number, status: string, paymentData?: any) => {
+export const updateInvoiceStatus = async (id: number, status: string, paymentData?: Record<string, unknown>) => {
   const result = await pool.query(
     'UPDATE invoices SET status = $1, payment_data = $2, updated_at = NOW() WHERE id = $3 RETURNING *',
     [status, paymentData ? JSON.stringify(paymentData) : null, id]

@@ -1,7 +1,7 @@
 import * as bookingService from './booking.service';
 import * as doctorService from '../doctor/doctor.service';
 import { asyncHandler } from '../../middlewares/asyncHandler.middleware';
-import { NotFoundError, BadRequestError } from '../../utils/errors';
+import { NotFoundError } from '../../utils/errors';
 import { getQueryInt, getQueryString } from '../../shared/query';
 
 export const createBooking = asyncHandler(async (req, res) => {

@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { authMiddleware, authorize } from '../../middlewares/auth.middleware';
-import { validate, validateZod } from '../../middlewares/validate.middleware';
+import { validateZod } from '../../middlewares/validate.middleware';
 import { createInvoiceSchema, updateInvoiceStatusSchema, invoiceIdSchema } from './billing.schema';
 import { getInvoices, getInvoiceById, createInvoice, updateInvoiceStatus, deleteInvoice, getBillingStats } from './billing.controller';
 

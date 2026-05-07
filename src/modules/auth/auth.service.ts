@@ -28,17 +28,17 @@ interface User {
 }
 
 export const register = async ({ email, password, rut, phone }: RegisterParams): Promise<Pick<User, 'id' | 'email' | 'rut' | 'phone'>> => {
-  if (!email || !password) throw new Error('Email and password required');
+  if (!email || !password) throw new BadRequestError('Email and password required');
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(email)) throw new Error('Invalid email format');
+  if (!emailRegex.test(email)) throw new BadRequestError('Invalid email format');
 
-  if (password.length < 8) throw new Error('Password must be at least 8 characters');
+  if (password.length < 8) throw new BadRequestError('Password must be at least 8 characters');
 
   let formattedRut: string | null = null;
   if (rut) {
     const cleaned = cleanRut(rut);
-    if (!validateRut(cleaned)) throw new Error('RUT inválido');
+    if (!validateRut(cleaned)) throw new BadRequestError('RUT inválido');
     formattedRut = formatRut(cleaned);
   }
 
@@ -53,11 +53,11 @@ export const register = async ({ email, password, rut, phone }: RegisterParams):
   } catch (error: unknown) {
     const pgError = error as { code?: string; detail?: string };
     if (pgError.code === '23505') {
-      if (pgError.detail?.includes('email')) throw new Error('Email already exists');
-      if (pgError.detail?.includes('rut')) throw new Error('RUT ya registrado');
-      throw new Error('Email or RUT already exists');
+      if (pgError.detail?.includes('email')) throw new BadRequestError('Email already exists');
+      if (pgError.detail?.includes('rut')) throw new BadRequestError('RUT ya registrado');
+      throw new BadRequestError('Email or RUT already exists');
     }
-    throw new Error('Error creating user');
+    throw new BadRequestError('Error creating user');
   }
 };
 
@@ -67,7 +67,7 @@ export const login = async ({ email, password }: LoginParams): Promise<{ token: 
   const result = await pool.query<User>('SELECT * FROM users WHERE email = $1', [email]);
   const user = result.rows[0];
 
-  const dummyHash = '$2b$12$invalidhashfortimingprotection000000000000000000000000';
+  const dummyHash = '$2b$12$LJ3m4ys3Lg3YOCwFfj5NOWJX0GqBiN3H0w5Cqx3z5Gq5X5z5P5Q5S';
   const isValid = await bcrypt.compare(password, user ? user.password : dummyHash);
 
   if (!user || !isValid) throw new BadRequestError('Invalid credentials');
