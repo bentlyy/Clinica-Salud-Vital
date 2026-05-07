@@ -1,4 +1,4 @@
-﻿import { pool } from '../../shared/db';
+import { pool } from '../../shared/db';
 import { NotFoundError, BadRequestError } from '../../utils/errors';
 
 const generateInvoiceNumber = () => {

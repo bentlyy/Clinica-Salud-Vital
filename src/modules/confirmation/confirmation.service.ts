@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken';
 import { pool } from '../../shared/db.js';
 import { getJWTSecret } from '../../shared/jwt.js';
+import { BadRequestError, NotFoundError } from '../../utils/errors.js';
 
 interface ConfirmResult {
   message: string;
@@ -9,7 +10,11 @@ interface ConfirmResult {
 }
 
 export const confirmBooking = async (token: string): Promise<ConfirmResult> => {
-  jwt.verify(token, getJWTSecret());
+  try {
+    jwt.verify(token, getJWTSecret());
+  } catch {
+    throw new BadRequestError('Token inválido');
+  }
 
   const bookingResult = await pool.query(
     `SELECT id, confirmed, guest_rut FROM bookings WHERE confirmation_token = $1`,
@@ -17,7 +22,7 @@ export const confirmBooking = async (token: string): Promise<ConfirmResult> => {
   );
 
   if (bookingResult.rows.length === 0) {
-    throw new Error('Reserva no encontrada');
+    throw new NotFoundError('Reserva no encontrada');
   }
 
   const booking = bookingResult.rows[0];

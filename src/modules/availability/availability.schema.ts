@@ -1,4 +1,4 @@
-﻿import { z } from 'zod';
+import { z } from 'zod';
 
 export const createAvailabilitySchema = z.object({
   day_of_week: z.coerce.number().int().min(0).max(6, 'Day must be 0-6'),

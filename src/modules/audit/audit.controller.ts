@@ -1,4 +1,4 @@
-﻿import * as auditService from './audit.service';
+import * as auditService from './audit.service';
 import { asyncHandler } from '../../middlewares/asyncHandler.middleware';
 
 const getQuery = (query: Record<string, unknown>, key: string): string | undefined => {

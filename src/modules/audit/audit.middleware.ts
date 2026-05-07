@@ -1,4 +1,5 @@
-﻿import { logAction } from './audit.service';
+import { logAction } from './audit.service';
+import { logger } from '../../utils/logger.js';
 
 export const auditMiddleware = (action, resource_type, getIdFromResponse = null) => {
   return async (req, res, next) => {
@@ -15,7 +16,7 @@ export const auditMiddleware = (action, resource_type, getIdFromResponse = null)
         new_values: ['POST', 'PUT', 'PATCH'].includes(req.method) ? req.body : null,
         ip_address: req.ip,
         user_agent: req.get('User-Agent'),
-      }).catch(err => console.error('Audit log error:', err));
+      }).catch(err => logger.error('Audit log error:', err));
 
       return originalJson(body);
     };

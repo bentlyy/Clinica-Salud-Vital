@@ -1,4 +1,4 @@
-﻿import { z } from 'zod';
+import { z } from 'zod';
 
 export const createInvoiceSchema = z.object({
   patient_id: z.coerce.number().int().positive('patient_id is required'),

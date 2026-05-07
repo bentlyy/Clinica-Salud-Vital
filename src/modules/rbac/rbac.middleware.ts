@@ -1,4 +1,4 @@
-﻿import { Request, Response, NextFunction } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { hasPermission } from './rbac.service.js';
 
 export const rbac = (requiredPermissions: string[] = []) => {

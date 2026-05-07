@@ -1,4 +1,4 @@
-﻿import { Router } from 'express';
+import { Router } from 'express';
 import { authMiddleware } from '../../middlewares/auth.middleware';
 import { getMyPermissions } from './rbac.controller';
 

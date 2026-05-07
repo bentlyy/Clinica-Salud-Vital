@@ -1,4 +1,5 @@
 import { pool } from '../../shared/db.js';
+import { BadRequestError, NotFoundError } from '../../utils/errors.js';
 
 interface AvailabilityInput {
   doctor_id: number;
@@ -21,16 +22,16 @@ export const getAvailabilityByDoctor = async (doctor_id: number): Promise<unknow
 
 export const createAvailability = async ({ doctor_id, day_of_week, start_time, end_time }: AvailabilityInput): Promise<unknown> => {
   if (!doctor_id || day_of_week === undefined || !start_time || !end_time) {
-    throw new Error('Missing required fields');
+    throw new BadRequestError('Missing required fields');
   }
   if (!Number.isInteger(day_of_week) || day_of_week < 0 || day_of_week > 6) {
-    throw new Error('day_of_week must be an integer between 0 and 6');
+    throw new BadRequestError('day_of_week must be an integer between 0 and 6');
   }
   if (!isValidTime(start_time) || !isValidTime(end_time)) {
-    throw new Error('Invalid time format, use HH:MM');
+    throw new BadRequestError('Invalid time format, use HH:MM');
   }
   if (start_time >= end_time) {
-    throw new Error('Invalid time range: start_time must be before end_time');
+    throw new BadRequestError('Invalid time range: start_time must be before end_time');
   }
 
   const overlap = await pool.query(
@@ -41,7 +42,7 @@ export const createAvailability = async ({ doctor_id, day_of_week, start_time, e
   );
 
   if (overlap.rows.length > 0) {
-    throw new Error('Time range overlaps with existing availability');
+    throw new BadRequestError('Time range overlaps with existing availability');
   }
 
   const result = await pool.query(
@@ -55,7 +56,7 @@ export const createAvailability = async ({ doctor_id, day_of_week, start_time, e
 
 export const deleteAvailability = async (availability_id: number, doctor_id: number): Promise<{ message: string }> => {
   if (!Number.isInteger(availability_id) || !Number.isInteger(doctor_id)) {
-    throw new Error('Invalid id');
+    throw new BadRequestError('Invalid id');
   }
 
   const result = await pool.query(
@@ -63,7 +64,7 @@ export const deleteAvailability = async (availability_id: number, doctor_id: num
     [availability_id, doctor_id]
   );
 
-  if (result.rows.length === 0) throw new Error('Availability not found or unauthorized');
+  if (result.rows.length === 0) throw new NotFoundError('Availability not found or unauthorized');
 
   return { message: 'Availability deleted' };
 };
