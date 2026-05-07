@@ -1,9 +1,47 @@
-# Clinic Backend - AI Agent Instructions
+# AI Agent Instructions — Clinic Backend
 
 ## Project Overview
-- **Type**: Full-stack web application (Node.js + React + PostgreSQL)
-- **Stack**: Express 5, PostgreSQL, React + Vite, Docker
-- **Port**: API: 3000, Frontend: 5173
+Full-stack clinical management system (Node.js + Express 5 + React + Vite + PostgreSQL 15).
+Orquestado con Docker Compose. ML con TensorFlow.js.
+
+### Ports
+| Servicio | Puerto |
+|----------|--------|
+| API | 3000 |
+| Frontend | 5173 |
+| PostgreSQL | 5432 |
+
+---
+
+## Stack & Packages
+
+### Backend
+| Package | Uso |
+|---------|-----|
+| express 5 | Framework HTTP |
+| pg | PostgreSQL pool |
+| jsonwebtoken | JWT auth + confirm tokens |
+| bcrypt | Password hashing (12 rounds) |
+| zod 4.x | Input validation |
+| winston | Logging (info/warn/error) |
+| helmet + hpp | Security headers |
+| express-rate-limit | Rate limiting |
+| nodemailer | Email (Gmail SMTP) |
+| pdfkit | Receta PDF |
+| node-cron | Cron jobs (c/5 min) |
+| compression | Gzip responses |
+| @tensorflow/tfjs | ML models (no-show, diagnosis, demand, vitals) |
+
+### Frontend
+| Package | Uso |
+|---------|-----|
+| React 19 | UI framework |
+| Vite 6 | Build tool |
+| MUI | Component library |
+| FullCalendar | Doctor calendar |
+| Recharts | Analytics charts |
+
+---
 
 ## Running the Project
 
@@ -11,81 +49,234 @@
 ```bash
 docker compose up -d --build
 ```
-- API: http://localhost:3000
-- Frontend: http://localhost:5173
 
-### Without Docker (for development)
+### Without Docker
 ```bash
-# Start PostgreSQL in Docker first
 docker run -d -p 5432:5432 -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=clinic --name clinic-db postgres:15-alpine
-
-# Update .env to use localhost
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/clinic
-
-# Run migrations
-docker exec -i clinic-db psql -U postgres -d clinic < db/init.sql
-
-# Start API
+npm install
 npm run dev
 ```
 
-## Commands
-- `npm run dev` - Start development server (with nodemon)
-- `npm start` - Start production server
-- `npm test` - Run tests with coverage
+### Commands
+| Cmd | Desc |
+|-----|------|
+| `npm run dev` | Dev server (tsx watch) |
+| `npm start` | Production |
+| `npm test` | Tests + coverage |
+| `npm run test:watch` | Watch mode |
+| `npm run typecheck` | TypeScript check |
+| `npm run build` | Compile TS |
 
-## Important Notes
-- Environment variables are in `.env` file
-- Database connection uses Docker service name `db` when running in containers
-- All migrations are consolidated in `db/init.sql` (schema + seed)
-- Frontend Vite proxy uses `VITE_API_PROXY_TARGET=http://api:3000` in Docker (not localhost)
-- TypeScript files in `src/utils/` are `.ts` but imported as `.js` (works via nodemon with tsx or vitest)
-- **Paginated API responses** return `{ data: [...], pagination: {...} }` - frontend must extract `.data`
-- **AuthContext**: `loading` starts `true`, loads from localStorage in `useEffect`, then sets `false`
-- Logged-in users book via `createBooking` (no RUT needed), guests via `createGuestBooking` (RUT required)
+---
 
-## Key Files
-- `src/app.js` - Main Express application
-- `src/shared/db.js` - PostgreSQL connection pool
-- `docker-compose.yml` - Docker services configuration
-- `.env` - Environment variables
-- `db/init.sql` - Full schema + seed (consolidated migrations)
-- `frontend/src/context/AuthContext.jsx` - Auth state management
-- `frontend/src/pages/MyBookingsPage.jsx` - Patient bookings (handles paginated response)
-- `frontend/src/pages/DoctorPanel.jsx` - Doctor dashboard (handles paginated response)
-- `frontend/src/pages/BookingPage.jsx` - Booking flow (user vs guest)
+## Project Structure
 
-## Known Issues Fixed
-- **Frontend**: Created `src/context/useAuth.js` to fix fast-refresh issue with React context
-- **Frontend**: Fixed setState in useEffect patterns with eslint-disable comments
-- **Backend**: Created missing `src/modules/doctor/doctor.service.js` (was imported but not found)
-- **Frontend**: Fixed AnalyticsPage.jsx - removed unused imports (LineChart, Line, COLORS), fixed function order
-- **Docker**: Fixed Vite proxy to use `VITE_API_PROXY_TARGET` env var instead of hardcoded localhost
-- **Frontend**: Fixed `bookings.map is not a function` in MyBookingsPage/DoctorPanel - API returns paginated `{ data, pagination }`
-- **Frontend**: Fixed AuthContext `loading` state - was static useState, now uses useEffect to load from localStorage
-- **Backend**: Fixed `auth.service.ts` login response to include `rut` and `phone` fields
-- **Backend**: Fixed `guest.service.ts` RUT search to clean formatting and search both `guest_rut` and `users.rut`
-- **Backend**: Fixed `BookingPage.jsx` to use `createBooking` for logged-in users vs `createGuestBooking` for guests
-- **Backend**: Fixed `admin.seed.ts` to generate valid RUTs for all seeded users
-- **DB**: Consolidated all migrations into `db/init.sql` for container restart persistence
+```
+src/
+├── app.ts                    # Entry point (Express setup, routes, migrations, cron)
+├── middlewares/               # Pipeline: security → cors → compression → logger → rateLimit → auth → role → validate → audit
+│   ├── auth.middleware.ts     # JWT verify (injects req.user)
+│   ├── role.middleware.ts     # Role check (admin/doctor/user)
+│   ├── security.middleware.ts # Helmet + HPP + env validation
+│   ├── validate.middleware.ts # Zod body/params/query validation
+│   ├── errorHandler.ts       # Global error handler (stack dev-only)
+│   ├── requestLogger.ts      # Winston request logging
+│   └── asyncHandler.ts       # Async error wrapper
+├── modules/                   # 14 modules (monolito modular)
+│   ├── auth/                  # POST /register, /login
+│   ├── booking/               # CRUD bookings, slots, doctor agenda
+│   ├── doctor/                # Register, create, profile
+│   ├── availability/          # Weekly blocks (day_of_week)
+│   ├── exception/             # Full/partial day blocks
+│   ├── guest/                 # Guest bookings + RUT lookup
+│   ├── confirmation/          # Email token confirmation
+│   ├── clinical-record/       # EHR + prescriptions + CIE-10 + PDF
+│   ├── analytics/             # Dashboard + stats + ML integration
+│   ├── billing/               # Invoices + payments + insurance
+│   ├── laboratory/            # Lab tests + requests + results
+│   ├── audit/                 # Audit logs (admin only)
+│   ├── rbac/                  # Permissions query
+│   └── ml/                    # TF.js: train, predict, forecast, cache
+├── shared/                    # db.ts, jwt.ts, rut.ts, email.ts, date.ts, query.ts
+├── utils/                     # logger.ts, errors.ts (AppError classes)
+├── jobs/                      # reminder.job.ts, confirmation.job.ts
+└── seed/                      # admin.seed.ts, seed.ts
+```
 
-## Frontend Lint Notes
-- React hooks warnings for `setState` in useEffect are expected for data fetching patterns
-- AuthContext exports both provider and context (warning is informational only)
+---
 
-## TypeScript Configuration
-- TypeScript is used in `src/utils/` (errors.ts, logger.ts)
-- Imports use `.js` extension but files are `.ts` - this works with vitest
-- Run `npm run typecheck` to verify TypeScript compilation
+## API Conventions
 
-## Seed Users (valid RUTs)
+### Paginated responses
+All list endpoints return `{ data: [...], pagination: { page, limit, total, totalPages } }`.
+Frontend must extract `.data` — **not the raw response**.
+
+### Auth
+- Header: `Authorization: Bearer <token>`
+- Token JWT con `{ id, email, role, rut }`, expires 1d
+- `req.user` disponible en rutas autenticadas (type: `AuthRequest`)
+
+### Error format
+```json
+{ "error": "message", "details": ["field: detail"], "stack": "..." }
+```
+Stack solo en desarrollo.
+
+### Validation
+Zod schemas en `*.schema.ts`. Middleware `validateZod(schema, 'body'|'params'|'query')`.
+
+---
+
+## Security
+
+| Layer | Detail |
+|-------|--------|
+| Helmet | CSP, HSTS (1y), XSS Filter, noSniff, Frameguard deny |
+| HPP | HTTP Parameter Pollution prevention |
+| CORS | Whitelist: localhost:5173 + FRONTEND_URL |
+| Rate Limit | Global 100/15min, Auth 10/15min, RUT 10/15min |
+| Body | JSON limit 10kb |
+| Passwords | bcrypt 12 rounds |
+| JWT | Secret configurable, validated ≥ 32 chars at startup |
+| Validation | Zod strict schemas on all endpoints |
+| Role | Middleware: `authorizeRoles('admin', 'doctor')` |
+| Audit | Middleware logs changes to critical entities |
+| Error handler | Never leaks stack in production |
+| Race conditions | PostgreSQL advisory locks on booking creation |
+
+---
+
+## Module Patterns
+
+Every module follows this convention:
+```
+module/
+├── module.controller.ts   # Express handlers (asyncHandler wrapper)
+├── module.service.ts      # Business logic + DB queries
+├── module.routes.ts       # Router definition
+├── module.schema.ts       # Zod validation schemas
+└── (optional extras)
+    ├── module.email.ts    # Email templates
+    ├── module.middleware.ts
+    └── ...
+```
+
+Controllers use `asyncHandler` from `middlewares/asyncHandler.middleware.ts` to catch async errors.
+
+---
+
+## Key Files Reference
+
+| File | Purpose |
+|------|---------|
+| `src/app.ts` | Express bootstrap, migration runner, cron starter |
+| `src/shared/db.ts` | PostgreSQL pool (single instance) |
+| `src/shared/jwt.ts` | JWT secret getter |
+| `src/shared/rut.ts` | RUT validation (Chilean) + format/clean |
+| `src/shared/email.service.ts` | Nodemailer transport |
+| `src/shared/date.ts` | getDayOfWeek, isValidDate, isValidTime |
+| `src/shared/query.ts` | getQueryInt, getQueryString helpers |
+| `src/utils/errors.ts` | AppError classes (BadRequestError, NotFoundError, UnauthorizedError) |
+| `src/utils/logger.ts` | Winston logger (console + file rotation) |
+| `src/middlewares/auth.middleware.ts` | JWT verification + authorize() |
+| `src/middlewares/role.middleware.ts` | authorizeRoles() |
+| `src/middlewares/security.middleware.ts` | Helmet + HPP + env validation |
+| `src/middlewares/errorHandler.middleware.ts` | Global error + 404 handler |
+| `src/middlewares/validate.middleware.ts` | Zod validation middleware |
+| `src/middlewares/asyncHandler.middleware.ts` | Async error wrapper |
+| `src/middlewares/requestLogger.middleware.ts` | Request logging with duration |
+| `src/modules/audit/audit.middleware.ts` | Audit logging middleware |
+| `db/init.sql` | Full schema + seed (migrations runner applies migration files too) |
+
+---
+
+## Frontend Key Files
+
+| File | Purpose |
+|------|---------|
+| `frontend/src/context/AuthContext.jsx` | Auth state: user, token, loading, login/logout |
+| `frontend/src/context/useAuth.js` | Hook wrapper (fixes fast-refresh HMR) |
+| `frontend/src/pages/BookingPage.jsx` | Booking flow (user=createBooking, guest=createGuestBooking) |
+| `frontend/src/pages/DoctorPanel.jsx` | Doctor dashboard (agenda + availability + exceptions) |
+| `frontend/src/pages/MyBookingsPage.jsx` | Patient bookings list |
+| `frontend/src/pages/AnalyticsPage.jsx` | Admin analytics dashboard |
+
+### AuthContext behavior
+- `loading` starts `true`
+- `useEffect` loads from localStorage on mount → sets `false`
+- Login stores token + user in localStorage
+- Logout clears localStorage
+
+---
+
+## Database Notes
+
+- All migrations consolidated in `db/init.sql` (434 lines)
+- Additional migrations in `db/migrations/` applied via migration runner (tracks applied in `_migrations` table)
+- Database URL: `postgresql://postgres:postgres@db:5432/clinic` (Docker) or `localhost` (dev)
+- Connection pool via `pg` in `src/shared/db.ts`
+- 15+ tables: users, doctors, bookings, availability, exceptions, clinical_records, prescriptions, cie10_catalog, audit_logs, invoices, invoice_items, payments, insurance_claims, lab_tests, lab_requests, lab_request_items, permissions, role_permissions, user_permissions, ml_prediction_history, ml_model_metrics, ml_demand_forecast
+- 30+ indexes including partial and functional
+- 4 triggers for updated_at
+- Constraints: CHECK for guest_or_user, slot_duration, future_date, etc.
+
+---
+
+## Seed Users
+
 | Rol | Email | Password | RUT |
 |-----|-------|----------|-----|
-| Admin | admin@clinic.com | REPLACED_PASSWORD | 20287886-5 |
-| Doctor | juan@clinic.com | REPLACED_PASSWORD | 11222333-9 |
-| Doctor | maria@clinic.com | REPLACED_PASSWORD | 14333444-7 |
-| Doctor | carlos@clinic.com | REPLACED_PASSWORD | 13444555-5 |
-| Doctor | ana@clinic.com | REPLACED_PASSWORD | 12555666-3 |
-| Patient | user1@clinic.com | REPLACED_PASSWORD | 15666777-3 |
-| Patient | user2@clinic.com | REPLACED_PASSWORD | 16777888-1 |
-| Patient | user3@clinic.com | REPLACED_PASSWORD | 17888999-9 |
+| Admin | admin@clinic.com | REPLACED_PASSWORD | 20.287.886-5 |
+| Doctor | juan@clinic.com | REPLACED_PASSWORD | 11.222.333-9 |
+| Doctor | maria@clinic.com | REPLACED_PASSWORD | 14.333.444-7 |
+| Doctor | carlos@clinic.com | REPLACED_PASSWORD | 13.444.555-5 |
+| Doctor | ana@clinic.com | REPLACED_PASSWORD | 12.555.666-3 |
+| Patient | user1@clinic.com | REPLACED_PASSWORD | 15.666.777-3 |
+| Patient | user2@clinic.com | REPLACED_PASSWORD | 16.777.888-1 |
+| Patient | user3@clinic.com | REPLACED_PASSWORD | 17.888.999-9 |
+
+---
+
+## ML Module (TensorFlow.js)
+
+4 models:
+- **noShowModel**: Predicts no-show probability (doctorId, userId, date, time, bookingId)
+- **diagnosisModel**: Classifies diagnosis from chief complaint text
+- **demandModel**: Forecasts daily appointment demand
+- **vitalAnomalyModel**: Detects anomalies in vital signs
+
+Features:
+- LRU cache for predictions (`ml.cache.ts`)
+- Metrics middleware tracks prediction counts and latency
+- Input sanitization + validation (`ml.validator.ts`)
+- Training uses `trainAllModels()` on historical data
+- Results stored in `ml_prediction_history`, `ml_model_metrics`, `ml_demand_forecast`
+
+---
+
+## Testing
+
+| Type | Files | What |
+|------|-------|------|
+| Unit | 7 | auth, booking, doctor, guest, confirmation, exception, RUT |
+| Integration | 6 | auth, booking, doctor, guest-confirmation, analytics, audit, clinical-record |
+| ML | 1 | ML model tests |
+
+**Setup:** `tests/setup.js` mocks env vars. DB mocked via `vi.hoisted()` over `pool.query`.
+**Coverage threshold:** 50% lines/branches/functions/statements (Vitest + v8).
+
+---
+
+## Known Issues & Gotchas
+
+- TypeScript files in `src/utils/` are `.ts` but imported as `.js` (works with tsx/vitest)
+- AuthContext `loading` starts as `true` (not false) — components must handle loading state
+- `frontend/src/context/useAuth.js` exists to fix React fast-refresh (HMR) — import from there, not AuthContext directly
+- API returns paginated `{ data, pagination }` — frontend must extract `.data` for `.map()`
+- Guest RUT search cleans formatting and searches both `guest_rut` AND `users.rut`
+- Login returns `rut` and `phone` in user object (not just id/email/role)
+- `VITE_API_PROXY_TARGET=http://api:3000` in Docker — not `localhost`
+- `db/migrations/` files applied incrementally via `_migrations` tracking table
+- When creating a doctor, always creates default availability (Mon-Fri 09:00-17:00)
+- Billing invoice number format: `INV-YYYY-XXXXX`
+- ML models disposed on reset — cache cleared from LRU
