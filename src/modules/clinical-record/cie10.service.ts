@@ -1,5 +1,5 @@
 import { pool } from '../../shared/db';
-import { NotFoundError, BadRequestError } from '../../utils/errors';
+import { NotFoundError } from '../../utils/errors';
 
 interface Cie10Query {
   query?: string;

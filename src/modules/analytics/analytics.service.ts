@@ -2,6 +2,37 @@ import { pool } from '../../shared/db.js';
 import * as mlService from '../ml/ml.service.js';
 import { logger } from '../../utils/logger.js';
 
+interface NoShowRow {
+  doctor: string;
+  total: string;
+  no_shows: string;
+}
+
+interface DiagnosisRow {
+  diagnosis: string;
+  count: string;
+}
+
+interface BookingRow {
+  date: string;
+  bookings: string;
+}
+
+interface VitalSignRow {
+  patientId: number;
+  date: string;
+  pressure: string;
+  heartRate: string;
+  temperature: string;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+interface VitalSignsInput extends Record<string, unknown> {
+  pressure: string;
+  heartRate: string;
+  temperature: string;
+}
+
 export const getDashboardStats = async () => {
   const result = await pool.query(`
     SELECT
@@ -90,7 +121,7 @@ export const getNoShowsByDoctor = async () => {
     ORDER BY total DESC
   `);
 
-  return result.rows.map((row: any) => ({
+  return result.rows.map((row: NoShowRow) => ({
     doctor: row.doctor,
     total: parseInt(row.total) || 0,
     noShows: parseInt(row.no_shows) || 0,
@@ -109,7 +140,7 @@ export const getDiagnoses = async () => {
     LIMIT 20
   `);
 
-  return result.rows.map((row: any) => ({
+  return result.rows.map((row: DiagnosisRow) => ({
     diagnosis: row.diagnosis,
     count: parseInt(row.count),
   }));
@@ -130,7 +161,7 @@ export const getDemandForecast = async (days = 30) => {
       ORDER BY date
     `, [days]);
 
-    const historical = result.rows.map((row: any) => ({
+    const historical = result.rows.map((row: BookingRow) => ({
       date: row.date,
       bookings: parseInt(row.bookings),
       predicted: null,
@@ -145,7 +176,7 @@ export const getDemandForecast = async (days = 30) => {
       WHERE date >= NOW() - INTERVAL '1 days' * $1 AND status != 'cancelled'
       GROUP BY date ORDER BY date
     `, [days]);
-    return result.rows.map((row: any) => ({
+    return result.rows.map((row: BookingRow) => ({
       date: row.date,
       bookings: parseInt(row.bookings),
     }));
@@ -185,8 +216,8 @@ export const getVitalSignsAnomalies = async () => {
       LIMIT 50
     `);
 
-    const analyzed = await Promise.all(result.rows.map(async (row: any) => {
-      const vs: any = {
+    const analyzed = await Promise.all(result.rows.map(async (row: VitalSignRow) => {
+      const vs: VitalSignsInput = {
         pressure: row.pressure,
         heartRate: row.heartRate,
         temperature: row.temperature
