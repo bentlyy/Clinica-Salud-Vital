@@ -109,7 +109,7 @@ export default function HomePage() {
           <h1 className="hero-title">
             Clínica <span className="text-accent">Salud Vital</span>
           </h1>
-          <p className="hero-subtitle">Medicina privada de excelencia — Tu salud merece la mejor atención</p>
+          <p className="hero-subtitle">Medicina de excelencia — Tu salud merece la mejor atención</p>
           <div className="hero-actions">
             <button onClick={() => navigate('/booking')} className="btn btn-primary btn-lg">
               Reservar Hora Médica

@@ -31,6 +31,8 @@ interface SequentialModel {
   trained?: boolean;
   vocab?: string[];
   diagnoses?: string[];
+  idf?: number[];
+  maxVals?: number[];
   originalData?: number[];
   windowSize?: number;
   mean?: number[];
@@ -160,6 +162,31 @@ const denormalize = (normalized: number[], originalData: number[]): number[] => 
   return normalized.map(v => Math.round(v * (max - min) + min));
 };
 
+export const getStopWords = (): Set<string> => new Set([
+  'el', 'la', 'los', 'las', 'de', 'del', 'en', 'un', 'una', 'por', 'para',
+  'con', 'sin', 'mi', 'tu', 'su', 'yo', 'que', 'es', 'son', 'me', 'tiene',
+  'mucho', 'poco', 'hace', 'tengo', 'tener', 'dolor', 'ya', 'mas', 'menos', 'muy'
+]);
+
+export const tokenizeText = (text: string): string[] => {
+  const stopWords = getStopWords();
+  return text.toLowerCase()
+    .replace(/[^\w\s]/g, ' ')
+    .split(/\s+/)
+    .filter(t => t.length > 2 && !stopWords.has(t));
+};
+
+export const vectorizeDiagnosis = (text: string, vocab: string[], idf: number[], maxVals: number[]): number[] => {
+  const tokens = tokenizeText(text);
+  const tf = new Map<string, number>();
+  tokens.forEach(t => tf.set(t, (tf.get(t) || 0) + 1));
+  const raw = vocab.map((v, i) => {
+    const tfVal = tf.get(v) || 0;
+    return tfVal * (idf[i] || 1);
+  });
+  return raw.map((v, i) => v / (maxVals[i] || 1));
+};
+
 const safeDispose = (tensor: unknown): void => {
   if (tensor && typeof tensor === 'object' && 'dispose' in tensor && typeof (tensor as { dispose: () => void }).dispose === 'function') {
     try {
@@ -237,7 +264,7 @@ export const trainNoShowModel = async (): Promise<TrainingResult> => {
     const y: number[] = [];
 
     bookings.rows.forEach((b: Record<string, unknown>) => {
-      const isNoShow = b.status === 'cancelled' || new Date(b.date as string) < new Date();
+      const isNoShow = b.status === 'no_show';
       const hour = parseInt((b.time as string)?.split(':')[0] || '9');
       const dayOfWeek = parseInt(String(b.day_of_week)) || 1;
       const month = parseInt(String(b.month)) || 1;
@@ -445,7 +472,7 @@ export const trainDiagnosisClassifier = async (): Promise<TrainingResult> => {
       return { trained: false, reason: 'insufficient_data' };
     }
 
-    const stopWords = new Set(['el', 'la', 'los', 'las', 'de', 'del', 'en', 'un', 'una', 'por', 'para', 'con', 'sin', 'mi', 'tu', 'su', 'yo', 'que', 'es', 'son', 'me', 'tiene', 'tiene', 'mucho', 'poco', 'hace', 'tengo', 'tener', 'dolor', 'ya', 'mas', 'menos', 'muy']);
+    const stopWords = getStopWords();
 
     const docTokens: string[][] = [];
     const allTokens = new Set<string>();
@@ -521,6 +548,8 @@ const maxVals = X[0].map((_, i) => Math.max(...X.map(row => Math.abs(row[i]))));
 
     diagnosisModel.vocab = vocabArray;
     diagnosisModel.diagnoses = diagnoses;
+    diagnosisModel.idf = vocabArray.map(v => idf.get(v) || 1);
+    diagnosisModel.maxVals = maxVals;
     diagnosisModel.trained = true;
 
     await mlCache.set(cacheKey, { model: diagnosisModel }, 30 * 60 * 1000);
@@ -558,8 +587,10 @@ export const predictDiagnosis = async (chiefComplaint: string): Promise<Diagnosi
 
   try {
     const { tensor2d: tensor2d2 } = await getTF();
-    const tokens = (chiefComplaint || '').toLowerCase().split(/\s+/);
-    const vector = diagnosisModel!.vocab!.map(v => tokens.includes(v) ? 1 : 0);
+    const vocab = diagnosisModel!.vocab!;
+    const idfWeights = diagnosisModel!.idf || vocab.map(() => 1);
+    const maxVals = diagnosisModel!.maxVals || vocab.map(() => 1);
+    const vector = vectorizeDiagnosis(chiefComplaint || '', vocab, idfWeights, maxVals);
 
     const input = tensor2d2([vector]);
     const prediction = diagnosisModel!.predict(input);
@@ -1154,7 +1185,7 @@ export const saveDemandForecast = async (
   try {
     for (const f of forecasts) {
       await pool.query(
-        `INSERT INTO ml_demand_forecast (forecast_date, predicted_demand, confidence)
+        `INSERT INTO ml_demand_forecast (date, predicted_demand, confidence)
          VALUES ($1, $2, $3)`,
         [f.date, f.predicted, f.confidence]
       );

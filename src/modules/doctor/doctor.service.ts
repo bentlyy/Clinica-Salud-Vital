@@ -6,6 +6,7 @@ import { doctorCredentialsEmail } from './doctor.email.js';
 import { validateRut, cleanRut, formatRut } from '../../shared/rut.js';
 import { BadRequestError } from '../../utils/errors.js';
 import { logger } from '../../utils/logger.js';
+import { ensureSpecialty } from '../specialties/specialties.service.js';
 
 interface DoctorInput {
   name: string;
@@ -67,7 +68,7 @@ export const registerDoctor = async ({ name, specialty, email, rut, phone }: Doc
 
   try {
     await client.query('BEGIN');
-
+    await ensureSpecialty(specialty);
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) throw new BadRequestError('Email inválido');
 
@@ -124,7 +125,7 @@ export const registerDoctor = async ({ name, specialty, email, rut, phone }: Doc
         password: tempPassword,
         loginUrl: process.env.FRONTEND_URL + '/login',
       }),
-    }).catch((err: unknown) => logger.error('Doctor welcome email error:', err));
+    }).then(r => { if (!r.sent) logger.error('Doctor welcome email error:', r.error); });
 
     return { doctor, credentials: { email, tempPassword } };
 
@@ -147,6 +148,7 @@ export const createDoctor = async ({ name, specialty, email, user_id }: CreateDo
 
   try {
     await client.query('BEGIN');
+    await ensureSpecialty(specialty);
 
     const user = await client.query(
       'SELECT id, role FROM users WHERE id = $1',

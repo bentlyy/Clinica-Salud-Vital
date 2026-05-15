@@ -178,7 +178,7 @@ export const createBooking = async ({ doctor_id, user_id, date, time, duration =
         confirmToken,
         frontendUrl: process.env.FRONTEND_URL,
       }),
-    }).catch((err: unknown) => logger.error('Email error (non-critical):', err));
+    }).then(r => { if (!r.sent) logger.error('Email error (non-critical):', r.error); });
 
     return booking;
 
@@ -316,6 +316,7 @@ export const getBookingsByDoctor = async (doctor_id: number, { page = 1, limit =
   const result = await pool.query(`
     SELECT b.id, b.date, b.time, b.duration, b.status, b.confirmed,
            u.email AS patient_email,
+           u.rut AS patient_rut,
            b.guest_name, b.guest_email, b.guest_phone, b.guest_rut
     FROM bookings b
     LEFT JOIN users u ON b.user_id = u.id

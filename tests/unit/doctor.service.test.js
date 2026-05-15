@@ -25,6 +25,7 @@ import * as doctorService from '../../src/modules/doctor/doctor.service.js';
 beforeEach(() => {
   vi.clearAllMocks();
   mockConnect.mockReturnValue(mockClient);
+  mockQuery.mockResolvedValue({ rows: [{ id: 1, name: 'General' }] });
 });
 
 describe('doctorService.getAllDoctors', () => {

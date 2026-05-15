@@ -29,6 +29,7 @@ export default function Navbar() {
             <>
               <Link to="/doctor" className="nav-link">Panel</Link>
               <Link to="/doctor/calendar" className="nav-link">Calendario</Link>
+              <Link to="/doctor/clinical-records" className="nav-link">Fichas Clínicas</Link>
             </>
           )}
 
