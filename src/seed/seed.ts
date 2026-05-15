@@ -41,6 +41,18 @@ const today = new Date();
 export const seed = async (): Promise<void> => {
   const exists = await pool.query('SELECT 1 FROM users WHERE role = $1 LIMIT 1', ['admin']);
   if (exists.rows.length > 0) {
+    // Asegurar pacientes simples incluso si el seed ya se ejecutó
+    const simplePatients = [
+      { email: 'user1@clinic.com', rut: '15666777-3', phone: '+56911111111' },
+      { email: 'user2@clinic.com', rut: '16777888-7', phone: '+56922222222' },
+      { email: 'user3@clinic.com', rut: '17888999-0', phone: '+56933333333' },
+    ];
+    for (const p of simplePatients) {
+      await pool.query(
+        'INSERT INTO users (email, password, role, rut, phone) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (email) DO NOTHING',
+        [p.email, HASH, 'user', p.rut, p.phone]
+      );
+    }
     logger.info('Seed ya ejecutado');
     return;
   }
@@ -134,6 +146,20 @@ export const seed = async (): Promise<void> => {
   }
 
   logger.info(`Usuarios creados: 1 admin, ${doctors.length} doctores, ${patients.length} pacientes`);
+
+  // ==================== SIMPLE PATIENTS (user1/2/3) ====================
+  // Estos se crean siempre (incluso si el seed ya se ejecutó antes)
+  const simplePatients = [
+    { email: 'user1@clinic.com', rut: '15666777-3', phone: '+56911111111' },
+    { email: 'user2@clinic.com', rut: '16777888-7', phone: '+56922222222' },
+    { email: 'user3@clinic.com', rut: '17888999-0', phone: '+56933333333' },
+  ];
+  for (const p of simplePatients) {
+    await pool.query(
+      'INSERT INTO users (email, password, role, rut, phone) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (email) DO NOTHING',
+      [p.email, HASH, 'user', p.rut, p.phone]
+    );
+  }
 
   // ==================== DOCTOR EXCEPTIONS ====================
   // Some doctors have days off in the past and future

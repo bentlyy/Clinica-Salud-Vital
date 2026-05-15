@@ -134,7 +134,7 @@ export const createGuestBooking = async ({ doctor_id, date, time, duration = 30,
         confirmToken,
         frontendUrl: process.env.FRONTEND_URL || 'http://localhost:5173',
       }),
-    }).catch((err: unknown) => logger.error('Email error:', err));
+    }).then(r => { if (!r.sent) logger.error('Email error:', r.error); });
 
     return booking;
 
@@ -168,12 +168,22 @@ export const getGuestBookingsByRut = async (rut: string): Promise<unknown[]> => 
 
 export const cancelGuestBooking = async (bookingId: number, userId: number, userRole?: string): Promise<{ message: string }> => {
   const canCancelAny = userRole === 'admin' || userRole === 'doctor';
-  const result = await pool.query(
-    `UPDATE bookings SET status = 'cancelled'
-     WHERE id = $1 AND (user_id = $2${canCancelAny ? ' OR true' : ''})
-     RETURNING *`,
-    [bookingId, userId]
-  );
+  let result;
+  if (canCancelAny) {
+    result = await pool.query(
+      `UPDATE bookings SET status = 'cancelled'
+       WHERE id = $1
+       RETURNING *`,
+      [bookingId]
+    );
+  } else {
+    result = await pool.query(
+      `UPDATE bookings SET status = 'cancelled'
+       WHERE id = $1 AND user_id = $2
+       RETURNING *`,
+      [bookingId, userId]
+    );
+  }
 
   if (result.rows.length === 0) throw new NotFoundError('Reserva no encontrada');
   return { message: 'Reserva cancelada correctamente' };

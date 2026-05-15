@@ -9,6 +9,7 @@ import MyBookingsPage from '../pages/MyBookingsPage';
 import DoctorPanel from '../pages/DoctorPanel';
 import DoctorAvailabilityPage from '../pages/DoctorAvailabilityPage';
 import DoctorCalendarPage from '../pages/DoctorCalendarPage';
+import DoctorClinicalRecordsPage from '../pages/DoctorClinicalRecordsPage';
 import RegisterDoctorPage from '../pages/RegisterDoctorPage';
 import AnalyticsPage from '../pages/AnalyticsPage';
 import ProtectedRoute from './ProtectedRoute';
@@ -40,6 +41,7 @@ export default function AppRoutes() {
       <Route path="/doctor" element={<ProtectedRoute role="doctor"><AppLayout><DoctorPanel /></AppLayout></ProtectedRoute>} />
       <Route path="/doctor/availability" element={<ProtectedRoute role="doctor"><AppLayout><DoctorAvailabilityPage /></AppLayout></ProtectedRoute>} />
       <Route path="/doctor/calendar" element={<ProtectedRoute role="doctor"><AppLayout><DoctorCalendarPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/doctor/clinical-records" element={<ProtectedRoute role="doctor"><AppLayout><DoctorClinicalRecordsPage /></AppLayout></ProtectedRoute>} />
 
       <Route path="/admin/register-doctor" element={<ProtectedRoute role="admin"><AppLayout><RegisterDoctorPage /></AppLayout></ProtectedRoute>} />
       <Route path="/admin/analytics" element={<ProtectedRoute role="admin"><AppLayout><AnalyticsPage /></AppLayout></ProtectedRoute>} />

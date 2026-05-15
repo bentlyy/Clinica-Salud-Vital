@@ -68,8 +68,8 @@ export default function GuestBookingPage() {
   };
 
   useEffect(() => {
-    getDoctors().then((res) => {
-      setDoctors(res.data || []);
+    getDoctors().then((data) => {
+      setDoctors(Array.isArray(data) ? data : (data.data || []));
       setLoadingDoctors(false);
     }).catch(() => setLoadingDoctors(false));
   }, []);
@@ -77,8 +77,8 @@ export default function GuestBookingPage() {
   useEffect(() => {
     if (selectedDoctor && date) {
       setLoadingSlots(true);
-      getAvailableSlots(selectedDoctor, date).then((res) => {
-        setSlots(res.data || []);
+      getAvailableSlots(selectedDoctor, date).then((data) => {
+        setSlots(Array.isArray(data) ? data : (data.data || []));
         setLoadingSlots(false);
       }).catch(() => {
         setSlots([]);

@@ -19,10 +19,8 @@ WORKDIR /app
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nodejs -u 1001
 
-# Copy dependencies from builder stage (includes dev dependencies)
+# Copy dependencies + source + db migrations
 COPY --from=builder /app/node_modules ./node_modules
-
-# Copy application files
 COPY --from=builder /app/src ./src
 COPY --from=builder /app/db ./db
 COPY --from=builder /app/package*.json ./

@@ -30,6 +30,7 @@ import billingRoutes from './modules/billing/billing.routes.js';
 import laboratoryRoutes from './modules/laboratory/laboratory.routes.js';
 import rbacRoutes from './modules/rbac/rbac.routes.js';
 import mlRoutes from './modules/ml/ml.routes.js';
+import specialtiesRoutes from './modules/specialties/specialties.routes.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -102,6 +103,7 @@ app.use('/api/billing', billingRoutes);
 app.use('/api/laboratory', laboratoryRoutes);
 app.use('/api/rbac', rbacRoutes);
 app.use('/api/ml', mlRoutes);
+app.use('/api/specialties', specialtiesRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);
@@ -165,5 +167,9 @@ const startServer = async (): Promise<void> => {
     process.exit(1);
   }
 };
+
+process.on('unhandledRejection', (reason) => {
+  logger.error('Unhandled Rejection', { reason });
+});
 
 startServer();

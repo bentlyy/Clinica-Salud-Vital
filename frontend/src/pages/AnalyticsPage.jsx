@@ -194,8 +194,8 @@ function SchedulesPanel({ data, chartRed, chartGreen }) {
                 <span style={{ width: 60, fontWeight: 500 }}>{day}</span>
                 <div style={{ display: 'flex', gap: 4, flex: 1 }}>
                   {['09:00', '10:00', '11:00', '14:00', '15:00', '16:00'].map((hour) => {
-                    const hourData = dayData?.hours.find(h => h.time === hour);
-                    const score = hourData?.score || 50;
+                    const hourData = dayData?.hours?.find(h => h.time === hour);
+                    const score = hourData?.score ?? 50;
                     const bg = score > 70 ? chartGreen : score > 40 ? 'var(--chart-warning)' : chartRed;
                     return (
                       <div key={hour} style={{ flex: 1, padding: 8, background: bg, borderRadius: 4, textAlign: 'center', color: 'white', fontSize: 11 }}>
@@ -323,9 +323,11 @@ export default function AnalyticsPage() {
     schedules: [],
     vitals: [],
   });
+  const [fetchError, setFetchError] = useState(false);
 
   const fetchAllData = async () => {
     setLoading(true);
+    setFetchError(false);
     try {
       const [noShows, diagnoses, demand, schedules, vitals, status] = await Promise.all([
         api.get('/analytics/no-shows'),
@@ -345,13 +347,7 @@ export default function AnalyticsPage() {
       setModelStatus(status.data || {});
     } catch (err) {
       console.error('Error fetching analytics:', err);
-      setData({
-        noShows: mockNoShows,
-        diagnoses: mockDiagnoses,
-        demand: mockDemand,
-        schedules: mockSchedules,
-        vitals: mockVitals,
-      });
+      setFetchError(true);
     } finally {
       setLoading(false);
     }
@@ -377,10 +373,27 @@ export default function AnalyticsPage() {
       await api.post('/ml/train');
       await fetchModelStatus();
       await fetchAllData();
+      downloadExport();
     } catch (err) {
       console.error('Error training models:', err);
     } finally {
       setTraining(false);
+    }
+  };
+
+  const downloadExport = async () => {
+    try {
+      const res = await api.get('/analytics/export-excel', { responseType: 'blob' });
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `analytics-powerbi-${new Date().toISOString().split('T')[0]}.xlsx`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Error exporting analytics:', err);
     }
   };
 
@@ -404,14 +417,23 @@ export default function AnalyticsPage() {
           <h1 style={{ marginBottom: 4 }}>Análisis y Predicciones</h1>
           <p style={{ color: 'var(--text-secondary)' }}>Dashboard de Machine Learning y Deep Learning</p>
         </div>
-        <button
-          onClick={trainModels}
-          disabled={training}
-          className="btn btn-primary"
-          style={{ padding: '10px 20px' }}
-        >
-          {training ? '🔄 Entrenando...' : '🧠 Entrenar Modelos'}
-        </button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button
+            onClick={downloadExport}
+            className="btn btn-outline"
+            style={{ padding: '10px 20px' }}
+          >
+            📥 Exportar Excel
+          </button>
+          <button
+            onClick={trainModels}
+            disabled={training}
+            className="btn btn-primary"
+            style={{ padding: '10px 20px' }}
+          >
+            {training ? '🔄 Entrenando...' : '🧠 Entrenar Modelos'}
+          </button>
+        </div>
       </div>
 
       <div className="model-status-bar">
@@ -429,6 +451,24 @@ export default function AnalyticsPage() {
           Vitals: {modelStatus.vitalAnomalyModel === 'trained' ? '✅' : '⏳'}
         </span>
       </div>
+
+      {fetchError && (
+        <div style={{
+          background: 'var(--danger-50, #fef2f2)', border: '1px solid var(--danger-200, #fecaca)',
+          borderRadius: 8, padding: '16px 20px', marginBottom: 20,
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12
+        }}>
+          <span style={{ color: 'var(--danger-700, #b91c1c)' }}>
+            Error al cargar datos. Los gráficos pueden estar vacíos.
+          </span>
+          <button onClick={fetchAllData} style={{
+            padding: '8px 16px', border: 'none', borderRadius: 6,
+            background: 'var(--danger-500, #ef4444)', color: '#fff', cursor: 'pointer', fontSize: 14
+          }}>
+            Reintentar
+          </button>
+        </div>
+      )}
 
       <div className="analytics-tabs">
         {tabs.map((tab) => (
@@ -560,42 +600,3 @@ export default function AnalyticsPage() {
   );
 }
 
-const mockNoShows = [
-  { doctor: 'Dr. Pérez', total: 45, noShows: 8 },
-  { doctor: 'Dr. García', total: 38, noShows: 5 },
-  { doctor: 'Dra. López', total: 52, noShows: 12 },
-  { doctor: 'Dr. Martínez', total: 30, noShows: 3 },
-  { doctor: 'Dra. Silva', total: 41, noShows: 7 },
-];
-
-const mockDiagnoses = [
-  { diagnosis: 'Hipertensión esencial', count: 45, cie10: 'I10' },
-  { diagnosis: 'Diabetes tipo 2', count: 38, cie10: 'E11' },
-  { diagnosis: 'Bronquitis aguda', count: 32, cie10: 'J20' },
-  { diagnosis: 'Gastritis', count: 28, cie10: 'K29' },
-  { diagnosis: 'Artrosis', count: 24, cie10: 'M19' },
-  { diagnosis: 'Migraña', count: 21, cie10: 'G43' },
-  { diagnosis: 'Ansiedad', count: 18, cie10: 'F41' },
-  { diagnosis: 'Asma', count: 15, cie10: 'J45' },
-];
-
-const mockDemand = Array.from({ length: 30 }, (_, i) => ({
-  date: `2026-04-${String(i + 1).padStart(2, '0')}`,
-  bookings: Math.floor(Math.random() * 20) + 10,
-  predicted: Math.floor(Math.random() * 20) + 10,
-}));
-
-const mockSchedules = [
-  { day: 'Lunes', bestTime: '10:00', occupancy: 75 },
-  { day: 'Martes', bestTime: '14:00', occupancy: 60 },
-  { day: 'Miércoles', bestTime: '09:00', occupancy: 80 },
-  { day: 'Jueves', bestTime: '15:00', occupancy: 55 },
-  { day: 'Viernes', bestTime: '11:00', occupancy: 70 },
-];
-
-const mockVitals = [
-  { patientId: 101, date: '2026-04-01', pressure: '140/90', pressureAnomaly: true, heartRate: 78, heartRateAnomaly: false, temperature: 36.5, tempAnomaly: false, anomaly: true },
-  { patientId: 102, date: '2026-04-01', pressure: '120/80', pressureAnomaly: false, heartRate: 72, heartRateAnomaly: false, temperature: 36.6, tempAnomaly: false, anomaly: false },
-  { patientId: 103, date: '2026-04-02', pressure: '130/85', pressureAnomaly: false, heartRate: 95, heartRateAnomaly: true, temperature: 37.2, tempAnomaly: false, anomaly: true },
-  { patientId: 104, date: '2026-04-02', pressure: '118/75', pressureAnomaly: false, heartRate: 68, heartRateAnomaly: false, temperature: 36.4, tempAnomaly: false, anomaly: false },
-];

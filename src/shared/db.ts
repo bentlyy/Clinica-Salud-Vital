@@ -32,8 +32,6 @@ pool.on('error', (err: Error) => {
 export const query = pool.query.bind(pool);
 export const getClient = pool.connect.bind(pool);
 
-type Pool = typeof pool;
-type PoolClient = ReturnType<typeof pool.connect>;
-type QueryResult = ReturnType<typeof pool.query>;
-
-export { Pool, PoolClient, QueryResult };
+export type Pool = typeof pool;
+export type PoolClient = ReturnType<typeof pool.connect>;
+export type QueryResult = ReturnType<typeof pool.query>;

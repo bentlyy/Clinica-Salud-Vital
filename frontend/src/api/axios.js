@@ -14,26 +14,25 @@ api.interceptors.request.use((config) => {
 });
 
 // ✅ Global response interceptor
-// - Expired token → clear storage and redirect to login
-// - 500 errors → single consistent error message
+// - Expired token → clear storage and dispatch event for AuthContext
+// - Auto-unwrap paginated responses: { data, pagination } → data
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    const body = response.data;
+    if (body && typeof body === 'object' && Array.isArray(body.data) && body.pagination) {
+      response.data = body.data;
+    }
+    return response;
+  },
   (error) => {
     const status = error.response?.status;
     const code   = error.response?.data?.code;
 
-    if (status === 401 && code === 'TOKEN_EXPIRED') {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      // Hard redirect so AuthContext resets cleanly
-      window.location.href = '/';
-      return Promise.reject(new Error('Session expired, please log in again'));
-    }
-
     if (status === 401) {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
-      window.location.href = '/';
+      window.dispatchEvent(new CustomEvent('auth:expired'));
+      return Promise.reject(new Error(code === 'TOKEN_EXPIRED' ? 'Session expired, please log in again' : 'Unauthorized'));
     }
 
     return Promise.reject(error);

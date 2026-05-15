@@ -42,15 +42,8 @@ export default function DoctorAvailabilityPage() {
   };
 
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        const data = await getAvailability();
-        setAvailability(data);
-      } catch {
-        setError('Error cargando disponibilidad');
-      }
-    };
-    loadData();
+    fetchAvailability();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // 🔥 generar bloques de 30 min

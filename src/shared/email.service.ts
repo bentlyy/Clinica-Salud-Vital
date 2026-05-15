@@ -6,6 +6,11 @@ export interface EmailOptions {
   html: string;
 }
 
+export interface EmailResult {
+  sent: boolean;
+  error?: string;
+}
+
 const transporter: Transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
@@ -14,11 +19,17 @@ const transporter: Transporter = nodemailer.createTransport({
   }
 });
 
-export const sendEmail = async ({ to, subject, html }: EmailOptions): Promise<void> => {
-  await transporter.sendMail({
-    from: `"Clinic App" <${process.env.EMAIL_USER}>`,
-    to,
-    subject,
-    html
-  });
+export const sendEmail = async ({ to, subject, html }: EmailOptions): Promise<EmailResult> => {
+  try {
+    await transporter.sendMail({
+      from: `"Clinic App" <${process.env.EMAIL_USER}>`,
+      to,
+      subject,
+      html
+    });
+    return { sent: true };
+  } catch (err) {
+    const message = (err as Error).message;
+    return { sent: false, error: message };
+  }
 };

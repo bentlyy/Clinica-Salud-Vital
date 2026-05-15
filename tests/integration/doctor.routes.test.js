@@ -50,6 +50,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   mockConnect.mockReturnValue(mockClient);
   mockClient.query.mockReset();
+  mockQuery.mockResolvedValue({ rows: [{ id: 1, name: 'General' }] });
 });
 
 describe('GET /api/doctors/public', () => {
