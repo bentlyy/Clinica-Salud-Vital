@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import { formatRut, validateRut, cleanRut } from '../utils/rut.js';
+import Combobox from '../components/Combobox';
 
 export default function RegisterDoctorPage() {
   const navigate = useNavigate();
@@ -68,7 +69,12 @@ export default function RegisterDoctorPage() {
 
         <div className="form-group">
           <label className="form-label">Especialidad <span className="required">*</span></label>
-          <input name="specialty" required value={form.specialty} onChange={(e) => setForm({ ...form, specialty: e.target.value })} placeholder="Cardiología" className="form-input" />
+          <Combobox
+            value={form.specialty}
+            onChange={(val) => setForm({ ...form, specialty: val })}
+            placeholder="Cardiología"
+            required
+          />
         </div>
 
         <div className="form-group">

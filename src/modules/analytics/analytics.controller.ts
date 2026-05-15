@@ -59,3 +59,11 @@ export const getVitalsAnomalies = asyncHandler(async (req, res) => {
   const data = await analyticsService.getVitalSignsAnomalies();
   res.json(data);
 });
+
+export const exportAnalytics = asyncHandler(async (req, res) => {
+  const { generateAnalyticsExcel } = await import('./analytics.export');
+  const buffer = await generateAnalyticsExcel();
+  res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  res.setHeader('Content-Disposition', `attachment; filename=analytics-powerbi-${new Date().toISOString().split('T')[0]}.xlsx`);
+  res.send(buffer);
+});
