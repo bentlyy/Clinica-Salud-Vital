@@ -21,7 +21,7 @@ export default function DoctorPanel() {
 
       {error && <div className="alert alert-error">{error}</div>}
 
-      <div className="grid grid-2" style={{ marginBottom: 32 }}>
+      <div className="grid grid-3" style={{ marginBottom: 32 }}>
         <div className="card card-subtle" onClick={() => navigate('/doctor/calendar')} style={{ cursor: 'pointer', padding: 32 }}>
           <div style={{ fontSize: 32, marginBottom: 12 }}>📅</div>
           <h3>Calendario</h3>
@@ -31,6 +31,11 @@ export default function DoctorPanel() {
           <div style={{ fontSize: 32, marginBottom: 12 }}>⏰</div>
           <h3>Disponibilidad</h3>
           <p>Define tus horarios base</p>
+        </div>
+        <div className="card card-subtle" onClick={() => navigate('/doctor/clinical-records')} style={{ cursor: 'pointer', padding: 32 }}>
+          <div style={{ fontSize: 32, marginBottom: 12 }}>📋</div>
+          <h3>Fichas Clínicas</h3>
+          <p>Registra diagnósticos y recetas</p>
         </div>
       </div>
 

@@ -24,13 +24,10 @@ const VALID_SENT_FIELDS = ['reminder_1h_sent', 'reminder_24h_sent'];
 
 const sendWithRetry = async (emailOptions: EmailOptions, attempts = 3): Promise<void> => {
   for (let i = 1; i <= attempts; i++) {
-    try {
-      await sendEmail(emailOptions);
-      return;
-    } catch (err) {
-      if (i === attempts) throw err;
-      await new Promise(r => setTimeout(r, 1000 * 2 ** i));
-    }
+    const result = await sendEmail(emailOptions);
+    if (result.sent) return;
+    if (i === attempts) throw new Error(result.error);
+    await new Promise(r => setTimeout(r, 1000 * 2 ** i));
   }
 };
 

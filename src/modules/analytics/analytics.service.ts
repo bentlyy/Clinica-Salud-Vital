@@ -186,15 +186,28 @@ export const getDemandForecast = async (days = 30) => {
 export const getOptimalSchedules = async () => {
   try {
     const schedules = await mlService.analyzeOptimalSchedules();
-    return schedules;
+    return schedules.map(s => ({
+      day: s.day,
+      bestTime: s.bestTime,
+      occupancy: s.occupancy,
+      hours: Object.entries(s.factors || {}).map(([time, data]) => ({
+        time,
+        score: Math.min(100, Math.round(data.demand * (1 - data.noShowRate) * 10)),
+      })),
+    }));
   } catch (err) {
     logger.error('[Analytics] Error getting optimal schedules:', err);
     const days = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'];
     const bestTimes = ['10:00', '14:00', '09:00', '15:00', '11:00'];
+    const hoursList = ['09:00', '10:00', '11:00', '14:00', '15:00', '16:00'];
     return days.map((day, i) => ({
       day,
       bestTime: bestTimes[i],
       occupancy: 50 + Math.floor(Math.random() * 30),
+      hours: hoursList.map(time => ({
+        time,
+        score: 40 + Math.floor(Math.random() * 60),
+      })),
     }));
   }
 };

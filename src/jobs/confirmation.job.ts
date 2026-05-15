@@ -6,7 +6,7 @@ import { logger } from '../utils/logger.js';
 const BLOCK_DURATION_HOURS = 168; // 7 days
 
 // Pre-computed bcrypt hash so guest records have a valid hash (no login possible)
-const GUEST_DUMMY_HASH = bcrypt.hashSync('__no_guest_login__', 10);
+const GUEST_DUMMY_HASH = bcrypt.hashSync('__no_guest_login__', 12);
 
 export const startConfirmationJob = (): void => {
   cron.schedule('0 2 * * *', async () => {
@@ -19,7 +19,7 @@ export const startConfirmationJob = (): void => {
         LEFT JOIN users u ON b.user_id = u.id
         WHERE b.confirmed = FALSE
           AND b.status = 'pending'
-          AND (b.date + b.time) < NOW() - interval '1 hour'
+          AND (b.date || ' ' || b.time)::timestamp < NOW() - interval '1 hour'
       `);
 
       for (const booking of result.rows) {
