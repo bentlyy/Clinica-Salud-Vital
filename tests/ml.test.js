@@ -282,5 +282,69 @@ describe('ML Text Utilities', () => {
       const vector = vectorizeDiagnosis('', vocab, idf, maxVals);
       expect(vector.every(v => v === 0)).toBe(true);
     });
+
+    it('should handle maxVals of zero (division guard)', () => {
+      const zeroMax = [0, 0, 0];
+      const vector = vectorizeDiagnosis('cabeza fiebre', vocab, idf, zeroMax);
+      expect(vector[0]).toBeGreaterThan(0);
+      expect(vector[1]).toBeGreaterThan(0);
+    });
+  });
+});
+
+describe('ML Cache advanced', () => {
+  beforeEach(() => {
+    mlCache.clear();
+  });
+
+  it('should invalidate keys by pattern', async () => {
+    await mlCache.set('noShow:abc123', { risk: 0.5 });
+    await mlCache.set('noShow:def456', { risk: 0.3 });
+    await mlCache.set('demand:ghi789', { value: 10 });
+
+    const count = await mlCache.invalidate('noShow');
+    expect(count).toBe(2);
+
+    const remaining = mlCache.getStats().size;
+    expect(remaining).toBe(1);
+  });
+
+  it('should evict oldest when cache is full', async () => {
+    for (let i = 0; i < 110; i++) {
+      await mlCache.set(`key${i}`, `value${i}`);
+    }
+    const stats = mlCache.getStats();
+    expect(stats.size).toBeLessThanOrEqual(100);
+  });
+
+  it('should handle generateKey with different data types', () => {
+    expect(mlCache.generateKey('test', 'string')).toBeTruthy();
+    expect(mlCache.generateKey('test', { a: 1 })).toBeTruthy();
+    expect(mlCache.generateKey('test', null)).toBeTruthy();
+  });
+});
+
+describe('Validation edge cases', () => {
+  it('validateNoShowPrediction should reject zero doctorId', () => {
+    const result = mlValidator.validateNoShowPrediction({
+      doctorId: 0,
+      date: '2026-05-10',
+      time: '10:00'
+    });
+    expect(result.valid).toBe(false);
+  });
+
+  it('validateDemandForecast should reject negative days', () => {
+    const result = mlValidator.validateDemandForecast({ days: '-5' });
+    expect(result.valid).toBe(false);
+    expect(result.errors).toHaveLength(1);
+  });
+
+  it('sanitizeMLInput should strip angle brackets and quotes', () => {
+    const result = mlValidator.sanitizeMLInput({
+      chiefComplaint: '<b>dolor</b> <img src=x onerror=alert(1)>'
+    });
+    expect(result.chiefComplaint).not.toContain('<');
+    expect(result.chiefComplaint).not.toContain('>');
   });
 });

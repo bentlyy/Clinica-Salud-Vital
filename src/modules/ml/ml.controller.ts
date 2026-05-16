@@ -96,11 +96,13 @@ export const classifyDiagnosis = [
   asyncHandler(async (req: Request, res: Response) => {
     const validation = validator.validateDiagnosisClassification(req.body);
     if (!validation.valid) {
-      throw new BadRequestError(validation.errors.map(e => e.message).join(', '));
+      throw new BadRequestError(
+        (validation.errors as Array<{ message: string }>).map(e => e.message).join(', ')
+      );
     }
 
     const sanitized = validator.sanitizeMLInput(req.body);
-    const result = await mlService.predictDiagnosis(sanitized.chiefComplaint);
+    const result = await mlService.predictDiagnosis(sanitized.chiefComplaint ?? '');
 
     res.json(result);
   })

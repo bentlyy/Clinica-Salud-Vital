@@ -46,7 +46,7 @@ export const getLabTests = async ({ category, active = true, limit = 50, offset 
   return result.rows;
 };
 
-export const createLabRequest = async (data) => {
+export const createLabRequest = async (data: { patient_id: number; doctor_id?: number; clinical_record_id?: number; priority?: string; notes?: string; test_ids?: number[] }) => {
   const client = await pool.connect();
 
   try {
