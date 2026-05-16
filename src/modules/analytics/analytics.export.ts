@@ -37,26 +37,17 @@ export const generateAnalyticsExcel = async (): Promise<Buffer> => {
   ]);
 
   if (bookingsByMonth.length) {
-    const header = Object.keys(bookingsByMonth[0]);
+    const header = Object.keys(bookingsByMonth[0] ?? {});
     addSheet(wb, 'Citas por Mes', [
       header,
-      ...bookingsByMonth.map(r => header.map(k => r[k] ?? '')),
+      ...bookingsByMonth.map((r: Record<string, unknown>) => header.map(k => String(r[k] ?? ''))),
     ]);
   }
 
   if (topDoctors.length) {
-    const header = Object.keys(topDoctors[0]);
     addSheet(wb, 'Top Doctores', [
-      header,
-      ...topDoctors.map(r => header.map(k => r[k] ?? '')),
-    ]);
-  }
-
-  if (statusDist.length) {
-    const header = Object.keys(statusDist[0]);
-    addSheet(wb, 'Distribución Estados', [
-      header,
-      ...statusDist.map(r => header.map(k => r[k] ?? '')),
+      ['Doctor', 'Especialidad', 'Citas'],
+      ...topDoctors.map(r => [r.doctor, r.specialty, r.count]),
     ]);
   }
 
@@ -75,10 +66,11 @@ export const generateAnalyticsExcel = async (): Promise<Buffer> => {
   }
 
   if (demand.length) {
-    const header = Object.keys(demand[0]);
+    const demandData = demand as Record<string, unknown>[];
+    const header = Object.keys(demandData[0] ?? {});
     addSheet(wb, 'Demanda / Pronóstico', [
       header,
-      ...demand.map(r => header.map(k => r[k] ?? '')),
+      ...demandData.map(r => header.map(k => String(r[k] ?? ''))),
     ]);
   }
 

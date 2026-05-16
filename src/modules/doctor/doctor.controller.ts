@@ -26,7 +26,7 @@ export const createDoctor = asyncHandler(async (req, res) => {
 });
 
 export const getMyDoctorProfile = asyncHandler(async (req, res) => {
-  const doctor = await doctorService.getDoctorByUserId(req.user.id);
+  const doctor = await doctorService.getDoctorByUserId(req.user!.id);
   if (!doctor) throw new NotFoundError('Doctor profile not found');
 
   res.json(doctor);
