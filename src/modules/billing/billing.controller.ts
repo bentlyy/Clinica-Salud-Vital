@@ -12,13 +12,13 @@ export const getInvoices = asyncHandler(async (req, res) => {
   const limit = getQueryInt(req.query, 'limit', 50);
   const offset = getQueryInt(req.query, 'offset', 0);
 
-  if (req.user.role === 'user') {
-    const invoices = await billingService.getInvoices({ patient_id: req.user.id, limit, offset });
+  if (req.user!.role === 'user') {
+    const invoices = await billingService.getInvoices({ patient_id: req.user!.id, limit, offset });
     return res.json(invoices);
   }
 
-  if (req.user.role === 'doctor') {
-    const doctor = await doctorService.getDoctorByUserId(req.user.id);
+  if (req.user!.role === 'doctor') {
+    const doctor = await doctorService.getDoctorByUserId(req.user!.id);
     if (!doctor) throw new NotFoundError('Doctor profile not found');
     const invoices = await billingService.getInvoices({ doctor_id: doctor.id, limit, offset });
     return res.json(invoices);
@@ -39,7 +39,7 @@ export const getInvoiceById = asyncHandler(async (req, res) => {
   const id = getQueryInt(req.params, 'id', 0);
   const invoice = await billingService.getInvoiceById(id);
 
-  if (req.user.role === 'user' && invoice.patient_id !== req.user.id) {
+  if (req.user!.role === 'user' && invoice.patient_id !== req.user!.id) {
     throw new BadRequestError('Access denied');
   }
 

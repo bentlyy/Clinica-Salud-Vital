@@ -204,3 +204,99 @@ describe('bookingService.getBookingsByDoctor', () => {
     expect(result.data[0].patient_email).toBe('patient@test.com');
   });
 });
+
+describe('bookingService.getAllBookings', () => {
+  it('returns paginated bookings', async () => {
+    const mockBookings = [
+      { id: 1, date: '2025-01-15', time: '10:00', doctor_name: 'Dr. Test' },
+    ];
+    mockQuery.mockResolvedValueOnce({ rows: mockBookings });
+    mockQuery.mockResolvedValueOnce({ rows: [{ count: '1' }] });
+
+    const result = await bookingService.getAllBookings({ page: 1, limit: 50 });
+
+    expect(result.data).toHaveLength(1);
+    expect(result.pagination.total).toBe(1);
+  });
+});
+
+describe('bookingService.createBooking advanced', () => {
+  const doctorRow = { id: 1, name: 'Dr. Test', slot_duration: 30, specialty: 'General', email: 'doc@test.com' };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockConnect.mockReturnValue(mockClient);
+  });
+
+  it('throws if date is in the past', async () => {
+    await expect(bookingService.createBooking({
+      doctor_id: 1, user_id: 1, date: '2020-01-01', time: '10:00',
+    })).rejects.toThrow('Cannot book appointments in the past');
+  });
+
+  it('throws if outside doctor availability', async () => {
+    mockQuery.mockResolvedValue({ rows: [doctorRow] });
+    mockClient.query.mockImplementation((sql) => {
+      if (sql === 'BEGIN' || sql.includes('pg_advisory')) return Promise.resolve({});
+      if (sql.includes('FROM users WHERE id')) return Promise.resolve({ rows: [{ email: 'test@test.com', blocked_until: null }] });
+      if (sql.includes('FROM doctor_availability')) return Promise.resolve({ rows: [{ start_time: '09:00:00', end_time: '12:00:00' }] });
+      return Promise.resolve({ rows: [] });
+    });
+
+    await expect(bookingService.createBooking({
+      doctor_id: 1, user_id: 1, date: futureDate, time: '14:00',
+    })).rejects.toThrow('Outside doctor availability');
+  });
+
+  it('detects time slot overlap', async () => {
+    mockQuery.mockResolvedValue({ rows: [doctorRow] });
+    mockClient.query.mockImplementation((sql) => {
+      if (sql === 'BEGIN' || sql.includes('pg_advisory')) return Promise.resolve({});
+      if (sql.includes('FROM users WHERE id')) return Promise.resolve({ rows: [{ email: 'test@test.com', blocked_until: null }] });
+      if (sql.includes('FROM doctor_availability')) return Promise.resolve({ rows: [{ start_time: '09:00:00', end_time: '17:00:00' }] });
+      if (sql.includes('FROM doctor_exceptions')) return Promise.resolve({ rows: [] });
+      if (sql.includes('FROM bookings')) return Promise.resolve({ rows: [{ id: 1 }] });
+      return Promise.resolve({ rows: [] });
+    });
+
+    await expect(bookingService.createBooking({
+      doctor_id: 1, user_id: 1, date: futureDate, time: '10:00',
+    })).rejects.toThrow('This time slot is already booked');
+  });
+
+  it('blocks full day exception', async () => {
+    mockQuery.mockResolvedValue({ rows: [doctorRow] });
+    mockClient.query.mockImplementation((sql) => {
+      if (sql === 'BEGIN' || sql.includes('pg_advisory')) return Promise.resolve({});
+      if (sql.includes('FROM users WHERE id')) return Promise.resolve({ rows: [{ email: 'test@test.com', blocked_until: null }] });
+      if (sql.includes('FROM doctor_availability')) return Promise.resolve({ rows: [{ start_time: '09:00:00', end_time: '17:00:00' }] });
+      if (sql.includes('FROM doctor_exceptions')) return Promise.resolve({ rows: [{ id: 1, is_full_day: true }] });
+      return Promise.resolve({ rows: [] });
+    });
+
+    await expect(bookingService.createBooking({
+      doctor_id: 1, user_id: 1, date: futureDate, time: '10:00',
+    })).rejects.toThrow('full day blocked');
+  });
+
+  it('creates booking successfully through full flow', async () => {
+    mockQuery.mockResolvedValue({ rows: [doctorRow] });
+    mockClient.query.mockImplementation((sql) => {
+      if (sql === 'BEGIN' || sql.includes('pg_advisory')) return Promise.resolve({});
+      if (sql.includes('FROM users WHERE id')) return Promise.resolve({ rows: [{ email: 'test@test.com', blocked_until: null, rut: null, phone: null }] });
+      if (sql.includes('FROM doctor_availability')) return Promise.resolve({ rows: [{ start_time: '09:00:00', end_time: '17:00:00' }] });
+      if (sql.includes('FROM doctor_exceptions')) return Promise.resolve({ rows: [] });
+      if (sql.includes('FROM bookings')) return Promise.resolve({ rows: [] });
+      if (sql.includes('INSERT INTO bookings')) return Promise.resolve({ rows: [{ id: 1, date: futureDate, time: '10:00' }] });
+      if (sql === 'COMMIT') return Promise.resolve({});
+      return Promise.resolve({ rows: [] });
+    });
+
+    const result = await bookingService.createBooking({
+      doctor_id: 1, user_id: 1, date: futureDate, time: '10:00',
+    });
+
+    expect(result.id).toBe(1);
+    expect(mockClient.query).toHaveBeenCalledWith('COMMIT');
+  });
+});
