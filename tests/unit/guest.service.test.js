@@ -116,4 +116,62 @@ describe('guestService.cancelGuestBooking', () => {
 
     await expect(guestService.cancelGuestBooking(999, 1)).rejects.toThrow('Reserva no encontrada');
   });
+
+  it('allows admin to cancel any booking', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [{ id: 1 }] });
+
+    const result = await guestService.cancelGuestBooking(1, 1, 'admin');
+
+    expect(result.message).toBe('Reserva cancelada correctamente');
+  });
+});
+
+describe('guestService.createGuestBooking advanced', () => {
+  const doctorRow = { id: 1, name: 'Dr. Test', slot_duration: 30 };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockConnect.mockReturnValue(mockClient);
+  });
+
+  it('completes full booking flow with transaction', async () => {
+    mockQuery.mockResolvedValue({ rows: [doctorRow] });
+    mockClient.query.mockImplementation((sql) => {
+      if (sql === 'BEGIN' || sql.includes('pg_advisory')) return Promise.resolve({});
+      if (sql.includes('FROM doctor_availability')) return Promise.resolve({ rows: [{ start_time: '09:00:00', end_time: '17:00:00' }] });
+      if (sql.includes('FROM doctor_exceptions')) return Promise.resolve({ rows: [] });
+      if (sql.includes('FROM bookings')) return Promise.resolve({ rows: [] });
+      if (sql.includes('INSERT INTO bookings')) return Promise.resolve({ rows: [{ id: 1, date: '2026-06-15', time: '10:00' }] });
+      if (sql === 'COMMIT') return Promise.resolve({});
+      return Promise.resolve({ rows: [] });
+    });
+
+    const result = await guestService.createGuestBooking({
+      doctor_id: 1, date: '2026-06-15', time: '10:00', rut: '12.345.678-5', email: 'guest@test.com', name: 'Guest',
+    });
+
+    expect(result.id).toBe(1);
+    expect(mockClient.query).toHaveBeenCalledWith('COMMIT');
+  });
+
+  it('throws on duplicate slot (unique constraint)', async () => {
+    mockQuery.mockResolvedValue({ rows: [doctorRow] });
+    mockClient.query.mockImplementation((sql) => {
+      if (sql === 'BEGIN' || sql.includes('pg_advisory')) return Promise.resolve({});
+      if (sql.includes('FROM doctor_availability')) return Promise.resolve({ rows: [{ start_time: '09:00:00', end_time: '17:00:00' }] });
+      if (sql.includes('FROM doctor_exceptions')) return Promise.resolve({ rows: [] });
+      if (sql.includes('FROM bookings')) return Promise.resolve({ rows: [] });
+      const err = new Error('Duplicate key');
+      err.code = '23505';
+      if (sql.includes('INSERT INTO bookings')) return Promise.reject(err);
+      if (sql === 'ROLLBACK') return Promise.resolve({});
+      return Promise.resolve({ rows: [] });
+    });
+
+    await expect(guestService.createGuestBooking({
+      doctor_id: 1, date: '2026-06-15', time: '10:00', rut: '12.345.678-5', email: 'guest@test.com',
+    })).rejects.toThrow('Este horario ya está reservado');
+
+    expect(mockClient.query).toHaveBeenCalledWith('ROLLBACK');
+  });
 });

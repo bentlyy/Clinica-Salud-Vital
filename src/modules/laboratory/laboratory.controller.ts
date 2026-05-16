@@ -34,9 +34,9 @@ export const getLabRequests = asyncHandler(async (req, res) => {
   const limit = getQueryInt(req.query, 'limit', 50);
   const offset = getQueryInt(req.query, 'offset', 0);
 
-  if (req.user.role === 'user') {
+  if (req.user!.role === 'user') {
     const requests = await laboratoryService.getLabRequests({
-      patient_id: req.user.id,
+      patient_id: req.user!.id,
       status,
       limit,
       offset,
@@ -44,8 +44,8 @@ export const getLabRequests = asyncHandler(async (req, res) => {
     return res.json(requests);
   }
 
-  if (req.user.role === 'doctor') {
-    const doctor = await doctorService.getDoctorByUserId(req.user.id);
+  if (req.user!.role === 'doctor') {
+    const doctor = await doctorService.getDoctorByUserId(req.user!.id);
     if (!doctor) throw new NotFoundError('Doctor profile not found');
     const requests = await laboratoryService.getLabRequests({
       doctor_id: doctor.id,
@@ -69,7 +69,7 @@ export const getLabRequests = asyncHandler(async (req, res) => {
 export const getLabRequestById = asyncHandler(async (req, res) => {
   const request = await laboratoryService.getLabRequestById(Number(req.params.id));
 
-  if (req.user.role === 'user' && request.patient_id !== req.user.id) {
+  if (req.user!.role === 'user' && request.patient_id !== req.user!.id) {
     throw new BadRequestError('Access denied');
   }
 
@@ -94,6 +94,6 @@ export const updateLabRequestItemResult = asyncHandler(async (req, res) => {
 });
 
 export const cancelLabRequest = asyncHandler(async (req, res) => {
-  const result = await laboratoryService.cancelLabRequest(Number(req.params.id), req.user.id, req.user.role);
+  const result = await laboratoryService.cancelLabRequest(Number(req.params.id), req.user!.id, req.user!.role);
   res.json(result);
 });
