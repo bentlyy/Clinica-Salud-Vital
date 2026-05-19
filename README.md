@@ -74,7 +74,7 @@ Sistema full-stack para clínicas que integra agenda médica, historias clínica
 
 | Capa | Tecnología | Versión |
 |------|-----------|---------|
-| **Frontend** | React + Vite + MUI + FullCalendar | 19 / 6 / 6 |
+| **Frontend** | React + Vite + FullCalendar + Recharts | 19 / 6 / 6 |
 | **Backend** | Node.js + Express 5 + TypeScript | 22 LTS |
 | **Base de datos** | PostgreSQL | 15 Alpine |
 | **Autenticación** | JWT + bcrypt (12 rounds) | — |
@@ -84,7 +84,7 @@ Sistema full-stack para clínicas que integra agenda médica, historias clínica
 | **PDF** | PDFKit | 0.18 |
 | **Logging** | Winston | 3.x |
 | **Testing** | Vitest + Supertest + Coverage V8 | 4.x |
-| **Infraestructura** | Docker + Docker Compose | — |
+| **Infraestructura** | Render | — |
 | **Tareas programadas** | node-cron (cada 5 min) | 4.x |
 | **Seguridad** | Helmet, HPP, express-rate-limit | — |
 | **Compresión** | compression (Express) | 1.8 |
@@ -150,9 +150,8 @@ C:.
 │       ├── api/                      # Llamadas API
 │       └── components/               # Componentes reutilizables
 ├── coverage/                         # Reportes de cobertura
-├── docker-compose.yml                # Orquestación Docker
-├── Dockerfile                        # Build de API
-└── cloudflare-config.yml             # Despliegue Cloudflare
+├── docker-compose.yml                # Solo PostgreSQL local
+└── render.yaml                       # Despliegue en Render
 ```
 
 ---
@@ -754,23 +753,31 @@ tests/
 
 ## 🚀 CÓMO EJECUTAR
 
-### Con Docker (recomendado)
+### Desarrollo Local
 ```bash
-docker compose up -d --build
-```
+# 1. PostgreSQL en Docker
+docker compose up -d db
 
-### Sin Docker (desarrollo)
-```bash
-# PostgreSQL en Docker
-docker run -d -p 5432:5432 -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=clinic --name clinic-db postgres:15-alpine
-
-# Migraciones
-docker exec -i clinic-db psql -U postgres -d clinic < db/init.sql
-
-# Iniciar API
+# 2. Iniciar API
 npm install
 npm run dev
 ```
+
+### Despliegue en Render
+
+1. Crea una **Web Service** en Render desde tu repo de GitHub
+2. Configura:
+   - **Build Command**: `npm install && npm run build`
+   - **Start Command**: `npm start`
+   - **Plan**: Free o superior
+3. Agrega las **Environment Variables** desde `render.yaml` o manualmente:
+   - `DATABASE_URL` — URL de tu PostgreSQL (puede ser Render PostgreSQL, Neon, etc.)
+   - `JWT_SECRET` — secreto largo para JWT
+   - `FRONTEND_URL` — dominio de tu frontend en Render
+   - `EMAIL_USER` / `EMAIL_PASS` — credenciales Gmail SMTP
+4. Render ejecutará el build (compila el frontend) y arrancará la API con `tsx`
+
+> El frontend se sirve estáticamente desde Express en producción (`/api/v1/*` → API, `/*` → frontend).
 
 ### Tests
 ```bash
