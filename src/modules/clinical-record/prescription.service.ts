@@ -1,5 +1,5 @@
-import { pool } from '../../shared/db';
-import { NotFoundError, BadRequestError } from '../../utils/errors';
+import { pool } from '../../shared/db.js';
+import { NotFoundError, BadRequestError } from '../../utils/errors.js';
 
 interface PrescriptionData {
   clinical_record_id: number;

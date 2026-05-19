@@ -1,7 +1,7 @@
-import * as laboratoryService from './laboratory.service';
-import * as doctorService from '../doctor/doctor.service';
-import { asyncHandler } from '../../middlewares/asyncHandler.middleware';
-import { NotFoundError, BadRequestError } from '../../utils/errors';
+import * as laboratoryService from './laboratory.service.js';
+import * as doctorService from '../doctor/doctor.service.js';
+import { asyncHandler } from '../../middlewares/asyncHandler.middleware.js';
+import { NotFoundError, BadRequestError } from '../../utils/errors.js';
 
 const getQuery = (query: Record<string, unknown>, key: string): string | undefined => {
   const val = query[key];

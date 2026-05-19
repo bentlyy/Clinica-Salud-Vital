@@ -1,8 +1,8 @@
-import * as bookingService from './booking.service';
-import * as doctorService from '../doctor/doctor.service';
-import { asyncHandler } from '../../middlewares/asyncHandler.middleware';
-import { NotFoundError } from '../../utils/errors';
-import { getQueryInt, getQueryString } from '../../shared/query';
+import * as bookingService from './booking.service.js';
+import * as doctorService from '../doctor/doctor.service.js';
+import { asyncHandler } from '../../middlewares/asyncHandler.middleware.js';
+import { NotFoundError } from '../../utils/errors.js';
+import { getQueryInt, getQueryString } from '../../shared/query.js';
 
 export const createBooking = asyncHandler(async (req, res) => {
   const booking = await bookingService.createBooking({

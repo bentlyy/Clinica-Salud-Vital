@@ -4,11 +4,11 @@ import {
   registerDoctor,
   createDoctor,
   getMyDoctorProfile
-} from './doctor.controller';
-import { authMiddleware } from '../../middlewares/auth.middleware';
-import { authorizeRoles } from '../../middlewares/role.middleware';
-import { validateZod } from '../../middlewares/validate.middleware';
-import { registerDoctorSchema, createDoctorSchema } from './doctor.schema';
+} from './doctor.controller.js';
+import { authMiddleware } from '../../middlewares/auth.middleware.js';
+import { authorizeRoles } from '../../middlewares/role.middleware.js';
+import { validateZod } from '../../middlewares/validate.middleware.js';
+import { registerDoctorSchema, createDoctorSchema } from './doctor.schema.js';
 
 const router = Router();
 

@@ -5,7 +5,7 @@
 
 import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
-import { authMiddleware, authorize } from '../../middlewares/auth.middleware';
+import { authMiddleware, authorize } from '../../middlewares/auth.middleware.js';
 import {
   trainModels,
   getModelStatus,
@@ -24,7 +24,7 @@ import {
   exportPredictionData,
   exportMetricsData,
   exportDemandForecastData
-} from './ml.controller';
+} from './ml.controller.js';
 
 const router = Router();
 

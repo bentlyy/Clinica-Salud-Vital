@@ -1,5 +1,5 @@
-import * as auditService from './audit.service';
-import { asyncHandler } from '../../middlewares/asyncHandler.middleware';
+import * as auditService from './audit.service.js';
+import { asyncHandler } from '../../middlewares/asyncHandler.middleware.js';
 
 const getQuery = (query: Record<string, unknown>, key: string): string | undefined => {
   const val = query[key];

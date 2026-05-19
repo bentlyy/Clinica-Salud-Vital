@@ -1,8 +1,8 @@
 import { Router } from 'express';
-import { authMiddleware, authorize } from '../../middlewares/auth.middleware';
-import { validateZod } from '../../middlewares/validate.middleware';
-import { createLabRequestSchema, labRequestIdSchema } from './laboratory.schema';
-import { getLabTests, getLabRequests, getLabRequestById, createLabRequest, updateLabRequestStatus, updateLabRequestItemResult, cancelLabRequest } from './laboratory.controller';
+import { authMiddleware, authorize } from '../../middlewares/auth.middleware.js';
+import { validateZod } from '../../middlewares/validate.middleware.js';
+import { createLabRequestSchema, labRequestIdSchema } from './laboratory.schema.js';
+import { getLabTests, getLabRequests, getLabRequestById, createLabRequest, updateLabRequestStatus, updateLabRequestItemResult, cancelLabRequest } from './laboratory.controller.js';
 
 const router = Router();
 
