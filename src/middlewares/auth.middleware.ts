@@ -3,24 +3,34 @@ import { Request, Response, NextFunction } from 'express';
 import { getJWTSecret } from '../shared/jwt.js';
 import { UserRole } from '../types/index.js';
 
-export type AuthRequest = Request;
+export type AuthRequest = Request & { user?: { id: number; email: string; role: UserRole } };
+
+declare global {
+  namespace Express {
+    interface Request {
+      user?: { id: number; email: string; role: UserRole };
+      tenant_id?: string;
+      locale?: string;
+    }
+  }
+}
 
 export const authMiddleware = (req: Request, res: Response, next: NextFunction): void => {
   const authHeader = req.headers.authorization;
+  const accessToken = req.headers['x-access-token'] as string | undefined;
 
-  if (!authHeader) {
+  const tokenStr = authHeader?.split(' ')[1] || accessToken;
+
+  if (!tokenStr) {
     res.status(401).json({ error: 'Token required' });
     return;
   }
 
-  const token = authHeader.split(' ')[1];
-
   try {
-    const decoded = jwt.verify(token, getJWTSecret()) as JwtPayload & {
+    const decoded = jwt.verify(tokenStr, getJWTSecret()) as JwtPayload & {
       id: number;
       email: string;
       role: UserRole;
-      rut: string;
     };
     req.user = decoded;
     next();
@@ -31,6 +41,28 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction):
     }
     res.status(401).json({ error: 'Invalid token' });
   }
+};
+
+export const optionalAuth = (req: Request, res: Response, next: NextFunction): void => {
+  const authHeader = req.headers.authorization;
+  const token = authHeader?.split(' ')[1];
+
+  if (!token) {
+    next();
+    return;
+  }
+
+  try {
+    const decoded = jwt.verify(token, getJWTSecret()) as JwtPayload & {
+      id: number;
+      email: string;
+      role: UserRole;
+    };
+    req.user = decoded;
+  } catch {
+    // Token invalid, continue without user
+  }
+  next();
 };
 
 export const authorize = (...allowedRoles: UserRole[]) => {

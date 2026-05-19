@@ -4,7 +4,9 @@ import jwt from 'jsonwebtoken';
 import { validateRut, cleanRut, formatRut } from '../../shared/rut.js';
 import { getJWTSecret } from '../../shared/jwt.js';
 import { UserRole } from '../../types/index.js';
-import { BadRequestError } from '../../utils/errors.js';
+import { BadRequestError, UnauthorizedError } from '../../utils/errors.js';
+import { verifyToken as verify2FAToken, is2FARequired } from './auth-2fa.service.js';
+import crypto from 'crypto';
 
 interface RegisterParams {
   email: string;
@@ -16,6 +18,17 @@ interface RegisterParams {
 interface LoginParams {
   email: string;
   password: string;
+  totp_token?: string;
+}
+
+interface RefreshParams {
+  refresh_token: string;
+}
+
+interface ChangePasswordParams {
+  userId: number;
+  currentPassword: string;
+  newPassword: string;
 }
 
 interface User {
@@ -25,7 +38,42 @@ interface User {
   phone: string | null;
   role: UserRole;
   password: string;
+  password_changed: boolean;
+  totp_enabled: boolean;
+  totp_secret: string | null;
 }
+
+const ACCESS_TOKEN_EXPIRY = '15m';
+const REFRESH_TOKEN_EXPIRY_DAYS = 30;
+
+const generateAccessToken = (user: { id: number; email: string; role: UserRole }): string => {
+  return jwt.sign(
+    { id: user.id, email: user.email, role: user.role || 'user' },
+    getJWTSecret(),
+    { expiresIn: ACCESS_TOKEN_EXPIRY }
+  );
+};
+
+const generateRefreshToken = async (userId: number): Promise<string> => {
+  const token = crypto.randomBytes(40).toString('hex');
+  const expiresAt = new Date();
+  expiresAt.setDate(expiresAt.getDate() + REFRESH_TOKEN_EXPIRY_DAYS);
+
+  await pool.query(
+    'INSERT INTO refresh_tokens (user_id, token, expires_at) VALUES ($1, $2, $3)',
+    [userId, token, expiresAt]
+  );
+
+  return token;
+};
+
+const revokeRefreshToken = async (token: string): Promise<void> => {
+  await pool.query('UPDATE refresh_tokens SET revoked = true WHERE token = $1', [token]);
+};
+
+const revokeAllUserRefreshTokens = async (userId: number): Promise<void> => {
+  await pool.query('UPDATE refresh_tokens SET revoked = true WHERE user_id = $1', [userId]);
+};
 
 export const register = async ({ email, password, rut, phone }: RegisterParams): Promise<Pick<User, 'id' | 'email' | 'rut' | 'phone'>> => {
   if (!email || !password) throw new BadRequestError('Email and password required');
@@ -34,6 +82,10 @@ export const register = async ({ email, password, rut, phone }: RegisterParams):
   if (!emailRegex.test(email)) throw new BadRequestError('Invalid email format');
 
   if (password.length < 8) throw new BadRequestError('Password must be at least 8 characters');
+  if (!/[A-Z]/.test(password)) throw new BadRequestError('Password must contain at least one uppercase letter');
+  if (!/[a-z]/.test(password)) throw new BadRequestError('Password must contain at least one lowercase letter');
+  if (!/[0-9]/.test(password)) throw new BadRequestError('Password must contain at least one number');
+  if (!/[^A-Za-z0-9]/.test(password)) throw new BadRequestError('Password must contain at least one special character');
 
   let formattedRut: string | null = null;
   if (rut) {
@@ -46,7 +98,7 @@ export const register = async ({ email, password, rut, phone }: RegisterParams):
 
   try {
     const result = await pool.query(
-      `INSERT INTO users (email, password, rut, phone) VALUES ($1, $2, $3, $4) RETURNING id, email, rut, phone`,
+      `INSERT INTO users (email, password, rut, phone, password_changed) VALUES ($1, $2, $3, $4, true) RETURNING id, email, rut, phone`,
       [email, hashedPassword, formattedRut, phone || null]
     );
     return result.rows[0];
@@ -61,7 +113,11 @@ export const register = async ({ email, password, rut, phone }: RegisterParams):
   }
 };
 
-export const login = async ({ email, password }: LoginParams): Promise<{ token: string; user: { id: number; email: string; role: UserRole; rut: string | null; phone: string | null } }> => {
+export const login = async ({ email, password, totp_token }: LoginParams): Promise<{
+  access_token: string;
+  refresh_token: string;
+  user: { id: number; email: string; role: UserRole; rut: string | null; phone: string | null; password_changed: boolean; totp_enabled: boolean };
+}> => {
   if (!email || !password) throw new Error('Email and password required');
 
   const result = await pool.query<User>('SELECT * FROM users WHERE email = $1', [email]);
@@ -72,14 +128,85 @@ export const login = async ({ email, password }: LoginParams): Promise<{ token: 
 
   if (!user || !isValid) throw new BadRequestError('Invalid credentials');
 
-  const token = jwt.sign(
-    { id: user.id, email: user.email, role: user.role || 'user' },
-    getJWTSecret(),
-    { expiresIn: '1d' }
-  );
+  if (user.totp_enabled) {
+    if (!totp_token) {
+      throw new BadRequestError('2FA token required');
+    }
+    if (!user.totp_secret || !verify2FAToken(user.totp_secret, totp_token)) {
+      throw new BadRequestError('Invalid 2FA token');
+    }
+  }
+
+  const access_token = generateAccessToken(user);
+  const refresh_token = await generateRefreshToken(user.id);
 
   return {
-    token,
-    user: { id: user.id, email: user.email, role: user.role || 'user', rut: user.rut || null, phone: user.phone || null },
+    access_token,
+    refresh_token,
+    user: {
+      id: user.id,
+      email: user.email,
+      role: user.role || 'user',
+      rut: user.rut || null,
+      phone: user.phone || null,
+      password_changed: user.password_changed ?? false,
+      totp_enabled: user.totp_enabled ?? false,
+    },
   };
+};
+
+export const refreshToken = async ({ refresh_token }: RefreshParams): Promise<{
+  access_token: string;
+  refresh_token: string;
+} | null> => {
+  const result = await pool.query(
+    'SELECT * FROM refresh_tokens WHERE token = $1 AND revoked = false AND expires_at > NOW()',
+    [refresh_token]
+  );
+  const tokenRecord = result.rows[0];
+  if (!tokenRecord) return null;
+
+  const userResult = await pool.query<User>('SELECT * FROM users WHERE id = $1', [tokenRecord.user_id]);
+  const user = userResult.rows[0];
+  if (!user) return null;
+
+  await revokeRefreshToken(refresh_token);
+
+  const newAccessToken = generateAccessToken(user);
+  const newRefreshToken = await generateRefreshToken(user.id);
+
+  return {
+    access_token: newAccessToken,
+    refresh_token: newRefreshToken,
+  };
+};
+
+export const logout = async (refresh_token: string): Promise<void> => {
+  await revokeRefreshToken(refresh_token);
+};
+
+export const logoutAll = async (userId: number): Promise<void> => {
+  await revokeAllUserRefreshTokens(userId);
+};
+
+export const changePassword = async ({ userId, currentPassword, newPassword }: ChangePasswordParams): Promise<void> => {
+  if (newPassword.length < 8) throw new BadRequestError('Password must be at least 8 characters');
+  if (!/[A-Z]/.test(newPassword)) throw new BadRequestError('Password must contain at least one uppercase letter');
+  if (!/[a-z]/.test(newPassword)) throw new BadRequestError('Password must contain at least one lowercase letter');
+  if (!/[0-9]/.test(newPassword)) throw new BadRequestError('Password must contain at least one number');
+  if (!/[^A-Za-z0-9]/.test(newPassword)) throw new BadRequestError('Password must contain at least one special character');
+
+  const userResult = await pool.query('SELECT password FROM users WHERE id = $1', [userId]);
+  if (!userResult.rows[0]) throw new BadRequestError('User not found');
+
+  const isValid = await bcrypt.compare(currentPassword, userResult.rows[0].password);
+  if (!isValid) throw new BadRequestError('Current password is incorrect');
+
+  const hashedPassword = await bcrypt.hash(newPassword, 12);
+  await pool.query(
+    'UPDATE users SET password = $1, password_changed = true WHERE id = $2',
+    [hashedPassword, userId]
+  );
+
+  await revokeAllUserRefreshTokens(userId);
 };
