@@ -5,6 +5,7 @@ services:
     region: oregon
     plan: free
     buildCommand: npm install && npm run build
+    preDeployCommand: echo "Build complete"
     startCommand: npm start
     healthCheckPath: /health
     envVars:

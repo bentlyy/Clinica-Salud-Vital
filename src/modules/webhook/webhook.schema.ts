@@ -12,5 +12,5 @@ export const updateWebhookSchema = createWebhookSchema.partial();
 
 export const webhookEventSchema = z.object({
   event: z.string(),
-  payload: z.record(z.unknown()),
+  payload: z.record(z.string(), z.unknown()),
 });

@@ -8,7 +8,7 @@ declare module 'express-serve-static-core' {
       id: number;
       email: string;
       role: UserRole;
-      rut: string;
+      rut?: string;
     };
   }
 }

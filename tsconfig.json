@@ -19,8 +19,8 @@
     "noUnusedParameters": false,
     "noImplicitReturns": false,
     "noFallthroughCasesInSwitch": false,
-    "allowImportingTsExtensions": true,
-    "noEmit": true
+    "allowImportingTsExtensions": false,
+    "noEmit": false
   },
   "include": ["src/**/*", "src/@types/**/*.d.ts"],
   "exclude": ["node_modules", "dist", "tests", "coverage"]
