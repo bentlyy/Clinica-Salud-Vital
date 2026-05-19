@@ -1,9 +1,9 @@
 import { Router } from 'express';
-import { getSpecialties, createSpecialty } from './specialties.controller';
-import { authMiddleware } from '../../middlewares/auth.middleware';
-import { authorizeRoles } from '../../middlewares/role.middleware';
-import { validateZod } from '../../middlewares/validate.middleware';
-import { createSpecialtySchema } from './specialties.schema';
+import { getSpecialties, createSpecialty } from './specialties.controller.js';
+import { authMiddleware } from '../../middlewares/auth.middleware.js';
+import { authorizeRoles } from '../../middlewares/role.middleware.js';
+import { validateZod } from '../../middlewares/validate.middleware.js';
+import { createSpecialtySchema } from './specialties.schema.js';
 
 const router = Router();
 

@@ -1,9 +1,9 @@
 import { Router } from 'express';
-import { getMyExceptions, createException, deleteException } from './exception.controller';
-import { authMiddleware } from '../../middlewares/auth.middleware';
-import { authorizeRoles } from '../../middlewares/role.middleware';
-import { validateZod } from '../../middlewares/validate.middleware';
-import { createExceptionSchema, exceptionIdSchema } from './exception.schema';
+import { getMyExceptions, createException, deleteException } from './exception.controller.js';
+import { authMiddleware } from '../../middlewares/auth.middleware.js';
+import { authorizeRoles } from '../../middlewares/role.middleware.js';
+import { validateZod } from '../../middlewares/validate.middleware.js';
+import { createExceptionSchema, exceptionIdSchema } from './exception.schema.js';
 
 const router = Router();
 

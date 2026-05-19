@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import PDFDocument from 'pdfkit';
-import { pool } from '../../shared/db';
-import { NotFoundError } from '../../utils/errors';
+import { pool } from '../../shared/db.js';
+import { NotFoundError } from '../../utils/errors.js';
 
 export const generatePrescriptionPDF = async (prescription_id: number | string): Promise<Buffer> => {
   const prescriptionResult = await pool.query(`

@@ -1,5 +1,5 @@
-import * as specialtiesService from './specialties.service';
-import { asyncHandler } from '../../middlewares/asyncHandler.middleware';
+import * as specialtiesService from './specialties.service.js';
+import { asyncHandler } from '../../middlewares/asyncHandler.middleware.js';
 
 export const getSpecialties = asyncHandler(async (req, res) => {
   const specialties = await specialtiesService.getAllSpecialties();

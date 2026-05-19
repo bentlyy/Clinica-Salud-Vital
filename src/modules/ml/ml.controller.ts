@@ -4,13 +4,13 @@
  */
 
 import type { Request, Response } from 'express';
-import * as mlService from './ml.service';
-import * as validator from './ml.validator';
-import { asyncHandler } from '../../middlewares/asyncHandler.middleware';
-import { BadRequestError } from '../../utils/errors';
-import { mlMetricsMiddleware, getMLMetrics } from './ml.middleware';
-import { mlCache } from './ml.cache';
-import { logger } from '../../utils/logger';
+import * as mlService from './ml.service.js';
+import * as validator from './ml.validator.js';
+import { asyncHandler } from '../../middlewares/asyncHandler.middleware.js';
+import { BadRequestError } from '../../utils/errors.js';
+import { mlMetricsMiddleware, getMLMetrics } from './ml.middleware.js';
+import { mlCache } from './ml.cache.js';
+import { logger } from '../../utils/logger.js';
 
 export const trainModels = asyncHandler(async (req: Request, res: Response) => {
   logger.info('[ML Controller] Train models requested');

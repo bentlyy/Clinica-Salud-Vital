@@ -1,8 +1,8 @@
-import * as billingService from './billing.service';
-import * as doctorService from '../doctor/doctor.service';
-import { asyncHandler } from '../../middlewares/asyncHandler.middleware';
-import { NotFoundError, BadRequestError } from '../../utils/errors';
-import { getQueryInt, getQueryString } from '../../shared/query';
+import * as billingService from './billing.service.js';
+import * as doctorService from '../doctor/doctor.service.js';
+import { asyncHandler } from '../../middlewares/asyncHandler.middleware.js';
+import { NotFoundError, BadRequestError } from '../../utils/errors.js';
+import { getQueryInt, getQueryString } from '../../shared/query.js';
 
 export const getInvoices = asyncHandler(async (req, res) => {
   const patient_id = getQueryInt(req.query, 'patient_id', 0);

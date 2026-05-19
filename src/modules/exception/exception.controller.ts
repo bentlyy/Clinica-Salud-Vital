@@ -1,7 +1,7 @@
-import * as exceptionService from './exception.service';
-import * as doctorService from '../doctor/doctor.service';
-import { asyncHandler } from '../../middlewares/asyncHandler.middleware';
-import { NotFoundError } from '../../utils/errors';
+import * as exceptionService from './exception.service.js';
+import * as doctorService from '../doctor/doctor.service.js';
+import { asyncHandler } from '../../middlewares/asyncHandler.middleware.js';
+import { NotFoundError } from '../../utils/errors.js';
 
 export const getMyExceptions = asyncHandler(async (req, res) => {
   const doctor = await doctorService.getDoctorByUserId(req.user!.id);

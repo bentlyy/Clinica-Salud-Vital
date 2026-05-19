@@ -1,9 +1,9 @@
 /**
- * Middleware de métricas y monitoreo para ML
+ * Middleware de mï¿½tricas y monitoreo para ML
  */
 
 import type { Request, Response, NextFunction } from 'express';
-import { logger } from '../../utils/logger';
+import { logger } from '../../utils/logger.js';
 
 interface PredictionMetrics {
   total: number;

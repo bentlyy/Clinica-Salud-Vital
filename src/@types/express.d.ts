@@ -1,6 +1,6 @@
 import 'express';
 import { JwtPayload } from 'jsonwebtoken';
-import { UserRole } from '../types/index';
+import { UserRole } from '../types/index.js';
 
 declare module 'express-serve-static-core' {
   interface Request {

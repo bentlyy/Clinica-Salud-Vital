@@ -1,5 +1,5 @@
 import { pool } from '../../shared/db.js';
-import { NotFoundError, BadRequestError } from '../../utils/errors';
+import { NotFoundError, BadRequestError } from '../../utils/errors.js';
 
 const generateRequestNumber = () => {
   const year = new Date().getFullYear();
