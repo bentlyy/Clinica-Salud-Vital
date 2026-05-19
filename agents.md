@@ -2,7 +2,7 @@
 
 ## Project Overview
 Full-stack clinical management system (Node.js + Express 5 + React + Vite + PostgreSQL 15).
-Orquestado con Docker Compose. ML con TensorFlow.js.
+Desplegado en Render. ML con TensorFlow.js.
 
 ### Ports
 | Servicio | Puerto |
@@ -45,16 +45,21 @@ Orquestado con Docker Compose. ML con TensorFlow.js.
 
 ## Running the Project
 
-### With Docker (Recommended)
+### Local Development
 ```bash
-docker compose up -d --build
-```
+# Start PostgreSQL
+docker compose up -d db
 
-### Without Docker
-```bash
-docker run -d -p 5432:5432 -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=clinic --name clinic-db postgres:15-alpine
+# Start API
 npm install
 npm run dev
+```
+
+### Deploy to Render
+```bash
+# Push to GitHub and create a Render Web Service:
+# Build Command: npm install && npm run build
+# Start Command: npm start
 ```
 
 ### Commands
@@ -65,7 +70,8 @@ npm run dev
 | `npm test` | Tests + coverage |
 | `npm run test:watch` | Watch mode |
 | `npm run typecheck` | TypeScript check |
-| `npm run build` | Compile TS |
+| `npm run build` | Build frontend (Vite) |
+| `npm run build:frontend` | Build frontend only |
 
 ---
 
@@ -213,7 +219,7 @@ Controllers use `asyncHandler` from `middlewares/asyncHandler.middleware.ts` to 
 
 - All migrations consolidated in `db/init.sql` (434 lines)
 - Additional migrations in `db/migrations/` applied via migration runner (tracks applied in `_migrations` table)
-- Database URL: `postgresql://postgres:postgres@db:5432/clinic` (Docker) or `localhost` (dev)
+- Database URL: `postgresql://postgres:postgres@localhost:5432/clinic` (local) or your Render PostgreSQL URL
 - Connection pool via `pg` in `src/shared/db.ts`
 - 15+ tables: users, doctors, bookings, availability, exceptions, clinical_records, prescriptions, cie10_catalog, audit_logs, invoices, invoice_items, payments, insurance_claims, lab_tests, lab_requests, lab_request_items, permissions, role_permissions, user_permissions, ml_prediction_history, ml_model_metrics, ml_demand_forecast
 - 30+ indexes including partial and functional
@@ -267,6 +273,68 @@ Features:
 
 ---
 
+## 🆕 Nuevas Funcionalidades (v2)
+
+### API Versioning
+- Todas las rutas ahora bajo `/api/v1/`
+- Backward compatibilidad mantenida con `/api/` → redirige a `/api/v1/`
+- Frontend configurado con `VITE_API_URL=/api/v1`
+
+### Refresh Tokens
+- `POST /api/v1/auth/refresh` — intercambia refresh token por nuevo access+refresh
+- `POST /api/v1/auth/logout` — revoca refresh token
+- `POST /api/v1/auth/logout-all` — revoca todos los refresh tokens del usuario
+- Access token expira en 15min, refresh token en 30 días
+- Frontend interceptor renueva automáticamente en 401/TOKEN_EXPIRED
+- Tabla `refresh_tokens` con tracking de revocación
+
+### 2FA / MFA (TOTP)
+- `POST /api/v1/auth/2fa/enable` — genera secreto TOTP
+- `POST /api/v1/auth/2fa/verify` — verifica código y activa 2FA
+- `POST /api/v1/auth/2fa/disable` — desactiva 2FA
+- Login requiere `totp_token` extra si el usuario tiene 2FA habilitado
+- Columnas `totp_secret` y `totp_enabled` en tabla `users`
+- Compatible con Google Authenticator / Authy
+
+### Cambio de Contraseña con Políticas
+- `POST /api/v1/auth/change-password`
+- Política: min 8 chars, mayúscula, minúscula, número, especial
+- Columna `password_changed` en `users` (para forzar cambio en primer login)
+- Al cambiar contraseña se revocan todos los refresh tokens
+
+### Webhooks
+- Módulo completo bajo `/api/v1/webhooks` (admin-only)
+- CRUD de webhooks con eventos y secret HMAC
+- Tabla `webhook_deliveries` con historial de entregas
+- Función `dispatchEvent(event, payload)` lista para integrar en cualquier módulo
+- Headers: `X-Webhook-Signature` (HMAC-SHA256), `X-Webhook-Event`
+
+### SMS / WhatsApp
+- Servicio `sms.service.ts` con soporte Twilio (SMS y WhatsApp)
+- Modo `log` para desarrollo (solo imprime en consola)
+- Servicio unificado `notification.service.ts` multicanal (email + sms)
+- Configurable via `SMS_PROVIDER=log|twilio|whatsapp`
+
+### Multi-tenancy
+- Middleware `tenant.middleware.ts` inyecta `req.tenant_id` y `req.locale`
+- Soporte por subdominio (`clinica1.misistema.com`) o header `X-Tenant-Id`
+- Tabla `tenants` con configuración por tenant (locale, timezone)
+- Columna `tenant_id` en tabla `users`
+- Tabla `notification_preferences` por usuario
+
+### Internacionalización (i18n)
+- Servicio `i18n.service.ts` con 4 idiomas: es, en, pt, fr
+- 30+ traducciones para mensajes del sistema y emails
+- `t(key)` devuelve en locale actual, `tAll(key)` devuelve en todos
+- Configurable via `APP_LOCALE=es|en|pt|fr`
+
+### Seguridad Mejorada
+- Body limit: 10kb → 100kb (permite EHRs y recetas completas)
+- Rate limits: global 100→500/15min, auth 10→30/15min
+- Password complexity validada en backend (Zod) y frontend
+- Refresh token rotation (cada refresh revoca el anterior)
+- `optionalAuth` middleware para rutas públicas opcionalmente autenticadas
+
 ## Known Issues & Gotchas
 
 - TypeScript files in `src/utils/` are `.ts` but imported as `.js` (works with tsx/vitest)
@@ -274,9 +342,14 @@ Features:
 - `frontend/src/context/useAuth.js` exists to fix React fast-refresh (HMR) — import from there, not AuthContext directly
 - API returns paginated `{ data, pagination }` — frontend must extract `.data` for `.map()`
 - Guest RUT search cleans formatting and searches both `guest_rut` AND `users.rut`
-- Login returns `rut` and `phone` in user object (not just id/email/role)
-- `VITE_API_PROXY_TARGET=http://api:3000` in Docker — not `localhost`
+- Login now returns `access_token`, `refresh_token` and `user` (not just `token`)
+- Login response includes `password_changed` and `totp_enabled` flags in user object
+- `VITE_API_PROXY_TARGET=http://localhost:3000` in dev — proxy de Vite al backend
 - `db/migrations/` files applied incrementally via `_migrations` tracking table
 - When creating a doctor, always creates default availability (Mon-Fri 09:00-17:00)
 - Billing invoice number format: `INV-YYYY-XXXXX`
 - ML models disposed on reset — cache cleared from LRU
+- Twilio SDK is optional — SMS works in `log` mode without it
+- API versioning: new routes under `/api/v1/`, old `/api/` still works
+- Webhook secrets auto-generated (32 bytes hex) if not provided
+- 2FA uses TOTP with 30s window and ±1 step tolerance
