@@ -2,12 +2,16 @@
   "name": "clinic-backend",
   "version": "1.0.0",
   "description": "",
-  "main": "src/app.ts",
+  "engines": {
+    "node": "22.x"
+  },
+  "main": "dist/app.js",
   "scripts": {
     "dev": "tsx src/app.ts",
-    "start": "tsx src/app.ts",
+    "start": "node dist/app.js",
+    "build:backend": "tsc",
     "build:frontend": "cd frontend && npm install && npm run build",
-    "build": "npm run build:frontend",
+    "build": "npm run build:backend && npm run build:frontend",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --coverage",
     "test:watch": "vitest",
@@ -33,8 +37,8 @@
     "nodemailer": "^8.0.7",
     "pdfkit": "^0.18.0",
     "pg": "^8.18.0",
-    "winston": "^3.19.0",
     "twilio": "^5.6.0",
+    "winston": "^3.19.0",
     "xlsx": "^0.18.5",
     "zod": "^4.4.3"
   },
@@ -48,6 +52,7 @@
     "@types/nodemailer": "^6.4.17",
     "@types/pg": "^8.11.11",
     "@types/supertest": "^6.0.2",
+    "@types/twilio": "^3.19.2",
     "@types/xlsx": "^0.0.35",
     "@vitest/coverage-v8": "^4.1.5",
     "supertest": "^7.2.2",

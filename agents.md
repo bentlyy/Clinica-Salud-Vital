@@ -66,12 +66,13 @@ npm run dev
 | Cmd | Desc |
 |-----|------|
 | `npm run dev` | Dev server (tsx watch) |
-| `npm start` | Production |
+| `npm start` | Production (node dist/app.js) |
 | `npm test` | Tests + coverage |
 | `npm run test:watch` | Watch mode |
 | `npm run typecheck` | TypeScript check |
-| `npm run build` | Build frontend (Vite) |
-| `npm run build:frontend` | Build frontend only |
+| `npm run build` | Compile TS + build frontend |
+| `npm run build:backend` | Compile TS only (tsc) |
+| `npm run build:frontend` | Build frontend only (Vite) |
 
 ---
 
