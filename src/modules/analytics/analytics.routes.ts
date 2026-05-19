@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { authMiddleware, authorize } from '../../middlewares/auth.middleware';
+import { authMiddleware, authorize } from '../../middlewares/auth.middleware.js';
 import {
   getDashboardStats,
   getBookingsByMonth,
@@ -12,7 +12,7 @@ import {
   getSchedules,
   getVitalsAnomalies,
   exportAnalytics,
-} from './analytics.controller';
+} from './analytics.controller.js';
 
 const router = Router();
 

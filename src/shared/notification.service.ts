@@ -1,6 +1,6 @@
 import { sendEmail, EmailOptions } from './email.service.js';
 import { sendSms, SmsOptions } from './sms.service.js';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 
 export type NotificationChannel = 'email' | 'sms' | 'whatsapp' | 'all';
 

@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { logAction } from './audit.service';
+import { logAction } from './audit.service.js';
 import { logger } from '../../utils/logger.js';
 
 export const auditMiddleware = (action: string, resource_type: string, getIdFromResponse: ((body: Record<string, unknown>) => string | undefined) | null = null) => {

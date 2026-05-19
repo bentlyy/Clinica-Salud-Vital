@@ -1,13 +1,13 @@
 import { Router } from 'express';
-import { authMiddleware, authorize } from '../../middlewares/auth.middleware';
-import { validateZod } from '../../middlewares/validate.middleware';
+import { authMiddleware, authorize } from '../../middlewares/auth.middleware.js';
+import { validateZod } from '../../middlewares/validate.middleware.js';
 import {
   createClinicalRecordSchema,
   updateClinicalRecordSchema,
   prescriptionSchema,
   clinicalRecordIdSchema,
   patientIdSchema,
-} from './clinical-record.schema';
+} from './clinical-record.schema.js';
 import {
   getClinicalRecords,
   getClinicalRecordById,
@@ -23,7 +23,7 @@ import {
   getCie10ByCode,
   getCie10Categories,
   downloadPrescriptionPDF,
-} from './clinical-record.controller';
+} from './clinical-record.controller.js';
 
 const router = Router();
 

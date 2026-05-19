@@ -1,5 +1,5 @@
 import * as XLSX from 'xlsx';
-import * as analyticsService from './analytics.service';
+import * as analyticsService from './analytics.service.js';
 
 export const generateAnalyticsExcel = async (): Promise<Buffer> => {
   const wb = XLSX.utils.book_new();

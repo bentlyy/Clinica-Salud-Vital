@@ -1,4 +1,4 @@
-import { UnauthorizedError } from '../utils/errors';
+import { UnauthorizedError } from '../utils/errors.js';
 
 export const getJWTSecret = (): string => {
   const secret = process.env.JWT_SECRET;

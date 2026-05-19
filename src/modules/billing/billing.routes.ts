@@ -1,8 +1,8 @@
 import { Router } from 'express';
-import { authMiddleware, authorize } from '../../middlewares/auth.middleware';
-import { validateZod } from '../../middlewares/validate.middleware';
-import { createInvoiceSchema, updateInvoiceStatusSchema, invoiceIdSchema } from './billing.schema';
-import { getInvoices, getInvoiceById, createInvoice, updateInvoiceStatus, deleteInvoice, getBillingStats } from './billing.controller';
+import { authMiddleware, authorize } from '../../middlewares/auth.middleware.js';
+import { validateZod } from '../../middlewares/validate.middleware.js';
+import { createInvoiceSchema, updateInvoiceStatusSchema, invoiceIdSchema } from './billing.schema.js';
+import { getInvoices, getInvoiceById, createInvoice, updateInvoiceStatus, deleteInvoice, getBillingStats } from './billing.controller.js';
 
 const router = Router();
 

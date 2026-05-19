@@ -1,11 +1,11 @@
 import type { Request, Response } from 'express';
-import * as clinicalRecordService from './clinical-record.service';
-import * as prescriptionService from './prescription.service';
-import * as cie10Service from './cie10.service';
-import * as doctorService from '../doctor/doctor.service';
-import { asyncHandler } from '../../middlewares/asyncHandler.middleware';
-import { NotFoundError, BadRequestError } from '../../utils/errors';
-import { generatePrescriptionPDF } from './prescription-pdf.service';
+import * as clinicalRecordService from './clinical-record.service.js';
+import * as prescriptionService from './prescription.service.js';
+import * as cie10Service from './cie10.service.js';
+import * as doctorService from '../doctor/doctor.service.js';
+import { asyncHandler } from '../../middlewares/asyncHandler.middleware.js';
+import { NotFoundError, BadRequestError } from '../../utils/errors.js';
+import { generatePrescriptionPDF } from './prescription-pdf.service.js';
 
 export const getClinicalRecords = asyncHandler(async (req: Request, res: Response) => {
   const { patient_id, status } = req.query;
