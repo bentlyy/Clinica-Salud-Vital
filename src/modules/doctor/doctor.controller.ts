@@ -1,6 +1,6 @@
-import * as doctorService from './doctor.service';
-import { asyncHandler } from '../../middlewares/asyncHandler.middleware';
-import { NotFoundError } from '../../utils/errors';
+import * as doctorService from './doctor.service.js';
+import { asyncHandler } from '../../middlewares/asyncHandler.middleware.js';
+import { NotFoundError } from '../../utils/errors.js';
 
 export const getDoctors = asyncHandler(async (req, res) => {
   const doctors = await doctorService.getAllDoctors();

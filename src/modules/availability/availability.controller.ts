@@ -1,8 +1,8 @@
-import * as availabilityService from './availability.service';
-import * as doctorService from '../doctor/doctor.service';
-import { asyncHandler } from '../../middlewares/asyncHandler.middleware';
-import { NotFoundError } from '../../utils/errors';
-import { getQueryInt } from '../../shared/query';
+import * as availabilityService from './availability.service.js';
+import * as doctorService from '../doctor/doctor.service.js';
+import { asyncHandler } from '../../middlewares/asyncHandler.middleware.js';
+import { NotFoundError } from '../../utils/errors.js';
+import { getQueryInt } from '../../shared/query.js';
 
 export const getAvailabilityByDoctor = asyncHandler(async (req, res) => {
   const id = getQueryInt(req.params, 'id', 0);

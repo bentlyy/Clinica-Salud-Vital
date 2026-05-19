@@ -5,11 +5,11 @@ import {
   cancelBooking,
   getAvailableSlots,
   getDoctorBookings,
-} from './booking.controller';
-import { authMiddleware } from '../../middlewares/auth.middleware';
-import { authorizeRoles } from '../../middlewares/role.middleware';
-import { validateZod } from '../../middlewares/validate.middleware';
-import { createBookingSchema, availableSlotsSchema, bookingIdSchema } from './booking.schema';
+} from './booking.controller.js';
+import { authMiddleware } from '../../middlewares/auth.middleware.js';
+import { authorizeRoles } from '../../middlewares/role.middleware.js';
+import { validateZod } from '../../middlewares/validate.middleware.js';
+import { createBookingSchema, availableSlotsSchema, bookingIdSchema } from './booking.schema.js';
 
 const router = Router();
 

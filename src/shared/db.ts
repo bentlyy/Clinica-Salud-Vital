@@ -1,5 +1,5 @@
 import pg from 'pg';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 
 const { Pool } = pg;
 

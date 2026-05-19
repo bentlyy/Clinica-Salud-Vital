@@ -1,5 +1,5 @@
-import { pool } from '../../shared/db';
-import { NotFoundError } from '../../utils/errors';
+import { pool } from '../../shared/db.js';
+import { NotFoundError } from '../../utils/errors.js';
 
 const generateInvoiceNumber = () => {
   const year = new Date().getFullYear();

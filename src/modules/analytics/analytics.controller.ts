@@ -1,8 +1,8 @@
-import * as analyticsService from './analytics.service';
-import * as doctorService from '../doctor/doctor.service';
-import { asyncHandler } from '../../middlewares/asyncHandler.middleware';
-import { NotFoundError } from '../../utils/errors';
-import { getQueryInt } from '../../shared/query';
+import * as analyticsService from './analytics.service.js';
+import * as doctorService from '../doctor/doctor.service.js';
+import { asyncHandler } from '../../middlewares/asyncHandler.middleware.js';
+import { NotFoundError } from '../../utils/errors.js';
+import { getQueryInt } from '../../shared/query.js';
 
 export const getDashboardStats = asyncHandler(async (req, res) => {
   const stats = await analyticsService.getDashboardStats();
@@ -61,7 +61,7 @@ export const getVitalsAnomalies = asyncHandler(async (req, res) => {
 });
 
 export const exportAnalytics = asyncHandler(async (req, res) => {
-  const { generateAnalyticsExcel } = await import('./analytics.export');
+  const { generateAnalyticsExcel } = await import('./analytics.export.js');
   const buffer = await generateAnalyticsExcel();
   res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
   res.setHeader('Content-Disposition', `attachment; filename=analytics-powerbi-${new Date().toISOString().split('T')[0]}.xlsx`);

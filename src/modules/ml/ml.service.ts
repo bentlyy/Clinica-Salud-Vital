@@ -4,9 +4,9 @@
  */
 
 import { pool } from '../../shared/db.js';
-import { logger } from '../../utils/logger';
-import { mlCache } from './ml.cache';
-import { trackTrainingMetric } from './ml.middleware';
+import { logger } from '../../utils/logger.js';
+import { mlCache } from './ml.cache.js';
+import { trackTrainingMetric } from './ml.middleware.js';
 
 // TensorFlow.js types
 interface TensorFlowModule {

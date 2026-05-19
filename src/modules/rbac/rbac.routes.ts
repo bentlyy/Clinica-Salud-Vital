@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { authMiddleware } from '../../middlewares/auth.middleware';
-import { getMyPermissions } from './rbac.controller';
+import { authMiddleware } from '../../middlewares/auth.middleware.js';
+import { getMyPermissions } from './rbac.controller.js';
 
 const router = Router();
 
