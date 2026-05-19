@@ -1,0 +1,34 @@
+services:
+  - type: web
+    name: clinic-api
+    env: node
+    region: oregon
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
+      - key: EMAIL_USER
+        sync: false
+      - key: EMAIL_PASS
+        sync: false
+      - key: TOTP_ISSUER
+        value: ClinicApp
+      - key: SMS_PROVIDER
+        value: log
+      - key: DEFAULT_TENANT_ID
+        value: default
+      - key: APP_LOCALE
+        value: es
+      - key: LOG_LEVEL
+        value: info

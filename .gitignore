@@ -43,6 +43,3 @@ db_data/
 # Temporary files
 tmp/
 temp/
-
-# Cloudflare Tunnel credentials (contains tunnel secret)
-cloudflare-credentials/

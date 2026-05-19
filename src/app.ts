@@ -12,6 +12,7 @@ import { pool } from './shared/db.js';
 import { startReminderJob } from './jobs/reminder.job.js';
 import { startConfirmationJob } from './jobs/confirmation.job.js';
 import { securityMiddleware, validateEnvSecurity } from './middlewares/security.middleware.js';
+import { tenantMiddleware } from './middlewares/tenant.middleware.js';
 import { requestLogger } from './middlewares/requestLogger.middleware.js';
 import { errorHandler, notFoundHandler } from './middlewares/errorHandler.middleware.js';
 import { logger } from './utils/logger.js';
@@ -31,6 +32,7 @@ import laboratoryRoutes from './modules/laboratory/laboratory.routes.js';
 import rbacRoutes from './modules/rbac/rbac.routes.js';
 import mlRoutes from './modules/ml/ml.routes.js';
 import specialtiesRoutes from './modules/specialties/specialties.routes.js';
+import webhookRoutes from './modules/webhook/webhook.routes.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -47,6 +49,9 @@ app.get('/health', async (req: Request, res: Response) => {
 });
 
 app.use(securityMiddleware);
+
+/* Multi-tenancy */
+app.use(tenantMiddleware);
 
 const allowedOrigins = [
   'http://localhost:5173',
@@ -66,12 +71,12 @@ app.use(cors({
 
 app.use(compression());
 
-app.use(express.json({ limit: '10kb' }));
+app.use(express.json({ limit: '100kb' }));
 app.use(requestLogger);
 
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100,
+  max: 500,
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Too many requests, please try again later' },
@@ -82,13 +87,33 @@ app.use(globalLimiter);
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 10,
+  max: 30,
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Too many login attempts, please try again later' },
   keyGenerator: (req) => req.ip || req.headers['x-forwarded-for'] as string || 'unknown',
 });
 
+const API_PREFIX = '/api/v1';
+
+app.use(`${API_PREFIX}/auth`, authLimiter, authRoutes);
+app.use(`${API_PREFIX}/doctors`, doctorRoutes);
+app.use(`${API_PREFIX}/bookings`, bookingRoutes);
+app.use(`${API_PREFIX}/availability`, availabilityRoutes);
+app.use(`${API_PREFIX}/exceptions`, exceptionRoutes);
+app.use(`${API_PREFIX}/guest`, guestRoutes);
+app.use(`${API_PREFIX}/confirmation`, confirmationRoutes);
+app.use(`${API_PREFIX}/clinical-records`, clinicalRecordRoutes);
+app.use(`${API_PREFIX}/audit`, auditRoutes);
+app.use(`${API_PREFIX}/analytics`, analyticsRoutes);
+app.use(`${API_PREFIX}/billing`, billingRoutes);
+app.use(`${API_PREFIX}/laboratory`, laboratoryRoutes);
+app.use(`${API_PREFIX}/rbac`, rbacRoutes);
+app.use(`${API_PREFIX}/ml`, mlRoutes);
+app.use(`${API_PREFIX}/specialties`, specialtiesRoutes);
+app.use(`${API_PREFIX}/webhooks`, webhookRoutes);
+
+/* Backward compat: /api/ → /api/v1/ */
 app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/doctors', doctorRoutes);
 app.use('/api/bookings', bookingRoutes);
@@ -104,6 +129,15 @@ app.use('/api/laboratory', laboratoryRoutes);
 app.use('/api/rbac', rbacRoutes);
 app.use('/api/ml', mlRoutes);
 app.use('/api/specialties', specialtiesRoutes);
+
+/* Serve frontend static files in production */
+if (process.env.NODE_ENV === 'production') {
+  const frontendPath = resolve(__dirname, '../frontend/dist');
+  app.use(express.static(frontendPath));
+  app.get('*', (_req, res) => {
+    res.sendFile(resolve(frontendPath, 'index.html'));
+  });
+}
 
 app.use(notFoundHandler);
 app.use(errorHandler);

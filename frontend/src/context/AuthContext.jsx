@@ -18,14 +18,23 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const logout = useCallback(() => {
-    localStorage.removeItem('token');
+  const logout = useCallback(async () => {
+    const refreshToken = localStorage.getItem('refresh_token');
+    if (refreshToken) {
+      try {
+        await api.post('/auth/logout', { refresh_token: refreshToken });
+      } catch {
+        // Ignore logout errors
+      }
+    }
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
     localStorage.removeItem('user');
     setUser(null);
   }, []);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('access_token');
     const savedUser = localStorage.getItem('user');
     if (token && savedUser) {
       const payload = parseJwtPayload(token);
@@ -33,34 +42,60 @@ export const AuthProvider = ({ children }) => {
         try {
           setUser(JSON.parse(savedUser));
         } catch {
-          logout();
+          localStorage.removeItem('access_token');
+          localStorage.removeItem('refresh_token');
+          localStorage.removeItem('user');
         }
       } else {
-        logout();
+        // Try refresh on app load
+        const refreshToken = localStorage.getItem('refresh_token');
+        if (refreshToken) {
+          api.post('/auth/refresh', { refresh_token: refreshToken })
+            .then((res) => {
+              localStorage.setItem('access_token', res.data.access_token);
+              localStorage.setItem('refresh_token', res.data.refresh_token);
+            })
+            .catch(() => {
+              localStorage.removeItem('access_token');
+              localStorage.removeItem('refresh_token');
+              localStorage.removeItem('user');
+            });
+        } else {
+          localStorage.removeItem('access_token');
+          localStorage.removeItem('refresh_token');
+          localStorage.removeItem('user');
+        }
       }
     }
     setLoading(false);
-  }, [logout]);
+  }, []);
 
   useEffect(() => {
     const handleAuthExpired = () => {
-      logout();
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+      localStorage.removeItem('user');
+      setUser(null);
       setLoading(false);
     };
     window.addEventListener('auth:expired', handleAuthExpired);
     return () => window.removeEventListener('auth:expired', handleAuthExpired);
-  }, [logout]);
+  }, []);
 
-  const login = async (email, password) => {
-    const res = await api.post('/auth/login', { email, password });
+  const login = async (email, password, totp_token) => {
+    const payload = { email, password };
+    if (totp_token) payload.totp_token = totp_token;
 
-    const { token, user } = res.data;
+    const res = await api.post('/auth/login', payload);
 
-    if (!token || !user) {
+    const { access_token, refresh_token, user } = res.data;
+
+    if (!access_token || !user) {
       throw new Error('Invalid response from server');
     }
 
-    localStorage.setItem('token', token);
+    localStorage.setItem('access_token', access_token);
+    localStorage.setItem('refresh_token', refresh_token);
     localStorage.setItem('user', JSON.stringify(user));
 
     setUser(user);

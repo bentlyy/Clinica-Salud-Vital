@@ -5,19 +5,30 @@ import { useAuth } from '../context/useAuth';
 export default function LoginPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
-  const [form, setForm] = useState({ email: '', password: '' });
-  const [error, setError] = useState(null);
+  const [form, setForm] = useState({ email: '', password: '', totp_token: '' });
+   const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const [needs2FA, setNeeds2FA] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
     try {
       setSubmitting(true);
-      await login(form.email, form.password);
-      navigate('/booking');
+      const user = await login(form.email, form.password, needs2FA ? form.totp_token : undefined);
+      if (user.role === 'admin') {
+        navigate('/analytics');
+      } else if (user.role === 'doctor') {
+        navigate('/doctor/panel');
+      } else {
+        navigate('/booking');
+      }
     } catch (err) {
-      setError(err.response?.data?.error || 'Credenciales inválidas');
+      if (err.response?.data?.error === '2FA token required') {
+        setNeeds2FA(true);
+      } else {
+        setError(err.response?.data?.error || 'Credenciales inválidas');
+      }
     } finally {
       setSubmitting(false);
     }
@@ -61,8 +72,25 @@ export default function LoginPage() {
             />
           </div>
 
+          {needs2FA && (
+            <div className="form-group">
+              <label className="form-label">Código 2FA <span className="required">*</span></label>
+              <input
+                name="totp_token"
+                type="text"
+                required
+                value={form.totp_token}
+                onChange={(e) => setForm({ ...form, totp_token: e.target.value })}
+                placeholder="Código de 6 dígitos"
+                className="form-input"
+                maxLength={6}
+                autoFocus
+              />
+            </div>
+          )}
+
           <button type="submit" disabled={submitting} className="btn btn-primary btn-block btn-lg" style={{ marginTop: 8 }}>
-            {submitting ? 'Ingresando...' : 'Iniciar Sesión'}
+            {submitting ? 'Ingresando...' : needs2FA ? 'Verificar 2FA' : 'Iniciar Sesión'}
           </button>
         </form>
 
