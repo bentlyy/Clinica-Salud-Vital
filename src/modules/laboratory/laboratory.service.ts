@@ -26,7 +26,7 @@ export interface LabRequestFilters {
 
 export const getLabTests = async ({ category, active = true, limit = 50, offset = 0 }: LabTestFilters = {}) => {
   let query = 'SELECT * FROM lab_tests WHERE 1=1';
-  const params = [];
+  const params: any[] = [];
   let paramCount = 1;
 
   if (active !== undefined) {
@@ -86,7 +86,7 @@ export const createLabRequest = async (data: { patient_id: number; doctor_id?: n
 
 export const getLabRequests = async ({ patient_id, doctor_id, status, start_date, end_date, limit = 20, offset = 0 }: LabRequestFilters = {}) => {
   let query = 'SELECT * FROM lab_requests WHERE 1=1';
-  const params = [];
+  const params: any[] = [];
   let paramCount = 1;
 
   if (patient_id) {
