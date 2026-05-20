@@ -70,7 +70,7 @@ export const createInvoice = async (data: InvoiceInput) => {
 
 export const getInvoices = async ({ patient_id, doctor_id, status, start_date, end_date, limit = 20, offset = 0 }: InvoiceFilters = {}) => {
   let query = 'SELECT * FROM invoices WHERE 1=1';
-  const params = [];
+  const params: any[] = [];
   let paramCount = 1;
 
   if (patient_id) { query += ' AND patient_id = $' + paramCount++; params.push(patient_id); }
