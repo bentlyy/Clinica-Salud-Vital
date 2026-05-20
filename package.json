@@ -21,7 +21,7 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "module",
+
   "dependencies": {
     "@tensorflow/tfjs": "^4.22.0",
     "bcrypt": "^6.0.0",
