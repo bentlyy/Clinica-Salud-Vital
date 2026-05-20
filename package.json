@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "",
   "engines": {
-    "node": "22.x"
+    "node": "20.x"
   },
   "main": "dist/app.js",
   "scripts": {
