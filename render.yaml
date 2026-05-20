@@ -4,7 +4,7 @@ services:
     env: node
     region: oregon
     plan: free
-    buildCommand: npm ci --include=dev && npm run build
+    buildCommand: npm install && npm run build
     preDeployCommand: node dist/scripts/migrate.js
     startCommand: npm start
     healthCheckPath: /health
