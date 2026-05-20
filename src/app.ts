@@ -160,6 +160,16 @@ const runMigration = async (): Promise<void> => {
     `CREATE TABLE IF NOT EXISTS _migrations (id SERIAL PRIMARY KEY, name VARCHAR(255) UNIQUE NOT NULL, applied_at TIMESTAMP DEFAULT NOW())`
   );
 
+  const { rows: [{ count }] } = await pool.query('SELECT COUNT(*)::int AS count FROM _migrations');
+  if (count === 0) {
+    const initPath = resolve(__dirname, '../db/init.sql');
+    if (fs.existsSync(initPath)) {
+      const initSql = fs.readFileSync(initPath, 'utf-8');
+      await pool.query(initSql);
+      logger.info('Esquema inicial (init.sql) aplicado');
+    }
+  }
+
   const migrationFiles = fs.readdirSync(migrationsDir)
     .filter(f => f.endsWith('.sql'))
     .sort();
