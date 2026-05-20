@@ -3,8 +3,7 @@ import cors from 'cors';
 import compression from 'compression';
 import rateLimit from 'express-rate-limit';
 import 'dotenv/config';
-import { fileURLToPath } from 'url';
-import { dirname, resolve } from 'path';
+import { resolve } from 'path';
 import fs from 'fs';
 
 import { seed, backfillInvoices } from './seed/seed.js';
@@ -33,9 +32,6 @@ import rbacRoutes from './modules/rbac/rbac.routes.js';
 import mlRoutes from './modules/ml/ml.routes.js';
 import specialtiesRoutes from './modules/specialties/specialties.routes.js';
 import webhookRoutes from './modules/webhook/webhook.routes.js';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
 
 const app: Express = express();
 
