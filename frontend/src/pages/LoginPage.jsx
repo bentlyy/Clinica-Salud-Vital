@@ -17,7 +17,7 @@ export default function LoginPage() {
       setSubmitting(true);
       const user = await login(form.email, form.password, needs2FA ? form.totp_token : undefined);
       if (user.role === 'admin') {
-        navigate('/analytics');
+        navigate('/admin/analytics');
       } else if (user.role === 'doctor') {
         navigate('/doctor/panel');
       } else {
