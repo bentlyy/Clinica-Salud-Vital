@@ -9,6 +9,7 @@
   "scripts": {
     "dev": "tsx src/app.ts",
     "start": "node dist/app.js",
+    "migrate": "node dist/scripts/migrate.js",
     "build:backend": "tsc",
     "build:frontend": "cd frontend && npm install && npm run build",
     "build": "npm run build:backend && npm run build:frontend",
