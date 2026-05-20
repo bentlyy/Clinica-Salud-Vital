@@ -52,14 +52,16 @@ app.use(tenantMiddleware);
 const allowedOrigins = [
   'http://localhost:5173',
   process.env.FRONTEND_URL,
+  process.env.RENDER_EXTERNAL_URL,
 ].filter((origin): origin is string => Boolean(origin));
 
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) {
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
-      callback(new Error(`CORS: origin ${origin} not allowed`));
+      callback(null, origin);
     }
   },
   credentials: true,
