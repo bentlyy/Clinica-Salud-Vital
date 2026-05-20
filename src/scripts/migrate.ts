@@ -5,6 +5,18 @@ import { pool } from '../shared/db.js';
 import { logger } from '../utils/logger.js';
 
 const runMigration = async (): Promise<void> => {
+  const { rows: [{ exists }] } = await pool.query(
+    `SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'users')`
+  );
+  if (!exists) {
+    const initPath = resolve(__dirname, '../../db/init.sql');
+    if (fs.existsSync(initPath)) {
+      const initSql = fs.readFileSync(initPath, 'utf-8');
+      await pool.query(initSql);
+      logger.info('Esquema inicial (init.sql) aplicado');
+    }
+  }
+
   const legacyPath = resolve(__dirname, '../../db/migrate.sql');
   if (fs.existsSync(legacyPath)) {
     const checkResult = await pool.query(
@@ -27,16 +39,7 @@ const runMigration = async (): Promise<void> => {
     `CREATE TABLE IF NOT EXISTS _migrations (id SERIAL PRIMARY KEY, name VARCHAR(255) UNIQUE NOT NULL, applied_at TIMESTAMP DEFAULT NOW())`
   );
 
-  const { rows: [{ exists }] } = await pool.query(
-    `SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'users')`
-  );
   if (!exists) {
-    const initPath = resolve(__dirname, '../../db/init.sql');
-    if (fs.existsSync(initPath)) {
-      const initSql = fs.readFileSync(initPath, 'utf-8');
-      await pool.query(initSql);
-      logger.info('Esquema inicial (init.sql) aplicado');
-    }
     await pool.query('DELETE FROM _migrations');
     logger.info('Migraciones previas limpiadas para re-ejecución');
   }
