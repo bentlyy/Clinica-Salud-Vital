@@ -49,8 +49,8 @@ export const seed = async (): Promise<void> => {
     ];
     for (const p of simplePatients) {
       await pool.query(
-        'INSERT INTO users (email, password, role, rut, phone) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (email) DO NOTHING',
-        [p.email, HASH, 'user', p.rut, p.phone]
+        'INSERT INTO users (email, password, name, role, rut, phone) VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT (email) DO NOTHING',
+        [p.email, HASH, p.email.split('@')[0], 'user', p.rut, p.phone]
       );
     }
     logger.info('Seed ya ejecutado');
@@ -60,8 +60,8 @@ export const seed = async (): Promise<void> => {
   // ==================== USERS ====================
 
   const adminResult = await pool.query(
-    'INSERT INTO users (email, password, role, rut, phone) VALUES ($1, $2, $3, $4, $5) RETURNING id',
-    ['admin@clinic.com', HASH, 'admin', generateRut(), '+56987654321']
+    'INSERT INTO users (email, password, name, role, rut, phone) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id',
+    ['admin@clinic.com', HASH, 'Admin', 'admin', generateRut(), '+56987654321']
   );
   const adminId = adminResult.rows[0].id;
 
@@ -91,8 +91,8 @@ export const seed = async (): Promise<void> => {
 
   for (const doc of doctorsData) {
     const userResult = await pool.query(
-      'INSERT INTO users (email, password, role, rut, phone) VALUES ($1, $2, $3, $4, $5) RETURNING id',
-      [doc.email, HASH, 'doctor', generateRut(), '+569' + String(randomInt(10000000, 99999999))]
+      'INSERT INTO users (email, password, name, role, rut, phone) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id',
+      [doc.email, HASH, doc.name, 'doctor', generateRut(), '+569' + String(randomInt(10000000, 99999999))]
     );
     const userId = userResult.rows[0].id;
 
@@ -136,13 +136,13 @@ export const seed = async (): Promise<void> => {
 
   const patients: PatientSeed[] = [];
 
-  for (const name of patientNames) {
-    const email = name.toLowerCase().replace(/\s+/g, '.') + '@clinic.com';
+  for (const pName of patientNames) {
+    const email = pName.toLowerCase().replace(/\s+/g, '.') + '@clinic.com';
     const userResult = await pool.query(
-      'INSERT INTO users (email, password, role, rut, phone) VALUES ($1, $2, $3, $4, $5) RETURNING id',
-      [email, HASH, 'user', generateRut(), '+569' + String(randomInt(10000000, 99999999))]
+      'INSERT INTO users (email, password, name, role, rut, phone) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id',
+      [email, HASH, pName, 'user', generateRut(), '+569' + String(randomInt(10000000, 99999999))]
     );
-    patients.push({ id: userResult.rows[0].id, name, email });
+    patients.push({ id: userResult.rows[0].id, name: pName, email });
   }
 
   logger.info(`Usuarios creados: 1 admin, ${doctors.length} doctores, ${patients.length} pacientes`);
@@ -156,8 +156,8 @@ export const seed = async (): Promise<void> => {
   ];
   for (const p of simplePatients) {
     await pool.query(
-      'INSERT INTO users (email, password, role, rut, phone) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (email) DO NOTHING',
-      [p.email, HASH, 'user', p.rut, p.phone]
+      'INSERT INTO users (email, password, name, role, rut, phone) VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT (email) DO NOTHING',
+      [p.email, HASH, p.email.split('@')[0], 'user', p.rut, p.phone]
     );
   }
 
