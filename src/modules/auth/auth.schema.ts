@@ -11,6 +11,7 @@ const passwordSchema = z.string()
 export const registerSchema = z.object({
   email: z.string().email('Invalid email format').min(1, 'Email is required').max(255),
   password: passwordSchema,
+  name: z.string().optional(),
   rut: z.string().optional(),
   phone: z.string().optional(),
 });

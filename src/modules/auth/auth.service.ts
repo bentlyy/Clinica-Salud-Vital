@@ -11,6 +11,7 @@ import crypto from 'crypto';
 interface RegisterParams {
   email: string;
   password: string;
+  name?: string;
   rut?: string;
   phone?: string;
 }
@@ -34,6 +35,7 @@ interface ChangePasswordParams {
 interface User {
   id: number;
   email: string;
+  name: string | null;
   rut: string | null;
   phone: string | null;
   role: UserRole;
@@ -75,7 +77,7 @@ const revokeAllUserRefreshTokens = async (userId: number): Promise<void> => {
   await pool.query('UPDATE refresh_tokens SET revoked = true WHERE user_id = $1', [userId]);
 };
 
-export const register = async ({ email, password, rut, phone }: RegisterParams): Promise<Pick<User, 'id' | 'email' | 'rut' | 'phone'>> => {
+export const register = async ({ email, password, name, rut, phone }: RegisterParams): Promise<Pick<User, 'id' | 'email' | 'rut' | 'phone'>> => {
   if (!email || !password) throw new BadRequestError('Email and password required');
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -98,8 +100,8 @@ export const register = async ({ email, password, rut, phone }: RegisterParams):
 
   try {
     const result = await pool.query(
-      `INSERT INTO users (email, password, rut, phone, password_changed) VALUES ($1, $2, $3, $4, true) RETURNING id, email, rut, phone`,
-      [email, hashedPassword, formattedRut, phone || null]
+      `INSERT INTO users (email, password, name, rut, phone, password_changed) VALUES ($1, $2, $3, $4, $5, true) RETURNING id, email, name, rut, phone`,
+      [email, hashedPassword, name || null, formattedRut, phone || null]
     );
     return result.rows[0];
   } catch (error: unknown) {
@@ -116,7 +118,7 @@ export const register = async ({ email, password, rut, phone }: RegisterParams):
 export const login = async ({ email, password, totp_token }: LoginParams): Promise<{
   access_token: string;
   refresh_token: string;
-  user: { id: number; email: string; role: UserRole; rut: string | null; phone: string | null; password_changed: boolean; totp_enabled: boolean };
+  user: { id: number; email: string; name: string | null; role: UserRole; rut: string | null; phone: string | null; password_changed: boolean; totp_enabled: boolean };
 }> => {
   if (!email || !password) throw new Error('Email and password required');
 
@@ -146,6 +148,7 @@ export const login = async ({ email, password, totp_token }: LoginParams): Promi
     user: {
       id: user.id,
       email: user.email,
+      name: user.name || null,
       role: user.role || 'user',
       rut: user.rut || null,
       phone: user.phone || null,
