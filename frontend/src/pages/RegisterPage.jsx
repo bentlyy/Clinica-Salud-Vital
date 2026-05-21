@@ -15,7 +15,8 @@ export default function RegisterPage() {
     setError(null);
 
     if (form.password !== form.confirmPassword) { setError('Las contraseñas no coinciden'); return; }
-    if (form.password.length < 8) { setError('La contraseña debe tener al menos 8 caracteres'); return; }
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
+    if (!passwordRegex.test(form.password)) { setError('La contraseña debe tener 8+ caracteres, mayúscula, minúscula, número y carácter especial'); return; }
     if (form.rut && !validateRut(cleanRut(form.rut))) { setError('RUT inválido'); return; }
 
     try {
