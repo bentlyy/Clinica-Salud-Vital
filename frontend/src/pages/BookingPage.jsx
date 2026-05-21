@@ -18,11 +18,23 @@ export default function BookingPage() {
   const [selectedTime, setSelectedTime] = useState(null);
 
   const [form, setForm] = useState({
-    rut: user?.rut || '',
-    name: user?.name || user?.email?.split('@')[0] || '',
-    email: user?.email || '',
-    phone: user?.phone || '',
+    rut: '',
+    name: '',
+    email: '',
+    phone: '',
   });
+
+  useEffect(() => {
+    if (user) {
+      setForm(prev => ({
+        ...prev,
+        rut: user.rut || '',
+        name: user.name || '',
+        email: user.email || '',
+        phone: user.phone || '',
+      }));
+    }
+  }, [user]);
 
   const [loadingDoctors, setLoadingDoctors] = useState(true);
   const [submitting, setSubmitting] = useState(false);
