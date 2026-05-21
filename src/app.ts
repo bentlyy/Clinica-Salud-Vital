@@ -12,6 +12,7 @@ import { startReminderJob } from './jobs/reminder.job.js';
 import { startConfirmationJob } from './jobs/confirmation.job.js';
 import { securityMiddleware, validateEnvSecurity } from './middlewares/security.middleware.js';
 import { tenantMiddleware } from './middlewares/tenant.middleware.js';
+import { validateEmailConfig } from './shared/email.service.js';
 import { requestLogger } from './middlewares/requestLogger.middleware.js';
 import { errorHandler, notFoundHandler } from './middlewares/errorHandler.middleware.js';
 import { logger } from './utils/logger.js';
@@ -196,6 +197,7 @@ const runMigration = async (): Promise<void> => {
 
 const startServer = async (): Promise<void> => {
   validateEnvSecurity();
+  validateEmailConfig();
 
   try {
     await pool.query('SELECT 1');
