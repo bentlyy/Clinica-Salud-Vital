@@ -42,6 +42,7 @@ export default function Navbar() {
 
           {!user && (
             <>
+              <Link to="/specialists" className="nav-link">Especialistas</Link>
               <Link to="/booking" className="nav-link">Reservar</Link>
               <Link to="/login" className="nav-link">Iniciar Sesión</Link>
               <Link to="/register" className="btn btn-primary btn-sm">Crear Cuenta</Link>
