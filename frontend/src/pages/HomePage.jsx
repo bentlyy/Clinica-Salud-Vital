@@ -129,10 +129,10 @@ export default function HomePage() {
         <div className="grid grid-3">
           <div
             className="card card-subtle feature-card feature-card-clickable"
-            onClick={() => navigate('/booking')}
+            onClick={() => navigate('/specialists')}
             role="button"
             tabIndex={0}
-            onKeyDown={(e) => e.key === 'Enter' && navigate('/booking')}
+            onKeyDown={(e) => e.key === 'Enter' && navigate('/specialists')}
           >
             <div className="feature-icon">👨‍⚕️</div>
             <h3>Especialistas de Primera</h3>
