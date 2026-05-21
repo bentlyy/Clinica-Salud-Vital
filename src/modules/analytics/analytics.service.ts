@@ -229,6 +229,8 @@ export const getVitalSignsAnomalies = async () => {
       LIMIT 50
     `);
 
+    await mlService.trainVitalSignsAnomalyDetector();
+
     const analyzed = await Promise.all(result.rows.map(async (row: VitalSignRow) => {
       const vs: VitalSignsInput = {
         pressure: row.pressure,
