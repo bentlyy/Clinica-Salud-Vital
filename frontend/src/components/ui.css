@@ -1123,6 +1123,171 @@
   }
 }
 
+/* ===== SPECIALISTS PAGE ===== */
+.sp-hero {
+  text-align: center;
+  padding: 48px 24px 32px;
+  margin-bottom: 32px;
+}
+
+.sp-hero-title {
+  font-family: var(--font-serif);
+  font-size: 2.5rem;
+  margin-bottom: 12px;
+}
+
+.sp-hero-title .text-accent {
+  color: var(--accent-500);
+}
+
+.sp-hero-subtitle {
+  font-size: 1.1rem;
+  color: var(--text-secondary);
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.sp-section {
+  margin-bottom: 48px;
+}
+
+.sp-filter-bar {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-bottom: 32px;
+}
+
+.sp-filter-pill {
+  padding: 8px 18px;
+  border-radius: var(--radius-full);
+  border: 1.5px solid var(--border-light);
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition);
+  white-space: nowrap;
+}
+
+.sp-filter-pill:hover {
+  border-color: var(--accent-500);
+  color: var(--accent-500);
+  background: var(--accent-50);
+}
+
+.sp-filter-active {
+  background: var(--accent-500) !important;
+  color: white !important;
+  border-color: var(--accent-500) !important;
+}
+
+.sp-doctor-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.sp-doctor-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  transition: var(--transition);
+}
+
+.sp-doctor-card:hover {
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-4px);
+  border-color: var(--accent-200, #bbdefb);
+}
+
+.sp-doctor-avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: white;
+  margin-bottom: 14px;
+  flex-shrink: 0;
+}
+
+.sp-doctor-info {
+  margin-bottom: 16px;
+  flex: 1;
+}
+
+.sp-doctor-name {
+  font-size: 1rem;
+  margin-bottom: 6px;
+  color: var(--text-primary);
+}
+
+.sp-doctor-specialty {
+  display: inline-block;
+  padding: 4px 12px;
+  background: var(--accent-50);
+  color: var(--accent-600);
+  border-radius: var(--radius-full);
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.sp-book-btn {
+  width: 100%;
+}
+
+.sp-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 24px;
+  gap: 16px;
+}
+
+.sp-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--border-light);
+  border-top-color: var(--accent-500);
+  border-radius: 50%;
+  animation: sp-spin 0.8s linear infinite;
+}
+
+@keyframes sp-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (max-width: 768px) {
+  .sp-hero-title {
+    font-size: 1.8rem;
+  }
+  .sp-filter-bar {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    justify-content: flex-start;
+    padding-bottom: 8px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .sp-filter-pill {
+    flex-shrink: 0;
+  }
+  .sp-doctor-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* ===== COMBOBOX ===== */
 .combobox-wrapper {
   position: relative;

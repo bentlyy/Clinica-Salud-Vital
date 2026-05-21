@@ -3,6 +3,7 @@ import HomePage from '../pages/HomePage';
 import LoginPage from '../pages/LoginPage';
 import RegisterPage from '../pages/RegisterPage';
 import BookingPage from '../pages/BookingPage';
+import SpecialistsPage from '../pages/SpecialistsPage';
 import GuestBookingsPage from '../pages/GuestBookingsPage';
 import ConfirmPage from '../pages/ConfirmPage';
 import MyBookingsPage from '../pages/MyBookingsPage';
@@ -32,6 +33,7 @@ export default function AppRoutes() {
       <Route path="/register" element={<AppLayout><RegisterPage /></AppLayout>} />
 
       <Route path="/booking" element={<AppLayout><BookingPage /></AppLayout>} />
+      <Route path="/specialists" element={<AppLayout><SpecialistsPage /></AppLayout>} />
       <Route path="/doctors" element={<ProtectedRoute><AppLayout><BookingPage /></AppLayout></ProtectedRoute>} />
 
       <Route path="/my-bookings/guest" element={<AppLayout><GuestBookingsPage /></AppLayout>} />
