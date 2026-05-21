@@ -135,6 +135,16 @@ let diagnosisModel: SequentialModel | null = null;
 let demandModel: SequentialModel | null = null;
 let vitalAnomalyModel: { mean: number[]; std: number[]; threshold: number; trained: boolean } | null = null;
 
+const trainingLocks: Record<string, Promise<unknown> | null> = {};
+
+const withTrainingLock = async <T>(key: string, fn: () => Promise<T>): Promise<T> => {
+  if (trainingLocks[key]) {
+    return trainingLocks[key] as Promise<T>;
+  }
+  trainingLocks[key] = fn().finally(() => { trainingLocks[key] = null; });
+  return trainingLocks[key] as Promise<T>;
+};
+
 const getTF = async (): Promise<TensorFlowModule> => {
   if (!tfLoaded) {
     logger.info('[ML] Loading TensorFlow (lazy load)...');
@@ -358,7 +368,7 @@ export const predictNoShow = async (doctorId: number | undefined, userId: number
   }
 
   if (!noShowModel || !noShowModel.trained) {
-    const result = await trainNoShowModel();
+    const result = await withTrainingLock('noshow', trainNoShowModel);
     if (!result.trained) {
       return { risk: 0.3, confidence: 'low', reason: 'model_not_trained' };
     }
@@ -579,7 +589,7 @@ export const predictDiagnosis = async (chiefComplaint: string): Promise<Diagnosi
   }
 
   if (!diagnosisModel || !diagnosisModel.trained) {
-    const result = await trainDiagnosisClassifier();
+    const result = await withTrainingLock('diagnosis', trainDiagnosisClassifier);
     if (!result.trained) {
       return { predictions: [], reason: 'model_not_trained' };
     }
@@ -747,7 +757,7 @@ const predictWithStatistical = (
 
 export const forecastDemand = async (days = 7): Promise<ForecastResult[]> => {
   if (!demandModel || !demandModel.trained) {
-    const result = await trainDemandForecastModel();
+    const result = await withTrainingLock('demand', trainDemandForecastModel);
     if (!result.trained) {
       const lastDate = new Date();
       return Array.from({ length: days }, (_, i) => {
@@ -1034,7 +1044,7 @@ const calculateCardiovascularRisk = (
 
 export const analyzeVitalSigns = async (vitalSigns?: Record<string, unknown>): Promise<VitalSignsAnalysis> => {
   if (!vitalAnomalyModel || !vitalAnomalyModel.trained) {
-    const result = await trainVitalSignsAnomalyDetector();
+    const result = await withTrainingLock('vitals', trainVitalSignsAnomalyDetector);
     if (!result.trained) {
       return { anomaly: false, score: 0, warnings: [], values: { systolic: 120, diastolic: 80, heartRate: 70, temp: 36.5 }, normalRanges: { systolic: { min: 0, max: 0 }, diastolic: { min: 0, max: 0 }, heartRate: { min: 0, max: 0 }, temperature: { min: '0', max: '0' } }, reason: 'model_not_trained' };
     }
