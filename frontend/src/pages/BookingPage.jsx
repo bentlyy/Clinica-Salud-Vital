@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { getDoctors } from '../api/doctors';
 import { getAvailableSlots, createGuestBooking, createBooking } from '../api/bookings';
 import { useAuth } from '../context/useAuth';
@@ -8,6 +8,7 @@ import { formatRut, validateRut, cleanRut } from '../utils/rut.js';
 export default function BookingPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   const [step, setStep] = useState(1);
   const [doctors, setDoctors] = useState([]);
@@ -33,10 +34,19 @@ export default function BookingPage() {
 
   useEffect(() => {
     getDoctors()
-      .then(setDoctors)
+      .then((data) => {
+        setDoctors(data);
+        const doctorParam = searchParams.get('doctor');
+        if (doctorParam) {
+          const id = Number(doctorParam);
+          if (data.some(d => d.id === id)) {
+            setSelectedDoctor(id);
+          }
+        }
+      })
       .catch(() => setError('Error cargando doctores'))
       .finally(() => setLoadingDoctors(false));
-  }, []);
+  }, [searchParams]);
 
   useEffect(() => {
     if (!selectedDoctor || !date) return;
@@ -122,12 +132,11 @@ export default function BookingPage() {
   }
 
   return (
-    <div className="page-container">
+    <div className="page-container bk-page">
       <h1 style={{ marginBottom: 24 }}>Reservar Hora Médica</h1>
 
       {error && <div className="alert alert-error">{error}</div>}
 
-      {/* Steps */}
       <div className="steps">
         <div className={`step ${step === 1 ? 'active' : step > 1 ? 'completed' : ''}`}>
           <div className="step-number">{step > 1 ? '✓' : '1'}</div>
@@ -140,11 +149,9 @@ export default function BookingPage() {
         </div>
       </div>
 
-      {/* STEP 1 */}
       {step === 1 && (
         <div>
-          {/* Date */}
-          <div className="form-group" style={{ maxWidth: 240 }}>
+          <div className="form-group" style={{ maxWidth: 280 }}>
             <label className="form-label">Fecha de la cita</label>
             <input
               type="date"
@@ -155,47 +162,64 @@ export default function BookingPage() {
             />
           </div>
 
-          {/* Doctors */}
-          <h3 style={{ fontSize: 16, color: 'var(--text-secondary)', marginBottom: 16, fontWeight: 500 }}>Selecciona un especialista</h3>
-          {loadingDoctors && <p style={{ color: 'var(--text-muted)' }}>Cargando especialistas...</p>}
-          <div className="grid grid-3 doctor-card-grid">
-            {doctors.map((doc) => (
-              <div
-                key={doc.id}
-                className={`doctor-card ${selectedDoctor === doc.id ? 'selected' : ''}`}
-                onClick={() => { setSelectedDoctor(doc.id); setSlots([]); setSelectedTime(null); }}
-              >
-                <div className="doctor-avatar">👨‍⚕️</div>
-                <h4>{doc.name}</h4>
-                <p>{doc.specialty}</p>
-              </div>
-            ))}
-          </div>
-
-          {/* Time Slots */}
-          {selectedDoctor && date && (
-            <div style={{ marginTop: 28 }}>
-              <h3 style={{ fontSize: 16, color: 'var(--text-secondary)', marginBottom: 16, fontWeight: 500 }}>Horarios disponibles</h3>
-              {slots.length === 0 && (
-                <div className="empty-state" style={{ padding: 24 }}>
-                  <p>No hay horarios disponibles para esta fecha</p>
-                </div>
-              )}
-              <div className="time-slots">
-                {slots.map((slot) => (
-                  <button
-                    key={slot}
-                    className={`time-slot ${selectedTime === slot ? 'selected' : ''}`}
-                    onClick={() => setSelectedTime(slot)}
+          <div className="bk-two-col">
+            <div className="bk-doctors-col">
+              <h3 className="bk-col-title">Selecciona un especialista</h3>
+              {loadingDoctors && <p style={{ color: 'var(--text-muted)' }}>Cargando especialistas...</p>}
+              <div className="bk-doctor-list">
+                {doctors.map((doc) => (
+                  <div
+                    key={doc.id}
+                    className={`bk-doctor-item ${selectedDoctor === doc.id ? 'bk-doctor-selected' : ''}`}
+                    onClick={() => { setSelectedDoctor(doc.id); setSlots([]); setSelectedTime(null); }}
                   >
-                    {slot}
-                  </button>
+                    <div className="bk-doctor-avatar">👨‍⚕️</div>
+                    <div className="bk-doctor-meta">
+                      <span className="bk-doctor-item-name">{doc.name}</span>
+                      <span className="bk-doctor-item-spec">{doc.specialty}</span>
+                    </div>
+                    {selectedDoctor === doc.id && <span className="bk-check">✓</span>}
+                  </div>
                 ))}
               </div>
             </div>
-          )}
 
-          {/* Continue */}
+            <div className="bk-slots-col">
+              <h3 className="bk-col-title">Horarios disponibles</h3>
+              {!selectedDoctor && (
+                <div className="bk-slots-placeholder">
+                  <div className="bk-slots-placeholder-icon">👈</div>
+                  <p>Selecciona un especialista</p>
+                </div>
+              )}
+              {selectedDoctor && !date && (
+                <div className="bk-slots-placeholder">
+                  <div className="bk-slots-placeholder-icon">📅</div>
+                  <p>Selecciona una fecha</p>
+                </div>
+              )}
+              {selectedDoctor && date && slots.length === 0 && (
+                <div className="bk-slots-placeholder">
+                  <div className="bk-slots-placeholder-icon">⏰</div>
+                  <p>No hay horarios disponibles para esta fecha</p>
+                </div>
+              )}
+              {selectedDoctor && date && slots.length > 0 && (
+                <div className="bk-slots-grid">
+                  {slots.map((slot) => (
+                    <button
+                      key={slot}
+                      className={`bk-slot-btn ${selectedTime === slot ? 'bk-slot-selected' : ''}`}
+                      onClick={() => setSelectedTime(slot)}
+                    >
+                      {slot}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
           <div style={{ marginTop: 32, display: 'flex', justifyContent: 'flex-end' }}>
             {canGoToStep2 ? (
               <button onClick={() => setStep(2)} className="btn btn-primary btn-lg">
@@ -210,10 +234,8 @@ export default function BookingPage() {
         </div>
       )}
 
-      {/* STEP 2 */}
       {step === 2 && (
         <div>
-          {/* Summary */}
           <div className="booking-summary">
             <h3>Resumen de tu cita</h3>
             <div className="summary-items">
@@ -223,18 +245,15 @@ export default function BookingPage() {
             </div>
           </div>
 
-          {/* Badge */}
           {isGuest ? (
             <div className="user-badge user-badge-guest">🔓 Reservando como invitado</div>
           ) : (
             <div className="user-badge user-badge-logged">🔒 Sesión iniciada como <strong>{user.email}</strong></div>
           )}
 
-          {/* Form */}
           <div className="card">
             <h3 style={{ marginBottom: 20 }}>Datos Personales</h3>
             <div className="grid grid-2">
-              {/* RUT */}
               <div className="form-group">
                 <label className="form-label">RUT <span className="required">*</span></label>
                 <input
@@ -247,7 +266,6 @@ export default function BookingPage() {
                 {isGuest && <p className="form-hint">Ingresa tu RUT chileno válido</p>}
               </div>
 
-              {/* Name */}
               <div className="form-group">
                 <label className="form-label">Nombre completo</label>
                 <input
@@ -259,7 +277,6 @@ export default function BookingPage() {
                 />
               </div>
 
-              {/* Email */}
               <div className="form-group">
                 <label className="form-label">Email <span className="required">*</span></label>
                 <input
@@ -272,7 +289,6 @@ export default function BookingPage() {
                 {isGuest && <p className="form-hint">Necesario para enviar confirmación</p>}
               </div>
 
-              {/* Phone */}
               <div className="form-group">
                 <label className="form-label">Teléfono</label>
                 <input
@@ -292,7 +308,6 @@ export default function BookingPage() {
             )}
           </div>
 
-          {/* Actions */}
           <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 28 }}>
             <button onClick={() => setStep(1)} className="btn btn-ghost btn-lg">
               ← Volver
