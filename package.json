@@ -23,6 +23,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@sendgrid/mail": "^8.1.6",
     "@tensorflow/tfjs": "^4.22.0",
     "@types/bcrypt": "^5.0.2",
     "@types/compression": "^1.8.1",
