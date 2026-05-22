@@ -4,6 +4,71 @@ Sistema full-stack para clínicas que integra agenda médica, historias clínica
 
 ---
 
+## Cómo Ejecutar
+
+### Requisitos
+- Node.js 20.x
+- Docker (para PostgreSQL local)
+- npm
+
+### Desarrollo Local
+
+```bash
+# 1. Clonar e instalar
+git clone <repo>
+cd clinic-backend
+npm install
+
+# 2. Iniciar PostgreSQL
+docker compose up -d db
+
+# 3. Copiar variables de entorno
+cp .env.example .env
+# Editar .env según sea necesario
+
+# 4. Iniciar API
+npm run dev
+```
+
+### Frontend
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+### Despliegue en Render
+
+1. Crea una **Web Service** desde tu repo de GitHub
+2. Configura:
+   - **Build Command**: `npm install && npm run build`
+   - **Pre-deploy Command**: `node dist/scripts/migrate.js`
+   - **Start Command**: `npm start`
+   - **Health Check Path**: `/health`
+3. Variables de entorno requeridas (ver `render.yaml`):
+   - `DATABASE_URL`, `JWT_SECRET`, `FRONTEND_URL`
+   - `EMAIL_USER`, `EMAIL_PASS`
+   - `TOTP_ISSUER`, `SMS_PROVIDER`, `DEFAULT_TENANT_ID`, `APP_LOCALE`
+
+### Comandos Disponibles
+
+| Comando | Descripción |
+|---------|-------------|
+| `npm run dev` | Dev server (tsx watch) |
+| `npm start` | Producción (node dist/app.js) |
+| `npm test` | Tests + cobertura |
+| `npm run test:watch` | Watch mode |
+| `npm run test:ui` | UI Vitest |
+| `npm run test:coverage` | Reporte HTML |
+| `npm run typecheck` | TypeScript check |
+| `npm run build` | Compile TS + build frontend |
+| `npm run build:backend` | Compile TS only (tsc) |
+| `npm run build:frontend` | Build frontend only (Vite) |
+| `npm run migrate` | Ejecutar migraciones |
+
+---
+
 ## Stack Tecnológico
 
 | Capa | Tecnología | Versión |
@@ -461,71 +526,6 @@ tests/
 - **HTTP Testing:** Supertest 7.x
 - **Coverage:** @vitest/coverage-v8 (text + lcov + html)
 - **Mocks:** vi.hoisted() para mocking de módulos ES
-
----
-
-## Cómo Ejecutar
-
-### Requisitos
-- Node.js 20.x
-- Docker (para PostgreSQL local)
-- npm
-
-### Desarrollo Local
-
-```bash
-# 1. Clonar e instalar
-git clone <repo>
-cd clinic-backend
-npm install
-
-# 2. Iniciar PostgreSQL
-docker compose up -d db
-
-# 3. Copiar variables de entorno
-cp .env.example .env
-# Editar .env según sea necesario
-
-# 4. Iniciar API
-npm run dev
-```
-
-### Frontend
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-### Despliegue en Render
-
-1. Crea una **Web Service** desde tu repo de GitHub
-2. Configura:
-   - **Build Command**: `npm install && npm run build`
-   - **Pre-deploy Command**: `node dist/scripts/migrate.js`
-   - **Start Command**: `npm start`
-   - **Health Check Path**: `/health`
-3. Variables de entorno requeridas (ver `render.yaml`):
-   - `DATABASE_URL`, `JWT_SECRET`, `FRONTEND_URL`
-   - `EMAIL_USER`, `EMAIL_PASS`
-   - `TOTP_ISSUER`, `SMS_PROVIDER`, `DEFAULT_TENANT_ID`, `APP_LOCALE`
-
-### Comandos Disponibles
-
-| Comando | Descripción |
-|---------|-------------|
-| `npm run dev` | Dev server (tsx watch) |
-| `npm start` | Producción (node dist/app.js) |
-| `npm test` | Tests + cobertura |
-| `npm run test:watch` | Watch mode |
-| `npm run test:ui` | UI Vitest |
-| `npm run test:coverage` | Reporte HTML |
-| `npm run typecheck` | TypeScript check |
-| `npm run build` | Compile TS + build frontend |
-| `npm run build:backend` | Compile TS only (tsc) |
-| `npm run build:frontend` | Build frontend only (Vite) |
-| `npm run migrate` | Ejecutar migraciones |
 
 ---
 
