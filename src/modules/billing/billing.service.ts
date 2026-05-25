@@ -31,7 +31,7 @@ interface InvoiceInput {
   items?: { description: string; quantity: number; unit_price: number }[];
 }
 
-export const createInvoice = async (data: InvoiceInput) => {
+export const createInvoice = async (data: InvoiceInput, tenantId?: string) => {
   const client = await pool.connect();
 
   try {
@@ -42,9 +42,17 @@ export const createInvoice = async (data: InvoiceInput) => {
 
     const total = Number(amount) + Number(tax_amount) - Number(discount_amount);
 
+    const columns = ['invoice_number', 'patient_id', 'doctor_id', 'booking_id', 'concept', 'description', 'amount', 'tax_amount', 'discount_amount', 'total_amount', 'due_date', 'notes'];
+    const valuesList: any[] = [invoiceNumber, patient_id, doctor_id || null, booking_id || null, concept, description || null, amount, tax_amount, discount_amount, total, due_date, notes || null];
+
+    if (tenantId) {
+      columns.push('tenant_id');
+      valuesList.push(tenantId);
+    }
+
     const invoiceResult = await client.query(
-      'INSERT INTO invoices (invoice_number, patient_id, doctor_id, booking_id, concept, description, amount, tax_amount, discount_amount, total_amount, due_date, notes) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *',
-      [invoiceNumber, patient_id, doctor_id, booking_id || null, concept, description || null, amount, tax_amount, discount_amount, total, due_date, notes || null]
+      `INSERT INTO invoices (${columns.join(', ')}) VALUES (${valuesList.map((_, i) => '$' + (i + 1)).join(', ')}) RETURNING *`,
+      valuesList
     );
 
     const invoice = invoiceResult.rows[0];
@@ -68,7 +76,7 @@ export const createInvoice = async (data: InvoiceInput) => {
   }
 };
 
-export const getInvoices = async ({ patient_id, doctor_id, status, start_date, end_date, limit = 20, offset = 0 }: InvoiceFilters = {}) => {
+export const getInvoices = async ({ patient_id, doctor_id, status, start_date, end_date, limit = 20, offset = 0 }: InvoiceFilters = {}, tenantId?: string) => {
   let query = 'SELECT * FROM invoices WHERE 1=1';
   const params: any[] = [];
   let paramCount = 1;
@@ -78,6 +86,7 @@ export const getInvoices = async ({ patient_id, doctor_id, status, start_date, e
   if (status) { query += ' AND status = $' + paramCount++; params.push(status); }
   if (start_date) { query += ' AND created_at >= $' + paramCount++; params.push(start_date); }
   if (end_date) { query += ' AND created_at <= $' + paramCount++; params.push(end_date); }
+  if (tenantId) { query += ' AND tenant_id = $' + paramCount++; params.push(tenantId); }
 
   query += ' ORDER BY created_at DESC LIMIT $' + paramCount++ + ' OFFSET $' + paramCount++;
   params.push(limit, offset);
@@ -86,33 +95,33 @@ export const getInvoices = async ({ patient_id, doctor_id, status, start_date, e
   return result.rows;
 };
 
-export const getInvoiceById = async (id: number) => {
-  const result = await pool.query('SELECT * FROM invoices WHERE id = $1', [id]);
+export const getInvoiceById = async (id: number, tenantId?: string) => {
+  const result = await pool.query(`SELECT * FROM invoices WHERE id = $1${tenantId ? ' AND tenant_id = $2' : ''}`, tenantId ? [id, tenantId] : [id]);
   if (result.rows.length === 0) throw new NotFoundError('Invoice not found');
   return result.rows[0];
 };
 
-export const updateInvoiceStatus = async (id: number, status: string, paymentData?: Record<string, unknown>) => {
+export const updateInvoiceStatus = async (id: number, status: string, paymentData?: Record<string, unknown>, tenantId?: string) => {
   const result = await pool.query(
-    'UPDATE invoices SET status = $1, payment_data = $2, updated_at = NOW() WHERE id = $3 RETURNING *',
-    [status, paymentData ? JSON.stringify(paymentData) : null, id]
+    `UPDATE invoices SET status = $1, payment_data = $2, updated_at = NOW() WHERE id = $3${tenantId ? ' AND tenant_id = $4' : ''} RETURNING *`,
+    tenantId ? [status, paymentData ? JSON.stringify(paymentData) : null, id, tenantId] : [status, paymentData ? JSON.stringify(paymentData) : null, id]
   );
   if (result.rows.length === 0) throw new NotFoundError('Invoice not found');
   return result.rows[0];
 };
 
-export const deleteInvoice = async (id: number) => {
-  await pool.query('DELETE FROM invoice_items WHERE invoice_id = $1', [id]);
-  const result = await pool.query('DELETE FROM invoices WHERE id = $1 RETURNING *', [id]);
+export const deleteInvoice = async (id: number, tenantId?: string) => {
+  await pool.query(`DELETE FROM invoice_items WHERE invoice_id = $1${tenantId ? ' AND tenant_id = $2' : ''}`, tenantId ? [id, tenantId] : [id]);
+  const result = await pool.query(`DELETE FROM invoices WHERE id = $1${tenantId ? ' AND tenant_id = $2' : ''} RETURNING *`, tenantId ? [id, tenantId] : [id]);
   if (result.rows.length === 0) throw new NotFoundError('Invoice not found');
   return { message: 'Invoice deleted' };
 };
 
-export const getBillingStats = async () => {
+export const getBillingStats = async (tenantId?: string) => {
   const [totalOutstanding, totalPaid, overdueCount] = await Promise.all([
-    pool.query('SELECT SUM(total_amount) AS total FROM invoices WHERE status = $1', ['pending']),
-    pool.query('SELECT SUM(total_amount) AS total FROM invoices WHERE status = $1', ['paid']),
-    pool.query('SELECT COUNT(*) AS count FROM invoices WHERE status = $1 AND due_date < CURRENT_DATE', ['pending']),
+    pool.query(`SELECT SUM(total_amount) AS total FROM invoices WHERE status = $1${tenantId ? ' AND tenant_id = $2' : ''}`, tenantId ? ['pending', tenantId] : ['pending']),
+    pool.query(`SELECT SUM(total_amount) AS total FROM invoices WHERE status = $1${tenantId ? ' AND tenant_id = $2' : ''}`, tenantId ? ['paid', tenantId] : ['paid']),
+    pool.query(`SELECT COUNT(*) AS count FROM invoices WHERE status = $1 AND due_date < CURRENT_DATE${tenantId ? ' AND tenant_id = $2' : ''}`, tenantId ? ['pending', tenantId] : ['pending']),
   ]);
 
   return {

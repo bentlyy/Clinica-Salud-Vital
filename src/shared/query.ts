@@ -26,15 +26,39 @@ export const tenantQuery = {
     return `${TAG_TENANT}${value}${TAG_TENANT}`;
   },
 
+  /**
+   * @deprecated Use whereParam() instead — this interpolates tenantId into SQL directly.
+   */
   build(text: string, tenantId: string): string {
     const placeholder = this.tag('');
     const searchRegex = new RegExp(placeholder, 'g');
     return text.replace(searchRegex, `'${tenantId.replace(/'/g, "''")}'`);
   },
 
+  /**
+   * @deprecated Use whereParam() instead — this interpolates tenantId into SQL directly.
+   */
   where(tenantId: string, tableAlias?: string): string {
     const alias = tableAlias ? `${tableAlias}.` : '';
     return `${alias}tenant_id = '${tenantId.replace(/'/g, "''")}'`;
+  },
+
+  /**
+   * Safe parameterized version — returns { sql, params }.
+   * @example const { sql, params } = tenantQuery.whereParam(tenantId, 'u');
+   * // sql: "u.tenant_id = $1", params: [tenantId]
+   */
+  whereParam(tenantId: string, tableAlias?: string, paramIndex: number = 1): { sql: string; params: string[] } {
+    const alias = tableAlias ? `${tableAlias}.` : '';
+    return { sql: `${alias}tenant_id = $${paramIndex}`, params: [tenantId] };
+  },
+
+  /**
+   * Safe parameterized WHERE AND clause.
+   */
+  andWhereParam(tenantId: string, tableAlias?: string, paramIndex: number = 1): { sql: string; params: string[] } {
+    const { sql, params } = this.whereParam(tenantId, tableAlias, paramIndex);
+    return { sql: `AND ${sql}`, params };
   },
 
   insert(text: string, params: QueryParams = []): string {

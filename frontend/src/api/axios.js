@@ -26,11 +26,12 @@ api.interceptors.request.use((config) => {
 
 // ✅ Global response interceptor
 // - Auto-refresh on 401/TOKEN_EXPIRED
-// - Auto-unwrap paginated responses: { data, pagination } → data
+// - Attach pagination to response.pagination for paginated endpoints
 api.interceptors.response.use(
   (response) => {
     const body = response.data;
     if (body && typeof body === 'object' && Array.isArray(body.data) && body.pagination) {
+      response.pagination = body.pagination;
       response.data = body.data;
     }
     return response;
