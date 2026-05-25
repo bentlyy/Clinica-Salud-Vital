@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
-import useAuth from '../context/useAuth';
+import { useAuth } from '../context/useAuth';
 import { useI18n } from '../i18n/useI18n';
 
 export default function SaasSuccessPage() {
