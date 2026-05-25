@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getPlans, getMySubscription, createCheckout } from '../api/saas';
-import useAuth from '../context/useAuth';
+import { useAuth } from '../context/useAuth';
 import { useI18n } from '../i18n/useI18n';
 
 export default function SaasPlansPage() {
