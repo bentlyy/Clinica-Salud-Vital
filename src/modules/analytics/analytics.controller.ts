@@ -5,24 +5,24 @@ import { NotFoundError } from '../../utils/errors.js';
 import { getQueryInt } from '../../shared/query.js';
 
 export const getDashboardStats = asyncHandler(async (req, res) => {
-  const stats = await analyticsService.getDashboardStats();
+  const stats = await analyticsService.getDashboardStats(req.tenant_id);
   res.json(stats);
 });
 
 export const getBookingsByMonth = asyncHandler(async (req, res) => {
   const months = getQueryInt(req.query, 'months', 12);
-  const data = await analyticsService.getBookingsByMonth(months);
+  const data = await analyticsService.getBookingsByMonth(months, req.tenant_id);
   res.json(data);
 });
 
 export const getTopDoctors = asyncHandler(async (req, res) => {
   const limit = getQueryInt(req.query, 'limit', 10);
-  const data = await analyticsService.getTopDoctors(limit);
+  const data = await analyticsService.getTopDoctors(limit, req.tenant_id);
   res.json(data);
 });
 
 export const getBookingStatusDistribution = asyncHandler(async (req, res) => {
-  const data = await analyticsService.getBookingStatusDistribution();
+  const data = await analyticsService.getBookingStatusDistribution(req.tenant_id);
   res.json(data);
 });
 
@@ -30,33 +30,33 @@ export const getMyDoctorStats = asyncHandler(async (req, res) => {
   const doctor = await doctorService.getDoctorByUserId(req.user!.id);
   if (!doctor) throw new NotFoundError('Doctor profile not found');
 
-  const stats = await analyticsService.getDoctorStats(doctor.id);
+  const stats = await analyticsService.getDoctorStats(doctor.id, req.tenant_id);
   res.json(stats);
 });
 
 export const getNoShows = asyncHandler(async (req, res) => {
-  const data = await analyticsService.getNoShowsByDoctor();
+  const data = await analyticsService.getNoShowsByDoctor(req.tenant_id);
   res.json(data);
 });
 
 export const getDiagnosesAnalytics = asyncHandler(async (req, res) => {
-  const data = await analyticsService.getDiagnoses();
+  const data = await analyticsService.getDiagnoses(req.tenant_id);
   res.json(data);
 });
 
 export const getDemand = asyncHandler(async (req, res) => {
   const days = getQueryInt(req.query, 'days', 30);
-  const data = await analyticsService.getDemandForecast(days);
+  const data = await analyticsService.getDemandForecast(days, req.tenant_id);
   res.json(data);
 });
 
 export const getSchedules = asyncHandler(async (req, res) => {
-  const data = await analyticsService.getOptimalSchedules();
+  const data = await analyticsService.getOptimalSchedules(req.tenant_id);
   res.json(data);
 });
 
 export const getVitalsAnomalies = asyncHandler(async (req, res) => {
-  const data = await analyticsService.getVitalSignsAnomalies();
+  const data = await analyticsService.getVitalSignsAnomalies(req.tenant_id);
   res.json(data);
 });
 
