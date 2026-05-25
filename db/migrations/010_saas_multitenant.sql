@@ -3,88 +3,32 @@
 -- Adds tenant_id to all entity tables + creates plan/subscription tables
 -- ============================================================
 
--- 1. Add tenant_id to all entity tables (with default from env or 'default')
-DO $$
-DECLARE
-  default_tenant TEXT := COALESCE(current_setting('app.dEFAULT_TENANT_ID', true), 'default');
-BEGIN
-
-  -- doctors
-  ALTER TABLE doctors ADD COLUMN IF NOT EXISTS tenant_id TEXT NOT NULL DEFAULT default_tenant;
-
-  -- bookings
-  ALTER TABLE bookings ADD COLUMN IF NOT EXISTS tenant_id TEXT NOT NULL DEFAULT default_tenant;
-
-  -- doctor_availability
-  ALTER TABLE doctor_availability ADD COLUMN IF NOT EXISTS tenant_id TEXT NOT NULL DEFAULT default_tenant;
-
-  -- doctor_exceptions
-  ALTER TABLE doctor_exceptions ADD COLUMN IF NOT EXISTS tenant_id TEXT NOT NULL DEFAULT default_tenant;
-
-  -- clinical_records
-  ALTER TABLE clinical_records ADD COLUMN IF NOT EXISTS tenant_id TEXT NOT NULL DEFAULT default_tenant;
-
-  -- prescriptions
-  ALTER TABLE prescriptions ADD COLUMN IF NOT EXISTS tenant_id TEXT NOT NULL DEFAULT default_tenant;
-
-  -- audit_logs
-  ALTER TABLE audit_logs ADD COLUMN IF NOT EXISTS tenant_id TEXT NOT NULL DEFAULT default_tenant;
-
-  -- invoices
-  ALTER TABLE invoices ADD COLUMN IF NOT EXISTS tenant_id TEXT NOT NULL DEFAULT default_tenant;
-
-  -- invoice_items
-  ALTER TABLE invoice_items ADD COLUMN IF NOT EXISTS tenant_id TEXT NOT NULL DEFAULT default_tenant;
-
-  -- payments
-  ALTER TABLE payments ADD COLUMN IF NOT EXISTS tenant_id TEXT NOT NULL DEFAULT default_tenant;
-
-  -- insurance_claims
-  ALTER TABLE insurance_claims ADD COLUMN IF NOT EXISTS tenant_id TEXT NOT NULL DEFAULT default_tenant;
-
-  -- lab_tests
-  ALTER TABLE lab_tests ADD COLUMN IF NOT EXISTS tenant_id TEXT NOT NULL DEFAULT default_tenant;
-
-  -- lab_requests
-  ALTER TABLE lab_requests ADD COLUMN IF NOT EXISTS tenant_id TEXT NOT NULL DEFAULT default_tenant;
-
-  -- lab_request_items
-  ALTER TABLE lab_request_items ADD COLUMN IF NOT EXISTS tenant_id TEXT NOT NULL DEFAULT default_tenant;
-
-  -- permissions
-  ALTER TABLE permissions ADD COLUMN IF NOT EXISTS tenant_id TEXT NOT NULL DEFAULT default_tenant;
-
-  -- role_permissions
-  ALTER TABLE role_permissions ADD COLUMN IF NOT EXISTS tenant_id TEXT NOT NULL DEFAULT default_tenant;
-
-  -- user_permissions
-  ALTER TABLE user_permissions ADD COLUMN IF NOT EXISTS tenant_id TEXT NOT NULL DEFAULT default_tenant;
-
-  -- ml_prediction_history
-  ALTER TABLE ml_prediction_history ADD COLUMN IF NOT EXISTS tenant_id TEXT NOT NULL DEFAULT default_tenant;
-
-  -- ml_model_metrics
-  ALTER TABLE ml_model_metrics ADD COLUMN IF NOT EXISTS tenant_id TEXT NOT NULL DEFAULT default_tenant;
-
-  -- ml_demand_forecast
-  ALTER TABLE ml_demand_forecast ADD COLUMN IF NOT EXISTS tenant_id TEXT NOT NULL DEFAULT default_tenant;
-
-  -- refresh_tokens
-  ALTER TABLE refresh_tokens ADD COLUMN IF NOT EXISTS tenant_id TEXT NOT NULL DEFAULT default_tenant;
-
-  -- webhooks
-  ALTER TABLE webhooks ADD COLUMN IF NOT EXISTS tenant_id TEXT NOT NULL DEFAULT default_tenant;
-
-  -- webhook_deliveries
-  ALTER TABLE webhook_deliveries ADD COLUMN IF NOT EXISTS tenant_id TEXT NOT NULL DEFAULT default_tenant;
-
-  -- notification_preferences
-  ALTER TABLE notification_preferences ADD COLUMN IF NOT EXISTS tenant_id TEXT NOT NULL DEFAULT default_tenant;
-
-  -- specialties
-  ALTER TABLE specialties ADD COLUMN IF NOT EXISTS tenant_id TEXT NOT NULL DEFAULT default_tenant;
-
-END $$;
+-- 1. Add tenant_id to all entity tables with default 'default'
+  ALTER TABLE doctors ADD COLUMN IF NOT EXISTS tenant_id TEXT NOT NULL DEFAULT 'default';
+  ALTER TABLE bookings ADD COLUMN IF NOT EXISTS tenant_id TEXT NOT NULL DEFAULT 'default';
+  ALTER TABLE doctor_availability ADD COLUMN IF NOT EXISTS tenant_id TEXT NOT NULL DEFAULT 'default';
+  ALTER TABLE doctor_exceptions ADD COLUMN IF NOT EXISTS tenant_id TEXT NOT NULL DEFAULT 'default';
+  ALTER TABLE clinical_records ADD COLUMN IF NOT EXISTS tenant_id TEXT NOT NULL DEFAULT 'default';
+  ALTER TABLE prescriptions ADD COLUMN IF NOT EXISTS tenant_id TEXT NOT NULL DEFAULT 'default';
+  ALTER TABLE audit_logs ADD COLUMN IF NOT EXISTS tenant_id TEXT NOT NULL DEFAULT 'default';
+  ALTER TABLE invoices ADD COLUMN IF NOT EXISTS tenant_id TEXT NOT NULL DEFAULT 'default';
+  ALTER TABLE invoice_items ADD COLUMN IF NOT EXISTS tenant_id TEXT NOT NULL DEFAULT 'default';
+  ALTER TABLE payments ADD COLUMN IF NOT EXISTS tenant_id TEXT NOT NULL DEFAULT 'default';
+  ALTER TABLE insurance_claims ADD COLUMN IF NOT EXISTS tenant_id TEXT NOT NULL DEFAULT 'default';
+  ALTER TABLE lab_tests ADD COLUMN IF NOT EXISTS tenant_id TEXT NOT NULL DEFAULT 'default';
+  ALTER TABLE lab_requests ADD COLUMN IF NOT EXISTS tenant_id TEXT NOT NULL DEFAULT 'default';
+  ALTER TABLE lab_request_items ADD COLUMN IF NOT EXISTS tenant_id TEXT NOT NULL DEFAULT 'default';
+  ALTER TABLE permissions ADD COLUMN IF NOT EXISTS tenant_id TEXT NOT NULL DEFAULT 'default';
+  ALTER TABLE role_permissions ADD COLUMN IF NOT EXISTS tenant_id TEXT NOT NULL DEFAULT 'default';
+  ALTER TABLE user_permissions ADD COLUMN IF NOT EXISTS tenant_id TEXT NOT NULL DEFAULT 'default';
+  ALTER TABLE ml_prediction_history ADD COLUMN IF NOT EXISTS tenant_id TEXT NOT NULL DEFAULT 'default';
+  ALTER TABLE ml_model_metrics ADD COLUMN IF NOT EXISTS tenant_id TEXT NOT NULL DEFAULT 'default';
+  ALTER TABLE ml_demand_forecast ADD COLUMN IF NOT EXISTS tenant_id TEXT NOT NULL DEFAULT 'default';
+  ALTER TABLE refresh_tokens ADD COLUMN IF NOT EXISTS tenant_id TEXT NOT NULL DEFAULT 'default';
+  ALTER TABLE webhooks ADD COLUMN IF NOT EXISTS tenant_id TEXT NOT NULL DEFAULT 'default';
+  ALTER TABLE webhook_deliveries ADD COLUMN IF NOT EXISTS tenant_id TEXT NOT NULL DEFAULT 'default';
+  ALTER TABLE notification_preferences ADD COLUMN IF NOT EXISTS tenant_id TEXT NOT NULL DEFAULT 'default';
+  ALTER TABLE specialties ADD COLUMN IF NOT EXISTS tenant_id TEXT NOT NULL DEFAULT 'default';
 
 -- 2. Create composite indexes for tenant isolation
 CREATE INDEX IF NOT EXISTS idx_doctors_tenant ON doctors(tenant_id, id);
