@@ -8,6 +8,8 @@ import fs from 'fs';
 
 import { seed, backfillInvoices } from './seed/seed.js';
 import { pool } from './shared/db.js';
+import { tenantService } from './shared/multi-tenant.service.js';
+import { seedDefaultTenant } from './seed/admin.seed.js';
 import { startReminderJob } from './jobs/reminder.job.js';
 import { startConfirmationJob } from './jobs/confirmation.job.js';
 import { securityMiddleware, validateEnvSecurity } from './middlewares/security.middleware.js';
@@ -33,6 +35,8 @@ import rbacRoutes from './modules/rbac/rbac.routes.js';
 import mlRoutes from './modules/ml/ml.routes.js';
 import specialtiesRoutes from './modules/specialties/specialties.routes.js';
 import webhookRoutes from './modules/webhook/webhook.routes.js';
+import saasRoutes from './modules/saas/saas.routes.js';
+import superAdminRoutes from './modules/super-admin/super-admin.routes.js';
 
 const app: Express = express();
 
@@ -111,6 +115,8 @@ app.use(`${API_PREFIX}/rbac`, rbacRoutes);
 app.use(`${API_PREFIX}/ml`, mlRoutes);
 app.use(`${API_PREFIX}/specialties`, specialtiesRoutes);
 app.use(`${API_PREFIX}/webhooks`, webhookRoutes);
+app.use(`${API_PREFIX}/saas`, saasRoutes);
+app.use(`${API_PREFIX}/super-admin`, superAdminRoutes);
 
 /* Backward compat: /api/ → /api/v1/ */
 app.use('/api/auth', authLimiter, authRoutes);
@@ -204,6 +210,11 @@ const startServer = async (): Promise<void> => {
     logger.info('DB conectada');
 
     await runMigration();
+
+    await tenantService.loadFromDB();
+    await seedDefaultTenant();
+    tenantService.startRefresh();
+
     await seed();
     await backfillInvoices();
 

@@ -13,6 +13,13 @@ import DoctorCalendarPage from '../pages/DoctorCalendarPage';
 import DoctorClinicalRecordsPage from '../pages/DoctorClinicalRecordsPage';
 import RegisterDoctorPage from '../pages/RegisterDoctorPage';
 import AnalyticsPage from '../pages/AnalyticsPage';
+import SaasRegisterPage from '../pages/SaasRegisterPage';
+import SaasPlansPage from '../pages/SaasPlansPage';
+import SaasSuccessPage from '../pages/SaasSuccessPage';
+import TenantDashboardPage from '../pages/TenantDashboardPage';
+import SuperAdminDashboardPage from '../pages/SuperAdminDashboardPage';
+import SuperAdminTenantsPage from '../pages/SuperAdminTenantsPage';
+import SuperAdminTenantDetailPage from '../pages/SuperAdminTenantDetailPage';
 import ProtectedRoute from './ProtectedRoute';
 import Navbar from '../components/Navbar';
 
@@ -40,6 +47,11 @@ export default function AppRoutes() {
       <Route path="/confirm/:token" element={<AppLayout><ConfirmPage /></AppLayout>} />
       <Route path="/my-bookings" element={<ProtectedRoute><AppLayout><MyBookingsPage /></AppLayout></ProtectedRoute>} />
 
+      <Route path="/saas/register" element={<AppLayout><SaasRegisterPage /></AppLayout>} />
+      <Route path="/saas/plans" element={<AppLayout><SaasPlansPage /></AppLayout>} />
+      <Route path="/saas/success" element={<AppLayout><SaasSuccessPage /></AppLayout>} />
+
+      <Route path="/admin/tenant" element={<ProtectedRoute role="admin"><AppLayout><TenantDashboardPage /></AppLayout></ProtectedRoute>} />
       <Route path="/doctor" element={<ProtectedRoute role="doctor"><AppLayout><DoctorPanel /></AppLayout></ProtectedRoute>} />
       <Route path="/doctor/availability" element={<ProtectedRoute role="doctor"><AppLayout><DoctorAvailabilityPage /></AppLayout></ProtectedRoute>} />
       <Route path="/doctor/calendar" element={<ProtectedRoute role="doctor"><AppLayout><DoctorCalendarPage /></AppLayout></ProtectedRoute>} />
@@ -47,6 +59,10 @@ export default function AppRoutes() {
 
       <Route path="/admin/register-doctor" element={<ProtectedRoute role="admin"><AppLayout><RegisterDoctorPage /></AppLayout></ProtectedRoute>} />
       <Route path="/admin/analytics" element={<ProtectedRoute role="admin"><AppLayout><AnalyticsPage /></AppLayout></ProtectedRoute>} />
+
+      <Route path="/super-admin" element={<ProtectedRoute role="superadmin"><AppLayout><SuperAdminDashboardPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/super-admin/tenants" element={<ProtectedRoute role="superadmin"><AppLayout><SuperAdminTenantsPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/super-admin/tenants/:id" element={<ProtectedRoute role="superadmin"><AppLayout><SuperAdminTenantDetailPage /></AppLayout></ProtectedRoute>} />
     </Routes>
   );
 }

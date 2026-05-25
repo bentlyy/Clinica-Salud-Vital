@@ -48,7 +48,7 @@ describe('POST /api/auth/register', () => {
 
     const res = await request(app)
       .post('/api/auth/register')
-      .send({ email: 'newuser@test.com', password: 'password123' });
+      .send({ email: 'newuser@test.com', password: 'Test1234!' });
 
     expect(res.status).toBe(201);
     expect(res.body.email).toBe('newuser@test.com');
@@ -89,21 +89,21 @@ describe('POST /api/auth/login', () => {
     bcrypt.compare.mockResolvedValueOnce(true);
 
     mockQuery.mockResolvedValueOnce({
-      rows: [{ id: 1, email: 'test@test.com', password: 'hashed', role: 'user' }],
+      rows: [{ id: 1, email: 'test@test.com', password: 'hashed', role: 'user', tenant_id: 'default' }],
     });
 
     const res = await request(app)
       .post('/api/auth/login')
-      .send({ email: 'test@test.com', password: 'password123' });
+      .send({ email: 'test@test.com', password: 'Test1234!' });
 
     expect(res.status).toBe(200);
-    expect(res.body.token).toBeDefined();
+    expect(res.body.access_token).toBeDefined();
     expect(res.body.user.id).toBe(1);
   });
 
   it('returns 400 if credentials invalid', async () => {
     mockQuery.mockResolvedValueOnce({
-      rows: [{ id: 1, email: 'wrong@test.com', password: 'hashed', role: 'user' }],
+      rows: [{ id: 1, email: 'wrong@test.com', password: 'hashed', role: 'user', tenant_id: 'default' }],
     });
     bcrypt.compare.mockResolvedValueOnce(false);
 

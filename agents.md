@@ -354,3 +354,65 @@ Features:
 - API versioning: new routes under `/api/v1/`, old `/api/` still works
 - Webhook secrets auto-generated (32 bytes hex) if not provided
 - 2FA uses TOTP with 30s window and ±1 step tolerance
+
+---
+
+## 🆕 SAAS Multi-Tenant (v3)
+
+### Arquitectura
+- **Shared database** con `tenant_id` en TODAS las tablas (migración `010_saas_multitenant.sql`)
+- Los tenants se cargan desde DB al startup (`tenantService.loadFromDB()`) y se refrescan cada 5 min
+- JWT incluye `tenant_id` para identificación sin DB lookup
+- Aislamiento de datos por `WHERE tenant_id = ?` en todas las queries
+
+### Planes y Suscripciones
+| Plan | Código | Precio | Doctores | Pacientes |
+|------|--------|--------|----------|-----------|
+| Gratuito | free | $0 | 1 | 50 |
+| Básico | basic | $29/mes | 3 | 200 |
+| Profesional | pro | $79/mes | 10 | ∞ |
+| Enterprise | enterprise | $199/mes | ∞ | ∞ |
+
+- Feature gating via `checkFeatureAccess(tenantId, featureKey)`
+- Límites via `checkLimits(tenantId, resource)` — devuelve current/limit
+- Stripe integrado (webhook + checkout sessions) — modo stub si no hay clave
+
+### Super Admin
+- Rol `superadmin` con acceso global a todos los tenants
+- `GET /api/v1/super-admin/stats` — estadísticas globales
+- CRUD completo de tenants via `/api/v1/super-admin/tenants`
+- Frontend: `/super-admin/` dashboard, `/super-admin/tenants` lista
+
+### Onboarding de Tenants
+- `POST /api/v1/saas/onboard` — crea tenant + suscripción trial + admin user
+- Frontend: `/saas/register` wizard 3 pasos (info → credenciales → plan)
+- `POST /api/v1/saas/checkout` — crea Stripe Checkout Session
+
+### Feature Gating
+- Middleware: `requireFeature('ml')` y `requireLimit('doctors')` para endpoints
+- Permite per-tenant overrides via tabla `tenant_features`
+
+### Módulos Nuevos
+| Módulo | Descripción |
+|--------|-------------|
+| `src/modules/saas/` | Planes, suscripciones, checkout, usage, onboarding |
+| `src/modules/super-admin/` | Gestión global de tenants y stats |
+| `src/shared/multi-tenant.service.ts` | Carga/refresh de tenants desde DB |
+| `src/shared/stripe.service.ts` | Stripe wrapper con stub mode |
+| `src/shared/usage.middleware.ts` | Tracking de uso por tenant |
+| `src/shared/query.ts` | Helpers `tenantQuery.build()`, `tenantQuery.where()` |
+
+### Frontend SaaS
+| Ruta | Página |
+|------|--------|
+| `/saas/register` | Registro de nueva clínica (3 pasos) |
+| `/saas/plans` | Planes y precios + checkout |
+| `/saas/success` | Confirmación pago/registro |
+| `/admin/tenant` | Dashboard de la clínica (suscripción, límites, uso) |
+| `/super-admin/` | Dashboard global super admin |
+| `/super-admin/tenants` | Lista de tenants + CRUD |
+| `/super-admin/tenants/:id` | Detalle/edición de tenant |
+
+### Env Variables Nuevas
+- `STRIPE_SECRET_KEY` — Stripe secret key (opcional, sin ella funciona en stub)
+- `STRIPE_WEBHOOK_SECRET` — Stripe webhook secret (opcional)
