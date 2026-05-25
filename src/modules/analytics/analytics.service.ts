@@ -33,21 +33,21 @@ interface VitalSignsInput extends Record<string, unknown> {
   temperature: string;
 }
 
-export const getDashboardStats = async () => {
+export const getDashboardStats = async (tenantId?: string) => {
   const result = await pool.query(`
     SELECT
-      (SELECT COUNT(*) FROM users WHERE role = 'user')::int AS total_patients,
-      (SELECT COUNT(*) FROM doctors)::int AS total_doctors,
-      (SELECT COUNT(*) FROM bookings WHERE status != 'cancelled')::int AS total_bookings,
-      (SELECT COUNT(*) FROM bookings WHERE date = CURRENT_DATE AND status != 'cancelled')::int AS today_bookings,
-      (SELECT COUNT(*) FROM bookings WHERE confirmed = true AND status != 'cancelled')::int AS confirmed_bookings,
-      (SELECT COUNT(*) FROM bookings WHERE status = 'cancelled')::int AS cancelled_bookings
-  `);
+      (SELECT COUNT(*) FROM users WHERE role = 'user'${tenantId ? ' AND tenant_id = $1' : ''})::int AS total_patients,
+      (SELECT COUNT(*) FROM doctors${tenantId ? ' WHERE tenant_id = $1' : ''})::int AS total_doctors,
+      (SELECT COUNT(*) FROM bookings WHERE status != 'cancelled'${tenantId ? ' AND tenant_id = $1' : ''})::int AS total_bookings,
+      (SELECT COUNT(*) FROM bookings WHERE date = CURRENT_DATE AND status != 'cancelled'${tenantId ? ' AND tenant_id = $1' : ''})::int AS today_bookings,
+      (SELECT COUNT(*) FROM bookings WHERE confirmed = true AND status != 'cancelled'${tenantId ? ' AND tenant_id = $1' : ''})::int AS confirmed_bookings,
+      (SELECT COUNT(*) FROM bookings WHERE status = 'cancelled'${tenantId ? ' AND tenant_id = $1' : ''})::int AS cancelled_bookings
+  `, tenantId ? [tenantId] : []);
 
   return result.rows[0];
 };
 
-export const getBookingsByMonth = async (months = 12) => {
+export const getBookingsByMonth = async (months = 12, tenantId?: string) => {
   const result = await pool.query(`
     SELECT
       TO_CHAR(date, 'YYYY-MM') AS month,
@@ -56,15 +56,19 @@ export const getBookingsByMonth = async (months = 12) => {
       COUNT(*) FILTER (WHERE status = 'cancelled') AS cancelled
     FROM bookings
     WHERE date >= NOW() - INTERVAL '1 months' * $1
+      ${tenantId ? 'AND tenant_id = $2' : ''}
     GROUP BY TO_CHAR(date, 'YYYY-MM')
     ORDER BY month
-  `, [months]);
+  `, tenantId ? [months, tenantId] : [months]);
 
   return result.rows;
 };
 
-export const getTopDoctors = async (limit = 10) => {
-  const result = await pool.query(`
+export const getTopDoctors = async (limit = 10, tenantId?: string) => {
+  const params: (string | number)[] = [limit];
+  let paramCount = 2;
+
+  let query = `
     SELECT 
       d.id,
       d.name,
@@ -73,30 +77,37 @@ export const getTopDoctors = async (limit = 10) => {
       COUNT(b.id) FILTER (WHERE b.confirmed = true) AS confirmed_bookings
     FROM doctors d
     LEFT JOIN bookings b ON d.id = b.doctor_id AND b.status != 'cancelled'
-    GROUP BY d.id
-    ORDER BY total_bookings DESC
-    LIMIT $1
-  `, [limit]);
+    WHERE 1=1
+  `;
 
+  if (tenantId) {
+    query += ` AND d.tenant_id = $${paramCount++}`;
+    params.push(tenantId);
+  }
+
+  query += `\n    GROUP BY d.id\n    ORDER BY total_bookings DESC\n    LIMIT $1`;
+
+  const result = await pool.query(query, params);
   return result.rows;
 };
 
-export const getBookingStatusDistribution = async () => {
+export const getBookingStatusDistribution = async (tenantId?: string) => {
   const result = await pool.query(`
     SELECT status, COUNT(*) AS count
     FROM bookings
+    ${tenantId ? 'WHERE tenant_id = $1' : ''}
     GROUP BY status
-  `);
+  `, tenantId ? [tenantId] : []);
 
   return result.rows;
 };
 
-export const getDoctorStats = async (doctor_id: number) => {
+export const getDoctorStats = async (doctor_id: number, tenantId?: string) => {
   const [totalBookings, upcomingBookings, patientsServed, clinicalRecords] = await Promise.all([
-    pool.query('SELECT COUNT(*) FROM bookings WHERE doctor_id = $1 AND status != $2', [doctor_id, 'cancelled']),
-    pool.query('SELECT COUNT(*) FROM bookings WHERE doctor_id = $1 AND date >= CURRENT_DATE AND status != $2', [doctor_id, 'cancelled']),
-    pool.query('SELECT COUNT(DISTINCT COALESCE(user_id, guest_rut)) FROM bookings WHERE doctor_id = $1 AND status != $2', [doctor_id, 'cancelled']),
-    pool.query('SELECT COUNT(*) FROM clinical_records WHERE doctor_id = $1', [doctor_id]),
+    pool.query(`SELECT COUNT(*) FROM bookings WHERE doctor_id = $1 AND status != $2${tenantId ? ' AND tenant_id = $3' : ''}`, tenantId ? [doctor_id, 'cancelled', tenantId] : [doctor_id, 'cancelled']),
+    pool.query(`SELECT COUNT(*) FROM bookings WHERE doctor_id = $1 AND date >= CURRENT_DATE AND status != $2${tenantId ? ' AND tenant_id = $3' : ''}`, tenantId ? [doctor_id, 'cancelled', tenantId] : [doctor_id, 'cancelled']),
+    pool.query(`SELECT COUNT(DISTINCT COALESCE(user_id, guest_rut)) FROM bookings WHERE doctor_id = $1 AND status != $2${tenantId ? ' AND tenant_id = $3' : ''}`, tenantId ? [doctor_id, 'cancelled', tenantId] : [doctor_id, 'cancelled']),
+    pool.query(`SELECT COUNT(*) FROM clinical_records WHERE doctor_id = $1${tenantId ? ' AND tenant_id = $2' : ''}`, tenantId ? [doctor_id, tenantId] : [doctor_id]),
   ]);
 
   return {
@@ -107,8 +118,11 @@ export const getDoctorStats = async (doctor_id: number) => {
   };
 };
 
-export const getNoShowsByDoctor = async () => {
-  const result = await pool.query(`
+export const getNoShowsByDoctor = async (tenantId?: string) => {
+  const params: (string | number)[] = [];
+  let paramCount = 1;
+
+  let query = `
     SELECT 
       d.id,
       d.name AS doctor,
@@ -117,9 +131,17 @@ export const getNoShowsByDoctor = async () => {
     FROM doctors d
     LEFT JOIN bookings b ON d.id = b.doctor_id 
       AND b.date >= NOW() - INTERVAL '6 months'
-    GROUP BY d.id
-    ORDER BY total DESC
-  `);
+    WHERE 1=1
+  `;
+
+  if (tenantId) {
+    query += ` AND d.tenant_id = $${paramCount++}`;
+    params.push(tenantId);
+  }
+
+  query += `\n    GROUP BY d.id\n    ORDER BY total DESC`;
+
+  const result = await pool.query(query, params);
 
   return result.rows.map((row: NoShowRow) => ({
     doctor: row.doctor,
@@ -128,17 +150,17 @@ export const getNoShowsByDoctor = async () => {
   }));
 };
 
-export const getDiagnoses = async () => {
+export const getDiagnoses = async (tenantId?: string) => {
   const result = await pool.query(`
     SELECT 
       diagnosis,
       COUNT(*) AS count
     FROM clinical_records
-    WHERE diagnosis IS NOT NULL AND diagnosis != ''
+    WHERE diagnosis IS NOT NULL AND diagnosis != ''${tenantId ? ' AND tenant_id = $1' : ''}
     GROUP BY diagnosis
     ORDER BY count DESC
     LIMIT 20
-  `);
+  `, tenantId ? [tenantId] : []);
 
   return result.rows.map((row: DiagnosisRow) => ({
     diagnosis: row.diagnosis,
@@ -146,7 +168,9 @@ export const getDiagnoses = async () => {
   }));
 };
 
-export const getDemandForecast = async (days = 30) => {
+export const getDemandForecast = async (days = 30, tenantId?: string) => {
+  const tenantFilter = tenantId ? ' AND tenant_id = $2' : '';
+  const params = tenantId ? [days, tenantId] : [days];
   try {
     const forecast = await mlService.forecastDemand(days);
 
@@ -156,10 +180,10 @@ export const getDemandForecast = async (days = 30) => {
         COUNT(*) AS bookings
       FROM bookings
       WHERE date >= NOW() - INTERVAL '1 days' * $1
-        AND status != 'cancelled'
+        AND status != 'cancelled'${tenantFilter}
       GROUP BY date
       ORDER BY date
-    `, [days]);
+    `, params);
 
     const historical = result.rows.map((row: BookingRow) => ({
       date: row.date,
@@ -173,9 +197,9 @@ export const getDemandForecast = async (days = 30) => {
     const result = await pool.query(`
       SELECT date::text AS date, COUNT(*) AS bookings
       FROM bookings
-      WHERE date >= NOW() - INTERVAL '1 days' * $1 AND status != 'cancelled'
+      WHERE date >= NOW() - INTERVAL '1 days' * $1 AND status != 'cancelled'${tenantFilter}
       GROUP BY date ORDER BY date
-    `, [days]);
+    `, params);
     return result.rows.map((row: BookingRow) => ({
       date: row.date,
       bookings: parseInt(row.bookings),
@@ -183,7 +207,7 @@ export const getDemandForecast = async (days = 30) => {
   }
 };
 
-export const getOptimalSchedules = async () => {
+export const getOptimalSchedules = async (_tenantId?: string) => {
   try {
     const schedules = await mlService.analyzeOptimalSchedules();
     return schedules.map(s => ({
@@ -212,7 +236,7 @@ export const getOptimalSchedules = async () => {
   }
 };
 
-export const getVitalSignsAnomalies = async () => {
+export const getVitalSignsAnomalies = async (_tenantId?: string) => {
   try {
     const result = await pool.query(`
       SELECT 

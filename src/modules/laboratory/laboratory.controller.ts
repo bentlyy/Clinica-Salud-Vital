@@ -40,7 +40,7 @@ export const getLabRequests = asyncHandler(async (req, res) => {
       status,
       limit,
       offset,
-    });
+    }, req.tenant_id);
     return res.json(requests);
   }
 
@@ -52,7 +52,7 @@ export const getLabRequests = asyncHandler(async (req, res) => {
       status,
       limit,
       offset,
-    });
+    }, req.tenant_id);
     return res.json(requests);
   }
 
@@ -62,12 +62,12 @@ export const getLabRequests = asyncHandler(async (req, res) => {
     end_date,
     limit,
     offset,
-  });
+  }, req.tenant_id);
   res.json(requests);
 });
 
 export const getLabRequestById = asyncHandler(async (req, res) => {
-  const request = await laboratoryService.getLabRequestById(Number(req.params.id));
+  const request = await laboratoryService.getLabRequestById(Number(req.params.id), req.tenant_id);
 
   if (req.user!.role === 'user' && request.patient_id !== req.user!.id) {
     throw new BadRequestError('Access denied');
@@ -77,13 +77,13 @@ export const getLabRequestById = asyncHandler(async (req, res) => {
 });
 
 export const createLabRequest = asyncHandler(async (req, res) => {
-  const request = await laboratoryService.createLabRequest(req.body);
+  const request = await laboratoryService.createLabRequest(req.body, req.tenant_id);
   res.status(201).json(request);
 });
 
 export const updateLabRequestStatus = asyncHandler(async (req, res) => {
   const { status } = req.body;
-  const request = await laboratoryService.updateLabRequestStatus(Number(req.params.id), status);
+  const request = await laboratoryService.updateLabRequestStatus(Number(req.params.id), status, req.tenant_id);
   res.json(request);
 });
 
@@ -94,6 +94,6 @@ export const updateLabRequestItemResult = asyncHandler(async (req, res) => {
 });
 
 export const cancelLabRequest = asyncHandler(async (req, res) => {
-  const result = await laboratoryService.cancelLabRequest(Number(req.params.id), req.user!.id, req.user!.role);
+  const result = await laboratoryService.cancelLabRequest(Number(req.params.id), req.user!.id, req.user!.role, req.tenant_id);
   res.json(result);
 });

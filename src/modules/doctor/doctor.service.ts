@@ -32,21 +32,17 @@ interface Doctor {
   slot_duration: number | null;
 }
 
-export const getAllDoctors = async (): Promise<Doctor[]> => {
-  const result = await pool.query(`
-    SELECT
-      d.id,
-      d.name,
-      d.specialty,
-      d.email,
-      d.user_id,
-      u.email AS user_email,
-      u.rut,
-      u.phone
+export const getAllDoctors = async (tenantId?: string): Promise<Doctor[]> => {
+  let query = `
+    SELECT d.id, d.name, d.specialty, d.email, d.user_id
     FROM doctors d
-    LEFT JOIN users u ON d.user_id = u.id
-  `);
-
+  `;
+  const params: string[] = [];
+  if (tenantId) {
+    query += ' WHERE d.tenant_id = $1';
+    params.push(tenantId);
+  }
+  const result = await pool.query(query, params);
   return result.rows;
 };
 

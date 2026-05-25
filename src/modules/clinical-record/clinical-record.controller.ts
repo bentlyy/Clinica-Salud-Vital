@@ -22,7 +22,7 @@ export const getClinicalRecords = asyncHandler(async (req: Request, res: Respons
       status: status ? String(status) : undefined,
       limit,
       offset,
-    });
+    }, req.tenant_id);
     return res.json(records);
   }
 
@@ -32,7 +32,7 @@ export const getClinicalRecords = asyncHandler(async (req: Request, res: Respons
       status: status ? String(status) : undefined,
       limit,
       offset,
-    });
+    }, req.tenant_id);
     return res.json(records);
   }
 
@@ -40,7 +40,7 @@ export const getClinicalRecords = asyncHandler(async (req: Request, res: Respons
 });
 
 export const getClinicalRecordById = asyncHandler(async (req: Request, res: Response) => {
-  const record = await clinicalRecordService.getClinicalRecordById(Number(req.params.id));
+  const record = await clinicalRecordService.getClinicalRecordById(Number(req.params.id), req.tenant_id);
 
   if (req.user!.role === 'doctor') {
     const doctor = await doctorService.getDoctorByUserId(req.user!.id);
@@ -67,7 +67,7 @@ export const getClinicalRecordsByPatient = asyncHandler(async (req: Request, res
     if (!doctor) throw new NotFoundError('Doctor profile not found');
   }
 
-  const records = await clinicalRecordService.getClinicalRecordsByPatient(patientId);
+  const records = await clinicalRecordService.getClinicalRecordsByPatient(patientId, req.tenant_id);
   res.json(records);
 });
 
@@ -78,7 +78,7 @@ export const createClinicalRecord = asyncHandler(async (req: Request, res: Respo
   const record = await clinicalRecordService.createClinicalRecord({
     ...req.body,
     doctor_id: doctor.id,
-  });
+  }, req.tenant_id);
 
   res.status(201).json(record);
 });
@@ -90,7 +90,8 @@ export const updateClinicalRecord = asyncHandler(async (req: Request, res: Respo
   const record = await clinicalRecordService.updateClinicalRecord(
     Number(req.params.id),
     req.body,
-    doctor.id
+    doctor.id,
+    req.tenant_id
   );
 
   res.json(record);
@@ -100,7 +101,7 @@ export const deleteClinicalRecord = asyncHandler(async (req: Request, res: Respo
   const doctor = await doctorService.getDoctorByUserId(req.user!.id);
   if (!doctor) throw new NotFoundError('Doctor profile not found');
 
-  const result = await clinicalRecordService.deleteClinicalRecord(Number(req.params.id), doctor.id);
+  const result = await clinicalRecordService.deleteClinicalRecord(Number(req.params.id), doctor.id, req.tenant_id);
   res.json(result);
 });
 

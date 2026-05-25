@@ -21,7 +21,7 @@ export default function LoginPage() {
       } else if (user.role === 'admin') {
         navigate('/admin/analytics');
       } else if (user.role === 'doctor') {
-        navigate('/doctor/panel');
+        navigate('/doctor');
       } else {
         navigate('/booking');
       }
