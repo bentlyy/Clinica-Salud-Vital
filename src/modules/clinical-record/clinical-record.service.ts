@@ -35,7 +35,7 @@ interface ClinicalRecordUpdate {
   status?: string;
 }
 
-export const getAllClinicalRecords = async ({ patient_id, doctor_id, status, limit = 100, offset = 0 }: ClinicalRecordQuery = {}) => {
+export const getAllClinicalRecords = async ({ patient_id, doctor_id, status, limit = 100, offset = 0 }: ClinicalRecordQuery = {}, tenantId?: string) => {
   let query = `
     SELECT cr.*, 
            d.name AS doctor_name, d.specialty,
@@ -63,6 +63,11 @@ export const getAllClinicalRecords = async ({ patient_id, doctor_id, status, lim
     params.push(status);
   }
 
+  if (tenantId) {
+    query += ` AND cr.tenant_id = $${paramCount++}`;
+    params.push(tenantId);
+  }
+
   query += ` ORDER BY cr.created_at DESC LIMIT $${paramCount++} OFFSET $${paramCount++}`;
   params.push(limit, offset);
 
@@ -70,7 +75,9 @@ export const getAllClinicalRecords = async ({ patient_id, doctor_id, status, lim
   return result.rows;
 };
 
-export const getClinicalRecordById = async (id: string | number) => {
+export const getClinicalRecordById = async (id: string | number, tenantId?: string) => {
+  const params: (string | number)[] = [id];
+  if (tenantId) params.push(tenantId);
   const result = await pool.query(`
     SELECT cr.*, 
            d.name AS doctor_name, d.specialty,
@@ -80,27 +87,27 @@ export const getClinicalRecordById = async (id: string | number) => {
     JOIN doctors d ON cr.doctor_id = d.id
     JOIN users u ON cr.patient_id = u.id
     LEFT JOIN bookings b ON cr.booking_id = b.id
-    WHERE cr.id = $1
-  `, [id]);
+    WHERE cr.id = $1${tenantId ? ' AND cr.tenant_id = $2' : ''}
+  `, params);
 
   if (result.rows.length === 0) throw new NotFoundError('Clinical record not found');
   return result.rows[0];
 };
 
-export const getClinicalRecordsByPatient = async (patient_id: number) => {
+export const getClinicalRecordsByPatient = async (patient_id: number, tenantId?: string) => {
   const result = await pool.query(`
     SELECT cr.*, 
            d.name AS doctor_name, d.specialty
     FROM clinical_records cr
     JOIN doctors d ON cr.doctor_id = d.id
-    WHERE cr.patient_id = $1 AND cr.status != 'cancelled'
+    WHERE cr.patient_id = $1 AND cr.status != 'cancelled'${tenantId ? ' AND cr.tenant_id = $2' : ''}
     ORDER BY cr.created_at DESC
-  `, [patient_id]);
+  `, tenantId ? [patient_id, tenantId] : [patient_id]);
 
   return result.rows;
 };
 
-export const createClinicalRecord = async (data: ClinicalRecordData) => {
+export const createClinicalRecord = async (data: ClinicalRecordData, tenantId?: string) => {
   const client = await pool.connect();
 
   try {
@@ -116,13 +123,21 @@ export const createClinicalRecord = async (data: ClinicalRecordData) => {
 
     const { patient_id, booking_id, chief_complaint, anamnesis, vital_signs, physical_exam, diagnosis, cie10_codes, treatment_plan, notes } = data;
 
+    const columns = ['patient_id', 'doctor_id', 'booking_id', 'chief_complaint', 'anamnesis', 'vital_signs', 'physical_exam', 'diagnosis', 'cie10_codes', 'treatment_plan', 'notes'];
+    const insertValues: any[] = [patient_id, data.doctor_id, booking_id || null, chief_complaint, anamnesis || null, vital_signs ? JSON.stringify(vital_signs) : null, physical_exam || null, diagnosis || null, cie10_codes || null, treatment_plan || null, notes || null];
+
+    if (tenantId) {
+      columns.push('tenant_id');
+      insertValues.push(tenantId);
+    }
+
     const result = await client.query(`
       INSERT INTO clinical_records 
-        (patient_id, doctor_id, booking_id, chief_complaint, anamnesis, vital_signs, physical_exam, diagnosis, cie10_codes, treatment_plan, notes)
+        (${columns.join(', ')})
       VALUES 
-        ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+        (${insertValues.map((_, i) => '$' + (i + 1)).join(', ')})
       RETURNING *
-    `, [patient_id, data.doctor_id, booking_id || null, chief_complaint, anamnesis || null, vital_signs ? JSON.stringify(vital_signs) : null, physical_exam || null, diagnosis || null, cie10_codes || null, treatment_plan || null, notes || null]);
+    `, insertValues);
 
     await client.query('COMMIT');
     return result.rows[0];
@@ -134,13 +149,13 @@ export const createClinicalRecord = async (data: ClinicalRecordData) => {
   }
 };
 
-export const updateClinicalRecord = async (id: string | number, data: ClinicalRecordUpdate, doctor_id: number) => {
+export const updateClinicalRecord = async (id: string | number, data: ClinicalRecordUpdate, doctor_id: number, tenantId?: string) => {
   const client = await pool.connect();
 
   try {
     await client.query('BEGIN');
 
-    const existing = await client.query('SELECT id, doctor_id, status FROM clinical_records WHERE id = $1', [id]);
+    const existing = await client.query(`SELECT id, doctor_id, status FROM clinical_records WHERE id = $1${tenantId ? ' AND tenant_id = $2' : ''}`, tenantId ? [id, tenantId] : [id]);
     if (existing.rows.length === 0) throw new NotFoundError('Clinical record not found');
 
     if (existing.rows[0].doctor_id !== doctor_id) {
@@ -174,11 +189,14 @@ export const updateClinicalRecord = async (id: string | number, data: ClinicalRe
 
     fields.push(`updated_at = NOW()`);
     values.push(id as number);
+    if (tenantId) {
+      values.push(tenantId);
+    }
 
     const result = await client.query(`
       UPDATE clinical_records 
       SET ${fields.join(', ')}
-      WHERE id = $${paramCount}
+      WHERE id = $${paramCount}${tenantId ? ` AND tenant_id = $${paramCount + 1}` : ''}
       RETURNING *
     `, values);
 
@@ -192,10 +210,12 @@ export const updateClinicalRecord = async (id: string | number, data: ClinicalRe
   }
 };
 
-export const deleteClinicalRecord = async (id: string | number, doctor_id: number) => {
+export const deleteClinicalRecord = async (id: string | number, doctor_id: number, tenantId?: string) => {
+  const params: (string | number)[] = [id, doctor_id];
+  if (tenantId) params.push(tenantId);
   const result = await pool.query(
-    `UPDATE clinical_records SET status = 'cancelled' WHERE id = $1 AND doctor_id = $2 AND status = 'draft' RETURNING *`,
-    [id, doctor_id]
+    `UPDATE clinical_records SET status = 'cancelled' WHERE id = $1 AND doctor_id = $2 AND status = 'draft'${tenantId ? ' AND tenant_id = $3' : ''} RETURNING *`,
+    params
   );
 
   if (result.rows.length === 0) throw new NotFoundError('Clinical record not found or cannot be deleted');

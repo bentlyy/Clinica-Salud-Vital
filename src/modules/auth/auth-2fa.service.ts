@@ -1,17 +1,21 @@
 import { pool } from '../../shared/db.js';
 import { BadRequestError } from '../../utils/errors.js';
 import crypto from 'crypto';
+import { base32Encode, base32Decode } from '../../shared/base32.js';
 
-export const generateSecret = (): { secret: string; qrCodeUrl: string } => {
-  const secret = crypto.randomBytes(20).toString('hex');
-  const qrCodeUrl = `otpauth://totp/Clinic:user?secret=${secret}&issuer=Clinic&algorithm=SHA1&digits=6&period=30`;
-  return { secret, qrCodeUrl: qrCodeUrl.replace('user', 'email') };
+export const generateSecret = (email: string): { secret: string; qrCodeUrl: string } => {
+  const buf = crypto.randomBytes(20);
+  const secret = base32Encode(buf);
+  const encodedEmail = encodeURIComponent(email);
+  const qrCodeUrl = `otpauth://totp/Clinic:${encodedEmail}?secret=${secret}&issuer=Clinic&algorithm=SHA1&digits=6&period=30`;
+  return { secret, qrCodeUrl };
 };
 
 export const verifyToken = (secret: string, token: string): boolean => {
   if (!secret || !token) return false;
   if (token.length !== 6 || !/^\d{6}$/.test(token)) return false;
 
+  const key = base32Decode(secret);
   const timeStep = 30;
   const currentTime = Math.floor(Date.now() / 1000);
   const currentStep = Math.floor(currentTime / timeStep);
@@ -21,7 +25,7 @@ export const verifyToken = (secret: string, token: string): boolean => {
     const counterBuffer = Buffer.alloc(8);
     counterBuffer.writeBigInt64BE(BigInt(counter));
 
-    const hmac = crypto.createHmac('sha1', secret);
+    const hmac = crypto.createHmac('sha1', key);
     hmac.update(counterBuffer);
     const hmacResult = hmac.digest();
 
@@ -42,8 +46,8 @@ export const verifyToken = (secret: string, token: string): boolean => {
   return false;
 };
 
-export const enable2FA = async (userId: number): Promise<{ secret: string; qrCodeUrl: string }> => {
-  const { secret, qrCodeUrl } = generateSecret();
+export const enable2FA = async (userId: number, email: string): Promise<{ secret: string; qrCodeUrl: string }> => {
+  const { secret, qrCodeUrl } = generateSecret(email);
   await pool.query(
     'UPDATE users SET totp_secret = $1, totp_enabled = false WHERE id = $2',
     [secret, userId]

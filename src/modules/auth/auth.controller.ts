@@ -62,7 +62,7 @@ export const enable2FA = asyncHandler(async (req: Request, res: Response) => {
     res.status(401).json({ error: 'Authentication required' });
     return;
   }
-  const result = await auth2faService.enable2FA(req.user.id);
+  const result = await auth2faService.enable2FA(req.user.id, req.user.email);
   res.json(result);
 });
 

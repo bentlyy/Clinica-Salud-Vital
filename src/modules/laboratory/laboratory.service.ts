@@ -46,7 +46,7 @@ export const getLabTests = async ({ category, active = true, limit = 50, offset 
   return result.rows;
 };
 
-export const createLabRequest = async (data: { patient_id: number; doctor_id?: number; clinical_record_id?: number; priority?: string; notes?: string; test_ids?: number[] }) => {
+export const createLabRequest = async (data: { patient_id: number; doctor_id?: number; clinical_record_id?: number; priority?: string; notes?: string; test_ids?: number[] }, tenantId?: string) => {
   const client = await pool.connect();
 
   try {
@@ -55,9 +55,17 @@ export const createLabRequest = async (data: { patient_id: number; doctor_id?: n
     const requestNumber = generateRequestNumber();
     const { patient_id, doctor_id, clinical_record_id, priority, notes, test_ids } = data;
 
+    const columns = ['request_number', 'patient_id', 'doctor_id', 'clinical_record_id', 'priority', 'notes'];
+    const valuesList: (string | number | null)[] = [requestNumber, patient_id, doctor_id || null, clinical_record_id || null, priority || 'routine', notes || null];
+
+    if (tenantId) {
+      columns.push('tenant_id');
+      valuesList.push(tenantId);
+    }
+
     const requestResult = await client.query(
-      'INSERT INTO lab_requests (request_number, patient_id, doctor_id, clinical_record_id, priority, notes) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
-      [requestNumber, patient_id, doctor_id || null, clinical_record_id || null, priority || 'routine', notes || null]
+      `INSERT INTO lab_requests (${columns.join(', ')}) VALUES (${valuesList.map((_, i) => '$' + (i + 1)).join(', ')}) RETURNING *`,
+      valuesList
     );
 
     const request = requestResult.rows[0];
@@ -84,7 +92,7 @@ export const createLabRequest = async (data: { patient_id: number; doctor_id?: n
   }
 };
 
-export const getLabRequests = async ({ patient_id, doctor_id, status, start_date, end_date, limit = 20, offset = 0 }: LabRequestFilters = {}) => {
+export const getLabRequests = async ({ patient_id, doctor_id, status, start_date, end_date, limit = 20, offset = 0 }: LabRequestFilters = {}, tenantId?: string) => {
   let query = 'SELECT * FROM lab_requests WHERE 1=1';
   const params: any[] = [];
   let paramCount = 1;
@@ -114,6 +122,11 @@ export const getLabRequests = async ({ patient_id, doctor_id, status, start_date
     params.push(end_date);
   }
 
+  if (tenantId) {
+    query += ' AND tenant_id = $' + paramCount++;
+    params.push(tenantId);
+  }
+
   query += ' ORDER BY created_at DESC LIMIT $' + paramCount++ + ' OFFSET $' + paramCount++;
   params.push(limit, offset);
 
@@ -121,17 +134,17 @@ export const getLabRequests = async ({ patient_id, doctor_id, status, start_date
   return result.rows;
 };
 
-export const updateLabRequestStatus = async (requestId: number | string, status: string) => {
+export const updateLabRequestStatus = async (requestId: number | string, status: string, tenantId?: string) => {
   const result = await pool.query(
-    'UPDATE lab_requests SET status = $1, updated_at = NOW() WHERE id = $2 RETURNING *',
-    [status, requestId]
+    `UPDATE lab_requests SET status = $1, updated_at = NOW() WHERE id = $2${tenantId ? ' AND tenant_id = $3' : ''} RETURNING *`,
+    tenantId ? [status, requestId, tenantId] : [status, requestId]
   );
   if (result.rows.length === 0) throw new NotFoundError('Lab request not found');
   return result.rows[0];
 };
 
-export const getLabRequestById = async (requestId: number | string) => {
-  const result = await pool.query('SELECT * FROM lab_requests WHERE id = $1', [requestId]);
+export const getLabRequestById = async (requestId: number | string, tenantId?: string) => {
+  const result = await pool.query(`SELECT * FROM lab_requests WHERE id = $1${tenantId ? ' AND tenant_id = $2' : ''}`, tenantId ? [requestId, tenantId] : [requestId]);
   if (result.rows.length === 0) throw new NotFoundError('Lab request not found');
   return result.rows[0];
 };
@@ -145,12 +158,12 @@ export const updateLabRequestItemResult = async (itemId: number | string, result
   return result.rows[0];
 };
 
-export const cancelLabRequest = async (requestId: number | string, userId: number, userRole: string) => {
-  const request = await getLabRequestById(requestId);
+export const cancelLabRequest = async (requestId: number | string, userId: number, userRole: string, tenantId?: string) => {
+  const request = await getLabRequestById(requestId, tenantId);
   
   if (userRole !== 'admin' && request.patient_id !== userId) {
     throw new BadRequestError('Access denied');
   }
   
-  return updateLabRequestStatus(requestId, 'cancelled');
+  return updateLabRequestStatus(requestId, 'cancelled', tenantId);
 };
