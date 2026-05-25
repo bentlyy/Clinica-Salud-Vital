@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getMySubscription, cancelSubscription, getLimits, getUsageSummary } from '../api/saas';
-import useAuth from '../context/useAuth';
+import { useAuth } from '../context/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { useI18n } from '../i18n/useI18n';
 
