@@ -14,6 +14,7 @@ export const registerSchema = z.object({
   name: z.string().optional(),
   rut: z.string().optional(),
   phone: z.string().optional(),
+  tenant_id: z.string().optional(),
 });
 
 export const loginSchema = z.object({

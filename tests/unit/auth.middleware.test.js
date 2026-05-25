@@ -14,6 +14,8 @@ function mockReq(authorization) {
   return {
     headers: { authorization },
     user: undefined,
+    tenant_id: 'default',
+    locale: 'es',
   };
 }
 
@@ -68,7 +70,7 @@ describe('authMiddleware', () => {
   });
 
   it('calls next with decoded user on valid token', () => {
-    const decoded = { id: 1, email: 'test@test.com', role: 'user', rut: '12.345.678-5' };
+    const decoded = { id: 1, email: 'test@test.com', role: 'user', tenant_id: 'default' };
     mockVerify.mockReturnValue(decoded);
     const req = mockReq('Bearer valid-token');
     const res = mockRes();
@@ -95,7 +97,7 @@ describe('authorize', () => {
 
   it('returns 403 if role not allowed', () => {
     const req = mockReq();
-    req.user = { id: 1, email: 'test@test.com', role: 'user', rut: '12.345.678-5' };
+    req.user = { id: 1, email: 'test@test.com', role: 'user', tenant_id: 'default' };
     const res = mockRes();
     const next = vi.fn();
 
@@ -107,7 +109,7 @@ describe('authorize', () => {
 
   it('calls next if role is allowed', () => {
     const req = mockReq();
-    req.user = { id: 1, email: 'test@test.com', role: 'admin', rut: '12.345.678-5' };
+    req.user = { id: 1, email: 'test@test.com', role: 'admin', tenant_id: 'default' };
     const res = mockRes();
     const next = vi.fn();
 

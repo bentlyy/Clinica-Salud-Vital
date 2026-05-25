@@ -29,6 +29,8 @@ vi.mock('bcrypt', () => ({
 import * as authService from '../../src/modules/auth/auth.service.js';
 import bcrypt from 'bcrypt';
 
+const validPassword = 'Test1234!';
+
 beforeEach(() => {
   vi.clearAllMocks();
 });
@@ -37,21 +39,21 @@ describe('authService.register', () => {
   it('throws if email or password missing', async () => {
     await expect(authService.register({})).rejects.toThrow('Email and password required');
     await expect(authService.register({ email: 'test@test.com' })).rejects.toThrow('Email and password required');
-    await expect(authService.register({ password: '12345678' })).rejects.toThrow('Email and password required');
+    await expect(authService.register({ password: validPassword })).rejects.toThrow('Email and password required');
   });
 
   it('throws if email format invalid', async () => {
-    await expect(authService.register({ email: 'not-an-email', password: '12345678' }))
+    await expect(authService.register({ email: 'not-an-email', password: validPassword }))
       .rejects.toThrow('Invalid email format');
   });
 
   it('throws if password too short', async () => {
-    await expect(authService.register({ email: 'test@test.com', password: 'short' }))
+    await expect(authService.register({ email: 'test@test.com', password: 'Ab1!' }))
       .rejects.toThrow('Password must be at least 8 characters');
   });
 
   it('throws if RUT invalid', async () => {
-    await expect(authService.register({ email: 'test@test.com', password: '12345678', rut: 'invalid' }))
+    await expect(authService.register({ email: 'test@test.com', password: validPassword, rut: 'invalid' }))
       .rejects.toThrow('RUT inválido');
   });
 
@@ -62,12 +64,12 @@ describe('authService.register', () => {
 
     const result = await authService.register({
       email: 'test@test.com',
-      password: '12345678',
+      password: validPassword,
     });
 
     expect(result.email).toBe('test@test.com');
     expect(result.id).toBe(1);
-    expect(bcrypt.hash).toHaveBeenCalledWith('12345678', 12);
+    expect(bcrypt.hash).toHaveBeenCalledWith(validPassword, 12);
   });
 
   it('throws if email already exists', async () => {
@@ -76,7 +78,7 @@ describe('authService.register', () => {
     error.detail = 'Key (email)=(test@test.com) already exists';
     mockQuery.mockRejectedValueOnce(error);
 
-    await expect(authService.register({ email: 'test@test.com', password: '12345678' }))
+    await expect(authService.register({ email: 'test@test.com', password: validPassword }))
       .rejects.toThrow('Email already exists');
   });
 
@@ -86,7 +88,7 @@ describe('authService.register', () => {
     error.detail = 'Key (rut)=(12.345.678-5) already exists';
     mockQuery.mockRejectedValueOnce(error);
 
-    await expect(authService.register({ email: 'test@test.com', password: '12345678', rut: '12.345.678-5' }))
+    await expect(authService.register({ email: 'test@test.com', password: validPassword, rut: '12.345.678-5' }))
       .rejects.toThrow('RUT ya registrado');
   });
 });
@@ -100,29 +102,29 @@ describe('authService.login', () => {
     mockQuery.mockResolvedValueOnce({ rows: [] });
     bcrypt.compare.mockResolvedValueOnce(false);
 
-    await expect(authService.login({ email: 'noexist@test.com', password: '12345678' }))
+    await expect(authService.login({ email: 'noexist@test.com', password: validPassword }))
       .rejects.toThrow('Invalid credentials');
   });
 
   it('throws if password incorrect', async () => {
     mockQuery.mockResolvedValueOnce({
-      rows: [{ id: 1, email: 'test@test.com', password: 'hashed', role: 'user' }],
+      rows: [{ id: 1, email: 'test@test.com', password: 'hashed', role: 'user', tenant_id: 'default' }],
     });
     bcrypt.compare.mockResolvedValueOnce(false);
 
-    await expect(authService.login({ email: 'test@test.com', password: 'wrong' }))
+    await expect(authService.login({ email: 'test@test.com', password: 'WrongPass1!' }))
       .rejects.toThrow('Invalid credentials');
   });
 
   it('returns token and user on success', async () => {
     mockQuery.mockResolvedValueOnce({
-      rows: [{ id: 1, email: 'test@test.com', password: 'hashed', role: 'user' }],
+      rows: [{ id: 1, email: 'test@test.com', password: 'hashed', role: 'user', tenant_id: 'default' }],
     });
     bcrypt.compare.mockResolvedValueOnce(true);
 
-    const result = await authService.login({ email: 'test@test.com', password: 'correct' });
+    const result = await authService.login({ email: 'test@test.com', password: validPassword });
 
-    expect(result.token).toBeDefined();
+    expect(result.access_token).toBeDefined();
     expect(result.user.id).toBe(1);
     expect(result.user.email).toBe('test@test.com');
     expect(result.user.role).toBe('user');
@@ -130,11 +132,11 @@ describe('authService.login', () => {
 
   it('defaults role to user if null', async () => {
     mockQuery.mockResolvedValueOnce({
-      rows: [{ id: 1, email: 'test@test.com', password: 'hashed', role: null }],
+      rows: [{ id: 1, email: 'test@test.com', password: 'hashed', role: null, tenant_id: 'default' }],
     });
     bcrypt.compare.mockResolvedValueOnce(true);
 
-    const result = await authService.login({ email: 'test@test.com', password: 'correct' });
+    const result = await authService.login({ email: 'test@test.com', password: validPassword });
 
     expect(result.user.role).toBe('user');
   });

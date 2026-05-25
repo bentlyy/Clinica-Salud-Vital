@@ -2,6 +2,40 @@ import { pool } from '../shared/db.js';
 import bcrypt from 'bcrypt';
 import { logger } from '../utils/logger.js';
 
+const DEFAULT_TENANT_ID = process.env.DEFAULT_TENANT_ID || 'default';
+
+export const seedDefaultTenant = async (): Promise<void> => {
+  const exists = await pool.query('SELECT 1 FROM tenants WHERE id = $1', [DEFAULT_TENANT_ID]);
+  if (exists.rows.length > 0) {
+    logger.info('Default tenant already exists');
+    return;
+  }
+
+  await pool.query(
+    `INSERT INTO tenants (id, name, domain, locale, timezone, config, active)
+     VALUES ($1, $2, $3, $4, $5, $6, true)
+     ON CONFLICT (id) DO NOTHING`,
+    [
+      DEFAULT_TENANT_ID,
+      'Default Clinic',
+      'default',
+      process.env.APP_LOCALE || 'es',
+      'America/Santiago',
+      JSON.stringify({ company: 'Mi Clínica', contact_email: 'admin@clinic.com' }),
+    ]
+  );
+
+  await pool.query(
+    `INSERT INTO subscriptions (tenant_id, plan_id, status, current_period_start, current_period_end)
+     SELECT $1, id, 'active', NOW(), NOW() + INTERVAL '1 year'
+     FROM plans WHERE code = 'enterprise'
+     ON CONFLICT DO NOTHING`,
+    [DEFAULT_TENANT_ID]
+  );
+
+  logger.info(`Default tenant created: ${DEFAULT_TENANT_ID}`);
+};
+
 export const seedAdmin = async (): Promise<void> => {
   const exists = await pool.query('SELECT 1 FROM users WHERE role = $1 LIMIT 1', ['admin']);
   if (exists.rows.length > 0) {
@@ -12,8 +46,8 @@ export const seedAdmin = async (): Promise<void> => {
   const hash = await bcrypt.hash('REPLACED_PASSWORD', 12);
 
   await pool.query(
-    'INSERT INTO users (email, password, role, rut) VALUES ($1, $2, $3, $4)',
-    ['admin@clinic.com', hash, 'admin', '20287886-5']
+    'INSERT INTO users (email, password, role, rut, tenant_id) VALUES ($1, $2, $3, $4, $5)',
+    ['admin@clinic.com', hash, 'admin', '20287886-5', DEFAULT_TENANT_ID]
   );
 
   const doctorsData = [
@@ -25,21 +59,21 @@ export const seedAdmin = async (): Promise<void> => {
 
   for (const doc of doctorsData) {
     const userResult = await pool.query(
-      'INSERT INTO users (email, password, role, rut) VALUES ($1, $2, $3, $4) RETURNING id',
-      [doc.email, hash, 'doctor', doc.rut]
+      'INSERT INTO users (email, password, role, rut, tenant_id) VALUES ($1, $2, $3, $4, $5) RETURNING id',
+      [doc.email, hash, 'doctor', doc.rut, DEFAULT_TENANT_ID]
     );
     const userId = userResult.rows[0].id;
 
     const doctorResult = await pool.query(
-      'INSERT INTO doctors (name, specialty, email, user_id) VALUES ($1, $2, $3, $4) RETURNING id',
-      [doc.name, doc.specialty, doc.email, userId]
+      'INSERT INTO doctors (name, specialty, email, user_id, tenant_id) VALUES ($1, $2, $3, $4, $5) RETURNING id',
+      [doc.name, doc.specialty, doc.email, userId, DEFAULT_TENANT_ID]
     );
     const doctorId = doctorResult.rows[0].id;
 
     for (let day = 1; day <= 5; day++) {
       await pool.query(
-        'INSERT INTO doctor_availability (doctor_id, day_of_week, start_time, end_time) VALUES ($1, $2, $3, $4)',
-        [doctorId, day, '09:00', '17:00']
+        'INSERT INTO doctor_availability (doctor_id, day_of_week, start_time, end_time, tenant_id) VALUES ($1, $2, $3, $4, $5)',
+        [doctorId, day, '09:00', '17:00', DEFAULT_TENANT_ID]
       );
     }
   }
@@ -52,8 +86,8 @@ export const seedAdmin = async (): Promise<void> => {
 
   for (const u of usersData) {
     await pool.query(
-      'INSERT INTO users (email, password, role, rut, phone) VALUES ($1, $2, $3, $4, $5)',
-      [u.email, hash, 'user', u.rut, u.phone]
+      'INSERT INTO users (email, password, role, rut, phone, tenant_id) VALUES ($1, $2, $3, $4, $5, $6)',
+      [u.email, hash, 'user', u.rut, u.phone, DEFAULT_TENANT_ID]
     );
   }
 

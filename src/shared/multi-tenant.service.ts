@@ -1,3 +1,6 @@
+import { pool } from './db.js';
+import { logger } from '../utils/logger.js';
+
 export interface Tenant {
   id: string;
   name: string;
@@ -5,9 +8,13 @@ export interface Tenant {
   locale: string;
   timezone: string;
   config: Record<string, unknown>;
+  active: boolean;
 }
 
 const tenants = new Map<string, Tenant>();
+let refreshInterval: ReturnType<typeof setInterval> | null = null;
+
+const REFRESH_INTERVAL_MS = 5 * 60 * 1000;
 
 export const tenantService = {
   register(tenant: Tenant): void {
@@ -32,13 +39,48 @@ export const tenantService = {
   clear(): void {
     tenants.clear();
   },
+
+  async loadFromDB(): Promise<void> {
+    try {
+      const result = await pool.query<Tenant>(
+        'SELECT id, name, domain, locale, timezone, config, active FROM tenants WHERE active = true'
+      );
+      const loaded = result.rows;
+      const oldCount = tenants.size / 2;
+      tenants.clear();
+      for (const tenant of loaded) {
+        tenants.set(tenant.id, tenant);
+        tenants.set(tenant.domain, tenant);
+      }
+      logger.info(`Tenants loaded from DB: ${loaded.length} (was ${oldCount})`);
+    } catch (error) {
+      logger.error('Failed to load tenants from DB', { error: (error as Error).message });
+    }
+  },
+
+  startRefresh(): void {
+    if (refreshInterval) clearInterval(refreshInterval);
+    refreshInterval = setInterval(() => this.loadFromDB(), REFRESH_INTERVAL_MS);
+  },
+
+  stopRefresh(): void {
+    if (refreshInterval) {
+      clearInterval(refreshInterval);
+      refreshInterval = null;
+    }
+  },
 };
 
 export const extractTenantFromHost = (host: string): string | null => {
   if (!host) return null;
   const parts = host.split('.');
+
   if (parts.length >= 3) {
     return parts[0];
   }
   return null;
+};
+
+export const getTenantId = (req: { headers: Record<string, string | string[] | undefined>; tenant_id?: string }): string => {
+  return req.tenant_id || process.env.DEFAULT_TENANT_ID || 'default';
 };
