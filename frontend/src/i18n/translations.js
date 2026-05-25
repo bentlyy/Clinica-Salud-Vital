@@ -1,41 +1,23 @@
-export type Locale = 'es' | 'en' | 'pt' | 'fr';
-
-const translations: Record<string, Record<string, string>> = {
+const translations = {
   es: {
     'booking.confirmed': 'Cita confirmada',
-    'booking.reminder_24h': 'Recordatorio: tienes una cita mañana',
-    'booking.reminder_1h': 'Recordatorio: tienes una cita en 1 hora',
     'booking.cancelled': 'Cita cancelada',
     'auth.login_success': 'Inicio de sesión exitoso',
     'auth.register_success': 'Registro exitoso',
-    'auth.password_required_change': 'Debes cambiar tu contraseña',
     'auth.invalid_credentials': 'Credenciales inválidas',
-    'doctor.created': 'Doctor creado exitosamente',
-    'invoice.created': 'Factura creada',
-    'invoice.paid': 'Factura pagada',
-    'lab.result_ready': 'Resultados de laboratorio disponibles',
     'error.not_found': 'Recurso no encontrado',
     'error.forbidden': 'Acceso denegado',
     'error.validation': 'Error de validación',
     'error.server': 'Error interno del servidor',
-    'saas.plan_gratuito': 'Gratuito',
-    'saas.plan_basico': 'Básico',
-    'saas.plan_profesional': 'Profesional',
+
+    'saas.plan_free': 'Gratuito',
+    'saas.plan_basic': 'Básico',
+    'saas.plan_pro': 'Profesional',
     'saas.plan_enterprise': 'Enterprise',
-    'saas.trial_ends': 'Tu período de prueba termina el {date}',
     'saas.subscription_active': 'Suscripción activa',
-    'saas.subscription_canceled': 'Suscripción cancelada',
-    'saas.subscription_trialing': 'Período de prueba',
-    'saas.limit_reached': 'Has alcanzado el límite de {resource}',
+    'saas.subscription_canceled': 'Cancelada',
+    'saas.subscription_trialing': 'Prueba gratis',
     'saas.upgrade_required': 'Actualiza tu plan para acceder a esta función',
-    'saas.tenant_created': 'Clínica creada exitosamente',
-    'saas.check_email': 'Revisa tu email para las instrucciones de inicio de sesión',
-    'saas.onboarding_subject': 'Bienvenido a Salud Vital - Tu clínica está lista',
-    'saas.onboarding_body': 'Hola {name}, tu clínica {clinic} ha sido creada. Puedes iniciar sesión con tu email {email}.',
-    'saas.invitation_subject': 'Has sido invitado a {clinic}',
-    'saas.invitation_body': 'Has sido invitado a unirte a {clinic}. Haz clic en el siguiente enlace para aceptar: {link}',
-    'saas.payment_failed': 'El pago de tu suscripción ha fallado',
-    'saas.payment_success': 'Pago recibido correctamente',
     'saas.doctor_limit': 'límite de doctores',
     'saas.patient_limit': 'límite de pacientes',
     'saas.storage_limit': 'límite de almacenamiento',
@@ -96,6 +78,8 @@ const translations: Record<string, Record<string, string>> = {
     'saas.includes': 'Incluye:',
     'saas.start_free': 'Comenzar Gratis',
     'saas.processing': 'Procesando...',
+    'saas.year_discount': '(ahorra {pct}%)',
+
     'superadmin.title': 'Panel Super Admin',
     'superadmin.subtitle': 'Gestión global del sistema SaaS',
     'superadmin.manage_tenants': 'Gestionar Tenants',
@@ -132,6 +116,7 @@ const translations: Record<string, Record<string, string>> = {
     'superadmin.tenant_deleted': 'Tenant eliminado',
     'superadmin.saving': 'Guardando...',
     'superadmin.save': 'Guardar Cambios',
+
     'tenant.panel_title': 'Panel de la Clínica',
     'tenant.welcome': 'Bienvenido, {name}',
     'tenant.plan': 'Plan',
@@ -140,41 +125,26 @@ const translations: Record<string, Record<string, string>> = {
     'tenant.limits_title': 'Límites',
     'tenant.config_title': 'Configuración de la Clínica',
   },
+
   en: {
     'booking.confirmed': 'Appointment confirmed',
-    'booking.reminder_24h': 'Reminder: you have an appointment tomorrow',
-    'booking.reminder_1h': 'Reminder: you have an appointment in 1 hour',
     'booking.cancelled': 'Appointment cancelled',
     'auth.login_success': 'Login successful',
     'auth.register_success': 'Registration successful',
-    'auth.password_required_change': 'You must change your password',
     'auth.invalid_credentials': 'Invalid credentials',
-    'doctor.created': 'Doctor created successfully',
-    'invoice.created': 'Invoice created',
-    'invoice.paid': 'Invoice paid',
-    'lab.result_ready': 'Lab results available',
     'error.not_found': 'Resource not found',
     'error.forbidden': 'Access denied',
     'error.validation': 'Validation error',
     'error.server': 'Internal server error',
-    'saas.plan_gratuito': 'Free',
-    'saas.plan_basico': 'Basic',
-    'saas.plan_profesional': 'Professional',
+
+    'saas.plan_free': 'Free',
+    'saas.plan_basic': 'Basic',
+    'saas.plan_pro': 'Professional',
     'saas.plan_enterprise': 'Enterprise',
-    'saas.trial_ends': 'Your trial period ends on {date}',
-    'saas.subscription_active': 'Active subscription',
-    'saas.subscription_canceled': 'Canceled subscription',
-    'saas.subscription_trialing': 'Trial period',
-    'saas.limit_reached': 'You have reached the {resource} limit',
+    'saas.subscription_active': 'Active',
+    'saas.subscription_canceled': 'Canceled',
+    'saas.subscription_trialing': 'Trial',
     'saas.upgrade_required': 'Upgrade your plan to access this feature',
-    'saas.tenant_created': 'Clinic created successfully',
-    'saas.check_email': 'Check your email for login instructions',
-    'saas.onboarding_subject': 'Welcome to Salud Vital - Your clinic is ready',
-    'saas.onboarding_body': 'Hello {name}, your clinic {clinic} has been created. You can login with your email {email}.',
-    'saas.invitation_subject': 'You have been invited to {clinic}',
-    'saas.invitation_body': 'You have been invited to join {clinic}. Click the link below to accept: {link}',
-    'saas.payment_failed': 'Your subscription payment has failed',
-    'saas.payment_success': 'Payment received successfully',
     'saas.doctor_limit': 'doctor limit',
     'saas.patient_limit': 'patient limit',
     'saas.storage_limit': 'storage limit',
@@ -235,6 +205,8 @@ const translations: Record<string, Record<string, string>> = {
     'saas.includes': 'Includes:',
     'saas.start_free': 'Start Free',
     'saas.processing': 'Processing...',
+    'saas.year_discount': '(save {pct}%)',
+
     'superadmin.title': 'Super Admin Panel',
     'superadmin.subtitle': 'Global SaaS system management',
     'superadmin.manage_tenants': 'Manage Tenants',
@@ -271,6 +243,7 @@ const translations: Record<string, Record<string, string>> = {
     'superadmin.tenant_deleted': 'Tenant deleted',
     'superadmin.saving': 'Saving...',
     'superadmin.save': 'Save Changes',
+
     'tenant.panel_title': 'Clinic Panel',
     'tenant.welcome': 'Welcome, {name}',
     'tenant.plan': 'Plan',
@@ -279,41 +252,26 @@ const translations: Record<string, Record<string, string>> = {
     'tenant.limits_title': 'Limits',
     'tenant.config_title': 'Clinic Configuration',
   },
+
   pt: {
     'booking.confirmed': 'Consulta confirmada',
-    'booking.reminder_24h': 'Lembrete: você tem uma consulta amanhã',
-    'booking.reminder_1h': 'Lembrete: você tem uma consulta em 1 hora',
     'booking.cancelled': 'Consulta cancelada',
-    'auth.login_success': 'Login realizado com sucesso',
-    'auth.register_success': 'Registro realizado com sucesso',
-    'auth.password_required_change': 'Você deve alterar sua senha',
+    'auth.login_success': 'Login bem-sucedido',
+    'auth.register_success': 'Registro bem-sucedido',
     'auth.invalid_credentials': 'Credenciais inválidas',
-    'doctor.created': 'Médico criado com sucesso',
-    'invoice.created': 'Fatura criada',
-    'invoice.paid': 'Fatura paga',
-    'lab.result_ready': 'Resultados de laboratório disponíveis',
     'error.not_found': 'Recurso não encontrado',
     'error.forbidden': 'Acesso negado',
     'error.validation': 'Erro de validação',
     'error.server': 'Erro interno do servidor',
-    'saas.plan_gratuito': 'Gratuito',
-    'saas.plan_basico': 'Básico',
-    'saas.plan_profesional': 'Profissional',
+
+    'saas.plan_free': 'Gratuito',
+    'saas.plan_basic': 'Básico',
+    'saas.plan_pro': 'Profissional',
     'saas.plan_enterprise': 'Enterprise',
-    'saas.trial_ends': 'Seu período de teste termina em {date}',
-    'saas.subscription_active': 'Assinatura ativa',
-    'saas.subscription_canceled': 'Assinatura cancelada',
-    'saas.subscription_trialing': 'Período de teste',
-    'saas.limit_reached': 'Você atingiu o limite de {resource}',
+    'saas.subscription_active': 'Ativa',
+    'saas.subscription_canceled': 'Cancelada',
+    'saas.subscription_trialing': 'Teste grátis',
     'saas.upgrade_required': 'Atualize seu plano para acessar este recurso',
-    'saas.tenant_created': 'Clínica criada com sucesso',
-    'saas.check_email': 'Verifique seu email para instruções de login',
-    'saas.onboarding_subject': 'Bem-vindo ao Salud Vital - Sua clínica está pronta',
-    'saas.onboarding_body': 'Olá {name}, sua clínica {clinic} foi criada. Você pode fazer login com seu email {email}.',
-    'saas.invitation_subject': 'Você foi convidado para {clinic}',
-    'saas.invitation_body': 'Você foi convidado para entrar na {clinic}. Clique no link abaixo para aceitar: {link}',
-    'saas.payment_failed': 'O pagamento da sua assinatura falhou',
-    'saas.payment_success': 'Pagamento recebido com sucesso',
     'saas.doctor_limit': 'limite de médicos',
     'saas.patient_limit': 'limite de pacientes',
     'saas.storage_limit': 'limite de armazenamento',
@@ -374,6 +332,8 @@ const translations: Record<string, Record<string, string>> = {
     'saas.includes': 'Inclui:',
     'saas.start_free': 'Começar Grátis',
     'saas.processing': 'Processando...',
+    'saas.year_discount': '(economize {pct}%)',
+
     'superadmin.title': 'Painel Super Admin',
     'superadmin.subtitle': 'Gerenciamento global do sistema SaaS',
     'superadmin.manage_tenants': 'Gerenciar Tenants',
@@ -410,6 +370,7 @@ const translations: Record<string, Record<string, string>> = {
     'superadmin.tenant_deleted': 'Tenant excluído',
     'superadmin.saving': 'Salvando...',
     'superadmin.save': 'Salvar Alterações',
+
     'tenant.panel_title': 'Painel da Clínica',
     'tenant.welcome': 'Bem-vindo, {name}',
     'tenant.plan': 'Plano',
@@ -418,41 +379,26 @@ const translations: Record<string, Record<string, string>> = {
     'tenant.limits_title': 'Limites',
     'tenant.config_title': 'Configuração da Clínica',
   },
+
   fr: {
     'booking.confirmed': 'Rendez-vous confirmé',
-    'booking.reminder_24h': 'Rappel: vous avez un rendez-vous demain',
-    'booking.reminder_1h': 'Rappel: vous avez un rendez-vous dans 1 heure',
     'booking.cancelled': 'Rendez-vous annulé',
     'auth.login_success': 'Connexion réussie',
     'auth.register_success': 'Inscription réussie',
-    'auth.password_required_change': 'Vous devez changer votre mot de passe',
     'auth.invalid_credentials': 'Identifiants invalides',
-    'doctor.created': 'Médecin créé avec succès',
-    'invoice.created': 'Facture créée',
-    'invoice.paid': 'Facture payée',
-    'lab.result_ready': 'Résultats de laboratoire disponibles',
     'error.not_found': 'Ressource non trouvée',
     'error.forbidden': 'Accès refusé',
     'error.validation': 'Erreur de validation',
     'error.server': 'Erreur interne du serveur',
-    'saas.plan_gratuito': 'Gratuit',
-    'saas.plan_basico': 'Basique',
-    'saas.plan_profesional': 'Professionnel',
+
+    'saas.plan_free': 'Gratuit',
+    'saas.plan_basic': 'Basique',
+    'saas.plan_pro': 'Professionnel',
     'saas.plan_enterprise': 'Enterprise',
-    'saas.trial_ends': 'Votre période d\'essai se termine le {date}',
-    'saas.subscription_active': 'Abonnement actif',
-    'saas.subscription_canceled': 'Abonnement annulé',
-    'saas.subscription_trialing': 'Période d\'essai',
-    'saas.limit_reached': 'Vous avez atteint la limite de {resource}',
+    'saas.subscription_active': 'Actif',
+    'saas.subscription_canceled': 'Annulé',
+    'saas.subscription_trialing': 'Essai',
     'saas.upgrade_required': 'Mettez à niveau votre plan pour accéder à cette fonctionnalité',
-    'saas.tenant_created': 'Clinique créée avec succès',
-    'saas.check_email': 'Vérifiez votre email pour les instructions de connexion',
-    'saas.onboarding_subject': 'Bienvenue chez Salud Vital - Votre clinique est prête',
-    'saas.onboarding_body': 'Bonjour {name}, votre clinique {clinic} a été créée. Vous pouvez vous connecter avec votre email {email}.',
-    'saas.invitation_subject': 'Vous avez été invité à {clinic}',
-    'saas.invitation_body': 'Vous avez été invité à rejoindre {clinic}. Cliquez sur le lien ci-dessous pour accepter : {link}',
-    'saas.payment_failed': 'Le paiement de votre abonnement a échoué',
-    'saas.payment_success': 'Paiement reçu avec succès',
     'saas.doctor_limit': 'limite de médecins',
     'saas.patient_limit': 'limite de patients',
     'saas.storage_limit': 'limite de stockage',
@@ -469,7 +415,7 @@ const translations: Record<string, Record<string, string>> = {
     'saas.monthly': '/mois',
     'saas.yearly': '/an',
     'saas.free': 'Gratuit',
-    'saas.subscribe': 'S\'abonner',
+    'saas.subscribe': "S'abonner",
     'saas.current_plan': 'Plan Actuel',
     'saas.change_plan': 'Changer de Plan',
     'saas.cancel': 'Annuler',
@@ -480,19 +426,19 @@ const translations: Record<string, Record<string, string>> = {
     'saas.patients': 'Patients',
     'saas.storage': 'Stockage',
     'saas.usage_30d': 'Utilisation (30 jours)',
-    'saas.no_usage': 'Aucune donnée d\'utilisation',
+    'saas.no_usage': "Aucune donnée d'utilisation",
     'saas.clinic_name': 'Nom de la Clinique',
     'saas.contact_email': 'Email de Contact',
     'saas.timezone': 'Fuseau Horaire',
     'saas.save_changes': 'Enregistrer',
     'saas.choose_plan': 'Choisissez un Plan',
     'saas.clinic_info': 'Informations de la Clinique',
-    'saas.admin_credentials': 'Identifiants Admin',
+    'saas.admin_credentials': "Identifiants Admin",
     'saas.create_clinic': 'Créez Votre Clinique',
     'saas.trial_description': 'Commencez votre essai gratuit de 14 jours',
     'saas.subdomain': 'Sous-domaine',
     'saas.subdomain_hint': 'maclinique.monsysteme.com',
-    'saas.admin_name': 'Nom de l\'Administrateur',
+    'saas.admin_name': "Nom de l'Administrateur",
     'saas.password_hint': 'Doit contenir majuscule, minuscule, chiffre et caractère spécial',
     'saas.already_account': 'Vous avez déjà un compte ?',
     'saas.login_here': 'Connectez-vous',
@@ -509,10 +455,12 @@ const translations: Record<string, Record<string, string>> = {
     'saas.plans_title': 'Forfaits et Tarifs',
     'saas.plans_subtitle': 'Choisissez le forfait parfait pour votre clinique',
     'saas.unlimited': 'Illimité',
-    'saas.up_to': 'Jusqu\'à',
+    'saas.up_to': "Jusqu'à",
     'saas.includes': 'Inclus :',
     'saas.start_free': 'Commencer Gratuit',
     'saas.processing': 'Traitement...',
+    'saas.year_discount': '(économisez {pct}%)',
+
     'superadmin.title': 'Panneau Super Admin',
     'superadmin.subtitle': 'Gestion globale du système SaaS',
     'superadmin.manage_tenants': 'Gérer les Tenants',
@@ -549,6 +497,7 @@ const translations: Record<string, Record<string, string>> = {
     'superadmin.tenant_deleted': 'Tenant supprimé',
     'superadmin.saving': 'Enregistrement...',
     'superadmin.save': 'Enregistrer',
+
     'tenant.panel_title': 'Panneau de la Clinique',
     'tenant.welcome': 'Bienvenue, {name}',
     'tenant.plan': 'Forfait',
@@ -559,35 +508,4 @@ const translations: Record<string, Record<string, string>> = {
   },
 };
 
-let currentLocale: Locale = (process.env.APP_LOCALE as Locale) || 'es';
-
-export const setLocale = (locale: Locale): void => {
-  if (translations[locale]) {
-    currentLocale = locale;
-  }
-};
-
-export const getLocale = (): Locale => currentLocale;
-
-export const t = (key: string, locale?: Locale, params?: Record<string, string | number>): string => {
-  const l = locale || currentLocale;
-  let msg = translations[l]?.[key] || translations['es']?.[key] || key;
-  if (params) {
-    for (const [k, v] of Object.entries(params)) {
-      msg = msg.replace(`{${k}}`, String(v));
-    }
-  }
-  return msg;
-};
-
-export const tAll = (key: string): Record<Locale, string> => {
-  const result = {} as Record<Locale, string>;
-  for (const locale of Object.keys(translations) as Locale[]) {
-    result[locale] = translations[locale]?.[key] || key;
-  }
-  return result;
-};
-
-export const translate = (key: string, locale?: Locale, params?: Record<string, string | number>): string => {
-  return t(key, locale, params);
-};
+export default translations;

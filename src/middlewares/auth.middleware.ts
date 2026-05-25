@@ -3,14 +3,21 @@ import { Request, Response, NextFunction } from 'express';
 import { getJWTSecret } from '../shared/jwt.js';
 import { UserRole } from '../types/index.js';
 
-export type AuthRequest = Request & { user?: { id: number; email: string; role: UserRole } };
+export interface JwtUser {
+  id: number;
+  email: string;
+  role: UserRole;
+  tenant_id: string;
+}
+
+export type AuthRequest = Request & { user?: JwtUser };
 
 declare global {
   namespace Express {
     interface Request {
-      user?: { id: number; email: string; role: UserRole };
-      tenant_id?: string;
-      locale?: string;
+      user?: JwtUser;
+      tenant_id: string;
+      locale: string;
     }
   }
 }
@@ -27,12 +34,13 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction):
   }
 
   try {
-    const decoded = jwt.verify(tokenStr, getJWTSecret()) as JwtPayload & {
-      id: number;
-      email: string;
-      role: UserRole;
+    const decoded = jwt.verify(tokenStr, getJWTSecret()) as JwtPayload & JwtUser;
+    req.user = {
+      id: decoded.id,
+      email: decoded.email,
+      role: decoded.role as UserRole,
+      tenant_id: decoded.tenant_id || req.tenant_id || process.env.DEFAULT_TENANT_ID || 'default',
     };
-    req.user = decoded;
     next();
   } catch (error) {
     if (error instanceof Error && error.name === 'TokenExpiredError') {
@@ -53,12 +61,13 @@ export const optionalAuth = (req: Request, res: Response, next: NextFunction): v
   }
 
   try {
-    const decoded = jwt.verify(token, getJWTSecret()) as JwtPayload & {
-      id: number;
-      email: string;
-      role: UserRole;
+    const decoded = jwt.verify(token, getJWTSecret()) as JwtPayload & JwtUser;
+    req.user = {
+      id: decoded.id,
+      email: decoded.email,
+      role: decoded.role as UserRole,
+      tenant_id: decoded.tenant_id || req.tenant_id || process.env.DEFAULT_TENANT_ID || 'default',
     };
-    req.user = decoded;
   } catch {
     // Token invalid, continue without user
   }

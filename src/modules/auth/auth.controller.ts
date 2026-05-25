@@ -1,20 +1,19 @@
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import * as authService from './auth.service.js';
 import * as auth2faService from './auth-2fa.service.js';
 import { asyncHandler } from '../../middlewares/asyncHandler.middleware.js';
-import { AuthRequest } from '../../middlewares/auth.middleware.js';
 
-export const register = asyncHandler(async (req: AuthRequest, res: Response) => {
-  const user = await authService.register(req.body);
+export const register = asyncHandler(async (req: Request, res: Response) => {
+  const user = await authService.register({ ...req.body, tenant_id: req.tenant_id });
   res.status(201).json(user);
 });
 
-export const login = asyncHandler(async (req: AuthRequest, res: Response) => {
+export const login = asyncHandler(async (req: Request, res: Response) => {
   const data = await authService.login(req.body);
   res.json(data);
 });
 
-export const refresh = asyncHandler(async (req: AuthRequest, res: Response) => {
+export const refresh = asyncHandler(async (req: Request, res: Response) => {
   const { refresh_token } = req.body;
   if (!refresh_token) {
     res.status(400).json({ error: 'Refresh token required' });
@@ -28,7 +27,7 @@ export const refresh = asyncHandler(async (req: AuthRequest, res: Response) => {
   res.json(data);
 });
 
-export const logout = asyncHandler(async (req: AuthRequest, res: Response) => {
+export const logout = asyncHandler(async (req: Request, res: Response) => {
   const { refresh_token } = req.body;
   if (refresh_token) {
     await authService.logout(refresh_token);
@@ -36,51 +35,51 @@ export const logout = asyncHandler(async (req: AuthRequest, res: Response) => {
   res.json({ message: 'Logged out successfully' });
 });
 
-export const logoutAll = asyncHandler(async (req: AuthRequest, res: Response) => {
+export const logoutAll = asyncHandler(async (req: Request, res: Response) => {
   if (!req.user) {
     res.status(401).json({ error: 'Authentication required' });
     return;
   }
-  await authService.logoutAll((req.user as { id: number }).id);
+  await authService.logoutAll(req.user.id);
   res.json({ message: 'Logged out from all devices' });
 });
 
-export const changePassword = asyncHandler(async (req: AuthRequest, res: Response) => {
+export const changePassword = asyncHandler(async (req: Request, res: Response) => {
   if (!req.user) {
     res.status(401).json({ error: 'Authentication required' });
     return;
   }
   await authService.changePassword({
-    userId: (req.user as { id: number }).id,
+    userId: req.user.id,
     currentPassword: req.body.current_password,
     newPassword: req.body.new_password,
   });
   res.json({ message: 'Password changed successfully' });
 });
 
-export const enable2FA = asyncHandler(async (req: AuthRequest, res: Response) => {
+export const enable2FA = asyncHandler(async (req: Request, res: Response) => {
   if (!req.user) {
     res.status(401).json({ error: 'Authentication required' });
     return;
   }
-  const result = await auth2faService.enable2FA((req.user as { id: number }).id);
+  const result = await auth2faService.enable2FA(req.user.id);
   res.json(result);
 });
 
-export const verifyAndEnable2FA = asyncHandler(async (req: AuthRequest, res: Response) => {
+export const verifyAndEnable2FA = asyncHandler(async (req: Request, res: Response) => {
   if (!req.user) {
     res.status(401).json({ error: 'Authentication required' });
     return;
   }
-  await auth2faService.verifyAndEnable2FA((req.user as { id: number }).id, req.body.token);
+  await auth2faService.verifyAndEnable2FA(req.user.id, req.body.token);
   res.json({ message: '2FA enabled successfully' });
 });
 
-export const disable2FA = asyncHandler(async (req: AuthRequest, res: Response) => {
+export const disable2FA = asyncHandler(async (req: Request, res: Response) => {
   if (!req.user) {
     res.status(401).json({ error: 'Authentication required' });
     return;
   }
-  await auth2faService.disable2FA((req.user as { id: number }).id);
+  await auth2faService.disable2FA(req.user.id);
   res.json({ message: '2FA disabled successfully' });
 });
