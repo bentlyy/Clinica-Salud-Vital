@@ -82,7 +82,7 @@ export default function Navbar() {
               }}>
                 {locales.map((l) => (
                   <button key={l.code} className="btn btn-ghost btn-sm" style={{ width: '100%', borderRadius: 0 }}
-                    onClick={() => { setStoredLocale(l.code); window.location.reload(); }}>
+                    onClick={() => { setStoredLocale(l.code); setLocaleOpen(false); }}>
                     {l.label}
                   </button>
                 ))}
