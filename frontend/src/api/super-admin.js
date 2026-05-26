@@ -10,7 +10,7 @@ export const listTenants = async (page = 1, limit = 20, filters = {}) => {
   if (filters.active !== undefined) params.set('active', filters.active);
   if (filters.search) params.set('search', filters.search);
   const res = await api.get(`/super-admin/tenants?${params}`);
-  return res.data;
+  return { data: res.data, pagination: res.pagination };
 };
 
 export const getTenantDetail = async (id) => {
@@ -29,5 +29,5 @@ export const updateTenant = async (id, data) => {
 };
 
 export const deleteTenant = async (id) => {
-  await api.delete(`/super-admin/tenants/${id}`);
+  await api.delete(`/super-admin/tenants/${id}`, { data: { confirm: true } });
 };

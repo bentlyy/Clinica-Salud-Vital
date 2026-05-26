@@ -1,7 +1,8 @@
+import { asyncHandler } from '../../middlewares/asyncHandler.middleware.js';
 import { checkFeatureAccess, checkLimits } from './saas.service.js';
 
 export const requireFeature = (featureKey: string) => {
-  return async (req: import('express').Request, res: import('express').Response, next: import('express').NextFunction): Promise<void> => {
+  return asyncHandler(async (req: import('express').Request, res: import('express').Response, next: import('express').NextFunction) => {
     const tenantId = (req as { tenant_id?: string }).tenant_id || process.env.DEFAULT_TENANT_ID || 'default';
 
     const hasAccess = await checkFeatureAccess(tenantId, featureKey);
@@ -15,11 +16,11 @@ export const requireFeature = (featureKey: string) => {
     }
 
     next();
-  };
+  });
 };
 
 export const requireLimit = (resource: 'doctors' | 'patients' | 'storage') => {
-  return async (req: import('express').Request, res: import('express').Response, next: import('express').NextFunction): Promise<void> => {
+  return asyncHandler(async (req: import('express').Request, res: import('express').Response, next: import('express').NextFunction) => {
     const tenantId = (req as { tenant_id?: string }).tenant_id || process.env.DEFAULT_TENANT_ID || 'default';
 
     const { allowed, current, limit } = await checkLimits(tenantId, resource);
@@ -34,5 +35,5 @@ export const requireLimit = (resource: 'doctors' | 'patients' | 'storage') => {
     }
 
     next();
-  };
+  });
 };

@@ -22,7 +22,7 @@ export default function SuperAdminTenantsPage() {
       if (s) filters.search = s;
       const result = await listTenants(p, limit, filters);
       setTenants(result.data || []);
-      setTotal(result.total || 0);
+      setTotal(result.pagination?.total || 0);
     } catch {
       setTenants([]);
     } finally {
@@ -86,27 +86,27 @@ export default function SuperAdminTenantsPage() {
                 </tr>
               </thead>
               <tbody>
-                {tenants.map((t) => (
-                  <tr key={t.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                    <td style={{ padding: 12 }}><code>{t.id}</code></td>
-                    <td style={{ padding: 12 }}>{t.name}</td>
-                    <td style={{ padding: 12 }}>{t.domain}</td>
+                {tenants.map((tenant) => (
+                  <tr key={tenant.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                    <td style={{ padding: 12 }}><code>{tenant.id}</code></td>
+                    <td style={{ padding: 12 }}>{tenant.name}</td>
+                    <td style={{ padding: 12 }}>{tenant.domain}</td>
                     <td style={{ padding: 12 }}>
-                      <span className={`badge badge--${t.active ? 'success' : 'error'}`}>
-                        {t.active ? t('superadmin.active_label') : t('superadmin.inactive')}
+                      <span className={`badge badge--${tenant.active ? 'success' : 'error'}`}>
+                        {tenant.active ? t('superadmin.active_label') : t('superadmin.inactive')}
                       </span>
                     </td>
-                    <td style={{ padding: 12 }}>{t.created_at ? new Date(t.created_at).toLocaleDateString() : '-'}</td>
+                    <td style={{ padding: 12 }}>{tenant.created_at ? new Date(tenant.created_at).toLocaleDateString() : '-'}</td>
                     <td style={{ padding: 12, textAlign: 'right' }}>
                       <button className="btn btn--outline btn--sm" style={{ marginRight: 4 }}
-                        onClick={() => navigate(`/super-admin/tenants/${t.id}`)}>{t('superadmin.view')}</button>
-                      {deleteConfirm === t.id ? (
+                        onClick={() => navigate(`/super-admin/tenants/${tenant.id}`)}>{t('superadmin.view')}</button>
+                      {deleteConfirm === tenant.id ? (
                         <>
-                          <button className="btn btn--danger btn--sm" onClick={() => handleDelete(t.id)}>{t('saas.confirm')}</button>
+                          <button className="btn btn--danger btn--sm" onClick={() => handleDelete(tenant.id)}>{t('saas.confirm')}</button>
                           <button className="btn btn--outline btn--sm" onClick={() => setDeleteConfirm(null)}>{t('saas.cancel')}</button>
                         </>
                       ) : (
-                        <button className="btn btn--outline btn--sm" onClick={() => setDeleteConfirm(t.id)}
+                        <button className="btn btn--outline btn--sm" onClick={() => setDeleteConfirm(tenant.id)}
                           style={{ color: 'var(--danger)' }}>{t('superadmin.delete')}</button>
                       )}
                     </td>

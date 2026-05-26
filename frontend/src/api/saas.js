@@ -44,3 +44,8 @@ export const onboardTenant = async (data) => {
   const res = await api.post('/saas/onboard', data);
   return res.data;
 };
+
+export const updateTenant = async (data) => {
+  const res = await api.patch('/saas/tenant', data);
+  return res.data;
+};
