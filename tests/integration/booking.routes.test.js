@@ -60,9 +60,7 @@ describe('GET /api/bookings/available-slots', () => {
       .get('/api/bookings/available-slots')
       .query({ doctor_id: '1', date: '2025-01-15' });
 
-    if (res.status !== 200) {
-      console.log('Error response:', res.body);
-    }
+
 
     expect(res.status).toBe(200);
     expect(Array.isArray(res.body)).toBe(true);
