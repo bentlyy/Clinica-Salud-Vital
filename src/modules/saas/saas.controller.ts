@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
 import { asyncHandler } from '../../middlewares/asyncHandler.middleware.js';
 import * as saasService from './saas.service.js';
+import { getStripe, getWebhookSecret, isStripeConfigured } from '../../shared/stripe.service.js';
+import { logger } from '../../utils/logger.js';
 
 export const getPlans = asyncHandler(async (_req: Request, res: Response) => {
   const plans = await saasService.getPlans();
@@ -16,10 +18,18 @@ export const getMySubscription = asyncHandler(async (req: Request, res: Response
 export const createCheckout = asyncHandler(async (req: Request, res: Response) => {
   const { plan_code, success_url, cancel_url } = req.body;
 
-  try {
-    const { stripe } = await import('../../shared/stripe.service.js');
-    const plan = await saasService.getPlanByCode(plan_code);
+  const stripe = await getStripe();
+  const plan = await saasService.getPlanByCode(plan_code);
 
+  if (!isStripeConfigured()) {
+    res.json({
+      url: `/saas/success?plan=${plan_code}&tenant=${req.tenant_id}`,
+      session_id: 'simulated',
+    });
+    return;
+  }
+
+  try {
     const checkout = (stripe as Record<string, unknown>).checkout as Record<string, unknown>;
     const sessions = checkout.sessions as Record<string, unknown>;
     const session = await (sessions.create as Function)({
@@ -44,7 +54,8 @@ export const createCheckout = asyncHandler(async (req: Request, res: Response) =
     });
 
     res.json({ url: (session as Record<string, unknown>).url, session_id: (session as Record<string, unknown>).id });
-  } catch {
+  } catch (err) {
+    logger.error('Stripe checkout error:', err);
     res.json({
       url: `/saas/success?plan=${plan_code}&tenant=${req.tenant_id}`,
       session_id: 'simulated',
@@ -55,16 +66,16 @@ export const createCheckout = asyncHandler(async (req: Request, res: Response) =
 export const stripeWebhook = asyncHandler(async (req: Request, res: Response) => {
   const sig = req.headers['stripe-signature'] as string;
   try {
-    const { stripe, webhookSecret } = await import('../../shared/stripe.service.js');
+    const stripe = await getStripe();
+    const whSecret = getWebhookSecret();
     const webhooks = (stripe as Record<string, unknown>).webhooks as Record<string, unknown>;
-    const event = (webhooks.constructEvent as Function)(req.body, sig, webhookSecret);
+    const event = (webhooks.constructEvent as Function)(req.body, sig, whSecret);
 
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object as { client_reference_id?: string; metadata?: Record<string, string>; subscription?: string; customer?: string };
         const tenantId = session.client_reference_id || session.metadata?.tenant_id || 'default';
         const subId = session.subscription as string;
-        const custId = session.customer as string;
 
         const existingSub = await saasService.getTenantSubscription(tenantId);
         if (existingSub) {
@@ -82,7 +93,8 @@ export const stripeWebhook = asyncHandler(async (req: Request, res: Response) =>
     }
 
     res.json({ received: true });
-  } catch {
+  } catch (err) {
+    logger.error('Stripe webhook error:', err);
     res.status(400).json({ error: 'Webhook signature verification failed' });
   }
 });

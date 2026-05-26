@@ -1,7 +1,7 @@
 import { logger } from '../utils/logger.js';
 
-const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || '';
-const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || '';
+let _stripeInstance: Record<string, unknown> | null = null;
+let _webhookSecret: string | null = null;
 
 const createStub = (): Record<string, unknown> => ({
   checkout: {
@@ -16,12 +16,18 @@ const createStub = (): Record<string, unknown> => ({
   },
 });
 
-const initStripe = (): Record<string, unknown> => {
-  const isConfigured = STRIPE_SECRET_KEY.startsWith('sk_test_') || STRIPE_SECRET_KEY.startsWith('sk_live_');
+const getConfig = () => ({
+  secretKey: process.env.STRIPE_SECRET_KEY || '',
+  webhookSecret: process.env.STRIPE_WEBHOOK_SECRET || '',
+});
+
+const initStripe = async (): Promise<Record<string, unknown>> => {
+  const { secretKey } = getConfig();
+  const isConfigured = secretKey.startsWith('sk_test_') || secretKey.startsWith('sk_live_');
   if (isConfigured) {
     try {
-      const Stripe = require('stripe');
-      return new Stripe(STRIPE_SECRET_KEY, { apiVersion: '2025-02-24.acacia' as string });
+      const { default: Stripe } = await import('stripe');
+      return new Stripe(secretKey, { apiVersion: '2025-02-24.acacia' as string });
     } catch {
       logger.warn('Stripe package failed to load, using stub');
     }
@@ -30,8 +36,23 @@ const initStripe = (): Record<string, unknown> => {
   return createStub();
 };
 
-export const stripe = initStripe();
-export const webhookSecret = STRIPE_WEBHOOK_SECRET;
-export const isStripeConfigured = (): boolean => {
-  return STRIPE_SECRET_KEY.startsWith('sk_test_') || STRIPE_SECRET_KEY.startsWith('sk_live_');
+export const getStripe = async (): Promise<Record<string, unknown>> => {
+  if (!_stripeInstance) _stripeInstance = await initStripe();
+  return _stripeInstance;
 };
+
+export const getWebhookSecret = (): string => {
+  if (!_webhookSecret) {
+    const { webhookSecret: ws } = getConfig();
+    _webhookSecret = ws;
+  }
+  return _webhookSecret;
+};
+
+export const isStripeConfigured = (): boolean => {
+  const { secretKey } = getConfig();
+  return secretKey.startsWith('sk_test_') || secretKey.startsWith('sk_live_');
+};
+
+export const stripe = createStub() as Record<string, unknown>;
+export const webhookSecret = '';
