@@ -231,9 +231,14 @@ Request → Helmet → Tenant → CORS → Compression → JSON(100kb) → Logge
 - Tabla `notification_preferences` por usuario
 
 ### Internacionalización (i18n)
-- `i18n.service.ts` — 4 idiomas: es, en, pt, fr
-- 30+ traducciones para mensajes del sistema y emails
-- `t(key)` en locale actual, `tAll(key)` en todos
+- Servicio `i18n.service.ts` (backend) + `useI18n.js` (frontend) con 4 idiomas: es, en, pt, fr
+- **421+ claves** traducidas, todas presentes en los 4 idiomas
+- Frontend: `GET /api/v1/i18n/translations` con cache localStorage (5 min TTL)
+- `t(key)` devuelve en locale actual, `tAll(key)` devuelve en todos
+- **14 páginas migradas**: HomePage, LoginPage, RegisterPage, BookingPage, MyBookingsPage, SpecialistsPage, DoctorsPage, GuestBookingPage, GuestBookingsPage, DoctorPanel, ConfirmPage, AnalyticsPage, DoctorClinicalRecordsPage, RegisterDoctorPage, SuperAdminTenantDetailPage, Navbar, ErrorBoundary
+- Locale reactivo vía custom event (`locale:changed`) — sin recarga de página
+- `I18nContext` + `I18nProvider` para class components (ErrorBoundary)
+- Fallback automático a español si falta clave en locale actual
 - Configurable via `APP_LOCALE=es|en|pt|fr`
 
 ---
