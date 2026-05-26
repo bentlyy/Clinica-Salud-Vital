@@ -48,17 +48,25 @@ export const getStoredLocale = () => {
 
 export const setStoredLocale = (locale) => {
   localStorage.setItem(LOCALE_KEY, locale);
+  window.dispatchEvent(new CustomEvent('locale:changed', { detail: locale }));
 };
 
 const supportedLocales = Object.keys(fallbackTranslations);
 
 export const useI18n = (locale) => {
   const [translations, setTranslations] = useState(cachedTranslations || fallbackTranslations);
+  const [localeVersion, setLocaleVersion] = useState(0);
 
   useEffect(() => {
     if (!cachedTranslations) {
       loadTranslations().then(setTranslations);
     }
+  }, []);
+
+  useEffect(() => {
+    const handler = () => setLocaleVersion((v) => v + 1);
+    window.addEventListener('locale:changed', handler);
+    return () => window.removeEventListener('locale:changed', handler);
   }, []);
 
   const currentLocale = locale || getStoredLocale();
@@ -89,7 +97,7 @@ export const useI18n = (locale) => {
     };
 
     return { t, tAll, locale: lang };
-  }, [lang, translations]);
+  }, [lang, translations, localeVersion]);
 };
 
 export default useI18n;
