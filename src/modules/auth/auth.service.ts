@@ -131,7 +131,8 @@ export const login = async ({ email, password, totp_token }: LoginParams): Promi
   const user = result.rows[0];
 
   const dummyHash = '$2b$12$LJ3m4ys3Lg3YOCwFfj5NOWJX0GqBiN3H0w5Cqx3z5Gq5X5z5P5Q5S';
-  const isValid = await bcrypt.compare(password, user ? user.password : dummyHash);
+  const passwordHash = user ? user.password : dummyHash;
+  const isValid = await bcrypt.compare(password, passwordHash);
 
   if (!user || !isValid) throw new BadRequestError('Invalid credentials');
 

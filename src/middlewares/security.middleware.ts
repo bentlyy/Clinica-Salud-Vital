@@ -7,7 +7,7 @@ const isProduction = process.env.NODE_ENV === 'production';
 
 export const securityMiddleware = [
   helmet({
-    contentSecurityPolicy: isProduction ? {
+    contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
         scriptSrc: ["'self'"],
@@ -17,17 +17,17 @@ export const securityMiddleware = [
         connectSrc: ["'self'"],
         frameAncestors: ["'none'"],
       },
-    } : false,
+    },
     crossOriginEmbedderPolicy: false,
     dnsPrefetchControl: true,
     frameguard: {
-      action: isProduction ? 'deny' : 'sameorigin',
+      action: 'deny',
     },
-    hsts: isProduction ? {
+    hsts: {
       maxAge: 31536000,
       includeSubDomains: true,
       preload: true,
-    } : false,
+    },
     noSniff: true,
     referrerPolicy: false,
     xssFilter: true,
@@ -43,8 +43,11 @@ export const validateEnvSecurity = (): void => {
     throw new UnauthorizedError('JWT_SECRET no está definido en las variables de entorno');
   }
 
-  if (jwtSecret === defaultSecret || jwtSecret.length < 32) {
-    logger.warn('⚠️ JWT_SECRET es débil o es el valor por defecto. En producción use un secreto de al menos 32 caracteres');
+  if (jwtSecret === defaultSecret) {
+    throw new UnauthorizedError('JWT_SECRET tiene el valor por defecto. Cámbielo antes de iniciar.');
+  }
+  if (jwtSecret.length < 32) {
+    throw new UnauthorizedError('JWT_SECRET debe tener al menos 32 caracteres.');
   }
 
   if (!isProduction) {
