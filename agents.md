@@ -193,6 +193,8 @@ Controllers use `asyncHandler` from `middlewares/asyncHandler.middleware.ts` to 
 | `src/middlewares/asyncHandler.middleware.ts` | Async error wrapper |
 | `src/middlewares/requestLogger.middleware.ts` | Request logging with duration |
 | `src/modules/audit/audit.middleware.ts` | Audit logging middleware |
+| `src/shared/i18n.service.ts` | Backend i18n service (421+ keys × 4 locales) |
+| `src/modules/i18n/` | Exposes translations via `GET /api/v1/i18n/translations` |
 | `db/init.sql` | Full schema + seed (migrations runner applies migration files too) |
 
 ---
@@ -207,6 +209,8 @@ Controllers use `asyncHandler` from `middlewares/asyncHandler.middleware.ts` to 
 | `frontend/src/pages/DoctorPanel.jsx` | Doctor dashboard (agenda + availability + exceptions) |
 | `frontend/src/pages/MyBookingsPage.jsx` | Patient bookings list |
 | `frontend/src/pages/AnalyticsPage.jsx` | Admin analytics dashboard |
+| `frontend/src/i18n/useI18n.js` | I18n hook + I18nContext + I18nProvider — API fetch + localStorage cache + custom event |
+| `frontend/src/i18n/translations.js` | Embedded fallback translations (~421 keys × 4 locales, 18 prefix groups) |
 
 ### AuthContext behavior
 - `loading` starts `true`
@@ -325,8 +329,13 @@ Features:
 
 ### Internacionalización (i18n)
 - Servicio `i18n.service.ts` con 4 idiomas: es, en, pt, fr
-- 30+ traducciones para mensajes del sistema y emails
+- **421+ claves** traducidas en todos los idiomas, 0 duplicados
 - `t(key)` devuelve en locale actual, `tAll(key)` devuelve en todos
+- Frontend: `useI18n` hook + `I18nContext` + `I18nProvider` — fetch API con cache localStorage
+- **14+ páginas migradas**: todas las páginas públicas y privadas usan `t()` sin texto hardcodeado
+- Locale reactivo vía custom event (`locale:changed`) — sin recarga de página
+- `ErrorBoundary` usa `I18nContext` (class component)
+- Fallback automático a español si falta clave en locale actual
 - Configurable via `APP_LOCALE=es|en|pt|fr`
 
 ### Seguridad Mejorada
@@ -403,6 +412,9 @@ Features:
 | `src/shared/query.ts` | Helpers `tenantQuery.build()`, `tenantQuery.where()` |
 | `src/shared/booking-utils.ts` | Shared slot validation (availability, exceptions, overlap) for booking + guest |
 | `src/modules/i18n/` | `GET /api/v1/i18n/translations` — exposes all translations for frontend to fetch |
+| `src/shared/i18n.service.ts` | Backend i18n service — 421+ keys × 4 locales (es/en/pt/fr) |
+| `frontend/src/i18n/useI18n.js` | Frontend hook + I18nContext + I18nProvider — API-backed with localStorage cache |
+| `frontend/src/i18n/translations.js` | Frontend embedded fallback translations — 18 prefix groups |
 
 ### Frontend SaaS
 | Ruta | Página |

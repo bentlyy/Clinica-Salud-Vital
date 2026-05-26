@@ -2,8 +2,10 @@ import { useEffect, useState } from 'react';
 import { getDoctors } from '../api/doctors';
 import { getAvailableSlots, createBooking } from '../api/bookings';
 import { useNavigate } from 'react-router-dom';
+import { useI18n } from '../i18n/useI18n';
 
 export default function DoctorsPage() {
+  const { t } = useI18n();
   const [doctors, setDoctors] = useState([]);
   const [selectedDoctor, setSelectedDoctor] = useState(null);
   const [date, setDate] = useState('');
@@ -12,7 +14,7 @@ export default function DoctorsPage() {
 
   const [loadingDoctors, setLoadingDoctors] = useState(true);
   const [loadingSlots, setLoadingSlots] = useState(false);
-  const [submitting, setSubmitting] = useState(false); // ✅ prevents double-click
+  const [submitting, setSubmitting] = useState(false); // prevents double-click
   const [error, setError] = useState(null);
   const [successMsg, setSuccessMsg] = useState(null);
 
@@ -24,13 +26,13 @@ export default function DoctorsPage() {
         const data = await getDoctors();
         setDoctors(data);
       } catch {
-        setError('Error cargando doctores');
+        setError(t('doctors.error'));
       } finally {
         setLoadingDoctors(false);
       }
     };
     fetchDoctors();
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     if (!selectedDoctor || !date) return;
@@ -45,16 +47,16 @@ export default function DoctorsPage() {
         setSlots(data);
         setSelectedTime(null);
       } catch {
-        setError('Error cargando horarios');
+        setError(t('doctors.error'));
       } finally {
         setLoadingSlots(false);
       }
     };
 
     loadSlots();
-  }, [selectedDoctor, date]);
+  }, [selectedDoctor, date, t]);
 
-  // ✅ Guard against double-click / double-submit
+  // Guard against double-click / double-submit
   const handleBooking = async () => {
     if (submitting) return;
 
@@ -65,14 +67,14 @@ export default function DoctorsPage() {
 
       await createBooking({ doctor_id: selectedDoctor, date, time: selectedTime });
 
-      setSuccessMsg('✅ Reserva realizada con éxito');
+      setSuccessMsg(t('doctors.success_create'));
 
       // Refresh slots to show the booked one as unavailable
       const updated = await getAvailableSlots(selectedDoctor, date);
       setSlots(updated);
       setSelectedTime(null);
     } catch (err) {
-      setError(err.response?.data?.error || 'Error al reservar');
+      setError(err.response?.data?.error || t('doctors.error'));
     } finally {
       setSubmitting(false);
     }
@@ -80,9 +82,9 @@ export default function DoctorsPage() {
 
   return (
     <div>
-      <h2>Reservar hora</h2>
+      <h2>{t('doctors.title')}</h2>
 
-      <button onClick={() => navigate('/my-bookings')}>Ver mis reservas</button>
+      <button onClick={() => navigate('/my-bookings')}>{t('doctors.columns')}</button>
 
       <hr />
 
@@ -99,11 +101,11 @@ export default function DoctorsPage() {
       )}
 
       <div style={{ marginBottom: '20px' }}>
-        <label>Selecciona fecha:</label><br />
+        <label>{t('doctors.subtitle')}</label><br />
         <input
           type="date"
           value={date}
-          min={new Date().toISOString().split('T')[0]} // ✅ prevent past dates in UI
+          min={new Date().toISOString().split('T')[0]} // prevent past dates in UI
           onChange={(e) => {
             setDate(e.target.value);
             setSlots([]);
@@ -113,9 +115,9 @@ export default function DoctorsPage() {
         />
       </div>
 
-      <h3>Selecciona un doctor</h3>
+      <h3>{t('doctors.subtitle')}</h3>
 
-      {loadingDoctors && <p>Cargando doctores...</p>}
+      {loadingDoctors && <p>{t('doctors.loading')}</p>}
 
       <div style={{ display: 'grid', gap: '10px' }}>
         {doctors.map((doc) => (
@@ -145,12 +147,12 @@ export default function DoctorsPage() {
 
       {selectedDoctor && date && (
         <div>
-          <h3>Horarios disponibles</h3>
+          <h3>{t('doctors.columns')}</h3>
 
-          {loadingSlots && <p>Cargando horarios...</p>}
+          {loadingSlots && <p>{t('doctors.loading')}</p>}
 
           {!loadingSlots && slots.length === 0 && (
-            <p>No hay horarios disponibles para esta fecha</p>
+            <p>{t('doctors.empty_desc')}</p>
           )}
 
           <div style={{ display: 'flex', flexWrap: 'wrap' }}>
@@ -175,7 +177,7 @@ export default function DoctorsPage() {
 
           <div style={{ marginTop: '15px' }}>
             <button
-              disabled={!selectedTime || submitting} // ✅ disabled while submitting
+              disabled={!selectedTime || submitting} // disabled while submitting
               onClick={handleBooking}
               style={{
                 padding: '10px 20px',
@@ -186,7 +188,7 @@ export default function DoctorsPage() {
                 opacity: submitting ? 0.6 : 1,
               }}
             >
-              {submitting ? 'Reservando...' : 'Reservar'}
+              {submitting ? t('doctors.saving') : t('doctors.save')}
             </button>
           </div>
         </div>

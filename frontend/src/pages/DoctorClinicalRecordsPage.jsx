@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useI18n } from '../i18n/useI18n';
 import {
   getClinicalRecords,
   getClinicalRecordById,
@@ -48,6 +49,7 @@ const initialForm = {
 };
 
 export default function DoctorClinicalRecordsPage() {
+  const { t } = useI18n();
   const [view, setView] = useState('list');
   const [records, setRecords] = useState([]);
   const [bookings, setBookings] = useState([]);
@@ -73,11 +75,11 @@ export default function DoctorClinicalRecordsPage() {
       setRecords(recordsRes.data || []);
       setBookings(Array.isArray(bookingsRes) ? bookingsRes : (bookingsRes.data || []));
     } catch (err) {
-      setError('Error cargando datos');
+      setError(t('clinical_records.error_load'));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
@@ -142,7 +144,7 @@ export default function DoctorClinicalRecordsPage() {
       setPrescriptions(record.prescriptions || []);
       setView('form');
     } catch (err) {
-      setError('Error cargando ficha clínica');
+      setError(t('clinical_records.error_load'));
     }
   };
 
@@ -245,7 +247,7 @@ export default function DoctorClinicalRecordsPage() {
       setView('list');
       setSelectedRecordId(null);
     } catch (err) {
-      setError(err.response?.data?.error || 'Error al guardar ficha clínica');
+      setError(err.response?.data?.error || t('clinical_records.error_save'));
     } finally {
       setSaving(false);
     }
@@ -278,7 +280,7 @@ export default function DoctorClinicalRecordsPage() {
       <div className="page-container-wide">
         <div className="page-header">
           <div>
-            <h1 style={{ marginBottom: 4 }}>{selectedRecordId ? 'Editar Ficha Clínica' : 'Nueva Ficha Clínica'}</h1>
+            <h1 style={{ marginBottom: 4 }}>{selectedRecordId ? t('clinical_records.edit_record') : t('clinical_records.new_record')}</h1>
             <p style={{ color: 'var(--text-secondary)' }}>
               {formData.patient_id ? `Paciente ID: ${formData.patient_id}` : 'Complete los datos del paciente'}
             </p>
@@ -320,7 +322,7 @@ export default function DoctorClinicalRecordsPage() {
           <h3>Signos Vitales</h3>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 12 }}>
             <div className="form-group">
-              <label className="form-label">Presión arterial</label>
+              <label className="form-label">{t('clinical_records.blood_pressure')}</label>
               <input
                 className="form-input"
                 value={formData.vital_signs.blood_pressure}
@@ -329,7 +331,7 @@ export default function DoctorClinicalRecordsPage() {
               />
             </div>
             <div className="form-group">
-              <label className="form-label">Frec. cardíaca (lpm)</label>
+              <label className="form-label">{t('clinical_records.heart_rate')}</label>
               <input
                 className="form-input"
                 type="number"
@@ -405,9 +407,9 @@ export default function DoctorClinicalRecordsPage() {
         </div>
 
         <div className="analytics-card">
-          <h3>Examen Físico</h3>
+          <h3>{t('clinical_records.physical_exam')}</h3>
           <div className="form-group">
-            <label className="form-label">Hallazgos al examen físico</label>
+            <label className="form-label">{t('clinical_records.physical_exam_label')}</label>
             <textarea
               className="form-input"
               rows={4}
@@ -421,18 +423,18 @@ export default function DoctorClinicalRecordsPage() {
         <div className="analytics-card">
           <h3>Diagnóstico</h3>
           <div className="form-group">
-            <label className="form-label">Diagnóstico (texto libre)</label>
+            <label className="form-label">{t('clinical_records.diagnosis_label')}</label>
             <textarea
               className="form-input"
               rows={3}
               value={formData.diagnosis}
               onChange={e => setFormData(prev => ({ ...prev, diagnosis: e.target.value }))}
-              placeholder="Ej: Hipertensión arterial esencial, Diabetes tipo 2..."
+              placeholder={t('clinical_records.diagnosis_placeholder')}
             />
           </div>
 
           <div className="form-group" style={{ position: 'relative' }}>
-            <label className="form-label">Códigos CIE-10</label>
+            <label className="form-label">{t('clinical_records.cie10_codes')}</label>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
               {formData.cie10_codes.map((code, i) => (
                 <span key={i} className="badge badge-info" style={{ cursor: 'pointer' }} onClick={() => removeCie10Code(i)}>
@@ -485,10 +487,10 @@ export default function DoctorClinicalRecordsPage() {
         <div className="analytics-card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
             <h3 style={{ margin: 0 }}>Receta / Prescripciones</h3>
-            <button onClick={addPrescription} className="btn btn-outline btn-sm">+ Agregar Medicamento</button>
+            <button onClick={addPrescription} className="btn btn-outline btn-sm">+ {t('clinical_records.add_medication')}</button>
           </div>
           {prescriptions.length === 0 && (
-            <p style={{ color: 'var(--text-secondary)', fontSize: 14 }}>No hay medicamentos recetados aún.</p>
+            <p style={{ color: 'var(--text-secondary)', fontSize: 14 }}>{t('clinical_records.no_medications')}</p>
           )}
           {prescriptions.map((p, idx) => (
             <div key={idx} style={{
@@ -513,11 +515,11 @@ export default function DoctorClinicalRecordsPage() {
                   <input className="form-input" value={p.frequency} onChange={e => updatePrescriptionField(idx, 'frequency', e.target.value)} placeholder="Ej: Cada 12 horas" />
                 </div>
                 <div className="form-group">
-                  <label className="form-label">Duración</label>
+                  <label className="form-label">{t('clinical_records.medication_duration')}</label>
                   <input className="form-input" value={p.duration} onChange={e => updatePrescriptionField(idx, 'duration', e.target.value)} placeholder="Ej: 10 días" />
                 </div>
                 <div className="form-group">
-                  <label className="form-label">Vía</label>
+                  <label className="form-label">{t('clinical_records.medication_route')}</label>
                   <select className="form-input" value={p.route} onChange={e => updatePrescriptionField(idx, 'route', e.target.value)}>
                     {Object.entries(ROUTES_MAP).map(([val, label]) => (
                       <option key={val} value={val}>{label}</option>
@@ -525,7 +527,7 @@ export default function DoctorClinicalRecordsPage() {
                   </select>
                 </div>
                 <div className="form-group" style={{ gridColumn: '1 / -1' }}>
-                  <label className="form-label">Instrucciones</label>
+                  <label className="form-label">{t('clinical_records.medication_instructions')}</label>
                   <input className="form-input" value={p.instructions} onChange={e => updatePrescriptionField(idx, 'instructions', e.target.value)} placeholder="Ej: Tomar después de las comidas" />
                 </div>
               </div>
@@ -548,12 +550,12 @@ export default function DoctorClinicalRecordsPage() {
         </div>
 
         <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', padding: '16px 0' }}>
-          <button onClick={handleCancel} className="btn btn-ghost" disabled={saving}>Cancelar</button>
+          <button onClick={handleCancel} className="btn btn-ghost" disabled={saving}>{t('clinical_records.cancel')}</button>
           <button onClick={() => handleSave('draft')} className="btn btn-outline" disabled={saving || !formData.chief_complaint}>
-            {saving ? 'Guardando...' : 'Guardar Borrador'}
+            {saving ? t('clinical_records.saving') : t('clinical_records.save')}
           </button>
           <button onClick={() => handleSave('completed')} className="btn btn-primary" disabled={saving || !formData.chief_complaint}>
-            {saving ? 'Guardando...' : 'Guardar y Completar'}
+            {saving ? t('clinical_records.saving') : 'Guardar y Completar'}
           </button>
         </div>
       </div>
@@ -563,7 +565,7 @@ export default function DoctorClinicalRecordsPage() {
   return (
     <div className="page-container-wide">
       <div className="page-header">
-        <h1>Fichas Clínicas</h1>
+        <h1>{t('clinical_records.title')}</h1>
       </div>
 
       {error && <div className="alert alert-error">{error}</div>}
@@ -577,7 +579,7 @@ export default function DoctorClinicalRecordsPage() {
         <>
           {bookingsWithoutRecord.length > 0 && (
             <div className="analytics-card">
-              <h3>Pacientes Pendientes (sin ficha clínica)</h3>
+              <h3>{t('clinical_records.pending_title')}</h3>
               <p style={{ fontSize: 14, color: 'var(--text-secondary)', marginBottom: 16 }}>
                 Estos pacientes tienen citas próximas y aún no tienen ficha clínica registrada.
               </p>
@@ -591,7 +593,7 @@ export default function DoctorClinicalRecordsPage() {
                       </div>
                     </div>
                     <button onClick={() => handleNewRecord(b)} className="btn btn-primary btn-sm">
-                      Crear Ficha
+                      {t('clinical_records.new_record')}
                     </button>
                   </div>
                 ))}
@@ -600,21 +602,21 @@ export default function DoctorClinicalRecordsPage() {
           )}
 
           <div className="analytics-card">
-            <h3>Fichas Clínicas Registradas</h3>
+            <h3>{t('clinical_records.registered_title')}</h3>
             {records.length === 0 ? (
               <div className="empty-state">
-                <p>No hay fichas clínicas registradas</p>
+                <p>{t('clinical_records.no_records')}</p>
               </div>
             ) : (
               <div style={{ overflowX: 'auto' }}>
                 <table style={{ width: '100%', fontSize: 13 }}>
                   <thead>
                     <tr style={{ background: 'var(--bg-primary)' }}>
-                      <th style={{ padding: 10, textAlign: 'left' }}>Paciente</th>
-                      <th style={{ padding: 10, textAlign: 'left' }}>Diagnóstico</th>
-                      <th style={{ padding: 10, textAlign: 'left' }}>Fecha</th>
+                      <th style={{ padding: 10, textAlign: 'left' }}>{t('clinical_records.patient')}</th>
+                      <th style={{ padding: 10, textAlign: 'left' }}>{t('clinical_records.diagnosis')}</th>
+                      <th style={{ padding: 10, textAlign: 'left' }}>{t('clinical_records.date')}</th>
                       <th style={{ padding: 10, textAlign: 'left' }}>Estado</th>
-                      <th style={{ padding: 10, textAlign: 'right' }}>Acciones</th>
+                      <th style={{ padding: 10, textAlign: 'right' }}>{t('clinical_records.actions')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -622,7 +624,7 @@ export default function DoctorClinicalRecordsPage() {
                       <tr key={r.id} style={{ borderBottom: '1px solid var(--border-light)' }}>
                         <td style={{ padding: 10 }}>{getPatientName(r)}</td>
                         <td style={{ padding: 10, maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {r.diagnosis || <span style={{ color: 'var(--text-muted)' }}>Sin diagnóstico</span>}
+                          {r.diagnosis || <span style={{ color: 'var(--text-muted)' }}>{t('clinical_records.no_diagnosis')}</span>}
                         </td>
                         <td style={{ padding: 10 }}>{r.created_at?.split('T')[0] || '-'}</td>
                         <td style={{ padding: 10 }}>
@@ -633,7 +635,7 @@ export default function DoctorClinicalRecordsPage() {
                         <td style={{ padding: 10, textAlign: 'right' }}>
                           <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
                             <button onClick={() => handleEditRecord(r.id)} className="btn btn-outline btn-sm">
-                              {r.status === 'draft' ? 'Editar' : 'Ver'}
+                              {r.status === 'draft' ? t('clinical_records.edit') : t('clinical_records.view')}
                             </button>
                             {r.status === 'draft' && (
                               <button onClick={() => handleDelete(r.id)} className="btn btn-ghost btn-sm" style={{ color: 'var(--danger-500)' }}>
