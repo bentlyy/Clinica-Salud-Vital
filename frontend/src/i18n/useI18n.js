@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect } from 'react';
 import fallbackTranslations from './translations';
-import api from '../api/auth';
+import api from '../api/axios';
 
 const FALLBACK_LOCALE = 'es';
 const LOCALE_KEY = 'app_locale';
