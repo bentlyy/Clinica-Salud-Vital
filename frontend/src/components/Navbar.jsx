@@ -14,7 +14,7 @@ const locales = [
 export default function Navbar() {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
-  const { locale } = useI18n();
+  const { locale, t } = useI18n();
   const [localeOpen, setLocaleOpen] = useState(false);
 
   return (
@@ -23,50 +23,50 @@ export default function Navbar() {
         <Link to="/" className="navbar-brand">
           <span className="brand-icon">+</span>
           <span className="brand-text">
-            <span className="brand-name">Salud Vital</span>
-            <span className="brand-sub">Clínica Privada</span>
+            <span className="brand-name">{t('app.name')}</span>
+            <span className="brand-sub">{t('app.subtitle')}</span>
           </span>
         </Link>
 
         <nav className="navbar-nav">
           {user && (
             <>
-              <Link to="/booking" className="nav-link">Reservar</Link>
-              <Link to="/my-bookings" className="nav-link">Mis Reservas</Link>
+              <Link to="/booking" className="nav-link">{t('nav.booking')}</Link>
+              <Link to="/my-bookings" className="nav-link">{t('nav.my_bookings')}</Link>
             </>
           )}
 
           {user?.role === 'doctor' && (
             <>
-              <Link to="/doctor" className="nav-link">Panel</Link>
-              <Link to="/doctor/calendar" className="nav-link">Calendario</Link>
-              <Link to="/doctor/clinical-records" className="nav-link">Fichas Clínicas</Link>
+              <Link to="/doctor" className="nav-link">{t('nav.doctor_panel')}</Link>
+              <Link to="/doctor/calendar" className="nav-link">{t('nav.calendar')}</Link>
+              <Link to="/doctor/clinical-records" className="nav-link">{t('nav.clinical_records')}</Link>
             </>
           )}
 
           {user?.role === 'admin' && (
             <>
-              <Link to="/admin/analytics" className="nav-link">Análisis</Link>
-              <Link to="/admin/tenant" className="nav-link">Mi Clínica</Link>
-              <Link to="/admin/register-doctor" className="nav-link nav-link-accent">Registrar Doctor</Link>
+              <Link to="/admin/analytics" className="nav-link">{t('nav.analytics')}</Link>
+              <Link to="/admin/tenant" className="nav-link">{t('nav.my_clinic')}</Link>
+              <Link to="/admin/register-doctor" className="nav-link nav-link-accent">{t('nav.register_doctor')}</Link>
             </>
           )}
 
           {user?.role === 'superadmin' && (
             <>
-              <Link to="/super-admin" className="nav-link">Dashboard</Link>
-              <Link to="/super-admin/tenants" className="nav-link">Tenants</Link>
-              <Link to="/saas/plans" className="nav-link">Planes</Link>
+              <Link to="/super-admin" className="nav-link">{t('nav.dashboard')}</Link>
+              <Link to="/super-admin/tenants" className="nav-link">{t('nav.tenants')}</Link>
+              <Link to="/saas/plans" className="nav-link">{t('nav.plans')}</Link>
             </>
           )}
 
           {!user && (
             <>
-              <Link to="/specialists" className="nav-link">Especialistas</Link>
-              <Link to="/booking" className="nav-link">Reservar</Link>
-              <Link to="/saas/register" className="nav-link nav-link-accent">Crear Clínica</Link>
-              <Link to="/login" className="nav-link">Iniciar Sesión</Link>
-              <Link to="/register" className="btn btn-primary btn-sm">Crear Cuenta</Link>
+              <Link to="/specialists" className="nav-link">{t('nav.specialists')}</Link>
+              <Link to="/booking" className="nav-link">{t('nav.booking')}</Link>
+              <Link to="/saas/register" className="nav-link nav-link-accent">{t('nav.create_clinic')}</Link>
+              <Link to="/login" className="nav-link">{t('nav.login')}</Link>
+              <Link to="/register" className="btn btn-primary btn-sm">{t('nav.register')}</Link>
             </>
           )}
 
@@ -105,7 +105,7 @@ export default function Navbar() {
                 )}
               </span>
               <button onClick={() => { logout(); window.location.href = '/'; }} className="btn btn-ghost btn-sm">
-                Salir
+                {t('nav.logout')}
               </button>
             </div>
           )}
