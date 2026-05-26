@@ -1,9 +1,11 @@
 import { logger } from '../utils/logger.js';
 
-let _stripeInstance: Record<string, unknown> | null = null;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let _stripeInstance: any = null;
 let _webhookSecret: string | null = null;
 
-const createStub = (): Record<string, unknown> => ({
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const createStub = (): any => ({
   checkout: {
     sessions: {
       create: async () => ({ url: '/saas/success', id: 'cs_simulated' }),
@@ -21,13 +23,14 @@ const getConfig = () => ({
   webhookSecret: process.env.STRIPE_WEBHOOK_SECRET || '',
 });
 
-const initStripe = async (): Promise<Record<string, unknown>> => {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const initStripe = async (): Promise<any> => {
   const { secretKey } = getConfig();
   const isConfigured = secretKey.startsWith('sk_test_') || secretKey.startsWith('sk_live_');
   if (isConfigured) {
     try {
       const { default: Stripe } = await import('stripe');
-      return new Stripe(secretKey, { apiVersion: '2025-02-24.acacia' as string });
+      return new Stripe(secretKey, { apiVersion: '2025-02-24.acacia' } as any);
     } catch {
       logger.warn('Stripe package failed to load, using stub');
     }
@@ -36,7 +39,8 @@ const initStripe = async (): Promise<Record<string, unknown>> => {
   return createStub();
 };
 
-export const getStripe = async (): Promise<Record<string, unknown>> => {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const getStripe = async (): Promise<any> => {
   if (!_stripeInstance) _stripeInstance = await initStripe();
   return _stripeInstance;
 };
@@ -54,5 +58,6 @@ export const isStripeConfigured = (): boolean => {
   return secretKey.startsWith('sk_test_') || secretKey.startsWith('sk_live_');
 };
 
-export const stripe = createStub() as Record<string, unknown>;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const stripe: any = createStub();
 export const webhookSecret = '';

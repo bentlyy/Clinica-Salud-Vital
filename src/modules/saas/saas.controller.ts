@@ -12,7 +12,7 @@ export const getPlans = asyncHandler(async (_req: Request, res: Response) => {
 export const getMySubscription = asyncHandler(async (req: Request, res: Response) => {
   const sub = await saasService.getTenantSubscription(req.tenant_id);
   const plan = sub ? await saasService.getPlanById(sub.plan_id) : null;
-  res.json({ subscription: sub, plan });
+  res.json({ subscription: sub || null, plan });
 });
 
 export const createCheckout = asyncHandler(async (req: Request, res: Response) => {
@@ -56,10 +56,7 @@ export const createCheckout = asyncHandler(async (req: Request, res: Response) =
     res.json({ url: (session as Record<string, unknown>).url, session_id: (session as Record<string, unknown>).id });
   } catch (err) {
     logger.error('Stripe checkout error:', err);
-    res.json({
-      url: `/saas/success?plan=${plan_code}&tenant=${req.tenant_id}`,
-      session_id: 'simulated',
-    });
+    res.status(502).json({ error: 'Payment gateway error. Please try again.' });
   }
 });
 
@@ -146,4 +143,18 @@ export const getLimits = asyncHandler(async (req: Request, res: Response) => {
   const patients = await saasService.checkLimits(req.tenant_id, 'patients');
   const storage = await saasService.checkLimits(req.tenant_id, 'storage');
   res.json({ doctors, patients, storage });
+});
+
+export const updateTenantConfig = asyncHandler(async (req: Request, res: Response) => {
+  const allowed = ['name', 'locale', 'timezone', 'config'];
+  const updates: Record<string, unknown> = {};
+  for (const key of allowed) {
+    if (req.body[key] !== undefined) updates[key] = req.body[key];
+  }
+  if (Object.keys(updates).length === 0) {
+    res.status(400).json({ error: 'No valid fields to update' });
+    return;
+  }
+  await saasService.updateTenantConfig(req.tenant_id, updates);
+  res.json({ message: 'Configuration updated' });
 });

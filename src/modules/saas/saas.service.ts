@@ -103,6 +103,15 @@ export const changePlan = async (
     throw new BadRequestError('No active subscription found');
   }
 
+  const doctorCheck = await checkLimits(tenantId, 'doctors');
+  if (plan.max_doctors > -1 && doctorCheck.current > plan.max_doctors) {
+    throw new BadRequestError(`Plan ${newPlanCode} allows max ${plan.max_doctors} doctors, but you have ${doctorCheck.current}`);
+  }
+  const patientCheck = await checkLimits(tenantId, 'patients');
+  if (plan.max_patients > -1 && patientCheck.current > plan.max_patients) {
+    throw new BadRequestError(`Plan ${newPlanCode} allows max ${plan.max_patients} patients, but you have ${patientCheck.current}`);
+  }
+
   const result = await pool.query<Subscription>(
     `UPDATE subscriptions SET plan_id = $1, stripe_subscription_id = COALESCE($3, stripe_subscription_id), updated_at = NOW()
      WHERE id = $2 RETURNING *`,
@@ -124,6 +133,32 @@ export const cancelSubscription = async (tenantId: string): Promise<void> => {
   );
 
   logger.info(`Subscription canceled for tenant ${tenantId}`);
+};
+
+export const updateTenantConfig = async (
+  tenantId: string,
+  data: Record<string, unknown>
+): Promise<void> => {
+  const sets: string[] = [];
+  const params: (string | number | boolean | null)[] = [];
+  let paramIdx = 1;
+
+  for (const [key, value] of Object.entries(data)) {
+    if (value !== undefined) {
+      sets.push(`${key} = $${paramIdx++}`);
+      params.push(value !== null && typeof value === 'object' ? JSON.stringify(value) : (value as string | number | boolean | null));
+    }
+  }
+
+  if (sets.length === 0) return;
+
+  params.push(tenantId);
+  const result = await pool.query(
+    `UPDATE tenants SET ${sets.join(', ')}, updated_at = NOW() WHERE id = $${paramIdx} RETURNING id`,
+    params
+  );
+
+  if (result.rows.length === 0) throw new NotFoundError('Tenant not found');
 };
 
 export const checkFeatureAccess = async (tenantId: string, featureKey: string): Promise<boolean> => {
@@ -265,7 +300,7 @@ export const onboardTenant = async (data: {
 
     const plan = planCode
       ? await getPlanByCode(planCode)
-      : { id: 1 } as Plan;
+      : await getPlanByCode('free');
 
     const now = new Date();
     const periodEnd = new Date(now);

@@ -6,7 +6,8 @@ import jwt from 'jsonwebtoken';
 import { getJWTSecret } from '../../shared/jwt.js';
 import { BadRequestError, NotFoundError } from '../../utils/errors.js';
 import { logger } from '../../utils/logger.js';
-import { getDayOfWeek, isValidDate, isValidTime } from '../../shared/date.js';
+import { isValidDate, isValidTime, getDayOfWeek } from '../../shared/date.js';
+import { validateBookingSlot } from '../../shared/booking-utils.js';
 
 interface BookingInput {
   doctor_id: number;
@@ -111,53 +112,7 @@ export const createBooking = async ({ doctor_id, user_id, date, time, duration =
       throw new BadRequestError('Your account is blocked due to unconfirmed appointments. Please wait before booking again.');
     }
 
-    const day = getDayOfWeek(date);
-
-    const availability = await client.query(
-      `SELECT start_time, end_time FROM doctor_availability
-       WHERE doctor_id = $1 AND day_of_week = $2`,
-      [doctor_id, day]
-    );
-
-    if (availability.rows.length === 0) throw new BadRequestError('Doctor not available on this day');
-
-    const start = new Date(`1970-01-01T${time}`);
-    const end = new Date(start);
-    end.setMinutes(end.getMinutes() + duration);
-
-    const isInsideAnyBlock = availability.rows.some((a: { start_time: string; end_time: string }) => {
-      const startLimit = new Date(`1970-01-01T${a.start_time}`);
-      const endLimit = new Date(`1970-01-01T${a.end_time}`);
-      return start >= startLimit && end <= endLimit;
-    });
-
-    if (!isInsideAnyBlock) throw new BadRequestError('Outside doctor availability');
-
-    const exceptions = await client.query(
-      `SELECT * FROM doctor_exceptions WHERE doctor_id = $1 AND date = $2`,
-      [doctor_id, date]
-    );
-
-    for (const ex of exceptions.rows) {
-      if (ex.is_full_day) throw new BadRequestError('Doctor not available (full day blocked)');
-      if (ex.start_time && ex.end_time) {
-        const exStart = new Date(`1970-01-01T${ex.start_time}`);
-        const exEnd = new Date(`1970-01-01T${ex.end_time}`);
-        if (start < exEnd && end > exStart) throw new BadRequestError('Time blocked by doctor');
-      }
-    }
-
-    const overlap = await client.query(
-      `SELECT 1 FROM bookings
-       WHERE doctor_id = $1 AND date = $2 AND status != 'cancelled'
-       AND (
-         (time <= $3 AND (time + (duration || ' minutes')::interval) > $3)
-         OR ($3 <= time AND ($3::time + ($4 || ' minutes')::interval) > time)
-       )`,
-      [doctor_id, date, time, duration]
-    );
-
-    if (overlap.rows.length > 0) throw new BadRequestError('This time slot is already booked');
+    await validateBookingSlot({ doctorId: doctor_id, date, time, duration, client });
 
     const confirmToken = jwt.sign(
       { user_id, doctor_id, date, time },

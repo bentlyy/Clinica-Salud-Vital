@@ -1,12 +1,15 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/useAuth';
+import { useI18n } from '../i18n/useI18n';
 
 export default function LoginPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const { t } = useI18n();
   const [form, setForm] = useState({ email: '', password: '', totp_token: '' });
-   const [error, setError] = useState(null);
+  const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [needs2FA, setNeeds2FA] = useState(false);
 
@@ -16,6 +19,8 @@ export default function LoginPage() {
     try {
       setSubmitting(true);
       const user = await login(form.email, form.password, needs2FA ? form.totp_token : undefined);
+      const redirect = searchParams.get('redirect');
+      if (redirect) { navigate(redirect); return; }
       if (user.role === 'superadmin') {
         navigate('/super-admin');
       } else if (user.role === 'admin') {
@@ -26,10 +31,10 @@ export default function LoginPage() {
         navigate('/booking');
       }
     } catch (err) {
-      if (err.response?.data?.error === '2FA token required') {
+      if (err.response?.data?.code === '2FA_REQUIRED' || err.response?.data?.error === '2FA token required') {
         setNeeds2FA(true);
       } else {
-        setError(err.response?.data?.error || 'Credenciales inválidas');
+        setError(err.response?.data?.error || t('auth.invalid_credentials'));
       }
     } finally {
       setSubmitting(false);
@@ -40,50 +45,49 @@ export default function LoginPage() {
     <div className="page-container" style={{ maxWidth: 440 }}>
       <div className="card" style={{ padding: 40 }}>
         <div style={{ textAlign: 'center', marginBottom: 28 }}>
-          <div style={{ fontSize: 40, marginBottom: 8 }}>🔑</div>
-          <h2>Iniciar Sesión</h2>
-          <p>Ingresa a tu cuenta de Clínica Salud Vital</p>
+          <h2>{t('auth.login_title')}</h2>
+          <p style={{ color: 'var(--text-secondary)' }}>{t('auth.login_subtitle')}</p>
         </div>
 
         {error && <div className="alert alert-error">{error}</div>}
 
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label className="form-label">Email <span className="required">*</span></label>
+            <label className="form-label">{t('auth.email')} <span className="required">*</span></label>
             <input
               name="email"
               type="email"
               required
               value={form.email}
               onChange={(e) => setForm({ ...form, email: e.target.value })}
-              placeholder="tu@email.com"
+              placeholder={t('auth.email_placeholder')}
               className="form-input"
             />
           </div>
 
           <div className="form-group">
-            <label className="form-label">Contraseña <span className="required">*</span></label>
+            <label className="form-label">{t('auth.password')} <span className="required">*</span></label>
             <input
               name="password"
               type="password"
               required
               value={form.password}
               onChange={(e) => setForm({ ...form, password: e.target.value })}
-              placeholder="Tu contraseña"
+              placeholder={t('auth.password_placeholder')}
               className="form-input"
             />
           </div>
 
           {needs2FA && (
             <div className="form-group">
-              <label className="form-label">Código 2FA <span className="required">*</span></label>
+              <label className="form-label">{t('auth.totp_code')} <span className="required">*</span></label>
               <input
                 name="totp_token"
                 type="text"
                 required
                 value={form.totp_token}
                 onChange={(e) => setForm({ ...form, totp_token: e.target.value })}
-                placeholder="Código de 6 dígitos"
+                placeholder={t('auth.totp_placeholder')}
                 className="form-input"
                 maxLength={6}
                 autoFocus
@@ -92,16 +96,16 @@ export default function LoginPage() {
           )}
 
           <button type="submit" disabled={submitting} className="btn btn-primary btn-block btn-lg" style={{ marginTop: 8 }}>
-            {submitting ? 'Ingresando...' : needs2FA ? 'Verificar 2FA' : 'Iniciar Sesión'}
+            {submitting ? t('auth.logging_in') : needs2FA ? t('auth.verify_2fa') : t('auth.login_button')}
           </button>
         </form>
 
         <div style={{ textAlign: 'center', marginTop: 24, paddingTop: 20, borderTop: '1px solid var(--border-light)' }}>
           <p style={{ marginBottom: 8 }}>
-            ¿No tienes cuenta? <Link to="/register">Regístrate</Link>
+            {t('auth.no_account')} <Link to="/register">{t('auth.register_link')}</Link>
           </p>
           <p>
-            o <Link to="/booking">reserva como invitado</Link>
+            {t('auth.or')} <Link to="/booking">{t('auth.guest_booking')}</Link>
           </p>
         </div>
       </div>
