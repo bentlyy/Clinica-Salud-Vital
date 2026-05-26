@@ -21,5 +21,6 @@ router.post('/cancel', authorize('admin', 'superadmin'), saasController.cancelSu
 router.get('/usage', saasController.getUsage);
 router.get('/usage/summary', saasController.getUsageSummary);
 router.get('/limits', saasController.getLimits);
+router.patch('/tenant', authorize('admin', 'superadmin'), saasController.updateTenantConfig);
 
 export default router;

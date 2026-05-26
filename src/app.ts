@@ -37,6 +37,7 @@ import specialtiesRoutes from './modules/specialties/specialties.routes.js';
 import webhookRoutes from './modules/webhook/webhook.routes.js';
 import saasRoutes from './modules/saas/saas.routes.js';
 import superAdminRoutes from './modules/super-admin/super-admin.routes.js';
+import i18nRoutes from './modules/i18n/i18n.routes.js';
 
 const app: Express = express();
 
@@ -74,6 +75,7 @@ app.use(cors({
 
 app.use(compression());
 
+app.use('/api/saas/webhook/stripe', express.raw({ type: 'application/json' }));
 app.use(express.json({ limit: '100kb' }));
 app.use(requestLogger);
 
@@ -134,6 +136,7 @@ app.use('/api/laboratory', laboratoryRoutes);
 app.use('/api/rbac', rbacRoutes);
 app.use('/api/ml', mlRoutes);
 app.use('/api/specialties', specialtiesRoutes);
+app.use('/api/i18n', i18nRoutes);
 
 /* Serve frontend static files in production */
 if (process.env.NODE_ENV === 'production') {

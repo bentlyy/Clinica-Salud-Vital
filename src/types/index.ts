@@ -20,7 +20,10 @@ export interface Doctor {
   specialty: string;
   email: string;
   user_id: number;
-  slot_duration: number;
+  slot_duration: number | null;
+  tenant_id: string;
+  rut?: string;
+  phone?: string;
   created_at: Date;
   updated_at: Date;
 }
@@ -35,9 +38,13 @@ export interface Booking {
   guest_phone?: string;
   date: string;
   time: string;
+  duration: number;
   status: 'pending' | 'confirmed' | 'cancelled' | 'completed' | 'no_show';
   confirmed: boolean;
   confirmation_token?: string;
+  tenant_id: string;
+  reminder_1h_sent?: boolean;
+  reminder_24h_sent?: boolean;
   created_at: Date;
   updated_at: Date;
 }
@@ -64,11 +71,17 @@ export interface ClinicalRecord {
   id: number;
   patient_id: number;
   doctor_id: number;
-  booking_id: number;
+  booking_id?: number;
   chief_complaint: string;
+  anamnesis?: string;
+  vital_signs?: Record<string, unknown>;
+  physical_exam?: string;
   diagnosis?: string;
+  cie10_codes?: string[];
   treatment_plan?: string;
   notes?: string;
+  status?: string;
+  tenant_id: string;
   created_at: Date;
   updated_at: Date;
 }
@@ -77,9 +90,19 @@ export interface Invoice {
   id: number;
   invoice_number: string;
   patient_id: number;
+  doctor_id?: number;
+  booking_id?: number;
+  concept: string;
+  description?: string;
   amount: number;
+  tax_amount?: number;
+  discount_amount?: number;
+  total_amount: number;
   status: 'pending' | 'paid' | 'overdue' | 'cancelled';
   due_date: Date;
+  notes?: string;
+  payment_data?: Record<string, unknown>;
+  tenant_id: string;
   created_at: Date;
   updated_at: Date;
 }
@@ -88,8 +111,12 @@ export interface LabRequest {
   id: number;
   patient_id: number;
   doctor_id: number;
-  status: 'pending' | 'completed' | 'cancelled';
+  request_number: string;
+  clinical_record_id?: number;
+  priority?: string;
+  status: 'pending' | 'in_progress' | 'completed' | 'cancelled';
   notes?: string;
+  tenant_id: string;
   created_at: Date;
   updated_at: Date;
 }

@@ -401,6 +401,8 @@ Features:
 | `src/shared/stripe.service.ts` | Stripe wrapper con stub mode |
 | `src/shared/usage.middleware.ts` | Tracking de uso por tenant |
 | `src/shared/query.ts` | Helpers `tenantQuery.build()`, `tenantQuery.where()` |
+| `src/shared/booking-utils.ts` | Shared slot validation (availability, exceptions, overlap) for booking + guest |
+| `src/modules/i18n/` | `GET /api/v1/i18n/translations` — exposes all translations for frontend to fetch |
 
 ### Frontend SaaS
 | Ruta | Página |

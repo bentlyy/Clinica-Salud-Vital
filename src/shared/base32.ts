@@ -1,6 +1,7 @@
-export function base32Encode(buf) {
-  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
-  const bits = [];
+const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+
+export function base32Encode(buf: Buffer | Uint8Array | number[]): string {
+  const bits: number[] = [];
   for (const b of buf) {
     for (let i = 7; i >= 0; i--) bits.push((b >> i) & 1);
   }
@@ -16,16 +17,15 @@ export function base32Encode(buf) {
   return result;
 }
 
-export function base32Decode(str) {
-  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+export function base32Decode(str: string): Buffer {
   str = str.replace(/=+$/, '').toUpperCase();
-  const bits = [];
+  const bits: number[] = [];
   for (const ch of str) {
     const idx = alphabet.indexOf(ch);
     if (idx === -1) continue;
     for (let i = 4; i >= 0; i--) bits.push((idx >> i) & 1);
   }
-  const bytes = [];
+  const bytes: number[] = [];
   for (let i = 0; i + 7 < bits.length; i += 8) {
     let byte = 0;
     for (let j = 0; j < 8; j++) byte = (byte << 1) | (bits[i + j] || 0);

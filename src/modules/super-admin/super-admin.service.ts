@@ -1,5 +1,5 @@
 import { pool } from '../../shared/db.js';
-import { NotFoundError } from '../../utils/errors.js';
+import { BadRequestError, NotFoundError } from '../../utils/errors.js';
 
 interface TenantRow {
   id: string;
@@ -17,7 +17,7 @@ export const listTenants = async (
   page: number = 1,
   limit: number = 20,
   filters?: { active?: boolean; search?: string }
-): Promise<{ data: TenantRow[]; total: number; page: number; limit: number }> => {
+): Promise<{ data: TenantRow[]; pagination: { page: number; limit: number; total: number; totalPages: number } }> => {
   const conditions: string[] = ['1=1'];
   const params: (string | number | boolean)[] = [];
   let paramIdx = 1;
@@ -50,11 +50,11 @@ export const listTenants = async (
     params
   );
 
+  const totalPages = Math.ceil(total / limit);
+
   return {
     data: result.rows,
-    total,
-    page,
-    limit,
+    pagination: { page, limit, total, totalPages },
   };
 };
 
@@ -108,7 +108,7 @@ export const updateTenant = async (
     }
   }
 
-  if (sets.length === 0) throw new NotFoundError('No fields to update');
+  if (sets.length === 0) throw new BadRequestError('No fields to update');
 
   params.push(tenantId);
   const result = await pool.query<TenantRow>(
@@ -159,8 +159,8 @@ export const adminCreateTenant = async (data: {
   locale?: string;
   timezone?: string;
   planCode?: string;
-  adminEmail?: string;
-  adminPassword?: string;
+  adminEmail: string;
+  adminPassword: string;
 }): Promise<{ tenantId: string }> => {
   const { tenantService } = await import('../../shared/multi-tenant.service.js');
   const saasService = await import('../saas/saas.service.js');
@@ -195,16 +195,14 @@ export const adminCreateTenant = async (data: {
       );
     }
 
-    if (data.adminEmail && data.adminPassword) {
-      const bcrypt = await import('bcrypt');
-      const hash = await bcrypt.hash(data.adminPassword, 12);
+    const bcrypt = await import('bcrypt');
+    const hash = await bcrypt.hash(data.adminPassword, 12);
 
-      await client.query(
-        `INSERT INTO users (email, password, name, role, tenant_id, password_changed)
-         VALUES ($1, $2, $3, 'admin', $4, true)`,
-        [data.adminEmail, hash, `Admin ${data.name}`, data.id]
-      );
-    }
+    await client.query(
+      `INSERT INTO users (email, password, name, role, tenant_id, password_changed)
+       VALUES ($1, $2, $3, 'admin', $4, true)`,
+      [data.adminEmail, hash, `Admin ${data.name}`, data.id]
+    );
 
     await client.query('COMMIT');
 

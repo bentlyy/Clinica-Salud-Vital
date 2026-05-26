@@ -26,6 +26,10 @@ export const updateTenant = asyncHandler(async (req: Request, res: Response) => 
 
 export const deleteTenant = asyncHandler(async (req: Request, res: Response) => {
   const id = String(req.params.id);
+  if (req.body.confirm !== true) {
+    res.status(400).json({ error: 'Must set confirm=true to delete a tenant' });
+    return;
+  }
   await superAdminService.deleteTenant(id);
   res.json({ message: 'Tenant deleted' });
 });
