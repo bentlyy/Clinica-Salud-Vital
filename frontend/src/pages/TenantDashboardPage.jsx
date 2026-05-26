@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getMySubscription, cancelSubscription, getLimits, getUsageSummary } from '../api/saas';
+import { getMySubscription, cancelSubscription, getLimits, getUsageSummary, updateTenant } from '../api/saas';
 import { useAuth } from '../context/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { useI18n } from '../i18n/useI18n';
@@ -15,6 +15,7 @@ export default function TenantDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [showCancel, setShowCancel] = useState(false);
   const [error, setError] = useState('');
+  const [saved, setSaved] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -45,6 +46,17 @@ export default function TenantDashboardPage() {
       setShowCancel(false);
     } catch (err) {
       setError(err.response?.data?.error || 'Cancelation failed');
+    }
+  };
+
+  const handleSaveConfig = async () => {
+    try {
+      setError('');
+      await updateTenant({ name: user?.tenant_id });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to save configuration');
     }
   };
 
@@ -161,7 +173,9 @@ export default function TenantDashboardPage() {
             <option value="America/Bogota">America/Bogota (UTC-5)</option>
           </select>
         </div>
-        <button className="btn btn--primary">{t('saas.save_changes')}</button>
+        <button className="btn btn--primary" onClick={handleSaveConfig}>
+          {saved ? t('saas.saved') : t('saas.save_changes')}
+        </button>
       </div>
     </div>
   );

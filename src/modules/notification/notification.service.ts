@@ -3,4 +3,4 @@
  * For multi-channel (email + sms + WhatsApp) notifications.
  * @see src/shared/notification.service.ts
  */
-export { sendNotification, getChannelStatus } from '../../shared/notification.service.js';
+export { sendNotification } from '../../shared/notification.service.js';

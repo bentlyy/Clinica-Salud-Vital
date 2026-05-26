@@ -48,10 +48,12 @@ export default function SaasPlansPage() {
       if (checkout.url) {
         window.location.href = checkout.url;
       } else {
+        setProcessing(false);
         navigate(`/saas/success?plan=${planCode}`);
       }
     } catch (err) {
       setError(err.response?.data?.error || err.message || 'Checkout failed');
+      setSelectedPlan(null);
       setProcessing(false);
     }
   };

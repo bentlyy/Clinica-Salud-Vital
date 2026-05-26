@@ -46,28 +46,36 @@ export const AuthProvider = ({ children }) => {
           localStorage.removeItem('refresh_token');
           localStorage.removeItem('user');
         }
+        setLoading(false);
       } else {
-        // Try refresh on app load
         const refreshToken = localStorage.getItem('refresh_token');
         if (refreshToken) {
           api.post('/auth/refresh', { refresh_token: refreshToken })
             .then((res) => {
               localStorage.setItem('access_token', res.data.access_token);
               localStorage.setItem('refresh_token', res.data.refresh_token);
+              const userPayload = parseJwtPayload(res.data.access_token);
+              if (userPayload?.id) {
+                const restored = JSON.parse(savedUser);
+                if (restored.id === userPayload.id) setUser(restored);
+              }
             })
             .catch(() => {
               localStorage.removeItem('access_token');
               localStorage.removeItem('refresh_token');
               localStorage.removeItem('user');
-            });
+            })
+            .finally(() => setLoading(false));
         } else {
           localStorage.removeItem('access_token');
           localStorage.removeItem('refresh_token');
           localStorage.removeItem('user');
+          setLoading(false);
         }
       }
+    } else {
+      setLoading(false);
     }
-    setLoading(false);
   }, []);
 
   useEffect(() => {
