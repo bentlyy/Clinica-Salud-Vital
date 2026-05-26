@@ -1,27 +1,17 @@
-import { useAuth } from '../context/useAuth';
 import { Navigate } from 'react-router-dom';
+import { useAuth } from '../context/useAuth';
+import LoadingState from '../components/LoadingState';
 
 export default function ProtectedRoute({ children, role }) {
   const { user, loading } = useAuth();
 
-  // 🔄 loading más limpio
   if (loading) {
-    return (
-      <div style={{ padding: '20px' }}>
-        <p>Cargando sesión...</p>
-      </div>
-    );
+    return <LoadingState message="Cargando sesión..." />;
   }
 
-  // 🔒 no autenticado
-  if (!user) {
-    return <Navigate to="/" replace />;
-  }
+  if (!user) return <Navigate to="/" replace />;
 
-  // 🚫 sin permisos
-  if (role && user.role !== role) {
-    return <Navigate to="/" replace />;
-  }
+  if (role && user.role !== role) return <Navigate to="/" replace />;
 
   return children;
 }
