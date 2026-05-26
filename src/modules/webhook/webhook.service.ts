@@ -1,6 +1,7 @@
 import { pool } from '../../shared/db.js';
 import { logger } from '../../utils/logger.js';
 import crypto from 'crypto';
+import { URL } from 'url';
 
 interface Webhook {
   id: number;
@@ -73,6 +74,24 @@ export const deleteWebhook = async (id: number): Promise<boolean> => {
   return (result.rowCount ?? 0) > 0;
 };
 
+export const isInternalHost = (urlStr: string): boolean => {
+  try {
+    const parsed = new URL(urlStr);
+    const host = parsed.hostname.toLowerCase();
+    if (host === 'localhost' || host === '127.0.0.1' || host === '0.0.0.0' || host === '::1') return true;
+    if (host.startsWith('10.') || host.startsWith('172.16.') || host.startsWith('192.168.')) return true;
+    if (host.endsWith('.local') || host.endsWith('.internal')) return true;
+    return false;
+  } catch {
+    return true;
+  }
+};
+
+const sleep = (ms: number): Promise<void> => new Promise(resolve => setTimeout(resolve, ms));
+
+const MAX_RETRIES = 3;
+const RETRY_DELAY_MS = 1000;
+
 export const dispatchEvent = async (event: string, payload: Record<string, unknown>): Promise<void> => {
   const webhooks = await pool.query(
     'SELECT * FROM webhooks WHERE active = true AND events @> $1',
@@ -80,34 +99,68 @@ export const dispatchEvent = async (event: string, payload: Record<string, unkno
   );
 
   for (const webhook of webhooks.rows) {
+    if (isInternalHost(webhook.url)) {
+      logger.error(`Webhook blocked: internal URL not allowed`, { webhookId: webhook.id, url: webhook.url });
+      await pool.query(
+        `INSERT INTO webhook_deliveries (webhook_id, event, status, error)
+         VALUES ($1, $2, 'failed', $3)`,
+        [webhook.id, event, 'Blocked: internal URLs not allowed for security']
+      );
+      continue;
+    }
+
     const body = JSON.stringify({ event, payload, timestamp: new Date().toISOString() });
     const signature = crypto
       .createHmac('sha256', webhook.secret)
       .update(body)
       .digest('hex');
 
-    try {
-      const response = await fetch(webhook.url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Webhook-Signature': signature,
-          'X-Webhook-Event': event,
-        },
-        body,
-      });
+    let lastError: string = '';
+    let success = false;
 
-      await pool.query(
-        `INSERT INTO webhook_deliveries (webhook_id, event, status, status_code, response_body)
-         VALUES ($1, $2, $3, $4, $5)`,
-        [webhook.id, event, response.ok ? 'delivered' : 'failed', response.status, await response.text().catch(() => '')]
-      );
-    } catch (err) {
-      logger.error(`Webhook delivery failed`, { webhookId: webhook.id, event, error: (err as Error).message });
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 10000);
+
+        const response = await fetch(webhook.url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Webhook-Signature': signature,
+            'X-Webhook-Event': event,
+          },
+          body,
+          signal: controller.signal,
+        });
+        clearTimeout(timeout);
+
+        await pool.query(
+          `INSERT INTO webhook_deliveries (webhook_id, event, status, status_code, response_body)
+           VALUES ($1, $2, $3, $4, $5)`,
+          [webhook.id, event, response.ok ? 'delivered' : 'failed', response.status, await response.text().catch(() => '')]
+        );
+
+        if (response.ok) {
+          success = true;
+          break;
+        }
+        lastError = `HTTP ${response.status}`;
+      } catch (err) {
+        lastError = (err as Error).message;
+        logger.warn(`Webhook delivery attempt ${attempt}/${MAX_RETRIES} failed`, { webhookId: webhook.id, event, error: lastError });
+        if (attempt < MAX_RETRIES) {
+          await sleep(RETRY_DELAY_MS * attempt);
+        }
+      }
+    }
+
+    if (!success) {
+      logger.error(`Webhook delivery failed after ${MAX_RETRIES} retries`, { webhookId: webhook.id, event, error: lastError });
       await pool.query(
         `INSERT INTO webhook_deliveries (webhook_id, event, status, error)
          VALUES ($1, $2, 'failed', $3)`,
-        [webhook.id, event, (err as Error).message]
+        [webhook.id, event, lastError]
       );
     }
   }

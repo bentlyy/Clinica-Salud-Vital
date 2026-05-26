@@ -27,20 +27,17 @@ export const tenantQuery = {
   },
 
   /**
-   * @deprecated Use whereParam() instead — this interpolates tenantId into SQL directly.
+   * @deprecated SQL injection risk — use whereParam() instead.
    */
-  build(text: string, tenantId: string): string {
-    const placeholder = this.tag('');
-    const searchRegex = new RegExp(placeholder, 'g');
-    return text.replace(searchRegex, `'${tenantId.replace(/'/g, "''")}'`);
+  build(_text: string, _tenantId: string): string {
+    throw new Error('tenantQuery.build() is deprecated due to SQL injection risk. Use whereParam() instead.');
   },
 
   /**
-   * @deprecated Use whereParam() instead — this interpolates tenantId into SQL directly.
+   * @deprecated SQL injection risk — use whereParam() instead.
    */
-  where(tenantId: string, tableAlias?: string): string {
-    const alias = tableAlias ? `${tableAlias}.` : '';
-    return `${alias}tenant_id = '${tenantId.replace(/'/g, "''")}'`;
+  where(_tenantId: string, _tableAlias?: string): string {
+    throw new Error('tenantQuery.where() is deprecated due to SQL injection risk. Use whereParam() instead.');
   },
 
   /**
@@ -86,31 +83,11 @@ export const tenantQuery = {
   },
 };
 
-export const buildTenantInsert = (text: string, tenantId: string): string => {
-  const lower = text.toLowerCase();
-  const insertIdx = lower.indexOf('insert into');
-  if (insertIdx === -1) return text;
-
-  const valuesIdx = lower.indexOf('values', insertIdx);
-  if (valuesIdx === -1) return text;
-
-  const colsEnd = text.indexOf(')', valuesIdx);
-  const colsStart = text.lastIndexOf('(', valuesIdx);
-
-  if (colsStart >= 0 && colsEnd >= 0) {
-    const before = text.slice(0, colsEnd);
-    const after = text.slice(colsEnd);
-    return before + ', tenant_id' + after.replace('VALUES', `VALUES ('${tenantId.replace(/'/g, "''")}', `);
-  }
-
-  if (text.includes('RETURNING')) {
-    const retIdx = text.indexOf('RETURNING');
-    const beforeReturn = text.slice(0, retIdx);
-    const afterReturn = text.slice(retIdx);
-    return beforeReturn.trimEnd() + ', tenant_id ' + afterReturn.replace('VALUES (', `VALUES ('${tenantId.replace(/'/g, "''")}', `);
-  }
-
-  return text.trimEnd() + ', tenant_id ' + text.replace('VALUES (', `VALUES ('${tenantId.replace(/'/g, "''")}', `);
+/**
+ * @deprecated SQL injection risk — use parameterized queries instead.
+ */
+export const buildTenantInsert = (_text: string, _tenantId: string): string => {
+  throw new Error('buildTenantInsert() is deprecated due to SQL injection risk. Use parameterized queries with tenant_id as a parameter instead.');
 };
 
 export const getTenantIdsFromRaw = (params: QueryParams, idx: number, tenantId: string): QueryParams => {

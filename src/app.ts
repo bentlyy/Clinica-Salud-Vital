@@ -67,7 +67,7 @@ app.use(cors({
     if (allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
-      callback(null, origin);
+      callback(new Error('Not allowed by CORS'));
     }
   },
   credentials: true,
@@ -92,7 +92,7 @@ app.use(globalLimiter);
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 30,
+  max: 5,
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Too many login attempts, please try again later' },
