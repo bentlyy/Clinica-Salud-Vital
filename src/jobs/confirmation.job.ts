@@ -5,8 +5,11 @@ import { logger } from '../utils/logger.js';
 
 const BLOCK_DURATION_HOURS = 168; // 7 days
 
-// Pre-computed bcrypt hash so guest records have a valid hash (no login possible)
-const GUEST_DUMMY_HASH = bcrypt.hashSync('__no_guest_login__', 12);
+let _guestDummyHash: string | null = null;
+const getGuestDummyHash = async (): Promise<string> => {
+  if (!_guestDummyHash) _guestDummyHash = await bcrypt.hash('__no_guest_login__', 12);
+  return _guestDummyHash;
+};
 
 export const startConfirmationJob = (): void => {
   cron.schedule('0 2 * * *', async () => {
@@ -49,10 +52,11 @@ export const startConfirmationJob = (): void => {
                 [BLOCK_DURATION_HOURS, booking.guest_rut]
               );
             } else {
+              const dummyHash = await getGuestDummyHash();
               await pool.query(
                 `INSERT INTO users (email, password, rut, role, blocked_until, no_show_count)
                  VALUES ($1, $2, $3, 'guest', NOW() + interval '1 hours' * $4, 1)`,
-                [booking.guest_email, GUEST_DUMMY_HASH, booking.guest_rut, BLOCK_DURATION_HOURS]
+                [booking.guest_email, dummyHash, booking.guest_rut, BLOCK_DURATION_HOURS]
               );
             }
           }

@@ -2,7 +2,11 @@ import { pool } from '../shared/db.js';
 import bcrypt from 'bcrypt';
 import { logger } from '../utils/logger.js';
 
-const HASH = bcrypt.hashSync('REPLACED_PASSWORD', 12);
+let _HASH: string | null = null;
+const getHash = async (): Promise<string> => {
+  if (!_HASH) _HASH = await bcrypt.hash('REPLACED_PASSWORD', 12);
+  return _HASH;
+};
 
 const generateRut = (): string => {
   const body = Math.floor(1000000 + Math.random() * 9000000).toString();
@@ -39,6 +43,7 @@ const pick = <T>(arr: T[]): T => arr[randomInt(0, arr.length - 1)];
 const today = new Date();
 
 export const seed = async (): Promise<void> => {
+  const HASH = await getHash();
   const exists = await pool.query('SELECT 1 FROM users WHERE role = $1 LIMIT 1', ['admin']);
   if (exists.rows.length > 0) {
     // Asegurar pacientes simples incluso si el seed ya se ejecutó
