@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTheme } from '../context/useTheme';
+import { useI18n } from '../i18n/useI18n';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, AreaChart, Area } from 'recharts';
 import api from '../api/axios';
 
@@ -7,12 +8,20 @@ const LIGHT_COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#8
 const DARK_COLORS = ['#4A9EFF', '#00E6A7', '#FFD444', '#FF9955', '#A78BFA', '#6EE7B7'];
 
 const tabs = [
-  { id: 'noshow', label: 'No-Shows', icon: '⚠️' },
-  { id: 'diagnoses', label: 'Diagnósticos', icon: '🩺' },
-  { id: 'demand', label: 'Demanda', icon: '📈' },
-  { id: 'schedules', label: 'Horarios', icon: '🕐' },
-  { id: 'vitals', label: 'Signos Vitales', icon: '❤️' },
+  { id: 'noshow', labelKey: 'analytics.tab_noshow', icon: '⚠️' },
+  { id: 'diagnoses', labelKey: 'analytics.tab_diagnoses', icon: '🩺' },
+  { id: 'demand', labelKey: 'analytics.tab_demand', icon: '📈' },
+  { id: 'schedules', labelKey: 'analytics.tab_schedules', icon: '🕐' },
+  { id: 'vitals', labelKey: 'analytics.tab_vitals', icon: '❤️' },
 ];
+
+const DAY_KEYS = {
+  'Lunes': 'analytics.monday',
+  'Martes': 'analytics.tuesday',
+  'Miércoles': 'analytics.wednesday',
+  'Jueves': 'analytics.thursday',
+  'Viernes': 'analytics.friday',
+};
 
 function getColors(theme) {
   const colors = theme === 'dark' ? DARK_COLORS : LIGHT_COLORS;
@@ -22,6 +31,7 @@ function getColors(theme) {
 }
 
 function NoShowsPanel({ data, colors, chartRed, chartGreen }) {
+  const { t } = useI18n();
   const total = data.reduce((acc, d) => acc + d.total, 0);
   const noShows = data.reduce((acc, d) => acc + d.noShows, 0);
   const rate = total > 0 ? ((noShows / total) * 100).toFixed(1) : 0;
@@ -31,43 +41,43 @@ function NoShowsPanel({ data, colors, chartRed, chartGreen }) {
       <div className="stats-grid">
         <div className="stat-card">
           <div className="stat-value">{total}</div>
-          <div className="stat-label">Total Citas</div>
+          <div className="stat-label">{t('analytics.total_appointments')}</div>
         </div>
         <div className="stat-card">
           <div className="stat-value" style={{ color: chartRed }}>{noShows}</div>
-          <div className="stat-label">No-Asistencias</div>
+          <div className="stat-label">{t('analytics.no_shows')}</div>
         </div>
         <div className="stat-card">
           <div className="stat-value" style={{ color: rate > 15 ? chartRed : chartGreen }}>{rate}%</div>
-          <div className="stat-label">Tasa No-Show</div>
+          <div className="stat-label">{t('analytics.no_show_rate')}</div>
         </div>
       </div>
 
       <div className="analytics-card">
-        <h3>No-Shows por Doctor (Últimos 6 meses)</h3>
+        <h3>{t('analytics.no_shows_by_doctor')}</h3>
         <ResponsiveContainer width="100%" height={300}>
           <BarChart data={data}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="doctor" tick={{ fontSize: 12 }} />
             <YAxis />
             <Tooltip />
-            <Bar dataKey="total" fill={colors[0]} name="Total Citas" />
-            <Bar dataKey="noShows" fill={chartRed} name="No-Asistencias" />
+            <Bar dataKey="total" fill={colors[0]} name={t('analytics.total_appointments')} />
+            <Bar dataKey="noShows" fill={chartRed} name={t('analytics.no_shows')} />
           </BarChart>
         </ResponsiveContainer>
       </div>
 
       <div className="analytics-card">
-        <h3>Predicción de No-Shows (ML)</h3>
+        <h3>{t('analytics.no_show_prediction')}</h3>
         <p style={{ fontSize: 14, color: 'var(--text-secondary)' }}>
-          Modelo predictivo basado en: historial del paciente, día de la semana, hora, doctor asignado.
+          {t('analytics.no_show_prediction_desc')}
         </p>
         <table style={{ width: '100%', marginTop: 12, fontSize: 13 }}>
           <thead>
             <tr style={{ background: 'var(--bg-primary)' }}>
-              <th style={{ padding: 10, textAlign: 'left' }}>Doctor</th>
-              <th style={{ padding: 10, textAlign: 'right' }}>Riesgo</th>
-              <th style={{ padding: 10, textAlign: 'right' }}>Recomendación</th>
+              <th style={{ padding: 10, textAlign: 'left' }}>{t('analytics.doctor')}</th>
+              <th style={{ padding: 10, textAlign: 'right' }}>{t('analytics.risk')}</th>
+              <th style={{ padding: 10, textAlign: 'right' }}>{t('analytics.recommendation')}</th>
             </tr>
           </thead>
           <tbody>
@@ -78,7 +88,7 @@ function NoShowsPanel({ data, colors, chartRed, chartGreen }) {
                   {((d.noShows / d.total) * 100).toFixed(1)}%
                 </td>
                 <td style={{ padding: 10, textAlign: 'right' }}>
-                  {d.noShows / d.total > 0.15 ? '⚠️ Recordatorio extra' : '✅ Normal'}
+                  {d.noShows / d.total > 0.15 ? '⚠️ ' + t('analytics.extra_reminder') : '✅ ' + t('analytics.normal')}
                 </td>
               </tr>
             ))}
@@ -90,32 +100,33 @@ function NoShowsPanel({ data, colors, chartRed, chartGreen }) {
 }
 
 function DiagnosesPanel({ data, colors, chartGreen }) {
+  const { t } = useI18n();
   return (
     <div>
       <div className="analytics-card">
-        <h3>Top 10 Diagnósticos Más Frecuentes</h3>
+        <h3>{t('analytics.top_diagnoses')}</h3>
         <ResponsiveContainer width="100%" height={300}>
           <BarChart data={data} layout="vertical">
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis type="number" />
             <YAxis dataKey="diagnosis" type="category" width={150} tick={{ fontSize: 11 }} />
             <Tooltip />
-            <Bar dataKey="count" fill={colors[1]} name="Casos" />
+            <Bar dataKey="count" fill={colors[1]} name={t('analytics.cases')} />
           </BarChart>
         </ResponsiveContainer>
       </div>
 
       <div className="analytics-card">
-        <h3>Clasificación de Diagnósticos (NLP)</h3>
+        <h3>{t('analytics.diagnosis_classification')}</h3>
         <p style={{ fontSize: 14, color: 'var(--text-secondary)', marginBottom: 16 }}>
-          Clasificador entrenado para sugerir diagnóstico basado en motivo de consulta.
+          {t('analytics.diagnosis_classification_desc')}
         </p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
           {data.slice(0, 6).map((d, i) => (
             <div key={i} style={{ background: 'var(--bg-primary)', padding: 12, borderRadius: 8, border: '1px solid var(--border-light)' }}>
               <div style={{ fontWeight: 600, fontSize: 13 }}>{d.diagnosis}</div>
-              <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{d.count} casos</div>
-              <div style={{ fontSize: 11, color: chartGreen, marginTop: 4 }}>CIE-10: {d.cie10 || 'N/A'}</div>
+              <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{d.count} {t('analytics.cases')}</div>
+              <div style={{ fontSize: 11, color: chartGreen, marginTop: 4 }}>CIE-10: {d.cie10 || t('analytics.na')}</div>
             </div>
           ))}
         </div>
@@ -125,50 +136,51 @@ function DiagnosesPanel({ data, colors, chartGreen }) {
 }
 
 function DemandPanel({ data, colors, chartRed, chartGreen }) {
+  const { t } = useI18n();
   return (
     <div>
       <div className="stats-grid">
         <div className="stat-card">
           <div className="stat-value">{data.reduce((a, d) => a + d.bookings, 0)}</div>
-          <div className="stat-label">Citas (30 días)</div>
+          <div className="stat-label">{t('analytics.appointments_30d')}</div>
         </div>
         <div className="stat-card">
           <div className="stat-value">{Math.round(data.reduce((a, d) => a + d.bookings, 0) / 30)}</div>
-          <div className="stat-label">Promedio/Día</div>
+          <div className="stat-label">{t('analytics.avg_daily')}</div>
         </div>
         <div className="stat-card">
           <div className="stat-value" style={{ color: colors[3] }}>
             {Math.max(...data.map(d => d.bookings))}
           </div>
-          <div className="stat-label">Día Pico</div>
+          <div className="stat-label">{t('analytics.peak_day')}</div>
         </div>
       </div>
 
       <div className="analytics-card">
-        <h3>Demanda de Citas por Día</h3>
+        <h3>{t('analytics.daily_demand')}</h3>
         <ResponsiveContainer width="100%" height={300}>
           <AreaChart data={data}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="date" tick={{ fontSize: 11 }} />
             <YAxis />
             <Tooltip />
-            <Area type="monotone" dataKey="bookings" stroke={colors[0]} fill={colors[0]} fillOpacity={0.3} name="Citas" />
+            <Area type="monotone" dataKey="bookings" stroke={colors[0]} fill={colors[0]} fillOpacity={0.3} name={t('analytics.appointments')} />
           </AreaChart>
         </ResponsiveContainer>
       </div>
 
       <div className="analytics-card">
-        <h3>Predicción de Demanda (LSTM/Prophet)</h3>
+        <h3>{t('analytics.demand_forecast')}</h3>
         <p style={{ fontSize: 14, color: 'var(--text-secondary)' }}>
-          Predicción de demanda para los próximos 7 días basada en series temporales.
+          {t('analytics.demand_forecast_desc')}
         </p>
         <div style={{ marginTop: 12 }}>
           {data.slice(0, 7).map((d, i) => (
             <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--border-light)' }}>
               <span>{d.date}</span>
-              <span style={{ fontWeight: 600 }}>{d.predicted || d.bookings} citas</span>
+              <span style={{ fontWeight: 600 }}>{d.predicted || d.bookings} {t('analytics.appointments')}</span>
               <span style={{ color: d.predicted && d.predicted > d.bookings ? chartRed : chartGreen }}>
-                {d.predicted ? (d.predicted > d.bookings ? '↑ demanda' : '↓ normal') : 'actual'}
+                {d.predicted ? (d.predicted > d.bookings ? '↑ ' + t('analytics.demand_up') : '↓ ' + t('analytics.normal')) : t('analytics.actual')}
               </span>
             </div>
           ))}
@@ -179,19 +191,20 @@ function DemandPanel({ data, colors, chartRed, chartGreen }) {
 }
 
 function SchedulesPanel({ data, chartRed, chartGreen }) {
+  const { t } = useI18n();
   return (
     <div>
       <div className="analytics-card">
-        <h3>Mejores Horarios por Día (Heatmap)</h3>
+        <h3>{t('analytics.best_slots')}</h3>
         <p style={{ fontSize: 14, color: 'var(--text-secondary)', marginBottom: 16 }}>
-          Análisis de disponibilidad óptimo basado en patrones históricos.
+          {t('analytics.best_slots_desc')}
         </p>
         <div style={{ display: 'grid', gap: 8 }}>
           {['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'].map((day) => {
             const dayData = data.find(d => d.day === day);
             return (
               <div key={day} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <span style={{ width: 60, fontWeight: 500 }}>{day}</span>
+                <span style={{ width: 60, fontWeight: 500 }}>{t(DAY_KEYS[day])}</span>
                 <div style={{ display: 'flex', gap: 4, flex: 1 }}>
                   {['09:00', '10:00', '11:00', '14:00', '15:00', '16:00'].map((hour) => {
                     const hourData = dayData?.hours?.find(h => h.time === hour);
@@ -211,13 +224,13 @@ function SchedulesPanel({ data, chartRed, chartGreen }) {
       </div>
 
       <div className="analytics-card">
-        <h3>Recomendaciones de Horarios (ML)</h3>
+        <h3>{t('analytics.schedule_recommendations')}</h3>
         <table style={{ width: '100%', fontSize: 13 }}>
           <thead>
             <tr style={{ background: 'var(--bg-primary)' }}>
-              <th style={{ padding: 10, textAlign: 'left' }}>Día</th>
-              <th style={{ padding: 10, textAlign: 'left' }}>Mejor Hora</th>
-              <th style={{ padding: 10, textAlign: 'left' }}>Ocupación</th>
+              <th style={{ padding: 10, textAlign: 'left' }}>{t('analytics.day')}</th>
+              <th style={{ padding: 10, textAlign: 'left' }}>{t('analytics.best_time')}</th>
+              <th style={{ padding: 10, textAlign: 'left' }}>{t('analytics.occupancy')}</th>
             </tr>
           </thead>
           <tbody>
@@ -245,38 +258,39 @@ function SchedulesPanel({ data, chartRed, chartGreen }) {
 }
 
 function VitalsPanel({ data, chartRed, chartGreen }) {
+  const { t } = useI18n();
   const anomalies = data.filter(d => d.anomaly);
   return (
     <div>
       <div className="stats-grid">
         <div className="stat-card">
           <div className="stat-value">{data.length}</div>
-          <div className="stat-label">Registros Totales</div>
+          <div className="stat-label">{t('analytics.total_records')}</div>
         </div>
         <div className="stat-card">
           <div className="stat-value" style={{ color: chartRed }}>{anomalies.length}</div>
-          <div className="stat-label">Anomalías Detectadas</div>
+          <div className="stat-label">{t('analytics.anomalies_detected')}</div>
         </div>
         <div className="stat-card">
           <div className="stat-value" style={{ color: chartGreen }}>{data.length - anomalies.length}</div>
-          <div className="stat-label">Normales</div>
+          <div className="stat-label">{t('analytics.normal')}</div>
         </div>
       </div>
 
       {anomalies.length > 0 && (
         <div className="analytics-card">
-          <h3>⚠️ Signos Vitales Anómalos (Autoencoder/Isolation Forest)</h3>
+          <h3>{t('analytics.vital_anomalies')}</h3>
           <p style={{ fontSize: 14, color: 'var(--text-secondary)' }}>
-            Detección de anomalías en signos vitales usando modelos de Machine Learning.
+            {t('analytics.vital_anomalies_desc')}
           </p>
           {anomalies.map((d, i) => (
             <div key={i} className="alert-card danger" style={{ marginTop: 12 }}>
-              <strong>Paciente ID: {d.patientId}</strong>
+              <strong>{t('analytics.patient_id')}: {d.patientId}</strong>
               <div style={{ marginTop: 8, fontSize: 13 }}>
-                <div>Fecha: {d.date}</div>
-                <div>Presión: {d.pressure} {d.pressureAnomaly && <span style={{ color: chartRed }}>⚠️</span>}</div>
-                <div>Frecuencia Cardíaca: {d.heartRate} lpm {d.heartRateAnomaly && <span style={{ color: chartRed }}>⚠️</span>}</div>
-                <div>Temperatura: {d.temperature}°C {d.tempAnomaly && <span style={{ color: chartRed }}>⚠️</span>}</div>
+                <div>{t('analytics.date')}: {d.date}</div>
+                <div>{t('analytics.pressure')}: {d.pressure} {d.pressureAnomaly && <span style={{ color: chartRed }}>⚠️</span>}</div>
+                <div>{t('analytics.heart_rate')}: {d.heartRate} {t('analytics.bpm')} {d.heartRateAnomaly && <span style={{ color: chartRed }}>⚠️</span>}</div>
+                <div>{t('analytics.temperature')}: {d.temperature}°C {d.tempAnomaly && <span style={{ color: chartRed }}>⚠️</span>}</div>
               </div>
             </div>
           ))}
@@ -284,13 +298,13 @@ function VitalsPanel({ data, chartRed, chartGreen }) {
       )}
 
       <div className="analytics-card">
-        <h3>Distribución de Signos Vitales</h3>
+        <h3>{t('analytics.vital_distribution')}</h3>
         <ResponsiveContainer width="100%" height={250}>
           <PieChart>
             <Pie
               data={[
-                { name: 'Normales', value: data.length - anomalies.length },
-                { name: 'Anómalos', value: anomalies.length },
+                { name: t('analytics.normal'), value: data.length - anomalies.length },
+                { name: t('analytics.anomalous'), value: anomalies.length },
               ]}
               cx="50%"
               cy="50%"
@@ -311,6 +325,7 @@ function VitalsPanel({ data, chartRed, chartGreen }) {
 }
 
 export default function AnalyticsPage() {
+  const { t } = useI18n();
   const { theme } = useTheme();
   const [activeTab, setActiveTab] = useState('noshow');
   const [loading, setLoading] = useState(true);
@@ -402,7 +417,7 @@ export default function AnalyticsPage() {
       <div className="page-container">
         <div style={{ textAlign: 'center', padding: 60 }}>
           <div className="spinner" style={{ margin: 'auto' }}></div>
-          <p>Cargando análisis...</p>
+          <p>{t('analytics.loading')}</p>
         </div>
       </div>
     );
@@ -414,8 +429,8 @@ export default function AnalyticsPage() {
     <div className="page-container">
       <div style={{ marginBottom: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
-          <h1 style={{ marginBottom: 4 }}>Análisis y Predicciones</h1>
-          <p style={{ color: 'var(--text-secondary)' }}>Dashboard de Machine Learning y Deep Learning</p>
+          <h1 style={{ marginBottom: 4 }}>{t('analytics.title')}</h1>
+          <p style={{ color: 'var(--text-secondary)' }}>{t('analytics.subtitle')}</p>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           <button
@@ -423,7 +438,7 @@ export default function AnalyticsPage() {
             className="btn btn-outline"
             style={{ padding: '10px 20px' }}
           >
-            📥 Exportar Excel
+            📥 {t('analytics.export_excel')}
           </button>
           <button
             onClick={trainModels}
@@ -431,24 +446,24 @@ export default function AnalyticsPage() {
             className="btn btn-primary"
             style={{ padding: '10px 20px' }}
           >
-            {training ? '🔄 Entrenando...' : '🧠 Entrenar Modelos'}
+            {training ? '🔄 ' + t('analytics.training') : '🧠 ' + t('analytics.train_models')}
           </button>
         </div>
       </div>
 
       <div className="model-status-bar">
-        <span style={{ fontWeight: 600, marginRight: 12 }}>Estado de Modelos:</span>
+        <span style={{ fontWeight: 600, marginRight: 12 }}>{t('analytics.model_status')}</span>
         <span className={`status-badge ${modelStatus.noShowModel === 'loaded' ? 'success' : 'warning'}`}>
-          No-Shows: {modelStatus.noShowModel === 'loaded' ? '✅' : '⏳'}
+          {t('analytics.model_noshow')}: {modelStatus.noShowModel === 'loaded' ? '✅' : '⏳'}
         </span>
         <span className={`status-badge ${modelStatus.diagnosisModel === 'loaded' ? 'success' : 'warning'}`}>
-          Diagnósticos: {modelStatus.diagnosisModel === 'loaded' ? '✅' : '⏳'}
+          {t('analytics.model_diagnoses')}: {modelStatus.diagnosisModel === 'loaded' ? '✅' : '⏳'}
         </span>
         <span className={`status-badge ${modelStatus.demandModel === 'loaded' ? 'success' : 'warning'}`}>
-          Demanda: {modelStatus.demandModel === 'loaded' ? '✅' : '⏳'}
+          {t('analytics.model_demand')}: {modelStatus.demandModel === 'loaded' ? '✅' : '⏳'}
         </span>
         <span className={`status-badge ${modelStatus.vitalAnomalyModel === 'trained' ? 'success' : 'warning'}`}>
-          Vitals: {modelStatus.vitalAnomalyModel === 'trained' ? '✅' : '⏳'}
+          {t('analytics.model_vitals')}: {modelStatus.vitalAnomalyModel === 'trained' ? '✅' : '⏳'}
         </span>
       </div>
 
@@ -459,13 +474,13 @@ export default function AnalyticsPage() {
           display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12
         }}>
           <span style={{ color: 'var(--danger-700, #b91c1c)' }}>
-            Error al cargar datos. Los gráficos pueden estar vacíos.
+            {t('analytics.fetch_error')}
           </span>
           <button onClick={fetchAllData} style={{
             padding: '8px 16px', border: 'none', borderRadius: 6,
             background: 'var(--danger-500, #ef4444)', color: '#fff', cursor: 'pointer', fontSize: 14
           }}>
-            Reintentar
+            {t('analytics.retry')}
           </button>
         </div>
       )}
@@ -478,7 +493,7 @@ export default function AnalyticsPage() {
             onClick={() => setActiveTab(tab.id)}
           >
             <span className="tab-icon">{tab.icon}</span>
-            <span>{tab.label}</span>
+            <span>{t(tab.labelKey)}</span>
           </button>
         ))}
       </div>
@@ -599,4 +614,3 @@ export default function AnalyticsPage() {
     </div>
   );
 }
-

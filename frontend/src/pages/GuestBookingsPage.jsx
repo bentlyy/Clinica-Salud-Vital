@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { getGuestBookings } from '../api/bookings';
 import { formatRut, validateRut, cleanRut } from '../utils/rut.js';
+import { useI18n } from '../i18n/useI18n';
 
 export default function GuestBookingsPage() {
+  const { t } = useI18n();
   const [rut, setRut] = useState('');
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -14,7 +16,7 @@ export default function GuestBookingsPage() {
     setError(null);
     setSearched(false);
 
-    if (!validateRut(cleanRut(rut))) { setError('RUT inválido'); return; }
+    if (!validateRut(cleanRut(rut))) { setError(t('guest_bookings.rut_invalid')); return; }
 
     try {
       setLoading(true);
@@ -22,7 +24,7 @@ export default function GuestBookingsPage() {
       setBookings(data);
       setSearched(true);
     } catch (err) {
-      setError(err.response?.data?.error || 'Error buscando reservas');
+      setError(err.response?.data?.error || t('guest_bookings.error'));
     } finally {
       setLoading(false);
     }
@@ -30,18 +32,18 @@ export default function GuestBookingsPage() {
 
   return (
     <div className="page-container">
-      <h1 style={{ marginBottom: 8 }}>Buscar mis Reservas</h1>
-      <p style={{ marginBottom: 24 }}>Ingresa tu RUT para ver tus citas médicas</p>
+      <h1 style={{ marginBottom: 8 }}>{t('guest_bookings.title')}</h1>
+      <p style={{ marginBottom: 24 }}>{t('guest_bookings.rut_hint')}</p>
 
       <form onSubmit={handleSearch} className="card" style={{ padding: 24, marginBottom: 24 }}>
         {error && <div className="alert alert-error">{error}</div>}
         <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end', flexWrap: 'wrap' }}>
           <div style={{ flex: 1, minWidth: 200 }}>
-            <label className="form-label">RUT</label>
-            <input value={rut} onChange={(e) => setRut(formatRut(e.target.value))} placeholder="12.345.678-5" className="form-input" />
+            <label className="form-label">{t('guest_bookings.rut_label')}</label>
+            <input value={rut} onChange={(e) => setRut(formatRut(e.target.value))} placeholder={t('guest_bookings.rut_placeholder')} className="form-input" />
           </div>
           <button type="submit" disabled={loading} className="btn btn-primary">
-            {loading ? 'Buscando...' : 'Buscar'}
+            {loading ? t('guest_bookings.searching') : t('guest_bookings.search')}
           </button>
         </div>
       </form>
@@ -49,8 +51,8 @@ export default function GuestBookingsPage() {
       {searched && bookings.length === 0 && (
         <div className="empty-state">
           <div className="empty-state-icon">📋</div>
-          <h3>Sin reservas</h3>
-          <p>No se encontraron reservas para este RUT</p>
+          <h3>{t('guest_bookings.empty_title')}</h3>
+          <p>{t('guest_bookings.empty_desc')}</p>
         </div>
       )}
 
@@ -63,7 +65,7 @@ export default function GuestBookingsPage() {
                 <p style={{ margin: '2px 0 0', fontSize: 14 }}>{b.specialty}</p>
               </div>
               <span className={`badge ${b.confirmed ? 'badge-success' : b.status === 'no_show' ? 'badge-danger' : 'badge-warning'}`}>
-                {b.confirmed ? 'Confirmada' : b.status === 'no_show' ? 'No Asistida' : 'Pendiente'}
+                {b.confirmed ? t('guest_bookings.status_confirmed') : b.status === 'no_show' ? t('guest_bookings.status_cancelled') : t('guest_bookings.status_pending')}
               </span>
             </div>
             <div style={{ display: 'flex', gap: 16, fontSize: 14, color: 'var(--text-secondary)' }}>

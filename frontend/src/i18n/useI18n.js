@@ -1,6 +1,8 @@
-import { useMemo, useState, useEffect } from 'react';
+import { createContext, createElement, useMemo, useState, useEffect } from 'react';
 import fallbackTranslations from './translations';
 import api from '../api/axios';
+
+export const I18nContext = createContext(null);
 
 const FALLBACK_LOCALE = 'es';
 const LOCALE_KEY = 'app_locale';
@@ -98,6 +100,11 @@ export const useI18n = (locale) => {
 
     return { t, tAll, locale: lang };
   }, [lang, translations, localeVersion]);
+};
+
+export const I18nProvider = ({ children, locale }) => {
+  const i18n = useI18n(locale);
+  return createElement(I18nContext.Provider, { value: i18n }, children);
 };
 
 export default useI18n;

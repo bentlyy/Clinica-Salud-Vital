@@ -2,11 +2,13 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/useAuth';
 import { useTheme } from '../context/useTheme';
+import { useI18n } from '../i18n/useI18n';
 
 export default function HomePage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { theme } = useTheme();
+  const { t } = useI18n();
   const [expandedSpecialty, setExpandedSpecialty] = useState(null);
   const [showReminderInfo, setShowReminderInfo] = useState(false);
 
@@ -14,85 +16,85 @@ export default function HomePage() {
     {
       id: 'cardiologia',
       icon: '❤️',
-      name: 'Cardiología',
-      desc: 'Cuidado integral del corazón',
+      name: 'home.spec_cardio',
+      desc: 'home.spec_cardio_desc',
+      department: 'home.spec_cardio_dept',
       color: theme === 'dark' ? '#ef4444' : '#dc2626',
       bgLight: theme === 'dark' ? 'rgba(239, 68, 68, 0.15)' : '#fef2f2',
-      department: 'Departamento de Ciencias Cardiovasculares',
       procedures: [
-        'Electrocardiograma (ECG)',
-        'Ecocardiograma Doppler',
-        'Prueba de esfuerzo',
-        'Holter de 24 horas',
-        'Cateterismo cardíaco',
-        'Control de hipertensión',
+        'home.proc_ecg',
+        'home.proc_echo',
+        'home.proc_stress',
+        'home.proc_holter',
+        'home.proc_catheter',
+        'home.proc_hypertension',
       ],
       doctors: [
-        { name: 'Dr. Roberto Méndez', sub: 'Cardiólogo Intervencionista' },
-        { name: 'Dra. Carolina Fuentes', sub: 'Arritmóloga' },
+        { name: 'home.doctor_1_name', sub: 'home.doctor_1_title' },
+        { name: 'home.doctor_2_name', sub: 'home.doctor_2_title' },
       ],
     },
     {
       id: 'dermatologia',
       icon: '🔬',
-      name: 'Dermatología',
-      desc: 'Salud y estética de la piel',
+      name: 'home.spec_derma',
+      desc: 'home.spec_derma_desc',
+      department: 'home.spec_derma_dept',
       color: theme === 'dark' ? '#a855f7' : '#9333ea',
       bgLight: theme === 'dark' ? 'rgba(168, 85, 247, 0.15)' : '#faf5ff',
-      department: 'Departamento de Dermatología y Estética',
       procedures: [
-        'Dermatoscopia digital',
-        'Biopsia de piel',
-        'Tratamiento de acné',
-        'Cirugía de lunares',
-        'Crioterapia',
-        'Láser dermatológico',
+        'home.proc_dermatoscopy',
+        'home.proc_biopsy',
+        'home.proc_acne',
+        'home.proc_mole_surgery',
+        'home.proc_cryo',
+        'home.proc_laser',
       ],
       doctors: [
-        { name: 'Dra. Valentina Rojas', sub: 'Dermatóloga Clínica' },
-        { name: 'Dr. Felipe Contreras', sub: 'Cirujano Dermatológico' },
+        { name: 'home.doctor_3_name', sub: 'home.doctor_3_title' },
+        { name: 'home.doctor_4_name', sub: 'home.doctor_4_title' },
       ],
     },
     {
       id: 'neurologia',
       icon: '🧠',
-      name: 'Neurología',
-      desc: 'Sistema nervioso y cerebro',
+      name: 'home.spec_neuro',
+      desc: 'home.spec_neuro_desc',
+      department: 'home.spec_neuro_dept',
       color: theme === 'dark' ? '#3b82f6' : '#2563eb',
       bgLight: theme === 'dark' ? 'rgba(59, 130, 246, 0.15)' : '#eff6ff',
-      department: 'Departamento de Neurociencias',
       procedures: [
-        'Electroencefalograma (EEG)',
-        'Resonancia magnética cerebral',
-        'Potenciales evocados',
-        'Tratamiento de migrañas',
-        'Evaluación de epilepsia',
-        'Neurorehabilitación',
+        'home.proc_eeg',
+        'home.proc_mri',
+        'home.proc_evoked',
+        'home.proc_migraine',
+        'home.proc_epilepsy',
+        'home.proc_neurorehab',
       ],
       doctors: [
-        { name: 'Dr. Andrés Villalobos', sub: 'Neurólogo Clínico' },
-        { name: 'Dra. Paula Soto', sub: 'Neurofisióloga' },
+        { name: 'home.doctor_5_name', sub: 'home.doctor_5_title' },
+        { name: 'home.doctor_6_name', sub: 'home.doctor_6_title' },
       ],
     },
     {
       id: 'pediatria',
       icon: '👶',
-      name: 'Pediatría',
-      desc: 'Atención médica infantil',
+      name: 'home.spec_pedia',
+      desc: 'home.spec_pedia_desc',
+      department: 'home.spec_pedia_dept',
       color: theme === 'dark' ? '#fbbf24' : '#f59e0b',
       bgLight: theme === 'dark' ? 'rgba(251, 191, 36, 0.15)' : '#fffbeb',
-      department: 'Departamento de Pediatría y Adolescencia',
       procedures: [
-        'Control de niño sano',
-        'Vacunación',
-        'Control de crecimiento',
-        'Tratamiento de infecciones',
-        'Alergias pediátricas',
-        'Orientación nutricional',
+        'home.proc_wellness',
+        'home.proc_vaccination',
+        'home.proc_growth',
+        'home.proc_infections',
+        'home.proc_allergies',
+        'home.proc_nutrition',
       ],
       doctors: [
-        { name: 'Dra. Camila Espinoza', sub: 'Pediatra General' },
-        { name: 'Dr. Matías Herrera', sub: 'Neonatólogo' },
+        { name: 'home.doctor_7_name', sub: 'home.doctor_7_title' },
+        { name: 'home.doctor_8_name', sub: 'home.doctor_8_title' },
       ],
     },
   ];
@@ -106,25 +108,23 @@ export default function HomePage() {
       {/* Hero */}
       <section className="hero">
         <div className="hero-content">
-          <h1 className="hero-title">
-            Clínica <span className="text-accent">Salud Vital</span>
-          </h1>
-          <p className="hero-subtitle">Medicina de excelencia — Tu salud merece la mejor atención</p>
+          <h1 className="hero-title" dangerouslySetInnerHTML={{ __html: t('home.hero_title') }} />
+          <p className="hero-subtitle">{t('home.hero_subtitle')}</p>
           <div className="hero-actions">
             <button onClick={() => navigate('/booking')} className="btn btn-primary btn-lg">
-              Reservar Hora Médica
+              {t('home.book_appointment')}
             </button>
             {!user && (
               <>
-                <Link to="/login" className="btn btn-outline btn-lg">Iniciar Sesión</Link>
-                <Link to="/register" className="btn btn-success btn-lg">Crear Cuenta</Link>
+                <Link to="/login" className="btn btn-outline btn-lg">{t('home.login')}</Link>
+                <Link to="/register" className="btn btn-success btn-lg">{t('home.create_account')}</Link>
               </>
             )}
           </div>
         </div>
       </section>
 
-      {/* Features - Interactivas */}
+      {/* Features */}
       <section className="section">
         <div className="grid grid-3">
           <div
@@ -135,9 +135,9 @@ export default function HomePage() {
             onKeyDown={(e) => e.key === 'Enter' && navigate('/specialists')}
           >
             <div className="feature-icon">👨‍⚕️</div>
-            <h3>Especialistas de Primera</h3>
-            <p>Equipo médico certificado en Cardiología, Dermatología, Neurología y Pediatría</p>
-            <span className="feature-link">Ver especialistas →</span>
+            <h3>{t('home.feature_specialists_title')}</h3>
+            <p>{t('home.feature_specialists_desc')}</p>
+            <span className="feature-link">{t('home.feature_specialists_link')}</span>
           </div>
 
           <div
@@ -148,9 +148,9 @@ export default function HomePage() {
             onKeyDown={(e) => e.key === 'Enter' && navigate('/booking')}
           >
             <div className="feature-icon">📅</div>
-            <h3>Reserva Online 24/7</h3>
-            <p>Agenda tu cita en cualquier momento, sin llamadas ni esperas</p>
-            <span className="feature-link">Reservar ahora →</span>
+            <h3>{t('home.feature_online_title')}</h3>
+            <p>{t('home.feature_online_desc')}</p>
+            <span className="feature-link">{t('home.feature_online_link')}</span>
           </div>
 
           <div
@@ -161,9 +161,9 @@ export default function HomePage() {
             onKeyDown={(e) => e.key === 'Enter' && setShowReminderInfo(!showReminderInfo)}
           >
             <div className="feature-icon">🔔</div>
-            <h3>Recordatorios Automáticos</h3>
-            <p>Te notificamos por email para que nunca olvides tu cita</p>
-            <span className="feature-link">{showReminderInfo ? 'Ocultar info ▲' : 'Saber más →'}</span>
+            <h3>{t('home.feature_reminders_title')}</h3>
+            <p>{t('home.feature_reminders_desc')}</p>
+            <span className="feature-link">{showReminderInfo ? t('home.feature_reminders_hide') : t('home.feature_reminders_link')}</span>
           </div>
         </div>
 
@@ -173,29 +173,29 @@ export default function HomePage() {
               <div className="reminder-step">
                 <div className="reminder-step-number">1</div>
                 <div>
-                  <strong>Reservas tu cita</strong>
-                  <p>Al agendar tu hora médica, tu email queda registrado automáticamente</p>
+                  <strong>{t('home.reminder_step1_title')}</strong>
+                  <p>{t('home.reminder_step1_desc')}</p>
                 </div>
               </div>
               <div className="reminder-step">
                 <div className="reminder-step-number">2</div>
                 <div>
-                  <strong>Recibes confirmación</strong>
-                  <p>Inmediatamente recibes un correo con los detalles de tu cita</p>
+                  <strong>{t('home.reminder_step2_title')}</strong>
+                  <p>{t('home.reminder_step2_desc')}</p>
                 </div>
               </div>
               <div className="reminder-step">
                 <div className="reminder-step-number">3</div>
                 <div>
-                  <strong>Recordatorio 24h antes</strong>
-                  <p>Te enviamos un recordatorio un día antes para que no olvides tu compromiso</p>
+                  <strong>{t('home.reminder_step3_title')}</strong>
+                  <p>{t('home.reminder_step3_desc')}</p>
                 </div>
               </div>
               <div className="reminder-step">
                 <div className="reminder-step-number">4</div>
                 <div>
-                  <strong>Confirmas tu asistencia</strong>
-                  <p>Debes confirmar tu cita desde el email para evitar bloqueo de 7 días</p>
+                  <strong>{t('home.reminder_step4_title')}</strong>
+                  <p>{t('home.reminder_step4_desc')}</p>
                 </div>
               </div>
             </div>
@@ -203,10 +203,10 @@ export default function HomePage() {
         )}
       </section>
 
-      {/* Specialties - Expandibles */}
+      {/* Specialties */}
       <section className="section">
-        <h2 className="section-title">Nuestras Especialidades</h2>
-        <p className="section-subtitle">Haz clic en una especialidad para ver más detalles</p>
+        <h2 className="section-title">{t('home.specialties_title')}</h2>
+        <p className="section-subtitle">{t('home.specialties_subtitle')}</p>
         <div className="grid grid-4">
           {specialtiesData.map((spec) => (
             <div
@@ -219,8 +219,8 @@ export default function HomePage() {
               style={{ '--spec-color': spec.color, '--spec-bg': spec.bgLight }}
             >
               <div className="specialty-icon">{spec.icon}</div>
-              <h4>{spec.name}</h4>
-              <p>{spec.desc}</p>
+              <h4>{t(spec.name)}</h4>
+              <p>{t(spec.desc)}</p>
               <span className="specialty-expand-icon">{expandedSpecialty === spec.id ? '▲' : '▼'}</span>
             </div>
           ))}
@@ -236,33 +236,33 @@ export default function HomePage() {
                   <div className="specialty-detail-header" style={{ background: spec.color }}>
                     <span className="specialty-detail-icon">{spec.icon}</span>
                     <div>
-                      <h3>{spec.name}</h3>
-                      <p>{spec.department}</p>
+                      <h3>{t(spec.name)}</h3>
+                      <p>{t(spec.department)}</p>
                     </div>
                   </div>
 
                   <div className="specialty-detail-body">
                     <div className="specialty-detail-section">
-                      <h4>Procedimientos y Servicios</h4>
+                      <h4>{t('home.procedures_title')}</h4>
                       <div className="procedure-list">
                         {spec.procedures.map((proc) => (
                           <div key={proc} className="procedure-item">
                             <span className="procedure-check">✓</span>
-                            <span>{proc}</span>
+                            <span>{t(proc)}</span>
                           </div>
                         ))}
                       </div>
                     </div>
 
                     <div className="specialty-detail-section">
-                      <h4>Especialistas Disponibles</h4>
+                      <h4>{t('home.specialists_title')}</h4>
                       <div className="doctor-mini-grid">
                         {spec.doctors.map((doc) => (
                           <div key={doc.name} className="doctor-mini-card">
                             <div className="doctor-mini-avatar">👨‍⚕️</div>
                             <div>
-                              <strong>{doc.name}</strong>
-                              <span>{doc.sub}</span>
+                              <strong>{t(doc.name)}</strong>
+                              <span>{t(doc.sub)}</span>
                             </div>
                           </div>
                         ))}
@@ -274,7 +274,7 @@ export default function HomePage() {
                       className="btn btn-primary btn-lg btn-block"
                       style={{ backgroundColor: spec.color, marginTop: 8 }}
                     >
-                      Reservar con especialista de {spec.name}
+                      {t('home.book_with_specialist', { name: t(spec.name) })}
                     </button>
                   </div>
                 </div>
@@ -287,26 +287,26 @@ export default function HomePage() {
       {/* Policy */}
       <section className="section">
         <div className="card card-subtle policy-card">
-          <h3>⚠️ Política de Asistencia</h3>
-          <p>Es obligatorio confirmar tu cita médica. Si no confirmas o no te presentas, tu RUT será bloqueado por <strong>7 días</strong> sin poder reservar nuevas citas.</p>
+          <h3>{t('home.policy_title')}</h3>
+          <p>{t('home.policy_desc')}</p>
         </div>
       </section>
 
       {/* CTA */}
       <section className="section">
         <div className="card cta-card">
-          <h3>¿Ya tienes una reserva?</h3>
-          <p>Consulta el estado de tus citas ingresando tu RUT</p>
+          <h3>{t('home.already_booked_title')}</h3>
+          <p>{t('home.already_booked_desc')}</p>
           <button onClick={() => navigate('/my-bookings/guest')} className="btn btn-success">
-            Buscar mis Reservas
+            {t('home.check_bookings')}
           </button>
         </div>
       </section>
 
       {/* Footer */}
       <footer className="footer">
-        <p>© 2026 Clínica Salud Vital. Todos los derechos reservados.</p>
-        <p className="footer-detail">Av. Salud 1234, Las Condes, Santiago | +56 2 2345 6789</p>
+        <p>{t('home.footer_text')}</p>
+        <p className="footer-detail">{t('home.footer_address')}</p>
       </footer>
     </div>
   );

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useI18n } from '../i18n/useI18n';
 import { getDoctors } from '../api/doctors';
 import { getSpecialties } from '../api/specialties';
 
@@ -13,6 +14,18 @@ const specialtyIcons = {
   Ginecología: '👩',
   Urología: '🩺',
   Medicina: '💊',
+};
+
+const specialtyKeyMap = {
+  Cardiología: 'specialists.spec_cardio',
+  Dermatología: 'specialists.spec_derma',
+  Neurología: 'specialists.spec_neuro',
+  Pediatría: 'specialists.spec_pedia',
+  Traumatología: 'specialists.spec_trauma',
+  Oftalmología: 'specialists.spec_oftal',
+  Ginecología: 'specialists.spec_gineco',
+  Urología: 'specialists.spec_uro',
+  Medicina: 'specialists.spec_med',
 };
 
 const doctorColors = [
@@ -30,6 +43,7 @@ function getColorForDoctor(id) {
 }
 
 export default function SpecialistsPage() {
+  const { t } = useI18n();
   const [doctors, setDoctors] = useState([]);
   const [specialties, setSpecialties] = useState([]);
   const [selectedSpecialty, setSelectedSpecialty] = useState(null);
@@ -47,7 +61,7 @@ export default function SpecialistsPage() {
         setDoctors(docs);
         setSpecialties(specs);
       } catch {
-        setError('Error al cargar los especialistas');
+        setError(t('specialists.error'));
       } finally {
         setLoading(false);
       }
@@ -65,7 +79,7 @@ export default function SpecialistsPage() {
       <div className="page-container-wide">
         <div className="sp-loading">
           <div className="sp-spinner" />
-          <p>Cargando especialistas...</p>
+          <p>{t('specialists.loading')}</p>
         </div>
       </div>
     );
@@ -74,9 +88,11 @@ export default function SpecialistsPage() {
   return (
     <div className="page-container-wide">
       <section className="sp-hero">
-        <h1 className="sp-hero-title">Nuestros <span className="text-accent">Especialistas</span></h1>
+        <h1 className="sp-hero-title">
+          {t('specialists.title')} <span className="text-accent">{t('specialists.title_accent')}</span>
+        </h1>
         <p className="sp-hero-subtitle">
-          Contamos con un equipo médico de excelencia en diversas especialidades
+          {t('specialists.subtitle')}
         </p>
       </section>
 
@@ -88,7 +104,7 @@ export default function SpecialistsPage() {
             className={`sp-filter-pill ${!selectedSpecialty ? 'sp-filter-active' : ''}`}
             onClick={() => setSelectedSpecialty(null)}
           >
-            Todos
+            {t('specialists.all')}
           </button>
           {specialtiesFromDoctors.map(spec => (
             <button
@@ -96,7 +112,7 @@ export default function SpecialistsPage() {
               className={`sp-filter-pill ${selectedSpecialty === spec ? 'sp-filter-active' : ''}`}
               onClick={() => setSelectedSpecialty(spec)}
             >
-              {specialtyIcons[spec] || '🩺'} {spec}
+              {specialtyIcons[spec] || '🩺'} {t(specialtyKeyMap[spec] || spec)}
             </button>
           ))}
         </div>
@@ -105,8 +121,8 @@ export default function SpecialistsPage() {
           {filteredDoctors.length === 0 && !loading && (
             <div className="empty-state" style={{ gridColumn: '1 / -1' }}>
               <div className="empty-state-icon">👨‍⚕️</div>
-              <h3>No hay especialistas disponibles</h3>
-              <p>{selectedSpecialty ? `No encontramos doctores en ${selectedSpecialty}` : 'No hay doctores registrados aún'}</p>
+              <h3>{t('specialists.empty_title')}</h3>
+              <p>{selectedSpecialty ? t('specialists.empty_desc_filter', { specialty: t(specialtyKeyMap[selectedSpecialty] || selectedSpecialty) }) : t('specialists.empty_desc_none')}</p>
             </div>
           )}
           {filteredDoctors.map(doc => (
@@ -120,14 +136,14 @@ export default function SpecialistsPage() {
               <div className="sp-doctor-info">
                 <h4 className="sp-doctor-name">{doc.name}</h4>
                 <span className="sp-doctor-specialty">
-                  {specialtyIcons[doc.specialty] || '🩺'} {doc.specialty}
+                  {specialtyIcons[doc.specialty] || '🩺'} {t(specialtyKeyMap[doc.specialty] || doc.specialty)}
                 </span>
               </div>
               <button
                 className="btn btn-primary btn-sm sp-book-btn"
                 onClick={() => navigate(`/booking?doctor=${doc.id}`)}
               >
-                Reservar cita
+                {t('specialists.book')}
               </button>
             </div>
           ))}

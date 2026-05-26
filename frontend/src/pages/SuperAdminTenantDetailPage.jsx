@@ -26,7 +26,7 @@ export default function SuperAdminTenantDetailPage() {
           active: data.tenant.active !== false,
         });
       } catch {
-        setError('Tenant not found');
+        setError(t('super_admin.tenant_error'));
       } finally {
         setLoading(false);
       }
@@ -41,9 +41,9 @@ export default function SuperAdminTenantDetailPage() {
     try {
       const updated = await updateTenant(id, form);
       setDetail((prev) => ({ ...prev, tenant: updated }));
-      setSuccess('Tenant updated successfully');
+      setSuccess(t('super_admin.tenant_saved'));
     } catch (err) {
-      setError(err.response?.data?.error || 'Error updating tenant');
+      setError(err.response?.data?.error || t('super_admin.tenant_error'));
     } finally {
       setSaving(false);
     }
@@ -89,7 +89,7 @@ export default function SuperAdminTenantDetailPage() {
         </div>
         <div className="card" style={{ padding: 16, textAlign: 'center' }}>
           <div style={{ fontSize: 24, fontWeight: 700 }}>{stats?.invoice_count || 0}</div>
-          <div style={{ fontSize: 14, color: 'var(--text-secondary)' }}>Facturas</div>
+          <div style={{ fontSize: 14, color: 'var(--text-secondary)' }}>{t('saas.invoices')}</div>
         </div>
       </div>
 
@@ -99,7 +99,7 @@ export default function SuperAdminTenantDetailPage() {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 12 }}>
             <div><span style={{ color: 'var(--text-secondary)' }}>{t('tenant.plan')}:</span> <strong>{subscription.plan_name}</strong></div>
             <div><span style={{ color: 'var(--text-secondary)' }}>{t('tenant.status')}:</span> <span className={`badge badge--${subscription.status === 'active' ? 'success' : 'warning'}`}>{subscription.status}</span></div>
-            <div><span style={{ color: 'var(--text-secondary)' }}>Inicio:</span> {subscription.current_period_start ? new Date(subscription.current_period_start).toLocaleDateString() : '-'}</div>
+            <div><span style={{ color: 'var(--text-secondary)' }}>{t('tenant.period_start')}:</span> {subscription.current_period_start ? new Date(subscription.current_period_start).toLocaleDateString() : '-'}</div>
             <div><span style={{ color: 'var(--text-secondary)' }}>{t('tenant.period_end')}:</span> {subscription.current_period_end ? new Date(subscription.current_period_end).toLocaleDateString() : '-'}</div>
           </div>
         </div>
@@ -112,12 +112,12 @@ export default function SuperAdminTenantDetailPage() {
           <input type="text" className="input" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} />
         </div>
         <div className="form-group">
-          <label>Locale</label>
+          <label>{t('super_admin.tenant_locale_label')}</label>
           <select className="input" value={form.locale} onChange={(e) => setForm((f) => ({ ...f, locale: e.target.value }))}>
-            <option value="es">Español</option>
-            <option value="en">English</option>
-            <option value="pt">Português</option>
-            <option value="fr">Français</option>
+            <option value="es">{t('super_admin.spanish')}</option>
+            <option value="en">{t('super_admin.english')}</option>
+            <option value="pt">{t('super_admin.portuguese')}</option>
+            <option value="fr">{t('super_admin.french')}</option>
           </select>
         </div>
         <div className="form-group">

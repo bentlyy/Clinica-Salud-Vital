@@ -3,8 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { getDoctors } from '../api/doctors';
 import { getAvailableSlots, createGuestBooking } from '../api/bookings';
 import { formatRut, validateRut, cleanRut } from '../utils/rut.js';
+import { useI18n } from '../i18n/useI18n';
 
 export default function GuestBookingPage() {
+  const { t } = useI18n();
+
   const [doctors, setDoctors] = useState([]);
   const [selectedDoctor, setSelectedDoctor] = useState(null);
   const [date, setDate] = useState('');
@@ -41,7 +44,7 @@ export default function GuestBookingPage() {
     try {
       const cleaned = cleanRut(form.rut);
       if (!validateRut(cleaned)) {
-        setError('RUT inválido');
+        setError(t('guest_booking.rut_invalid'));
         setSubmitting(false);
         return;
       }
@@ -54,14 +57,14 @@ export default function GuestBookingPage() {
         email: form.email,
         phone: form.phone || undefined,
       });
-      setSuccessMsg('Reserva creada. Revisa tu email para confirmar la cita.');
+      setSuccessMsg(t('guest_booking.success_desc'));
       setForm({ rut: '', name: '', email: '', phone: '' });
       setSelectedDoctor(null);
       setDate('');
       setSlots([]);
       setSelectedTime(null);
     } catch (err) {
-      setError(err.response?.data?.error || 'Error al reservar');
+      setError(err.response?.data?.error || t('guest_booking.error'));
     } finally {
       setSubmitting(false);
     }
@@ -89,8 +92,8 @@ export default function GuestBookingPage() {
 
   return (
     <div style={{ maxWidth: 700, margin: '0 auto', padding: '20px' }}>
-      <h2 style={{ color: 'var(--accent-600)' }}>Reservar hora como invitado</h2>
-      <p style={{ color: 'var(--text-secondary)', marginBottom: 20 }}>Completa tus datos para reservar. Recibirás un email para confirmar tu cita.</p>
+      <h2 style={{ color: 'var(--accent-600)' }}>{t('guest_booking.title')}</h2>
+      <p style={{ color: 'var(--text-secondary)', marginBottom: 20 }}>{t('guest_booking.email_sent')}</p>
 
       {error && (
         <div style={{ background: 'var(--danger-50)', color: 'var(--danger-600)', padding: 10, borderRadius: 6, marginBottom: 16 }}>
@@ -103,38 +106,38 @@ export default function GuestBookingPage() {
           {successMsg}
           <br />
           <button onClick={() => navigate('/my-bookings/guest')} style={{ marginTop: 8, padding: '6px 12px', background: 'var(--primary-500)', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer' }}>
-            Ver mis reservas por RUT
+            {t('guest_booking.back_home')}
           </button>
         </div>
       )}
 
       <div style={{ background: 'var(--bg-secondary)', padding: 20, borderRadius: 12, marginBottom: 20 }}>
-        <h3 style={{ marginTop: 0 }}>Tus datos</h3>
+        <h3 style={{ marginTop: 0 }}>{t('guest_booking.personal_data_title')}</h3>
 
         <div style={{ marginBottom: 14 }}>
-          <label style={labelStyle}>RUT <span style={{ color: 'var(--danger-500)' }}>*</span></label>
-          <input value={form.rut} onChange={handleRutChange} placeholder="12.345.678-5" style={inputStyle} />
+          <label style={labelStyle}>{t('guest_booking.rut_label')} <span style={{ color: 'var(--danger-500)' }}>*</span></label>
+          <input value={form.rut} onChange={handleRutChange} placeholder={t('guest_booking.rut_placeholder')} style={inputStyle} />
         </div>
 
         <div style={{ marginBottom: 14 }}>
-          <label style={labelStyle}>Nombre (opcional)</label>
-          <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Tu nombre completo" style={inputStyle} />
+          <label style={labelStyle}>{t('guest_booking.name_label')}</label>
+          <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder={t('guest_booking.name_placeholder')} style={inputStyle} />
         </div>
 
         <div style={{ marginBottom: 14 }}>
-          <label style={labelStyle}>Email <span style={{ color: 'var(--danger-500)' }}>*</span></label>
-          <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="tu@email.com" style={inputStyle} />
-          <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>Necesario para enviarte el link de confirmación</span>
+          <label style={labelStyle}>{t('guest_booking.email_label')} <span style={{ color: 'var(--danger-500)' }}>*</span></label>
+          <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder={t('guest_booking.email_placeholder')} style={inputStyle} />
+          <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{t('guest_booking.rut_hint')}</span>
         </div>
 
         <div style={{ marginBottom: 0 }}>
-          <label style={labelStyle}>Teléfono (opcional)</label>
-          <input type="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="+56 9 1234 5678" style={inputStyle} />
+          <label style={labelStyle}>{t('guest_booking.phone_label')}</label>
+          <input type="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder={t('guest_booking.phone_placeholder')} style={inputStyle} />
         </div>
       </div>
 
       <div style={{ marginBottom: 20 }}>
-        <label style={labelStyle}>Fecha</label>
+        <label style={labelStyle}>{t('guest_booking.date_label')}</label>
         <input
           type="date"
           value={date}
@@ -149,9 +152,9 @@ export default function GuestBookingPage() {
         />
       </div>
 
-      <h3>Selecciona un doctor</h3>
+      <h3>{t('guest_booking.select_doctor')}</h3>
 
-      {loadingDoctors && <p>Cargando doctores...</p>}
+      {loadingDoctors && <p>{t('guest_booking.loading_doctors')}</p>}
 
       <div style={{ display: 'grid', gap: 10 }}>
         {doctors.map((doc) => (
@@ -179,11 +182,11 @@ export default function GuestBookingPage() {
 
       {selectedDoctor && date && (
         <div style={{ marginTop: 20 }}>
-          <h3>Horarios disponibles</h3>
+          <h3>{t('guest_booking.available_slots')}</h3>
 
-          {loadingSlots && <p>Cargando horarios...</p>}
+          {loadingSlots && <p>{t('guest_booking.loading_doctors')}</p>}
 
-          {!loadingSlots && slots.length === 0 && <p>No hay horarios disponibles para esta fecha</p>}
+          {!loadingSlots && slots.length === 0 && <p>{t('guest_booking.no_slots')}</p>}
 
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
             {slots.map((slot) => (
@@ -220,7 +223,7 @@ export default function GuestBookingPage() {
                 fontWeight: 'bold',
               }}
             >
-              {submitting ? 'Reservando...' : 'Reservar cita'}
+              {submitting ? t('guest_booking.confirming') : t('guest_booking.confirm')}
             </button>
           </div>
         </div>
