@@ -8,7 +8,7 @@ const BLOCK_DURATION_HOURS = 168; // 7 days
 let _guestDummyHash: string | null = null;
 const getGuestDummyHash = async (): Promise<string> => {
   if (!_guestDummyHash) _guestDummyHash = await bcrypt.hash('__no_guest_login__', 12);
-  return _guestDummyHash;
+  return _guestDummyHash!;
 };
 
 export const startConfirmationJob = (): void => {

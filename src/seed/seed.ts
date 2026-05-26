@@ -5,7 +5,7 @@ import { logger } from '../utils/logger.js';
 let _HASH: string | null = null;
 const getHash = async (): Promise<string> => {
   if (!_HASH) _HASH = await bcrypt.hash('REPLACED_PASSWORD', 12);
-  return _HASH;
+  return _HASH!;
 };
 
 const generateRut = (): string => {
