@@ -4,8 +4,10 @@ import { getDoctors } from '../api/doctors';
 import { getAvailableSlots, createGuestBooking, createBooking } from '../api/bookings';
 import { useAuth } from '../context/useAuth';
 import { formatRut, validateRut, cleanRut } from '../utils/rut.js';
+import { useI18n } from '../i18n/useI18n';
 
 export default function BookingPage() {
+  const { t } = useI18n();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -56,7 +58,7 @@ export default function BookingPage() {
           }
         }
       })
-      .catch(() => setError('Error cargando doctores'))
+      .catch(() => setError(t('booking.error')))
       .finally(() => setLoadingDoctors(false));
   }, [searchParams]);
 
@@ -64,7 +66,7 @@ export default function BookingPage() {
     if (!selectedDoctor || !date) return;
     getAvailableSlots(selectedDoctor, date)
       .then((data) => { setSlots(data); setSelectedTime(null); })
-      .catch(() => setError('Error cargando horarios'));
+      .catch(() => setError(t('booking.error')));
   }, [selectedDoctor, date]);
 
   const handleRutChange = (e) => {
@@ -77,11 +79,11 @@ export default function BookingPage() {
 
     if (isGuest) {
       if (!validateRut(cleanRut(form.rut))) {
-        setError('RUT inválido. Verifica el dígito verificador.');
+        setError(t('booking.rut_invalid'));
         return;
       }
       if (!form.email) {
-        setError('El email es obligatorio para enviarte la confirmación.');
+        setError(t('booking.email_required'));
         return;
       }
     }
@@ -110,7 +112,7 @@ export default function BookingPage() {
 
       setSuccess(true);
     } catch (err) {
-      setError(err.response?.data?.error || 'Error al reservar');
+      setError(err.response?.data?.error || t('booking.error'));
     } finally {
       setSubmitting(false);
     }
@@ -123,19 +125,19 @@ export default function BookingPage() {
       <div className="page-container">
         <div className="card" style={{ textAlign: 'center', padding: 48 }}>
           <div style={{ fontSize: 56, marginBottom: 16 }}>✅</div>
-          <h2 style={{ color: 'var(--primary-700)', marginBottom: 8 }}>¡Reserva realizada!</h2>
+          <h2 style={{ color: 'var(--primary-700)', marginBottom: 8 }}>{t('booking.success_title')}</h2>
           <p style={{ fontSize: 16, marginBottom: 16 }}>
-            Revisa tu email <strong>{form.email}</strong> para confirmar tu cita.
+            {t('booking.success_desc', { email: form.email })}
           </p>
           <div className="alert alert-warning" style={{ maxWidth: 500, margin: '0 auto 24px' }}>
-            ⚠️ Debes confirmar tu cita. Si no lo haces, tu RUT será bloqueado por <strong>7 días</strong>.
+            ⚠️ {t('booking.success_warning')}
           </div>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
             <button onClick={() => navigate('/my-bookings/guest')} className="btn btn-success">
-              Ver mis Reservas
+              {t('booking.view_bookings')}
             </button>
             <button onClick={() => navigate('/')} className="btn btn-ghost">
-              Volver al Inicio
+              {t('booking.back_home')}
             </button>
           </div>
         </div>
@@ -145,26 +147,26 @@ export default function BookingPage() {
 
   return (
     <div className="page-container bk-page">
-      <h1 style={{ marginBottom: 24 }}>Reservar Hora Médica</h1>
+      <h1 style={{ marginBottom: 24 }}>{t('booking.title')}</h1>
 
       {error && <div className="alert alert-error">{error}</div>}
 
       <div className="steps">
         <div className={`step ${step === 1 ? 'active' : step > 1 ? 'completed' : ''}`}>
           <div className="step-number">{step > 1 ? '✓' : '1'}</div>
-          <span className="step-label">Doctor, Fecha y Hora</span>
+          <span className="step-label">{t('booking.step_select')}</span>
         </div>
         <div className={`step-line ${step > 1 ? 'completed' : step === 1 ? '' : ''}`} />
         <div className={`step ${step === 2 ? 'active' : ''}`}>
           <div className="step-number">2</div>
-          <span className="step-label">Confirmar Datos</span>
+          <span className="step-label">{t('booking.step_confirm')}</span>
         </div>
       </div>
 
       {step === 1 && (
         <div>
           <div className="form-group" style={{ maxWidth: 280 }}>
-            <label className="form-label">Fecha de la cita</label>
+            <label className="form-label">{t('booking.date_label')}</label>
             <input
               type="date"
               value={date}
@@ -176,8 +178,8 @@ export default function BookingPage() {
 
           <div className="bk-two-col">
             <div className="bk-doctors-col">
-              <h3 className="bk-col-title">Selecciona un especialista</h3>
-              {loadingDoctors && <p style={{ color: 'var(--text-muted)' }}>Cargando especialistas...</p>}
+              <h3 className="bk-col-title">{t('booking.select_doctor')}</h3>
+              {loadingDoctors && <p style={{ color: 'var(--text-muted)' }}>{t('booking.loading_doctors')}</p>}
               <div className="bk-doctor-list">
                 {doctors.map((doc) => (
                   <div
@@ -197,23 +199,23 @@ export default function BookingPage() {
             </div>
 
             <div className="bk-slots-col">
-              <h3 className="bk-col-title">Horarios disponibles</h3>
+              <h3 className="bk-col-title">{t('booking.available_slots')}</h3>
               {!selectedDoctor && (
                 <div className="bk-slots-placeholder">
                   <div className="bk-slots-placeholder-icon">👈</div>
-                  <p>Selecciona un especialista</p>
+                  <p>{t('booking.select_specialist_first')}</p>
                 </div>
               )}
               {selectedDoctor && !date && (
                 <div className="bk-slots-placeholder">
                   <div className="bk-slots-placeholder-icon">📅</div>
-                  <p>Selecciona una fecha</p>
+                  <p>{t('booking.select_date_first')}</p>
                 </div>
               )}
               {selectedDoctor && date && slots.length === 0 && (
                 <div className="bk-slots-placeholder">
                   <div className="bk-slots-placeholder-icon">⏰</div>
-                  <p>No hay horarios disponibles para esta fecha</p>
+                  <p>{t('booking.no_slots')}</p>
                 </div>
               )}
               {selectedDoctor && date && slots.length > 0 && (
@@ -235,11 +237,11 @@ export default function BookingPage() {
           <div style={{ marginTop: 32, display: 'flex', justifyContent: 'flex-end' }}>
             {canGoToStep2 ? (
               <button onClick={() => setStep(2)} className="btn btn-primary btn-lg">
-                Continuar →
+                {t('booking.continue')} →
               </button>
             ) : (
               <button disabled className="btn btn-ghost btn-lg">
-                Selecciona doctor, fecha y hora
+                {t('booking.select_requirements')}
               </button>
             )}
           </div>
@@ -249,65 +251,65 @@ export default function BookingPage() {
       {step === 2 && (
         <div>
           <div className="booking-summary">
-            <h3>Resumen de tu cita</h3>
+            <h3>{t('booking.summary_title')}</h3>
             <div className="summary-items">
-              <span><strong>Doctor:</strong> {doctors.find(d => d.id === selectedDoctor)?.name}</span>
-              <span><strong>Fecha:</strong> {date}</span>
-              <span><strong>Hora:</strong> {selectedTime}</span>
+              <span><strong>{t('booking.doctor_label')}:</strong> {doctors.find(d => d.id === selectedDoctor)?.name}</span>
+              <span><strong>{t('booking.date_label_short')}:</strong> {date}</span>
+              <span><strong>{t('booking.time_label')}:</strong> {selectedTime}</span>
             </div>
           </div>
 
           {isGuest ? (
-            <div className="user-badge user-badge-guest">🔓 Reservando como invitado</div>
+            <div className="user-badge user-badge-guest">🔓 {t('booking.guest_badge')}</div>
           ) : (
-            <div className="user-badge user-badge-logged">🔒 Sesión iniciada como <strong>{user.email}</strong></div>
+            <div className="user-badge user-badge-logged">🔒 {t('booking.logged_in_as', { email: user.email })}</div>
           )}
 
           <div className="card">
-            <h3 style={{ marginBottom: 20 }}>Datos Personales</h3>
+            <h3 style={{ marginBottom: 20 }}>{t('booking.personal_data_title')}</h3>
             <div className="grid grid-2">
               <div className="form-group">
-                <label className="form-label">RUT <span className="required">*</span></label>
+                <label className="form-label">{t('booking.rut_label')} <span className="required">*</span></label>
                 <input
                   value={form.rut}
                   onChange={isGuest ? handleRutChange : undefined}
                   disabled={!isGuest}
-                  placeholder="12.345.678-5"
+                  placeholder={t('booking.rut_placeholder')}
                   className="form-input"
                 />
-                {isGuest && <p className="form-hint">Ingresa tu RUT chileno válido</p>}
+                {isGuest && <p className="form-hint">{t('booking.rut_hint')}</p>}
               </div>
 
               <div className="form-group">
-                <label className="form-label">Nombre completo</label>
+                <label className="form-label">{t('booking.name_label')}</label>
                 <input
                   value={form.name}
                   onChange={isGuest ? (e) => setForm({ ...form, name: e.target.value }) : undefined}
                   disabled={!isGuest}
-                  placeholder="Tu nombre"
+                  placeholder={t('booking.name_placeholder')}
                   className="form-input"
                 />
               </div>
 
               <div className="form-group">
-                <label className="form-label">Email <span className="required">*</span></label>
+                <label className="form-label">{t('booking.email_label')} <span className="required">*</span></label>
                 <input
                   value={form.email}
                   onChange={isGuest ? (e) => setForm({ ...form, email: e.target.value }) : undefined}
                   disabled={!isGuest}
-                  placeholder="tu@email.com"
+                  placeholder={t('booking.email_placeholder')}
                   className="form-input"
                 />
-                {isGuest && <p className="form-hint">Necesario para enviar confirmación</p>}
+                {isGuest && <p className="form-hint">{t('booking.email_hint')}</p>}
               </div>
 
               <div className="form-group">
-                <label className="form-label">Teléfono</label>
+                <label className="form-label">{t('booking.phone_label')}</label>
                 <input
                   value={form.phone}
                   onChange={isGuest ? (e) => setForm({ ...form, phone: e.target.value }) : undefined}
                   disabled={!isGuest}
-                  placeholder="+56 9 1234 5678"
+                  placeholder={t('booking.phone_placeholder')}
                   className="form-input"
                 />
               </div>
@@ -315,21 +317,21 @@ export default function BookingPage() {
 
             {!isGuest && (
               <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 8, fontStyle: 'italic' }}>
-                Datos tomados de tu perfil. Para modificarlos, contacta a administración.
+                {t('booking.profile_data_hint')}
               </p>
             )}
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 28 }}>
             <button onClick={() => setStep(1)} className="btn btn-ghost btn-lg">
-              ← Volver
+              ← {t('booking.back')}
             </button>
             <button
               onClick={handleConfirm}
               disabled={submitting}
               className="btn btn-primary btn-lg"
             >
-              {submitting ? 'Reservando...' : 'Confirmar Reserva'}
+              {submitting ? t('booking.confirming') : t('booking.confirm')}
             </button>
           </div>
         </div>

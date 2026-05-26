@@ -1,6 +1,9 @@
 import { Component } from 'react';
+import { I18nContext } from '../i18n/useI18n';
 
 export default class ErrorBoundary extends Component {
+  static contextType = I18nContext;
+
   constructor(props) {
     super(props);
     this.state = { hasError: false, error: null };
@@ -21,7 +24,7 @@ export default class ErrorBoundary extends Component {
           display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
           minHeight: '60vh', padding: 40, textAlign: 'center'
         }}>
-          <h2 style={{ color: 'var(--danger-600, #dc3545)', marginBottom: 12 }}>Algo salió mal</h2>
+          <h2 style={{ color: 'var(--danger-600, #dc3545)', marginBottom: 12 }}>{this.context.t('error_boundary.title')}</h2>
           <p style={{ color: 'var(--text-secondary, #666)', marginBottom: 24, maxWidth: 400 }}>
             Ocurrió un error inesperado. Por favor, intenta recargar la página.
           </p>
