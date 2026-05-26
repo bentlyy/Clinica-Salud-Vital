@@ -6,6 +6,9 @@ import { getAvailability } from '../api/availability';
 import { getExceptions, createException, deleteException } from '../api/exceptions';
 import { getDoctorBookings } from '../api/doctors';
 import { useTheme } from '../context/useTheme';
+import { useI18n } from '../i18n/useI18n';
+import LoadingState from '../components/LoadingState';
+import ErrorState from '../components/ErrorState';
 
 function mergeSlots(slots) {
   if (!slots.length) return [];
@@ -28,6 +31,7 @@ function mergeSlots(slots) {
 
 export default function DoctorCalendarPage() {
   const { theme } = useTheme();
+  const { t, locale } = useI18n();
   const calendarRef = useRef(null);
   const [allAvailability, setAllAvailability] = useState([]);
   const [allExceptions, setAllExceptions] = useState([]);
@@ -82,11 +86,11 @@ export default function DoctorCalendarPage() {
       setAllExceptions(exc || []);
       setAllBookings(Array.isArray(bks) ? bks : (bks?.data || []));
     } catch (err) {
-      setError('Error cargando calendario');
+      setError(t('doctor_calendar.error_load'));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
@@ -110,7 +114,7 @@ export default function DoctorCalendarPage() {
 
     if (filters.exceptions) {
       allExceptions.forEach((e) => {
-        const label = e.reason ? ` ${e.reason}` : ' Bloqueado';
+        const label = e.reason ? ` ${e.reason}` : ` ${t('doctor_calendar.filter_exceptions')}`;
         list.push({
           id: `exc-${e.id}`,
           title: label,
@@ -160,7 +164,7 @@ export default function DoctorCalendarPage() {
     }
 
     return list;
-  }, [allAvailability, allExceptions, allBookings, filters, COLORS]);
+  }, [allAvailability, allExceptions, allBookings, filters, COLORS, t]);
 
   const handleSelect = (info) => {
     const date = info.startStr.split('T')[0];
@@ -185,17 +189,17 @@ export default function DoctorCalendarPage() {
       setBlockReason('');
       fetchData();
     } catch (err) {
-      setError(err.response?.data?.error || 'Error al bloquear');
+      setError(err.response?.data?.error || t('doctor_calendar.error'));
     }
   };
 
   const handleEventClick = (info) => {
     const p = info.event.extendedProps;
     if (p.type === 'exception') {
-      if (window.confirm('¿Desbloquear este horario?')) {
+      if (window.confirm(t('doctor_calendar.block_confirm'))) {
         deleteException(p.exceptionId)
           .then(() => fetchData())
-          .catch(() => setError('Error al desbloquear'));
+          .catch(() => setError(t('doctor_calendar.error_unblock')));
       }
     } else if (p.type === 'booking') {
       setSelectedBooking(p);
@@ -233,25 +237,25 @@ export default function DoctorCalendarPage() {
     <div className="page-container-wide" style={{ display: 'flex', flexDirection: 'column', minHeight: '100%' }}>
       <div className="page-header">
         <div>
-          <h1 style={{ margin: 0 }}>Calendario</h1>
+          <h1 style={{ margin: 0 }}>{t('doctor_calendar.title')}</h1>
           <p style={{ color: 'var(--text-secondary)', marginTop: 4 }}>
-            Tus citas, disponibilidad y bloqueos en una vista
+            {t('doctor_calendar.subtitle')}
           </p>
         </div>
-        <button onClick={today} className="btn btn-outline btn-sm">Hoy</button>
+        <button onClick={today} className="btn btn-outline btn-sm">{t('doctor_calendar.today')}</button>
       </div>
 
-      {error && <div className="alert alert-error" style={{ flexShrink: 0 }}>{error}</div>}
+      {error && <ErrorState message={error} />}
 
       <div style={{
         display: 'flex', gap: 8, marginBottom: 16, padding: '10px 16px',
         background: 'var(--bg-secondary)', borderRadius: 8, alignItems: 'center', flexWrap: 'wrap', flexShrink: 0,
       }}>
-        <span style={{ fontWeight: 600, fontSize: 13, marginRight: 4 }}>Mostrar:</span>
+        <span style={{ fontWeight: 600, fontSize: 13, marginRight: 4 }}>{t('doctor_calendar.filter_show')}</span>
         {[
-          { key: 'bookings', label: 'Citas', color: COLORS.booking, active: filters.bookings },
-          { key: 'availability', label: 'Disponibilidad', color: COLORS.available, active: filters.availability },
-          { key: 'exceptions', label: 'Bloqueos', color: COLORS.blocked, active: filters.exceptions },
+          { key: 'bookings', label: t('doctor_calendar.filter_bookings'), color: COLORS.booking, active: filters.bookings },
+          { key: 'availability', label: t('doctor_calendar.filter_availability'), color: COLORS.available, active: filters.availability },
+          { key: 'exceptions', label: t('doctor_calendar.filter_exceptions'), color: COLORS.blocked, active: filters.exceptions },
         ].map((f) => (
           <button
             key={f.key}
@@ -274,14 +278,11 @@ export default function DoctorCalendarPage() {
             {f.active && <span style={{ fontSize: 11, marginLeft: 2 }}>✓</span>}
           </button>
         ))}
-        {loading && <span style={{ fontSize: 12, color: 'var(--text-muted)', marginLeft: 8 }}>actualizando...</span>}
+        {loading && <span style={{ fontSize: 12, color: 'var(--text-muted)', marginLeft: 8 }}>{t('doctor_calendar.updating')}</span>}
       </div>
 
       {loading && events.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: 60, flexShrink: 0 }}>
-          <div className="spinner" style={{ margin: 'auto' }}></div>
-          <p style={{ marginTop: 12, color: 'var(--text-secondary)' }}>Cargando calendario...</p>
-        </div>
+        <LoadingState message={t('doctor_calendar.loading')} fullPage />
       ) : (
         <div style={{
           background: 'var(--bg-primary)', borderRadius: 12,
@@ -302,14 +303,14 @@ export default function DoctorCalendarPage() {
             allDaySlot={false}
             events={events}
             height={calendarHeight}
-            locale="es"
+            locale={locale === 'pt' ? 'pt-br' : locale === 'en' ? 'en' : locale === 'fr' ? 'fr' : 'es'}
             firstDay={1}
             headerToolbar={{
               left: 'prev,next today',
               center: 'title',
               right: 'timeGridWeek,timeGridDay',
             }}
-            buttonText={{ today: 'Hoy', week: 'Semana', day: 'Día' }}
+            buttonText={{ today: t('doctor_calendar.today'), week: locale === 'en' ? 'Week' : 'Semana', day: locale === 'en' ? 'Day' : 'Día' }}
             slotLabelFormat={{ hour: '2-digit', minute: '2-digit', hour12: false }}
             eventTimeFormat={{ hour: '2-digit', minute: '2-digit', hour12: false }}
             nowIndicator
@@ -325,19 +326,19 @@ export default function DoctorCalendarPage() {
         <div style={OVERLAY} onClick={() => setSelectedBooking(null)}>
           <div style={MODAL} onClick={e => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-              <h3 style={{ margin: 0, fontSize: 18 }}>Detalle de la Cita</h3>
+              <h3 style={{ margin: 0, fontSize: 18 }}>{t('doctor_calendar.detail_title')}</h3>
               <button onClick={() => setSelectedBooking(null)} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: 'var(--text-secondary)' }}>✕</button>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <Row label="Paciente" value={selectedBooking.patient} />
-              {selectedBooking.email && <Row label="Email" value={selectedBooking.email} />}
-              {selectedBooking.phone && <Row label="Teléfono" value={selectedBooking.phone} />}
-              {selectedBooking.rut && <Row label="RUT" value={selectedBooking.rut} />}
-              <Row label="Fecha" value={selectedBooking.date} />
-              <Row label="Hora" value={`${selectedBooking.time} (${selectedBooking.duration} min)`} />
-              <Row label="Estado" value={
+              <Row label={t('doctor_calendar.patient')} value={selectedBooking.patient} />
+              {selectedBooking.email && <Row label={t('doctor_calendar.email')} value={selectedBooking.email} />}
+              {selectedBooking.phone && <Row label={t('doctor_calendar.phone')} value={selectedBooking.phone} />}
+              {selectedBooking.rut && <Row label={t('doctor_calendar.rut')} value={selectedBooking.rut} />}
+              <Row label={t('booking.date_label')} value={selectedBooking.date} />
+              <Row label={t('booking.time_label')} value={`${selectedBooking.time} (${selectedBooking.duration} min)`} />
+              <Row label={t('doctor_calendar.status')} value={
                 <span className={`badge ${selectedBooking.confirmed ? 'badge-success' : 'badge-warning'}`}>
-                  {selectedBooking.confirmed ? 'Confirmada' : 'Pendiente'}
+                  {selectedBooking.confirmed ? t('doctor_calendar.status_confirmed') : t('doctor_calendar.status_pending')}
                 </span>
               } />
             </div>
@@ -348,12 +349,12 @@ export default function DoctorCalendarPage() {
       {blockModal.open && (
         <div style={OVERLAY} onClick={() => setBlockModal(prev => ({ ...prev, open: false }))}>
           <div style={MODAL} onClick={e => e.stopPropagation()}>
-            <h3 style={{ margin: '0 0 16px' }}>Bloquear Horario</h3>
+            <h3 style={{ margin: '0 0 16px' }}>{t('doctor_calendar.block_modal_title')}</h3>
             <p style={{ fontSize: 14, color: 'var(--text-secondary)', marginBottom: 16 }}>
               {blockModal.date} — {blockModal.start} a {blockModal.end}
             </p>
             <div style={{ marginBottom: 16 }}>
-              <label style={{ display: 'block', fontSize: 13, marginBottom: 6, fontWeight: 500 }}>Motivo (opcional)</label>
+              <label style={{ display: 'block', fontSize: 13, marginBottom: 6, fontWeight: 500 }}>{t('doctor_calendar.block_reason')}</label>
               <input
                 style={{
                   width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid var(--border-light)',
@@ -362,12 +363,12 @@ export default function DoctorCalendarPage() {
                 }}
                 value={blockReason}
                 onChange={e => setBlockReason(e.target.value)}
-                placeholder="Ej: Bloqueo administrativo, colación..."
+                placeholder={t('doctor_calendar.block_reason_placeholder')}
               />
             </div>
             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-              <button onClick={() => setBlockModal(prev => ({ ...prev, open: false }))} className="btn btn-ghost">Cancelar</button>
-              <button onClick={confirmBlock} className="btn btn-primary">Bloquear</button>
+              <button onClick={() => setBlockModal(prev => ({ ...prev, open: false }))} className="btn btn-ghost">{t('doctor_calendar.cancel')}</button>
+              <button onClick={confirmBlock} className="btn btn-primary">{t('doctor_calendar.block_modal_title')}</button>
             </div>
           </div>
         </div>
@@ -399,7 +400,6 @@ export default function DoctorCalendarPage() {
         .fc .fc-timegrid-now-indicator-arrow {
           border-color: var(--danger-500); border-width: 5px 0 5px 6px;
         }
-
         .fc .fc-event {
           border-radius: 4px; font-size: 11px; padding: 0;
           border-width: 1px; cursor: pointer;
@@ -413,7 +413,6 @@ export default function DoctorCalendarPage() {
           box-shadow: 0 1px 3px rgba(0,0,0,0.2);
         }
         .fc .fc-event.ev-booking:hover { filter: brightness(1.1); }
-
         .fc .fc-scrollgrid,
         .fc .fc-scrollgrid td,
         .fc .fc-scrollgrid th,
@@ -421,11 +420,9 @@ export default function DoctorCalendarPage() {
         .fc .fc-timegrid-slot-lane {
           border-color: var(--border-light);
         }
-
         .fc .fc-timegrid-col { width: 100% !important; }
         .fc .fc-timegrid-body { width: 100% !important; }
         .fc .fc-daygrid-body { width: 100% !important; }
-
         .fc .fc-timegrid-slots table,
         .fc .fc-timegrid-col-events table,
         .fc .fc-timegrid-bg-harness table {
