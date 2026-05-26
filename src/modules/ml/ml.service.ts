@@ -498,7 +498,7 @@ export const trainDiagnosisClassifier = async (): Promise<TrainingResult> => {
     });
 
     const vocabArray: string[] = Array.from(allTokens);
-    const diagnoses: string[] = [...new Set(records.rows.map(r => r.diagnosis as string))];
+    const diagnoses: string[] = Array.from(new Set(records.rows.map(r => r.diagnosis as string)));
 
     if (diagnoses.length < 2 || vocabArray.length < 3) {
       return { trained: false, reason: 'insufficient_variety' };
