@@ -63,6 +63,14 @@ describe('specialtiesService.createSpecialty', () => {
 
     await expect(specialtiesService.createSpecialty('Cardiología')).rejects.toThrow('La especialidad ya existe');
   });
+
+  it('throws original error for non-unique constraint errors', async () => {
+    const error = new Error('Foreign key violation');
+    error.code = '23503';
+    mockQuery.mockRejectedValueOnce(error);
+
+    await expect(specialtiesService.createSpecialty('Cardiología')).rejects.toThrow('Foreign key violation');
+  });
 });
 
 describe('specialtiesService.ensureSpecialty', () => {

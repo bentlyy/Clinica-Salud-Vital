@@ -280,12 +280,15 @@ Features:
 
 | Métrica | % |
 |---------|---|
-| Statements | 87.75 |
-| Branches | 87.95 |
-| Functions | 91 |
-| Lines | 88.09 |
+| Statements | 88.9 |
 
-**1071 tests** · 78 archivos · 0 fallos
+| Branches | 88.56 |
+
+| Functions | 92.04 |
+
+| Lines | 89.1 |
+
+**1121 tests** · 93 archivos · 0 fallos
 
 ---
 

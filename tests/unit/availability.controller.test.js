@@ -99,4 +99,15 @@ describe('availabilityController.deleteAvailability', () => {
     expect(availabilityService.deleteAvailability).toHaveBeenCalledWith(1, 1, 'test');
     expect(res.json).toHaveBeenCalledWith({ message: 'Availability deleted' });
   });
+
+  it('calls next with error if doctor not found', async () => {
+    vi.mocked(doctorService.getDoctorByUserId).mockResolvedValue(null);
+    const req = { user: { id: 1 }, params: { id: '1' } };
+    const res = { json: vi.fn() };
+    const next = vi.fn();
+
+    availabilityController.deleteAvailability(req, res, next);
+    await flush();
+    expect(next).toHaveBeenCalledWith(expect.any(Error));
+  });
 });
