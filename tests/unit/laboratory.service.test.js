@@ -79,6 +79,24 @@ describe('labService.createLabRequest', () => {
     expect(mockClient.query).toHaveBeenCalledWith('COMMIT');
   });
 
+  it('creates lab request with tenantId', async () => {
+    mockClient.query.mockImplementation((sql) => {
+      if (sql === 'BEGIN') return Promise.resolve({});
+      if (sql === 'COMMIT') return Promise.resolve({});
+      if (sql.includes('INSERT INTO lab_requests')) return Promise.resolve({ rows: [{ id: 2, request_number: 'LAB-2026-00002' }] });
+      if (sql.includes('SELECT id FROM lab_tests WHERE id')) return Promise.resolve({ rows: [{ id: 1 }] });
+      if (sql.includes('INSERT INTO lab_request_items')) return Promise.resolve({ rows: [{ id: 1 }] });
+      return Promise.resolve({ rows: [] });
+    });
+
+    const result = await labService.createLabRequest({
+      patient_id: 1, test_ids: [1],
+    }, 'tenant-1');
+
+    expect(result.id).toBe(2);
+    expect(mockClient.query).toHaveBeenCalledWith(expect.stringContaining('tenant_id'), expect.arrayContaining(['tenant-1']));
+  });
+
   it('rolls back if lab test not found', async () => {
     mockClient.query.mockImplementation((sql) => {
       if (sql === 'BEGIN') return Promise.resolve({});

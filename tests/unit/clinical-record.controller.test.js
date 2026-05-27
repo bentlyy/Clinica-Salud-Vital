@@ -155,6 +155,17 @@ describe('getClinicalRecordById', () => {
     expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ id: 1 }));
   });
 
+  it('calls next with error for user viewing someone else record', async () => {
+    vi.mocked(clinicalRecordService.getClinicalRecordById).mockResolvedValue({ id: 1, doctor_id: 1, patient_id: 99 });
+    const req = { params: { id: '1' }, user: { role: 'user', id: 5 }, tenant_id: 'test' };
+    const res = { json: vi.fn() };
+    const next = vi.fn();
+
+    crController.getClinicalRecordById(req, res, next);
+    await flush();
+    expect(next).toHaveBeenCalledWith(expect.any(Error));
+  });
+
   it('returns record for doctor viewing own record', async () => {
     vi.mocked(clinicalRecordService.getClinicalRecordById).mockResolvedValue({ id: 1, doctor_id: 1, patient_id: 5 });
     vi.mocked(doctorService.getDoctorByUserId).mockResolvedValue({ id: 1 });
@@ -267,6 +278,17 @@ describe('createClinicalRecord', () => {
     expect(res.status).toHaveBeenCalledWith(201);
     expect(res.json).toHaveBeenCalledWith({ id: 1 });
   });
+
+  it('calls next with error if doctor not found', async () => {
+    vi.mocked(doctorService.getDoctorByUserId).mockResolvedValue(null);
+    const req = { user: { id: 1 }, tenant_id: 'test', body: { chief_complaint: 'Pain' } };
+    const res = { status: vi.fn().mockReturnThis(), json: vi.fn() };
+    const next = vi.fn();
+
+    crController.createClinicalRecord(req, res, next);
+    await flush();
+    expect(next).toHaveBeenCalledWith(expect.any(Error));
+  });
 });
 
 describe('updateClinicalRecord', () => {
@@ -281,6 +303,17 @@ describe('updateClinicalRecord', () => {
     await flush();
     expect(res.json).toHaveBeenCalledWith({ id: 1, diagnosis: 'Updated' });
   });
+
+  it('calls next with error if doctor not found', async () => {
+    vi.mocked(doctorService.getDoctorByUserId).mockResolvedValue(null);
+    const req = { params: { id: '1' }, user: { id: 1 }, tenant_id: 'test', body: { diagnosis: 'Updated' } };
+    const res = { json: vi.fn() };
+    const next = vi.fn();
+
+    crController.updateClinicalRecord(req, res, next);
+    await flush();
+    expect(next).toHaveBeenCalledWith(expect.any(Error));
+  });
 });
 
 describe('deleteClinicalRecord', () => {
@@ -294,6 +327,17 @@ describe('deleteClinicalRecord', () => {
     crController.deleteClinicalRecord(req, res, next);
     await flush();
     expect(res.json).toHaveBeenCalledWith({ message: 'Deleted' });
+  });
+
+  it('calls next with error if doctor not found', async () => {
+    vi.mocked(doctorService.getDoctorByUserId).mockResolvedValue(null);
+    const req = { params: { id: '1' }, user: { id: 1 }, tenant_id: 'test' };
+    const res = { json: vi.fn() };
+    const next = vi.fn();
+
+    crController.deleteClinicalRecord(req, res, next);
+    await flush();
+    expect(next).toHaveBeenCalledWith(expect.any(Error));
   });
 });
 
@@ -322,6 +366,17 @@ describe('createPrescription', () => {
     await flush();
     expect(res.status).toHaveBeenCalledWith(201);
   });
+
+  it('calls next with error if doctor not found', async () => {
+    vi.mocked(doctorService.getDoctorByUserId).mockResolvedValue(null);
+    const req = { user: { id: 1 }, body: { medication: 'Test' } };
+    const res = { status: vi.fn().mockReturnThis(), json: vi.fn() };
+    const next = vi.fn();
+
+    crController.createPrescription(req, res, next);
+    await flush();
+    expect(next).toHaveBeenCalledWith(expect.any(Error));
+  });
 });
 
 describe('updatePrescription', () => {
@@ -336,6 +391,17 @@ describe('updatePrescription', () => {
     await flush();
     expect(res.json).toHaveBeenCalledWith({ id: 1, dosage: '500mg' });
   });
+
+  it('calls next with error if doctor not found', async () => {
+    vi.mocked(doctorService.getDoctorByUserId).mockResolvedValue(null);
+    const req = { params: { id: '1' }, user: { id: 1 }, body: { dosage: '500mg' } };
+    const res = { json: vi.fn() };
+    const next = vi.fn();
+
+    crController.updatePrescription(req, res, next);
+    await flush();
+    expect(next).toHaveBeenCalledWith(expect.any(Error));
+  });
 });
 
 describe('deletePrescription', () => {
@@ -349,6 +415,17 @@ describe('deletePrescription', () => {
     crController.deletePrescription(req, res, next);
     await flush();
     expect(res.json).toHaveBeenCalledWith({ message: 'Deleted' });
+  });
+
+  it('calls next with error if doctor not found', async () => {
+    vi.mocked(doctorService.getDoctorByUserId).mockResolvedValue(null);
+    const req = { params: { id: '1' }, user: { id: 1 } };
+    const res = { json: vi.fn() };
+    const next = vi.fn();
+
+    crController.deletePrescription(req, res, next);
+    await flush();
+    expect(next).toHaveBeenCalledWith(expect.any(Error));
   });
 });
 
@@ -434,6 +511,17 @@ describe('downloadPrescriptionPDF', () => {
   it('calls next with error for wrong doctor', async () => {
     vi.mocked(doctorService.getDoctorByUserId).mockResolvedValue({ id: 1 });
     vi.mocked(prescriptionService.getPrescriptionById).mockResolvedValue({ id: 1, doctor_id: 99 });
+    const req = { params: { id: '1' }, user: { id: 1 } };
+    const res = { setHeader: vi.fn(), send: vi.fn() };
+    const next = vi.fn();
+
+    crController.downloadPrescriptionPDF(req, res, next);
+    await flush();
+    expect(next).toHaveBeenCalledWith(expect.any(Error));
+  });
+
+  it('calls next with error if doctor not found', async () => {
+    vi.mocked(doctorService.getDoctorByUserId).mockResolvedValue(null);
     const req = { params: { id: '1' }, user: { id: 1 } };
     const res = { setHeader: vi.fn(), send: vi.fn() };
     const next = vi.fn();
