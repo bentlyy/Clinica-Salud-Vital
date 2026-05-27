@@ -205,10 +205,10 @@ const runMigration = async (): Promise<void> => {
 };
 
 const startServer = async (): Promise<void> => {
-  validateEnvSecurity();
-  validateEmailConfig();
-
   try {
+    validateEnvSecurity();
+    validateEmailConfig();
+
     await pool.query('SELECT 1');
     logger.info('DB conectada');
 
@@ -237,4 +237,7 @@ process.on('unhandledRejection', (reason) => {
   logger.error('Unhandled Rejection', { reason });
 });
 
-startServer();
+startServer().catch((err) => {
+  logger.error('Fatal startup error', { error: (err as Error).message, stack: (err as Error).stack });
+  process.exit(1);
+});
