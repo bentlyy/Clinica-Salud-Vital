@@ -52,4 +52,14 @@ describe('i18n service', () => {
     expect(all).toHaveProperty('en');
     expect(all.es['clinical_records.save']).toBe('Guardar');
   });
+
+  it('t() replaces params in template string', () => {
+    const result = t('tenant.welcome', 'es', { name: 'María' });
+    expect(result).toBe('Bienvenido, María');
+  });
+
+  it('t() handles missing param gracefully', () => {
+    const result = t('tenant.welcome', 'es', {});
+    expect(result).toBe('Bienvenido, {name}');
+  });
 });
