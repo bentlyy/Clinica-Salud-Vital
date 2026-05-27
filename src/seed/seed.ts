@@ -109,7 +109,7 @@ export const seed = async (): Promise<void> => {
 
     doctors.push({ id: doctorId, userId, name: doc.name, specialty: doc.specialty });
 
-    // Availability: morning + afternoon blocks with variation
+
     for (let day = 1; day <= 5; day++) {
       await pool.query(
         'INSERT INTO doctor_availability (doctor_id, day_of_week, start_time, end_time) VALUES ($1, $2, $3, $4)',
@@ -153,7 +153,6 @@ export const seed = async (): Promise<void> => {
   logger.info(`Usuarios creados: 1 admin, ${doctors.length} doctores, ${patients.length} pacientes`);
 
   // ==================== SIMPLE PATIENTS (user1/2/3) ====================
-  // Estos se crean siempre (incluso si el seed ya se ejecutó antes)
   const simplePatients = [
     { email: 'user1@clinic.com', rut: '15666777-3', phone: '+56911111111' },
     { email: 'user2@clinic.com', rut: '16777888-7', phone: '+56922222222' },
@@ -167,7 +166,6 @@ export const seed = async (): Promise<void> => {
   }
 
   // ==================== DOCTOR EXCEPTIONS ====================
-  // Some doctors have days off in the past and future
   const exceptionData = [
     { doctorIdx: 0, daysAgo: 30, fullDay: true },
     { doctorIdx: 2, daysAgo: 45, fullDay: true },
@@ -195,13 +193,11 @@ export const seed = async (): Promise<void> => {
   }
 
   // ==================== BOOKINGS ====================
-  // Temporarily disable future-date check so we can seed past bookings
   await pool.query('ALTER TABLE bookings DROP CONSTRAINT IF EXISTS check_future_date');
 
   const statuses = ['pending', 'confirmed', 'completed', 'no_show', 'cancelled'];
   const bookingIds: number[] = [];
 
-  // Past bookings (last 60 days) - mixed statuses
   for (let i = 0; i < 80; i++) {
     const doctor = pick(doctors);
     const patient = pick(patients);
@@ -230,11 +226,8 @@ export const seed = async (): Promise<void> => {
       );
       bookingIds.push(result.rows[0].id);
     } catch {
-      // skip duplicate slot
     }
   }
-
-  // Future bookings (next 30 days) - pending/confirmed
   for (let i = 0; i < 40; i++) {
     const doctor = pick(doctors);
     const patient = pick(patients);
@@ -260,13 +253,10 @@ export const seed = async (): Promise<void> => {
       );
       bookingIds.push(result.rows[0].id);
     } catch {
-      // skip duplicate slot
     }
   }
 
-  // Re-enable future-date check (NOT VALID so existing past bookings are allowed)
   await pool.query('ALTER TABLE bookings ADD CONSTRAINT check_future_date CHECK (date >= CURRENT_DATE) NOT VALID');
-
   logger.info(`Reservas creadas: ${bookingIds.length}`);
 
   // ==================== CLINICAL RECORDS ====================
@@ -299,10 +289,9 @@ export const seed = async (): Promise<void> => {
 
   const clinicalRecordIds: number[] = [];
 
-  // Create ~50 clinical records (only for completed/past bookings)
   const pastBookingIds = bookingIds.slice(0, 60);
   for (const bookingId of pastBookingIds) {
-    if (Math.random() > 0.7) continue; // some bookings don't have records
+    if (Math.random() > 0.7) continue;
 
     const bookingResult = await pool.query(
       'SELECT doctor_id, user_id FROM bookings WHERE id = $1',
@@ -337,7 +326,6 @@ export const seed = async (): Promise<void> => {
       );
       clinicalRecordIds.push(result.rows[0].id);
     } catch {
-      // skip
     }
   }
 
@@ -370,7 +358,6 @@ export const seed = async (): Promise<void> => {
         );
         prescriptionCount++;
       } catch {
-        // skip
       }
     }
   }
@@ -415,7 +402,6 @@ export const seed = async (): Promise<void> => {
       );
       invoiceCount++;
     } catch {
-      // skip
     }
   }
 
@@ -440,7 +426,6 @@ export const seed = async (): Promise<void> => {
       );
       const lrId = lrResult.rows[0].id;
 
-      // Add 2-4 test items
       const testCount = randomInt(2, 4);
       for (let t = 0; t < testCount; t++) {
         await pool.query(
@@ -457,7 +442,6 @@ export const seed = async (): Promise<void> => {
       }
       labRequestCount++;
     } catch {
-      // skip
     }
   }
 
@@ -480,7 +464,6 @@ export const seed = async (): Promise<void> => {
         ]
       );
     } catch {
-      // skip
     }
   }
 
@@ -498,7 +481,6 @@ export const seed = async (): Promise<void> => {
         ]
       );
     } catch {
-      // skip
     }
   }
 

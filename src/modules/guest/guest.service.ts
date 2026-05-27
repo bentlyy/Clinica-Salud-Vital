@@ -31,7 +31,7 @@ export const checkRutBlocked = async (rut: string): Promise<boolean> => {
   return new Date(result.rows[0].blocked_until) > new Date();
 };
 
-export const createGuestBooking = async ({ doctor_id, date, time, duration = 30, rut, name, email, phone }: GuestBookingInput): Promise<unknown> => {
+export const createGuestBooking = async ({ doctor_id, date, time, duration = 30, rut, name, email, phone }: GuestBookingInput, tenantId?: string): Promise<unknown> => {
   if (!doctor_id || !date || !time || !rut || !email) {
     throw new BadRequestError('Missing required fields');
   }
@@ -59,7 +59,7 @@ export const createGuestBooking = async ({ doctor_id, date, time, duration = 30,
     const doctor = await doctorService.getDoctorById(doctor_id);
     if (!doctor) throw new BadRequestError('Doctor no encontrado');
 
-    await validateBookingSlot({ doctorId: doctor_id, date, time, duration, client });
+    await validateBookingSlot({ doctorId: doctor_id, date, time, duration, client, tenantId });
 
     const formattedRut = formatRut(rut);
     const confirmToken = jwt.sign(
@@ -69,9 +69,9 @@ export const createGuestBooking = async ({ doctor_id, date, time, duration = 30,
     );
 
     const result = await client.query(
-      `INSERT INTO bookings (doctor_id, date, time, duration, guest_rut, guest_name, guest_email, guest_phone, confirmation_token)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
-      [doctor_id, date, time, duration, formattedRut, name, email, phone, confirmToken]
+      `INSERT INTO bookings (doctor_id, date, time, duration, guest_rut, guest_name, guest_email, guest_phone, confirmation_token${tenantId ? ', tenant_id' : ''})
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9${tenantId ? ', $10' : ''}) RETURNING *`,
+      tenantId ? [doctor_id, date, time, duration, formattedRut, name, email, phone, confirmToken, tenantId] : [doctor_id, date, time, duration, formattedRut, name, email, phone, confirmToken]
     );
 
     await client.query('COMMIT');
@@ -94,17 +94,16 @@ export const createGuestBooking = async ({ doctor_id, date, time, duration = 30,
     return booking;
 
   } catch (error: unknown) {
-     await client.query('ROLLBACK');
+    await client.query('ROLLBACK');
     const pgError = error as { code?: string };
     if (pgError.code === '23505') throw new BadRequestError('Este horario ya está reservado');
-    if (error instanceof BadRequestError || error instanceof NotFoundError) throw error;
-    throw new BadRequestError((error as Error).message || 'Error en la base de datos');
+    throw error;
   } finally {
     client.release();
   }
 };
 
-export const getGuestBookingsByRut = async (rut: string): Promise<unknown[]> => {
+export const getGuestBookingsByRut = async (rut: string, tenantId?: string): Promise<unknown[]> => {
   const cleanedRut = rut.replace(/[^0-9kK]/g, '').toUpperCase();
   const result = await pool.query(`
     SELECT b.id, b.date, b.time, b.duration, b.status, b.confirmed,
@@ -115,28 +114,28 @@ export const getGuestBookingsByRut = async (rut: string): Promise<unknown[]> => 
     WHERE (
       REPLACE(REPLACE(b.guest_rut, '.', ''), '-', '') = $1
       OR REPLACE(REPLACE(u.rut, '.', ''), '-', '') = $1
-    ) AND b.status != 'cancelled'
+    ) AND b.status != 'cancelled'${tenantId ? ' AND b.tenant_id = $2' : ''}
     ORDER BY b.date, b.time
-  `, [cleanedRut]);
+  `, tenantId ? [cleanedRut, tenantId] : [cleanedRut]);
   return result.rows;
 };
 
-export const cancelGuestBooking = async (bookingId: number, userId: number, userRole?: string): Promise<{ message: string }> => {
+export const cancelGuestBooking = async (bookingId: number, userId: number, userRole?: string, tenantId?: string): Promise<{ message: string }> => {
   const canCancelAny = userRole === 'admin' || userRole === 'doctor';
   let result;
   if (canCancelAny) {
     result = await pool.query(
       `UPDATE bookings SET status = 'cancelled'
-       WHERE id = $1
+       WHERE id = $1${tenantId ? ' AND tenant_id = $2' : ''}
        RETURNING *`,
-      [bookingId]
+      tenantId ? [bookingId, tenantId] : [bookingId]
     );
   } else {
     result = await pool.query(
       `UPDATE bookings SET status = 'cancelled'
-       WHERE id = $1 AND user_id = $2
+       WHERE id = $1 AND user_id = $2${tenantId ? ' AND tenant_id = $3' : ''}
        RETURNING *`,
-      [bookingId, userId]
+      tenantId ? [bookingId, userId, tenantId] : [bookingId, userId]
     );
   }
 

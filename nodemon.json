@@ -2,10 +2,9 @@
   "watch": ["src"],
   "ext": "js,ts",
   "ignore": ["src/**/*.test.js", "src/**/*.test.ts", "node_modules"],
-  "exec": "node --experimental-specifier-resolution=node",
+  "exec": "npx tsx",
   "env": {
     "NODE_ENV": "development"
   },
-  "verbose": true,
   "delay": 1000
 }

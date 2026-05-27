@@ -40,6 +40,16 @@ describe('availabilityService.getAvailabilityByDoctor', () => {
 
     expect(result).toEqual([]);
   });
+
+  it('returns availability with tenantId', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [{ id: 1, doctor_id: 1, day_of_week: 1 }] });
+
+    const result = await availabilityService.getAvailabilityByDoctor(1, 'tenant-1');
+
+    expect(result).toHaveLength(1);
+    expect(mockQuery.mock.calls[0][0]).toContain('tenant_id');
+    expect(mockQuery.mock.calls[0][1]).toContain('tenant-1');
+  });
 });
 
 describe('availabilityService.createAvailability', () => {
@@ -104,5 +114,28 @@ describe('availabilityService.deleteAvailability', () => {
     const result = await availabilityService.deleteAvailability(1, 1);
 
     expect(result.message).toBe('Availability deleted');
+  });
+
+  it('creates availability with tenantId', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] });
+    mockQuery.mockResolvedValueOnce({ rows: [{ id: 1, doctor_id: 1, day_of_week: 1, start_time: '09:00:00', end_time: '12:00:00' }] });
+
+    const result = await availabilityService.createAvailability({
+      doctor_id: 1, day_of_week: 1, start_time: '09:00', end_time: '12:00',
+    }, 'tenant-1');
+
+    expect(result.id).toBe(1);
+    expect(mockQuery.mock.calls[1][0]).toContain('tenant_id');
+    expect(mockQuery.mock.calls[1][1]).toContain('tenant-1');
+  });
+
+  it('deletes availability with tenantId', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [{ id: 1 }] });
+
+    const result = await availabilityService.deleteAvailability(1, 1, 'tenant-1');
+
+    expect(result.message).toBe('Availability deleted');
+    expect(mockQuery.mock.calls[0][0]).toContain('tenant_id');
+    expect(mockQuery.mock.calls[0][1]).toContain('tenant-1');
   });
 });

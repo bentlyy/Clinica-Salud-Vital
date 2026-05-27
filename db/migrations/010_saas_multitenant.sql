@@ -134,13 +134,13 @@ CREATE INDEX IF NOT EXISTS idx_tenant_usage_tenant ON tenant_usage(tenant_id, re
 -- 8. Insert default plans
 INSERT INTO plans (name, code, description, price_monthly, price_yearly, max_doctors, max_patients, storage_gb, features, sort_order) VALUES
   ('Gratuito', 'free', 'Plan básico para clínicas pequeñas', 0, 0, 1, 50, 1,
-   '{"bookings": true, "clinical_records": false, "laboratory": false, "analytics": false, "ml": false, "api_access": false, "white_label": false, "custom_domain": false, "sms": false, "advanced_reports": false}'::jsonb, 1),
+   '{"bookings": true, "clinical_records": false, "laboratory": false, "analytics": false, "ml": false, "ml_predictions_limit": 0, "ml_training_limit": 0, "api_access": false, "white_label": false, "custom_domain": false, "sms": false, "advanced_reports": false}'::jsonb, 1),
   ('Básico', 'basic', 'Para clínicas en crecimiento', 29, 290, 3, 200, 5,
-   '{"bookings": true, "clinical_records": true, "laboratory": false, "analytics": true, "ml": false, "api_access": false, "white_label": false, "custom_domain": false, "sms": true, "advanced_reports": false}'::jsonb, 2),
+   '{"bookings": true, "clinical_records": true, "laboratory": false, "analytics": true, "ml": false, "ml_predictions_limit": 0, "ml_training_limit": 0, "api_access": false, "white_label": false, "custom_domain": false, "sms": true, "advanced_reports": false}'::jsonb, 2),
   ('Profesional', 'pro', 'Solución completa para clínicas', 79, 790, 10, -1, 20,
-   '{"bookings": true, "clinical_records": true, "laboratory": true, "analytics": true, "ml": true, "api_access": true, "white_label": false, "custom_domain": false, "sms": true, "advanced_reports": true}'::jsonb, 3),
+   '{"bookings": true, "clinical_records": true, "laboratory": true, "analytics": true, "ml": true, "ml_predictions_limit": 1000, "ml_training_limit": 1, "api_access": true, "white_label": false, "custom_domain": false, "sms": true, "advanced_reports": true}'::jsonb, 3),
   ('Enterprise', 'enterprise', 'Solución integral con personalización', 199, 1990, -1, -1, 100,
-   '{"bookings": true, "clinical_records": true, "laboratory": true, "analytics": true, "ml": true, "api_access": true, "white_label": true, "custom_domain": true, "sms": true, "advanced_reports": true}'::jsonb, 4)
+   '{"bookings": true, "clinical_records": true, "laboratory": true, "analytics": true, "ml": true, "ml_predictions_limit": 10000, "ml_training_limit": 10, "api_access": true, "white_label": true, "custom_domain": true, "sms": true, "advanced_reports": true}'::jsonb, 4)
 ON CONFLICT (code) DO NOTHING;
 
 -- 9. Add superadmin role to user roles

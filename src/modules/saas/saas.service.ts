@@ -97,29 +97,40 @@ export const changePlan = async (
   newPlanCode: string,
   stripeSubscriptionId?: string
 ): Promise<Subscription> => {
-  const plan = await getPlanByCode(newPlanCode);
-  const sub = await getTenantSubscription(tenantId);
-  if (!sub) {
-    throw new BadRequestError('No active subscription found');
-  }
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
 
-  const doctorCheck = await checkLimits(tenantId, 'doctors');
-  if (plan.max_doctors > -1 && doctorCheck.current > plan.max_doctors) {
-    throw new BadRequestError(`Plan ${newPlanCode} allows max ${plan.max_doctors} doctors, but you have ${doctorCheck.current}`);
-  }
-  const patientCheck = await checkLimits(tenantId, 'patients');
-  if (plan.max_patients > -1 && patientCheck.current > plan.max_patients) {
-    throw new BadRequestError(`Plan ${newPlanCode} allows max ${plan.max_patients} patients, but you have ${patientCheck.current}`);
-  }
+    const plan = await getPlanByCode(newPlanCode);
+    const sub = await getTenantSubscription(tenantId);
+    if (!sub) {
+      throw new BadRequestError('No active subscription found');
+    }
 
-  const result = await pool.query<Subscription>(
-    `UPDATE subscriptions SET plan_id = $1, stripe_subscription_id = COALESCE($3, stripe_subscription_id), updated_at = NOW()
-     WHERE id = $2 RETURNING *`,
-    [plan.id, sub.id, stripeSubscriptionId || null]
-  );
+    const doctorCheck = await checkLimits(tenantId, 'doctors');
+    if (plan.max_doctors > -1 && doctorCheck.current > plan.max_doctors) {
+      throw new BadRequestError(`Plan ${newPlanCode} allows max ${plan.max_doctors} doctors, but you have ${doctorCheck.current}`);
+    }
+    const patientCheck = await checkLimits(tenantId, 'patients');
+    if (plan.max_patients > -1 && patientCheck.current > plan.max_patients) {
+      throw new BadRequestError(`Plan ${newPlanCode} allows max ${plan.max_patients} patients, but you have ${patientCheck.current}`);
+    }
 
-  logger.info(`Plan changed for tenant ${tenantId}`, { plan: newPlanCode });
-  return result.rows[0];
+    const result = await client.query<Subscription>(
+      `UPDATE subscriptions SET plan_id = $1, stripe_subscription_id = COALESCE($3, stripe_subscription_id), updated_at = NOW()
+       WHERE id = $2 RETURNING *`,
+      [plan.id, sub.id, stripeSubscriptionId || null]
+    );
+
+    await client.query('COMMIT');
+    logger.info(`Plan changed for tenant ${tenantId}`, { plan: newPlanCode });
+    return result.rows[0];
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
+  }
 };
 
 export const cancelSubscription = async (tenantId: string): Promise<void> => {
@@ -135,6 +146,8 @@ export const cancelSubscription = async (tenantId: string): Promise<void> => {
   logger.info(`Subscription canceled for tenant ${tenantId}`);
 };
 
+const ALLOWED_TENANT_CONFIG_FIELDS = new Set(['name', 'locale', 'timezone', 'config']);
+
 export const updateTenantConfig = async (
   tenantId: string,
   data: Record<string, unknown>
@@ -144,6 +157,9 @@ export const updateTenantConfig = async (
   let paramIdx = 1;
 
   for (const [key, value] of Object.entries(data)) {
+    if (!ALLOWED_TENANT_CONFIG_FIELDS.has(key)) {
+      throw new BadRequestError(`Unknown field: ${key}`);
+    }
     if (value !== undefined) {
       sets.push(`${key} = $${paramIdx++}`);
       params.push(value !== null && typeof value === 'object' ? JSON.stringify(value) : (value as string | number | boolean | null));
@@ -179,7 +195,7 @@ export const checkFeatureAccess = async (tenantId: string, featureKey: string): 
 
 export const checkLimits = async (
   tenantId: string,
-  resource: 'doctors' | 'patients' | 'storage'
+  resource: 'doctors' | 'patients' | 'storage' | 'ml_predictions' | 'ml_training'
 ): Promise<{ allowed: boolean; current: number; limit: number }> => {
   const plan = await getTenantPlan(tenantId);
   if (!plan) return { allowed: false, current: 0, limit: 0 };
@@ -209,6 +225,26 @@ export const checkLimits = async (
     );
     current = Math.round(parseInt(usage.rows[0].bytes, 10) / (1024 * 1024));
     limit = plan.storage_gb * 1024;
+  } else if (resource === 'ml_predictions') {
+    const usage = await pool.query(
+      `SELECT COALESCE(SUM(metric_value), 0) as total
+       FROM tenant_usage
+       WHERE tenant_id = $1 AND metric_key = 'ml_predictions' AND recorded_at >= DATE_TRUNC('month', CURRENT_DATE)`,
+      [tenantId]
+    );
+    current = parseInt(usage.rows[0].total, 10);
+    const planFeatures = plan.features as Record<string, unknown>;
+    limit = (planFeatures.ml_predictions_limit as number) || (planFeatures.ml === true ? 1000 : 0);
+  } else if (resource === 'ml_training') {
+    const usage = await pool.query(
+      `SELECT COALESCE(SUM(metric_value), 0) as total
+       FROM tenant_usage
+       WHERE tenant_id = $1 AND metric_key = 'ml_training' AND recorded_at >= DATE_TRUNC('month', CURRENT_DATE)`,
+      [tenantId]
+    );
+    current = parseInt(usage.rows[0].total, 10);
+    const planFeatures = plan.features as Record<string, unknown>;
+    limit = (planFeatures.ml_training_limit as number) || (planFeatures.ml === true ? 10 : 0);
   }
 
   return {
@@ -326,7 +362,6 @@ export const onboardTenant = async (data: {
     try {
       await (await import('../../shared/multi-tenant.service.js')).tenantService.loadFromDB();
     } catch {
-      // non-critical
     }
 
     logger.info(`Tenant onboarded: ${tenantId} (${tenantName})`);

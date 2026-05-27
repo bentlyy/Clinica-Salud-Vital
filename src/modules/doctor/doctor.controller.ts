@@ -8,15 +8,12 @@ export const getDoctors = asyncHandler(async (req, res) => {
 });
 
 export const registerDoctor = asyncHandler(async (req, res) => {
-  const result = await doctorService.registerDoctor(req.body);
+  const result = await doctorService.registerDoctor(req.body, req.tenant_id);
   const response: Record<string, unknown> = {
-    message: 'Doctor registrado correctamente. Credenciales enviadas por email.',
+    message: 'Doctor registrado correctamente. Instrucciones enviadas por email.',
     doctor: result.doctor,
     email: result.credentials.email,
   };
-  if (process.env.NODE_ENV !== 'production') {
-    response.tempPassword = result.credentials.tempPassword;
-  }
   res.status(201).json(response);
 });
 

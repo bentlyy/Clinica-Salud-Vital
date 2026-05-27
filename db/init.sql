@@ -65,7 +65,11 @@ CREATE TABLE doctor_exceptions (
   start_time TIME,
   end_time TIME,
   is_full_day BOOLEAN DEFAULT FALSE,
-  CONSTRAINT fk_doctor_exception FOREIGN KEY (doctor_id) REFERENCES doctors(id) ON DELETE CASCADE
+  CONSTRAINT fk_doctor_exception FOREIGN KEY (doctor_id) REFERENCES doctors(id) ON DELETE CASCADE,
+  CONSTRAINT check_full_day_consistency CHECK (
+    (is_full_day = true AND start_time IS NULL AND end_time IS NULL)
+    OR (is_full_day = false AND start_time IS NOT NULL AND end_time IS NOT NULL AND start_time < end_time)
+  )
 );
 
 -- Clinical Records Module
@@ -230,37 +234,42 @@ CREATE TABLE IF NOT EXISTS user_permissions (
   UNIQUE(user_id, permission_id)
 );
 
--- ML Module Tables
+-- ML Module Tables (schema matches migrate.sql + app code in ml.service.ts)
 CREATE TABLE IF NOT EXISTS ml_prediction_history (
   id SERIAL PRIMARY KEY,
-  model_type VARCHAR(50) NOT NULL,
-  input_data JSONB,
-  prediction JSONB,
-  confidence DECIMAL(5, 2),
-  created_at TIMESTAMP DEFAULT NOW()
+  model_type TEXT NOT NULL,
+  input_data JSONB NOT NULL,
+  prediction_result JSONB NOT NULL,
+  confidence TEXT,
+  prediction_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  doctor_id INT,
+  user_id INT,
+  booking_id INT,
+  actual_result BOOLEAN,
+  is_correct BOOLEAN,
+  error_message TEXT
 );
 
 CREATE TABLE IF NOT EXISTS ml_model_metrics (
   id SERIAL PRIMARY KEY,
-  model_type VARCHAR(50) UNIQUE NOT NULL,
-  accuracy DECIMAL(5, 2),
-  f1_score DECIMAL(5, 2),
-  precision DECIMAL(5, 2),
-  recall DECIMAL(5, 2),
-  training_data_size INTEGER,
-  trained_at TIMESTAMP DEFAULT NOW(),
-  created_at TIMESTAMP DEFAULT NOW(),
-  updated_at TIMESTAMP DEFAULT NOW()
+  model_type TEXT NOT NULL,
+  trained_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  duration_ms INT,
+  samples_used INT,
+  accuracy FLOAT,
+  loss_value FLOAT,
+  status TEXT DEFAULT 'success',
+  error_message TEXT
 );
 
 CREATE TABLE IF NOT EXISTS ml_demand_forecast (
   id SERIAL PRIMARY KEY,
   date DATE NOT NULL,
-  predicted_demand INTEGER,
-  actual_demand INTEGER,
-  confidence DECIMAL(5, 2),
-  created_at TIMESTAMP DEFAULT NOW(),
-  UNIQUE(date)
+  predicted_demand INT NOT NULL,
+  actual_demand INT,
+  confidence TEXT,
+  generated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  model_version TEXT DEFAULT 'v1'
 );
 
 -- Indexes

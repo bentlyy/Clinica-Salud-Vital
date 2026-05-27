@@ -22,6 +22,20 @@ declare global {
   }
 }
 
+const extractAndVerifyUser = (token: string, req: Request): JwtUser | null => {
+  try {
+    const decoded = jwt.verify(token, getJWTSecret()) as JwtPayload & JwtUser;
+    return {
+      id: decoded.id,
+      email: decoded.email,
+      role: decoded.role as UserRole,
+      tenant_id: decoded.tenant_id || req.tenant_id || process.env.DEFAULT_TENANT_ID || 'default',
+    };
+  } catch {
+    return null;
+  }
+};
+
 export const authMiddleware = (req: Request, res: Response, next: NextFunction): void => {
   const authHeader = req.headers.authorization;
   const accessToken = req.headers['x-access-token'] as string | undefined;
@@ -33,44 +47,33 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction):
     return;
   }
 
-  try {
-    const decoded = jwt.verify(tokenStr, getJWTSecret()) as JwtPayload & JwtUser;
-    req.user = {
-      id: decoded.id,
-      email: decoded.email,
-      role: decoded.role as UserRole,
-      tenant_id: decoded.tenant_id || req.tenant_id || process.env.DEFAULT_TENANT_ID || 'default',
-    };
-    next();
-  } catch (error) {
-    if (error instanceof Error && error.name === 'TokenExpiredError') {
-      res.status(401).json({ error: 'Token expired', code: 'TOKEN_EXPIRED' });
-      return;
+  const user = extractAndVerifyUser(tokenStr, req);
+  if (!user) {
+    try {
+      jwt.verify(tokenStr, getJWTSecret());
+    } catch (error) {
+      if (error instanceof Error && error.name === 'TokenExpiredError') {
+        res.status(401).json({ error: 'Token expired', code: 'TOKEN_EXPIRED' });
+        return;
+      }
     }
     res.status(401).json({ error: 'Invalid token' });
+    return;
   }
+
+  req.user = user;
+  next();
 };
 
 export const optionalAuth = (req: Request, res: Response, next: NextFunction): void => {
   const authHeader = req.headers.authorization;
   const token = authHeader?.split(' ')[1];
 
-  if (!token) {
-    next();
-    return;
+  if (token) {
+    const user = extractAndVerifyUser(token, req);
+    if (user) req.user = user;
   }
 
-  try {
-    const decoded = jwt.verify(token, getJWTSecret()) as JwtPayload & JwtUser;
-    req.user = {
-      id: decoded.id,
-      email: decoded.email,
-      role: decoded.role as UserRole,
-      tenant_id: decoded.tenant_id || req.tenant_id || process.env.DEFAULT_TENANT_ID || 'default',
-    };
-  } catch {
-    // Token invalid, continue without user
-  }
   next();
 };
 

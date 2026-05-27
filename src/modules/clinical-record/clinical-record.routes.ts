@@ -29,13 +29,11 @@ const router = Router();
 
 router.use(authMiddleware);
 
-// Static routes first (before dynamic :id routes)
 router.get('/cie10/search', authorize('doctor', 'admin'), searchCie10);
 router.get('/cie10/categories', authorize('doctor', 'admin'), getCie10Categories);
 router.get('/cie10/:code', authorize('doctor', 'admin'), getCie10ByCode);
 router.get('/prescriptions/:id/pdf', authorize('doctor'), downloadPrescriptionPDF);
 
-// CRUD routes
 router.get('/', authorize('doctor', 'admin'), getClinicalRecords);
 router.get('/:id', authorize('doctor', 'admin', 'user'), validateZod(clinicalRecordIdSchema, 'params'), getClinicalRecordById);
 router.get('/patient/:patient_id', authorize('doctor', 'admin', 'user'), validateZod(patientIdSchema, 'params'), getClinicalRecordsByPatient);
@@ -43,7 +41,6 @@ router.post('/', authorize('doctor'), validateZod(createClinicalRecordSchema), c
 router.put('/:id', authorize('doctor'), validateZod(updateClinicalRecordSchema), updateClinicalRecord);
 router.delete('/:id', authorize('doctor'), validateZod(clinicalRecordIdSchema, 'params'), deleteClinicalRecord);
 
-// Prescription routes
 router.get('/:record_id/prescriptions', authorize('doctor', 'admin'), validateZod(clinicalRecordIdSchema, 'params'), getPrescriptionsByRecord);
 router.post('/prescriptions', authorize('doctor'), validateZod(prescriptionSchema), createPrescription);
 router.put('/prescriptions/:id', authorize('doctor'), validateZod(prescriptionSchema.partial()), updatePrescription);

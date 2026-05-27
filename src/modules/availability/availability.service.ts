@@ -10,17 +10,17 @@ interface AvailabilityInput {
 
 const isValidTime = (t: string): boolean => /^\d{2}:\d{2}$/.test(t);
 
-export const getAvailabilityByDoctor = async (doctor_id: number): Promise<unknown[]> => {
+export const getAvailabilityByDoctor = async (doctor_id: number, tenantId?: string): Promise<unknown[]> => {
   const result = await pool.query(
     `SELECT * FROM doctor_availability
-     WHERE doctor_id = $1
+     WHERE doctor_id = $1${tenantId ? ' AND tenant_id = $2' : ''}
      ORDER BY day_of_week, start_time`,
-    [doctor_id]
+    tenantId ? [doctor_id, tenantId] : [doctor_id]
   );
   return result.rows;
 };
 
-export const createAvailability = async ({ doctor_id, day_of_week, start_time, end_time }: AvailabilityInput): Promise<unknown> => {
+export const createAvailability = async ({ doctor_id, day_of_week, start_time, end_time }: AvailabilityInput, tenantId?: string): Promise<unknown> => {
   if (!doctor_id || day_of_week === undefined || !start_time || !end_time) {
     throw new BadRequestError('Missing required fields');
   }
@@ -36,9 +36,9 @@ export const createAvailability = async ({ doctor_id, day_of_week, start_time, e
 
   const overlap = await pool.query(
     `SELECT 1 FROM doctor_availability
-     WHERE doctor_id = $1 AND day_of_week = $2
+     WHERE doctor_id = $1 AND day_of_week = $2${tenantId ? ' AND tenant_id = $5' : ''}
      AND (start_time < $4 AND end_time > $3)`,
-    [doctor_id, day_of_week, start_time, end_time]
+    tenantId ? [doctor_id, day_of_week, start_time, end_time, tenantId] : [doctor_id, day_of_week, start_time, end_time]
   );
 
   if (overlap.rows.length > 0) {
@@ -46,22 +46,22 @@ export const createAvailability = async ({ doctor_id, day_of_week, start_time, e
   }
 
   const result = await pool.query(
-    `INSERT INTO doctor_availability (doctor_id, day_of_week, start_time, end_time)
-     VALUES ($1, $2, $3, $4) RETURNING *`,
-    [doctor_id, day_of_week, start_time, end_time]
+    `INSERT INTO doctor_availability (doctor_id, day_of_week, start_time, end_time${tenantId ? ', tenant_id' : ''})
+     VALUES ($1, $2, $3, $4${tenantId ? ', $5' : ''}) RETURNING *`,
+    tenantId ? [doctor_id, day_of_week, start_time, end_time, tenantId] : [doctor_id, day_of_week, start_time, end_time]
   );
 
   return result.rows[0];
 };
 
-export const deleteAvailability = async (availability_id: number, doctor_id: number): Promise<{ message: string }> => {
+export const deleteAvailability = async (availability_id: number, doctor_id: number, tenantId?: string): Promise<{ message: string }> => {
   if (!Number.isInteger(availability_id) || !Number.isInteger(doctor_id)) {
     throw new BadRequestError('Invalid id');
   }
 
   const result = await pool.query(
-    `DELETE FROM doctor_availability WHERE id = $1 AND doctor_id = $2 RETURNING *`,
-    [availability_id, doctor_id]
+    `DELETE FROM doctor_availability WHERE id = $1 AND doctor_id = $2${tenantId ? ' AND tenant_id = $3' : ''} RETURNING *`,
+    tenantId ? [availability_id, doctor_id, tenantId] : [availability_id, doctor_id]
   );
 
   if (result.rows.length === 0) throw new NotFoundError('Availability not found or unauthorized');

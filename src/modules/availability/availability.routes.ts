@@ -11,7 +11,7 @@ import { authorizeRoles } from '../../middlewares/role.middleware.js';
 
 const router = Router();
 
-// ver mi disponibilidad (doctor logeado) — debe ir ANTES de /:id
+// debe ir ANTES de /:id
 router.get(
   '/me',
   authMiddleware,
@@ -19,10 +19,8 @@ router.get(
   getMyAvailability
 );
 
-// ver disponibilidad de un doctor (publico)
 router.get('/:id', getAvailabilityByDoctor);
 
-// crear disponibilidad (solo doctor)
 router.post(
   '/',
   authMiddleware,
@@ -30,7 +28,6 @@ router.post(
   createAvailability
 );
 
-// eliminar bloque
 router.delete(
   '/:id',
   authMiddleware,

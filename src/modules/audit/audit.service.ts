@@ -9,6 +9,7 @@ export interface AuditLogInput {
   new_values?: Record<string, unknown>;
   ip_address?: string;
   user_agent?: string;
+  tenant_id?: string;
 }
 
 export interface AuditLogQuery {
@@ -20,21 +21,22 @@ export interface AuditLogQuery {
   offset?: number;
   start_date?: string;
   end_date?: string;
+  tenant_id?: string;
 }
 
 export const logAction = async (input: AuditLogInput): Promise<void> => {
+  const hasTenant = !!input.tenant_id;
   await pool.query(
-    'INSERT INTO audit_logs (user_id, action, resource_type, resource_id, old_values, new_values, ip_address, user_agent) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
-    [
-      input.user_id || null,
-      input.action,
-      input.resource_type,
-      input.resource_id || null,
-      input.old_values ? JSON.stringify(input.old_values) : null,
-      input.new_values ? JSON.stringify(input.new_values) : null,
-      input.ip_address || null,
-      input.user_agent || null
-    ]
+    `INSERT INTO audit_logs (user_id, action, resource_type, resource_id, old_values, new_values, ip_address, user_agent${hasTenant ? ', tenant_id' : ''}) VALUES ($1, $2, $3, $4, $5, $6, $7, $8${hasTenant ? ', $9' : ''})`,
+    hasTenant
+      ? [input.user_id || null, input.action, input.resource_type, input.resource_id || null,
+         input.old_values ? JSON.stringify(input.old_values) : null,
+         input.new_values ? JSON.stringify(input.new_values) : null,
+         input.ip_address || null, input.user_agent || null, input.tenant_id]
+      : [input.user_id || null, input.action, input.resource_type, input.resource_id || null,
+         input.old_values ? JSON.stringify(input.old_values) : null,
+         input.new_values ? JSON.stringify(input.new_values) : null,
+         input.ip_address || null, input.user_agent || null]
   );
 };
 
@@ -43,6 +45,10 @@ export const getAuditLogs = async (query: AuditLogQuery = {}): Promise<unknown[]
   const params: unknown[] = [];
   let paramCount = 1;
 
+  if (query.tenant_id) {
+    sql += ` AND al.tenant_id = $${paramCount++}`;
+    params.push(query.tenant_id);
+  }
   if (query.user_id) {
     sql += ` AND al.user_id = $${paramCount++}`;
     params.push(query.user_id);

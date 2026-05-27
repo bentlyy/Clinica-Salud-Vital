@@ -57,4 +57,31 @@ describe('confirmationService.confirmBooking', () => {
     expect(result.confirmed).toBe(true);
     expect(result.message).toBe('Cita confirmada correctamente');
   });
+
+  it('throws when decoded booking_id does not match', async () => {
+    const token = jwt.sign({ booking_id: 999, user_id: 1 }, process.env.JWT_SECRET);
+    mockQuery.mockResolvedValueOnce({
+      rows: [{ id: 1, confirmed: false }],
+    });
+
+    await expect(confirmationService.confirmBooking(token))
+      .rejects.toThrow('Token inválido para esta reserva');
+  });
+
+  it('confirms booking with tenant_id', async () => {
+    const token = jwt.sign({ user_id: 1, doctor_id: 1, date: '2025-01-15', time: '10:00' }, process.env.JWT_SECRET);
+    mockQuery
+      .mockResolvedValueOnce({
+        rows: [{ id: 1, confirmed: false }],
+      })
+      .mockResolvedValueOnce({ rows: [] });
+
+    const result = await confirmationService.confirmBooking(token, 'tenant-1');
+
+    expect(result.confirmed).toBe(true);
+    expect(mockQuery).toHaveBeenCalledWith(
+      expect.stringContaining('tenant_id'),
+      [expect.any(String), 'tenant-1']
+    );
+  });
 });

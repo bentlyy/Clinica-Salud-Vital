@@ -92,6 +92,63 @@ describe('exceptionService.createException', () => {
     expect(result.start_time).toBe('10:00');
     expect(result.is_full_day).toBe(false);
   });
+
+  it('creates exception with tenantId', async () => {
+    mockQuery.mockResolvedValueOnce({
+      rows: [{ id: 1, doctor_id: 1, date: '2025-01-20', is_full_day: true }],
+    });
+
+    const result = await exceptionService.createException({
+      doctor_id: 1, date: '2025-01-20', is_full_day: true,
+    }, 'tenant-1');
+
+    expect(result.is_full_day).toBe(true);
+    expect(mockQuery.mock.calls[0][0]).toContain('tenant_id');
+    expect(mockQuery.mock.calls[0][1]).toContain('tenant-1');
+  });
+});
+
+describe('exceptionService.deleteException', () => {
+  it('throws if ids not integers', async () => {
+    await expect(exceptionService.deleteException('abc', 1)).rejects.toThrow('Invalid id');
+    await expect(exceptionService.deleteException(1, 'abc')).rejects.toThrow('Invalid id');
+  });
+
+  it('deletes exception successfully', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [{ id: 1 }] });
+
+    const result = await exceptionService.deleteException(1, 1);
+
+    expect(result.message).toBe('Exception deleted');
+  });
+
+  it('throws if exception not found', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] });
+
+    await expect(exceptionService.deleteException(999, 1)).rejects.toThrow('Exception not found or unauthorized');
+  });
+
+  it('deletes with tenantId', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [{ id: 1 }] });
+
+    const result = await exceptionService.deleteException(1, 1, 'tenant-1');
+
+    expect(result.message).toBe('Exception deleted');
+    expect(mockQuery.mock.calls[0][0]).toContain('tenant_id');
+    expect(mockQuery.mock.calls[0][1]).toContain('tenant-1');
+  });
+});
+
+describe('exceptionService.getExceptionsByDoctor', () => {
+  it('returns exceptions with tenantId', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [{ id: 1, doctor_id: 1, date: '2025-01-20', is_full_day: true }] });
+
+    const result = await exceptionService.getExceptionsByDoctor(1, 'tenant-1');
+
+    expect(result).toHaveLength(1);
+    expect(mockQuery.mock.calls[0][0]).toContain('tenant_id');
+    expect(mockQuery.mock.calls[0][1]).toContain('tenant-1');
+  });
 });
 
 describe('exceptionService.deleteException', () => {

@@ -24,7 +24,6 @@ export const AuthProvider = ({ children }) => {
       try {
         await api.post('/auth/logout', { refresh_token: refreshToken });
       } catch {
-        // Ignore logout errors
       }
     }
     localStorage.removeItem('access_token');
@@ -45,8 +44,9 @@ export const AuthProvider = ({ children }) => {
           localStorage.removeItem('access_token');
           localStorage.removeItem('refresh_token');
           localStorage.removeItem('user');
+        } finally {
+          setLoading(false);
         }
-        setLoading(false);
       } else {
         const refreshToken = localStorage.getItem('refresh_token');
         if (refreshToken) {

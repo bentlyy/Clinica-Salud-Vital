@@ -112,7 +112,7 @@ export const createBooking = async ({ doctor_id, user_id, date, time, duration =
       throw new BadRequestError('Your account is blocked due to unconfirmed appointments. Please wait before booking again.');
     }
 
-    await validateBookingSlot({ doctorId: doctor_id, date, time, duration, client });
+    await validateBookingSlot({ doctorId: doctor_id, date, time, duration, client, tenantId });
 
     const confirmToken = jwt.sign(
       { user_id, doctor_id, date, time },
@@ -123,33 +123,41 @@ export const createBooking = async ({ doctor_id, user_id, date, time, duration =
     const insertCols = '(doctor_id, user_id, date, time, duration, confirmation_token';
     const insertVals = '($1, $2, $3, $4, $5, $6';
     const insertParams: (string | number | undefined)[] = [doctor_id, user_id, date, time, duration, confirmToken];
+    let booking: unknown;
     if (tenantId) {
       const result = await client.query(
         `INSERT INTO bookings ${insertCols}, tenant_id) VALUES ${insertVals}, $7) RETURNING *`,
         [...insertParams, tenantId]
       );
-      var booking = result.rows[0];
+      booking = result.rows[0];
     } else {
       const result = await client.query(
         `INSERT INTO bookings ${insertCols}) VALUES ${insertVals}) RETURNING *`,
         insertParams
       );
-      var booking = result.rows[0];
+      booking = result.rows[0];
     }
 
     await client.query('COMMIT');
 
-    sendEmail({
-      to: user.email,
-      subject: 'Confirma tu cita médica',
-      html: bookingConfirmationTemplate({
-        doctor: doctor.name,
-        date,
-        time,
-        confirmToken,
-        frontendUrl: process.env.FRONTEND_URL,
-      }),
-    }).then(r => { if (!r.sent) logger.error('Email error (non-critical):', r.error); });
+    setTimeout(async () => {
+      try {
+        const r = await sendEmail({
+          to: user.email,
+          subject: 'Confirma tu cita médica',
+          html: bookingConfirmationTemplate({
+            doctor: doctor.name,
+            date,
+            time,
+            confirmToken,
+            frontendUrl: process.env.FRONTEND_URL,
+          }),
+        });
+        if (!r.sent) logger.error('Email de confirmación no enviado:', { to: user.email, error: r.error });
+      } catch (emailErr) {
+        logger.error('Error enviando email de confirmación:', { to: user.email, error: (emailErr as Error).message });
+      }
+    }, 0);
 
     return booking;
 
@@ -227,15 +235,15 @@ export const getAvailableSlots = async (doctor_id: number, date: string, tenantI
 
   const availabilityResult = await pool.query(
     `SELECT start_time, end_time FROM doctor_availability
-     WHERE doctor_id = $1 AND day_of_week = $2 ORDER BY start_time`,
-    [doctor_id, day]
+     WHERE doctor_id = $1 AND day_of_week = $2${tenantId ? ' AND tenant_id = $3' : ''} ORDER BY start_time`,
+    tenantId ? [doctor_id, day, tenantId] : [doctor_id, day]
   );
 
   if (availabilityResult.rows.length === 0) return [];
 
   const doctorResult = await pool.query(
-    `SELECT slot_duration FROM doctors WHERE id = $1`,
-    [doctor_id]
+    `SELECT slot_duration FROM doctors WHERE id = $1${tenantId ? ' AND tenant_id = $2' : ''}`,
+    tenantId ? [doctor_id, tenantId] : [doctor_id]
   );
   const duration = doctorResult.rows[0]?.slot_duration || 30;
 
@@ -266,8 +274,8 @@ export const getAvailableSlots = async (doctor_id: number, date: string, tenantI
   );
 
   const exceptions = await pool.query(
-    `SELECT * FROM doctor_exceptions WHERE doctor_id = $1 AND date = $2`,
-    [doctor_id, date]
+    `SELECT * FROM doctor_exceptions WHERE doctor_id = $1 AND date = $2${tenantId ? ' AND tenant_id = $3' : ''}`,
+    tenantId ? [doctor_id, date, tenantId] : [doctor_id, date]
   );
 
   return slots.filter(slot => {
