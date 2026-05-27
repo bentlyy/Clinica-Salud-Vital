@@ -1,5 +1,8 @@
 export type Locale = 'es' | 'en' | 'pt' | 'fr';
 
+// NOTA: pt y fr están incompletos. pt tiene ~106 claves (vs 363 de es).
+//       fr es una copia de es — NO son traducciones reales al francés.
+//       La función t() ya cae a es como fallback para claves faltantes.
 const translations: Record<string, Record<string, string>> = {
   es: {
 

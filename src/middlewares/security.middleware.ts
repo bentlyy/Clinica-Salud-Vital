@@ -29,7 +29,7 @@ export const securityMiddleware = [
       preload: true,
     },
     noSniff: true,
-    referrerPolicy: false,
+    referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
     xssFilter: true,
   }),
   hpp(),

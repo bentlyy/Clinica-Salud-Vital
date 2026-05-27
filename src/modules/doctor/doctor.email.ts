@@ -1,29 +1,32 @@
+import { escapeHtml } from '../../shared/escape.js';
+
 interface DoctorCredentialsParams {
   name: string;
   email: string;
-  password: string;
+  setupToken: string;
   loginUrl: string;
 }
 
-export const doctorCredentialsEmail = ({ name, email, password, loginUrl }: DoctorCredentialsParams): string => {
+export const doctorCredentialsEmail = ({ name, email, setupToken, loginUrl }: DoctorCredentialsParams): string => {
+  const setupUrl = `${escapeHtml(loginUrl)}/setup-password?token=${encodeURIComponent(setupToken)}`;
+
   return `
     <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto;">
-      <h2 style="color: #1976d2;">Bienvenido/a, ${name}</h2>
-      <p>Tu cuenta de doctor ha sido creada en <strong>Clínica Salud Vital</strong>. A continuación tus credenciales de acceso:</p>
+      <h2 style="color: #1976d2;">Bienvenido/a, ${escapeHtml(name)}</h2>
+      <p>Tu cuenta de doctor ha sido creada en <strong>Cl\u00ednica Salud Vital</strong>.</p>
 
-      <div style="background: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
-        <p style="margin: 8px 0;"><strong>Email:</strong> ${email}</p>
-        <p style="margin: 8px 0;"><strong>Contraseña temporal:</strong> <code style="background: #fff; padding: 4px 8px; border-radius: 4px;">${password}</code></p>
-      </div>
+      <p><strong>Email:</strong> ${escapeHtml(email)}</p>
+
+      <p>Para establecer tu contrase\u00f1a y acceder al sistema, haz clic en el siguiente enlace:</p>
 
       <p style="text-align: center;">
-        <a href="${loginUrl}" style="background: #1976d2; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">
-          Iniciar sesión
+        <a href="${setupUrl}" style="background: #1976d2; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">
+          Establecer mi contrase\u00f1a
         </a>
       </p>
 
-      <p style="color: #e53935; font-size: 13px;">
-        ⚠️ Por tu seguridad, te recomendamos cambiar tu contraseña al iniciar sesión por primera vez.
+      <p style="font-size: 13px;">
+        Este enlace expira en 24 horas. Si no solicitaste esta cuenta, ignora este mensaje.
       </p>
     </div>
   `;

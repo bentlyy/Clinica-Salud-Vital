@@ -93,6 +93,8 @@ export const getTenantDetail = async (tenantId: string): Promise<{
   };
 };
 
+const ALLOWED_TENANT_FIELDS = new Set(['name', 'locale', 'timezone', 'active', 'config']);
+
 export const updateTenant = async (
   tenantId: string,
   data: Partial<Pick<TenantRow, 'name' | 'locale' | 'timezone' | 'active' | 'config'>>
@@ -102,6 +104,9 @@ export const updateTenant = async (
   let paramIdx = 1;
 
   for (const [key, value] of Object.entries(data)) {
+    if (!ALLOWED_TENANT_FIELDS.has(key)) {
+      throw new BadRequestError(`Unknown field: ${key}`);
+    }
     if (value !== undefined) {
       sets.push(`${key} = $${paramIdx++}`);
       params.push(value !== null && typeof value === 'object' ? JSON.stringify(value) : (value as string | number | boolean | null));
@@ -121,7 +126,6 @@ export const updateTenant = async (
     const { tenantService } = await import('../../shared/multi-tenant.service.js');
     await tenantService.loadFromDB();
   } catch {
-    // non-critical
   }
 
   return result.rows[0];

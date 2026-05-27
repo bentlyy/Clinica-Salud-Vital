@@ -1,7 +1,3 @@
-/**
- * Tests unitarios para Módulo ML/DL
- */
-
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import * as mlValidator from '../src/modules/ml/ml.validator.js';
 import { mlCache } from '../src/modules/ml/ml.cache.js';
@@ -346,5 +342,95 @@ describe('Validation edge cases', () => {
     });
     expect(result.chiefComplaint).not.toContain('<');
     expect(result.chiefComplaint).not.toContain('>');
+  });
+
+  it('validateNoShowPrediction should reject invalid userId', () => {
+    const result = mlValidator.validateNoShowPrediction({
+      doctorId: 1, userId: 0,
+      date: '2026-05-10', time: '10:00'
+    });
+    expect(result.valid).toBe(false);
+  });
+
+  it('validateNoShowPrediction should accept missing time', () => {
+    const result = mlValidator.validateNoShowPrediction({
+      doctorId: 1, date: '2026-05-10'
+    });
+    expect(result.valid).toBe(true);
+  });
+
+  it('validateDiagnosisClassification should reject non-string', () => {
+    const result = mlValidator.validateDiagnosisClassification({ chiefComplaint: 123 });
+    expect(result.valid).toBe(false);
+  });
+
+  it('validateDiagnosisClassification should reject > 1000 chars', () => {
+    const result = mlValidator.validateDiagnosisClassification({ chiefComplaint: 'a'.repeat(1001) });
+    expect(result.valid).toBe(false);
+  });
+
+  it('validateVitalSignsAnalysis should accept missing fields', () => {
+    const result = mlValidator.validateVitalSignsAnalysis({ vitalSigns: {} });
+    expect(result.valid).toBe(true);
+  });
+
+  it('validateVitalSignsAnalysis should reject out of range systolic', () => {
+    const result = mlValidator.validateVitalSignsAnalysis({
+      vitalSigns: { pressure: '55/80' }
+    });
+    expect(result.valid).toBe(false);
+  });
+
+  it('validateVitalSignsAnalysis should reject out of range diastolic', () => {
+    const result = mlValidator.validateVitalSignsAnalysis({
+      vitalSigns: { pressure: '120/30' }
+    });
+    expect(result.valid).toBe(false);
+  });
+
+  it('validateVitalSignsAnalysis should reject out of range temperature', () => {
+    const result = mlValidator.validateVitalSignsAnalysis({
+      vitalSigns: { temperature: 50 }
+    });
+    expect(result.valid).toBe(false);
+  });
+
+  it('sanitizeMLInput should handle missing chief complaint', () => {
+    const result = mlValidator.sanitizeMLInput({});
+    expect(result).toEqual({});
+  });
+
+  it('sanitizeMLInput should sanitize vital signs', () => {
+    const result = mlValidator.sanitizeMLInput({
+      vitalSigns: { pressure: '120/80', heartRate: 72, temperature: 36.5 }
+    });
+    expect(result.vitalSigns).toBeDefined();
+    expect(result.vitalSigns.pressure).toBe('120/80');
+  });
+
+  it('sanitizeMLInput should handle undefined vitalSigns', () => {
+    const result = mlValidator.sanitizeMLInput({ chiefComplaint: 'dolor' });
+    expect(result.chiefComplaint).toBe('dolor');
+    expect(result.vitalSigns).toBeUndefined();
+  });
+
+  it('sanitizeMLInput should handle non-string values', () => {
+    const result = mlValidator.sanitizeMLInput({
+      chiefComplaint: 12345
+    });
+    expect(result.chiefComplaint).toBe('');
+  });
+
+  it('validateNoShowPrediction should accept missing doctorId and userId', () => {
+    const result = mlValidator.validateNoShowPrediction({ date: '2026-05-10' });
+    expect(result.valid).toBe(true);
+  });
+
+  it('sanitizeMLInput should handle vitalSigns without pressure', () => {
+    const result = mlValidator.sanitizeMLInput({
+      vitalSigns: { heartRate: 72 }
+    });
+    expect(result.vitalSigns.heartRate).toBe(72);
+    expect(result.vitalSigns.pressure).toBeUndefined();
   });
 });

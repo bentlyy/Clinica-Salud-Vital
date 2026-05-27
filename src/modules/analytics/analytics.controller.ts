@@ -6,24 +6,24 @@ import { getQueryInt } from '../../shared/query.js';
 
 export const getDashboardStats = asyncHandler(async (req, res) => {
   const stats = await analyticsService.getDashboardStats(req.tenant_id);
-  res.json(stats);
+  res.json({ data: stats });
 });
 
 export const getBookingsByMonth = asyncHandler(async (req, res) => {
   const months = getQueryInt(req.query, 'months', 12);
   const data = await analyticsService.getBookingsByMonth(months, req.tenant_id);
-  res.json(data);
+  res.json({ data });
 });
 
 export const getTopDoctors = asyncHandler(async (req, res) => {
   const limit = getQueryInt(req.query, 'limit', 10);
   const data = await analyticsService.getTopDoctors(limit, req.tenant_id);
-  res.json(data);
+  res.json({ data });
 });
 
 export const getBookingStatusDistribution = asyncHandler(async (req, res) => {
   const data = await analyticsService.getBookingStatusDistribution(req.tenant_id);
-  res.json(data);
+  res.json({ data });
 });
 
 export const getMyDoctorStats = asyncHandler(async (req, res) => {
@@ -31,33 +31,33 @@ export const getMyDoctorStats = asyncHandler(async (req, res) => {
   if (!doctor) throw new NotFoundError('Doctor profile not found');
 
   const stats = await analyticsService.getDoctorStats(doctor.id, req.tenant_id);
-  res.json(stats);
+  res.json({ data: stats });
 });
 
 export const getNoShows = asyncHandler(async (req, res) => {
   const data = await analyticsService.getNoShowsByDoctor(req.tenant_id);
-  res.json(data);
+  res.json({ data });
 });
 
 export const getDiagnosesAnalytics = asyncHandler(async (req, res) => {
   const data = await analyticsService.getDiagnoses(req.tenant_id);
-  res.json(data);
+  res.json({ data });
 });
 
 export const getDemand = asyncHandler(async (req, res) => {
   const days = getQueryInt(req.query, 'days', 30);
   const data = await analyticsService.getDemandForecast(days, req.tenant_id);
-  res.json(data);
+  res.json({ data });
 });
 
 export const getSchedules = asyncHandler(async (req, res) => {
   const data = await analyticsService.getOptimalSchedules(req.tenant_id);
-  res.json(data);
+  res.json({ data });
 });
 
 export const getVitalsAnomalies = asyncHandler(async (req, res) => {
   const data = await analyticsService.getVitalSignsAnomalies(req.tenant_id);
-  res.json(data);
+  res.json({ data });
 });
 
 export const exportAnalytics = asyncHandler(async (req, res) => {

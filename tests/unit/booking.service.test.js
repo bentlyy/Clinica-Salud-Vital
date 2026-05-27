@@ -20,6 +20,11 @@ vi.mock('nodemailer', () => ({
   },
 }));
 
+const mockSendEmail = vi.hoisted(() => vi.fn());
+vi.mock('../../src/shared/email.service.js', () => ({
+  sendEmail: mockSendEmail,
+}));
+
 import * as bookingService from '../../src/modules/booking/booking.service.js';
 
 const futureDate = (() => {
@@ -39,6 +44,7 @@ const futureMonday = (() => {
 beforeEach(() => {
   vi.clearAllMocks();
   mockConnect.mockReturnValue(mockClient);
+  mockSendEmail.mockResolvedValue({ sent: true });
 });
 
 describe('bookingService.createBooking', () => {
@@ -136,6 +142,19 @@ describe('bookingService.getBookingsByUser', () => {
     expect(result.data).toHaveLength(1);
     expect(result.data[0].doctor_name).toBe('Dr. Test');
   });
+
+  it('returns bookings for user with tenant_id', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [{ id: 1 }] });
+    mockQuery.mockResolvedValueOnce({ rows: [{ count: '1' }] });
+
+    const result = await bookingService.getBookingsByUser(1, { page: 1, limit: 20 }, 'tenant-1');
+
+    expect(result.data).toHaveLength(1);
+    expect(mockQuery).toHaveBeenCalledWith(
+      expect.stringContaining('tenant_id'),
+      [1, 20, 0, 'tenant-1']
+    );
+  });
 });
 
 describe('bookingService.deleteBooking', () => {
@@ -155,6 +174,22 @@ describe('bookingService.deleteBooking', () => {
 
   it('throws if id is not integer', async () => {
     await expect(bookingService.deleteBooking('abc', 1)).rejects.toThrow('Invalid booking id');
+  });
+
+  it('throws if user_id is not integer', async () => {
+    await expect(bookingService.deleteBooking(1, 'abc')).rejects.toThrow('Invalid booking id');
+  });
+
+  it('cancels booking with tenant_id', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [{ id: 1 }] });
+
+    const result = await bookingService.deleteBooking(1, 1, 'tenant-1');
+
+    expect(result.message).toBe('Booking cancelled successfully');
+    expect(mockQuery).toHaveBeenCalledWith(
+      expect.stringContaining('tenant_id'),
+      [1, 1, 'tenant-1']
+    );
   });
 });
 
@@ -188,6 +223,61 @@ describe('bookingService.getAvailableSlots', () => {
     expect(result.length).toBeGreaterThan(0);
     expect(result[0]).toBe('09:00');
   });
+
+  it('uses default slot_duration 30 when doctor has null duration', async () => {
+    mockQuery
+      .mockResolvedValueOnce({ rows: [{ start_time: '09:00:00', end_time: '10:00:00' }] })
+      .mockResolvedValueOnce({ rows: [{ slot_duration: null }] })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [] });
+
+    const result = await bookingService.getAvailableSlots(1, futureDate);
+
+    expect(result).toContain('09:00');
+    expect(result).toContain('09:30');
+  });
+
+  it('filters out booked and exception slots', async () => {
+    mockQuery
+      .mockResolvedValueOnce({ rows: [{ start_time: '09:00:00', end_time: '12:00:00' }] })
+      .mockResolvedValueOnce({ rows: [{ slot_duration: 60 }] })
+      .mockResolvedValueOnce({ rows: [{ time: '10:00', duration: 60 }] })
+      .mockResolvedValueOnce({ rows: [{ is_full_day: false, start_time: '11:00', end_time: '12:00' }] });
+
+    const result = await bookingService.getAvailableSlots(1, futureDate);
+
+    expect(result).toContain('09:00');
+    expect(result).not.toContain('10:00');
+    expect(result).not.toContain('11:00');
+  });
+
+  it('blocks full day exception in getAvailableSlots', async () => {
+    mockQuery
+      .mockResolvedValueOnce({ rows: [{ start_time: '09:00:00', end_time: '12:00:00' }] })
+      .mockResolvedValueOnce({ rows: [{ slot_duration: 30 }] })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [{ is_full_day: true }] });
+
+    const result = await bookingService.getAvailableSlots(1, futureDate);
+
+    expect(result).toEqual([]);
+  });
+
+  it('returns slots with tenant_id', async () => {
+    mockQuery
+      .mockResolvedValueOnce({ rows: [{ start_time: '09:00:00', end_time: '12:00:00' }] })
+      .mockResolvedValueOnce({ rows: [{ slot_duration: 30 }] })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [] });
+
+    const result = await bookingService.getAvailableSlots(1, futureDate, 'tenant-1');
+
+    expect(result.length).toBeGreaterThan(0);
+    expect(mockQuery).toHaveBeenCalledWith(
+      expect.stringContaining('tenant_id'),
+      [1, expect.any(Number), 'tenant-1']
+    );
+  });
 });
 
 describe('bookingService.getBookingsByDoctor', () => {
@@ -203,6 +293,19 @@ describe('bookingService.getBookingsByDoctor', () => {
     expect(result.data).toHaveLength(1);
     expect(result.data[0].patient_email).toBe('patient@test.com');
   });
+
+  it('returns bookings for doctor with tenant_id', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [{ id: 1 }] });
+    mockQuery.mockResolvedValueOnce({ rows: [{ count: '1' }] });
+
+    const result = await bookingService.getBookingsByDoctor(1, { page: 1, limit: 50 }, 'tenant-1');
+
+    expect(result.data).toHaveLength(1);
+    expect(mockQuery).toHaveBeenCalledWith(
+      expect.stringContaining('tenant_id'),
+      [1, 50, 0, 'tenant-1']
+    );
+  });
 });
 
 describe('bookingService.getAllBookings', () => {
@@ -217,6 +320,19 @@ describe('bookingService.getAllBookings', () => {
 
     expect(result.data).toHaveLength(1);
     expect(result.pagination.total).toBe(1);
+  });
+
+  it('returns paginated bookings with tenant_id', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [{ id: 1, date: '2025-01-15' }] });
+    mockQuery.mockResolvedValueOnce({ rows: [{ count: '1' }] });
+
+    const result = await bookingService.getAllBookings({ page: 1, limit: 10 }, 'tenant-1');
+
+    expect(result.data).toHaveLength(1);
+    expect(mockQuery).toHaveBeenCalledWith(
+      expect.stringContaining('tenant_id'),
+      [10, 0, 'tenant-1']
+    );
   });
 });
 
@@ -279,6 +395,50 @@ describe('bookingService.createBooking advanced', () => {
     })).rejects.toThrow('full day blocked');
   });
 
+  it('handles sendEmail returning {sent:false}', async () => {
+    mockSendEmail.mockResolvedValue({ sent: false, error: 'SMTP error' });
+    mockQuery.mockResolvedValue({ rows: [doctorRow] });
+    mockClient.query.mockImplementation((sql) => {
+      if (sql === 'BEGIN' || sql.includes('pg_advisory')) return Promise.resolve({});
+      if (sql.includes('FROM users WHERE id')) return Promise.resolve({ rows: [{ email: 'test@test.com', blocked_until: null, rut: null, phone: null }] });
+      if (sql.includes('FROM doctor_availability')) return Promise.resolve({ rows: [{ start_time: '09:00:00', end_time: '17:00:00' }] });
+      if (sql.includes('FROM doctor_exceptions')) return Promise.resolve({ rows: [] });
+      if (sql.includes('FROM bookings')) return Promise.resolve({ rows: [] });
+      if (sql.includes('INSERT INTO bookings')) return Promise.resolve({ rows: [{ id: 3, date: futureDate, time: '10:00' }] });
+      if (sql === 'COMMIT') return Promise.resolve({});
+      return Promise.resolve({ rows: [] });
+    });
+
+    const result = await bookingService.createBooking({
+      doctor_id: 1, user_id: 1, date: futureDate, time: '10:00',
+    });
+
+    expect(result.id).toBe(3);
+    await new Promise(r => setTimeout(r, 5));
+  });
+
+  it('handles email sending throw in booking catch block', async () => {
+    mockSendEmail.mockRejectedValue(new Error('SMTP connection failed'));
+    mockQuery.mockResolvedValue({ rows: [doctorRow] });
+    mockClient.query.mockImplementation((sql) => {
+      if (sql === 'BEGIN' || sql.includes('pg_advisory')) return Promise.resolve({});
+      if (sql.includes('FROM users WHERE id')) return Promise.resolve({ rows: [{ email: 'test@test.com', blocked_until: null, rut: null, phone: null }] });
+      if (sql.includes('FROM doctor_availability')) return Promise.resolve({ rows: [{ start_time: '09:00:00', end_time: '17:00:00' }] });
+      if (sql.includes('FROM doctor_exceptions')) return Promise.resolve({ rows: [] });
+      if (sql.includes('FROM bookings')) return Promise.resolve({ rows: [] });
+      if (sql.includes('INSERT INTO bookings')) return Promise.resolve({ rows: [{ id: 1, date: futureDate, time: '10:00' }] });
+      if (sql === 'COMMIT') return Promise.resolve({});
+      return Promise.resolve({ rows: [] });
+    });
+
+    const result = await bookingService.createBooking({
+      doctor_id: 1, user_id: 1, date: futureDate, time: '10:00',
+    });
+
+    expect(result.id).toBe(1);
+    await new Promise(r => setTimeout(r, 5));
+  });
+
   it('creates booking successfully through full flow', async () => {
     mockQuery.mockResolvedValue({ rows: [doctorRow] });
     mockClient.query.mockImplementation((sql) => {
@@ -295,6 +455,82 @@ describe('bookingService.createBooking advanced', () => {
     const result = await bookingService.createBooking({
       doctor_id: 1, user_id: 1, date: futureDate, time: '10:00',
     });
+
+    expect(result.id).toBe(1);
+    expect(mockClient.query).toHaveBeenCalledWith('COMMIT');
+  });
+
+  it('throws when duration exceeds slot_duration', async () => {
+    mockQuery.mockResolvedValue({ rows: [{ id: 1, name: 'Dr. Test', slot_duration: 30, specialty: 'General' }] });
+    mockClient.query.mockImplementation((sql) => {
+      if (sql === 'BEGIN' || sql.includes('pg_advisory')) return Promise.resolve({});
+      if (sql.includes('FROM users WHERE id')) return Promise.resolve({ rows: [{ email: 'test@test.com', blocked_until: null }] });
+      return Promise.resolve({ rows: [] });
+    });
+
+    await expect(bookingService.createBooking({
+      doctor_id: 1, user_id: 1, date: futureDate, time: '10:00', duration: 60,
+    })).rejects.toThrow('Duration cannot exceed');
+  });
+
+  it('throws on PG unique violation (23505)', async () => {
+    mockQuery.mockResolvedValue({ rows: [doctorRow] });
+    mockClient.query.mockImplementation((sql) => {
+      if (sql === 'BEGIN' || sql.includes('pg_advisory')) return Promise.resolve({});
+      if (sql.includes('FROM users WHERE id')) return Promise.resolve({ rows: [{ email: 'test@test.com', blocked_until: null }] });
+      if (sql.includes('FROM doctor_availability')) return Promise.resolve({ rows: [{ start_time: '09:00:00', end_time: '17:00:00' }] });
+      if (sql.includes('FROM doctor_exceptions')) return Promise.resolve({ rows: [] });
+      if (sql.includes('FROM bookings')) return Promise.resolve({ rows: [] });
+      if (sql.includes('INSERT INTO bookings')) {
+        const err = new Error('duplicate key');
+        err.code = '23505';
+        return Promise.reject(err);
+      }
+      return Promise.resolve({ rows: [] });
+    });
+
+    await expect(bookingService.createBooking({
+      doctor_id: 1, user_id: 1, date: futureDate, time: '10:00',
+    })).rejects.toThrow('This time slot is already booked');
+  });
+
+  it('throws on PG foreign key violation (23503)', async () => {
+    mockQuery.mockResolvedValue({ rows: [doctorRow] });
+    mockClient.query.mockImplementation((sql) => {
+      if (sql === 'BEGIN' || sql.includes('pg_advisory')) return Promise.resolve({});
+      if (sql.includes('FROM users WHERE id')) return Promise.resolve({ rows: [{ email: 'test@test.com', blocked_until: null }] });
+      if (sql.includes('FROM doctor_availability')) return Promise.resolve({ rows: [{ start_time: '09:00:00', end_time: '17:00:00' }] });
+      if (sql.includes('FROM doctor_exceptions')) return Promise.resolve({ rows: [] });
+      if (sql.includes('FROM bookings')) return Promise.resolve({ rows: [] });
+      if (sql.includes('INSERT INTO bookings')) {
+        const err = new Error('foreign key');
+        err.code = '23503';
+        return Promise.reject(err);
+      }
+      return Promise.resolve({ rows: [] });
+    });
+
+    await expect(bookingService.createBooking({
+      doctor_id: 1, user_id: 1, date: futureDate, time: '10:00',
+    })).rejects.toThrow('Invalid doctor or user');
+  });
+
+  it('creates booking with tenant_id', async () => {
+    mockQuery.mockResolvedValue({ rows: [doctorRow] });
+    mockClient.query.mockImplementation((sql) => {
+      if (sql === 'BEGIN' || sql.includes('pg_advisory')) return Promise.resolve({});
+      if (sql.includes('FROM users WHERE id')) return Promise.resolve({ rows: [{ email: 'test@test.com', blocked_until: null, rut: null, phone: null }] });
+      if (sql.includes('FROM doctor_availability')) return Promise.resolve({ rows: [{ start_time: '09:00:00', end_time: '17:00:00' }] });
+      if (sql.includes('FROM doctor_exceptions')) return Promise.resolve({ rows: [] });
+      if (sql.includes('FROM bookings')) return Promise.resolve({ rows: [] });
+      if (sql.includes('INSERT INTO bookings')) return Promise.resolve({ rows: [{ id: 1 }] });
+      if (sql === 'COMMIT') return Promise.resolve({});
+      return Promise.resolve({ rows: [] });
+    });
+
+    const result = await bookingService.createBooking({
+      doctor_id: 1, user_id: 1, date: futureDate, time: '10:00',
+    }, 'tenant-1');
 
     expect(result.id).toBe(1);
     expect(mockClient.query).toHaveBeenCalledWith('COMMIT');

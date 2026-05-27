@@ -1,7 +1,3 @@
-/**
- * Validaci�n de inputs para ML
- */
-
 interface ValidationError {
   field?: string;
   message: string;

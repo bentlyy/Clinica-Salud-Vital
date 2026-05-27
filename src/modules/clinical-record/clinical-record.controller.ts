@@ -4,7 +4,7 @@ import * as prescriptionService from './prescription.service.js';
 import * as cie10Service from './cie10.service.js';
 import * as doctorService from '../doctor/doctor.service.js';
 import { asyncHandler } from '../../middlewares/asyncHandler.middleware.js';
-import { NotFoundError, BadRequestError } from '../../utils/errors.js';
+import { NotFoundError, BadRequestError, ForbiddenError } from '../../utils/errors.js';
 import { generatePrescriptionPDF } from './prescription-pdf.service.js';
 
 export const getClinicalRecords = asyncHandler(async (req: Request, res: Response) => {
@@ -65,10 +65,18 @@ export const getClinicalRecordsByPatient = asyncHandler(async (req: Request, res
   if (req.user!.role === 'doctor') {
     const doctor = await doctorService.getDoctorByUserId(req.user!.id);
     if (!doctor) throw new NotFoundError('Doctor profile not found');
+
+    const hasRelationship = await clinicalRecordService.getClinicalRecordsByPatient(patientId, req.tenant_id);
+    if (hasRelationship.length === 0) {
+      const hasBooking = await clinicalRecordService.doesDoctorHaveBookingWithPatient(doctor.id, patientId, req.tenant_id);
+      if (!hasBooking) throw new BadRequestError('Access denied');
+    }
+    const records = await clinicalRecordService.getClinicalRecordsByPatient(patientId, req.tenant_id);
+    return res.json(records);
   }
 
   const records = await clinicalRecordService.getClinicalRecordsByPatient(patientId, req.tenant_id);
-  res.json(records);
+  return res.json(records);
 });
 
 export const createClinicalRecord = asyncHandler(async (req: Request, res: Response) => {

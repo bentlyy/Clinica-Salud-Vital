@@ -63,7 +63,7 @@ export const getLabRequests = asyncHandler(async (req, res) => {
     limit,
     offset,
   }, req.tenant_id);
-  res.json(requests);
+  return res.json(requests);
 });
 
 export const getLabRequestById = asyncHandler(async (req, res) => {
@@ -71,6 +71,13 @@ export const getLabRequestById = asyncHandler(async (req, res) => {
 
   if (req.user!.role === 'user' && request.patient_id !== req.user!.id) {
     throw new BadRequestError('Access denied');
+  }
+
+  if (req.user!.role === 'doctor') {
+    const doctor = await doctorService.getDoctorByUserId(req.user!.id);
+    if (!doctor || request.doctor_id !== doctor.id) {
+      throw new BadRequestError('Access denied');
+    }
   }
 
   res.json(request);

@@ -19,26 +19,30 @@ export const createWebhook = async (data: {
   events: string[];
   secret?: string;
   active?: boolean;
+  tenant_id?: string;
 }): Promise<Webhook> => {
   const secret = data.secret || crypto.randomBytes(32).toString('hex');
   const result = await pool.query(
-    `INSERT INTO webhooks (name, url, events, secret, active)
-     VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-    [data.name, data.url, JSON.stringify(data.events), secret, data.active ?? true]
+    `INSERT INTO webhooks (name, url, events, secret, active, tenant_id)
+     VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+    [data.name, data.url, JSON.stringify(data.events), secret, data.active ?? true, data.tenant_id || 'default']
   );
   return result.rows[0];
 };
 
-export const getWebhooks = async (activeOnly = false): Promise<Webhook[]> => {
-  let query = 'SELECT * FROM webhooks';
-  if (activeOnly) query += ' WHERE active = true';
+export const getWebhooks = async (activeOnly = false, tenantId?: string): Promise<Webhook[]> => {
+  const params: (string | boolean)[] = [];
+  let paramIdx = 1;
+  let query = 'SELECT * FROM webhooks WHERE 1=1';
+  if (activeOnly) { query += ` AND active = $${paramIdx++}`; params.push(true); }
+  if (tenantId) { query += ` AND tenant_id = $${paramIdx++}`; params.push(tenantId); }
   query += ' ORDER BY created_at DESC';
-  const result = await pool.query(query);
+  const result = await pool.query(query, params);
   return result.rows;
 };
 
-export const getWebhookById = async (id: number): Promise<Webhook | null> => {
-  const result = await pool.query('SELECT * FROM webhooks WHERE id = $1', [id]);
+export const getWebhookById = async (id: number, tenantId?: string): Promise<Webhook | null> => {
+  const result = await pool.query(`SELECT * FROM webhooks WHERE id = $1${tenantId ? ' AND tenant_id = $2' : ''}`, tenantId ? [id, tenantId] : [id]);
   return result.rows[0] || null;
 };
 
@@ -48,7 +52,7 @@ export const updateWebhook = async (id: number, data: Partial<{
   events: string[];
   secret: string;
   active: boolean;
-}>): Promise<Webhook | null> => {
+}>, tenantId?: string): Promise<Webhook | null> => {
   const fields: string[] = [];
   const values: unknown[] = [];
   let paramIndex = 1;
@@ -59,18 +63,18 @@ export const updateWebhook = async (id: number, data: Partial<{
   if (data.secret !== undefined) { fields.push(`secret = $${paramIndex++}`); values.push(data.secret); }
   if (data.active !== undefined) { fields.push(`active = $${paramIndex++}`); values.push(data.active); }
 
-  if (fields.length === 0) return getWebhookById(id);
+  if (fields.length === 0) return getWebhookById(id, tenantId);
 
-  values.push(id);
+  values.push(id, tenantId);
   const result = await pool.query(
-    `UPDATE webhooks SET ${fields.join(', ')} WHERE id = $${paramIndex} RETURNING *`,
+    `UPDATE webhooks SET ${fields.join(', ')} WHERE id = $${paramIndex}${tenantId ? ` AND tenant_id = $${paramIndex + 1}` : ''} RETURNING *`,
     values
   );
   return result.rows[0] || null;
 };
 
-export const deleteWebhook = async (id: number): Promise<boolean> => {
-  const result = await pool.query('DELETE FROM webhooks WHERE id = $1', [id]);
+export const deleteWebhook = async (id: number, tenantId?: string): Promise<boolean> => {
+  const result = await pool.query(`DELETE FROM webhooks WHERE id = $1${tenantId ? ' AND tenant_id = $2' : ''}`, tenantId ? [id, tenantId] : [id]);
   return (result.rowCount ?? 0) > 0;
 };
 

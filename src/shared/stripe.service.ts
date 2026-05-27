@@ -58,6 +58,8 @@ export const isStripeConfigured = (): boolean => {
   return secretKey.startsWith('sk_test_') || secretKey.startsWith('sk_live_');
 };
 
+// Use getStripe() instead of this stub for real Stripe operations
+const _defaultExport: any = createStub();
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const stripe: any = createStub();
+export const stripe: any = _defaultExport;
 export const webhookSecret = '';

@@ -14,7 +14,7 @@ export default function DoctorsPage() {
 
   const [loadingDoctors, setLoadingDoctors] = useState(true);
   const [loadingSlots, setLoadingSlots] = useState(false);
-  const [submitting, setSubmitting] = useState(false); // prevents double-click
+  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [successMsg, setSuccessMsg] = useState(null);
 
@@ -56,7 +56,6 @@ export default function DoctorsPage() {
     loadSlots();
   }, [selectedDoctor, date, t]);
 
-  // Guard against double-click / double-submit
   const handleBooking = async () => {
     if (submitting) return;
 
@@ -69,7 +68,6 @@ export default function DoctorsPage() {
 
       setSuccessMsg(t('doctors.success_create'));
 
-      // Refresh slots to show the booked one as unavailable
       const updated = await getAvailableSlots(selectedDoctor, date);
       setSlots(updated);
       setSelectedTime(null);
@@ -105,7 +103,7 @@ export default function DoctorsPage() {
         <input
           type="date"
           value={date}
-          min={new Date().toISOString().split('T')[0]} // prevent past dates in UI
+          min={new Date().toISOString().split('T')[0]}
           onChange={(e) => {
             setDate(e.target.value);
             setSlots([]);
@@ -177,7 +175,7 @@ export default function DoctorsPage() {
 
           <div style={{ marginTop: '15px' }}>
             <button
-              disabled={!selectedTime || submitting} // disabled while submitting
+              disabled={!selectedTime || submitting}
               onClick={handleBooking}
               style={{
                 padding: '10px 20px',

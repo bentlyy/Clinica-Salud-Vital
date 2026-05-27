@@ -59,9 +59,9 @@ describe('GET /api/analytics/dashboard', () => {
       .set('Authorization', `Bearer ${adminToken}`);
 
     expect(res.status).toBe(200);
-    expect(res.body).toHaveProperty('total_patients');
-    expect(res.body).toHaveProperty('total_doctors');
-    expect(res.body).toHaveProperty('total_bookings');
+    expect(res.body.data).toHaveProperty('total_patients');
+    expect(res.body.data).toHaveProperty('total_doctors');
+    expect(res.body.data).toHaveProperty('total_bookings');
   });
 
   it('returns 401 if not authenticated', async () => {
@@ -87,7 +87,7 @@ describe('GET /api/analytics/bookings-by-month', () => {
       .set('Authorization', `Bearer ${adminToken}`);
 
     expect(res.status).toBe(200);
-    expect(Array.isArray(res.body)).toBe(true);
+    expect(Array.isArray(res.body.data)).toBe(true);
   });
 
   it('returns bookings by month for doctor', async () => {
@@ -118,7 +118,7 @@ describe('GET /api/analytics/top-doctors', () => {
       .set('Authorization', `Bearer ${adminToken}`);
 
     expect(res.status).toBe(200);
-    expect(Array.isArray(res.body)).toBe(true);
+    expect(Array.isArray(res.body.data)).toBe(true);
   });
 });
 
@@ -135,7 +135,7 @@ describe('GET /api/analytics/my-stats', () => {
       .set('Authorization', `Bearer ${doctorToken}`);
 
     expect(res.status).toBe(200);
-    expect(res.body).toHaveProperty('total_bookings');
+    expect(res.body.data).toHaveProperty('total_bookings');
   });
 
   it('returns 403 if role is user', async () => {

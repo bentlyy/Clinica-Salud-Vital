@@ -79,17 +79,18 @@ const revokeAllUserRefreshTokens = async (userId: number): Promise<void> => {
   await pool.query('UPDATE refresh_tokens SET revoked = true WHERE user_id = $1', [userId]);
 };
 
-export const register = async ({ email, password, name, rut, phone, tenant_id }: RegisterParams): Promise<Pick<User, 'id' | 'email' | 'rut' | 'phone'>> => {
-  if (!email || !password) throw new BadRequestError('Email and password required');
-
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(email)) throw new BadRequestError('Invalid email format');
-
+const validatePassword = (password: string): void => {
   if (password.length < 8) throw new BadRequestError('Password must be at least 8 characters');
   if (!/[A-Z]/.test(password)) throw new BadRequestError('Password must contain at least one uppercase letter');
   if (!/[a-z]/.test(password)) throw new BadRequestError('Password must contain at least one lowercase letter');
   if (!/[0-9]/.test(password)) throw new BadRequestError('Password must contain at least one number');
   if (!/[^A-Za-z0-9]/.test(password)) throw new BadRequestError('Password must contain at least one special character');
+};
+
+export const register = async ({ email, password, name, rut, phone, tenant_id }: RegisterParams): Promise<Pick<User, 'id' | 'email' | 'rut' | 'phone'>> => {
+  if (!email || !password) throw new BadRequestError('Email and password required');
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new BadRequestError('Invalid email format');
+  validatePassword(password);
 
   let formattedRut: string | null = null;
   if (rut) {
@@ -110,11 +111,9 @@ export const register = async ({ email, password, name, rut, phone, tenant_id }:
     );
     return result.rows[0];
   } catch (error: unknown) {
-    const pgError = error as { code?: string; detail?: string };
+    const pgError = error as { code?: string };
     if (pgError.code === '23505') {
-      if (pgError.detail?.includes('email')) throw new BadRequestError('Email already exists');
-      if (pgError.detail?.includes('rut')) throw new BadRequestError('RUT ya registrado');
-      throw new BadRequestError('Email or RUT already exists');
+      throw new BadRequestError('Email or RUT already registered');
     }
     throw new BadRequestError('Error creating user');
   }
@@ -174,31 +173,59 @@ export const refreshToken = async ({ refresh_token }: RefreshParams): Promise<{
   access_token: string;
   refresh_token: string;
 } | null> => {
-  const result = await pool.query(
-    'SELECT * FROM refresh_tokens WHERE token = $1 AND revoked = false AND expires_at > NOW()',
-    [refresh_token]
-  );
-  const tokenRecord = result.rows[0];
-  if (!tokenRecord) return null;
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
 
-  const userResult = await pool.query<User>('SELECT * FROM users WHERE id = $1', [tokenRecord.user_id]);
-  const user = userResult.rows[0];
-  if (!user) return null;
+    const result = await client.query(
+      'SELECT * FROM refresh_tokens WHERE token = $1 AND revoked = false AND expires_at > NOW() FOR UPDATE',
+      [refresh_token]
+    );
+    const tokenRecord = result.rows[0];
+    if (!tokenRecord) {
+      await client.query('ROLLBACK');
+      client.release();
+      return null;
+    }
 
-  await revokeRefreshToken(refresh_token);
+    const userResult = await client.query<User>('SELECT * FROM users WHERE id = $1', [tokenRecord.user_id]);
+    const user = userResult.rows[0];
+    if (!user) {
+      await client.query('ROLLBACK');
+      client.release();
+      return null;
+    }
 
-  const newAccessToken = generateAccessToken({
-    id: user.id,
-    email: user.email,
-    role: user.role || 'user',
-    tenant_id: user.tenant_id || process.env.DEFAULT_TENANT_ID || 'default',
-  });
-  const newRefreshToken = await generateRefreshToken(user.id);
+    await client.query('UPDATE refresh_tokens SET revoked = true WHERE token = $1', [refresh_token]);
 
-  return {
-    access_token: newAccessToken,
-    refresh_token: newRefreshToken,
-  };
+    const newAccessToken = generateAccessToken({
+      id: user.id,
+      email: user.email,
+      role: user.role || 'user',
+      tenant_id: user.tenant_id || process.env.DEFAULT_TENANT_ID || 'default',
+    });
+
+    const newToken = crypto.randomBytes(40).toString('hex');
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + REFRESH_TOKEN_EXPIRY_DAYS);
+
+    await client.query(
+      'INSERT INTO refresh_tokens (user_id, token, expires_at) VALUES ($1, $2, $3)',
+      [user.id, newToken, expiresAt]
+    );
+
+    await client.query('COMMIT');
+
+    return {
+      access_token: newAccessToken,
+      refresh_token: newToken,
+    };
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
+  }
 };
 
 export const logout = async (refresh_token: string): Promise<void> => {
@@ -210,11 +237,7 @@ export const logoutAll = async (userId: number): Promise<void> => {
 };
 
 export const changePassword = async ({ userId, currentPassword, newPassword }: ChangePasswordParams): Promise<void> => {
-  if (newPassword.length < 8) throw new BadRequestError('Password must be at least 8 characters');
-  if (!/[A-Z]/.test(newPassword)) throw new BadRequestError('Password must contain at least one uppercase letter');
-  if (!/[a-z]/.test(newPassword)) throw new BadRequestError('Password must contain at least one lowercase letter');
-  if (!/[0-9]/.test(newPassword)) throw new BadRequestError('Password must contain at least one number');
-  if (!/[^A-Za-z0-9]/.test(newPassword)) throw new BadRequestError('Password must contain at least one special character');
+  validatePassword(newPassword);
 
   const userResult = await pool.query('SELECT password FROM users WHERE id = $1', [userId]);
   if (!userResult.rows[0]) throw new BadRequestError('User not found');
