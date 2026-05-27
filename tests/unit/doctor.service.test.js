@@ -159,6 +159,27 @@ describe('doctorService.registerDoctor', () => {
     expect(result.doctor.name).toBe('Dr. RUT');
   });
 
+  it('handles unique constraint error in catch block', async () => {
+    mockClient.query.mockImplementation((sql) => {
+      if (sql === 'BEGIN') return Promise.resolve({});
+      if (sql.includes('SELECT 1 FROM users WHERE rut')) return Promise.resolve({ rows: [] });
+      if (sql.includes('SELECT 1 FROM users WHERE email')) return Promise.resolve({ rows: [] });
+      if (sql.includes('INSERT INTO users')) {
+        const err = new Error('Unique violation');
+        err.code = '23505';
+        return Promise.reject(err);
+      }
+      if (sql === 'ROLLBACK') return Promise.resolve({});
+      return Promise.resolve({ rows: [] });
+    });
+
+    await expect(doctorService.registerDoctor({
+      name: 'Dr. Dup', specialty: 'General', email: 'dup@test.com',
+    })).rejects.toThrow('Doctor o usuario ya existe');
+
+    expect(mockClient.query).toHaveBeenCalledWith('ROLLBACK');
+  });
+
   it('registers doctor with tenantId', async () => {
     mockClient.query.mockImplementation((sql) => {
       if (sql === 'BEGIN') return Promise.resolve({});
