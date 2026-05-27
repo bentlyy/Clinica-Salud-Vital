@@ -125,6 +125,24 @@ describe('query helpers', () => {
       const result = tenantQuery.insertParams(['a', undefined], 'tenant-1');
       expect(result).toEqual(['a', 'tenant-1']);
     });
+
+    it('insert handles missing closing parenthesis', async () => {
+      const { tenantQuery } = await import('../../src/shared/query.js');
+      const result = tenantQuery.insert('INSERT INTO users (name VALUES ($1');
+      expect(result).toBe('INSERT INTO users (name VALUES ($1');
+    });
+
+    it('insert handles already present tenant_id without RETURNING', async () => {
+      const { tenantQuery } = await import('../../src/shared/query.js');
+      const result = tenantQuery.insert('INSERT INTO users (name, tenant_id) VALUES ($1, $2)');
+      expect(result).toBe('INSERT INTO users (name, tenant_id) VALUES ($1, $2)');
+    });
+
+    it('insertParams with tagged param filters undefined', async () => {
+      const { tenantQuery } = await import('../../src/shared/query.js');
+      const result = tenantQuery.insertParams(['a', '__tenant_id__placeholder__', undefined], 'tenant-1');
+      expect(result).toEqual(['a', 'tenant-1']);
+    });
   });
 
   describe('getTenantIdsFromRaw', () => {

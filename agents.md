@@ -269,12 +269,23 @@ Features:
 
 | Type | Files | What |
 |------|-------|------|
-| Unit | 7 | auth, booking, doctor, guest, confirmation, exception, RUT |
-| Integration | 6 | auth, booking, doctor, guest-confirmation, analytics, audit, clinical-record |
+| Unit | 13 | auth, booking, doctor, guest, confirmation, exception, RUT, laboratory, billing, i18n, routes, ml service, shared utilities |
+| Integration | 7 | auth, booking, doctor, guest-confirmation, analytics, audit, clinical-record |
 | ML | 1 | ML model tests |
 
 **Setup:** `tests/setup.js` mocks env vars. DB mocked via `vi.hoisted()` over `pool.query`.
 **Coverage threshold:** 50% lines/branches/functions/statements (Vitest + v8).
+
+### Coverage actual
+
+| Métrica | % |
+|---------|---|
+| Statements | 87.75 |
+| Branches | 87.95 |
+| Functions | 91 |
+| Lines | 88.09 |
+
+**1071 tests** · 78 archivos · 0 fallos
 
 ---
 
@@ -344,6 +355,14 @@ Features:
 - Password complexity validada en backend (Zod) y frontend
 - Refresh token rotation (cada refresh revoca el anterior)
 - `optionalAuth` middleware para rutas públicas opcionalmente autenticadas
+
+## Test Gotchas
+
+### vi.mock paths (ml.service.test.js)
+- When mocking modules that are imported via relative paths in source files, use the path **relative to the test file**, not the source file.
+- `vi.mock('./ml.cache.js', ...)` resolves relative to `tests/unit/` → `tests/unit/ml.cache.js` (wrong!)
+- Must use `vi.mock('../../src/modules/ml/ml.cache.js', ...)` to resolve to `src/modules/ml/ml.cache.js` (correct)
+- Same applies to `ml.middleware.js` and any other module imported by the source via a relative path.
 
 ## Known Issues & Gotchas
 
