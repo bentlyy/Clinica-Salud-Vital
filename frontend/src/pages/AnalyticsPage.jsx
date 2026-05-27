@@ -441,6 +441,17 @@ export default function AnalyticsPage() {
             📥 {t('analytics.export_excel')}
           </button>
           <button
+            onClick={() => {
+              const url = `${window.location.origin}/api/v1/ml/powerbi-export`;
+              navigator.clipboard.writeText(url);
+              alert(t('analytics.powerbi_copied'));
+            }}
+            className="btn btn-outline"
+            style={{ padding: '10px 20px' }}
+          >
+            📊 Power BI
+          </button>
+          <button
             onClick={trainModels}
             disabled={training}
             className="btn btn-primary"

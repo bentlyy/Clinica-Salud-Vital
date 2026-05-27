@@ -15,13 +15,14 @@ const isInternalDb = (): boolean => {
 
 export const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: !isInternalDb() && process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+  ssl: !isInternalDb() && process.env.NODE_ENV === 'production' ? { rejectUnauthorized: true } : false,
   max: 20,
   idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000,
+  connectionTimeoutMillis: 5000,
 });
 
-pool.on('connect', () => {
+pool.on('connect', (client) => {
+  client.query('SET statement_timeout = 30000; SET idle_in_transaction_session_timeout = 60000;').catch(() => {});
   logger.info('DB connected');
 });
 

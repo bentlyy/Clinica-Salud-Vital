@@ -25,7 +25,6 @@ export default function SaasPlansPage() {
         setPlans(Array.isArray(plansData.data) ? plansData.data : []);
         setSubscription(subData?.subscription || null);
       } catch {
-        // show empty
       } finally {
         setLoading(false);
       }

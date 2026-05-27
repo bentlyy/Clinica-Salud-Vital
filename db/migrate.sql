@@ -31,46 +31,8 @@ CREATE INDEX IF NOT EXISTS idx_bookings_confirmed ON bookings(confirmed);
 CREATE INDEX IF NOT EXISTS idx_users_rut ON users(rut);
 
 -- ML Prediction History Tables
-CREATE TABLE IF NOT EXISTS ml_prediction_history (
-  id SERIAL PRIMARY KEY,
-  model_type TEXT NOT NULL,
-  input_data JSONB NOT NULL,
-  prediction_result JSONB NOT NULL,
-  confidence TEXT,
-  prediction_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  doctor_id INT,
-  user_id INT,
-  booking_id INT,
-  actual_result BOOLEAN,
-  is_correct BOOLEAN,
-  error_message TEXT
-);
-
-CREATE TABLE IF NOT EXISTS ml_model_metrics (
-  id SERIAL PRIMARY KEY,
-  model_type TEXT NOT NULL,
-  trained_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  duration_ms INT,
-  samples_used INT,
-  accuracy FLOAT,
-  loss_value FLOAT,
-  status TEXT DEFAULT 'success',
-  error_message TEXT
-);
-
-CREATE TABLE IF NOT EXISTS ml_demand_forecast (
-  id SERIAL PRIMARY KEY,
-  forecast_date DATE NOT NULL,
-  predicted_demand INT NOT NULL,
-  actual_demand INT,
-  confidence TEXT,
-  generated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  model_version TEXT DEFAULT 'v1'
-);
-
-CREATE INDEX IF NOT EXISTS idx_prediction_history_model ON ml_prediction_history(model_type);
-CREATE INDEX IF NOT EXISTS idx_prediction_history_date ON ml_prediction_history(prediction_date);
-CREATE INDEX IF NOT EXISTS idx_prediction_history_user ON ml_prediction_history(user_id);
-CREATE INDEX IF NOT EXISTS idx_demand_forecast_date ON ml_demand_forecast(forecast_date);
+-- migrate.sql uses CREATE TABLE IF NOT EXISTS consistently with init.sql
+-- Any differences from init.sql are handled via ALTER TABLE ADD COLUMN IF NOT EXISTS
+-- ML tables are defined in init.sql (authoritative schema)
 
 END $$;

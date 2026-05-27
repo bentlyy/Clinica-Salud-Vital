@@ -17,6 +17,7 @@ export const auditMiddleware = (action: string, resource_type: string, getIdFrom
         new_values: ['POST', 'PUT', 'PATCH'].includes(req.method) ? req.body : null,
         ip_address: req.ip,
         user_agent: req.get('User-Agent'),
+        tenant_id: req.tenant_id,
       }).catch((err: Error) => logger.error('Audit log error:', err));
 
       return originalJson(body);

@@ -1,8 +1,9 @@
+import type { Request, Response, NextFunction } from 'express';
 import { asyncHandler } from '../../middlewares/asyncHandler.middleware.js';
 import { checkFeatureAccess, checkLimits } from './saas.service.js';
 
 export const requireFeature = (featureKey: string) => {
-  return asyncHandler(async (req: import('express').Request, res: import('express').Response, next: import('express').NextFunction) => {
+  return asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
     const tenantId = (req as { tenant_id?: string }).tenant_id || process.env.DEFAULT_TENANT_ID || 'default';
 
     const hasAccess = await checkFeatureAccess(tenantId, featureKey);
@@ -19,8 +20,8 @@ export const requireFeature = (featureKey: string) => {
   });
 };
 
-export const requireLimit = (resource: 'doctors' | 'patients' | 'storage') => {
-  return asyncHandler(async (req: import('express').Request, res: import('express').Response, next: import('express').NextFunction) => {
+export const requireLimit = (resource: 'doctors' | 'patients' | 'storage' | 'ml_predictions' | 'ml_training') => {
+  return asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
     const tenantId = (req as { tenant_id?: string }).tenant_id || process.env.DEFAULT_TENANT_ID || 'default';
 
     const { allowed, current, limit } = await checkLimits(tenantId, resource);

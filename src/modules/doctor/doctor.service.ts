@@ -1,11 +1,13 @@
 import { pool } from '../../shared/db.js';
 import bcrypt from 'bcrypt';
-import crypto from 'crypto';
+import jwt from 'jsonwebtoken';
 import { sendEmail } from '../../shared/email.service.js';
 import { doctorCredentialsEmail } from './doctor.email.js';
-import { validateRut, cleanRut, formatRut } from '../../shared/rut.js';
-import { BadRequestError } from '../../utils/errors.js';
+import { getJWTSecret } from '../../shared/jwt.js';
+import { BadRequestError, NotFoundError } from '../../utils/errors.js';
 import { logger } from '../../utils/logger.js';
+import crypto from 'crypto';
+import { cleanRut, validateRut, formatRut } from '../../shared/rut.js';
 import { ensureSpecialty } from '../specialties/specialties.service.js';
 
 interface DoctorInput {
@@ -55,7 +57,7 @@ const generatePassword = (): string => {
   return password;
 };
 
-export const registerDoctor = async ({ name, specialty, email, rut, phone }: DoctorInput): Promise<{ doctor: Doctor; credentials: { email: string; tempPassword: string } }> => {
+export const registerDoctor = async ({ name, specialty, email, rut, phone }: DoctorInput, tenantId?: string): Promise<{ doctor: Doctor; credentials: { email: string } }> => {
   if (!name || !specialty || !email) {
     throw new BadRequestError('Nombre, especialidad y email son obligatorios');
   }
@@ -85,19 +87,19 @@ export const registerDoctor = async ({ name, specialty, email, rut, phone }: Doc
     const hashedPassword = await bcrypt.hash(tempPassword, 12);
 
     const userResult = await client.query(
-      `INSERT INTO users (email, password, role, rut, phone)
-       VALUES ($1, $2, 'doctor', $3, $4)
+      `INSERT INTO users (email, password, role, rut, phone${tenantId ? ', tenant_id' : ''})
+       VALUES ($1, $2, 'doctor', $3, $4${tenantId ? ', $5' : ''})
        RETURNING id, email`,
-      [email, hashedPassword, formattedRut, phone || null]
+      tenantId ? [email, hashedPassword, formattedRut, phone || null, tenantId] : [email, hashedPassword, formattedRut, phone || null]
     );
 
     const userId = userResult.rows[0].id;
 
     const doctorResult = await client.query(
-      `INSERT INTO doctors (name, specialty, email, user_id)
-       VALUES ($1, $2, $3, $4)
+      `INSERT INTO doctors (name, specialty, email, user_id${tenantId ? ', tenant_id' : ''})
+       VALUES ($1, $2, $3, $4${tenantId ? ', $5' : ''})
        RETURNING *`,
-      [name, specialty, email, userId]
+      tenantId ? [name, specialty, email, userId, tenantId] : [name, specialty, email, userId]
     );
 
     const doctor = doctorResult.rows[0] as Doctor;
@@ -112,18 +114,24 @@ export const registerDoctor = async ({ name, specialty, email, rut, phone }: Doc
 
     await client.query('COMMIT');
 
+    const setupToken = jwt.sign(
+      { id: userId, purpose: 'setup-password' },
+      getJWTSecret(),
+      { expiresIn: '24h' }
+    );
+
     sendEmail({
       to: email,
-      subject: 'Bienvenido a Clínica Salud Vital — Tus credenciales de acceso',
+      subject: 'Bienvenido a Clínica Salud Vital — Establece tu contraseña',
       html: doctorCredentialsEmail({
         name,
         email,
-        password: tempPassword,
+        setupToken,
         loginUrl: process.env.FRONTEND_URL + '/login',
       }),
     }).then(r => { if (!r.sent) logger.error('Doctor welcome email error:', r.error); });
 
-    return { doctor, credentials: { email, tempPassword } };
+    return { doctor, credentials: { email } };
 
   } catch (error: unknown) {
     await client.query('ROLLBACK');

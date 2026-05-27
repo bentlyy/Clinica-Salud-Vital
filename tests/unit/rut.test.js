@@ -27,6 +27,10 @@ describe('formatRut', () => {
   it('handles short rut', () => {
     expect(formatRut('12')).toBe('1-2');
   });
+
+  it('returns cleaned input when length is 1', () => {
+    expect(formatRut('5')).toBe('5');
+  });
 });
 
 describe('validateRut', () => {
@@ -53,5 +57,10 @@ describe('validateRut', () => {
 
   it('rejects rut with body 0', () => {
     expect(validateRut('0-1')).toBe(false);
+  });
+
+  it('validates rut with expectedDv 11 mapping to 0', () => {
+    expect(validateRut('3.068.695-0')).toBe(true);
+    expect(validateRut('3068695-0')).toBe(true);
   });
 });

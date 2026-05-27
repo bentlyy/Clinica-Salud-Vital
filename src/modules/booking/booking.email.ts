@@ -1,3 +1,5 @@
+import { escapeHtml } from '../../shared/escape.js';
+
 interface BookingConfirmationParams {
   doctor: string;
   date: string;
@@ -7,16 +9,17 @@ interface BookingConfirmationParams {
 }
 
 export const bookingConfirmationTemplate = ({ doctor, date, time, confirmToken, frontendUrl }: BookingConfirmationParams): string => {
-  const confirmUrl = confirmToken ? `${frontendUrl || 'http://localhost:5173'}/confirm/${confirmToken}` : null;
+  const baseUrl = escapeHtml(frontendUrl || 'http://localhost:5173');
+  const confirmUrl = confirmToken ? `${baseUrl}/confirm/${encodeURIComponent(confirmToken)}` : null;
 
   return `
     <h2>Reserva pre-confirmada</h2>
-    <p>Tu cita ha sido agendada. Para asegurarla, confirma con el botón de abajo:</p>
+    <p>Tu cita ha sido agendada. Para asegurarla, confirma con el bot\u00f3n de abajo:</p>
 
     <ul>
-      <li><strong>Doctor:</strong> ${doctor}</li>
-      <li><strong>Fecha:</strong> ${date}</li>
-      <li><strong>Hora:</strong> ${time}</li>
+      <li><strong>Doctor:</strong> ${escapeHtml(doctor)}</li>
+      <li><strong>Fecha:</strong> ${escapeHtml(date)}</li>
+      <li><strong>Hora:</strong> ${escapeHtml(time)}</li>
     </ul>
 
     ${confirmUrl ? `
@@ -26,7 +29,7 @@ export const bookingConfirmationTemplate = ({ doctor, date, time, confirmToken, 
         </a>
       </p>
       <p style="color: #e53935; font-size: 13px;">
-        ⚠️ Si no confirmas tu cita, tu RUT será bloqueado por 7 días.
+        Si no confirmas tu cita, tu RUT ser\u00e1 bloqueado por 7 d\u00edas.
       </p>
     ` : '<p>Gracias por confiar en nosotros.</p>'}
   `;

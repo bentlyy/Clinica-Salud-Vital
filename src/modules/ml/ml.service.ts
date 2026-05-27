@@ -1,14 +1,8 @@
-/**
- * Servicio de Machine Learning / Deep Learning
- * Modelos: No-Shows, Diagnósticos, Demanda, Signos Vitales
- */
-
 import { pool } from '../../shared/db.js';
 import { logger } from '../../utils/logger.js';
 import { mlCache } from './ml.cache.js';
 import { trackTrainingMetric } from './ml.middleware.js';
 
-// TensorFlow.js types
 interface TensorFlowModule {
   tensor2d: (data: number[][], shape?: [number, number]) => unknown;
   tensor3d: (data: number[][][], shape?: [number, number, number]) => unknown;
@@ -38,6 +32,7 @@ interface SequentialModel {
   mean?: number[];
   std?: number[];
   threshold?: number;
+  specialtyList?: string[];
 }
 
 interface Layer {
@@ -53,7 +48,6 @@ interface Tensor {
 
 interface History {}
 
-// Model types
 interface TrainingResult {
   trained: boolean;
   cached?: boolean;
@@ -175,7 +169,7 @@ const denormalize = (normalized: number[], originalData: number[]): number[] => 
 export const getStopWords = (): Set<string> => new Set([
   'el', 'la', 'los', 'las', 'de', 'del', 'en', 'un', 'una', 'por', 'para',
   'con', 'sin', 'mi', 'tu', 'su', 'yo', 'que', 'es', 'son', 'me', 'tiene',
-  'mucho', 'poco', 'hace', 'tengo', 'tener', 'dolor', 'ya', 'mas', 'menos', 'muy'
+  'mucho', 'poco', 'hace', 'tengo', 'tener', 'ya', 'mas', 'menos', 'muy'
 ]);
 
 export const tokenizeText = (text: string): string[] => {
@@ -216,13 +210,13 @@ const trainWithTimeout = async <T>(trainingFn: () => Promise<T>, timeout = 60000
   ]);
 };
 
-export const trainNoShowModel = async (): Promise<TrainingResult> => {
+export const trainNoShowModel = async (tenantId?: string): Promise<TrainingResult> => {
   const startTime = Date.now();
   logger.info('[ML] Training No-Show model (enhanced)...');
 
   try {
     const { tensor2d, sequential, layers, train } = await getTF();
-    const cacheKey = 'model:noshow';
+    const cacheKey = tenantId ? `tenant:${tenantId}:model:noshow` : 'model:noshow';
     const cached = await mlCache.get(cacheKey) as { model: SequentialModel } | null;
     if (cached) {
       noShowModel = cached.model;
@@ -253,7 +247,8 @@ export const trainNoShowModel = async (): Promise<TrainingResult> => {
       LEFT JOIN doctors d ON b.doctor_id = d.id
       WHERE b.date >= NOW() - INTERVAL '6 months'
         AND b.created_at IS NOT NULL
-    `);
+        ${tenantId ? 'AND b.tenant_id = $1' : ''}
+    `, tenantId ? [tenantId] : []);
 
     if (bookings.rows.length < 10) {
       logger.warn('[ML] Insufficient data for No-Show training');
@@ -269,6 +264,7 @@ export const trainNoShowModel = async (): Promise<TrainingResult> => {
         specialtyMap.set(spec, specialtyIdx++);
       }
     });
+    const specialtyCount = Math.max(specialtyMap.size, 1);
 
     const X: number[][] = [];
     const y: number[] = [];
@@ -296,7 +292,7 @@ export const trainNoShowModel = async (): Promise<TrainingResult> => {
         isBlocked,
         Math.min(daysAdvance, 30) / 30,
         Math.min(userBookings, 10) / 10,
-        specialty / Math.max(specialtyMap.size, 1),
+        specialty / specialtyCount,
         isMonday,
         isFriday,
         isMorning,
@@ -339,10 +335,11 @@ export const trainNoShowModel = async (): Promise<TrainingResult> => {
     noShowModel.trained = true;
     noShowModel.mean = mean;
     noShowModel.std = std;
+    noShowModel.specialtyList = Array.from(specialtyMap.keys());
 
     await mlCache.set(cacheKey, { model: noShowModel }, 30 * 60 * 1000);
 
-    await saveModelMetrics('noshow', Date.now() - startTime, X.length, undefined, undefined);
+    await saveModelMetrics('noshow', Date.now() - startTime, X.length, undefined, undefined, undefined, tenantId);
 
     const duration = Date.now() - startTime;
     logger.info(`[ML] No-Show model trained in ${duration}ms with ${X.length} samples, ${specialtyMap.size} specialties`);
@@ -356,19 +353,19 @@ export const trainNoShowModel = async (): Promise<TrainingResult> => {
   }
 };
 
-export const predictNoShow = async (doctorId: number | undefined, userId: number | undefined, date: string, time: string, bookingId?: number): Promise<PredictionResult> => {
+export const predictNoShow = async (doctorId: number | undefined, userId: number | undefined, date: string, time: string, bookingId?: number, tenantId?: string): Promise<PredictionResult> => {
   if (!doctorId || !userId) {
     return { risk: 0.3, confidence: 'low', reason: 'invalid_input' };
   }
 
-  const cacheKey = `predict:noshow:${doctorId}:${userId}:${date}:${time}`;
+  const cacheKey = tenantId ? `tenant:${tenantId}:predict:noshow:${doctorId}:${userId}:${date}:${time}` : `predict:noshow:${doctorId}:${userId}:${date}:${time}`;
   const cached = await mlCache.get(cacheKey) as PredictionResult | null;
   if (cached) {
     return cached;
   }
 
   if (!noShowModel || !noShowModel.trained) {
-    const result = await withTrainingLock('noshow', trainNoShowModel);
+    const result = await withTrainingLock('noshow', () => trainNoShowModel(tenantId));
     if (!result.trained) {
       return { risk: 0.3, confidence: 'low', reason: 'model_not_trained' };
     }
@@ -391,6 +388,18 @@ export const predictNoShow = async (doctorId: number | undefined, userId: number
     );
     const user = userResult.rows[0] as Record<string, unknown> || {};
 
+    let doctorSpecialtyIdx = 0;
+    const doctorResult = await pool.query(
+      'SELECT specialty FROM doctors WHERE id = $1',
+      [doctorId]
+    );
+    if (doctorResult.rows.length > 0) {
+      const specialtyName = doctorResult.rows[0].specialty;
+      const specialtyList = noShowModel?.specialtyList || [];
+      const idx = specialtyList.indexOf(specialtyName);
+      if (idx >= 0) doctorSpecialtyIdx = idx;
+    }
+
     const bookingResult = await pool.query(
       'SELECT created_at::date as created_date FROM bookings WHERE doctor_id = $1 AND user_id = $2 AND date = $3::date LIMIT 1',
       [doctorId, userId, date]
@@ -404,7 +413,7 @@ export const predictNoShow = async (doctorId: number | undefined, userId: number
     const noShowHistory = (user?.no_show_count as number) || 0;
     const isBlocked = user?.blocked_until && new Date(user.blocked_until as string) > new Date() ? 1 : 0;
     const userBookings = parseInt(String(user?.user_bookings_month)) || 0;
-    const specialty = 0;
+    const specialty = doctorSpecialtyIdx;
     const isMonday = dayOfWeek === 1 ? 1 : 0;
     const isFriday = dayOfWeek === 5 ? 1 : 0;
     const isMorning = hour < 12 ? 1 : 0;
@@ -445,7 +454,7 @@ export const predictNoShow = async (doctorId: number | undefined, userId: number
 
     await mlCache.set(cacheKey, result, 5 * 60 * 1000);
     
-    await savePrediction('noshow', { doctorId, userId, date, time, features: rawFeatures }, result as unknown as Record<string, unknown>, { doctorId, userId, bookingId });
+    await savePrediction('noshow', { doctorId, userId, date, time, features: rawFeatures }, result as unknown as Record<string, unknown>, { doctorId, userId, bookingId }, tenantId);
     
     return result;
   } catch (err) {
@@ -454,13 +463,13 @@ export const predictNoShow = async (doctorId: number | undefined, userId: number
   }
 };
 
-export const trainDiagnosisClassifier = async (): Promise<TrainingResult> => {
+export const trainDiagnosisClassifier = async (tenantId?: string): Promise<TrainingResult> => {
   const startTime = Date.now();
   logger.info('[ML] Training diagnosis classifier (TF-IDF enhanced)...');
 
   try {
     const { tensor2d, sequential, layers } = await getTF();
-    const cacheKey = 'model:diagnosis';
+    const cacheKey = tenantId ? `tenant:${tenantId}:model:diagnosis` : 'model:diagnosis';
     const cached = await mlCache.get(cacheKey) as { model: SequentialModel } | null;
     if (cached) {
       diagnosisModel = cached.model;
@@ -474,7 +483,8 @@ export const trainDiagnosisClassifier = async (): Promise<TrainingResult> => {
       FROM clinical_records
       WHERE diagnosis IS NOT NULL AND diagnosis != ''
         AND chief_complaint IS NOT NULL AND chief_complaint != ''
-    `);
+        ${tenantId ? 'AND tenant_id = $1' : ''}
+    `, tenantId ? [tenantId] : []);
 
     if (records.rows.length < 5) {
       logger.warn('[ML] Insufficient data for diagnosis classifier');
@@ -563,7 +573,7 @@ const maxVals = X[0].map((_, i) => Math.max(...X.map(row => Math.abs(row[i]))));
     diagnosisModel.trained = true;
 
     await mlCache.set(cacheKey, { model: diagnosisModel }, 30 * 60 * 1000);
-    await saveModelMetrics('diagnosis', Date.now() - startTime, records.rows.length, undefined, undefined);
+    await saveModelMetrics('diagnosis', Date.now() - startTime, records.rows.length, undefined, undefined, undefined, tenantId);
 
     const duration = Date.now() - startTime;
     logger.info(`[ML] Diagnosis classifier trained in ${duration}ms, vocab: ${vocabArray.length}, diagnoses: ${diagnoses.length}`);
@@ -577,19 +587,19 @@ const maxVals = X[0].map((_, i) => Math.max(...X.map(row => Math.abs(row[i]))));
   }
 };
 
-export const predictDiagnosis = async (chiefComplaint: string): Promise<DiagnosisPrediction> => {
+export const predictDiagnosis = async (chiefComplaint: string, tenantId?: string): Promise<DiagnosisPrediction> => {
   if (!chiefComplaint || chiefComplaint.length < 2) {
     return { predictions: [], error: 'Invalid input' };
   }
 
-  const cacheKey = `predict:diagnosis:${chiefComplaint.substring(0, 50)}`;
+  const cacheKey = tenantId ? `tenant:${tenantId}:predict:diagnosis:${chiefComplaint.substring(0, 50)}` : `predict:diagnosis:${chiefComplaint.substring(0, 50)}`;
   const cached = await mlCache.get(cacheKey) as DiagnosisPrediction | null;
   if (cached) {
     return cached;
   }
 
   if (!diagnosisModel || !diagnosisModel.trained) {
-    const result = await withTrainingLock('diagnosis', trainDiagnosisClassifier);
+    const result = await withTrainingLock('diagnosis', () => trainDiagnosisClassifier(tenantId));
     if (!result.trained) {
       return { predictions: [], reason: 'model_not_trained' };
     }
@@ -629,13 +639,13 @@ export const predictDiagnosis = async (chiefComplaint: string): Promise<Diagnosi
   }
 };
 
-export const trainDemandForecastModel = async (): Promise<TrainingResult> => {
+export const trainDemandForecastModel = async (tenantId?: string): Promise<TrainingResult> => {
   const startTime = Date.now();
   logger.info('[ML] Training demand forecast model (enhanced with fallback)...');
 
   try {
     const { tensor3d, tensor2d, sequential, layers: dlayers } = await getTF();
-    const cacheKey = 'model:demand';
+    const cacheKey = tenantId ? `tenant:${tenantId}:model:demand` : 'model:demand';
     const cached = await mlCache.get(cacheKey) as { model: SequentialModel } | null;
     if (cached) {
       demandModel = cached.model;
@@ -649,9 +659,10 @@ export const trainDemandForecastModel = async (): Promise<TrainingResult> => {
       FROM bookings
       WHERE date >= NOW() - INTERVAL '6 months'
         AND status != 'cancelled'
+        ${tenantId ? 'AND tenant_id = $1' : ''}
       GROUP BY date
       ORDER BY date
-    `);
+    `, tenantId ? [tenantId] : []);
 
     if (bookings.rows.length < 14) {
       logger.warn('[ML] Insufficient data for demand forecast');
@@ -712,7 +723,7 @@ export const trainDemandForecastModel = async (): Promise<TrainingResult> => {
     demandModel.trained = modelTrained;
 
     await mlCache.set(cacheKey, { model: demandModel }, 30 * 60 * 1000);
-    await saveModelMetrics('demand', Date.now() - startTime, values.length, undefined, undefined);
+    await saveModelMetrics('demand', Date.now() - startTime, values.length, undefined, undefined, undefined, tenantId);
 
     const duration = Date.now() - startTime;
     logger.info(`[ML] Demand model trained in ${duration}ms, data points: ${values.length}, type: ${modelTrained ? 'LSTM' : 'Statistical'}`);
@@ -755,17 +766,18 @@ const predictWithStatistical = (
   return results;
 };
 
-export const forecastDemand = async (days = 7): Promise<ForecastResult[]> => {
+export const forecastDemand = async (days = 7, tenantId?: string): Promise<ForecastResult[]> => {
   if (!demandModel || !demandModel.trained) {
-    const result = await withTrainingLock('demand', trainDemandForecastModel);
+    const result = await withTrainingLock('demand', () => trainDemandForecastModel(tenantId));
     if (!result.trained) {
       const lastDate = new Date();
+      const avg = result.samples && result.samples > 0 ? Math.round(result.samples / 30) : 10;
       return Array.from({ length: days }, (_, i) => {
         const date = new Date(lastDate);
         date.setDate(date.getDate() + i + 1);
         return {
           date: date.toISOString().split('T')[0],
-          predicted: Math.floor(Math.random() * 10) + 10,
+          predicted: Math.max(1, Math.round(avg + (i % 7) * 0.1 * avg)),
           confidence: 'low',
           reason: 'model_not_trained'
         };
@@ -791,7 +803,7 @@ export const forecastDemand = async (days = 7): Promise<ForecastResult[]> => {
         };
       });
       
-      await saveDemandForecast(forecasts);
+      await saveDemandForecast(forecasts, tenantId);
       return forecasts;
     }
 
@@ -825,7 +837,7 @@ export const forecastDemand = async (days = 7): Promise<ForecastResult[]> => {
       });
     }
 
-    await saveDemandForecast(forecasts);
+    await saveDemandForecast(forecasts, tenantId);
     return forecasts;
   } catch (err) {
     logger.error('[ML] Error forecasting demand:', (err as Error).message);
@@ -844,11 +856,11 @@ export const forecastDemand = async (days = 7): Promise<ForecastResult[]> => {
   }
 };
 
-export const analyzeOptimalSchedules = async (): Promise<ScheduleRecommendation[]> => {
+export const analyzeOptimalSchedules = async (tenantId?: string): Promise<ScheduleRecommendation[]> => {
   logger.info('[ML] Analyzing optimal schedules...');
 
   try {
-    const cacheKey = 'analysis:schedules';
+    const cacheKey = tenantId ? `tenant:${tenantId}:analysis:schedules` : 'analysis:schedules';
     const cached = await mlCache.get(cacheKey) as ScheduleRecommendation[] | null;
     if (cached) {
       return cached;
@@ -862,8 +874,9 @@ export const analyzeOptimalSchedules = async (): Promise<ScheduleRecommendation[
         COUNT(*) FILTER (WHERE status = 'cancelled') as cancelled
       FROM bookings
       WHERE date >= NOW() - INTERVAL '3 months'
+        ${tenantId ? 'AND tenant_id = $1' : ''}
       GROUP BY EXTRACT(DOW FROM date), EXTRACT(HOUR FROM time)
-    `);
+    `, tenantId ? [tenantId] : []);
 
     const days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
     const hours = ['09:00', '10:00', '11:00', '12:00', '14:00', '15:00', '16:00', '17:00'];
@@ -919,12 +932,12 @@ export const analyzeOptimalSchedules = async (): Promise<ScheduleRecommendation[
   }
 };
 
-export const trainVitalSignsAnomalyDetector = async (): Promise<TrainingResult> => {
+export const trainVitalSignsAnomalyDetector = async (tenantId?: string): Promise<TrainingResult> => {
   const startTime = Date.now();
   logger.info('[ML] Training vital signs anomaly detector (enhanced)...');
 
   try {
-    const cacheKey = 'model:vitals';
+    const cacheKey = tenantId ? `tenant:${tenantId}:model:vitals` : 'model:vitals';
     const cached = await mlCache.get(cacheKey) as { model: { mean: number[]; std: number[]; threshold: number; trained: boolean } } | null;
     if (cached) {
       vitalAnomalyModel = cached.model;
@@ -938,7 +951,8 @@ export const trainVitalSignsAnomalyDetector = async (): Promise<TrainingResult> 
       FROM clinical_records
       WHERE vital_signs IS NOT NULL
         AND vital_signs != '{}'
-    `);
+        ${tenantId ? 'AND tenant_id = $1' : ''}
+    `, tenantId ? [tenantId] : []);
 
     if (records.rows.length < 20) {
       logger.warn('[ML] Insufficient data for vital signs detector');
@@ -979,7 +993,7 @@ export const trainVitalSignsAnomalyDetector = async (): Promise<TrainingResult> 
     };
 
     await mlCache.set(cacheKey, { model: vitalAnomalyModel }, 30 * 60 * 1000);
-    await saveModelMetrics('vitals', Date.now() - startTime, features.length, undefined, undefined);
+    await saveModelMetrics('vitals', Date.now() - startTime, features.length, undefined, undefined, undefined, tenantId);
 
     const duration = Date.now() - startTime;
     logger.info(`[ML] Vital signs detector trained in ${duration}ms, samples: ${features.length}`);
@@ -1042,9 +1056,9 @@ const calculateCardiovascularRisk = (
   return { level, score, factors };
 };
 
-export const analyzeVitalSigns = async (vitalSigns?: Record<string, unknown>): Promise<VitalSignsAnalysis> => {
+export const analyzeVitalSigns = async (vitalSigns?: Record<string, unknown>, tenantId?: string): Promise<VitalSignsAnalysis> => {
   if (!vitalAnomalyModel || !vitalAnomalyModel.trained) {
-    const result = await withTrainingLock('vitals', trainVitalSignsAnomalyDetector);
+    const result = await withTrainingLock('vitals', () => trainVitalSignsAnomalyDetector(tenantId));
     if (!result.trained) {
       return { anomaly: false, score: 0, warnings: [], values: { systolic: 120, diastolic: 80, heartRate: 70, temp: 36.5 }, normalRanges: { systolic: { min: 0, max: 0 }, diastolic: { min: 0, max: 0 }, heartRate: { min: 0, max: 0 }, temperature: { min: '0', max: '0' } }, reason: 'model_not_trained' };
     }
@@ -1100,7 +1114,7 @@ export const analyzeVitalSigns = async (vitalSigns?: Record<string, unknown>): P
   }
 };
 
-export const getModelStatus = async (): Promise<ModelStatus> => {
+export const getModelStatus = async (tenantId?: string): Promise<ModelStatus> => {
   return {
     noShowModel: noShowModel?.trained ? 'trained' : 'not_trained',
     diagnosisModel: diagnosisModel?.trained ? 'trained' : 'not_trained',
@@ -1110,7 +1124,7 @@ export const getModelStatus = async (): Promise<ModelStatus> => {
   };
 };
 
-export const trainAllModels = async (): Promise<TrainAllResults> => {
+export const trainAllModels = async (tenantId?: string): Promise<TrainAllResults> => {
   const results: TrainAllResults = {
     noShow: { trained: false },
     diagnosis: { trained: false },
@@ -1122,10 +1136,10 @@ export const trainAllModels = async (): Promise<TrainAllResults> => {
 
   try {
     const [noShow, diagnosis, demand, vitals] = await Promise.all([
-      trainNoShowModel(),
-      trainDiagnosisClassifier(),
-      trainDemandForecastModel(),
-      trainVitalSignsAnomalyDetector()
+      trainNoShowModel(tenantId),
+      trainDiagnosisClassifier(tenantId),
+      trainDemandForecastModel(tenantId),
+      trainVitalSignsAnomalyDetector(tenantId)
     ]);
 
     results.noShow = noShow;
@@ -1142,7 +1156,7 @@ export const trainAllModels = async (): Promise<TrainAllResults> => {
   }
 };
 
-export const disposeAllModels = (): void => {
+export const disposeAllModels = (tenantId?: string): void => {
   if (noShowModel) { noShowModel.dispose(); noShowModel = null; }
   if (diagnosisModel) { diagnosisModel.dispose(); diagnosisModel = null; }
   if (demandModel) { demandModel.dispose(); demandModel = null; }
@@ -1153,15 +1167,18 @@ export const savePrediction = async (
   modelType: string,
   inputData: Record<string, unknown>,
   result: Record<string, unknown>,
-  options?: { doctorId?: number; userId?: number; bookingId?: number }
+  options?: { doctorId?: number; userId?: number; bookingId?: number },
+  tenantId?: string
 ): Promise<void> => {
   try {
     const confidence = (result as unknown as PredictionResult).confidence || 'low';
+    const columns = `model_type, input_data, prediction_result, confidence, doctor_id, user_id, booking_id${tenantId ? ', tenant_id' : ''}`;
+    const values = `$1, $2, $3, $4, $5, $6, $7${tenantId ? ', $8' : ''}`;
+    const params: (string | number | undefined)[] = [modelType, JSON.stringify(inputData), JSON.stringify(result), confidence, options?.doctorId, options?.userId, options?.bookingId];
+    if (tenantId) params.push(tenantId);
     await pool.query(
-      `INSERT INTO ml_prediction_history 
-       (model_type, input_data, prediction_result, confidence, doctor_id, user_id, booking_id)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-      [modelType, JSON.stringify(inputData), JSON.stringify(result), confidence, options?.doctorId, options?.userId, options?.bookingId]
+      `INSERT INTO ml_prediction_history (${columns}) VALUES (${values})`,
+      params
     );
   } catch (err) {
     logger.error('[ML] Error saving prediction:', (err as Error).message);
@@ -1174,15 +1191,18 @@ export const saveModelMetrics = async (
   samples: number,
   accuracy?: number,
   loss?: number,
-  error?: string
+  error?: string,
+  tenantId?: string
 ): Promise<void> => {
   try {
     const status = error ? 'error' : 'success';
+    const columns = `model_type, duration_ms, samples_used, accuracy, loss_value, status, error_message${tenantId ? ', tenant_id' : ''}`;
+    const values = `$1, $2, $3, $4, $5, $6, $7${tenantId ? ', $8' : ''}`;
+    const params: (string | number | undefined)[] = [modelType, duration, samples, accuracy, loss, status, error];
+    if (tenantId) params.push(tenantId);
     await pool.query(
-      `INSERT INTO ml_model_metrics 
-       (model_type, duration_ms, samples_used, accuracy, loss_value, status, error_message)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-      [modelType, duration, samples, accuracy, loss, status, error]
+      `INSERT INTO ml_model_metrics (${columns}) VALUES (${values})`,
+      params
     );
   } catch (err) {
     logger.error('[ML] Error saving metrics:', (err as Error).message);
@@ -1190,14 +1210,18 @@ export const saveModelMetrics = async (
 };
 
 export const saveDemandForecast = async (
-  forecasts: ForecastResult[]
+  forecasts: ForecastResult[],
+  tenantId?: string
 ): Promise<void> => {
   try {
     for (const f of forecasts) {
+      const columns = `date, predicted_demand, confidence${tenantId ? ', tenant_id' : ''}`;
+      const values = `$1, $2, $3${tenantId ? ', $4' : ''}`;
+      const params: (string | number)[] = [f.date, f.predicted, f.confidence];
+      if (tenantId) params.push(tenantId);
       await pool.query(
-        `INSERT INTO ml_demand_forecast (date, predicted_demand, confidence)
-         VALUES ($1, $2, $3)`,
-        [f.date, f.predicted, f.confidence]
+        `INSERT INTO ml_demand_forecast (${columns}) VALUES (${values})`,
+        params
       );
     }
   } catch (err) {
@@ -1207,13 +1231,27 @@ export const saveDemandForecast = async (
 
 export const getPredictionHistory = async (
   modelType?: string,
-  limit = 100
+  limit = 100,
+  tenantId?: string
 ): Promise<Record<string, unknown>[]> => {
   try {
-    const query = modelType
-      ? `SELECT * FROM ml_prediction_history WHERE model_type = $1 ORDER BY prediction_date DESC LIMIT $2`
-      : `SELECT * FROM ml_prediction_history ORDER BY prediction_date DESC LIMIT $1`;
-    const params = modelType ? [modelType, limit] : [limit];
+    let query: string;
+    const params: (string | number)[] = [];
+    
+    if (modelType && tenantId) {
+      query = `SELECT * FROM ml_prediction_history WHERE model_type = $1 AND tenant_id = $2 ORDER BY prediction_date DESC LIMIT $3`;
+      params.push(modelType, tenantId, limit);
+    } else if (modelType) {
+      query = `SELECT * FROM ml_prediction_history WHERE model_type = $1 ORDER BY prediction_date DESC LIMIT $2`;
+      params.push(modelType, limit);
+    } else if (tenantId) {
+      query = `SELECT * FROM ml_prediction_history WHERE tenant_id = $1 ORDER BY prediction_date DESC LIMIT $2`;
+      params.push(tenantId, limit);
+    } else {
+      query = `SELECT * FROM ml_prediction_history ORDER BY prediction_date DESC LIMIT $1`;
+      params.push(limit);
+    }
+    
     const result = await pool.query(query, params);
     return result.rows;
   } catch (err) {
@@ -1224,13 +1262,27 @@ export const getPredictionHistory = async (
 
 export const getModelMetricsHistory = async (
   modelType?: string,
-  limit = 50
+  limit = 50,
+  tenantId?: string
 ): Promise<Record<string, unknown>[]> => {
   try {
-    const query = modelType
-      ? `SELECT * FROM ml_model_metrics WHERE model_type = $1 ORDER BY trained_at DESC LIMIT $2`
-      : `SELECT * FROM ml_model_metrics ORDER BY trained_at DESC LIMIT $1`;
-    const params = modelType ? [modelType, limit] : [limit];
+    let query: string;
+    const params: (string | number)[] = [];
+    
+    if (modelType && tenantId) {
+      query = `SELECT * FROM ml_model_metrics WHERE model_type = $1 AND tenant_id = $2 ORDER BY trained_at DESC LIMIT $3`;
+      params.push(modelType, tenantId, limit);
+    } else if (modelType) {
+      query = `SELECT * FROM ml_model_metrics WHERE model_type = $1 ORDER BY trained_at DESC LIMIT $2`;
+      params.push(modelType, limit);
+    } else if (tenantId) {
+      query = `SELECT * FROM ml_model_metrics WHERE tenant_id = $1 ORDER BY trained_at DESC LIMIT $2`;
+      params.push(tenantId, limit);
+    } else {
+      query = `SELECT * FROM ml_model_metrics ORDER BY trained_at DESC LIMIT $1`;
+      params.push(limit);
+    }
+    
     const result = await pool.query(query, params);
     return result.rows;
   } catch (err) {
@@ -1242,15 +1294,34 @@ export const getModelMetricsHistory = async (
 export const getDemandForecastHistory = async (
   startDate?: string,
   endDate?: string,
-  limit = 30
+  limit = 30,
+  tenantId?: string
 ): Promise<Record<string, unknown>[]> => {
   try {
     const params: (string | number)[] = [];
     
+    if (startDate && endDate && tenantId) {
+      params.push(startDate, endDate, tenantId, limit);
+      const result = await pool.query(
+        `SELECT * FROM ml_demand_forecast WHERE date BETWEEN $1 AND $2 AND tenant_id = $3 ORDER BY date DESC LIMIT $4`,
+        params
+      );
+      return result.rows;
+    }
+    
     if (startDate && endDate) {
       params.push(startDate, endDate, limit);
       const result = await pool.query(
-        `SELECT * FROM ml_demand_forecast WHERE forecast_date BETWEEN $1 AND $2 ORDER BY forecast_date DESC LIMIT $3`,
+        `SELECT * FROM ml_demand_forecast WHERE date BETWEEN $1 AND $2 ORDER BY date DESC LIMIT $3`,
+        params
+      );
+      return result.rows;
+    }
+    
+    if (tenantId) {
+      params.push(tenantId, limit);
+      const result = await pool.query(
+        `SELECT * FROM ml_demand_forecast WHERE tenant_id = $1 ORDER BY date DESC LIMIT $2`,
         params
       );
       return result.rows;
@@ -1258,7 +1329,7 @@ export const getDemandForecastHistory = async (
     
     params.push(limit);
     const result = await pool.query(
-      `SELECT * FROM ml_demand_forecast ORDER BY forecast_date DESC LIMIT $1`,
+      `SELECT * FROM ml_demand_forecast ORDER BY date DESC LIMIT $1`,
       params
     );
     return result.rows;

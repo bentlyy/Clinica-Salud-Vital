@@ -20,11 +20,17 @@ vi.mock('nodemailer', () => ({
   },
 }));
 
+const mockSendEmail = vi.hoisted(() => vi.fn());
+vi.mock('../../src/shared/email.service.js', () => ({
+  sendEmail: mockSendEmail,
+}));
+
 import * as guestService from '../../src/modules/guest/guest.service.js';
 
 beforeEach(() => {
   vi.clearAllMocks();
   mockConnect.mockReturnValue(mockClient);
+  mockSendEmail.mockResolvedValue({ sent: true });
 });
 
 describe('guestService.checkRutBlocked', () => {
@@ -100,6 +106,16 @@ describe('guestService.getGuestBookingsByRut', () => {
     expect(result).toHaveLength(1);
     expect(result[0].doctor_name).toBe('Dr. Test');
   });
+
+  it('returns bookings with tenantId', async () => {
+    const mockBookings = [{ id: 1, date: '2025-01-15', time: '10:00', doctor_name: 'Dr. Test' }];
+    mockQuery.mockResolvedValueOnce({ rows: mockBookings });
+
+    const result = await guestService.getGuestBookingsByRut('12.345.678-5', 'tenant-1');
+
+    expect(result).toHaveLength(1);
+    expect(mockQuery).toHaveBeenCalledWith(expect.stringContaining('tenant_id = $2'), ['123456785', 'tenant-1']);
+  });
 });
 
 describe('guestService.cancelGuestBooking', () => {
@@ -124,6 +140,24 @@ describe('guestService.cancelGuestBooking', () => {
 
     expect(result.message).toBe('Reserva cancelada correctamente');
   });
+
+  it('cancels booking with tenantId', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [{ id: 1 }] });
+
+    const result = await guestService.cancelGuestBooking(1, 1, 'user', 'tenant-1');
+
+    expect(result.message).toBe('Reserva cancelada correctamente');
+    expect(mockQuery).toHaveBeenCalledWith(expect.stringContaining('tenant_id = $3'), [1, 1, 'tenant-1']);
+  });
+
+  it('admin cancels booking with tenantId', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [{ id: 1 }] });
+
+    const result = await guestService.cancelGuestBooking(1, 1, 'admin', 'tenant-1');
+
+    expect(result.message).toBe('Reserva cancelada correctamente');
+    expect(mockQuery).toHaveBeenCalledWith(expect.stringContaining('tenant_id = $2'), [1, 'tenant-1']);
+  });
 });
 
 describe('guestService.createGuestBooking advanced', () => {
@@ -132,6 +166,27 @@ describe('guestService.createGuestBooking advanced', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockConnect.mockReturnValue(mockClient);
+    mockSendEmail.mockResolvedValue({ sent: true });
+  });
+
+  it('handles sendEmail returning {sent:false}', async () => {
+    mockSendEmail.mockResolvedValue({ sent: false, error: 'SMTP error' });
+    mockQuery.mockResolvedValue({ rows: [doctorRow] });
+    mockClient.query.mockImplementation((sql) => {
+      if (sql === 'BEGIN' || sql.includes('pg_advisory')) return Promise.resolve({});
+      if (sql.includes('FROM doctor_availability')) return Promise.resolve({ rows: [{ start_time: '09:00:00', end_time: '17:00:00' }] });
+      if (sql.includes('FROM doctor_exceptions')) return Promise.resolve({ rows: [] });
+      if (sql.includes('FROM bookings')) return Promise.resolve({ rows: [] });
+      if (sql.includes('INSERT INTO bookings')) return Promise.resolve({ rows: [{ id: 2, date: '2026-06-15', time: '10:00' }] });
+      if (sql === 'COMMIT') return Promise.resolve({});
+      return Promise.resolve({ rows: [] });
+    });
+
+    const result = await guestService.createGuestBooking({
+      doctor_id: 1, date: '2026-06-15', time: '10:00', rut: '12.345.678-5', email: 'guest@test.com', name: 'Guest',
+    });
+
+    expect(result.id).toBe(2);
   });
 
   it('completes full booking flow with transaction', async () => {
@@ -173,5 +228,77 @@ describe('guestService.createGuestBooking advanced', () => {
     })).rejects.toThrow('Este horario ya está reservado');
 
     expect(mockClient.query).toHaveBeenCalledWith('ROLLBACK');
+  });
+
+  it('throws if RUT is blocked', async () => {
+    const futureDate = new Date(Date.now() + 86400000).toISOString();
+    mockQuery.mockResolvedValueOnce({ rows: [{ blocked_until: futureDate }] });
+
+    await expect(guestService.createGuestBooking({
+      doctor_id: 1, date: '2026-06-15', time: '10:00', rut: '12.345.678-5', email: 'guest@test.com',
+    })).rejects.toThrow('bloqueado');
+  });
+
+  it('throws if doctor not found', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [{ blocked_until: null }] });
+    mockConnect.mockReturnValue(mockClient);
+    mockClient.query.mockImplementation((sql) => {
+      if (sql === 'BEGIN' || sql.includes('pg_advisory')) return Promise.resolve({});
+      if (sql === 'ROLLBACK') return Promise.resolve({});
+      return Promise.resolve({ rows: [] });
+    });
+    mockQuery.mockResolvedValueOnce({ rows: [] });
+
+    await expect(guestService.createGuestBooking({
+      doctor_id: 999, date: '2026-06-15', time: '10:00', rut: '12.345.678-5', email: 'guest@test.com',
+    })).rejects.toThrow('Doctor no encontrado');
+
+    expect(mockClient.query).toHaveBeenCalledWith('ROLLBACK');
+  });
+
+  it('throws general error on non-unique DB issue', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [{ blocked_until: null }] });
+    mockConnect.mockReturnValue(mockClient);
+    mockClient.query.mockImplementation((sql) => {
+      if (sql === 'BEGIN' || sql.includes('pg_advisory')) return Promise.resolve({});
+      if (sql.includes('FROM doctor_availability')) return Promise.resolve({ rows: [{ start_time: '09:00:00', end_time: '17:00:00' }] });
+      if (sql.includes('FROM doctor_exceptions')) return Promise.resolve({ rows: [] });
+      if (sql.includes('FROM bookings')) return Promise.resolve({ rows: [] });
+      if (sql.includes('INSERT INTO bookings')) return Promise.reject(new Error('Connection timeout'));
+      if (sql === 'ROLLBACK') return Promise.resolve({});
+      return Promise.resolve({ rows: [] });
+    });
+    mockQuery.mockResolvedValueOnce({ rows: [{ id: 1, name: 'Dr. Test', slot_duration: 30 }] });
+
+    await expect(guestService.createGuestBooking({
+      doctor_id: 1, date: '2026-06-15', time: '10:00', rut: '12.345.678-5', email: 'guest@test.com',
+    })).rejects.toThrow('Connection timeout');
+
+    expect(mockClient.query).toHaveBeenCalledWith('ROLLBACK');
+  });
+
+  it('completes booking flow with tenantId', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [{ blocked_until: null }] });
+    mockConnect.mockReturnValue(mockClient);
+    mockClient.query.mockImplementation((sql) => {
+      if (sql === 'BEGIN' || sql.includes('pg_advisory')) return Promise.resolve({});
+      if (sql.includes('FROM doctor_availability')) return Promise.resolve({ rows: [{ start_time: '09:00:00', end_time: '17:00:00' }] });
+      if (sql.includes('FROM doctor_exceptions')) return Promise.resolve({ rows: [] });
+      if (sql.includes('FROM bookings')) return Promise.resolve({ rows: [] });
+      if (sql.includes('INSERT INTO bookings')) return Promise.resolve({ rows: [{ id: 1, date: '2026-06-15', time: '10:00' }] });
+      if (sql === 'COMMIT') return Promise.resolve({});
+      return Promise.resolve({ rows: [] });
+    });
+    mockQuery.mockResolvedValueOnce({ rows: [{ id: 1, name: 'Dr. Test', slot_duration: 30 }] });
+
+    const result = await guestService.createGuestBooking({
+      doctor_id: 1, date: '2026-06-15', time: '10:00', rut: '12.345.678-5', email: 'guest@test.com', name: 'Guest',
+    }, 'tenant-1');
+
+    expect(result.id).toBe(1);
+    expect(mockClient.query).toHaveBeenCalledWith(
+      expect.stringContaining('tenant_id'),
+      expect.arrayContaining(['tenant-1'])
+    );
   });
 });

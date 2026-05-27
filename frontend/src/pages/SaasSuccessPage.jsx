@@ -13,7 +13,6 @@ export default function SaasSuccessPage() {
 
   useEffect(() => {
     if (tenant && !searchParams.get('session_id')?.startsWith('cs_')) {
-      // Simulated success - redirect to login
       const timer = setTimeout(() => {
         navigate('/login');
       }, 5000);

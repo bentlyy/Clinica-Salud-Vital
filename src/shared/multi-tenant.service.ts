@@ -46,11 +46,15 @@ export const tenantService = {
         'SELECT id, name, domain, locale, timezone, config, active FROM tenants WHERE active = true'
       );
       const loaded = result.rows;
-      const oldCount = tenants.size / 2;
-      tenants.clear();
+      const oldCount = tenantService.getAll().length;
+      const newMap = new Map<string, Tenant>();
       for (const tenant of loaded) {
-        tenants.set(tenant.id, tenant);
-        tenants.set(tenant.domain, tenant);
+        newMap.set(tenant.id, tenant);
+        newMap.set(tenant.domain, tenant);
+      }
+      tenants.clear();
+      for (const [key, value] of newMap) {
+        tenants.set(key, value);
       }
       logger.info(`Tenants loaded from DB: ${loaded.length} (was ${oldCount})`);
     } catch (error) {

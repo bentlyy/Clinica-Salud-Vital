@@ -1,9 +1,10 @@
 import { pool } from '../../shared/db.js';
 import { NotFoundError } from '../../utils/errors.js';
+import crypto from 'crypto';
 
 const generateInvoiceNumber = () => {
   const year = new Date().getFullYear();
-  const random = Math.floor(Math.random() * 100000).toString().padStart(5, '0');
+  const random = crypto.randomInt(100000, 999999).toString();
   return 'INV-' + year + '-' + random;
 };
 
@@ -111,10 +112,23 @@ export const updateInvoiceStatus = async (id: number, status: string, paymentDat
 };
 
 export const deleteInvoice = async (id: number, tenantId?: string) => {
-  await pool.query(`DELETE FROM invoice_items WHERE invoice_id = $1${tenantId ? ' AND tenant_id = $2' : ''}`, tenantId ? [id, tenantId] : [id]);
-  const result = await pool.query(`DELETE FROM invoices WHERE id = $1${tenantId ? ' AND tenant_id = $2' : ''} RETURNING *`, tenantId ? [id, tenantId] : [id]);
-  if (result.rows.length === 0) throw new NotFoundError('Invoice not found');
-  return { message: 'Invoice deleted' };
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    await client.query('DELETE FROM invoice_items WHERE invoice_id = $1', [id]);
+    const result = await client.query(`DELETE FROM invoices WHERE id = $1${tenantId ? ' AND tenant_id = $2' : ''} RETURNING *`, tenantId ? [id, tenantId] : [id]);
+    if (result.rows.length === 0) {
+      await client.query('ROLLBACK');
+      throw new NotFoundError('Invoice not found');
+    }
+    await client.query('COMMIT');
+    return { message: 'Invoice deleted' };
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
+  }
 };
 
 export const getBillingStats = async (tenantId?: string) => {

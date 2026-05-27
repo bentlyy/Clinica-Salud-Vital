@@ -10,6 +10,10 @@ declare global {
   }
 }
 
+const getLocaleFromRequest = (req: Request): string => {
+  return (req.headers['accept-language']?.toString().slice(0, 2)) || process.env.APP_LOCALE || 'es';
+};
+
 export const tenantMiddleware = (req: Request, res: Response, next: NextFunction): void => {
   const host = req.headers.host || '';
   const tenantHeader = req.headers['x-tenant-id'] as string | undefined;
@@ -23,11 +27,11 @@ export const tenantMiddleware = (req: Request, res: Response, next: NextFunction
       req.locale = tenant.locale;
     } else {
       req.tenant_id = tenantId;
-      req.locale = (req.headers['accept-language']?.toString().slice(0, 2) as string) || process.env.APP_LOCALE || 'es';
+      req.locale = getLocaleFromRequest(req);
     }
   } else {
     req.tenant_id = process.env.DEFAULT_TENANT_ID || 'default';
-    req.locale = (req.headers['accept-language']?.toString().slice(0, 2) as string) || process.env.APP_LOCALE || 'es';
+    req.locale = getLocaleFromRequest(req);
   }
 
   res.setHeader('X-Tenant-Id', req.tenant_id);

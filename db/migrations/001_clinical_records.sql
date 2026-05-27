@@ -49,15 +49,6 @@ CREATE INDEX IF NOT EXISTS idx_clinical_records_status ON clinical_records(statu
 CREATE INDEX IF NOT EXISTS idx_prescriptions_record ON prescriptions(clinical_record_id);
 CREATE INDEX IF NOT EXISTS idx_cie10_code ON cie10_catalog(code);
 
--- Función para actualizar updated_at
-CREATE OR REPLACE FUNCTION update_updated_at_column()
-RETURNS TRIGGER AS $$
-BEGIN
-  NEW.updated_at = NOW();
-  RETURN NEW;
-END;
-$$ language 'plpgsql';
-
 -- Trigger para actualizar updated_at
 DROP TRIGGER IF EXISTS update_clinical_records_updated_at ON clinical_records;
 CREATE TRIGGER update_clinical_records_updated_at

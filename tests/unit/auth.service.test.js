@@ -26,8 +26,13 @@ vi.mock('bcrypt', () => ({
   },
 }));
 
+vi.mock('../../src/modules/auth/auth-2fa.service.js', () => ({
+  verifyToken: vi.fn(),
+}));
+
 import * as authService from '../../src/modules/auth/auth.service.js';
 import bcrypt from 'bcrypt';
+import { verifyToken as mockVerify2FAToken } from '../../src/modules/auth/auth-2fa.service.js';
 
 const validPassword = 'Test1234!';
 
@@ -50,6 +55,26 @@ describe('authService.register', () => {
   it('throws if password too short', async () => {
     await expect(authService.register({ email: 'test@test.com', password: 'Ab1!' }))
       .rejects.toThrow('Password must be at least 8 characters');
+  });
+
+  it('throws if password missing uppercase', async () => {
+    await expect(authService.register({ email: 'test@test.com', password: 'lowercase1@' }))
+      .rejects.toThrow('uppercase');
+  });
+
+  it('throws if password missing lowercase', async () => {
+    await expect(authService.register({ email: 'test@test.com', password: 'UPPERCASE1@' }))
+      .rejects.toThrow('lowercase');
+  });
+
+  it('throws if password missing number', async () => {
+    await expect(authService.register({ email: 'test@test.com', password: 'Abcdefgh@' }))
+      .rejects.toThrow('number');
+  });
+
+  it('throws if password missing special character', async () => {
+    await expect(authService.register({ email: 'test@test.com', password: 'Abcdefg1' }))
+      .rejects.toThrow('special character');
   });
 
   it('throws if RUT invalid', async () => {
@@ -79,7 +104,7 @@ describe('authService.register', () => {
     mockQuery.mockRejectedValueOnce(error);
 
     await expect(authService.register({ email: 'test@test.com', password: validPassword }))
-      .rejects.toThrow('Email already exists');
+      .rejects.toThrow('Email or RUT already registered');
   });
 
   it('throws if RUT already registered', async () => {
@@ -89,7 +114,45 @@ describe('authService.register', () => {
     mockQuery.mockRejectedValueOnce(error);
 
     await expect(authService.register({ email: 'test@test.com', password: validPassword, rut: '12.345.678-5' }))
-      .rejects.toThrow('RUT ya registrado');
+      .rejects.toThrow('Email or RUT already registered');
+  });
+
+  it('creates user with valid RUT', async () => {
+    mockQuery.mockResolvedValueOnce({
+      rows: [{ id: 2, email: 'rutuser@test.com', rut: '15.666.777-3', phone: null }],
+    });
+
+    const result = await authService.register({
+      email: 'rutuser@test.com',
+      password: validPassword,
+      rut: '15.666.777-3',
+    });
+
+    expect(result.id).toBe(2);
+    expect(result.rut).toBeTruthy();
+  });
+
+  it('creates user with tenant_id', async () => {
+    mockQuery.mockResolvedValueOnce({
+      rows: [{ id: 3, email: 'tenant@test.com', rut: null, phone: null }],
+    });
+
+    const result = await authService.register({
+      email: 'tenant@test.com',
+      password: validPassword,
+      tenant_id: 'tenant-123',
+    });
+
+    expect(result.email).toBe('tenant@test.com');
+  });
+
+  it('throws generic error on non-unique DB error', async () => {
+    const error = new Error('Connection refused');
+    error.code = '08001';
+    mockQuery.mockRejectedValueOnce(error);
+
+    await expect(authService.register({ email: 'db@test.com', password: validPassword }))
+      .rejects.toThrow('Error creating user');
   });
 });
 
@@ -139,5 +202,65 @@ describe('authService.login', () => {
     const result = await authService.login({ email: 'test@test.com', password: validPassword });
 
     expect(result.user.role).toBe('user');
+  });
+
+  it('throws if 2FA token required but not provided', async () => {
+    mockQuery.mockResolvedValueOnce({
+      rows: [{ id: 1, email: '2fa@test.com', password: 'hashed', role: 'user', tenant_id: 'default', totp_enabled: true, totp_secret: 'SECRET' }],
+    });
+    bcrypt.compare.mockResolvedValueOnce(true);
+
+    await expect(authService.login({ email: '2fa@test.com', password: validPassword }))
+      .rejects.toThrow('2FA token required');
+  });
+
+  it('throws if 2FA token is invalid', async () => {
+    mockVerify2FAToken.mockReturnValue(false);
+    mockQuery.mockResolvedValueOnce({
+      rows: [{ id: 1, email: '2fa@test.com', password: 'hashed', role: 'user', tenant_id: 'default', totp_enabled: true, totp_secret: 'SECRET' }],
+    });
+    bcrypt.compare.mockResolvedValueOnce(true);
+
+    await expect(authService.login({ email: '2fa@test.com', password: validPassword, totp_token: '000000' }))
+      .rejects.toThrow('Invalid 2FA token');
+  });
+
+  it('succeeds with valid 2FA token', async () => {
+    mockVerify2FAToken.mockReturnValue(true);
+    mockQuery.mockResolvedValueOnce({
+      rows: [{ id: 1, email: '2fa@test.com', password: 'hashed', role: 'user', tenant_id: 'default', totp_enabled: true, totp_secret: 'SECRET' }],
+    });
+    bcrypt.compare.mockResolvedValueOnce(true);
+    mockQuery.mockResolvedValueOnce({ rows: [] });
+
+    const result = await authService.login({ email: '2fa@test.com', password: validPassword, totp_token: '123456' });
+
+    expect(result.access_token).toBeDefined();
+    expect(mockVerify2FAToken).toHaveBeenCalledWith('SECRET', '123456');
+  });
+
+  it('defaults password_changed and totp_enabled when undefined in user', async () => {
+    mockQuery.mockResolvedValueOnce({
+      rows: [{ id: 1, email: 'partial@test.com', password: 'hashed', role: 'user', tenant_id: 'default' }],
+    });
+    bcrypt.compare.mockResolvedValueOnce(true);
+    mockQuery.mockResolvedValueOnce({ rows: [] });
+
+    const result = await authService.login({ email: 'partial@test.com', password: validPassword });
+
+    expect(result.user.password_changed).toBe(false);
+    expect(result.user.totp_enabled).toBe(false);
+  });
+
+  it('defaults tenant_id when user tenant_id is null', async () => {
+    mockQuery.mockResolvedValueOnce({
+      rows: [{ id: 1, email: 'notenant@test.com', password: 'hashed', role: 'user', tenant_id: null }],
+    });
+    bcrypt.compare.mockResolvedValueOnce(true);
+    mockQuery.mockResolvedValueOnce({ rows: [] });
+
+    const result = await authService.login({ email: 'notenant@test.com', password: validPassword });
+
+    expect(result.user.tenant_id).toBe('default');
   });
 });

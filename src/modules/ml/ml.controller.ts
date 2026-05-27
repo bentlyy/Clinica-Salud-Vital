@@ -1,8 +1,3 @@
-/**
- * Controlador de ML/DL
- * Endpoints para predicci�n y entrenamiento de modelos
- */
-
 import type { Request, Response } from 'express';
 import * as mlService from './ml.service.js';
 import * as validator from './ml.validator.js';
@@ -15,7 +10,7 @@ import { logger } from '../../utils/logger.js';
 export const trainModels = asyncHandler(async (req: Request, res: Response) => {
   logger.info('[ML Controller] Train models requested');
 
-  const results = await mlService.trainAllModels();
+  const results = await mlService.trainAllModels(req.tenant_id);
 
   if (results.error) {
     return res.status(207).json({
@@ -24,14 +19,14 @@ export const trainModels = asyncHandler(async (req: Request, res: Response) => {
     });
   }
 
-  res.json({
+  return res.json({
     message: 'All models trained successfully',
     results
   });
 });
 
 export const getModelStatus = asyncHandler(async (req: Request, res: Response) => {
-  const status = await mlService.getModelStatus();
+  const status = await mlService.getModelStatus(req.tenant_id);
   const metrics = getMLMetrics();
 
   res.json({
@@ -42,7 +37,7 @@ export const getModelStatus = asyncHandler(async (req: Request, res: Response) =
 });
 
 export const resetModels = asyncHandler(async (req: Request, res: Response) => {
-  mlService.disposeAllModels();
+  mlService.disposeAllModels(req.tenant_id);
   mlCache.clear();
 
   res.json({ message: 'Models disposed and cache cleared' });
@@ -85,7 +80,7 @@ export const predictNoShow = [
     }
 
     const { doctorId, userId, date, time, bookingId } = req.body;
-    const prediction = await mlService.predictNoShow(doctorId, userId, date, time, bookingId);
+    const prediction = await mlService.predictNoShow(doctorId, userId, date, time, bookingId, req.tenant_id);
 
     res.json(prediction);
   })
@@ -102,7 +97,7 @@ export const classifyDiagnosis = [
     }
 
     const sanitized = validator.sanitizeMLInput(req.body);
-    const result = await mlService.predictDiagnosis(sanitized.chiefComplaint ?? '');
+    const result = await mlService.predictDiagnosis(sanitized.chiefComplaint ?? '', req.tenant_id);
 
     res.json(result);
   })
@@ -117,14 +112,14 @@ export const getDemandForecast = [
     }
 
     const days = validation.days;
-    const forecast = await mlService.forecastDemand(days);
+    const forecast = await mlService.forecastDemand(days, req.tenant_id);
 
     res.json(forecast);
   })
 ];
 
 export const getOptimalSchedules = asyncHandler(async (req: Request, res: Response) => {
-  const schedules = await mlService.analyzeOptimalSchedules();
+  const schedules = await mlService.analyzeOptimalSchedules(req.tenant_id);
   res.json(schedules);
 });
 
@@ -137,7 +132,7 @@ export const analyzeVitals = [
     }
 
     const sanitized = validator.sanitizeMLInput(req.body);
-    const result = await mlService.analyzeVitalSigns(sanitized.vitalSigns);
+    const result = await mlService.analyzeVitalSigns(sanitized.vitalSigns, req.tenant_id);
 
     res.json(result);
   })
@@ -146,14 +141,14 @@ export const analyzeVitals = [
 export const getPredictionHistory = asyncHandler(async (req: Request, res: Response) => {
   const modelType = req.query.modelType as string | undefined;
   const limit = parseInt(req.query.limit as string) || 100;
-  const history = await mlService.getPredictionHistory(modelType, limit);
+  const history = await mlService.getPredictionHistory(modelType, limit, req.tenant_id);
   res.json({ data: history, count: history.length });
 });
 
 export const getModelMetricsHistory = asyncHandler(async (req: Request, res: Response) => {
   const modelType = req.query.modelType as string | undefined;
   const limit = parseInt(req.query.limit as string) || 50;
-  const metrics = await mlService.getModelMetricsHistory(modelType, limit);
+  const metrics = await mlService.getModelMetricsHistory(modelType, limit, req.tenant_id);
   res.json({ data: metrics, count: metrics.length });
 });
 
@@ -161,8 +156,8 @@ export const getDemandForecastHistory = asyncHandler(async (req: Request, res: R
   const startDate = req.query.startDate as string | undefined;
   const endDate = req.query.endDate as string | undefined;
   const limit = parseInt(req.query.limit as string) || 30;
-  const forecasts = await mlService.getDemandForecastHistory(startDate, endDate, limit);
-  res.json({ data: forecasts, count: forecasts.length });
+  const forecasts = await mlService.getDemandForecastHistory(startDate, endDate, limit, req.tenant_id);
+  return res.json({ data: forecasts, count: forecasts.length });
 });
 
 export const exportPredictionData = asyncHandler(async (req: Request, res: Response) => {
@@ -170,7 +165,7 @@ export const exportPredictionData = asyncHandler(async (req: Request, res: Respo
   const modelType = req.query.modelType as string | undefined;
   const limit = parseInt(req.query.limit as string) || 1000;
   
-  const history = await mlService.getPredictionHistory(modelType, limit);
+  const history = await mlService.getPredictionHistory(modelType, limit, req.tenant_id);
   
   if (format === 'csv') {
     if (history.length === 0) {
@@ -195,7 +190,7 @@ export const exportPredictionData = asyncHandler(async (req: Request, res: Respo
     return res.status(200).send(csv);
   }
   
-  res.json({ data: history, count: history.length });
+  return res.json({ data: history, count: history.length });
 });
 
 export const exportMetricsData = asyncHandler(async (req: Request, res: Response) => {
@@ -203,7 +198,7 @@ export const exportMetricsData = asyncHandler(async (req: Request, res: Response
   const modelType = req.query.modelType as string | undefined;
   const limit = parseInt(req.query.limit as string) || 500;
   
-  const metrics = await mlService.getModelMetricsHistory(modelType, limit);
+  const metrics = await mlService.getModelMetricsHistory(modelType, limit, req.tenant_id);
   
   if (format === 'csv') {
     if (metrics.length === 0) {
@@ -229,7 +224,7 @@ export const exportMetricsData = asyncHandler(async (req: Request, res: Response
     return res.status(200).send(csv);
   }
   
-  res.json({ data: metrics, count: metrics.length });
+  return res.json({ data: metrics, count: metrics.length });
 });
 
 export const exportDemandForecastData = asyncHandler(async (req: Request, res: Response) => {
@@ -238,7 +233,7 @@ export const exportDemandForecastData = asyncHandler(async (req: Request, res: R
   const endDate = req.query.endDate as string | undefined;
   const limit = parseInt(req.query.limit as string) || 100;
   
-  const forecasts = await mlService.getDemandForecastHistory(startDate, endDate, limit);
+  const forecasts = await mlService.getDemandForecastHistory(startDate, endDate, limit, req.tenant_id);
   
   if (format === 'csv') {
     if (forecasts.length === 0) {
@@ -261,6 +256,38 @@ export const exportDemandForecastData = asyncHandler(async (req: Request, res: R
     res.setHeader('Content-Disposition', 'attachment; filename=demand_forecast.csv');
     return res.status(200).send(csv);
   }
-  
-  res.json({ data: forecasts, count: forecasts.length });
+
+  return res.json({ data: forecasts, count: forecasts.length });
+});
+
+export const powerBiExport = asyncHandler(async (req: Request, res: Response) => {
+  const tenantId = req.tenant_id;
+
+  const [predictions, metrics, forecasts, status] = await Promise.all([
+    mlService.getPredictionHistory(undefined, 5000, tenantId),
+    mlService.getModelMetricsHistory(undefined, 500, tenantId),
+    mlService.getDemandForecastHistory(undefined, undefined, 365, tenantId),
+    mlService.getModelStatus(tenantId),
+  ]);
+
+  const mlMetrics = getMLMetrics();
+
+  res.json({
+    predictions,
+    model_metrics: metrics,
+    demand_forecasts: forecasts,
+    model_status: {
+      noShowModel: status.noShowModel,
+      diagnosisModel: status.diagnosisModel,
+      demandModel: status.demandModel,
+      vitalAnomalyModel: status.vitalAnomalyModel,
+      cache_hits: status.cacheStats?.hits || 0,
+      cache_misses: status.cacheStats?.misses || 0,
+      cache_hit_rate: status.cacheStats?.hitRate || '0%',
+      cache_size: status.cacheStats?.size || 0,
+    },
+    prediction_metrics: mlMetrics.predictions,
+    training_metrics: mlMetrics.training,
+    exported_at: new Date().toISOString(),
+  });
 });

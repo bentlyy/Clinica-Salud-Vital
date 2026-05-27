@@ -102,7 +102,7 @@ export default function Navbar() {
                 {locale.toUpperCase()}
               </button>
               {localeOpen && (
-                <div className="navbar-locale-menu">
+                <div className="navbar-locale-menu" style={{ position: 'relative', zIndex: 100 }}>
                   {locales.map((l) => (
                     <button key={l.code} className="btn btn-ghost btn-sm" style={{ width: '100%', borderRadius: 0 }}
                       onClick={() => { setStoredLocale(l.code); setLocaleOpen(false); setMobileOpen(false); }}>
@@ -113,11 +113,11 @@ export default function Navbar() {
               )}
             </div>
 
+            {localeOpen && <div style={{ position: 'fixed', inset: 0, zIndex: 99 }} onClick={() => setLocaleOpen(false)} />}
+
             <button onClick={toggleTheme} className="btn btn-ghost btn-sm theme-toggle" aria-label="Toggle theme">
               {theme === 'light' ? '🌙' : '☀️'}
             </button>
-
-            {localeOpen && <div style={{ position: 'fixed', inset: 0, zIndex: 99 }} onClick={() => setLocaleOpen(false)} />}
 
             {user && (
               <div className="navbar-user">
