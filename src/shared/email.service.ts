@@ -62,7 +62,7 @@ export const validateEmailConfig = (): void => {
   initSendGrid() || initSMTP();
 
   if (provider === 'smtp' && transporter) {
-    transporter.verify((err) => {
+    transporter.verify((err: Error | null) => {
       if (err) {
         logger.error('[Email] Falló verificación SMTP:', { error: (err as Error).message });
       } else {
