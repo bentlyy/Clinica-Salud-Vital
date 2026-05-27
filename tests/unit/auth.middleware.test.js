@@ -8,7 +8,7 @@ vi.mock('jsonwebtoken', () => ({
   default: { verify: mockVerify },
 }));
 
-import { authMiddleware, authorize } from '../../src/middlewares/auth.middleware.js';
+import { authMiddleware, authorize, optionalAuth } from '../../src/middlewares/auth.middleware.js';
 
 function mockReq(authorization) {
   return {
@@ -79,6 +79,44 @@ describe('authMiddleware', () => {
     authMiddleware(req, res, next);
 
     expect(req.user).toEqual(decoded);
+    expect(next).toHaveBeenCalled();
+  });
+});
+
+describe('optionalAuth', () => {
+  it('calls next when no token', () => {
+    const req = mockReq();
+    const res = mockRes();
+    const next = vi.fn();
+
+    optionalAuth(req, res, next);
+
+    expect(req.user).toBeUndefined();
+    expect(next).toHaveBeenCalled();
+  });
+
+  it('sets user on valid token', () => {
+    const decoded = { id: 1, email: 'test@test.com', role: 'user', tenant_id: 'default' };
+    mockVerify.mockReturnValue(decoded);
+    const req = mockReq('Bearer valid-token');
+    const res = mockRes();
+    const next = vi.fn();
+
+    optionalAuth(req, res, next);
+
+    expect(req.user).toEqual(decoded);
+    expect(next).toHaveBeenCalled();
+  });
+
+  it('skips setting user on invalid token', () => {
+    mockVerify.mockImplementation(() => { throw new Error('jwt malformed'); });
+    const req = mockReq('Bearer invalid-token');
+    const res = mockRes();
+    const next = vi.fn();
+
+    optionalAuth(req, res, next);
+
+    expect(req.user).toBeUndefined();
     expect(next).toHaveBeenCalled();
   });
 });
