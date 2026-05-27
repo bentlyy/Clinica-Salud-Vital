@@ -32,15 +32,23 @@ export const getInvoices = asyncHandler(async (req, res) => {
     limit,
     offset,
   }, req.tenant_id);
-  res.json(invoices);
+  return res.json(invoices);
 });
 
 export const getInvoiceById = asyncHandler(async (req, res) => {
-  const id = getQueryInt(req.params, 'id', 0);
+  const id = Number(req.params.id);
+  if (isNaN(id) || id <= 0) throw new BadRequestError('Invalid invoice ID');
   const invoice = await billingService.getInvoiceById(id, req.tenant_id);
 
   if (req.user!.role === 'user' && invoice.patient_id !== req.user!.id) {
     throw new BadRequestError('Access denied');
+  }
+
+  if (req.user!.role === 'doctor') {
+    const doctor = await doctorService.getDoctorByUserId(req.user!.id);
+    if (!doctor || invoice.doctor_id !== doctor.id) {
+      throw new BadRequestError('Access denied');
+    }
   }
 
   res.json(invoice);

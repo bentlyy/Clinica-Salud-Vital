@@ -6,7 +6,7 @@ import { getQueryInt } from '../../shared/query.js';
 
 export const getAvailabilityByDoctor = asyncHandler(async (req, res) => {
   const id = getQueryInt(req.params, 'id', 0);
-  const data = await availabilityService.getAvailabilityByDoctor(id);
+  const data = await availabilityService.getAvailabilityByDoctor(id, req.tenant_id);
   res.json(data);
 });
 
@@ -14,7 +14,7 @@ export const getMyAvailability = asyncHandler(async (req, res) => {
   const doctor = await doctorService.getDoctorByUserId(req.user!.id);
   if (!doctor) throw new NotFoundError('Doctor profile not found');
 
-  const data = await availabilityService.getAvailabilityByDoctor(doctor.id);
+  const data = await availabilityService.getAvailabilityByDoctor(doctor.id, req.tenant_id);
   res.json(data);
 });
 
@@ -29,7 +29,7 @@ export const createAvailability = asyncHandler(async (req, res) => {
     day_of_week,
     start_time,
     end_time,
-  });
+  }, req.tenant_id);
 
   res.status(201).json(availability);
 });
@@ -38,6 +38,6 @@ export const deleteAvailability = asyncHandler(async (req, res) => {
   const doctor = await doctorService.getDoctorByUserId(req.user!.id);
   if (!doctor) throw new NotFoundError('Doctor profile not found');
 
-  const result = await availabilityService.deleteAvailability(Number(req.params.id), doctor.id);
+  const result = await availabilityService.deleteAvailability(Number(req.params.id), doctor.id, req.tenant_id);
   res.json(result);
 });

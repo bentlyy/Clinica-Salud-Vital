@@ -3,18 +3,18 @@ import * as webhookService from './webhook.service.js';
 import { asyncHandler } from '../../middlewares/asyncHandler.middleware.js';
 
 export const create = asyncHandler(async (req: Request, res: Response) => {
-  const webhook = await webhookService.createWebhook(req.body);
+  const webhook = await webhookService.createWebhook({ ...req.body, tenant_id: req.tenant_id });
   res.status(201).json(webhook);
 });
 
 export const list = asyncHandler(async (req: Request, res: Response) => {
   const activeOnly = req.query.active_only === 'true';
-  const webhooks = await webhookService.getWebhooks(activeOnly);
+  const webhooks = await webhookService.getWebhooks(activeOnly, req.tenant_id);
   res.json({ data: webhooks });
 });
 
 export const getById = asyncHandler(async (req: Request, res: Response) => {
-  const webhook = await webhookService.getWebhookById(Number(req.params.id));
+  const webhook = await webhookService.getWebhookById(Number(req.params.id), req.tenant_id);
   if (!webhook) {
     res.status(404).json({ error: 'Webhook not found' });
     return;
@@ -23,7 +23,7 @@ export const getById = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export const update = asyncHandler(async (req: Request, res: Response) => {
-  const webhook = await webhookService.updateWebhook(Number(req.params.id), req.body);
+  const webhook = await webhookService.updateWebhook(Number(req.params.id), req.body, req.tenant_id);
   if (!webhook) {
     res.status(404).json({ error: 'Webhook not found' });
     return;
@@ -32,7 +32,7 @@ export const update = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export const remove = asyncHandler(async (req: Request, res: Response) => {
-  const deleted = await webhookService.deleteWebhook(Number(req.params.id));
+  const deleted = await webhookService.deleteWebhook(Number(req.params.id), req.tenant_id);
   if (!deleted) {
     res.status(404).json({ error: 'Webhook not found' });
     return;

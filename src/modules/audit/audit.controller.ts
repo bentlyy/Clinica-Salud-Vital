@@ -21,6 +21,7 @@ export const getAuditLogs = asyncHandler(async (req, res) => {
   const offset = getQueryInt(req.query, 'offset', 0);
 
   const logs = await auditService.getAuditLogs({
+    tenant_id: req.tenant_id,
     user_id: user_id || undefined,
     action,
     resource_type,

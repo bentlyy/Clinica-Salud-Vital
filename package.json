@@ -32,6 +32,7 @@
     "express": "4.21.2",
     "express-rate-limit": "^6.10.0",
     "helmet": "^8.1.0",
+    "hi-base32": "^0.5.1",
     "hpp": "^0.2.3",
     "jsonwebtoken": "^9.0.3",
     "node-cron": "^4.2.1",

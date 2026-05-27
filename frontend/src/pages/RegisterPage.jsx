@@ -76,7 +76,7 @@ export default function RegisterPage() {
         </form>
 
         <p style={{ textAlign: 'center', marginTop: 20 }}>
-          {t('register.login_link', { link: <Link to="/login">{t('register.login_link_text')}</Link> })}
+          {t('register.have_account')} <Link to="/login">{t('register.login_link_text')}</Link>
         </p>
       </div>
     </div>

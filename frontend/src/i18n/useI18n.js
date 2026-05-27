@@ -21,7 +21,7 @@ const loadTranslations = async () => {
         cachedTranslations = data;
         return data;
       }
-    } catch { /* ignore */ }
+    } catch { }
   }
 
   if (fetchPromise) return fetchPromise;

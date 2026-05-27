@@ -33,9 +33,6 @@ export const sendNotification = async (options: NotificationOptions): Promise<{ 
         if (smsBody && phone) {
           const smsResult = await sendSms({ to: phone, body: smsBody });
           results.sms = smsResult.sent;
-        } else if (smsBody && channel === 'whatsapp' && phone) {
-          const whatsappResult = await sendSms({ to: phone, body: smsBody });
-          results.sms = whatsappResult.sent;
         }
         break;
       case 'all':

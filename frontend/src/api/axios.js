@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000',
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1',
 });
 
 let isRefreshing = false;
@@ -15,7 +15,6 @@ const processQueue = (error, token = null) => {
   failedQueue = [];
 };
 
-// ✅ Attach access token to every request
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('access_token');
   if (token) {
@@ -24,9 +23,6 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// ✅ Global response interceptor
-// - Auto-refresh on 401/TOKEN_EXPIRED
-// - Attach pagination to response.pagination for paginated endpoints
 api.interceptors.response.use(
   (response) => {
     const body = response.data;

@@ -1,0 +1,235 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+vi.mock('../../src/modules/auth/auth.service.js', () => ({
+  register: vi.fn(),
+  login: vi.fn(),
+  refreshToken: vi.fn(),
+  logout: vi.fn(),
+  logoutAll: vi.fn(),
+  changePassword: vi.fn(),
+}));
+
+vi.mock('../../src/modules/auth/auth-2fa.service.js', () => ({
+  enable2FA: vi.fn(),
+  verifyAndEnable2FA: vi.fn(),
+  disable2FA: vi.fn(),
+}));
+
+import * as authService from '../../src/modules/auth/auth.service.js';
+import * as auth2faService from '../../src/modules/auth/auth-2fa.service.js';
+import * as authController from '../../src/modules/auth/auth.controller.js';
+
+const flush = () => new Promise(resolve => setTimeout(resolve, 0));
+const mkRes = () => ({ json: vi.fn(), status: vi.fn().mockReturnThis() });
+
+beforeEach(() => {
+  vi.clearAllMocks();
+});
+
+describe('register', () => {
+  it('calls register service and returns 201', async () => {
+    vi.mocked(authService.register).mockResolvedValue({ id: 1, email: 'test@test.com' });
+    const req = { body: { email: 'test@test.com', password: 'Pass1!' }, tenant_id: 't1' };
+    const res = mkRes();
+
+    authController.register(req, res, vi.fn());
+    await flush();
+
+    expect(authService.register).toHaveBeenCalledWith({ email: 'test@test.com', password: 'Pass1!', tenant_id: 't1' });
+    expect(res.status).toHaveBeenCalledWith(201);
+    expect(res.json).toHaveBeenCalledWith({ id: 1, email: 'test@test.com' });
+  });
+});
+
+describe('login', () => {
+  it('calls login service and returns data', async () => {
+    vi.mocked(authService.login).mockResolvedValue({ token: 'abc', user: { id: 1 } });
+    const req = { body: { email: 'test@test.com', password: 'Pass1!' } };
+    const res = mkRes();
+
+    authController.login(req, res, vi.fn());
+    await flush();
+
+    expect(authService.login).toHaveBeenCalledWith({ email: 'test@test.com', password: 'Pass1!' });
+    expect(res.json).toHaveBeenCalledWith({ token: 'abc', user: { id: 1 } });
+  });
+});
+
+describe('refresh', () => {
+  it('returns 400 when refresh_token missing', async () => {
+    const req = { body: {} };
+    const res = mkRes();
+
+    authController.refresh(req, res, vi.fn());
+    await flush();
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({ error: 'Refresh token required' });
+  });
+
+  it('returns 401 when refresh_token invalid', async () => {
+    vi.mocked(authService.refreshToken).mockResolvedValue(null);
+    const req = { body: { refresh_token: 'bad' } };
+    const res = mkRes();
+
+    authController.refresh(req, res, vi.fn());
+    await flush();
+
+    expect(res.status).toHaveBeenCalledWith(401);
+    expect(res.json).toHaveBeenCalledWith({ error: 'Invalid or expired refresh token' });
+  });
+
+  it('returns new tokens when valid', async () => {
+    vi.mocked(authService.refreshToken).mockResolvedValue({ access_token: 'new', refresh_token: 'new-r' });
+    const req = { body: { refresh_token: 'valid' } };
+    const res = mkRes();
+
+    authController.refresh(req, res, vi.fn());
+    await flush();
+
+    expect(res.json).toHaveBeenCalledWith({ access_token: 'new', refresh_token: 'new-r' });
+  });
+});
+
+describe('logout', () => {
+  it('logs out with refresh_token', async () => {
+    const req = { body: { refresh_token: 'rt' } };
+    const res = mkRes();
+
+    authController.logout(req, res, vi.fn());
+    await flush();
+
+    expect(authService.logout).toHaveBeenCalledWith('rt');
+    expect(res.json).toHaveBeenCalledWith({ message: 'Logged out successfully' });
+  });
+
+  it('succeeds without refresh_token', async () => {
+    const req = { body: {} };
+    const res = mkRes();
+
+    authController.logout(req, res, vi.fn());
+    await flush();
+
+    expect(authService.logout).not.toHaveBeenCalled();
+    expect(res.json).toHaveBeenCalledWith({ message: 'Logged out successfully' });
+  });
+});
+
+describe('logoutAll', () => {
+  it('returns 401 when no user', async () => {
+    const req = { body: {} };
+    const res = mkRes();
+
+    authController.logoutAll(req, res, vi.fn());
+    await flush();
+
+    expect(res.status).toHaveBeenCalledWith(401);
+    expect(res.json).toHaveBeenCalledWith({ error: 'Authentication required' });
+  });
+
+  it('logs out all sessions', async () => {
+    const req = { user: { id: 1 }, body: {} };
+    const res = mkRes();
+
+    authController.logoutAll(req, res, vi.fn());
+    await flush();
+
+    expect(authService.logoutAll).toHaveBeenCalledWith(1);
+    expect(res.json).toHaveBeenCalledWith({ message: 'Logged out from all devices' });
+  });
+});
+
+describe('changePassword', () => {
+  it('returns 401 when no user', async () => {
+    const req = { body: {} };
+    const res = mkRes();
+
+    authController.changePassword(req, res, vi.fn());
+    await flush();
+
+    expect(res.status).toHaveBeenCalledWith(401);
+  });
+
+  it('changes password successfully', async () => {
+    const req = { user: { id: 1 }, body: { current_password: 'old', new_password: 'NewPass1!' } };
+    const res = mkRes();
+
+    authController.changePassword(req, res, vi.fn());
+    await flush();
+
+    expect(authService.changePassword).toHaveBeenCalledWith({
+      userId: 1, currentPassword: 'old', newPassword: 'NewPass1!',
+    });
+    expect(res.json).toHaveBeenCalledWith({ message: 'Password changed successfully' });
+  });
+});
+
+describe('enable2FA', () => {
+  it('returns 401 when no user', async () => {
+    const req = { body: {} };
+    const res = mkRes();
+
+    authController.enable2FA(req, res, vi.fn());
+    await flush();
+
+    expect(res.status).toHaveBeenCalledWith(401);
+  });
+
+  it('enables 2FA', async () => {
+    vi.mocked(auth2faService.enable2FA).mockResolvedValue({ secret: 'JBSWY3DPEHPK3PXP' });
+    const req = { user: { id: 1, email: 'test@test.com' }, body: {} };
+    const res = mkRes();
+
+    authController.enable2FA(req, res, vi.fn());
+    await flush();
+
+    expect(auth2faService.enable2FA).toHaveBeenCalledWith(1, 'test@test.com');
+    expect(res.json).toHaveBeenCalledWith({ secret: 'JBSWY3DPEHPK3PXP' });
+  });
+});
+
+describe('verifyAndEnable2FA', () => {
+  it('returns 401 when no user', async () => {
+    const req = { body: {} };
+    const res = mkRes();
+
+    authController.verifyAndEnable2FA(req, res, vi.fn());
+    await flush();
+
+    expect(res.status).toHaveBeenCalledWith(401);
+  });
+
+  it('verifies and enables 2FA', async () => {
+    const req = { user: { id: 1 }, body: { token: '123456' } };
+    const res = mkRes();
+
+    authController.verifyAndEnable2FA(req, res, vi.fn());
+    await flush();
+
+    expect(auth2faService.verifyAndEnable2FA).toHaveBeenCalledWith(1, '123456');
+    expect(res.json).toHaveBeenCalledWith({ message: '2FA enabled successfully' });
+  });
+});
+
+describe('disable2FA', () => {
+  it('returns 401 when no user', async () => {
+    const req = { body: {} };
+    const res = mkRes();
+
+    authController.disable2FA(req, res, vi.fn());
+    await flush();
+
+    expect(res.status).toHaveBeenCalledWith(401);
+  });
+
+  it('disables 2FA', async () => {
+    const req = { user: { id: 1 }, body: {} };
+    const res = mkRes();
+
+    authController.disable2FA(req, res, vi.fn());
+    await flush();
+
+    expect(auth2faService.disable2FA).toHaveBeenCalledWith(1);
+    expect(res.json).toHaveBeenCalledWith({ message: '2FA disabled successfully' });
+  });
+});

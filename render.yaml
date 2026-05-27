@@ -27,6 +27,8 @@ services:
         value: ClinicApp
       - key: SMS_PROVIDER
         value: log
+      - key: SENDGRID_API_KEY
+        sync: false
       - key: DEFAULT_TENANT_ID
         value: default
       - key: APP_LOCALE

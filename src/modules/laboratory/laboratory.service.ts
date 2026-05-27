@@ -1,9 +1,10 @@
 import { pool } from '../../shared/db.js';
 import { NotFoundError, BadRequestError } from '../../utils/errors.js';
+import crypto from 'crypto';
 
 const generateRequestNumber = () => {
   const year = new Date().getFullYear();
-  const random = Math.floor(Math.random() * 100000).toString().padStart(5, '0');
+  const random = crypto.randomInt(100000, 999999).toString();
   return 'LAB-' + year + '-' + random;
 };
 

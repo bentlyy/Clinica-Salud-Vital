@@ -14,7 +14,6 @@ export default function SuperAdminDashboardPage() {
         const data = await getGlobalStats();
         setStats(data);
       } catch {
-        // ignore
       } finally {
         setLoading(false);
       }

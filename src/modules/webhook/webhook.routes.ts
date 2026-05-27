@@ -11,9 +11,9 @@ router.use(authorize('admin'));
 
 router.get('/', webhookController.list);
 router.post('/', validateZod(createWebhookSchema), webhookController.create);
+router.get('/:webhook_id/deliveries', webhookController.getDeliveries);
 router.get('/:id', webhookController.getById);
 router.put('/:id', validateZod(updateWebhookSchema), webhookController.update);
 router.delete('/:id', webhookController.remove);
-router.get('/:webhook_id/deliveries', webhookController.getDeliveries);
 
 export default router;

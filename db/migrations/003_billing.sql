@@ -72,15 +72,16 @@ CREATE TABLE IF NOT EXISTS payments (
 );
 
 -- Add missing columns to payments if created by init.sql
-ALTER TABLE payments ADD COLUMN IF NOT EXISTS payment_method VARCHAR(50);
+-- NOTE: init.sql uses 'method' column, not 'payment_method' — keep consistent
+ALTER TABLE payments ADD COLUMN IF NOT EXISTS method VARCHAR(50);
 ALTER TABLE payments ADD COLUMN IF NOT EXISTS transaction_id VARCHAR(255);
 ALTER TABLE payments ADD COLUMN IF NOT EXISTS payment_date TIMESTAMP DEFAULT NOW();
 ALTER TABLE payments ADD COLUMN IF NOT EXISTS metadata JSONB;
 
--- Insurance claims table
+-- Insurance claims table (matches init.sql column names)
 CREATE TABLE IF NOT EXISTS insurance_claims (
   id SERIAL PRIMARY KEY,
-  invoice_id INTEGER REFERENCES invoices(id) ON DELETE CASCADE,
+  invoice_id INTEGER REFERENCES invoices(id) ON DELETE SET NULL,
   insurance_provider VARCHAR(255) NOT NULL,
   policy_number VARCHAR(100) NOT NULL,
   claim_number VARCHAR(100),
@@ -88,7 +89,7 @@ CREATE TABLE IF NOT EXISTS insurance_claims (
   approved_amount NUMERIC(10, 2),
   status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'submitted', 'approved', 'rejected', 'partial')),
   submitted_at TIMESTAMP,
-  response_at TIMESTAMP,
+  resolved_at TIMESTAMP,
   notes TEXT,
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW()
@@ -98,7 +99,7 @@ CREATE TABLE IF NOT EXISTS insurance_claims (
 ALTER TABLE insurance_claims ADD COLUMN IF NOT EXISTS claim_number VARCHAR(100);
 ALTER TABLE insurance_claims ADD COLUMN IF NOT EXISTS approved_amount NUMERIC(10, 2);
 ALTER TABLE insurance_claims ADD COLUMN IF NOT EXISTS submitted_at TIMESTAMP;
-ALTER TABLE insurance_claims ADD COLUMN IF NOT EXISTS response_at TIMESTAMP;
+ALTER TABLE insurance_claims ADD COLUMN IF NOT EXISTS resolved_at TIMESTAMP;
 ALTER TABLE insurance_claims ADD COLUMN IF NOT EXISTS notes TEXT;
 
 -- Indexes
@@ -111,23 +112,15 @@ CREATE INDEX IF NOT EXISTS idx_payments_invoice ON payments(invoice_id);
 CREATE INDEX IF NOT EXISTS idx_payments_transaction ON payments(transaction_id);
 CREATE INDEX IF NOT EXISTS idx_insurance_claims_invoice ON insurance_claims(invoice_id);
 
--- Trigger for updated_at
-CREATE OR REPLACE FUNCTION update_invoice_updated_at()
-RETURNS TRIGGER AS $$
-BEGIN
-  NEW.updated_at = NOW();
-  RETURN NEW;
-END;
-$$ language 'plpgsql';
-
+-- Trigger for updated_at (uses shared function from init.sql)
 DROP TRIGGER IF EXISTS update_invoices_updated_at ON invoices;
 CREATE TRIGGER update_invoices_updated_at
   BEFORE UPDATE ON invoices
   FOR EACH ROW
-  EXECUTE FUNCTION update_invoice_updated_at();
+  EXECUTE FUNCTION update_updated_at_column();
 
 DROP TRIGGER IF EXISTS update_insurance_claims_updated_at ON insurance_claims;
 CREATE TRIGGER update_insurance_claims_updated_at
   BEFORE UPDATE ON insurance_claims
   FOR EACH ROW
-  EXECUTE FUNCTION update_invoice_updated_at();
+  EXECUTE FUNCTION update_updated_at_column();

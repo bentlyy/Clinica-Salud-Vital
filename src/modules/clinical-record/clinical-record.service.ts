@@ -221,3 +221,11 @@ export const deleteClinicalRecord = async (id: string | number, doctor_id: numbe
   if (result.rows.length === 0) throw new NotFoundError('Clinical record not found or cannot be deleted');
   return { message: 'Clinical record cancelled successfully' };
 };
+
+export const doesDoctorHaveBookingWithPatient = async (doctorId: number, patientId: number, tenantId?: string): Promise<boolean> => {
+  const result = await pool.query(
+    `SELECT 1 FROM bookings WHERE doctor_id = $1 AND user_id = $2${tenantId ? ' AND tenant_id = $3' : ''} LIMIT 1`,
+    tenantId ? [doctorId, patientId, tenantId] : [doctorId, patientId]
+  );
+  return result.rows.length > 0;
+};

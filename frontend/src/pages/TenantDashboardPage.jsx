@@ -16,6 +16,16 @@ export default function TenantDashboardPage() {
   const [showCancel, setShowCancel] = useState(false);
   const [error, setError] = useState('');
   const [saved, setSaved] = useState(false);
+  const [configName, setConfigName] = useState('');
+  const [configEmail, setConfigEmail] = useState('');
+  const [configTimezone, setConfigTimezone] = useState('America/Santiago');
+
+  useEffect(() => {
+    if (user) {
+      setConfigName(user?.tenant_id === 'default' ? 'Mi Clínica' : user?.tenant_id);
+      setConfigEmail(user?.email || '');
+    }
+  }, [user]);
 
   useEffect(() => {
     if (!user) return;
@@ -52,7 +62,7 @@ export default function TenantDashboardPage() {
   const handleSaveConfig = async () => {
     try {
       setError('');
-      await updateTenant({ name: user?.tenant_id });
+      await updateTenant({ name: configName, locale: configTimezone ? configTimezone.slice(0, 2) : undefined });
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     } catch (err) {
@@ -154,29 +164,29 @@ export default function TenantDashboardPage() {
         </div>
       </div>
 
-      <div className="card" style={{ padding: 24, marginTop: 24 }}>
-        <h3 style={{ marginBottom: 16 }}>{t('tenant.config_title')}</h3>
-        <div className="form-group">
-          <label>{t('saas.clinic_name')}</label>
-          <input type="text" className="input" defaultValue={user?.tenant_id === 'default' ? 'Mi Clínica' : user?.tenant_id} />
+        <div className="card" style={{ padding: 24, marginTop: 24 }}>
+          <h3 style={{ marginBottom: 16 }}>{t('tenant.config_title')}</h3>
+          <div className="form-group">
+            <label>{t('saas.clinic_name')}</label>
+            <input type="text" className="input" value={configName} onChange={(e) => setConfigName(e.target.value)} />
+          </div>
+          <div className="form-group">
+            <label>{t('saas.contact_email')}</label>
+            <input type="email" className="input" value={configEmail} onChange={(e) => setConfigEmail(e.target.value)} disabled />
+          </div>
+          <div className="form-group">
+            <label>{t('saas.timezone')}</label>
+            <select className="input" value={configTimezone} onChange={(e) => setConfigTimezone(e.target.value)}>
+              <option value="America/Santiago">America/Santiago (UTC-3)</option>
+              <option value="America/Buenos_Aires">America/Buenos_Aires (UTC-3)</option>
+              <option value="America/Mexico_City">America/Mexico_City (UTC-6)</option>
+              <option value="America/Bogota">America/Bogota (UTC-5)</option>
+            </select>
+          </div>
+          <button className="btn btn--primary" onClick={handleSaveConfig}>
+            {saved ? t('saas.saved') : t('saas.save_changes')}
+          </button>
         </div>
-        <div className="form-group">
-          <label>{t('saas.contact_email')}</label>
-          <input type="email" className="input" defaultValue={user?.email} />
-        </div>
-        <div className="form-group">
-          <label>{t('saas.timezone')}</label>
-          <select className="input">
-            <option value="America/Santiago">America/Santiago (UTC-3)</option>
-            <option value="America/Buenos_Aires">America/Buenos_Aires (UTC-3)</option>
-            <option value="America/Mexico_City">America/Mexico_City (UTC-6)</option>
-            <option value="America/Bogota">America/Bogota (UTC-5)</option>
-          </select>
-        </div>
-        <button className="btn btn--primary" onClick={handleSaveConfig}>
-          {saved ? t('saas.saved') : t('saas.save_changes')}
-        </button>
-      </div>
     </div>
   );
 }

@@ -12,6 +12,7 @@ export interface SlotOverlapOptions {
   date: string;
   time: string;
   duration: number;
+  tenantId?: string;
   client?: { query: typeof pool.query };
 }
 
@@ -20,14 +21,15 @@ export const checkDoctorAvailability = async (
   date: string,
   time: string,
   duration: number,
-  db: { query: typeof pool.query } = pool
+  db: { query: typeof pool.query } = pool,
+  tenantId?: string
 ): Promise<void> => {
   const day = getDayOfWeek(date);
 
   const availability = await db.query(
     `SELECT start_time, end_time FROM doctor_availability
-     WHERE doctor_id = $1 AND day_of_week = $2`,
-    [doctorId, day]
+     WHERE doctor_id = $1 AND day_of_week = $2${tenantId ? ' AND tenant_id = $3' : ''}`,
+    tenantId ? [doctorId, day, tenantId] : [doctorId, day]
   );
 
   if (availability.rows.length === 0) {
@@ -52,11 +54,12 @@ export const checkDoctorExceptions = async (
   date: string,
   time: string,
   duration: number,
-  db: { query: typeof pool.query } = pool
+  db: { query: typeof pool.query } = pool,
+  tenantId?: string
 ): Promise<void> => {
   const exceptions = await db.query(
-    `SELECT * FROM doctor_exceptions WHERE doctor_id = $1 AND date = $2`,
-    [doctorId, date]
+    `SELECT * FROM doctor_exceptions WHERE doctor_id = $1 AND date = $2${tenantId ? ' AND tenant_id = $3' : ''}`,
+    tenantId ? [doctorId, date, tenantId] : [doctorId, date]
   );
 
   const start = new Date(`1970-01-01T${time}`);
@@ -78,16 +81,18 @@ export const checkSlotOverlap = async (
   date: string,
   time: string,
   duration: number,
-  db: { query: typeof pool.query } = pool
+  db: { query: typeof pool.query } = pool,
+  tenantId?: string
 ): Promise<void> => {
   const overlap = await db.query(
     `SELECT 1 FROM bookings
      WHERE doctor_id = $1 AND date = $2 AND status != 'cancelled'
+     ${tenantId ? 'AND tenant_id = $5' : ''}
      AND (
        (time <= $3 AND (time + (duration || ' minutes')::interval) > $3)
        OR ($3 <= time AND ($3::time + ($4 || ' minutes')::interval) > time)
      )`,
-    [doctorId, date, time, duration]
+    tenantId ? [doctorId, date, time, duration, tenantId] : [doctorId, date, time, duration]
   );
 
   if (overlap.rows.length > 0) throw new BadRequestError('This time slot is already booked');
@@ -95,7 +100,7 @@ export const checkSlotOverlap = async (
 
 export const validateBookingSlot = async (opts: SlotOverlapOptions): Promise<void> => {
   const db = opts.client || pool;
-  await checkDoctorAvailability(opts.doctorId, opts.date, opts.time, opts.duration, db);
-  await checkDoctorExceptions(opts.doctorId, opts.date, opts.time, opts.duration, db);
-  await checkSlotOverlap(opts.doctorId, opts.date, opts.time, opts.duration, db);
+  await checkDoctorAvailability(opts.doctorId, opts.date, opts.time, opts.duration, db, opts.tenantId);
+  await checkDoctorExceptions(opts.doctorId, opts.date, opts.time, opts.duration, db, opts.tenantId);
+  await checkSlotOverlap(opts.doctorId, opts.date, opts.time, opts.duration, db, opts.tenantId);
 };

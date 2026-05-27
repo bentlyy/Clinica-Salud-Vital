@@ -112,6 +112,20 @@ describe('labService.getLabRequests', () => {
 
     expect(result).toEqual([]);
   });
+
+  it('filters by end_date', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [{ id: 1, created_at: '2026-05-01' }] });
+    const result = await labService.getLabRequests({ end_date: '2026-06-01' });
+    expect(result).toHaveLength(1);
+    expect(mockQuery).toHaveBeenCalledWith(expect.stringContaining('created_at <='), expect.any(Array));
+  });
+
+  it('filters by tenantId', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [{ id: 1 }] });
+    const result = await labService.getLabRequests({}, 'tenant-1');
+    expect(result).toHaveLength(1);
+    expect(mockQuery).toHaveBeenCalledWith(expect.stringContaining('tenant_id'), expect.arrayContaining(['tenant-1']));
+  });
 });
 
 describe('labService.updateLabRequestStatus', () => {

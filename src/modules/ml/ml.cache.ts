@@ -1,8 +1,3 @@
-/**
- * Sistema de cach� para ML
- * Usa Redis cuando est� disponible, fallback a memoria
- */
-
 import type { Request, Response, NextFunction } from 'express';
 import { logger } from '../../utils/logger.js';
 
@@ -134,14 +129,15 @@ class MLCache {
 export const mlCache = new MLCache();
 
 export const cacheMiddleware = (ttl = 300000) => {
-  return async (req: Request, res: Response, next: NextFunction) => {
+  return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const cacheKey = `ml:${req.method}:${req.originalUrl}:${JSON.stringify(req.query)}`;
 
     try {
       const cached = await mlCache.get(cacheKey);
       if (cached && req.method === 'GET') {
         logger.debug(`[ML Cache] Hit: ${cacheKey}`);
-        return res.json({ ...(cached as Record<string, unknown>), fromCache: true });
+        res.json({ ...(cached as Record<string, unknown>), fromCache: true });
+        return;
       }
     } catch (err) {
       logger.warn('[ML Cache] Error getting from cache:', (err as Error).message);

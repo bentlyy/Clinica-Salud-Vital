@@ -68,19 +68,11 @@ ALTER TABLE lab_request_items ADD COLUMN IF NOT EXISTS completed_at TIMESTAMP;
 ALTER TABLE lab_request_items ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT NOW();
 
 -- Trigger for updated_at
-CREATE OR REPLACE FUNCTION update_lab_request_updated_at()
-RETURNS TRIGGER AS $$
-BEGIN
-  NEW.updated_at = NOW();
-  RETURN NEW;
-END;
-$$ language 'plpgsql';
-
 DROP TRIGGER IF EXISTS update_lab_requests_updated_at ON lab_requests;
 CREATE TRIGGER update_lab_requests_updated_at
   BEFORE UPDATE ON lab_requests
   FOR EACH ROW
-  EXECUTE FUNCTION update_lab_request_updated_at();
+  EXECUTE FUNCTION update_updated_at_column();
 
 -- Sample data for lab tests (only if the migration-specific columns exist)
 DO $$

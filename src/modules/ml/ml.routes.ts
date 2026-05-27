@@ -1,11 +1,7 @@
-/**
- * ML/DL Routes
- * Prediction, training and metrics
- */
-
 import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
 import { authMiddleware, authorize } from '../../middlewares/auth.middleware.js';
+import { requireFeature } from '../saas/saas.features.js';
 import {
   trainModels,
   getModelStatus,
@@ -23,13 +19,15 @@ import {
   getDemandForecastHistory,
   exportPredictionData,
   exportMetricsData,
-  exportDemandForecastData
+  exportDemandForecastData,
+  powerBiExport
 } from './ml.controller.js';
 
 const router = Router();
 
 router.use(authMiddleware);
 router.use(authorize('admin'));
+router.use(requireFeature('ml'));
 
 const mlTrainLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
@@ -47,7 +45,7 @@ const mlPredictLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-router.post('/train', mlTrainLimiter, trainModels);
+router.post('/train', mlTrainLimiter, requireFeature('ml-training'), trainModels);
 router.get('/status', getModelStatus);
 router.get('/health', getHealthCheck);
 router.post('/reset', resetModels);
@@ -64,8 +62,9 @@ router.get('/history/predictions', getPredictionHistory);
 router.get('/history/metrics', getModelMetricsHistory);
 router.get('/history/forecast', getDemandForecastHistory);
 
-router.get('/export/predictions', exportPredictionData);
-router.get('/export/metrics', exportMetricsData);
-router.get('/export/forecast', exportDemandForecastData);
+router.get('/export/predictions', requireFeature('ml-export'), exportPredictionData);
+router.get('/export/metrics', requireFeature('ml-export'), exportMetricsData);
+router.get('/export/forecast', requireFeature('ml-export'), exportDemandForecastData);
+router.get('/powerbi-export', powerBiExport);
 
 export default router;
