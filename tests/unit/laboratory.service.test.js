@@ -126,6 +126,27 @@ describe('labService.getLabRequests', () => {
     expect(result).toHaveLength(1);
     expect(mockQuery).toHaveBeenCalledWith(expect.stringContaining('tenant_id'), expect.arrayContaining(['tenant-1']));
   });
+
+  it('filters by doctor_id', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [{ id: 1, doctor_id: 1 }] });
+    const result = await labService.getLabRequests({ doctor_id: 1 });
+    expect(result).toHaveLength(1);
+    expect(mockQuery).toHaveBeenCalledWith(expect.stringContaining('doctor_id'), expect.arrayContaining([1]));
+  });
+
+  it('filters by status', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [{ id: 1, status: 'pending' }] });
+    const result = await labService.getLabRequests({ status: 'pending' });
+    expect(result).toHaveLength(1);
+    expect(mockQuery).toHaveBeenCalledWith(expect.stringContaining('status'), expect.arrayContaining(['pending']));
+  });
+
+  it('filters by start_date', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [{ id: 1 }] });
+    const result = await labService.getLabRequests({ start_date: '2026-01-01' });
+    expect(result).toHaveLength(1);
+    expect(mockQuery).toHaveBeenCalledWith(expect.stringContaining('created_at >='), expect.arrayContaining(['2026-01-01']));
+  });
 });
 
 describe('labService.updateLabRequestStatus', () => {
