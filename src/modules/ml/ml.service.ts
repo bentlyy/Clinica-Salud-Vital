@@ -960,7 +960,7 @@ export const trainVitalSignsAnomalyDetector = async (tenantId?: string): Promise
       return { trained: false, reason: 'insufficient_data' };
     }
 
-    const features = records.rows
+    const features: number[][] = records.rows
       .filter(r => r.vital_signs)
       .map(r => {
         const vs = r.vital_signs as Record<string, unknown> | undefined;
@@ -971,7 +971,7 @@ export const trainVitalSignsAnomalyDetector = async (tenantId?: string): Promise
         const temp = parseFloat(String(vs.temperature || '36.5'));
         return [systolic, diastolic, heartRate, temp];
       })
-      .filter(f => f[0] > 0);
+      .filter((f): f is number[] => f[0] > 0);
 
     if (features.length < 20) {
       return { trained: false, reason: 'insufficient_valid_data' };
