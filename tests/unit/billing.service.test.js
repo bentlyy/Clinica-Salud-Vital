@@ -120,6 +120,20 @@ describe('updateInvoiceStatus', () => {
     expect(mockQuery.mock.calls[0][1][1]).toContain('transfer');
   });
 
+  it('updates with payment data without tenant', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [{ id: 1 }] });
+    await updateInvoiceStatus(1, 'paid', { method: 'cash' });
+    expect(mockQuery.mock.calls[0][1][1]).toContain('cash');
+    expect(mockQuery.mock.calls[0][0]).not.toContain('tenant_id');
+  });
+
+  it('updates with tenant but no payment data', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [{ id: 1 }] });
+    await updateInvoiceStatus(1, 'paid', undefined, 'tenant-1');
+    expect(mockQuery.mock.calls[0][1][1]).toBeNull();
+    expect(mockQuery.mock.calls[0][0]).toContain('tenant_id');
+  });
+
   it('throws when not found', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [] });
     await expect(updateInvoiceStatus(999, 'paid')).rejects.toThrow('Invoice not found');
@@ -146,6 +160,18 @@ describe('deleteInvoice', () => {
 
     await expect(deleteInvoice(999)).rejects.toThrow('Invoice not found');
     expect(mockQuery).toHaveBeenCalledWith('ROLLBACK');
+  });
+
+  it('deletes invoice with tenantId', async () => {
+    mockQuery
+      .mockResolvedValueOnce({ rows: [] })                    // BEGIN
+      .mockResolvedValueOnce({ rows: [] })                    // DELETE items
+      .mockResolvedValueOnce({ rows: [{ id: 1 }] })           // DELETE invoice
+      .mockResolvedValueOnce({ rows: [] });                   // COMMIT
+
+    await deleteInvoice(1, 'tenant-1');
+    expect(mockQuery.mock.calls[2][0]).toContain('tenant_id');
+    expect(mockQuery.mock.calls[2][1]).toContain('tenant-1');
   });
 });
 

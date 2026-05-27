@@ -519,12 +519,14 @@ tests/
 
 ### Cobertura
 
-| Métrica | Mínimo |
-|---------|--------|
-| Lines | 50% |
-| Branches | 50% |
-| Functions | 50% |
-| Statements | 50% |
+| Métrica | Actual | Mínimo |
+|---------|--------|--------|
+| Statements | **87.75%** | 50% |
+| Branches | **87.95%** | 50% |
+| Functions | **91%** | 50% |
+| Lines | **88.09%** | 50% |
+
+**1071 tests** · 78 test files · 0 fallos
 
 ### Herramientas
 - **Framework:** Vitest 4.x

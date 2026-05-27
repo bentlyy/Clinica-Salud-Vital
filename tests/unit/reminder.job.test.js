@@ -54,6 +54,24 @@ describe('reminder.job', () => {
     expect(result).toBe(60);
   });
 
+  it('parseIntervalToMinutes parses hours format', async () => {
+    const { parseIntervalToMinutes } = await import('../../src/jobs/reminder.job.js');
+    expect(parseIntervalToMinutes('2 hours')).toBe(120);
+    expect(parseIntervalToMinutes('1h')).toBe(60);
+  });
+
+  it('parseIntervalToMinutes parses minutes format', async () => {
+    const { parseIntervalToMinutes } = await import('../../src/jobs/reminder.job.js');
+    expect(parseIntervalToMinutes('30m')).toBe(30);
+    expect(parseIntervalToMinutes('15 minutes')).toBe(15);
+  });
+
+  it('parseIntervalToMinutes returns 0 for invalid input', async () => {
+    const { parseIntervalToMinutes } = await import('../../src/jobs/reminder.job.js');
+    expect(parseIntervalToMinutes('invalid')).toBe(0);
+    expect(parseIntervalToMinutes('')).toBe(0);
+  });
+
   it('sendReminders throws for invalid sentField', async () => {
     mockQuery.mockResolvedValue({ rows: [] });
     const { sendReminders } = await import('../../src/jobs/reminder.job.js');
