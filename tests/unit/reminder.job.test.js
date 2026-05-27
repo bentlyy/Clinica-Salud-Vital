@@ -48,6 +48,34 @@ describe('reminder.job', () => {
     expect(cron.default.schedule).toHaveBeenCalledWith('*/5 * * * *', expect.any(Function));
   });
 
+  it('startReminderJob cron callback runs sendReminders', async () => {
+    mockQuery.mockResolvedValue({ rows: [] });
+    const { startReminderJob } = await import('../../src/jobs/reminder.job.js');
+
+    startReminderJob();
+
+    const cron = await import('node-cron');
+    const callback = cron.default.schedule.mock.calls[0][1];
+    await callback();
+
+    const logger = await import('../../src/utils/logger.js');
+    expect(logger.logger.info).toHaveBeenCalledWith('Checking reminders...');
+  });
+
+  it('startReminderJob cron callback handles errors', async () => {
+    mockQuery.mockRejectedValue(new Error('DB error'));
+    const { startReminderJob } = await import('../../src/jobs/reminder.job.js');
+
+    startReminderJob();
+
+    const cron = await import('node-cron');
+    const callback = cron.default.schedule.mock.calls[0][1];
+    await callback();
+
+    const logger = await import('../../src/utils/logger.js');
+    expect(logger.logger.error).toHaveBeenCalledWith('Reminder job global error:', expect.any(Error));
+  });
+
   it('parseIntervalToMinutes parses hours', async () => {
     const { parseIntervalToMinutes } = await import('../../src/jobs/reminder.job.js');
     const result = parseIntervalToMinutes('60 minutes');

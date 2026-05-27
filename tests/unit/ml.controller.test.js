@@ -265,6 +265,17 @@ describe('analyzeVitals', () => {
     await flush();
     expect(res.json).toHaveBeenCalledWith({ anomalies: [] });
   });
+
+  it('calls next with validation error', async () => {
+    vi.mocked(validator.validateVitalSignsAnalysis).mockReturnValue({ valid: false, errors: ['vitalSigns es requerido'] });
+    const req = { body: {} };
+    const res = { json: vi.fn() };
+    const next = vi.fn();
+    const handlers = mlController.analyzeVitals;
+    handlers[1](req, res, next);
+    await flush();
+    expect(next).toHaveBeenCalledWith(expect.any(Error));
+  });
 });
 
 describe('getPredictionHistory', () => {
