@@ -1,8 +1,15 @@
 import { useState, useRef } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import ReCAPTCHA from 'react-google-recaptcha';
 import { useAuth } from '../context/useAuth';
 import { useI18n } from '../i18n/useI18n';
+
+const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
+const hasCaptcha = Boolean(RECAPTCHA_SITE_KEY);
+
+let ReCAPTCHA = null;
+if (hasCaptcha) {
+  ReCAPTCHA = require('react-google-recaptcha').default;
+}
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -15,12 +22,17 @@ export default function LoginPage() {
   const [submitting, setSubmitting] = useState(false);
   const [needs2FA, setNeeds2FA] = useState(false);
 
+  const getCaptchaToken = () => {
+    if (!hasCaptcha) return '__captcha_disabled__';
+    return recaptchaRef.current?.getValue();
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
 
-    const captcha_token = recaptchaRef.current?.getValue();
-    if (!captcha_token) {
+    const captcha_token = getCaptchaToken();
+    if (hasCaptcha && !captcha_token) {
       setError(t('auth.captcha_required'));
       return;
     }
@@ -105,12 +117,14 @@ export default function LoginPage() {
             </div>
           )}
 
-          <div className="form-group" style={{ display: 'flex', justifyContent: 'center', marginTop: 16 }}>
-            <ReCAPTCHA
-              ref={recaptchaRef}
-              sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY || '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI'}
-            />
-          </div>
+          {hasCaptcha && ReCAPTCHA && (
+            <div className="form-group" style={{ display: 'flex', justifyContent: 'center', marginTop: 16 }}>
+              <ReCAPTCHA
+                ref={recaptchaRef}
+                sitekey={RECAPTCHA_SITE_KEY}
+              />
+            </div>
+          )}
 
           <button type="submit" disabled={submitting} className="btn btn-primary btn-block btn-lg" style={{ marginTop: 8 }}>
             {submitting ? t('auth.logging_in') : needs2FA ? t('auth.verify_2fa') : t('auth.login_button')}
