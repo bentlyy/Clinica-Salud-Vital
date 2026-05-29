@@ -90,9 +90,10 @@ export const AuthProvider = ({ children }) => {
     return () => window.removeEventListener('auth:expired', handleAuthExpired);
   }, []);
 
-  const login = async (email, password, totp_token) => {
+  const login = async (email, password, totp_token, captcha_token) => {
     const payload = { email, password };
     if (totp_token) payload.totp_token = totp_token;
+    if (captcha_token) payload.captcha_token = captcha_token;
 
     const res = await api.post('/auth/login', payload);
 
