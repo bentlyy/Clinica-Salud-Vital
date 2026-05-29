@@ -17,6 +17,8 @@ import { tenantMiddleware } from './middlewares/tenant.middleware.js';
 import { validateEmailConfig } from './shared/email.service.js';
 import { requestLogger } from './middlewares/requestLogger.middleware.js';
 import { errorHandler, notFoundHandler } from './middlewares/errorHandler.middleware.js';
+import { monitoringService, monitoringMiddleware } from './middlewares/monitoring.middleware.js';
+import { dbMonitor } from './shared/db-monitor.service.js';
 import { logger } from './utils/logger.js';
 
 import doctorRoutes from './modules/doctor/doctor.routes.js';
@@ -38,19 +40,32 @@ import webhookRoutes from './modules/webhook/webhook.routes.js';
 import saasRoutes from './modules/saas/saas.routes.js';
 import superAdminRoutes from './modules/super-admin/super-admin.routes.js';
 import i18nRoutes from './modules/i18n/i18n.routes.js';
+import monitoringRoutes from './modules/monitoring/monitoring.routes.js';
 
 const app: Express = express();
 
 app.get('/health', async (req: Request, res: Response) => {
   try {
+    const startDb = Date.now();
     await pool.query('SELECT 1');
-    res.json({ status: 'ok', db: 'connected' });
+    const dbLatency = Date.now() - startDb;
+    const mem = monitoringService.getMemoryUsage();
+    const eventLoopLag = await monitoringService.getEventLoopLag();
+    res.json({
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+      db: { status: 'connected', latency: `${dbLatency}ms` },
+      memory: mem,
+      eventLoopLag: `${eventLoopLag}ms`,
+      uptime: process.uptime(),
+    });
   } catch {
     res.status(500).json({ status: 'error', db: 'down' });
   }
 });
 
 app.use(securityMiddleware);
+app.use(monitoringMiddleware);
 
 /* Multi-tenancy */
 app.use(tenantMiddleware);
@@ -119,6 +134,7 @@ app.use(`${API_PREFIX}/specialties`, specialtiesRoutes);
 app.use(`${API_PREFIX}/webhooks`, webhookRoutes);
 app.use(`${API_PREFIX}/saas`, saasRoutes);
 app.use(`${API_PREFIX}/super-admin`, superAdminRoutes);
+app.use(`${API_PREFIX}/monitoring`, monitoringRoutes);
 
 /* Backward compat: /api/ → /api/v1/ */
 app.use('/api/auth', authLimiter, authRoutes);
@@ -137,6 +153,7 @@ app.use('/api/rbac', rbacRoutes);
 app.use('/api/ml', mlRoutes);
 app.use('/api/specialties', specialtiesRoutes);
 app.use('/api/i18n', i18nRoutes);
+app.use('/api/monitoring', monitoringRoutes);
 
 /* Serve frontend static files in production */
 if (process.env.NODE_ENV === 'production') {
@@ -234,7 +251,24 @@ const startServer = async (): Promise<void> => {
 };
 
 process.on('unhandledRejection', (reason) => {
-  logger.error('Unhandled Rejection', { reason });
+  const mem = process.memoryUsage();
+  logger.error('Unhandled Rejection', { reason, memory: { heapUsed: `${Math.round(mem.heapUsed / 1024 / 1024)}MB`, rss: `${Math.round(mem.rss / 1024 / 1024)}MB` } });
+});
+
+process.on('SIGTERM', () => {
+  logger.info('SIGTERM received. Shutting down gracefully...');
+  monitoringService.stop();
+  dbMonitor.stop();
+  pool.end().catch(() => {});
+  process.exit(0);
+});
+
+process.on('SIGINT', () => {
+  logger.info('SIGINT received. Shutting down gracefully...');
+  monitoringService.stop();
+  dbMonitor.stop();
+  pool.end().catch(() => {});
+  process.exit(0);
 });
 
 startServer().catch((err) => {
