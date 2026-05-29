@@ -21,6 +21,7 @@ interface LoginParams {
   email: string;
   password: string;
   totp_token?: string;
+  captcha_token?: string;
 }
 
 interface RefreshParams {
@@ -119,12 +120,33 @@ export const register = async ({ email, password, name, rut, phone, tenant_id }:
   }
 };
 
-export const login = async ({ email, password, totp_token }: LoginParams): Promise<{
+const verifyCaptcha = async (token: string): Promise<boolean> => {
+  const secret = process.env.RECAPTCHA_SECRET_KEY;
+  if (!secret) return true;
+
+  try {
+    const params = new URLSearchParams({ secret, response: token });
+    const res = await fetch('https://www.google.com/recaptcha/api/siteverify', {
+      method: 'POST',
+      body: params,
+    });
+    const data = await res.json() as { success: boolean };
+    return data.success === true;
+  } catch {
+    return false;
+  }
+};
+
+export const login = async ({ email, password, totp_token, captcha_token }: LoginParams): Promise<{
   access_token: string;
   refresh_token: string;
   user: { id: number; email: string; name: string | null; role: UserRole; rut: string | null; phone: string | null; password_changed: boolean; totp_enabled: boolean; tenant_id: string };
 }> => {
   if (!email || !password) throw new Error('Email and password required');
+
+  if (!captcha_token || !(await verifyCaptcha(captcha_token))) {
+    throw new BadRequestError('CAPTCHA verification failed');
+  }
 
   const result = await pool.query<User>('SELECT * FROM users WHERE email = $1', [email]);
   const user = result.rows[0];
