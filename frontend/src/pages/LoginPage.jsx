@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import ReCAPTCHA from 'react-google-recaptcha';
 import { useAuth } from '../context/useAuth';
 import { useI18n } from '../i18n/useI18n';
 
@@ -8,6 +9,7 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { t } = useI18n();
+  const recaptchaRef = useRef(null);
   const [form, setForm] = useState({ email: '', password: '', totp_token: '' });
   const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
@@ -16,9 +18,16 @@ export default function LoginPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
+
+    const captcha_token = recaptchaRef.current?.getValue();
+    if (!captcha_token) {
+      setError(t('auth.captcha_required'));
+      return;
+    }
+
     try {
       setSubmitting(true);
-      const user = await login(form.email, form.password, needs2FA ? form.totp_token : undefined);
+      const user = await login(form.email, form.password, needs2FA ? form.totp_token : undefined, captcha_token);
       const redirect = searchParams.get('redirect');
       if (redirect) { navigate(redirect); return; }
       if (user.role === 'superadmin') {
@@ -36,6 +45,7 @@ export default function LoginPage() {
       } else {
         setError(err.response?.data?.error || t('auth.invalid_credentials'));
       }
+      recaptchaRef.current?.reset();
     } finally {
       setSubmitting(false);
     }
@@ -94,6 +104,13 @@ export default function LoginPage() {
               />
             </div>
           )}
+
+          <div className="form-group" style={{ display: 'flex', justifyContent: 'center', marginTop: 16 }}>
+            <ReCAPTCHA
+              ref={recaptchaRef}
+              sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY || '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI'}
+            />
+          </div>
 
           <button type="submit" disabled={submitting} className="btn btn-primary btn-block btn-lg" style={{ marginTop: 8 }}>
             {submitting ? t('auth.logging_in') : needs2FA ? t('auth.verify_2fa') : t('auth.login_button')}
