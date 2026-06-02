@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/useAuth';
 import { useI18n } from '../i18n/useI18n';
 import { formatRut, validateRut, cleanRut } from '../utils/rut.js';
@@ -8,6 +8,8 @@ export default function RegisterPage() {
   const { t } = useI18n();
   const { register } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const tenantId = searchParams.get('tenant');
   const [form, setForm] = useState({ email: '', password: '', confirmPassword: '', rut: '', phone: '' });
   const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
@@ -23,8 +25,8 @@ export default function RegisterPage() {
 
     try {
       setSubmitting(true);
-      await register({ email: form.email, password: form.password, rut: form.rut || undefined, phone: form.phone || undefined });
-      navigate('/login');
+      await register({ email: form.email, password: form.password, rut: form.rut || undefined, phone: form.phone || undefined, tenant_id: tenantId });
+      navigate(tenantId ? `/login?tenant=${tenantId}` : '/login');
     } catch (err) {
       setError(err.response?.data?.error || t('register.error'));
     } finally {
