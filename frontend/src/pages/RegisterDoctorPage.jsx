@@ -1,8 +1,14 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import Combobox from '../components/Combobox';
 import { useI18n } from '../i18n/useI18n';
+
+const ROLE_CONFIG = {
+  admin: { icon: '🛡️', label: 'Administradores', color: '#6c5ce7' },
+  doctor: { icon: '🩺', label: 'Doctores', color: '#0984e3' },
+  patient: { icon: '🧑‍⚕️', label: 'Pacientes', color: '#00b894' },
+};
 
 function InviteTab({ t, onSent }) {
   const [role, setRole] = useState('patient');
@@ -76,34 +82,116 @@ function InviteTab({ t, onSent }) {
   );
 }
 
+function UserRow({ user, onToggle, toggling }) {
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: 12,
+      padding: '10px 14px', borderRadius: 8,
+      background: user.active ? 'var(--bg-secondary)' : 'var(--gray-100)',
+      opacity: user.active ? 1 : 0.55,
+      transition: 'all 0.2s',
+    }}>
+      <div style={{
+        width: 36, height: 36, borderRadius: '50%',
+        background: ROLE_CONFIG[user.role]?.color || '#ccc',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        color: '#fff', fontWeight: 600, fontSize: '0.85rem', flexShrink: 0,
+      }}>
+        {user.name ? user.name.charAt(0).toUpperCase() : '?'}
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontWeight: 500, fontSize: '0.9rem', color: 'var(--text-primary)' }}>{user.name || '—'}</div>
+        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.email}</div>
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+        <span style={{
+          width: 8, height: 8, borderRadius: '50%',
+          background: user.active ? '#00b894' : '#d63031',
+          display: 'inline-block',
+        }} />
+        <button
+          onClick={() => onToggle(user.id, user.active)}
+          disabled={toggling === user.id}
+          style={{
+            padding: '5px 12px', borderRadius: 6, border: 'none',
+            fontSize: '0.78rem', fontWeight: 500, cursor: 'pointer',
+            background: user.active ? '#fee2e2' : '#d1fae5',
+            color: user.active ? '#dc2626' : '#059669',
+            transition: 'all 0.15s',
+          }}
+        >
+          {toggling === user.id ? '...' : user.active ? 'Desactivar' : 'Activar'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function RoleSection({ role, users, onToggle, toggling }) {
+  const cfg = ROLE_CONFIG[role] || { icon: '👤', label: role, color: '#636e72' };
+  return (
+    <div style={{ marginBottom: 20 }}>
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 10,
+        padding: '12px 16px', marginBottom: 8,
+        borderRadius: 'var(--radius-sm)',
+        background: `linear-gradient(135deg, ${cfg.color}15, ${cfg.color}08)`,
+        borderLeft: `4px solid ${cfg.color}`,
+      }}>
+        <span style={{ fontSize: '1.3rem' }}>{cfg.icon}</span>
+        <span style={{ fontWeight: 600, fontSize: '0.95rem', color: cfg.color }}>{cfg.label}</span>
+        <span style={{
+          marginLeft: 'auto', background: cfg.color + '20',
+          color: cfg.color, padding: '2px 10px', borderRadius: 12,
+          fontSize: '0.8rem', fontWeight: 600,
+        }}>{users.length}</span>
+      </div>
+      {users.length === 0 ? (
+        <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', padding: '12px 16px', textAlign: 'center' }}>
+          No hay {cfg.label.toLowerCase()} registrados
+        </p>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {users.map(user => (
+            <UserRow key={user.id} user={user} onToggle={onToggle} toggling={toggling} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function UsersTab({ t }) {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [search, setSearch] = useState('');
-  const [roleFilter, setRoleFilter] = useState('');
-  const [page, setPage] = useState(1);
-  const [pagination, setPagination] = useState(null);
   const [toggling, setToggling] = useState(null);
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const params = { page, limit: 20 };
+      const params = { page: 1, limit: 200 };
       if (search) params.search = search;
-      if (roleFilter) params.role = roleFilter;
       const res = await api.get('/doctors/users', { params });
       setUsers(res.data);
-      setPagination(res.pagination);
     } catch (err) {
       setError(err.response?.data?.error || 'Error al cargar usuarios');
     } finally {
       setLoading(false);
     }
-  }, [page, search, roleFilter]);
+  }, [search]);
 
   useEffect(() => { fetchUsers(); }, [fetchUsers]);
+
+  const grouped = useMemo(() => {
+    const groups = { admin: [], doctor: [], patient: [] };
+    for (const u of users) {
+      if (groups[u.role]) groups[u.role].push(u);
+    }
+    return groups;
+  }, [users]);
 
   const handleToggle = async (userId, currentActive) => {
     setToggling(userId);
@@ -117,80 +205,46 @@ function UsersTab({ t }) {
     }
   };
 
-  if (loading && users.length === 0) return <p style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: 32 }}>Cargando usuarios...</p>;
-
   return (
-    <div>
-      {error && <div className="alert alert-error">{error}</div>}
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      {error && <div className="alert alert-error" style={{ marginBottom: 12 }}>{error}</div>}
 
-      <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
+      <div style={{ position: 'relative', marginBottom: 16 }}>
+        <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', fontSize: '0.9rem' }}>🔍</span>
         <input
-          type="text" value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-          placeholder="Buscar por nombre o email" className="form-input"
-          style={{ flex: 1, minWidth: 200 }}
+          type="text" value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Buscar por nombre o email..."
+          className="form-input"
+          style={{ paddingLeft: 36, fontSize: '0.9rem' }}
         />
-        <select value={roleFilter} onChange={(e) => { setRoleFilter(e.target.value); setPage(1); }} className="form-input" style={{ width: 'auto' }}>
-          <option value="">Todos los roles</option>
-          <option value="patient">Pacientes</option>
-          <option value="doctor">Doctores</option>
-          <option value="admin">Administradores</option>
-        </select>
       </div>
 
-      {users.length === 0 ? (
-        <p style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: 32 }}>No hay usuarios registrados</p>
-      ) : (
-        <>
-          <div className="table-responsive">
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>Nombre</th>
-                  <th>Email</th>
-                  <th>Rol</th>
-                  <th>Estado</th>
-                  <th style={{ width: 120 }}></th>
-                </tr>
-              </thead>
-              <tbody>
-                {users.map(user => (
-                  <tr key={user.id} style={{ opacity: user.active ? 1 : 0.6 }}>
-                    <td>{user.name || '—'}</td>
-                    <td>{user.email}</td>
-                    <td><span className={`badge badge-${user.role}`}>{user.role}</span></td>
-                    <td>
-                      <span style={{
-                        display: 'inline-flex', alignItems: 'center', gap: 4,
-                        color: user.active ? 'var(--success)' : 'var(--danger)',
-                        fontWeight: 500, fontSize: '0.85rem',
-                      }}>
-                        <span style={{ width: 8, height: 8, borderRadius: '50%', background: user.active ? 'var(--success)' : 'var(--danger)', display: 'inline-block' }} />
-                        {user.active ? 'Activo' : 'Inactivo'}
-                      </span>
-                    </td>
-                    <td>
-                      <button
-                        onClick={() => handleToggle(user.id, user.active)}
-                        disabled={toggling === user.id}
-                        className={`btn btn-sm ${user.active ? 'btn-danger' : 'btn-success'}`}
-                      >
-                        {toggling === user.id ? '...' : user.active ? 'Desactivar' : 'Activar'}
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+      {loading ? (
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ textAlign: 'center', color: 'var(--text-muted)' }}>
+            <div style={{ fontSize: '2rem', marginBottom: 8 }}>⏳</div>
+            <div>Cargando usuarios...</div>
           </div>
-
-          {pagination && pagination.totalPages > 1 && (
-            <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginTop: 16 }}>
-              <button disabled={page <= 1} onClick={() => setPage(p => p - 1)} className="btn btn-sm">Anterior</button>
-              <span style={{ padding: '6px 12px', color: 'var(--text-secondary)' }}>{page} / {pagination.totalPages}</span>
-              <button disabled={page >= pagination.totalPages} onClick={() => setPage(p => p + 1)} className="btn btn-sm">Siguiente</button>
-            </div>
+        </div>
+      ) : users.length === 0 ? (
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <p style={{ color: 'var(--text-muted)', textAlign: 'center' }}>
+            No hay usuarios registrados en esta clínica
+          </p>
+        </div>
+      ) : (
+        <div style={{ flex: 1, overflowY: 'auto', paddingRight: 4, minHeight: 0 }}>
+          {grouped.admin.length > 0 && (
+            <RoleSection role="admin" users={grouped.admin} onToggle={handleToggle} toggling={toggling} />
           )}
-        </>
+          {grouped.doctor.length > 0 && (
+            <RoleSection role="doctor" users={grouped.doctor} onToggle={handleToggle} toggling={toggling} />
+          )}
+          {grouped.patient.length > 0 && (
+            <RoleSection role="patient" users={grouped.patient} onToggle={handleToggle} toggling={toggling} />
+          )}
+        </div>
       )}
     </div>
   );
@@ -199,7 +253,7 @@ function UsersTab({ t }) {
 export default function RegisterDoctorPage() {
   const navigate = useNavigate();
   const { t } = useI18n();
-  const [tab, setTab] = useState('invite');
+  const [tab, setTab] = useState('users');
   const [sent, setSent] = useState(null);
 
   if (sent) {
@@ -231,16 +285,6 @@ export default function RegisterDoctorPage() {
 
       <div style={{ display: 'flex', gap: 0, marginBottom: 24, background: 'var(--gray-100)', borderRadius: 'var(--radius-sm)', padding: 4 }}>
         <button
-          onClick={() => setTab('invite')}
-          style={{
-            flex: 1, padding: '10px 16px', border: 'none', borderRadius: 6,
-            background: tab === 'invite' ? 'var(--bg-secondary)' : 'transparent',
-            color: tab === 'invite' ? 'var(--accent-500)' : 'var(--text-secondary)',
-            fontWeight: tab === 'invite' ? 600 : 400, cursor: 'pointer', fontSize: '0.9rem',
-            transition: 'var(--transition)', boxShadow: tab === 'invite' ? 'var(--shadow-sm)' : 'none',
-          }}
-        >📨 Invitar</button>
-        <button
           onClick={() => setTab('users')}
           style={{
             flex: 1, padding: '10px 16px', border: 'none', borderRadius: 6,
@@ -250,9 +294,19 @@ export default function RegisterDoctorPage() {
             transition: 'var(--transition)', boxShadow: tab === 'users' ? 'var(--shadow-sm)' : 'none',
           }}
         >👥 Usuarios</button>
+        <button
+          onClick={() => setTab('invite')}
+          style={{
+            flex: 1, padding: '10px 16px', border: 'none', borderRadius: 6,
+            background: tab === 'invite' ? 'var(--bg-secondary)' : 'transparent',
+            color: tab === 'invite' ? 'var(--accent-500)' : 'var(--text-secondary)',
+            fontWeight: tab === 'invite' ? 600 : 400, cursor: 'pointer', fontSize: '0.9rem',
+            transition: 'var(--transition)', boxShadow: tab === 'invite' ? 'var(--shadow-sm)' : 'none',
+          }}
+        >📨 Invitar</button>
       </div>
 
-      <div className="card" style={{ padding: 32 }}>
+      <div className="card" style={{ padding: 24 }}>
         {tab === 'invite' ? <InviteTab t={t} onSent={setSent} /> : <UsersTab t={t} />}
       </div>
 
