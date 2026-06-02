@@ -17,4 +17,7 @@ router.post('/tenants', validateZod(adminCreateTenantSchema), superAdminControll
 router.patch('/tenants/:id', validateZod(updateTenantSchema), superAdminController.updateTenant);
 router.delete('/tenants/:id', superAdminController.deleteTenant);
 
+router.get('/users', superAdminController.listUsers);
+router.patch('/users/:userId/active', superAdminController.toggleUserActive);
+
 export default router;

@@ -136,6 +136,78 @@ export const deleteTenant = async (tenantId: string): Promise<void> => {
   if (result.rows.length === 0) throw new NotFoundError('Tenant not found');
 };
 
+interface ListUsersFilters {
+  tenantId?: string;
+  role?: string;
+  search?: string;
+}
+
+export const listUsers = async (
+  page: number = 1,
+  limit: number = 50,
+  filters?: ListUsersFilters
+): Promise<{ data: Record<string, unknown>[]; pagination: { page: number; limit: number; total: number; totalPages: number } }> => {
+  const conditions: string[] = ['1=1'];
+  const params: (string | number)[] = [];
+  let paramIdx = 1;
+
+  if (filters?.tenantId) {
+    conditions.push(`u.tenant_id = $${paramIdx++}`);
+    params.push(filters.tenantId);
+  }
+
+  if (filters?.role) {
+    conditions.push(`u.role = $${paramIdx++}`);
+    params.push(filters.role);
+  }
+
+  if (filters?.search) {
+    conditions.push(`(u.name ILIKE $${paramIdx} OR u.email ILIKE $${paramIdx})`);
+    params.push(`%${filters.search}%`);
+    paramIdx++;
+  }
+
+  const whereClause = conditions.join(' AND ');
+
+  const countResult = await pool.query(
+    `SELECT COUNT(*) as total FROM users u WHERE ${whereClause}`,
+    params
+  );
+  const total = parseInt(countResult.rows[0].total, 10);
+
+  const offset = (page - 1) * limit;
+  params.push(limit, offset);
+
+  const result = await pool.query(
+    `SELECT u.id, u.email, u.name, u.role, u.rut, u.phone, u.tenant_id, u.active,
+            u.password_changed, u.totp_enabled, u.created_at, u.last_activity_at
+     FROM users u WHERE ${whereClause}
+     ORDER BY u.created_at DESC LIMIT $${paramIdx} OFFSET $${paramIdx + 1}`,
+    params
+  );
+
+  const totalPages = Math.ceil(total / limit);
+
+  return {
+    data: result.rows.map((r: Record<string, unknown>) => ({
+      id: r.id, email: r.email, name: r.name, role: r.role,
+      rut: r.rut, phone: r.phone, tenant_id: r.tenant_id, active: r.active,
+      password_changed: r.password_changed, totp_enabled: r.totp_enabled,
+      created_at: r.created_at, last_activity_at: r.last_activity_at,
+    })),
+    pagination: { page, limit, total, totalPages },
+  };
+};
+
+export const setUserActive = async (userId: number, active: boolean): Promise<Record<string, unknown>> => {
+  const result = await pool.query(
+    `UPDATE users SET active = $1 WHERE id = $2 RETURNING id, email, name, role, active, tenant_id`,
+    [active, userId]
+  );
+  if (result.rows.length === 0) throw new NotFoundError('User not found');
+  return result.rows[0];
+};
+
 export const getGlobalStats = async (): Promise<{
   total_tenants: number;
   active_tenants: number;
