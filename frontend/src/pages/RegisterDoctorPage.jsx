@@ -108,26 +108,30 @@ function ToggleSwitch({ active, onToggle, disabled }) {
 
 function UserRow({ user, onToggle, toggling }) {
   const displayName = user.name || user.email || '—';
+  const secondary = [user.rut, user.email].filter(Boolean).join(' · ');
   return (
     <div style={{
       display: 'flex', alignItems: 'center', gap: 12,
       padding: '10px 12px', borderRadius: 8,
-      background: user.active ? 'transparent' : 'var(--gray-100)',
+      background: user.active ? '#fff' : '#f8f9fa',
       opacity: user.active ? 1 : 0.5,
       transition: 'all 0.2s',
+      border: '1px solid #eee',
     }}>
       <div style={{
-        width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
+        width: 38, height: 38, borderRadius: '50%', flexShrink: 0,
         background: ROLE_CONFIG[user.role === 'user' ? 'patient' : user.role]?.color || '#ccc',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        color: '#fff', fontWeight: 700, fontSize: '0.85rem',
+        color: '#fff', fontWeight: 700, fontSize: '0.9rem',
       }}>
-        {displayName.charAt(0).toUpperCase()}
+        {user.name ? user.name.charAt(0).toUpperCase() : (user.email ? user.email.charAt(0).toUpperCase() : '?')}
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-primary)' }}>{displayName}</div>
-        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-          {[user.rut, user.email && !user.name ? null : user.email].filter(Boolean).join(' · ') || user.email}
+        <div style={{ fontWeight: 600, fontSize: '0.9rem', color: '#2d3436', lineHeight: 1.3 }}>
+          {user.name || '—'}
+        </div>
+        <div style={{ fontSize: '0.8rem', color: '#636e72', lineHeight: 1.4 }}>
+          {secondary}
         </div>
       </div>
       <ToggleSwitch active={user.active} onToggle={() => onToggle(user.id, user.active)} disabled={toggling === user.id} />
