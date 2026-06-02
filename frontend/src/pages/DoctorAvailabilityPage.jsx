@@ -36,7 +36,7 @@ export default function DoctorAvailabilityPage() {
       setLoading(true);
       setError(null);
       const data = await getAvailability();
-      setAvailability(data);
+      setAvailability(Array.isArray(data) ? data : []);
     } catch {
       setError(t('doctor_availability.error'));
     } finally {

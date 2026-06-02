@@ -72,7 +72,7 @@ export default function DoctorClinicalRecordsPage() {
         getClinicalRecords({ limit: 50 }),
         getDoctorBookings(),
       ]);
-      setRecords(recordsRes.data || []);
+      setRecords(Array.isArray(recordsRes) ? recordsRes : (recordsRes.data || []));
       setBookings(Array.isArray(bookingsRes) ? bookingsRes : (bookingsRes.data || []));
     } catch (err) {
       setError(t('clinical_records.error_load'));
