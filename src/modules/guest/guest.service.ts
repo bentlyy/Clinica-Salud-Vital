@@ -43,7 +43,7 @@ export const createGuestBooking = async ({ doctor_id, date, time, duration = 30,
   if (isBlocked) {
     const result = await pool.query(`SELECT blocked_until FROM users WHERE rut = $1${tenantId ? ' AND tenant_id = $2' : ''}`, tenantId ? [rut, tenantId] : [rut]);
     const blockedUntil = new Date(result.rows[0].blocked_until).toLocaleDateString('es-CL');
-    throw new BadRequestError(`Tu RUT está bloqueado hasta el ${blockedUntil} por no confirmar citas anteriores.`);
+    throw new BadRequestError(`Tu RUT está bloqueado hasta el ${blockedUntil} por inasistencia a citas anteriores.`);
   }
 
   const client = await pool.connect();
@@ -69,8 +69,8 @@ export const createGuestBooking = async ({ doctor_id, date, time, duration = 30,
     );
 
     const result = await client.query(
-      `INSERT INTO bookings (doctor_id, date, time, duration, guest_rut, guest_name, guest_email, guest_phone, confirmation_token${tenantId ? ', tenant_id' : ''})
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9${tenantId ? ', $10' : ''}) RETURNING *`,
+      `INSERT INTO bookings (doctor_id, date, time, duration, confirmed, guest_rut, guest_name, guest_email, guest_phone, confirmation_token${tenantId ? ', tenant_id' : ''})
+       VALUES ($1, $2, $3, $4, true, $5, $6, $7, $8, $9${tenantId ? ', $10' : ''}) RETURNING *`,
       tenantId ? [doctor_id, date, time, duration, formattedRut, name, email, phone, confirmToken, tenantId] : [doctor_id, date, time, duration, formattedRut, name, email, phone, confirmToken]
     );
 
@@ -80,7 +80,7 @@ export const createGuestBooking = async ({ doctor_id, date, time, duration = 30,
 
     sendEmail({
       to: email,
-      subject: 'Confirma tu cita médica',
+      subject: 'Cita agendada - Salud Vital',
       html: guestConfirmationEmail({
         name: name || 'Paciente',
         doctor: doctor.name,

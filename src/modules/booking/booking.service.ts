@@ -120,8 +120,8 @@ export const createBooking = async ({ doctor_id, user_id, date, time, duration =
       { expiresIn: '7d' }
     );
 
-    const insertCols = '(doctor_id, user_id, date, time, duration, confirmation_token';
-    const insertVals = '($1, $2, $3, $4, $5, $6';
+    const insertCols = '(doctor_id, user_id, date, time, duration, confirmed, confirmation_token';
+    const insertVals = '($1, $2, $3, $4, $5, true, $6';
     const insertParams: (string | number | undefined)[] = [doctor_id, user_id, date, time, duration, confirmToken];
     let booking: unknown;
     if (tenantId) {
@@ -144,7 +144,7 @@ export const createBooking = async ({ doctor_id, user_id, date, time, duration =
       try {
         const r = await sendEmail({
           to: user.email,
-          subject: 'Confirma tu cita médica',
+          subject: 'Cita agendada - Salud Vital',
           html: bookingConfirmationTemplate({
             doctor: doctor.name,
             date,
