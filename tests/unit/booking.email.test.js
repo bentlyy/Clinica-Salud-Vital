@@ -15,7 +15,7 @@ describe('bookingConfirmationTemplate', () => {
     expect(html).toContain('2026-06-01');
     expect(html).toContain('10:00');
     expect(html).toContain('https://clinic.example.com/confirm/abc123');
-    expect(html).toContain('Confirmar mi cita');
+    expect(html).toContain('Gestionar mi cita');
   });
 
   it('uses default frontendUrl when not provided', () => {
@@ -37,7 +37,7 @@ describe('bookingConfirmationTemplate', () => {
       frontendUrl: 'https://clinic.example.com',
     });
 
-    expect(html).not.toContain('Confirmar mi cita');
+    expect(html).not.toContain('Gestionar mi cita');
     expect(html).toContain('Gracias por confiar en nosotros');
   });
 });
