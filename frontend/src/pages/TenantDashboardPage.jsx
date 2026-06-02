@@ -3,6 +3,7 @@ import { getMySubscription, cancelSubscription, getLimits, getUsageSummary, upda
 import { useAuth } from '../context/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { useI18n } from '../i18n/useI18n';
+import { register } from '../api/auth';
 
 export default function TenantDashboardPage() {
   const { user } = useAuth();
@@ -16,6 +17,10 @@ export default function TenantDashboardPage() {
   const [showCancel, setShowCancel] = useState(false);
   const [error, setError] = useState('');
   const [saved, setSaved] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
+  const [newPatient, setNewPatient] = useState({ email: '', password: '', name: '' });
+  const [patientCreating, setPatientCreating] = useState(false);
+  const [patientCreated, setPatientCreated] = useState(false);
   const [configName, setConfigName] = useState('');
   const [configEmail, setConfigEmail] = useState('');
   const [configTimezone, setConfigTimezone] = useState('America/Santiago');
@@ -56,6 +61,34 @@ export default function TenantDashboardPage() {
       setShowCancel(false);
     } catch (err) {
       setError(err.response?.data?.error || 'Cancelation failed');
+    }
+  };
+
+  const registrationLink = user?.tenant_id && user.tenant_id !== 'default'
+    ? `${window.location.origin}/register?tenant=${user.tenant_id}`
+    : null;
+
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(registrationLink);
+      setLinkCopied(true);
+      setTimeout(() => setLinkCopied(false), 2000);
+    } catch {}
+  };
+
+  const handleCreatePatient = async (e) => {
+    e.preventDefault();
+    setError('');
+    try {
+      setPatientCreating(true);
+      await register({ email: newPatient.email, password: newPatient.password, name: newPatient.name || undefined });
+      setPatientCreated(true);
+      setNewPatient({ email: '', password: '', name: '' });
+      setTimeout(() => setPatientCreated(false), 3000);
+    } catch (err) {
+      setError(err.response?.data?.error || 'Error al crear paciente');
+    } finally {
+      setPatientCreating(false);
     }
   };
 
@@ -162,6 +195,51 @@ export default function TenantDashboardPage() {
             ))
           )}
         </div>
+      </div>
+
+      {registrationLink && (
+        <div className="card" style={{ padding: 24, marginTop: 24 }}>
+          <h3 style={{ marginBottom: 16 }}>Enlace de Registro</h3>
+          <p style={{ fontSize: 14, color: 'var(--text-secondary)', marginBottom: 12 }}>
+            Comparte este enlace con tus pacientes para que se registren en tu clínica:
+          </p>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <input type="text" className="input" value={registrationLink} readOnly style={{ flex: 1 }} />
+            <button className="btn btn--primary" onClick={handleCopyLink}>
+              {linkCopied ? '✓ Copiado' : 'Copiar'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div className="card" style={{ padding: 24, marginTop: 24 }}>
+        <h3 style={{ marginBottom: 16 }}>Crear Paciente</h3>
+        <p style={{ fontSize: 14, color: 'var(--text-secondary)', marginBottom: 12 }}>
+          Registra un paciente manualmente en tu clínica:
+        </p>
+        <form onSubmit={handleCreatePatient}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+            <div className="form-group" style={{ margin: 0 }}>
+              <label>Nombre</label>
+              <input type="text" className="input" placeholder="Nombre del paciente" value={newPatient.name}
+                onChange={(e) => setNewPatient({ ...newPatient, name: e.target.value })} />
+            </div>
+            <div className="form-group" style={{ margin: 0 }}>
+              <label>Email <span className="required">*</span></label>
+              <input type="email" className="input" required placeholder="paciente@email.com" value={newPatient.email}
+                onChange={(e) => setNewPatient({ ...newPatient, email: e.target.value })} />
+            </div>
+          </div>
+          <div className="form-group" style={{ marginBottom: 12 }}>
+            <label>Contraseña temporal <span className="required">*</span></label>
+            <input type="text" className="input" required placeholder="Clave temporal" value={newPatient.password}
+              onChange={(e) => setNewPatient({ ...newPatient, password: e.target.value })} />
+            <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>Mín. 8 caracteres, mayúscula, minúscula, número y especial</p>
+          </div>
+          <button type="submit" className="btn btn--primary" disabled={patientCreating}>
+            {patientCreating ? 'Creando...' : patientCreated ? '✓ Paciente creado' : 'Crear Paciente'}
+          </button>
+        </form>
       </div>
 
         <div className="card" style={{ padding: 24, marginTop: 24 }}>

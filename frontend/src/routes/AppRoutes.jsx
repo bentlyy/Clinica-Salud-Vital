@@ -4,7 +4,7 @@ import LoginPage from '../pages/LoginPage';
 import RegisterPage from '../pages/RegisterPage';
 import BookingPage from '../pages/BookingPage';
 import SpecialistsPage from '../pages/SpecialistsPage';
-import GuestBookingsPage from '../pages/GuestBookingsPage';
+
 import ConfirmPage from '../pages/ConfirmPage';
 import MyBookingsPage from '../pages/MyBookingsPage';
 import DoctorPanel from '../pages/DoctorPanel';
@@ -43,7 +43,7 @@ export default function AppRoutes() {
       <Route path="/specialists" element={<AppLayout><SpecialistsPage /></AppLayout>} />
       <Route path="/doctors" element={<ProtectedRoute><AppLayout><BookingPage /></AppLayout></ProtectedRoute>} />
 
-      <Route path="/my-bookings/guest" element={<AppLayout><GuestBookingsPage /></AppLayout>} />
+
       <Route path="/confirm/:token" element={<AppLayout><ConfirmPage /></AppLayout>} />
       <Route path="/my-bookings" element={<ProtectedRoute><AppLayout><MyBookingsPage /></AppLayout></ProtectedRoute>} />
 
