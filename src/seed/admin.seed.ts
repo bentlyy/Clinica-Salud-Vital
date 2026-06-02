@@ -36,6 +36,111 @@ export const seedDefaultTenant = async (): Promise<void> => {
   logger.info(`Default tenant created: ${DEFAULT_TENANT_ID}`);
 };
 
+export const seedSuperAdmin = async (): Promise<void> => {
+  const exists = await pool.query('SELECT 1 FROM users WHERE role = $1 LIMIT 1', ['superadmin']);
+  if (exists.rows.length > 0) {
+    logger.info('Superadmin already exists');
+    return;
+  }
+
+  const hash = await bcrypt.hash('REPLACED_PASSWORD', 12);
+
+  await pool.query(
+    'INSERT INTO users (email, password, name, role) VALUES ($1, $2, $3, $4) ON CONFLICT (email) DO NOTHING',
+    ['superadmin@clinic.com', hash, 'Super Admin', 'superadmin']
+  );
+
+  logger.info('Superadmin created: superadmin@clinic.com / REPLACED_PASSWORD');
+};
+
+const TEST_TENANTS = [
+  {
+    id: 'clinica-norte',
+    name: 'Clínica del Norte',
+    domain: 'norte',
+    adminEmail: 'admin@norte.clinic.com',
+    adminRut: '11111111-1',
+  },
+  {
+    id: 'clinica-sur',
+    name: 'Clínica del Sur',
+    domain: 'sur',
+    adminEmail: 'admin@sur.clinic.com',
+    adminRut: '22222222-2',
+  },
+];
+
+export const seedTestTenants = async (): Promise<void> => {
+  const hash = await bcrypt.hash('REPLACED_PASSWORD', 12);
+
+  for (const t of TEST_TENANTS) {
+    const exists = await pool.query('SELECT 1 FROM tenants WHERE id = $1', [t.id]);
+    if (exists.rows.length > 0) {
+      logger.info(`Tenant ${t.id} already exists`);
+      continue;
+    }
+
+    await pool.query(
+      `INSERT INTO tenants (id, name, domain, locale, timezone, config, active)
+       VALUES ($1, $2, $3, $4, $5, $6, true)
+       ON CONFLICT (id) DO NOTHING`,
+      [
+        t.id,
+        t.name,
+        t.domain,
+        process.env.APP_LOCALE || 'es',
+        'America/Santiago',
+        JSON.stringify({ company: t.name, contact_email: t.adminEmail }),
+      ]
+    );
+
+    await pool.query(
+      `INSERT INTO subscriptions (tenant_id, plan_id, status, current_period_start, current_period_end)
+       SELECT $1, id, 'active', NOW(), NOW() + INTERVAL '1 year'
+       FROM plans WHERE code = 'pro'
+       ON CONFLICT DO NOTHING`,
+      [t.id]
+    );
+
+    await pool.query(
+      'INSERT INTO users (email, password, name, role, rut, tenant_id) VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT (email) DO NOTHING',
+      [t.adminEmail, hash, t.name, 'admin', t.adminRut, t.id]
+    );
+
+    const docRuts = [
+      { name: `Dr. ${t.name} Cardiología`, email: `cardio@${t.domain}.clinic.com`, rut: `${t.domain === 'norte' ? '333' : '444'}33333-3`, specialty: 'Cardiología' },
+      { name: `Dr. ${t.name} Pediatría`, email: `pediatria@${t.domain}.clinic.com`, rut: `${t.domain === 'norte' ? '555' : '666'}44444-4`, specialty: 'Pediatría' },
+    ];
+
+    for (const doc of docRuts) {
+      const userResult = await pool.query(
+        'INSERT INTO users (email, password, name, role, rut, tenant_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id',
+        [doc.email, hash, doc.name, 'doctor', doc.rut, t.id]
+      );
+      const userId = userResult.rows[0].id;
+
+      const doctorResult = await pool.query(
+        'INSERT INTO doctors (name, specialty, email, user_id, tenant_id) VALUES ($1, $2, $3, $4, $5) RETURNING id',
+        [doc.name, doc.specialty, doc.email, userId, t.id]
+      );
+      const doctorId = doctorResult.rows[0].id;
+
+      for (let day = 1; day <= 5; day++) {
+        await pool.query(
+          'INSERT INTO doctor_availability (doctor_id, day_of_week, start_time, end_time, tenant_id) VALUES ($1, $2, $3, $4, $5)',
+          [doctorId, day, '09:00', '13:00', t.id]
+        );
+        await pool.query(
+          'INSERT INTO doctor_availability (doctor_id, day_of_week, start_time, end_time, tenant_id) VALUES ($1, $2, $3, $4, $5)',
+          [doctorId, day, '14:00', '18:00', t.id]
+        );
+      }
+    }
+
+    logger.info(`Test tenant created: ${t.id} (${t.name})`);
+  }
+};
+
 export const seedAdmin = async (): Promise<void> => {
   const exists = await pool.query('SELECT 1 FROM users WHERE role = $1 LIMIT 1', ['admin']);
   if (exists.rows.length > 0) {
