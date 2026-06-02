@@ -2,7 +2,7 @@ import { pool } from '../../shared/db.js';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { sendEmail } from '../../shared/email.service.js';
-import { doctorCredentialsEmail } from './doctor.email.js';
+import { doctorCredentialsEmail, invitationEmail } from './doctor.email.js';
 import { getJWTSecret } from '../../shared/jwt.js';
 import { BadRequestError, NotFoundError } from '../../utils/errors.js';
 import { logger } from '../../utils/logger.js';
@@ -216,4 +216,54 @@ export const getDoctorByUserId = async (user_id: number): Promise<Doctor | null>
   );
 
   return result.rows[0] || null;
+};
+
+interface InvitePersonInput {
+  email: string;
+  name?: string;
+  role: 'patient' | 'doctor';
+  specialty?: string;
+}
+
+export const invitePerson = async (input: InvitePersonInput, tenantId?: string): Promise<void> => {
+  const { email, name, role, specialty } = input;
+
+  if (!email) throw new BadRequestError('Email es obligatorio');
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) throw new BadRequestError('Email inválido');
+
+  if (role === 'doctor' && !specialty) throw new BadRequestError('Especialidad es obligatoria para doctores');
+
+  const existing = await pool.query('SELECT 1 FROM users WHERE email = $1', [email]);
+  if (existing.rows.length > 0) throw new BadRequestError('Email ya registrado');
+
+  const inviteToken = jwt.sign(
+    { email, name: name || email, role, specialty: specialty || null, tenant_id: tenantId || null, purpose: 'invite' },
+    getJWTSecret(),
+    { expiresIn: '7d' }
+  );
+
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+
+  sendEmail({
+    to: email,
+    subject: `Invitación a registrarse como ${role === 'doctor' ? 'médico' : 'paciente'}`,
+    html: invitationEmail({
+      name: name || email,
+      email,
+      inviteToken,
+      frontendUrl,
+      role,
+    }),
+  }).then(r => { if (!r.sent) logger.error('Invitation email error:', r.error); });
+};
+
+export const verifyInviteToken = (token: string): { email: string; name: string; role: string; specialty: string | null; tenant_id: string | null } => {
+  try {
+    const payload = jwt.verify(token, getJWTSecret()) as { email: string; name: string; role: string; specialty: string | null; tenant_id: string | null; purpose: string };
+    if (payload.purpose !== 'invite') throw new BadRequestError('Token inválido');
+    return payload;
+  } catch {
+    throw new BadRequestError('Token de invitación inválido o expirado');
+  }
 };

@@ -3,6 +3,7 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { validateRut, cleanRut, formatRut } from '../../shared/rut.js';
 import { getJWTSecret } from '../../shared/jwt.js';
+import { verifyInviteToken } from '../doctor/doctor.service.js';
 import { UserRole } from '../../types/index.js';
 import { BadRequestError } from '../../utils/errors.js';
 import { verifyToken as verify2FAToken } from './auth-2fa.service.js';
@@ -15,6 +16,7 @@ interface RegisterParams {
   rut?: string;
   phone?: string;
   tenant_id?: string;
+  invite_token?: string;
 }
 
 interface LoginParams {
@@ -89,10 +91,23 @@ const validatePassword = (password: string): void => {
   if (!/[^A-Za-z0-9]/.test(password)) throw new BadRequestError('Password must contain at least one special character');
 };
 
-export const register = async ({ email, password, name, rut, phone, tenant_id }: RegisterParams): Promise<Pick<User, 'id' | 'email' | 'rut' | 'phone'>> => {
+export const register = async ({ email, password, name, rut, phone, tenant_id, invite_token }: RegisterParams): Promise<Pick<User, 'id' | 'email' | 'rut' | 'phone'>> => {
   if (!email || !password) throw new BadRequestError('Email and password required');
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new BadRequestError('Invalid email format');
   validatePassword(password);
+
+  let role: string = 'patient';
+  let specialty: string | null = null;
+  let tid = tenant_id || process.env.DEFAULT_TENANT_ID || 'default';
+
+  if (invite_token) {
+    const invite = verifyInviteToken(invite_token);
+    email = invite.email;
+    name = invite.name;
+    role = invite.role;
+    specialty = invite.specialty;
+    tid = invite.tenant_id || tid;
+  }
 
   let formattedRut: string | null = null;
   if (rut) {
@@ -102,22 +117,45 @@ export const register = async ({ email, password, name, rut, phone, tenant_id }:
   }
 
   const hashedPassword = await bcrypt.hash(password, 12);
-  const tid = tenant_id || process.env.DEFAULT_TENANT_ID || 'default';
 
+  const client = await pool.connect();
   try {
-    const result = await pool.query(
-      `INSERT INTO users (email, password, name, rut, phone, password_changed, tenant_id)
-       VALUES ($1, $2, $3, $4, $5, true, $6)
-       RETURNING id, email, name, rut, phone`,
-      [email, hashedPassword, name || null, formattedRut, phone || null, tid]
+    await client.query('BEGIN');
+
+    const result = await client.query(
+      `INSERT INTO users (email, password, name, rut, phone, role, password_changed, tenant_id)
+       VALUES ($1, $2, $3, $4, $5, $6, true, $7)
+       RETURNING id, email, name, rut, phone, role`,
+      [email, hashedPassword, name || null, formattedRut, phone || null, role, tid]
     );
-    return result.rows[0];
+    const user = result.rows[0];
+
+    if (role === 'doctor' && specialty) {
+      await client.query(
+        `INSERT INTO doctors (name, specialty, email, user_id, tenant_id)
+         VALUES ($1, $2, $3, $4, $5)`,
+        [name || email, specialty, email, user.id, tid]
+      );
+      for (let day = 1; day <= 5; day++) {
+        await client.query(
+          `INSERT INTO doctor_availability (doctor_id, day_of_week, start_time, end_time, tenant_id)
+           VALUES ($1, $2, $3, $4, $5)`,
+          [user.id, day, '09:00', '17:00', tid]
+        );
+      }
+    }
+
+    await client.query('COMMIT');
+    return user;
   } catch (error: unknown) {
+    await client.query('ROLLBACK');
     const pgError = error as { code?: string };
     if (pgError.code === '23505') {
       throw new BadRequestError('Email or RUT already registered');
     }
     throw new BadRequestError('Error creating user');
+  } finally {
+    client.release();
   }
 };
 

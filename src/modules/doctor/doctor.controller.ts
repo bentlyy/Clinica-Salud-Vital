@@ -23,6 +23,11 @@ export const createDoctor = asyncHandler(async (req, res) => {
   res.status(201).json(doctor);
 });
 
+export const invitePerson = asyncHandler(async (req, res) => {
+  await doctorService.invitePerson(req.body, req.tenant_id);
+  res.status(201).json({ message: 'Invitación enviada correctamente' });
+});
+
 export const getMyDoctorProfile = asyncHandler(async (req, res) => {
   const doctor = await doctorService.getDoctorByUserId(req.user!.id);
   if (!doctor) throw new NotFoundError('Doctor profile not found');
