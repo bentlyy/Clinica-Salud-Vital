@@ -41,7 +41,7 @@ const mockCtrl = Object.fromEntries([
   // saas
   'stripeWebhook', 'getPlans', 'onboardTenant', 'getMySubscription', 'createCheckout', 'changePlan', 'cancelSubscription', 'getUsage', 'getUsageSummary', 'getLimits', 'updateTenantConfig',
   // super-admin
-  'getGlobalStats', 'listTenants', 'getTenantDetail', 'adminCreateTenant', 'updateTenant', 'deleteTenant',
+  'getGlobalStats', 'listTenants', 'getTenantDetail', 'adminCreateTenant', 'updateTenant', 'deleteTenant', 'listUsers', 'toggleUserActive',
   // webhook
   'list', 'getDeliveries', 'remove',
   // specialties
