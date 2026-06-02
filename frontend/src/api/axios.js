@@ -26,8 +26,8 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => {
     const body = response.data;
-    if (body && typeof body === 'object' && Array.isArray(body.data) && body.pagination) {
-      response.pagination = body.pagination;
+    if (body && typeof body === 'object' && Array.isArray(body.data)) {
+      if (body.pagination) response.pagination = body.pagination;
       response.data = body.data;
     }
     return response;
