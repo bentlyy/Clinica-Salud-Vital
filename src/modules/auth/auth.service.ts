@@ -210,7 +210,6 @@ export const refreshToken = async ({ refresh_token }: RefreshParams): Promise<{
     const tokenRecord = result.rows[0];
     if (!tokenRecord) {
       await client.query('ROLLBACK');
-      client.release();
       return null;
     }
 
@@ -218,7 +217,6 @@ export const refreshToken = async ({ refresh_token }: RefreshParams): Promise<{
     const user = userResult.rows[0];
     if (!user) {
       await client.query('ROLLBACK');
-      client.release();
       return null;
     }
 
@@ -227,7 +225,6 @@ export const refreshToken = async ({ refresh_token }: RefreshParams): Promise<{
       if (inactiveMinutes > 30) {
         await client.query('UPDATE refresh_tokens SET revoked = true WHERE token = $1', [refresh_token]);
         await client.query('COMMIT');
-        client.release();
         return null;
       }
     }

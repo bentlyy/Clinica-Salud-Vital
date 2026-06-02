@@ -1235,7 +1235,7 @@ export const saveDemandForecast = async (
       );
     }
   } catch (err) {
-    logger.error('[ML] Error saving demand forecast:', (err as Error).message);
+    logger.error(`[ML] Error saving demand forecast: ${(err as Error).message}`, { error: (err as Error).stack });
   }
 };
 
