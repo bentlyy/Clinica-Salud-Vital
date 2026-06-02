@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { getDoctors } from '../api/doctors';
-import { getAvailableSlots, createGuestBooking, createBooking } from '../api/bookings';
+import { getAvailableSlots, createBooking } from '../api/bookings';
 import { useAuth } from '../context/useAuth';
-import { formatRut, validateRut, cleanRut } from '../utils/rut.js';
 import { useI18n } from '../i18n/useI18n';
 
 export default function BookingPage() {
@@ -38,12 +37,15 @@ export default function BookingPage() {
     }
   }, [user]);
 
+  useEffect(() => {
+    if (!user) navigate('/login');
+  }, [user, navigate]);
+
   const [loadingDoctors, setLoadingDoctors] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
 
-  const isGuest = !user;
   const today = new Date().toISOString().split('T')[0];
 
   useEffect(() => {
@@ -70,46 +72,18 @@ export default function BookingPage() {
       .catch(() => setError(t('booking.error')));
   }, [selectedDoctor, date]);
 
-  const handleRutChange = (e) => {
-    setForm({ ...form, rut: formatRut(e.target.value) });
-    setError(null);
-  };
-
   const handleConfirm = async () => {
     if (submitting) return;
-
-    if (isGuest) {
-      if (!validateRut(cleanRut(form.rut))) {
-        setError(t('booking.rut_invalid'));
-        return;
-      }
-      if (!form.email) {
-        setError(t('booking.email_required'));
-        return;
-      }
-    }
 
     try {
       setSubmitting(true);
       setError(null);
 
-      if (isGuest) {
-        await createGuestBooking({
-          doctor_id: selectedDoctor,
-          date,
-          time: selectedTime,
-          rut: cleanRut(form.rut),
-          name: form.name,
-          email: form.email,
-          phone: form.phone,
-        });
-      } else {
-        await createBooking({
-          doctor_id: selectedDoctor,
-          date,
-          time: selectedTime,
-        });
-      }
+      await createBooking({
+        doctor_id: selectedDoctor,
+        date,
+        time: selectedTime,
+      });
 
       setSuccess(true);
     } catch (err) {
@@ -134,7 +108,7 @@ export default function BookingPage() {
             ⚠️ {t('booking.success_warning')}
           </div>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <button onClick={() => navigate('/my-bookings/guest')} className="btn btn-success">
+            <button onClick={() => navigate('/my-bookings')} className="btn btn-success">
               {t('booking.view_bookings')}
             </button>
             <button onClick={() => navigate('/')} className="btn btn-ghost">
@@ -260,67 +234,32 @@ export default function BookingPage() {
             </div>
           </div>
 
-          {isGuest ? (
-            <div className="user-badge user-badge-guest">🔓 {t('booking.guest_badge')}</div>
-          ) : (
-            <div className="user-badge user-badge-logged">🔒 {t('booking.logged_in_as', { email: user.email })}</div>
-          )}
+          <div className="user-badge user-badge-logged">🔒 {t('booking.logged_in_as', { email: user.email })}</div>
 
           <div className="card">
             <h3 style={{ marginBottom: 20 }}>{t('booking.personal_data_title')}</h3>
             <div className="grid grid-2">
               <div className="form-group">
-                <label className="form-label">{t('booking.rut_label')} <span className="required">*</span></label>
-                <input
-                  value={form.rut}
-                  onChange={isGuest ? handleRutChange : undefined}
-                  disabled={!isGuest}
-                  placeholder={t('booking.rut_placeholder')}
-                  className="form-input"
-                />
-                {isGuest && <p className="form-hint">{t('booking.rut_hint')}</p>}
+                <label className="form-label">{t('booking.rut_label')}</label>
+                <input value={form.rut} disabled placeholder={t('booking.rut_placeholder')} className="form-input" />
               </div>
-
               <div className="form-group">
                 <label className="form-label">{t('booking.name_label')}</label>
-                <input
-                  value={form.name}
-                  onChange={isGuest ? (e) => setForm({ ...form, name: e.target.value }) : undefined}
-                  disabled={!isGuest}
-                  placeholder={t('booking.name_placeholder')}
-                  className="form-input"
-                />
+                <input value={form.name} disabled placeholder={t('booking.name_placeholder')} className="form-input" />
               </div>
-
               <div className="form-group">
-                <label className="form-label">{t('booking.email_label')} <span className="required">*</span></label>
-                <input
-                  value={form.email}
-                  onChange={isGuest ? (e) => setForm({ ...form, email: e.target.value }) : undefined}
-                  disabled={!isGuest}
-                  placeholder={t('booking.email_placeholder')}
-                  className="form-input"
-                />
-                {isGuest && <p className="form-hint">{t('booking.email_hint')}</p>}
+                <label className="form-label">{t('booking.email_label')}</label>
+                <input value={form.email} disabled placeholder={t('booking.email_placeholder')} className="form-input" />
               </div>
-
               <div className="form-group">
                 <label className="form-label">{t('booking.phone_label')}</label>
-                <input
-                  value={form.phone}
-                  onChange={isGuest ? (e) => setForm({ ...form, phone: e.target.value }) : undefined}
-                  disabled={!isGuest}
-                  placeholder={t('booking.phone_placeholder')}
-                  className="form-input"
-                />
+                <input value={form.phone} disabled placeholder={t('booking.phone_placeholder')} className="form-input" />
               </div>
             </div>
 
-            {!isGuest && (
-              <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 8, fontStyle: 'italic' }}>
-                {t('booking.profile_data_hint')}
-              </p>
-            )}
+            <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 8, fontStyle: 'italic' }}>
+              {t('booking.profile_data_hint')}
+            </p>
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 28 }}>
