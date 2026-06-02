@@ -794,7 +794,7 @@ export const forecastDemand = async (days = 7, tenantId?: string): Promise<Forec
   try {
     const windowSize = demandModel!.windowSize!;
     const values = demandModel!.originalData!;
-    const isLSTM = demandModel!.trained;
+    const isLSTM = demandModel!.lstmTrained;
 
     if (!isLSTM) {
       const stats = predictWithStatistical([...values], days, windowSize);
