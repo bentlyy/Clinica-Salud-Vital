@@ -66,6 +66,7 @@
     "nodemailer": "^8.0.7",
     "pdfkit": "^0.18.0",
     "pg": "^8.18.0",
+    "sanitize-html": "^2.17.4",
     "stripe": "^22.1.1",
     "twilio": "^5.6.0",
     "typescript": "^5.8.3",
@@ -74,6 +75,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@types/sanitize-html": "^2.16.1",
     "@vitest/coverage-v8": "^4.1.5",
     "supertest": "^7.2.2",
     "tsx": "^4.19.0",

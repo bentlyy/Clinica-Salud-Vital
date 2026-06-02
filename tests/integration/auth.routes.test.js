@@ -94,7 +94,7 @@ describe('POST /api/auth/login', () => {
 
     const res = await request(app)
       .post('/api/auth/login')
-      .send({ email: 'test@test.com', password: 'Test1234!' });
+      .send({ email: 'test@test.com', password: 'Test1234!', captcha_token: 'test-captcha' });
 
     expect(res.status).toBe(200);
     expect(res.body.access_token).toBeDefined();
@@ -109,7 +109,7 @@ describe('POST /api/auth/login', () => {
 
     const res = await request(app)
       .post('/api/auth/login')
-      .send({ email: 'wrong@test.com', password: 'wrong' });
+      .send({ email: 'wrong@test.com', password: 'wrong', captcha_token: 'test-captcha' });
 
     expect(res.status).toBe(400);
     expect(res.body.error).toBe('Invalid credentials');
@@ -118,7 +118,16 @@ describe('POST /api/auth/login', () => {
   it('returns 400 if email missing', async () => {
     const res = await request(app)
       .post('/api/auth/login')
-      .send({ password: 'password123' });
+      .send({ password: 'password123', captcha_token: 'test-captcha' });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe('Validation failed');
+  });
+
+  it('returns 400 if captcha token missing', async () => {
+    const res = await request(app)
+      .post('/api/auth/login')
+      .send({ email: 'test@test.com', password: 'Test1234!' });
 
     expect(res.status).toBe(400);
     expect(res.body.error).toBe('Validation failed');
