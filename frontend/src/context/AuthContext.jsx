@@ -90,10 +90,11 @@ export const AuthProvider = ({ children }) => {
     return () => window.removeEventListener('auth:expired', handleAuthExpired);
   }, []);
 
-  const login = async (email, password, totp_token, captcha_token) => {
+  const login = async (email, password, totp_token, captcha_token, tenant_id) => {
     const payload = { email, password };
     if (totp_token) payload.totp_token = totp_token;
     if (captcha_token) payload.captcha_token = captcha_token;
+    if (tenant_id) payload.tenant_id = tenant_id;
 
     const res = await api.post('/auth/login', payload);
 
@@ -112,8 +113,10 @@ export const AuthProvider = ({ children }) => {
     return user;
   };
 
-  const register = async ({ email, password, rut, phone }) => {
-    const res = await api.post('/auth/register', { email, password, rut, phone });
+  const register = async ({ email, password, rut, phone, tenant_id }) => {
+    const body = { email, password, rut, phone };
+    if (tenant_id) body.tenant_id = tenant_id;
+    const res = await api.post('/auth/register', body);
     return res.data;
   };
 
