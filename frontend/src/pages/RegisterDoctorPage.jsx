@@ -93,7 +93,7 @@ function UserRow({ user, onToggle, toggling }) {
     }}>
       <div style={{
         width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
-        background: ROLE_CONFIG[user.role]?.color || '#ccc',
+        background: ROLE_CONFIG[user.role === 'user' ? 'patient' : user.role]?.color || '#ccc',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         color: '#fff', fontWeight: 600, fontSize: '0.75rem',
       }}>
@@ -188,7 +188,8 @@ function UsersTab({ t }) {
   const grouped = useMemo(() => {
     const groups = { admin: [], doctor: [], patient: [] };
     for (const u of users) {
-      if (groups[u.role]) groups[u.role].push(u);
+      const key = u.role === 'user' ? 'patient' : u.role;
+      if (groups[key]) groups[key].push(u);
     }
     return groups;
   }, [users]);
