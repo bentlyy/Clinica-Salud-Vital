@@ -24,7 +24,7 @@ export default function DoctorsPage() {
     const fetchDoctors = async () => {
       try {
         const data = await getDoctors();
-        setDoctors(data);
+        setDoctors(Array.isArray(data) ? data : (data.data || []));
       } catch {
         setError(t('doctors.error'));
       } finally {
@@ -44,7 +44,7 @@ export default function DoctorsPage() {
         setSuccessMsg(null);
 
         const data = await getAvailableSlots(selectedDoctor, date);
-        setSlots(data);
+        setSlots(Array.isArray(data) ? data : []);
         setSelectedTime(null);
       } catch {
         setError(t('doctors.error'));
@@ -69,7 +69,7 @@ export default function DoctorsPage() {
       setSuccessMsg(t('doctors.success_create'));
 
       const updated = await getAvailableSlots(selectedDoctor, date);
-      setSlots(updated);
+      setSlots(Array.isArray(updated) ? updated : []);
       setSelectedTime(null);
     } catch (err) {
       setError(err.response?.data?.error || t('doctors.error'));

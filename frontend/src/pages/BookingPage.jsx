@@ -49,11 +49,12 @@ export default function BookingPage() {
   useEffect(() => {
     getDoctors()
       .then((data) => {
-        setDoctors(data);
+        const docs = Array.isArray(data) ? data : (data.data || []);
+        setDoctors(docs);
         const doctorParam = searchParams.get('doctor');
         if (doctorParam) {
           const id = Number(doctorParam);
-          if (data.some(d => d.id === id)) {
+          if (docs.some(d => d.id === id)) {
             setSelectedDoctor(id);
           }
         }
@@ -65,7 +66,7 @@ export default function BookingPage() {
   useEffect(() => {
     if (!selectedDoctor || !date) return;
     getAvailableSlots(selectedDoctor, date)
-      .then((data) => { setSlots(data); setSelectedTime(null); })
+      .then((data) => { setSlots(Array.isArray(data) ? data : []); setSelectedTime(null); })
       .catch(() => setError(t('booking.error')));
   }, [selectedDoctor, date]);
 
