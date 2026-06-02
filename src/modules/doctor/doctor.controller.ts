@@ -19,7 +19,7 @@ export const registerDoctor = asyncHandler(async (req, res) => {
 });
 
 export const createDoctor = asyncHandler(async (req, res) => {
-  const doctor = await doctorService.createDoctor(req.body);
+  const doctor = await doctorService.createDoctor(req.body, req.tenant_id);
   res.status(201).json(doctor);
 });
 
