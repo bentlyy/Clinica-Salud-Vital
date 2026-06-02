@@ -85,78 +85,78 @@ function InviteTab({ t, onSent }) {
 function UserRow({ user, onToggle, toggling }) {
   return (
     <div style={{
-      display: 'flex', alignItems: 'center', gap: 12,
-      padding: '10px 14px', borderRadius: 8,
+      display: 'flex', alignItems: 'center', gap: 10,
+      padding: '8px 12px', borderRadius: 8,
       background: user.active ? 'var(--bg-secondary)' : 'var(--gray-100)',
       opacity: user.active ? 1 : 0.55,
       transition: 'all 0.2s',
     }}>
       <div style={{
-        width: 36, height: 36, borderRadius: '50%',
+        width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
         background: ROLE_CONFIG[user.role]?.color || '#ccc',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        color: '#fff', fontWeight: 600, fontSize: '0.85rem', flexShrink: 0,
+        color: '#fff', fontWeight: 600, fontSize: '0.75rem',
       }}>
         {user.name ? user.name.charAt(0).toUpperCase() : '?'}
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontWeight: 500, fontSize: '0.9rem', color: 'var(--text-primary)' }}>{user.name || '—'}</div>
-        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.email}</div>
+        <div style={{ fontWeight: 500, fontSize: '0.85rem', color: 'var(--text-primary)' }}>{user.name || '—'}</div>
+        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.email}</div>
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-        <span style={{
-          width: 8, height: 8, borderRadius: '50%',
-          background: user.active ? '#00b894' : '#d63031',
-          display: 'inline-block',
-        }} />
-        <button
-          onClick={() => onToggle(user.id, user.active)}
-          disabled={toggling === user.id}
-          style={{
-            padding: '5px 12px', borderRadius: 6, border: 'none',
-            fontSize: '0.78rem', fontWeight: 500, cursor: 'pointer',
-            background: user.active ? '#fee2e2' : '#d1fae5',
-            color: user.active ? '#dc2626' : '#059669',
-            transition: 'all 0.15s',
-          }}
-        >
-          {toggling === user.id ? '...' : user.active ? 'Desactivar' : 'Activar'}
-        </button>
-      </div>
+      <button
+        onClick={() => onToggle(user.id, user.active)}
+        disabled={toggling === user.id}
+        style={{
+          padding: '4px 10px', borderRadius: 6, border: 'none', flexShrink: 0,
+          fontSize: '0.75rem', fontWeight: 500, cursor: 'pointer',
+          background: user.active ? '#fee2e2' : '#d1fae5',
+          color: user.active ? '#dc2626' : '#059669',
+          transition: 'all 0.15s',
+        }}
+      >
+        {toggling === user.id ? '...' : user.active ? 'Desactivar' : 'Activar'}
+      </button>
     </div>
   );
 }
 
-function RoleSection({ role, users, onToggle, toggling }) {
+function RoleCard({ role, users, onToggle, toggling }) {
   const cfg = ROLE_CONFIG[role] || { icon: '👤', label: role, color: '#636e72' };
   return (
-    <div style={{ marginBottom: 20 }}>
+    <div style={{
+      display: 'flex', flexDirection: 'column', minHeight: 0,
+      borderRadius: 'var(--radius-sm)',
+      border: `1px solid ${cfg.color}20`,
+      background: `linear-gradient(180deg, ${cfg.color}08, transparent)`,
+      overflow: 'hidden',
+    }}>
       <div style={{
-        display: 'flex', alignItems: 'center', gap: 10,
-        padding: '12px 16px', marginBottom: 8,
-        borderRadius: 'var(--radius-sm)',
-        background: `linear-gradient(135deg, ${cfg.color}15, ${cfg.color}08)`,
-        borderLeft: `4px solid ${cfg.color}`,
+        display: 'flex', alignItems: 'center', gap: 8,
+        padding: '10px 14px',
+        borderBottom: `1px solid ${cfg.color}15`,
+        background: cfg.color + '08',
       }}>
-        <span style={{ fontSize: '1.3rem' }}>{cfg.icon}</span>
-        <span style={{ fontWeight: 600, fontSize: '0.95rem', color: cfg.color }}>{cfg.label}</span>
+        <span style={{ fontSize: '1.1rem' }}>{cfg.icon}</span>
+        <span style={{ fontWeight: 600, fontSize: '0.9rem', color: cfg.color }}>{cfg.label}</span>
         <span style={{
           marginLeft: 'auto', background: cfg.color + '20',
-          color: cfg.color, padding: '2px 10px', borderRadius: 12,
-          fontSize: '0.8rem', fontWeight: 600,
+          color: cfg.color, padding: '1px 8px', borderRadius: 10,
+          fontSize: '0.75rem', fontWeight: 600,
         }}>{users.length}</span>
       </div>
-      {users.length === 0 ? (
-        <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', padding: '12px 16px', textAlign: 'center' }}>
-          No hay {cfg.label.toLowerCase()} registrados
-        </p>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          {users.map(user => (
-            <UserRow key={user.id} user={user} onToggle={onToggle} toggling={toggling} />
-          ))}
-        </div>
-      )}
+      <div style={{ flex: 1, overflowY: 'auto', padding: '6px', minHeight: 0 }}>
+        {users.length === 0 ? (
+          <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textAlign: 'center', padding: '20px 8px' }}>
+            No hay {cfg.label.toLowerCase()} registrados
+          </p>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            {users.map(user => (
+              <UserRow key={user.id} user={user} onToggle={onToggle} toggling={toggling} />
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -206,17 +206,17 @@ function UsersTab({ t }) {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      {error && <div className="alert alert-error" style={{ marginBottom: 12 }}>{error}</div>}
+    <div style={{ display: 'flex', flexDirection: 'column', height: 520 }}>
+      {error && <div className="alert alert-error" style={{ marginBottom: 8 }}>{error}</div>}
 
-      <div style={{ position: 'relative', marginBottom: 16 }}>
-        <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', fontSize: '0.9rem' }}>🔍</span>
+      <div style={{ position: 'relative', marginBottom: 12 }}>
+        <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', fontSize: '0.85rem' }}>🔍</span>
         <input
           type="text" value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Buscar por nombre o email..."
           className="form-input"
-          style={{ paddingLeft: 36, fontSize: '0.9rem' }}
+          style={{ paddingLeft: 34, fontSize: '0.85rem' }}
         />
       </div>
 
@@ -227,23 +227,17 @@ function UsersTab({ t }) {
             <div>Cargando usuarios...</div>
           </div>
         </div>
-      ) : users.length === 0 ? (
-        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <p style={{ color: 'var(--text-muted)', textAlign: 'center' }}>
-            No hay usuarios registrados en esta clínica
-          </p>
-        </div>
       ) : (
-        <div style={{ flex: 1, overflowY: 'auto', paddingRight: 4, minHeight: 0 }}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 10, minHeight: 0 }}>
           {grouped.admin.length > 0 && (
-            <RoleSection role="admin" users={grouped.admin} onToggle={handleToggle} toggling={toggling} />
+            <div style={{ flexShrink: 0 }}>
+              <RoleCard role="admin" users={grouped.admin} onToggle={handleToggle} toggling={toggling} />
+            </div>
           )}
-          {grouped.doctor.length > 0 && (
-            <RoleSection role="doctor" users={grouped.doctor} onToggle={handleToggle} toggling={toggling} />
-          )}
-          {grouped.patient.length > 0 && (
-            <RoleSection role="patient" users={grouped.patient} onToggle={handleToggle} toggling={toggling} />
-          )}
+          <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, minHeight: 0 }}>
+            <RoleCard role="doctor" users={grouped.doctor} onToggle={handleToggle} toggling={toggling} />
+            <RoleCard role="patient" users={grouped.patient} onToggle={handleToggle} toggling={toggling} />
+          </div>
         </div>
       )}
     </div>
