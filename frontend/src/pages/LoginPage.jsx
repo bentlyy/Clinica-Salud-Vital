@@ -15,6 +15,7 @@ export default function LoginPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const tenantId = searchParams.get('tenant');
   const { t } = useI18n();
   const recaptchaRef = useRef(null);
   const [form, setForm] = useState({ email: '', password: '', totp_token: '' });
@@ -39,7 +40,7 @@ export default function LoginPage() {
 
     try {
       setSubmitting(true);
-      const user = await login(form.email, form.password, needs2FA ? form.totp_token : undefined, captcha_token);
+      const user = await login(form.email, form.password, needs2FA ? form.totp_token : undefined, captcha_token, tenantId);
       const redirect = searchParams.get('redirect');
       if (redirect) { navigate(redirect); return; }
       if (user.role === 'superadmin') {
@@ -133,10 +134,10 @@ export default function LoginPage() {
 
         <div style={{ textAlign: 'center', marginTop: 24, paddingTop: 20, borderTop: '1px solid var(--border-light)' }}>
           <p style={{ marginBottom: 8 }}>
-            {t('auth.no_account')} <Link to="/register">{t('auth.register_link')}</Link>
+            {t('auth.no_account')} <Link to={tenantId ? `/register?tenant=${tenantId}` : '/register'}>{t('auth.register_link')}</Link>
           </p>
           <p>
-            {t('auth.or')} <Link to="/booking">{t('auth.guest_booking')}</Link>
+            {t('auth.or')} <Link to={tenantId ? `/booking?tenant=${tenantId}` : '/booking'}>{t('auth.guest_booking')}</Link>
           </p>
         </div>
       </div>
