@@ -47,7 +47,7 @@ export const adminCreateTenant = asyncHandler(async (req: Request, res: Response
 export const listUsers = asyncHandler(async (req: Request, res: Response) => {
   const page = parseInt(String(req.query.page || '1'), 10);
   const limit = parseInt(String(req.query.limit || '50'), 10);
-  const tenantId = req.query.tenant_id ? String(req.query.tenant_id) : undefined;
+  const tenantId = req.query.tenant_id ? String(req.query.tenant_id as string) : undefined;
   const role = req.query.role ? String(req.query.role) : undefined;
   const search = req.query.search ? String(req.query.search) : undefined;
 
