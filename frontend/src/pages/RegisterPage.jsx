@@ -12,7 +12,7 @@ export default function RegisterPage() {
   const [searchParams] = useSearchParams();
   const tenantId = searchParams.get('tenant');
   const inviteToken = searchParams.get('invite');
-  const [form, setForm] = useState({ email: '', password: '', confirmPassword: '', rut: '', phone: '' });
+  const [form, setForm] = useState({ email: '', name: '', password: '', confirmPassword: '', rut: '', phone: '' });
   const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [loadingInvite, setLoadingInvite] = useState(!!inviteToken);
@@ -23,7 +23,7 @@ export default function RegisterPage() {
       api.get(`/auth/invite-info?token=${encodeURIComponent(inviteToken)}`)
         .then((res) => {
           setInviteData(res.data);
-          setForm((prev) => ({ ...prev, email: res.data.email }));
+          setForm((prev) => ({ ...prev, email: res.data.email, name: res.data.name || '' }));
         })
         .catch(() => setError(t('register.invite_expired') || 'Enlace de invitación inválido o expirado'))
         .finally(() => setLoadingInvite(false));
@@ -42,7 +42,7 @@ export default function RegisterPage() {
 
     try {
       setSubmitting(true);
-      const body = { email: form.email, password: form.password, rut: form.rut || undefined, phone: form.phone || undefined };
+      const body = { email: form.email, name: form.name || undefined, password: form.password, rut: form.rut || undefined, phone: form.phone || undefined };
       if (tenantId) body.tenant_id = tenantId;
       if (inviteToken) body.invite_token = inviteToken;
       await register(body);
@@ -89,6 +89,17 @@ export default function RegisterPage() {
             {inviteData && (
               <p className="form-hint">Este correo fue registrado en tu invitación. No puede modificarse.</p>
             )}
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Nombre completo</label>
+            <input name="name" value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              placeholder="Tu nombre"
+              className="form-input"
+              readOnly={!!inviteData}
+              style={inviteData ? { background: 'var(--gray-100)', cursor: 'not-allowed' } : {}}
+            />
           </div>
 
           <div className="form-group">
