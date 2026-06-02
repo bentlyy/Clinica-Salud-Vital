@@ -33,6 +33,14 @@ export const seedDefaultTenant = async (): Promise<void> => {
     [DEFAULT_TENANT_ID]
   );
 
+  const nullTenantResult = await pool.query(
+    'UPDATE users SET tenant_id = $1 WHERE tenant_id IS NULL',
+    [DEFAULT_TENANT_ID]
+  );
+  if (nullTenantResult.rowCount && nullTenantResult.rowCount > 0) {
+    logger.info(`Usuarios legacy actualizados con tenant_id: ${nullTenantResult.rowCount}`);
+  }
+
   logger.info(`Default tenant created: ${DEFAULT_TENANT_ID}`);
 };
 
@@ -46,8 +54,8 @@ export const seedSuperAdmin = async (): Promise<void> => {
   const hash = await bcrypt.hash('REPLACED_PASSWORD', 12);
 
   await pool.query(
-    'INSERT INTO users (email, password, name, role) VALUES ($1, $2, $3, $4) ON CONFLICT (email) DO NOTHING',
-    ['superadmin@clinic.com', hash, 'Super Admin', 'superadmin']
+    'INSERT INTO users (email, password, name, role, tenant_id) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (email) DO NOTHING',
+    ['superadmin@clinic.com', hash, 'Super Admin', 'superadmin', DEFAULT_TENANT_ID]
   );
 
   logger.info('Superadmin created: superadmin@clinic.com / REPLACED_PASSWORD');
