@@ -2,14 +2,10 @@ import { useState, useRef } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/useAuth';
 import { useI18n } from '../i18n/useI18n';
+import ReCAPTCHA from 'react-google-recaptcha';
 
 const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
 const hasCaptcha = Boolean(RECAPTCHA_SITE_KEY);
-
-let ReCAPTCHA = null;
-if (hasCaptcha) {
-  ReCAPTCHA = require('react-google-recaptcha').default;
-}
 
 export default function LoginPage() {
   const { login } = useAuth();
