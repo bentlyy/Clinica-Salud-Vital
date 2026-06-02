@@ -36,11 +36,18 @@ const extractAndVerifyUser = (token: string, req: Request): JwtUser | null => {
   }
 };
 
+export const setSecurityHeaders = (req: Request, res: Response, next: NextFunction): void => {
+  res.setHeader('Cache-Control', 'private, no-store, no-cache, must-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  next();
+};
+
 export const authMiddleware = (req: Request, res: Response, next: NextFunction): void => {
   const authHeader = req.headers.authorization;
-  const accessToken = req.headers['x-access-token'] as string | undefined;
 
-  const tokenStr = authHeader?.split(' ')[1] || accessToken;
+  const tokenStr = authHeader?.split(' ')[1];
 
   if (!tokenStr) {
     res.status(401).json({ error: 'Token required' });
@@ -62,7 +69,7 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction):
   }
 
   req.user = user;
-  next();
+  setSecurityHeaders(req, res, next);
 };
 
 export const optionalAuth = (req: Request, res: Response, next: NextFunction): void => {
@@ -75,6 +82,12 @@ export const optionalAuth = (req: Request, res: Response, next: NextFunction): v
   }
 
   next();
+};
+
+export const authMiddlewareNoCache = (req: Request, res: Response, next: NextFunction): void => {
+  setSecurityHeaders(req, res, () => {
+    authMiddleware(req, res, next);
+  });
 };
 
 export const authorize = (...allowedRoles: UserRole[]) => {

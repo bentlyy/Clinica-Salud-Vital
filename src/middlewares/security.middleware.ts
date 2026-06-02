@@ -1,5 +1,6 @@
 import helmet from 'helmet';
 import hpp from 'hpp';
+import type { Request, Response, NextFunction } from 'express';
 import { logger } from '../utils/logger.js';
 import { UnauthorizedError } from '../utils/errors.js';
 
@@ -11,14 +12,18 @@ export const securityMiddleware = [
       directives: {
         defaultSrc: ["'self'"],
         scriptSrc: ["'self'"],
-        styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+        styleSrc: ["'self'", "https://fonts.googleapis.com"],
         fontSrc: ["'self'", "data:", "https://fonts.gstatic.com"],
         imgSrc: ["'self'", "data:", "https:"],
         connectSrc: ["'self'"],
         frameAncestors: ["'none'"],
+        formAction: ["'self'"],
+        baseUri: ["'none'"],
       },
     },
-    crossOriginEmbedderPolicy: false,
+    crossOriginEmbedderPolicy: { policy: 'require-corp' },
+    crossOriginOpenerPolicy: { policy: 'same-origin' },
+    crossOriginResourcePolicy: { policy: 'same-origin' },
     dnsPrefetchControl: true,
     frameguard: {
       action: 'deny',
@@ -31,8 +36,14 @@ export const securityMiddleware = [
     noSniff: true,
     referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
     xssFilter: true,
+    permittedCrossDomainPolicies: { permittedPolicies: 'none' },
+    originAgentCluster: true,
   }),
   hpp(),
+  (req: Request, res: Response, next: NextFunction) => {
+    res.setHeader('Permissions-Policy', 'geolocation=(), camera=(), microphone=(), payment=(), usb=(), magnetometer=(), accelerometer=(), gyroscope=(), display-capture=(), clipboard-read=(), clipboard-write=(self)');
+    next();
+  },
 ];
 
 export const validateEnvSecurity = (): void => {
@@ -48,6 +59,10 @@ export const validateEnvSecurity = (): void => {
   }
   if (jwtSecret.length < 32) {
     throw new UnauthorizedError('JWT_SECRET debe tener al menos 32 caracteres.');
+  }
+
+  if (!process.env.RECAPTCHA_SECRET_KEY) {
+    throw new UnauthorizedError('RECAPTCHA_SECRET_KEY no está definida. El CAPTCHA es obligatorio para login.');
   }
 
   if (!isProduction) {
