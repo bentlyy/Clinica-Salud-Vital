@@ -720,7 +720,8 @@ export const trainDemandForecastModel = async (tenantId?: string): Promise<Train
     demandModel.windowSize = windowSize;
     demandModel.mean = [avg];
     demandModel.std = [stdDev];
-    demandModel.trained = modelTrained;
+    demandModel.trained = true;
+    demandModel.lstmTrained = modelTrained;
 
     await mlCache.set(cacheKey, { model: demandModel }, 30 * 60 * 1000);
     await saveModelMetrics('demand', Date.now() - startTime, values.length, undefined, undefined, undefined, tenantId);
