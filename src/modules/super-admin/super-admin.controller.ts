@@ -56,7 +56,7 @@ export const listUsers = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export const toggleUserActive = asyncHandler(async (req: Request, res: Response) => {
-  const userId = parseInt(req.params.userId, 10);
+  const userId = parseInt(String(req.params.userId), 10);
   const active = req.body.active !== false;
   const user = await superAdminService.setUserActive(userId, active);
   res.json(user);
