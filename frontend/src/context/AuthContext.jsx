@@ -20,62 +20,57 @@ export const AuthProvider = ({ children }) => {
 
   const logout = useCallback(async () => {
     const refreshToken = localStorage.getItem('refresh_token');
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+    localStorage.removeItem('user');
+    setUser(null);
     if (refreshToken) {
       try {
         await api.post('/auth/logout', { refresh_token: refreshToken });
       } catch {
       }
     }
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
-    localStorage.removeItem('user');
-    setUser(null);
   }, []);
 
   useEffect(() => {
     const token = localStorage.getItem('access_token');
     const savedUser = localStorage.getItem('user');
-    if (token && savedUser) {
-      const payload = parseJwtPayload(token);
-      if (payload && payload.exp * 1000 > Date.now()) {
-        try {
-          setUser(JSON.parse(savedUser));
-        } catch {
-          localStorage.removeItem('access_token');
-          localStorage.removeItem('refresh_token');
-          localStorage.removeItem('user');
-        } finally {
-          setLoading(false);
-        }
-      } else {
-        const refreshToken = localStorage.getItem('refresh_token');
-        if (refreshToken) {
-          api.post('/auth/refresh', { refresh_token: refreshToken })
-            .then((res) => {
-              localStorage.setItem('access_token', res.data.access_token);
-              localStorage.setItem('refresh_token', res.data.refresh_token);
-              const userPayload = parseJwtPayload(res.data.access_token);
-              if (userPayload?.id) {
-                const restored = JSON.parse(savedUser);
-                if (restored.id === userPayload.id) setUser(restored);
-              }
-            })
-            .catch(() => {
-              localStorage.removeItem('access_token');
-              localStorage.removeItem('refresh_token');
-              localStorage.removeItem('user');
-            })
-            .finally(() => setLoading(false));
-        } else {
-          localStorage.removeItem('access_token');
-          localStorage.removeItem('refresh_token');
-          localStorage.removeItem('user');
-          setLoading(false);
-        }
-      }
-    } else {
+    if (!token || !savedUser) {
       setLoading(false);
+      return;
     }
+
+    const refreshToken = localStorage.getItem('refresh_token');
+    if (!refreshToken) {
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+      localStorage.removeItem('user');
+      setLoading(false);
+      return;
+    }
+
+    api.post('/auth/refresh', { refresh_token: refreshToken })
+      .then((res) => {
+        localStorage.setItem('access_token', res.data.access_token);
+        localStorage.setItem('refresh_token', res.data.refresh_token);
+        const userPayload = parseJwtPayload(res.data.access_token);
+        if (userPayload?.id) {
+          try {
+            const restored = JSON.parse(savedUser);
+            if (restored.id === userPayload.id) setUser(restored);
+          } catch {
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('refresh_token');
+            localStorage.removeItem('user');
+          }
+        }
+      })
+      .catch(() => {
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+        localStorage.removeItem('user');
+      })
+      .finally(() => setLoading(false));
   }, []);
 
   useEffect(() => {
