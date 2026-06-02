@@ -109,7 +109,7 @@ class MonitoringService {
     const systemMem = (() => { try { return require('os').totalmem() / 1024 / 1024; } catch { return Infinity; } })();
     const rssRatio = current.rss / systemMem;
 
-    if (heapRatio > this.heapWarningThreshold) {
+    if (heapRatio > this.heapWarningThreshold && current.heapUsed > 200) {
       this.addAlert({
         type: 'high_heap',
         value: current.heapUsed,
