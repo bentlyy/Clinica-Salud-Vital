@@ -44,3 +44,6 @@ db_data/
 # Temporary files
 tmp/
 temp/
+
+# Documentation (auto-generated)
+docs/
