@@ -118,19 +118,17 @@ export const register = async ({ email, password, name, rut, phone, tenant_id, i
 
   const hashedPassword = await bcrypt.hash(password, 12);
 
-  const client = await pool.connect();
-  try {
-    await client.query('BEGIN');
-
-    const result = await client.query(
-      `INSERT INTO users (email, password, name, rut, phone, role, password_changed, tenant_id)
-       VALUES ($1, $2, $3, $4, $5, $6, true, $7)
-       RETURNING id, email, name, rut, phone, role`,
-      [email, hashedPassword, name || null, formattedRut, phone || null, role, tid]
-    );
-    const user = result.rows[0];
-
-    if (role === 'doctor' && specialty) {
+  if (invite_token && role === 'doctor' && specialty) {
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      const result = await client.query(
+        `INSERT INTO users (email, password, name, rut, phone, role, password_changed, tenant_id)
+         VALUES ($1, $2, $3, $4, $5, $6, true, $7)
+         RETURNING id, email, name, rut, phone, role`,
+        [email, hashedPassword, name || null, formattedRut, phone || null, role, tid]
+      );
+      const user = result.rows[0];
       await client.query(
         `INSERT INTO doctors (name, specialty, email, user_id, tenant_id)
          VALUES ($1, $2, $3, $4, $5)`,
@@ -143,19 +141,30 @@ export const register = async ({ email, password, name, rut, phone, tenant_id, i
           [user.id, day, '09:00', '17:00', tid]
         );
       }
+      await client.query('COMMIT');
+      return user;
+    } catch (error: unknown) {
+      await client.query('ROLLBACK');
+      const pgError = error as { code?: string };
+      if (pgError.code === '23505') throw new BadRequestError('Email or RUT already registered');
+      throw new BadRequestError('Error creating user');
+    } finally {
+      client.release();
     }
+  }
 
-    await client.query('COMMIT');
-    return user;
+  try {
+    const result = await pool.query(
+      `INSERT INTO users (email, password, name, rut, phone, role, password_changed, tenant_id)
+       VALUES ($1, $2, $3, $4, $5, $6, true, $7)
+       RETURNING id, email, name, rut, phone, role`,
+      [email, hashedPassword, name || null, formattedRut, phone || null, role, tid]
+    );
+    return result.rows[0];
   } catch (error: unknown) {
-    await client.query('ROLLBACK');
     const pgError = error as { code?: string };
-    if (pgError.code === '23505') {
-      throw new BadRequestError('Email or RUT already registered');
-    }
+    if (pgError.code === '23505') throw new BadRequestError('Email or RUT already registered');
     throw new BadRequestError('Error creating user');
-  } finally {
-    client.release();
   }
 };
 
