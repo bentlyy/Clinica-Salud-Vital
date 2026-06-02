@@ -82,58 +82,52 @@ function InviteTab({ t, onSent }) {
   );
 }
 
-function UserRow({ user, onToggle, toggling }) {
-  const tooltip = [
-    `Email: ${user.email}`,
-    user.rut ? `RUT: ${user.rut}` : '',
-    user.phone ? `Tel: ${user.phone}` : '',
-    `Registrado: ${new Date(user.created_at).toLocaleDateString('es-CL')}`,
-  ].filter(Boolean).join('\n');
-
+function ToggleSwitch({ active, onToggle, disabled }) {
   return (
-    <div title={tooltip} style={{
+    <button
+      onClick={onToggle}
+      disabled={disabled}
+      title={active ? 'Desactivar' : 'Activar'}
+      style={{
+        width: 44, height: 24, borderRadius: 12, border: 'none',
+        cursor: 'pointer', position: 'relative', flexShrink: 0,
+        background: active ? '#00b894' : '#dfe6e9',
+        transition: 'background 0.25s',
+        opacity: disabled ? 0.5 : 1,
+      }}
+    >
+      <span style={{
+        position: 'absolute', top: 3, left: active ? 23 : 3,
+        width: 18, height: 18, borderRadius: '50%',
+        background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+        transition: 'left 0.25s',
+      }} />
+    </button>
+  );
+}
+
+function UserRow({ user, onToggle, toggling }) {
+  return (
+    <div style={{
       display: 'flex', alignItems: 'center', gap: 12,
-      padding: '10px 14px', borderRadius: 8,
-      background: user.active ? 'var(--bg-secondary)' : 'var(--gray-100)',
-      opacity: user.active ? 1 : 0.55,
-      transition: 'all 0.2s', cursor: 'default',
+      padding: '8px 12px', borderRadius: 8,
+      background: user.active ? 'transparent' : 'var(--gray-100)',
+      opacity: user.active ? 1 : 0.5,
+      transition: 'all 0.2s',
     }}>
       <div style={{
-        width: 40, height: 40, borderRadius: '50%', flexShrink: 0,
+        width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
         background: ROLE_CONFIG[user.role === 'user' ? 'patient' : user.role]?.color || '#ccc',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        color: '#fff', fontWeight: 700, fontSize: '0.9rem',
+        color: '#fff', fontWeight: 700, fontSize: '0.85rem',
       }}>
         {user.name ? user.name.charAt(0).toUpperCase() : '?'}
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-primary)' }}>{user.name || '—'}</div>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-          {user.rut && <span>{user.rut}</span>}
-          {user.rut && user.email && <span>·</span>}
-          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 180 }}>{user.email}</span>
-        </div>
+        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{user.rut || ''}</div>
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 2, flexShrink: 0 }}>
-        <span style={{
-          width: 8, height: 8, borderRadius: '50%',
-          background: user.active ? '#00b894' : '#d63031',
-          display: 'inline-block',
-        }} />
-        <button
-          onClick={() => onToggle(user.id, user.active)}
-          disabled={toggling === user.id}
-          style={{
-            padding: '5px 12px', borderRadius: 6, border: 'none',
-            fontSize: '0.78rem', fontWeight: 500, cursor: 'pointer',
-            background: user.active ? '#fee2e2' : '#d1fae5',
-            color: user.active ? '#dc2626' : '#059669',
-            transition: 'all 0.15s',
-          }}
-        >
-          {toggling === user.id ? '...' : user.active ? 'Desactivar' : 'Activar'}
-        </button>
-      </div>
+      <ToggleSwitch active={user.active} onToggle={() => onToggle(user.id, user.active)} disabled={toggling === user.id} />
     </div>
   );
 }
