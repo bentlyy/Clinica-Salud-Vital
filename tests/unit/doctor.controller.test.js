@@ -19,14 +19,14 @@ beforeEach(() => {
 describe('doctorController.getDoctors', () => {
   it('returns all doctors', async () => {
     vi.mocked(doctorService.getAllDoctors).mockResolvedValue([{ id: 1, name: 'Dr. Test' }]);
-    const req = {};
+    const req = { query: {}, user: { role: 'admin' } };
     const res = { json: vi.fn() };
     const next = vi.fn();
 
     doctorController.getDoctors(req, res, next);
     await flush();
 
-    expect(doctorService.getAllDoctors).toHaveBeenCalledOnce();
+    expect(doctorService.getAllDoctors).toHaveBeenCalledWith(undefined);
     expect(res.json).toHaveBeenCalledWith([{ id: 1, name: 'Dr. Test' }]);
   });
 });
@@ -41,7 +41,7 @@ describe('doctorController.createDoctor', () => {
     doctorController.createDoctor(req, res, next);
     await flush();
 
-    expect(doctorService.createDoctor).toHaveBeenCalledWith({ name: 'Dr. New', specialty: 'General' });
+    expect(doctorService.createDoctor).toHaveBeenCalledWith({ name: 'Dr. New', specialty: 'General' }, undefined);
     expect(res.status).toHaveBeenCalledWith(201);
     expect(res.json).toHaveBeenCalledWith({ id: 1, name: 'Dr. New' });
   });
