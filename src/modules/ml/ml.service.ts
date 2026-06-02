@@ -23,6 +23,7 @@ interface SequentialModel {
   predict: (input: unknown) => Tensor;
   dispose: () => void;
   trained?: boolean;
+  lstmTrained?: boolean;
   vocab?: string[];
   diagnoses?: string[];
   idf?: number[];
