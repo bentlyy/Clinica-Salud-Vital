@@ -152,6 +152,7 @@ export const createBooking = async ({ doctor_id, user_id, date, time, duration =
             confirmToken,
             frontendUrl: process.env.FRONTEND_URL,
           }),
+          tenantId,
         });
         if (!r.sent) logger.error('Email de confirmación no enviado:', { to: user.email, error: r.error });
       } catch (emailErr) {
