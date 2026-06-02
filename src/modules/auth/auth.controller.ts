@@ -2,6 +2,17 @@ import { Request, Response } from 'express';
 import * as authService from './auth.service.js';
 import * as auth2faService from './auth-2fa.service.js';
 import { asyncHandler } from '../../middlewares/asyncHandler.middleware.js';
+import { verifyInviteToken } from '../doctor/doctor.service.js';
+
+export const inviteInfo = asyncHandler(async (req: Request, res: Response) => {
+  const { token } = req.query;
+  if (!token || typeof token !== 'string') {
+    res.status(400).json({ error: 'Token requerido' });
+    return;
+  }
+  const data = verifyInviteToken(token);
+  res.json({ email: data.email, name: data.name, role: data.role, specialty: data.specialty });
+});
 
 export const register = asyncHandler(async (req: Request, res: Response) => {
   const user = await authService.register({ ...req.body, tenant_id: req.body.tenant_id || req.tenant_id });

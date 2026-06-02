@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/useAuth';
 import { useI18n } from '../i18n/useI18n';
 import { formatRut, validateRut, cleanRut } from '../utils/rut.js';
+import api from '../api/axios';
 
 export default function RegisterPage() {
   const { t } = useI18n();
@@ -10,15 +11,30 @@ export default function RegisterPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const tenantId = searchParams.get('tenant');
+  const inviteToken = searchParams.get('invite');
   const [form, setForm] = useState({ email: '', password: '', confirmPassword: '', rut: '', phone: '' });
   const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const [loadingInvite, setLoadingInvite] = useState(!!inviteToken);
+  const [inviteData, setInviteData] = useState(null);
+
+  useEffect(() => {
+    if (inviteToken) {
+      api.get(`/auth/invite-info?token=${encodeURIComponent(inviteToken)}`)
+        .then((res) => {
+          setInviteData(res.data);
+          setForm((prev) => ({ ...prev, email: res.data.email }));
+        })
+        .catch(() => setError(t('register.invite_expired') || 'Enlace de invitación inválido o expirado'))
+        .finally(() => setLoadingInvite(false));
+    }
+  }, [inviteToken, t]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
 
-    if (!tenantId) { setError(t('register.invitation_required') || 'Necesitas un enlace de invitación para registrarte'); return; }
+    if (!tenantId && !inviteToken) { setError(t('register.invitation_required') || 'Necesitas un enlace de invitación para registrarte'); return; }
     if (form.password !== form.confirmPassword) { setError(t('register.password_mismatch')); return; }
     const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
     if (!passwordRegex.test(form.password)) { setError(t('register.password_requirements')); return; }
@@ -26,7 +42,10 @@ export default function RegisterPage() {
 
     try {
       setSubmitting(true);
-      await register({ email: form.email, password: form.password, rut: form.rut || undefined, phone: form.phone || undefined, tenant_id: tenantId });
+      const body = { email: form.email, password: form.password, rut: form.rut || undefined, phone: form.phone || undefined };
+      if (tenantId) body.tenant_id = tenantId;
+      if (inviteToken) body.invite_token = inviteToken;
+      await register(body);
       navigate(tenantId ? `/login?tenant=${tenantId}` : '/login');
     } catch (err) {
       setError(err.response?.data?.error || t('register.error'));
@@ -34,6 +53,17 @@ export default function RegisterPage() {
       setSubmitting(false);
     }
   };
+
+  if (loadingInvite) {
+    return (
+      <div className="page-container" style={{ maxWidth: 480 }}>
+        <div className="card" style={{ padding: 40, textAlign: 'center' }}>
+          <div className="loading-spinner" />
+          <p style={{ marginTop: 16, color: 'var(--text-secondary)' }}>Verificando invitación...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="page-container" style={{ maxWidth: 480 }}>
@@ -48,8 +78,17 @@ export default function RegisterPage() {
 
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label className="form-label">{t('register.email')} <span className="required">*</span></label>
-            <input name="email" type="email" required value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder={t('register.email_placeholder')} className="form-input" />
+            <label className="form-label">{inviteData ? 'Email (de la invitación)' : t('register.email')} <span className="required">*</span></label>
+            <input name="email" type="email" required value={form.email}
+              onChange={(e) => setForm({ ...form, email: e.target.value })}
+              placeholder={t('register.email_placeholder')}
+              className="form-input"
+              readOnly={!!inviteData}
+              style={inviteData ? { background: 'var(--gray-100)', cursor: 'not-allowed' } : {}}
+            />
+            {inviteData && (
+              <p className="form-hint">Este correo fue registrado en tu invitación. No puede modificarse.</p>
+            )}
           </div>
 
           <div className="form-group">
