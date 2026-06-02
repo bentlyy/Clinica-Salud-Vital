@@ -3,7 +3,8 @@ import { asyncHandler } from '../../middlewares/asyncHandler.middleware.js';
 import { NotFoundError } from '../../utils/errors.js';
 
 export const getDoctors = asyncHandler(async (req, res) => {
-  const doctors = await doctorService.getAllDoctors();
+  const tenantId = req.query.all === 'true' && req.user?.role === 'superadmin' ? undefined : req.tenant_id;
+  const doctors = await doctorService.getAllDoctors(tenantId);
   res.json(doctors);
 });
 

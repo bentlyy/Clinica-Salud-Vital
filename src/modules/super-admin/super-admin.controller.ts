@@ -43,3 +43,21 @@ export const adminCreateTenant = asyncHandler(async (req: Request, res: Response
   const result = await superAdminService.adminCreateTenant(req.body);
   res.status(201).json(result);
 });
+
+export const listUsers = asyncHandler(async (req: Request, res: Response) => {
+  const page = parseInt(String(req.query.page || '1'), 10);
+  const limit = parseInt(String(req.query.limit || '50'), 10);
+  const tenantId = req.query.tenant_id ? String(req.query.tenant_id) : undefined;
+  const role = req.query.role ? String(req.query.role) : undefined;
+  const search = req.query.search ? String(req.query.search) : undefined;
+
+  const result = await superAdminService.listUsers(page, limit, { tenantId, role, search });
+  res.json(result);
+});
+
+export const toggleUserActive = asyncHandler(async (req: Request, res: Response) => {
+  const userId = parseInt(req.params.userId, 10);
+  const active = req.body.active !== false;
+  const user = await superAdminService.setUserActive(userId, active);
+  res.json(user);
+});
