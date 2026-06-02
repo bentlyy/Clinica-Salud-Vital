@@ -780,7 +780,7 @@ export const forecastDemand = async (days = 7, tenantId?: string): Promise<Forec
       const samples = result.samples ?? 0;
       const defaultValues = samples > 0 ? Array.from({ length: Math.min(samples, 30) }, () => Math.round(samples / 30)) : [10, 12, 8, 15, 11, 9, 14];
       const avg = defaultValues.reduce((a, b) => a + b, 0) / defaultValues.length;
-      demandModel = { trained: true, lstmTrained: false, originalData: defaultValues, windowSize: 7, mean: [avg], std: [1] } as unknown as SequentialModel;
+      demandModel = { trained: true, lstmTrained: false, originalData: defaultValues, windowSize: 7, mean: [avg], std: [1], dispose: () => {} } as unknown as SequentialModel;
       const lastDate = new Date();
       return Array.from({ length: days }, (_, i) => {
         const date = new Date(lastDate);
@@ -1167,9 +1167,9 @@ export const trainAllModels = async (tenantId?: string): Promise<TrainAllResults
 };
 
 export const disposeAllModels = (tenantId?: string): void => {
-  if (noShowModel) { noShowModel.dispose(); noShowModel = null; }
-  if (diagnosisModel) { diagnosisModel.dispose(); diagnosisModel = null; }
-  if (demandModel) { demandModel.dispose(); demandModel = null; }
+  if (noShowModel && typeof noShowModel.dispose === 'function') { noShowModel.dispose(); noShowModel = null; }
+  if (diagnosisModel && typeof diagnosisModel.dispose === 'function') { diagnosisModel.dispose(); diagnosisModel = null; }
+  if (demandModel && typeof demandModel.dispose === 'function') { demandModel.dispose(); demandModel = null; }
   logger.info('[ML] All models disposed');
 };
 
