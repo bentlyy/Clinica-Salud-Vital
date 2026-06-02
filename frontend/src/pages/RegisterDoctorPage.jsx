@@ -94,8 +94,8 @@ function UsersTab({ t }) {
       if (search) params.search = search;
       if (roleFilter) params.role = roleFilter;
       const res = await api.get('/doctors/users', { params });
-      setUsers(res.data.data);
-      setPagination(res.data.pagination);
+      setUsers(res.data);
+      setPagination(res.pagination);
     } catch (err) {
       setError(err.response?.data?.error || 'Error al cargar usuarios');
     } finally {
