@@ -26,7 +26,9 @@ Desplegado en Render. ML con TensorFlow.js.
 | winston | Logging (info/warn/error) |
 | helmet + hpp | Security headers |
 | express-rate-limit | Rate limiting |
-| nodemailer | Email (Gmail SMTP) |
+| nodemailer | Email (Gmail SMTP + SendGrid) |
+| @sendgrid/mail | SendGrid transactional email provider |
+| react-google-recaptcha | reCAPTCHA v2 checkbox |
 | pdfkit | Receta PDF |
 | node-cron | Cron jobs (c/5 min) |
 | compression | Gzip responses |
@@ -206,6 +208,7 @@ Controllers use `asyncHandler` from `middlewares/asyncHandler.middleware.ts` to 
 | `frontend/src/context/AuthContext.jsx` | Auth state: user, token, loading, login/logout |
 | `frontend/src/context/useAuth.js` | Hook wrapper (fixes fast-refresh HMR) |
 | `frontend/src/pages/BookingPage.jsx` | Booking flow (user=createBooking, guest=createGuestBooking) |
+| `frontend/src/pages/LoginPage.jsx` | Login with captcha + 2FA support |
 | `frontend/src/pages/DoctorPanel.jsx` | Doctor dashboard (agenda + availability + exceptions) |
 | `frontend/src/pages/MyBookingsPage.jsx` | Patient bookings list |
 | `frontend/src/pages/AnalyticsPage.jsx` | Admin analytics dashboard |
@@ -214,9 +217,10 @@ Controllers use `asyncHandler` from `middlewares/asyncHandler.middleware.ts` to 
 
 ### AuthContext behavior
 - `loading` starts `true`
-- `useEffect` loads from localStorage on mount → sets `false`
+- `useEffect` loads from localStorage on mount → checks token expiry locally (no auto-refresh)
 - Login stores token + user in localStorage
-- Logout clears localStorage
+- Logout clears localStorage synchronously before API call
+- Token refresh only happens during active API calls (401 interceptor)
 
 ---
 
@@ -288,7 +292,7 @@ Features:
 
 | Lines | 89.1 |
 
-**1121 tests** · 93 archivos · 0 fallos
+**1122 tests** · 93 archivos · 0 fallos
 
 ---
 
@@ -452,3 +456,50 @@ Features:
 ### Env Variables Nuevas
 - `STRIPE_SECRET_KEY` — Stripe secret key (opcional, sin ella funciona en stub)
 - `STRIPE_WEBHOOK_SECRET` — Stripe webhook secret (opcional)
+
+---
+
+## 🆕 Mejoras Recientes (v3.1)
+
+### Booking Auto-Confirmado
+- Las reservas se crean con `confirmed = true` directo (ya no requieren clic en email)
+- El email es solo notificación: "Cita agendada - Salud Vital" con detalles y link para cancelar/reagendar
+- Se eliminó la warning de bloqueo por no confirmar
+
+### Gestión de Usuarios (Admin)
+- `GET /api/v1/doctors/users` — Lista usuarios del tenant (paginado, filtro por rol/búsqueda)
+- `PATCH /api/v1/doctors/users/:id/active` — Activar/desactivar usuario (toggle `active`)
+- Frontend: panel "Gestionar Personal" con tabs Usuarios/Invitar, tarjetas por rol, toggle switch
+
+### Registro con Nombre
+- Formulario de registro ahora incluye campo "Nombre completo" y lo envía en el body
+- Invitación precarga el nombre desde el token JWT
+- Seed actualizado: `ON CONFLICT (email) DO UPDATE SET name = EXCLUDED.name`
+
+### Migraciones de Nombres
+- `014_backfill_user_names.sql` — Backfill para usuarios con name=NULL (doctores desde `doctors.name`, resto desde prefijo email)
+- `015_fix_seed_names.sql` — Mapea emails del seed a nombres reales (30 pacientes + 12 doctores + admin)
+
+### reCAPTCHA v2
+- CSP actualizada para permitir scripts/frames de Google reCAPTCHA
+- Site key via `VITE_RECAPTCHA_SITE_KEY` (frontend), Secret key via `RECAPTCHA_SECRET_KEY` (backend)
+- Import ESM de `react-google-recaptcha`
+
+### Email con SendGrid
+- `EMAIL_USER`/`EMAIL_PASS` (Gmail SMTP) como fallback
+- `SENDGRID_API_KEY` como provider principal
+- Per-tenant from name/address via `tenants.config.email_from_name` / `email_from_address`
+
+### Auth Persistence
+- Al montar la app, solo restaura sesión si el access token NO ha expirado (15 min)
+- Si expiró, limpia localStorage y redirige a login
+- Refresh automático solo durante llamadas API activas (interceptor 401)
+- Logout: limpia localStorage síncronamente antes de la llamada API
+
+## Known Issues & Gotchas (Actualizado)
+- LoginPage usa `import ReCAPTCHA` directo (no require dinámico) — funciona en Vite ESM
+- CSP permite `https://www.google.com/recaptcha/` y `https://www.gstatic.com/recaptcha/` en script-src y frame-src
+- `RegisterPage.jsx` ahora incluye campo `name` en estado y body
+- El Navbar hace `await logout()` antes de navegar para evitar race condition
+- Las reservas se auto-confirman al crearse (`confirmed=true`) — el email es solo notificación
+- SendGrid es el provider de email principal si `SENDGRID_API_KEY` está definida
