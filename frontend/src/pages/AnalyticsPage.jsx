@@ -464,17 +464,17 @@ export default function AnalyticsPage() {
 
       <div className="model-status-bar">
         <span style={{ fontWeight: 600, marginRight: 12 }}>{t('analytics.model_status')}</span>
-        <span className={`status-badge ${modelStatus.noShowModel === 'loaded' ? 'success' : 'warning'}`}>
-          {t('analytics.model_noshow')}: {modelStatus.noShowModel === 'loaded' ? '✅' : '⏳'}
+        <span className={`status-badge ${modelStatus.models?.noShowModel === 'loaded' ? 'success' : 'warning'}`}>
+          {t('analytics.model_noshow')}: {modelStatus.models?.noShowModel === 'loaded' ? '✅' : '⏳'}
         </span>
-        <span className={`status-badge ${modelStatus.diagnosisModel === 'loaded' ? 'success' : 'warning'}`}>
-          {t('analytics.model_diagnoses')}: {modelStatus.diagnosisModel === 'loaded' ? '✅' : '⏳'}
+        <span className={`status-badge ${modelStatus.models?.diagnosisModel === 'loaded' ? 'success' : 'warning'}`}>
+          {t('analytics.model_diagnoses')}: {modelStatus.models?.diagnosisModel === 'loaded' ? '✅' : '⏳'}
         </span>
-        <span className={`status-badge ${modelStatus.demandModel === 'loaded' ? 'success' : 'warning'}`}>
-          {t('analytics.model_demand')}: {modelStatus.demandModel === 'loaded' ? '✅' : '⏳'}
+        <span className={`status-badge ${modelStatus.models?.demandModel === 'loaded' ? 'success' : 'warning'}`}>
+          {t('analytics.model_demand')}: {modelStatus.models?.demandModel === 'loaded' ? '✅' : '⏳'}
         </span>
-        <span className={`status-badge ${modelStatus.vitalAnomalyModel === 'trained' ? 'success' : 'warning'}`}>
-          {t('analytics.model_vitals')}: {modelStatus.vitalAnomalyModel === 'trained' ? '✅' : '⏳'}
+        <span className={`status-badge ${modelStatus.models?.vitalAnomalyModel === 'trained' ? 'success' : 'warning'}`}>
+          {t('analytics.model_vitals')}: {modelStatus.models?.vitalAnomalyModel === 'trained' ? '✅' : '⏳'}
         </span>
       </div>
 

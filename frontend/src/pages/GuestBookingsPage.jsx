@@ -21,7 +21,7 @@ export default function GuestBookingsPage() {
     try {
       setLoading(true);
       const data = await getGuestBookings(cleanRut(rut));
-      setBookings(data);
+      setBookings(Array.isArray(data) ? data : []);
       setSearched(true);
     } catch (err) {
       setError(err.response?.data?.error || t('guest_bookings.error'));
