@@ -104,9 +104,6 @@ export default function BookingPage() {
           <p style={{ fontSize: 16, marginBottom: 16 }}>
             {t('booking.success_desc', { email: form.email })}
           </p>
-          <div className="alert alert-warning" style={{ maxWidth: 500, margin: '0 auto 24px' }}>
-            ⚠️ {t('booking.success_warning')}
-          </div>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
             <button onClick={() => navigate('/my-bookings')} className="btn btn-success">
               {t('booking.view_bookings')}

@@ -13,23 +13,21 @@ export const bookingConfirmationTemplate = ({ doctor, date, time, confirmToken, 
   const confirmUrl = confirmToken ? `${baseUrl}/confirm/${encodeURIComponent(confirmToken)}` : null;
 
   return `
-    <h2>Reserva pre-confirmada</h2>
-    <p>Tu cita ha sido agendada. Para asegurarla, confirma con el bot\u00f3n de abajo:</p>
+    <h2>Cita agendada</h2>
+    <p>Tu cita ha sido registrada exitosamente. Aqu\u00ed est\u00e1n los detalles:</p>
 
-    <ul>
-      <li><strong>Doctor:</strong> ${escapeHtml(doctor)}</li>
-      <li><strong>Fecha:</strong> ${escapeHtml(date)}</li>
-      <li><strong>Hora:</strong> ${escapeHtml(time)}</li>
-    </ul>
+    <table style="width:100%;border-collapse:collapse;margin:16px 0">
+      <tr><td style="padding:8px;background:#f5f5f5"><strong>Doctor:</strong></td><td style="padding:8px">${escapeHtml(doctor)}</td></tr>
+      <tr><td style="padding:8px;background:#f5f5f5"><strong>Fecha:</strong></td><td style="padding:8px">${escapeHtml(date)}</td></tr>
+      <tr><td style="padding:8px;background:#f5f5f5"><strong>Hora:</strong></td><td style="padding:8px">${escapeHtml(time)}</td></tr>
+    </table>
 
     ${confirmUrl ? `
-      <p style="text-align: center;">
-        <a href="${confirmUrl}" style="background: #1976d2; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px;">
-          Confirmar mi cita
-        </a>
+      <p style="font-size:14px;color:#666;">
+        Si necesitas cancelar o reagendar, haz clic en el siguiente enlace:
       </p>
-      <p style="color: #e53935; font-size: 13px;">
-        Si no confirmas tu cita, tu RUT ser\u00e1 bloqueado por 7 d\u00edas.
+      <p style="text-align:center;">
+        <a href="${confirmUrl}">Gestionar mi cita</a>
       </p>
     ` : '<p>Gracias por confiar en nosotros.</p>'}
   `;
