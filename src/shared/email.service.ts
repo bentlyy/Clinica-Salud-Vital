@@ -1,11 +1,13 @@
 import nodemailer, { Transporter } from 'nodemailer';
 import sgMail from '@sendgrid/mail';
 import { logger } from '../utils/logger.js';
+import { tenantService } from './multi-tenant.service.js';
 
 export interface EmailOptions {
   to: string;
   subject: string;
   html: string;
+  tenantId?: string;
 }
 
 export interface EmailResult {
@@ -17,7 +19,23 @@ type EmailProvider = 'sendgrid' | 'smtp' | 'log';
 
 let provider: EmailProvider = 'log';
 let transporter: Transporter | null = null;
-const FROM_NAME = 'Clinic App';
+const DEFAULT_FROM_NAME = 'Clinic App';
+
+const getFromName = (tenantId?: string): string => {
+  if (tenantId) {
+    const tenant = tenantService.getById(tenantId);
+    if (tenant?.config?.email_from_name) return String(tenant.config.email_from_name);
+  }
+  return DEFAULT_FROM_NAME;
+};
+
+const getFromEmail = (tenantId?: string): string => {
+  if (tenantId) {
+    const tenant = tenantService.getById(tenantId);
+    if (tenant?.config?.email_from_address) return String(tenant.config.email_from_address);
+  }
+  return process.env.EMAIL_USER || 'noreply@clinic.app';
+};
 
 const initSendGrid = (): boolean => {
   const apiKey = process.env.SENDGRID_API_KEY;
@@ -77,11 +95,11 @@ export const validateEmailConfig = (): void => {
   }
 };
 
-const sendViaSendGrid = async ({ to, subject, html }: EmailOptions): Promise<EmailResult> => {
+const sendViaSendGrid = async ({ to, subject, html, tenantId }: EmailOptions): Promise<EmailResult> => {
   try {
     await sgMail.send({
       to,
-      from: { email: process.env.EMAIL_USER || 'noreply@clinic.app', name: FROM_NAME },
+      from: { email: getFromEmail(tenantId), name: getFromName(tenantId) },
       subject,
       html,
     });
@@ -93,12 +111,12 @@ const sendViaSendGrid = async ({ to, subject, html }: EmailOptions): Promise<Ema
   }
 };
 
-const sendViaSMTP = async ({ to, subject, html }: EmailOptions): Promise<EmailResult> => {
+const sendViaSMTP = async ({ to, subject, html, tenantId }: EmailOptions): Promise<EmailResult> => {
   if (!transporter) return { sent: false, error: 'SMTP not initialized' };
 
   try {
     await transporter.sendMail({
-      from: `"${FROM_NAME}" <${process.env.EMAIL_USER}>`,
+      from: `"${getFromName(tenantId)}" <${getFromEmail(tenantId)}>`,
       to,
       subject,
       html,
