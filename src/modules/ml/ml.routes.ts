@@ -26,8 +26,7 @@ import {
 const router = Router();
 
 router.use(authMiddleware);
-router.use(authorize('admin'));
-router.use(requireFeature('ml'));
+router.use(authorize('admin', 'superadmin'));
 
 const mlTrainLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
@@ -52,19 +51,19 @@ router.post('/reset', resetModels);
 router.get('/metrics', getMetrics);
 router.post('/cache/clear', clearCache);
 
-router.post('/predict-noshow', mlPredictLimiter, predictNoShow);
-router.post('/classify-diagnosis', mlPredictLimiter, classifyDiagnosis);
-router.get('/demand-forecast', getDemandForecast);
-router.get('/optimal-schedules', getOptimalSchedules);
-router.post('/analyze-vitals', mlPredictLimiter, analyzeVitals);
+router.post('/predict-noshow', mlPredictLimiter, requireFeature('ml'), predictNoShow);
+router.post('/classify-diagnosis', mlPredictLimiter, requireFeature('ml'), classifyDiagnosis);
+router.get('/demand-forecast', requireFeature('ml'), getDemandForecast);
+router.get('/optimal-schedules', requireFeature('ml'), getOptimalSchedules);
+router.post('/analyze-vitals', mlPredictLimiter, requireFeature('ml'), analyzeVitals);
 
-router.get('/history/predictions', getPredictionHistory);
-router.get('/history/metrics', getModelMetricsHistory);
-router.get('/history/forecast', getDemandForecastHistory);
+router.get('/history/predictions', requireFeature('ml'), getPredictionHistory);
+router.get('/history/metrics', requireFeature('ml'), getModelMetricsHistory);
+router.get('/history/forecast', requireFeature('ml'), getDemandForecastHistory);
 
-router.get('/export/predictions', requireFeature('ml-export'), exportPredictionData);
-router.get('/export/metrics', requireFeature('ml-export'), exportMetricsData);
-router.get('/export/forecast', requireFeature('ml-export'), exportDemandForecastData);
-router.get('/powerbi-export', powerBiExport);
+router.get('/export/predictions', requireFeature('ml'), requireFeature('ml-export'), exportPredictionData);
+router.get('/export/metrics', requireFeature('ml'), requireFeature('ml-export'), exportMetricsData);
+router.get('/export/forecast', requireFeature('ml'), requireFeature('ml-export'), exportDemandForecastData);
+router.get('/powerbi-export', requireFeature('ml'), powerBiExport);
 
 export default router;

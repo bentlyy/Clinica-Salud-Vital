@@ -19,6 +19,7 @@ import { requestLogger } from './middlewares/requestLogger.middleware.js';
 import { errorHandler, notFoundHandler } from './middlewares/errorHandler.middleware.js';
 import { monitoringService, monitoringMiddleware } from './middlewares/monitoring.middleware.js';
 import { dbMonitor } from './shared/db-monitor.service.js';
+import { trackActivity } from './middlewares/sessionActivity.middleware.js';
 import { logger } from './utils/logger.js';
 
 import doctorRoutes from './modules/doctor/doctor.routes.js';
@@ -69,6 +70,9 @@ app.use(monitoringMiddleware);
 
 /* Multi-tenancy */
 app.use(tenantMiddleware);
+
+/* Session activity tracking (fire-and-forget for authenticated users) */
+app.use(trackActivity);
 
 const allowedOrigins = [
   'http://localhost:5173',
