@@ -269,3 +269,57 @@ export const verifyInviteToken = (token: string): { email: string; name: string;
     throw new BadRequestError('Token de invitación inválido o expirado');
   }
 };
+
+export const listTenantUsers = async (
+  tenantId: string,
+  page: number = 1,
+  limit: number = 20,
+  filters?: { role?: string; search?: string }
+): Promise<{ data: Record<string, unknown>[]; pagination: { page: number; limit: number; total: number; totalPages: number } }> => {
+  const conditions: string[] = ['u.tenant_id = $1'];
+  const params: (string | number)[] = [tenantId];
+  let paramIdx = 2;
+
+  if (filters?.role) {
+    conditions.push(`u.role = $${paramIdx++}`);
+    params.push(filters.role);
+  }
+
+  if (filters?.search) {
+    conditions.push(`(u.name ILIKE $${paramIdx} OR u.email ILIKE $${paramIdx})`);
+    params.push(`%${filters.search}%`);
+    paramIdx++;
+  }
+
+  const whereClause = conditions.join(' AND ');
+
+  const countResult = await pool.query(
+    `SELECT COUNT(*) as total FROM users u WHERE ${whereClause}`,
+    params
+  );
+  const total = parseInt(countResult.rows[0].total, 10);
+
+  const offset = (page - 1) * limit;
+  params.push(limit, offset);
+
+  const result = await pool.query(
+    `SELECT u.id, u.email, u.name, u.role, u.rut, u.phone, u.active, u.created_at
+     FROM users u WHERE ${whereClause}
+     ORDER BY u.created_at DESC LIMIT $${paramIdx} OFFSET $${paramIdx + 1}`,
+    params
+  );
+
+  return {
+    data: result.rows,
+    pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+  };
+};
+
+export const toggleUserActive = async (userId: number, tenantId: string): Promise<Record<string, unknown>> => {
+  const result = await pool.query(
+    `UPDATE users SET active = NOT active WHERE id = $1 AND tenant_id = $2 RETURNING id, email, name, role, active`,
+    [userId, tenantId]
+  );
+  if (result.rows.length === 0) throw new NotFoundError('Usuario no encontrado en este tenant');
+  return result.rows[0];
+};

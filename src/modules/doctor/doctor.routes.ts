@@ -4,7 +4,9 @@ import {
   registerDoctor,
   createDoctor,
   invitePerson,
-  getMyDoctorProfile
+  getMyDoctorProfile,
+  listUsers,
+  toggleUserActive,
 } from './doctor.controller.js';
 import { authMiddleware } from '../../middlewares/auth.middleware.js';
 import { authorizeRoles } from '../../middlewares/role.middleware.js';
@@ -27,6 +29,9 @@ router.get('/public', (req, res, next) => {
 router.post('/', authMiddleware, authorizeRoles('admin', 'superadmin'), validateZod(createDoctorSchema), createDoctor);
 
 router.get('/me', authMiddleware, authorizeRoles('doctor'), getMyDoctorProfile);
+
+router.get('/users', authMiddleware, authorizeRoles('admin', 'superadmin'), listUsers);
+router.patch('/users/:userId/active', authMiddleware, authorizeRoles('admin', 'superadmin'), toggleUserActive);
 
 export default router;
 

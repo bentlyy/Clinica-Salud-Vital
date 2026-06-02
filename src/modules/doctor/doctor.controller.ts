@@ -35,3 +35,19 @@ export const getMyDoctorProfile = asyncHandler(async (req, res) => {
   res.json(doctor);
 });
 
+export const listUsers = asyncHandler(async (req, res) => {
+  const page = parseInt(String(req.query.page || '1'), 10);
+  const limit = parseInt(String(req.query.limit || '20'), 10);
+  const role = req.query.role ? String(req.query.role) : undefined;
+  const search = req.query.search ? String(req.query.search) : undefined;
+
+  const result = await doctorService.listTenantUsers(req.tenant_id, page, limit, { role, search });
+  res.json(result);
+});
+
+export const toggleUserActive = asyncHandler(async (req, res) => {
+  const userId = parseInt(String(req.params.userId), 10);
+  const user = await doctorService.toggleUserActive(userId, req.tenant_id);
+  res.json(user);
+});
+
