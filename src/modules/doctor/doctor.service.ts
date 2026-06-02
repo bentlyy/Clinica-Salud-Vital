@@ -106,9 +106,9 @@ export const registerDoctor = async ({ name, specialty, email, rut, phone }: Doc
 
     for (let day = 1; day <= 5; day++) {
       await client.query(
-        `INSERT INTO doctor_availability (doctor_id, day_of_week, start_time, end_time)
-         VALUES ($1, $2, $3, $4)`,
-        [doctor.id, day, '09:00', '17:00']
+        `INSERT INTO doctor_availability (doctor_id, day_of_week, start_time, end_time${tenantId ? ', tenant_id' : ''})
+         VALUES ($1, $2, $3, $4${tenantId ? ', $5' : ''})`,
+        tenantId ? [doctor.id, day, '09:00', '17:00', tenantId] : [doctor.id, day, '09:00', '17:00']
       );
     }
 
@@ -143,7 +143,7 @@ export const registerDoctor = async ({ name, specialty, email, rut, phone }: Doc
   }
 };
 
-export const createDoctor = async ({ name, specialty, email, user_id }: CreateDoctorInput): Promise<Doctor> => {
+export const createDoctor = async ({ name, specialty, email, user_id }: CreateDoctorInput, tenantId?: string): Promise<Doctor> => {
   if (!name || !specialty || !email || !user_id) {
     throw new BadRequestError('Missing required fields');
   }
@@ -168,19 +168,19 @@ export const createDoctor = async ({ name, specialty, email, user_id }: CreateDo
     }
 
     const result = await client.query(
-      `INSERT INTO doctors (name, specialty, email, user_id)
-       VALUES ($1, $2, $3, $4)
+      `INSERT INTO doctors (name, specialty, email, user_id${tenantId ? ', tenant_id' : ''})
+       VALUES ($1, $2, $3, $4${tenantId ? ', $5' : ''})
        RETURNING *`,
-      [name, specialty, email, user_id]
+      tenantId ? [name, specialty, email, user_id, tenantId] : [name, specialty, email, user_id]
     );
 
     const doctor = result.rows[0] as Doctor;
 
     for (let day = 1; day <= 5; day++) {
       await client.query(
-        ` INSERT INTO doctor_availability (doctor_id, day_of_week, start_time, end_time)
-         VALUES ($1, $2, $3, $4)`,
-        [doctor.id, day, '09:00', '17:00']
+        `INSERT INTO doctor_availability (doctor_id, day_of_week, start_time, end_time${tenantId ? ', tenant_id' : ''})
+         VALUES ($1, $2, $3, $4${tenantId ? ', $5' : ''})`,
+        tenantId ? [doctor.id, day, '09:00', '17:00', tenantId] : [doctor.id, day, '09:00', '17:00']
       );
     }
 
