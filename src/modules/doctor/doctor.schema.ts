@@ -15,3 +15,10 @@ export const createDoctorSchema = z.object({
   user_id: z.coerce.number().int().positive('user_id is required'),
 });
 
+export const invitePersonSchema = z.object({
+  email: z.string().email('Email inválido'),
+  name: z.string().optional(),
+  role: z.enum(['patient', 'doctor']),
+  specialty: z.string().optional(),
+});
+
