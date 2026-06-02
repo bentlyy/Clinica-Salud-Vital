@@ -83,39 +83,57 @@ function InviteTab({ t, onSent }) {
 }
 
 function UserRow({ user, onToggle, toggling }) {
+  const tooltip = [
+    `Email: ${user.email}`,
+    user.rut ? `RUT: ${user.rut}` : '',
+    user.phone ? `Tel: ${user.phone}` : '',
+    `Registrado: ${new Date(user.created_at).toLocaleDateString('es-CL')}`,
+  ].filter(Boolean).join('\n');
+
   return (
-    <div style={{
-      display: 'flex', alignItems: 'center', gap: 10,
-      padding: '8px 12px', borderRadius: 8,
+    <div title={tooltip} style={{
+      display: 'flex', alignItems: 'center', gap: 12,
+      padding: '10px 14px', borderRadius: 8,
       background: user.active ? 'var(--bg-secondary)' : 'var(--gray-100)',
       opacity: user.active ? 1 : 0.55,
-      transition: 'all 0.2s',
+      transition: 'all 0.2s', cursor: 'default',
     }}>
       <div style={{
-        width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
+        width: 40, height: 40, borderRadius: '50%', flexShrink: 0,
         background: ROLE_CONFIG[user.role === 'user' ? 'patient' : user.role]?.color || '#ccc',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        color: '#fff', fontWeight: 600, fontSize: '0.75rem',
+        color: '#fff', fontWeight: 700, fontSize: '0.9rem',
       }}>
         {user.name ? user.name.charAt(0).toUpperCase() : '?'}
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontWeight: 500, fontSize: '0.85rem', color: 'var(--text-primary)' }}>{user.name || '—'}</div>
-        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.email}</div>
+        <div style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-primary)' }}>{user.name || '—'}</div>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+          {user.rut && <span>{user.rut}</span>}
+          {user.rut && user.email && <span>·</span>}
+          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 180 }}>{user.email}</span>
+        </div>
       </div>
-      <button
-        onClick={() => onToggle(user.id, user.active)}
-        disabled={toggling === user.id}
-        style={{
-          padding: '4px 10px', borderRadius: 6, border: 'none', flexShrink: 0,
-          fontSize: '0.75rem', fontWeight: 500, cursor: 'pointer',
-          background: user.active ? '#fee2e2' : '#d1fae5',
-          color: user.active ? '#dc2626' : '#059669',
-          transition: 'all 0.15s',
-        }}
-      >
-        {toggling === user.id ? '...' : user.active ? 'Desactivar' : 'Activar'}
-      </button>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 2, flexShrink: 0 }}>
+        <span style={{
+          width: 8, height: 8, borderRadius: '50%',
+          background: user.active ? '#00b894' : '#d63031',
+          display: 'inline-block',
+        }} />
+        <button
+          onClick={() => onToggle(user.id, user.active)}
+          disabled={toggling === user.id}
+          style={{
+            padding: '5px 12px', borderRadius: 6, border: 'none',
+            fontSize: '0.78rem', fontWeight: 500, cursor: 'pointer',
+            background: user.active ? '#fee2e2' : '#d1fae5',
+            color: user.active ? '#dc2626' : '#059669',
+            transition: 'all 0.15s',
+          }}
+        >
+          {toggling === user.id ? '...' : user.active ? 'Desactivar' : 'Activar'}
+        </button>
+      </div>
     </div>
   );
 }
@@ -131,26 +149,26 @@ function RoleCard({ role, users, onToggle, toggling }) {
       overflow: 'hidden',
     }}>
       <div style={{
-        display: 'flex', alignItems: 'center', gap: 8,
-        padding: '10px 14px',
+        display: 'flex', alignItems: 'center', gap: 10,
+        padding: '12px 16px',
         borderBottom: `1px solid ${cfg.color}15`,
         background: cfg.color + '08',
       }}>
-        <span style={{ fontSize: '1.1rem' }}>{cfg.icon}</span>
-        <span style={{ fontWeight: 600, fontSize: '0.9rem', color: cfg.color }}>{cfg.label}</span>
+        <span style={{ fontSize: '1.2rem' }}>{cfg.icon}</span>
+        <span style={{ fontWeight: 600, fontSize: '0.95rem', color: cfg.color }}>{cfg.label}</span>
         <span style={{
           marginLeft: 'auto', background: cfg.color + '20',
-          color: cfg.color, padding: '1px 8px', borderRadius: 10,
-          fontSize: '0.75rem', fontWeight: 600,
+          color: cfg.color, padding: '2px 10px', borderRadius: 12,
+          fontSize: '0.8rem', fontWeight: 600,
         }}>{users.length}</span>
       </div>
-      <div style={{ flex: 1, overflowY: 'auto', padding: '6px', minHeight: 0 }}>
+      <div style={{ flex: 1, overflowY: 'auto', padding: '8px', minHeight: 0 }}>
         {users.length === 0 ? (
-          <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textAlign: 'center', padding: '20px 8px' }}>
+          <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textAlign: 'center', padding: '24px 8px' }}>
             No hay {cfg.label.toLowerCase()} registrados
           </p>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             {users.map(user => (
               <UserRow key={user.id} user={user} onToggle={onToggle} toggling={toggling} />
             ))}
@@ -207,7 +225,7 @@ function UsersTab({ t }) {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: 520 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: 560 }}>
       {error && <div className="alert alert-error" style={{ marginBottom: 8 }}>{error}</div>}
 
       <div style={{ position: 'relative', marginBottom: 12 }}>
@@ -215,9 +233,9 @@ function UsersTab({ t }) {
         <input
           type="text" value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Buscar por nombre o email..."
+          placeholder="Buscar por nombre, email o RUT..."
           className="form-input"
-          style={{ paddingLeft: 34, fontSize: '0.85rem' }}
+          style={{ paddingLeft: 34, fontSize: '0.9rem' }}
         />
       </div>
 
@@ -272,7 +290,7 @@ export default function RegisterDoctorPage() {
   }
 
   return (
-    <div className="page-container" style={{ maxWidth: 720 }}>
+    <div className="page-container" style={{ maxWidth: 960 }}>
       <div style={{ marginBottom: 24, textAlign: 'center' }}>
         <h1 style={{ marginBottom: 8 }}>Gestionar Personal</h1>
         <p style={{ color: 'var(--text-secondary)' }}>Invita nuevos miembros o administra los existentes</p>
