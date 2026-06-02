@@ -8,31 +8,33 @@ export const seedDefaultTenant = async (): Promise<void> => {
   const exists = await pool.query('SELECT 1 FROM tenants WHERE id = $1', [DEFAULT_TENANT_ID]);
   if (exists.rows.length > 0) {
     logger.info('Default tenant already exists');
-    return;
+  } else {
+    await pool.query(
+      `INSERT INTO tenants (id, name, domain, locale, timezone, config, active)
+       VALUES ($1, $2, $3, $4, $5, $6, true)
+       ON CONFLICT (id) DO NOTHING`,
+      [
+        DEFAULT_TENANT_ID,
+        'Default Clinic',
+        'default',
+        process.env.APP_LOCALE || 'es',
+        'America/Santiago',
+        JSON.stringify({ company: 'Mi Clínica', contact_email: 'admin@clinic.com' }),
+      ]
+    );
+
+    await pool.query(
+      `INSERT INTO subscriptions (tenant_id, plan_id, status, current_period_start, current_period_end)
+       SELECT $1, id, 'active', NOW(), NOW() + INTERVAL '1 year'
+       FROM plans WHERE code = 'enterprise'
+       ON CONFLICT DO NOTHING`,
+      [DEFAULT_TENANT_ID]
+    );
+
+    logger.info(`Default tenant created: ${DEFAULT_TENANT_ID}`);
   }
 
-  await pool.query(
-    `INSERT INTO tenants (id, name, domain, locale, timezone, config, active)
-     VALUES ($1, $2, $3, $4, $5, $6, true)
-     ON CONFLICT (id) DO NOTHING`,
-    [
-      DEFAULT_TENANT_ID,
-      'Default Clinic',
-      'default',
-      process.env.APP_LOCALE || 'es',
-      'America/Santiago',
-      JSON.stringify({ company: 'Mi Clínica', contact_email: 'admin@clinic.com' }),
-    ]
-  );
-
-  await pool.query(
-    `INSERT INTO subscriptions (tenant_id, plan_id, status, current_period_start, current_period_end)
-     SELECT $1, id, 'active', NOW(), NOW() + INTERVAL '1 year'
-     FROM plans WHERE code = 'enterprise'
-     ON CONFLICT DO NOTHING`,
-    [DEFAULT_TENANT_ID]
-  );
-
+  /* Siempre actualizar usuarios legacy con tenant_id NULL */
   const nullTenantResult = await pool.query(
     'UPDATE users SET tenant_id = $1 WHERE tenant_id IS NULL',
     [DEFAULT_TENANT_ID]
@@ -40,8 +42,6 @@ export const seedDefaultTenant = async (): Promise<void> => {
   if (nullTenantResult.rowCount && nullTenantResult.rowCount > 0) {
     logger.info(`Usuarios legacy actualizados con tenant_id: ${nullTenantResult.rowCount}`);
   }
-
-  logger.info(`Default tenant created: ${DEFAULT_TENANT_ID}`);
 };
 
 export const seedSuperAdmin = async (): Promise<void> => {
