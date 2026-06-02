@@ -25,6 +25,7 @@ describe('tenant.middleware', () => {
   });
 
   it('extracts tenant from subdomain when no header', async () => {
+    tenantService.register({ id: 'tenant1', name: 'Tenant 1', domain: 'tenant1.mysystem.com', locale: 'en', timezone: 'UTC', config: {}, active: true });
     const { tenantMiddleware } = await import('../../src/middlewares/tenant.middleware.js');
     const req = { headers: { host: 'tenant1.mysystem.com' } };
     const res = { setHeader: vi.fn() };
