@@ -62,7 +62,7 @@ export const validateEnvSecurity = (): void => {
   }
 
   if (!process.env.RECAPTCHA_SECRET_KEY) {
-    throw new UnauthorizedError('RECAPTCHA_SECRET_KEY no está definida. El CAPTCHA es obligatorio para login.');
+    logger.warn('⚠️ RECAPTCHA_SECRET_KEY no está definida. El CAPTCHA estará deshabilitado hasta que se configure.');
   }
 
   if (!isProduction) {
