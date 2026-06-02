@@ -18,6 +18,7 @@ export default function RegisterPage() {
     e.preventDefault();
     setError(null);
 
+    if (!tenantId) { setError(t('register.invitation_required') || 'Necesitas un enlace de invitación para registrarte'); return; }
     if (form.password !== form.confirmPassword) { setError(t('register.password_mismatch')); return; }
     const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
     if (!passwordRegex.test(form.password)) { setError(t('register.password_requirements')); return; }

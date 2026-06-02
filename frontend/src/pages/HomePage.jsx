@@ -115,10 +115,7 @@ export default function HomePage() {
               {t('home.book_appointment')}
             </button>
             {!user && (
-              <>
-                <Link to="/login" className="btn btn-outline btn-lg">{t('home.login')}</Link>
-                <Link to="/register" className="btn btn-success btn-lg">{t('home.create_account')}</Link>
-              </>
+              <Link to="/login" className="btn btn-outline btn-lg">{t('home.login')}</Link>
             )}
           </div>
         </div>
@@ -297,9 +294,6 @@ export default function HomePage() {
         <div className="card cta-card">
           <h3>{t('home.already_booked_title')}</h3>
           <p>{t('home.already_booked_desc')}</p>
-          <button onClick={() => navigate('/my-bookings/guest')} className="btn btn-success">
-            {t('home.check_bookings')}
-          </button>
         </div>
       </section>
 

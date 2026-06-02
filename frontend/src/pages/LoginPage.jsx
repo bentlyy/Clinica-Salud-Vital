@@ -133,12 +133,11 @@ export default function LoginPage() {
         </form>
 
         <div style={{ textAlign: 'center', marginTop: 24, paddingTop: 20, borderTop: '1px solid var(--border-light)' }}>
-          <p style={{ marginBottom: 8 }}>
-            {t('auth.no_account')} <Link to={tenantId ? `/register?tenant=${tenantId}` : '/register'}>{t('auth.register_link')}</Link>
-          </p>
-          <p>
-            {t('auth.or')} <Link to={tenantId ? `/booking?tenant=${tenantId}` : '/booking'}>{t('auth.guest_booking')}</Link>
-          </p>
+          {tenantId && (
+            <p style={{ marginBottom: 8 }}>
+              {t('auth.no_account')} <Link to={`/register?tenant=${tenantId}`}>{t('auth.register_link')}</Link>
+            </p>
+          )}
         </div>
       </div>
     </div>

@@ -92,7 +92,7 @@ export default function Navbar() {
               <Link to="/booking" className="nav-link" onClick={() => setMobileOpen(false)}>{t('nav.booking')}</Link>
               <Link to="/saas/register" className="nav-link nav-link-accent" onClick={() => setMobileOpen(false)}>{t('nav.create_clinic')}</Link>
               <Link to="/login" className="nav-link" onClick={() => setMobileOpen(false)}>{t('nav.login')}</Link>
-              <Link to="/register" className="btn btn-primary btn-sm" onClick={() => setMobileOpen(false)}>{t('nav.register')}</Link>
+
             </>
           )}
 
