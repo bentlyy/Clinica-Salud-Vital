@@ -22,7 +22,7 @@ export default function SaasPlansPage() {
           getPlans(),
           user ? getMySubscription() : Promise.resolve(null),
         ]);
-        setPlans(Array.isArray(plansData.data) ? plansData.data : []);
+        setPlans(Array.isArray(plansData) ? plansData : (plansData.data || []));
         setSubscription(subData?.subscription || null);
       } catch {
       } finally {

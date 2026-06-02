@@ -21,10 +21,10 @@ interface GuestBookingInput {
   phone?: string;
 }
 
-export const checkRutBlocked = async (rut: string): Promise<boolean> => {
+export const checkRutBlocked = async (rut: string, tenantId?: string): Promise<boolean> => {
   const result = await pool.query(
-    `SELECT blocked_until FROM users WHERE rut = $1`,
-    [rut]
+    `SELECT blocked_until FROM users WHERE rut = $1${tenantId ? ' AND tenant_id = $2' : ''}`,
+    tenantId ? [rut, tenantId] : [rut]
   );
   if (result.rows.length === 0) return false;
   if (!result.rows[0].blocked_until) return false;
@@ -39,9 +39,9 @@ export const createGuestBooking = async ({ doctor_id, date, time, duration = 30,
   if (!isValidDate(date)) throw new BadRequestError('Formato de fecha inválido');
   if (!isValidTime(time)) throw new BadRequestError('Formato de hora inválido');
 
-  const isBlocked = await checkRutBlocked(rut);
+  const isBlocked = await checkRutBlocked(rut, tenantId);
   if (isBlocked) {
-    const result = await pool.query(`SELECT blocked_until FROM users WHERE rut = $1`, [rut]);
+    const result = await pool.query(`SELECT blocked_until FROM users WHERE rut = $1${tenantId ? ' AND tenant_id = $2' : ''}`, tenantId ? [rut, tenantId] : [rut]);
     const blockedUntil = new Date(result.rows[0].blocked_until).toLocaleDateString('es-CL');
     throw new BadRequestError(`Tu RUT está bloqueado hasta el ${blockedUntil} por no confirmar citas anteriores.`);
   }

@@ -9,7 +9,7 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export const login = asyncHandler(async (req: Request, res: Response) => {
-  const data = await authService.login(req.body);
+  const data = await authService.login(req.body, req.tenant_id);
   res.json(data);
 });
 
@@ -53,7 +53,7 @@ export const changePassword = asyncHandler(async (req: Request, res: Response) =
     userId: req.user.id,
     currentPassword: req.body.current_password,
     newPassword: req.body.new_password,
-  });
+  }, req.tenant_id);
   res.json({ message: 'Password changed successfully' });
 });
 

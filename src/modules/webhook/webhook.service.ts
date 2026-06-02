@@ -137,10 +137,10 @@ const sleep = (ms: number): Promise<void> => new Promise(resolve => setTimeout(r
 const MAX_RETRIES = 3;
 const RETRY_DELAY_MS = 1000;
 
-export const dispatchEvent = async (event: string, payload: Record<string, unknown>): Promise<void> => {
+export const dispatchEvent = async (event: string, payload: Record<string, unknown>, tenantId?: string): Promise<void> => {
   const webhooks = await pool.query(
-    'SELECT * FROM webhooks WHERE active = true AND events @> $1',
-    [JSON.stringify([event])]
+    `SELECT * FROM webhooks WHERE active = true AND events @> $1${tenantId ? ' AND tenant_id = $2' : ''}`,
+    tenantId ? [JSON.stringify([event]), tenantId] : [JSON.stringify([event])]
   );
 
   for (const webhook of webhooks.rows) {

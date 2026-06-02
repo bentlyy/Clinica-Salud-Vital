@@ -139,7 +139,7 @@ const verifyCaptcha = async (token: string): Promise<boolean> => {
   }
 };
 
-export const login = async ({ email, password, totp_token, captcha_token }: LoginParams): Promise<{
+export const login = async ({ email, password, totp_token, captcha_token }: LoginParams, tenantId?: string): Promise<{
   access_token: string;
   refresh_token: string;
   user: { id: number; email: string; name: string | null; role: UserRole; rut: string | null; phone: string | null; password_changed: boolean; totp_enabled: boolean; tenant_id: string };
@@ -150,7 +150,7 @@ export const login = async ({ email, password, totp_token, captcha_token }: Logi
     throw new BadRequestError('CAPTCHA verification failed');
   }
 
-  const result = await pool.query<User>('SELECT * FROM users WHERE email = $1', [email]);
+  const result = await pool.query<User>(`SELECT * FROM users WHERE email = $1${tenantId ? ' AND tenant_id = $2' : ''}`, tenantId ? [email, tenantId] : [email]);
   const user = result.rows[0];
 
   const dummyHash = '$2b$12$LJ3m4ys3Lg3YOCwFfj5NOWJX0GqBiN3H0w5Cqx3z5Gq5X5z5P5Q5S';
@@ -270,10 +270,10 @@ export const logoutAll = async (userId: number): Promise<void> => {
   await revokeAllUserRefreshTokens(userId);
 };
 
-export const changePassword = async ({ userId, currentPassword, newPassword }: ChangePasswordParams): Promise<void> => {
+export const changePassword = async ({ userId, currentPassword, newPassword }: ChangePasswordParams, tenantId?: string): Promise<void> => {
   validatePassword(newPassword);
 
-  const userResult = await pool.query('SELECT password FROM users WHERE id = $1', [userId]);
+  const userResult = await pool.query(`SELECT password FROM users WHERE id = $1${tenantId ? ' AND tenant_id = $2' : ''}`, tenantId ? [userId, tenantId] : [userId]);
   if (!userResult.rows[0]) throw new BadRequestError('User not found');
 
   const isValid = await bcrypt.compare(currentPassword, userResult.rows[0].password);
@@ -281,8 +281,8 @@ export const changePassword = async ({ userId, currentPassword, newPassword }: C
 
   const hashedPassword = await bcrypt.hash(newPassword, 12);
   await pool.query(
-    'UPDATE users SET password = $1, password_changed = true WHERE id = $2',
-    [hashedPassword, userId]
+    `UPDATE users SET password = $1, password_changed = true WHERE id = $2${tenantId ? ' AND tenant_id = $3' : ''}`,
+    tenantId ? [hashedPassword, userId, tenantId] : [hashedPassword, userId]
   );
 
   await revokeAllUserRefreshTokens(userId);

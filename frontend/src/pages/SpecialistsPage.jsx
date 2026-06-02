@@ -58,8 +58,8 @@ export default function SpecialistsPage() {
           getDoctors(),
           getSpecialties(),
         ]);
-        setDoctors(docs);
-        setSpecialties(specs);
+        setDoctors(Array.isArray(docs) ? docs : []);
+        setSpecialties(Array.isArray(specs) ? specs : []);
       } catch {
         setError(t('specialists.error'));
       } finally {
