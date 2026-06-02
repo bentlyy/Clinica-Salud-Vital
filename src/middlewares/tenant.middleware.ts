@@ -21,13 +21,21 @@ export const tenantMiddleware = (req: Request, res: Response, next: NextFunction
   const tenantId = tenantHeader || extractTenantFromHost(host);
 
   if (tenantId && tenantId !== 'default') {
-    const tenant = tenantService.getByDomain(tenantId) || tenantService.getById(tenantId);
-    if (tenant) {
-      req.tenant_id = tenant.id;
-      req.locale = tenant.locale;
+    if (tenantHeader) {
+      /* X-Tenant-Id header: trust the client */
+      const tenant = tenantService.getById(tenantId) || tenantService.getByDomain(tenantId);
+      req.tenant_id = tenant ? tenant.id : tenantId;
+      req.locale = tenant ? tenant.locale : getLocaleFromRequest(req);
     } else {
-      req.tenant_id = tenantId;
-      req.locale = getLocaleFromRequest(req);
+      /* Extracted from hostname: only use if tenant exists, otherwise fall back */
+      const tenant = tenantService.getByDomain(tenantId) || tenantService.getById(tenantId);
+      if (tenant) {
+        req.tenant_id = tenant.id;
+        req.locale = tenant.locale;
+      } else {
+        req.tenant_id = process.env.DEFAULT_TENANT_ID || 'default';
+        req.locale = getLocaleFromRequest(req);
+      }
     }
   } else {
     req.tenant_id = process.env.DEFAULT_TENANT_ID || 'default';
