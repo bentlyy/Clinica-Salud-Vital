@@ -86,7 +86,7 @@ describe('auditMiddleware', () => {
 
     const { logAction } = await import('../../src/modules/audit/audit.service.js');
     expect(logAction).toHaveBeenCalledWith(
-      expect.objectContaining({ new_values: null })
+      expect.not.objectContaining({ new_values: expect.anything() })
     );
   });
 

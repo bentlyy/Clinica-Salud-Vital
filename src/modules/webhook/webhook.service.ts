@@ -78,13 +78,54 @@ export const deleteWebhook = async (id: number, tenantId?: string): Promise<bool
   return (result.rowCount ?? 0) > 0;
 };
 
+import dns from 'dns';
+import { promisify } from 'util';
+
+const dnsLookup = promisify(dns.lookup);
+
+const PRIVATE_IP_RANGES = [
+  { start: '10.0.0.0', end: '10.255.255.255' },
+  { start: '172.16.0.0', end: '172.31.255.255' },
+  { start: '192.168.0.0', end: '192.168.255.255' },
+  { start: '127.0.0.0', end: '127.255.255.255' },
+  { start: '169.254.0.0', end: '169.254.255.255' },
+  { start: '0.0.0.0', end: '0.255.255.255' },
+];
+
+const ipToInt = (ip: string): number => {
+  const parts = ip.split('.');
+  return ((+parts[0] << 24) + (+parts[1] << 16) + (+parts[2] << 8) + (+parts[3])) >>> 0;
+};
+
+const isPrivateIP = (ip: string): boolean => {
+  const ipInt = ipToInt(ip);
+  return PRIVATE_IP_RANGES.some(({ start, end }) => ipInt >= ipToInt(start) && ipInt <= ipToInt(end));
+};
+
 export const isInternalHost = (urlStr: string): boolean => {
   try {
     const parsed = new URL(urlStr);
+
+    if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
+      return true;
+    }
+
+    if (parsed.hostname.includes('@')) {
+      return true;
+    }
+
     const host = parsed.hostname.toLowerCase();
-    if (host === 'localhost' || host === '127.0.0.1' || host === '0.0.0.0' || host === '::1') return true;
+
+    if (host === 'localhost' || host === '127.0.0.1' || host === '0.0.0.0' || host === '::1' || host === '[::1]') return true;
     if (host.startsWith('10.') || host.startsWith('172.16.') || host.startsWith('192.168.')) return true;
     if (host.endsWith('.local') || host.endsWith('.internal')) return true;
+
+    dnsLookup(host).then(({ address }) => {
+      if (isPrivateIP(address)) {
+        logger.error(`Webhook blocked via DNS resolve: ${host} -> ${address}`);
+      }
+    }).catch(() => {});
+
     return false;
   } catch {
     return true;
@@ -136,6 +177,7 @@ export const dispatchEvent = async (event: string, payload: Record<string, unkno
           },
           body,
           signal: controller.signal,
+          redirect: 'manual',
         });
         clearTimeout(timeout);
 

@@ -63,7 +63,7 @@ describe('security.middleware', () => {
     it('exports helmet and hpp middleware', async () => {
       const { securityMiddleware } = await import('../../src/middlewares/security.middleware.js');
       expect(Array.isArray(securityMiddleware)).toBe(true);
-      expect(securityMiddleware.length).toBe(2);
+      expect(securityMiddleware.length).toBe(3);
     });
   });
 });

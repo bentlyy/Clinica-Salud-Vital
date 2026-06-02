@@ -1,5 +1,6 @@
 import { pool } from '../../shared/db.js';
 import { NotFoundError, BadRequestError } from '../../utils/errors.js';
+import { sanitizeText, sanitizeTextStrict } from '../../shared/sanitize.js';
 
 interface ClinicalRecordQuery {
   patient_id?: number;
@@ -124,7 +125,17 @@ export const createClinicalRecord = async (data: ClinicalRecordData, tenantId?: 
     const { patient_id, booking_id, chief_complaint, anamnesis, vital_signs, physical_exam, diagnosis, cie10_codes, treatment_plan, notes } = data;
 
     const columns = ['patient_id', 'doctor_id', 'booking_id', 'chief_complaint', 'anamnesis', 'vital_signs', 'physical_exam', 'diagnosis', 'cie10_codes', 'treatment_plan', 'notes'];
-    const insertValues: any[] = [patient_id, data.doctor_id, booking_id || null, chief_complaint, anamnesis || null, vital_signs ? JSON.stringify(vital_signs) : null, physical_exam || null, diagnosis || null, cie10_codes || null, treatment_plan || null, notes || null];
+    const insertValues: any[] = [
+      patient_id, data.doctor_id, booking_id || null,
+      sanitizeTextStrict(chief_complaint, 5000),
+      sanitizeTextStrict(anamnesis, 10000) || null,
+      vital_signs ? JSON.stringify(vital_signs) : null,
+      sanitizeTextStrict(physical_exam, 10000) || null,
+      sanitizeTextStrict(diagnosis, 5000) || null,
+      cie10_codes || null,
+      sanitizeTextStrict(treatment_plan, 10000) || null,
+      sanitizeTextStrict(notes, 10000) || null,
+    ];
 
     if (tenantId) {
       columns.push('tenant_id');

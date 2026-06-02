@@ -78,14 +78,19 @@ const allowedOrigins = [
 
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin) return callback(null, true);
+    if (!origin && process.env.NODE_ENV !== 'production') {
+      return callback(null, true);
+    }
+    if (!origin) {
+      return callback(null, false);
+    }
     if (allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
     }
   },
-  credentials: true,
+  credentials: false,
 }));
 
 app.use(compression());
@@ -114,8 +119,38 @@ const authLimiter = rateLimit({
   keyGenerator: (req) => req.ip || req.headers['x-forwarded-for'] as string || 'unknown',
 });
 
+const changePasswordLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many password change attempts, please try again later' },
+  keyGenerator: (req) => req.ip || req.headers['x-forwarded-for'] as string || 'unknown',
+});
+
+const twoFALimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many 2FA attempts, please try again later' },
+  keyGenerator: (req) => req.ip || req.headers['x-forwarded-for'] as string || 'unknown',
+});
+
+const logoutAllLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 2,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many logout-all attempts, please try again later' },
+  keyGenerator: (req) => req.ip || req.headers['x-forwarded-for'] as string || 'unknown',
+});
+
 const API_PREFIX = '/api/v1';
 
+app.use(`${API_PREFIX}/auth/change-password`, changePasswordLimiter);
+app.use(`${API_PREFIX}/auth/2fa`, twoFALimiter);
+app.use(`${API_PREFIX}/auth/logout-all`, logoutAllLimiter);
 app.use(`${API_PREFIX}/auth`, authLimiter, authRoutes);
 app.use(`${API_PREFIX}/doctors`, doctorRoutes);
 app.use(`${API_PREFIX}/bookings`, bookingRoutes);
@@ -137,6 +172,9 @@ app.use(`${API_PREFIX}/super-admin`, superAdminRoutes);
 app.use(`${API_PREFIX}/monitoring`, monitoringRoutes);
 
 /* Backward compat: /api/ → /api/v1/ */
+app.use('/api/auth/change-password', changePasswordLimiter);
+app.use('/api/auth/2fa', twoFALimiter);
+app.use('/api/auth/logout-all', logoutAllLimiter);
 app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/doctors', doctorRoutes);
 app.use('/api/bookings', bookingRoutes);

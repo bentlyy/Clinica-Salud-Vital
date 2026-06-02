@@ -179,5 +179,7 @@ export const downloadPrescriptionPDF = asyncHandler(async (req: Request, res: Re
 
   res.setHeader('Content-Type', 'application/pdf');
   res.setHeader('Content-Disposition', `attachment; filename=receta-${prescription.id}.pdf`);
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('Cache-Control', 'private, no-store, no-cache, must-revalidate');
   res.send(pdfBuffer);
 });
