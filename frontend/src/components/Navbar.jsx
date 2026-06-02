@@ -127,7 +127,7 @@ export default function Navbar() {
                     <span style={{ fontSize: 11, opacity: 0.6, marginLeft: 4 }}>· {user.tenant_id}</span>
                   )}
                 </span>
-                <button onClick={() => { logout(); window.location.href = '/'; }} className="btn btn-ghost btn-sm">
+                <button onClick={async () => { await logout(); window.location.href = '/'; }} className="btn btn-ghost btn-sm">
                   {t('nav.logout')}
                 </button>
               </div>
