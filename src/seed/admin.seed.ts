@@ -111,7 +111,7 @@ export const seedTestTenants = async (): Promise<void> => {
     );
 
     await pool.query(
-      'INSERT INTO users (email, password, name, role, rut, tenant_id) VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT (email) DO NOTHING',
+      'INSERT INTO users (email, password, name, role, rut, tenant_id) VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT (email) DO UPDATE SET name = EXCLUDED.name',
       [t.adminEmail, hash, t.name, 'admin', t.adminRut, t.id]
     );
 
