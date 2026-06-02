@@ -102,7 +102,7 @@ export default function Navbar() {
                 {locale.toUpperCase()}
               </button>
               {localeOpen && (
-                <div className="navbar-locale-menu" style={{ position: 'relative', zIndex: 100 }}>
+                <div className="navbar-locale-menu">
                   {locales.map((l) => (
                     <button key={l.code} className="btn btn-ghost btn-sm" style={{ width: '100%', borderRadius: 0 }}
                       onClick={() => { setStoredLocale(l.code); setLocaleOpen(false); setMobileOpen(false); }}>
