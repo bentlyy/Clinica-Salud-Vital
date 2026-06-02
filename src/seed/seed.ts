@@ -2,6 +2,8 @@ import { pool } from '../shared/db.js';
 import bcrypt from 'bcrypt';
 import { logger } from '../utils/logger.js';
 
+const DEFAULT_TENANT_ID = process.env.DEFAULT_TENANT_ID || 'default';
+
 let _HASH: string | null = null;
 const getHash = async (): Promise<string> => {
   if (!_HASH) _HASH = await bcrypt.hash('REPLACED_PASSWORD', 12);
@@ -44,7 +46,7 @@ const today = new Date();
 
 export const seed = async (): Promise<void> => {
   const HASH = await getHash();
-  const exists = await pool.query('SELECT 1 FROM users WHERE role = $1 LIMIT 1', ['admin']);
+  const exists = await pool.query('SELECT 1 FROM users WHERE email = $1 LIMIT 1', ['admin@clinic.com']);
   if (exists.rows.length > 0) {
     // Asegurar pacientes simples incluso si el seed ya se ejecutó
     const simplePatients = [
@@ -54,8 +56,8 @@ export const seed = async (): Promise<void> => {
     ];
     for (const p of simplePatients) {
       await pool.query(
-        'INSERT INTO users (email, password, name, role, rut, phone) VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT (email) DO NOTHING',
-        [p.email, HASH, p.email.split('@')[0], 'user', p.rut, p.phone]
+        'INSERT INTO users (email, password, name, role, rut, phone, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (email) DO NOTHING',
+        [p.email, HASH, p.email.split('@')[0], 'user', p.rut, p.phone, DEFAULT_TENANT_ID]
       );
     }
     logger.info('Seed ya ejecutado');
@@ -65,8 +67,8 @@ export const seed = async (): Promise<void> => {
   // ==================== USERS ====================
 
   const adminResult = await pool.query(
-    'INSERT INTO users (email, password, name, role, rut, phone) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id',
-    ['admin@clinic.com', HASH, 'Admin', 'admin', generateRut(), '+56987654321']
+    'INSERT INTO users (email, password, name, role, rut, phone, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id',
+    ['admin@clinic.com', HASH, 'Admin', 'admin', generateRut(), '+56987654321', DEFAULT_TENANT_ID]
   );
   const adminId = adminResult.rows[0].id;
 
@@ -96,14 +98,14 @@ export const seed = async (): Promise<void> => {
 
   for (const doc of doctorsData) {
     const userResult = await pool.query(
-      'INSERT INTO users (email, password, name, role, rut, phone) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id',
-      [doc.email, HASH, doc.name, 'doctor', generateRut(), '+569' + String(randomInt(10000000, 99999999))]
+      'INSERT INTO users (email, password, name, role, rut, phone, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id',
+      [doc.email, HASH, doc.name, 'doctor', generateRut(), '+569' + String(randomInt(10000000, 99999999)), DEFAULT_TENANT_ID]
     );
     const userId = userResult.rows[0].id;
 
     const doctorResult = await pool.query(
-      'INSERT INTO doctors (name, specialty, email, user_id) VALUES ($1, $2, $3, $4) RETURNING id',
-      [doc.name, doc.specialty, doc.email, userId]
+      'INSERT INTO doctors (name, specialty, email, user_id, tenant_id) VALUES ($1, $2, $3, $4, $5) RETURNING id',
+      [doc.name, doc.specialty, doc.email, userId, DEFAULT_TENANT_ID]
     );
     const doctorId = doctorResult.rows[0].id;
 
@@ -112,12 +114,12 @@ export const seed = async (): Promise<void> => {
 
     for (let day = 1; day <= 5; day++) {
       await pool.query(
-        'INSERT INTO doctor_availability (doctor_id, day_of_week, start_time, end_time) VALUES ($1, $2, $3, $4)',
-        [doctorId, day, '09:00', '13:00']
+        'INSERT INTO doctor_availability (doctor_id, day_of_week, start_time, end_time, tenant_id) VALUES ($1, $2, $3, $4, $5)',
+        [doctorId, day, '09:00', '13:00', DEFAULT_TENANT_ID]
       );
       await pool.query(
-        'INSERT INTO doctor_availability (doctor_id, day_of_week, start_time, end_time) VALUES ($1, $2, $3, $4)',
-        [doctorId, day, '14:00', '18:00']
+        'INSERT INTO doctor_availability (doctor_id, day_of_week, start_time, end_time, tenant_id) VALUES ($1, $2, $3, $4, $5)',
+        [doctorId, day, '14:00', '18:00', DEFAULT_TENANT_ID]
       );
     }
   }
@@ -144,8 +146,8 @@ export const seed = async (): Promise<void> => {
   for (const pName of patientNames) {
     const email = pName.toLowerCase().replace(/\s+/g, '.') + '@clinic.com';
     const userResult = await pool.query(
-      'INSERT INTO users (email, password, name, role, rut, phone) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id',
-      [email, HASH, pName, 'user', generateRut(), '+569' + String(randomInt(10000000, 99999999))]
+      'INSERT INTO users (email, password, name, role, rut, phone, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id',
+      [email, HASH, pName, 'user', generateRut(), '+569' + String(randomInt(10000000, 99999999)), DEFAULT_TENANT_ID]
     );
     patients.push({ id: userResult.rows[0].id, name: pName, email });
   }
@@ -160,8 +162,8 @@ export const seed = async (): Promise<void> => {
   ];
   for (const p of simplePatients) {
     await pool.query(
-      'INSERT INTO users (email, password, name, role, rut, phone) VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT (email) DO NOTHING',
-      [p.email, HASH, p.email.split('@')[0], 'user', p.rut, p.phone]
+      'INSERT INTO users (email, password, name, role, rut, phone, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (email) DO NOTHING',
+      [p.email, HASH, p.email.split('@')[0], 'user', p.rut, p.phone, DEFAULT_TENANT_ID]
     );
   }
 
@@ -180,14 +182,15 @@ export const seed = async (): Promise<void> => {
       ? addDays(today, -ex.daysAgo)
       : addDays(today, ex.daysFromNow ?? 0);
     await pool.query(
-      `INSERT INTO doctor_exceptions (doctor_id, date, start_time, end_time, is_full_day)
-       VALUES ($1, $2, $3, $4, $5)`,
+      `INSERT INTO doctor_exceptions (doctor_id, date, start_time, end_time, is_full_day, tenant_id)
+       VALUES ($1, $2, $3, $4, $5, $6)`,
       [
         doctors[ex.doctorIdx].id,
         formatDate(date),
         ex.start || null,
         ex.end || null,
         ex.fullDay,
+        DEFAULT_TENANT_ID,
       ]
     );
   }
@@ -212,8 +215,8 @@ export const seed = async (): Promise<void> => {
 
     try {
       const result = await pool.query(
-        `INSERT INTO bookings (doctor_id, user_id, date, time, duration, status, confirmed)
-         VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
+        `INSERT INTO bookings (doctor_id, user_id, date, time, duration, status, confirmed, tenant_id)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`,
         [
           doctor.id,
           patient.id,
@@ -222,6 +225,7 @@ export const seed = async (): Promise<void> => {
           30,
           status,
           status === 'confirmed' || status === 'completed',
+          DEFAULT_TENANT_ID,
         ]
       );
       bookingIds.push(result.rows[0].id);
@@ -239,8 +243,8 @@ export const seed = async (): Promise<void> => {
 
     try {
       const result = await pool.query(
-        `INSERT INTO bookings (doctor_id, user_id, date, time, duration, status, confirmed)
-         VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
+        `INSERT INTO bookings (doctor_id, user_id, date, time, duration, status, confirmed, tenant_id)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`,
         [
           doctor.id,
           patient.id,
@@ -249,6 +253,7 @@ export const seed = async (): Promise<void> => {
           30,
           confirmed ? 'confirmed' : 'pending',
           confirmed,
+          DEFAULT_TENANT_ID,
         ]
       );
       bookingIds.push(result.rows[0].id);
@@ -304,8 +309,8 @@ export const seed = async (): Promise<void> => {
     const diagnosis = pick(diagnoses);
     try {
       const result = await pool.query(
-        `INSERT INTO clinical_records (patient_id, doctor_id, booking_id, chief_complaint, anamnesis, diagnosis, cie10_codes, treatment_plan, vital_signs, status)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'completed') RETURNING id`,
+        `INSERT INTO clinical_records (patient_id, doctor_id, booking_id, chief_complaint, anamnesis, diagnosis, cie10_codes, treatment_plan, vital_signs, status, tenant_id)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'completed', $10) RETURNING id`,
         [
           user_id,
           doctor_id,
@@ -322,6 +327,7 @@ export const seed = async (): Promise<void> => {
             weight: randomInt(55, 95),
             height: randomInt(150, 190),
           }),
+          DEFAULT_TENANT_ID,
         ]
       );
       clinicalRecordIds.push(result.rows[0].id);
@@ -345,15 +351,16 @@ export const seed = async (): Promise<void> => {
     for (let m = 0; m < medCount; m++) {
       try {
         await pool.query(
-          `INSERT INTO prescriptions (clinical_record_id, medication, dosage, frequency, duration, instructions)
-           VALUES ($1, $2, $3, $4, $5, $6)`,
-          [
+          `INSERT INTO prescriptions (clinical_record_id, medication, dosage, frequency, duration, instructions, tenant_id)
+           VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+           [
             crId,
             pick(medications),
             pick(['1 comprimido', '2 comprimidos', '1 cápsula', '5ml', '1 aplicación']),
             pick(['cada 8 horas', 'cada 12 horas', 'cada 24 horas', '3 veces al día']),
             pick(['7 días', '10 días', '14 días', '30 días']),
             pick(['Tomar con alimentos', 'Tomar en ayunas', 'Evitar alcohol durante el tratamiento']),
+            DEFAULT_TENANT_ID,
           ]
         );
         prescriptionCount++;
@@ -382,8 +389,8 @@ export const seed = async (): Promise<void> => {
     const tax = Math.round(amount * 0.19 * 100) / 100;
     try {
       const invResult = await pool.query(
-        `INSERT INTO invoices (invoice_number, patient_id, doctor_id, booking_id, concept, description, amount, tax_amount, discount_amount, total_amount, due_date, status, created_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING id`,
+        `INSERT INTO invoices (invoice_number, patient_id, doctor_id, booking_id, concept, description, amount, tax_amount, discount_amount, total_amount, due_date, status, created_at, tenant_id)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING id`,
         [
           'INV-' + today.getFullYear() + '-' + String(invoiceCount + 1).padStart(5, '0'),
           user_id,
@@ -398,6 +405,7 @@ export const seed = async (): Promise<void> => {
           formatDate(addDays(today, randomInt(-30, 30))),
           pick(['pending', 'paid', 'paid', 'paid', 'cancelled']),
           formatDate(addDays(today, -randomInt(1, 60))),
+          DEFAULT_TENANT_ID,
         ]
       );
       invoiceCount++;
@@ -420,17 +428,17 @@ export const seed = async (): Promise<void> => {
       const { patient_id, doctor_id } = cr.rows[0];
 
       const lrResult = await pool.query(
-        `INSERT INTO lab_requests (patient_id, doctor_id, clinical_record_id, status, notes)
-         VALUES ($1, $2, $3, $4, $5) RETURNING id`,
-        [patient_id, doctor_id, crId, pick(['pending', 'in_progress', 'completed']), 'Exámenes de rutina']
+        `INSERT INTO lab_requests (patient_id, doctor_id, clinical_record_id, status, notes, tenant_id)
+         VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
+        [patient_id, doctor_id, crId, pick(['pending', 'in_progress', 'completed']), 'Exámenes de rutina', DEFAULT_TENANT_ID]
       );
       const lrId = lrResult.rows[0].id;
 
       const testCount = randomInt(2, 4);
       for (let t = 0; t < testCount; t++) {
         await pool.query(
-          `INSERT INTO lab_request_items (lab_request_id, lab_test_id, priority, status, results)
-           VALUES ($1, $2, $3, $4, $5)`,
+          `INSERT INTO lab_request_items (lab_request_id, lab_test_id, priority, status, results, tenant_id)
+           VALUES ($1, $2, $3, $4, $5, $6)`,
           [
             lrId,
             randomInt(1, 9),
@@ -452,8 +460,8 @@ export const seed = async (): Promise<void> => {
   for (let i = 0; i < 50; i++) {
     try {
       await pool.query(
-        `INSERT INTO audit_logs (user_id, action, entity_type, entity_id, ip_address, created_at)
-         VALUES ($1, $2, $3, $4, $5, $6)`,
+      `INSERT INTO audit_logs (user_id, action, entity_type, entity_id, ip_address, created_at, tenant_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
         [
           pick(patients.concat(doctors.map(d => ({ id: d.userId, name: '', email: '' })))).id,
           pick(actions),
@@ -461,6 +469,7 @@ export const seed = async (): Promise<void> => {
           randomInt(1, 100),
           '192.168.1.' + randomInt(1, 255),
           formatDate(addDays(today, -randomInt(1, 30))),
+          DEFAULT_TENANT_ID,
         ]
       );
     } catch {
@@ -471,13 +480,14 @@ export const seed = async (): Promise<void> => {
   for (let d = 0; d < 14; d++) {
     try {
       await pool.query(
-        `INSERT INTO ml_demand_forecast (date, predicted_demand, actual_demand, confidence)
-         VALUES ($1, $2, $3, $4)`,
+        `INSERT INTO ml_demand_forecast (date, predicted_demand, actual_demand, confidence, tenant_id)
+         VALUES ($1, $2, $3, $4, $5)`,
         [
           formatDate(addDays(today, d)),
           randomInt(15, 40),
           d < 7 ? randomInt(15, 40) : null,
           Math.round(Math.random() * 30 + 70),
+          DEFAULT_TENANT_ID,
         ]
       );
     } catch {
@@ -501,7 +511,8 @@ export const backfillInvoices = async (): Promise<void> => {
     `SELECT b.id, b.user_id, b.doctor_id, b.date
      FROM bookings b
      LEFT JOIN invoices i ON i.booking_id = b.id
-     WHERE i.id IS NULL AND b.user_id IS NOT NULL`
+     WHERE i.id IS NULL AND b.user_id IS NOT NULL AND (b.tenant_id IS NULL OR b.tenant_id = $1)`,
+    [DEFAULT_TENANT_ID]
   );
 
   let count = 0;
@@ -510,8 +521,8 @@ export const backfillInvoices = async (): Promise<void> => {
     const tax = Math.round(amount * 0.19 * 100) / 100;
     try {
       await pool.query(
-        `INSERT INTO invoices (invoice_number, patient_id, doctor_id, booking_id, concept, description, amount, tax_amount, discount_amount, total_amount, due_date, status, created_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
+        `INSERT INTO invoices (invoice_number, patient_id, doctor_id, booking_id, concept, description, amount, tax_amount, discount_amount, total_amount, due_date, status, created_at, tenant_id)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`,
         [
           'INV-' + today.getFullYear() + '-' + String(nextSeq++).padStart(5, '0'),
           row.user_id,
@@ -526,6 +537,7 @@ export const backfillInvoices = async (): Promise<void> => {
           formatDate(addDays(today, randomInt(-30, 30))),
           pickOne(['pending', 'paid', 'paid', 'paid', 'cancelled']),
           formatDate(addDays(today, -randomInt(1, 60))),
+          DEFAULT_TENANT_ID,
         ]
       );
       count++;
