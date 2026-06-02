@@ -48,7 +48,8 @@ npm run dev
    - **Health Check Path**: `/health`
 3. Variables de entorno requeridas (ver `render.yaml`):
    - `DATABASE_URL`, `JWT_SECRET`, `FRONTEND_URL`
-   - `EMAIL_USER`, `EMAIL_PASS`
+   - `SENDGRID_API_KEY` (principal) o `EMAIL_USER`, `EMAIL_PASS` (fallback Gmail SMTP)
+   - `RECAPTCHA_SECRET_KEY`, `VITE_RECAPTCHA_SITE_KEY`
    - `TOTP_ISSUER`, `SMS_PROVIDER`, `DEFAULT_TENANT_ID`, `APP_LOCALE`
 
 ### Comandos Disponibles
@@ -90,6 +91,7 @@ npm run dev
 | **Seguridad** | Helmet, HPP, express-rate-limit | — |
 | **Multi-tenancy** | Por subdominio / X-Tenant-Id header | — |
 | **Internacionalización** | es / en / pt / fr | — |
+| **reCAPTCHA** | react-google-recaptcha (v2 checkbox) | 3.x |
 
 ---
 
@@ -263,7 +265,7 @@ Request → Helmet → Tenant → CORS → Compression → JSON(100kb) → Logge
 
 | Función | Endpoint | Acceso | Descripción |
 |---------|----------|--------|-------------|
-| `createBooking` | `POST /api/v1/bookings` | user | Crea reserva con advisory lock. Verifica disponibilidad, excepciones, overlapping. Envía email confirmación con JWT token (7d). |
+| `createBooking` | `POST /api/v1/bookings` | user | Crea reserva con advisory lock. Verifica disponibilidad, excepciones, overlapping. Auto-confirmado (`confirmed=true`). Envía email notificación. |
 | `getMyBookings` | `GET /api/v1/bookings/me` | user | Lista paginada de reservas del usuario. |
 | `cancelBooking` | `DELETE /api/v1/bookings/:id` | user | Cancela (status=cancelled). Verifica ownership. |
 | `getAvailableSlots` | `GET /api/v1/bookings/available-slots?doctor_id=&date=` | Público | Calcula slots disponibles (duración, disponibilidad semanal, excepciones, bookings existentes). |
@@ -278,6 +280,8 @@ Request → Helmet → Tenant → CORS → Compression → JSON(100kb) → Logge
 | `registerDoctor` | `POST /api/v1/doctors/register` | admin | Crea usuario + perfil + disponibilidad default (Lun-Vie 9-17). Password aleatorio 12 chars. Envía credenciales por email. |
 | `createDoctor` | `POST /api/v1/doctors` | admin | Crea doctor para usuario existente (role=doctor). |
 | `getMyDoctorProfile` | `GET /api/v1/doctors/me` | doctor | Perfil del doctor autenticado. |
+| `listUsers` | `GET /api/v1/doctors/users` | admin | Lista usuarios del tenant (paginado, filtro por rol/búsqueda). |
+| `toggleUserActive` | `PATCH /api/v1/doctors/users/:id/active` | admin | Activa/desactiva usuario (toggle `active`). |
 
 ### 4. Availability (`src/modules/availability/`)
 
@@ -427,15 +431,16 @@ Request → Helmet → Tenant → CORS → Compression → JSON(100kb) → Logge
 
 | Tipo | Canal | Disparador |
 |------|-------|------------|
-| **Confirmación booking** | Email | Al crear reserva (usuario registrado) |
-| **Confirmación guest** | Email | Al crear reserva como invitado |
+| **Notificación booking** | Email | Al crear reserva (usuario registrado) |
+| **Notificación guest** | Email | Al crear reserva como invitado |
 | **Credenciales doctor** | Email | Al registrar nuevo doctor |
 | **Recordatorio 24h** | Email / SMS | Cron cada 5 min |
 | **Recordatorio 1h** | Email / SMS | Cron cada 5 min |
 
 - Servicio unificado `notification.service.ts` (email + sms + whatsapp)
 - SMS: Twilio (producción) / log (desarrollo)
-- Email: Nodemailer Gmail SMTP + SendGrid
+- Email: SendGrid (principal) + Nodemailer Gmail SMTP (fallback)
+- Per-tenant from name/address via `tenants.config.email_from_name` / `email_from_address`
 
 ---
 
@@ -529,7 +534,7 @@ tests/
 
 | Lines | **89.1%** | 50% |
 
-**1121 tests** · 93 test files · 0 fallos
+**1122 tests** · 93 test files · 0 fallos
 
 ### Herramientas
 - **Framework:** Vitest 4.x
@@ -655,7 +660,12 @@ Stack solo en desarrollo.
 - Webhook secrets auto-generated (32 bytes hex) if not provided
 - 2FA uses TOTP with 30s window and ±1 step tolerance
 - Webhooks only mounted under `/api/v1/webhooks` (no `/api/webhooks` backward compat)
-
+- **Booking auto-confirm**: `confirmed=true` al crear — el email es solo notificación, no requiere clic
+- **SendGrid**: Provider principal si `SENDGRID_API_KEY` está definida; fallback a Gmail SMTP
+- **reCAPTCHA v2**: CSP permite `https://www.google.com/recaptcha/` y `https://www.gstatic.com/recaptcha/` en script-src y frame-src
+- **Auth persistence**: Al montar app, solo restaura sesión si access token NO expiró (15 min ventana); si expiró limpia localStorage
+- **Logout**: Limpia localStorage síncronamente ANTES de la llamada API para evitar race condition
+- **RegisterPage.jsx**: Incluye campo `name` en estado y body
 ---
 
 ## Licencia
