@@ -165,7 +165,7 @@ describe('authService.login', () => {
     mockQuery.mockResolvedValueOnce({ rows: [] });
     bcrypt.compare.mockResolvedValueOnce(false);
 
-    await expect(authService.login({ email: 'noexist@test.com', password: validPassword }))
+    await expect(authService.login({ email: 'noexist@test.com', password: validPassword, captcha_token: 'test-captcha' }))
       .rejects.toThrow('Invalid credentials');
   });
 
@@ -175,7 +175,7 @@ describe('authService.login', () => {
     });
     bcrypt.compare.mockResolvedValueOnce(false);
 
-    await expect(authService.login({ email: 'test@test.com', password: 'WrongPass1!' }))
+    await expect(authService.login({ email: 'test@test.com', password: 'WrongPass1!', captcha_token: 'test-captcha' }))
       .rejects.toThrow('Invalid credentials');
   });
 
@@ -185,7 +185,7 @@ describe('authService.login', () => {
     });
     bcrypt.compare.mockResolvedValueOnce(true);
 
-    const result = await authService.login({ email: 'test@test.com', password: validPassword });
+    const result = await authService.login({ email: 'test@test.com', password: validPassword, captcha_token: 'test-captcha' });
 
     expect(result.access_token).toBeDefined();
     expect(result.user.id).toBe(1);
@@ -199,7 +199,7 @@ describe('authService.login', () => {
     });
     bcrypt.compare.mockResolvedValueOnce(true);
 
-    const result = await authService.login({ email: 'test@test.com', password: validPassword });
+    const result = await authService.login({ email: 'test@test.com', password: validPassword, captcha_token: 'test-captcha' });
 
     expect(result.user.role).toBe('user');
   });
@@ -210,7 +210,7 @@ describe('authService.login', () => {
     });
     bcrypt.compare.mockResolvedValueOnce(true);
 
-    await expect(authService.login({ email: '2fa@test.com', password: validPassword }))
+    await expect(authService.login({ email: '2fa@test.com', password: validPassword, captcha_token: 'test-captcha' }))
       .rejects.toThrow('2FA token required');
   });
 
@@ -221,7 +221,7 @@ describe('authService.login', () => {
     });
     bcrypt.compare.mockResolvedValueOnce(true);
 
-    await expect(authService.login({ email: '2fa@test.com', password: validPassword, totp_token: '000000' }))
+    await expect(authService.login({ email: '2fa@test.com', password: validPassword, totp_token: '000000', captcha_token: 'test-captcha' }))
       .rejects.toThrow('Invalid 2FA token');
   });
 
@@ -233,7 +233,7 @@ describe('authService.login', () => {
     bcrypt.compare.mockResolvedValueOnce(true);
     mockQuery.mockResolvedValueOnce({ rows: [] });
 
-    const result = await authService.login({ email: '2fa@test.com', password: validPassword, totp_token: '123456' });
+    const result = await authService.login({ email: '2fa@test.com', password: validPassword, totp_token: '123456', captcha_token: 'test-captcha' });
 
     expect(result.access_token).toBeDefined();
     expect(mockVerify2FAToken).toHaveBeenCalledWith('SECRET', '123456');
@@ -246,7 +246,7 @@ describe('authService.login', () => {
     bcrypt.compare.mockResolvedValueOnce(true);
     mockQuery.mockResolvedValueOnce({ rows: [] });
 
-    const result = await authService.login({ email: 'partial@test.com', password: validPassword });
+    const result = await authService.login({ email: 'partial@test.com', password: validPassword, captcha_token: 'test-captcha' });
 
     expect(result.user.password_changed).toBe(false);
     expect(result.user.totp_enabled).toBe(false);
@@ -259,7 +259,7 @@ describe('authService.login', () => {
     bcrypt.compare.mockResolvedValueOnce(true);
     mockQuery.mockResolvedValueOnce({ rows: [] });
 
-    const result = await authService.login({ email: 'notenant@test.com', password: validPassword });
+    const result = await authService.login({ email: 'notenant@test.com', password: validPassword, captcha_token: 'test-captcha' });
 
     expect(result.user.tenant_id).toBe('default');
   });

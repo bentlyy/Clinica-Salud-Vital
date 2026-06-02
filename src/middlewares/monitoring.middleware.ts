@@ -101,12 +101,7 @@ class MonitoringService {
   }
 
   getGCMetrics() {
-    let gcCount = 0;
-    let gcTime = 0;
-    if (global.gc) {
-      try { global.gc(); } catch { /* noop */ }
-    }
-    return { gcCount, gcTime };
+    return { gcCount: 0, gcTime: 0 };
   }
 
   checkThresholds(current: MemorySnapshot) {
@@ -162,18 +157,14 @@ class MonitoringService {
     }, 30000);
 
     this.gcInterval = setInterval(() => {
-      if (global.gc) {
-        try {
-          global.gc();
-          logger.debug('[Monitoring] Manual GC triggered');
-        } catch { /* noop */ }
-      }
+      logger.debug('[Monitoring] GC check skipped (manual GC disabled)');
     }, 300000);
   }
 
   stop() {
     if (this.checkInterval) clearInterval(this.checkInterval);
     if (this.gcInterval) clearInterval(this.gcInterval);
+    this.gcInterval = null;
   }
 }
 
