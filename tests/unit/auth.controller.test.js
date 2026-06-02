@@ -50,7 +50,7 @@ describe('login', () => {
     authController.login(req, res, vi.fn());
     await flush();
 
-    expect(authService.login).toHaveBeenCalledWith({ email: 'test@test.com', password: 'Pass1!' });
+    expect(authService.login).toHaveBeenCalledWith({ email: 'test@test.com', password: 'Pass1!' }, undefined);
     expect(res.json).toHaveBeenCalledWith({ token: 'abc', user: { id: 1 } });
   });
 });
@@ -159,7 +159,7 @@ describe('changePassword', () => {
 
     expect(authService.changePassword).toHaveBeenCalledWith({
       userId: 1, currentPassword: 'old', newPassword: 'NewPass1!',
-    });
+    }, undefined);
     expect(res.json).toHaveBeenCalledWith({ message: 'Password changed successfully' });
   });
 });
