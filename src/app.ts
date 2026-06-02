@@ -9,7 +9,7 @@ import fs from 'fs';
 import { seed, backfillInvoices } from './seed/seed.js';
 import { pool } from './shared/db.js';
 import { tenantService } from './shared/multi-tenant.service.js';
-import { seedDefaultTenant } from './seed/admin.seed.js';
+import { seedDefaultTenant, seedSuperAdmin, seedTestTenants } from './seed/admin.seed.js';
 import { startReminderJob } from './jobs/reminder.job.js';
 import { startConfirmationJob } from './jobs/confirmation.job.js';
 import { securityMiddleware, validateEnvSecurity } from './middlewares/security.middleware.js';
@@ -275,6 +275,8 @@ const startServer = async (): Promise<void> => {
 
     await tenantService.loadFromDB();
     await seedDefaultTenant();
+    await seedSuperAdmin();
+    await seedTestTenants();
     tenantService.startRefresh();
 
     await seed();
