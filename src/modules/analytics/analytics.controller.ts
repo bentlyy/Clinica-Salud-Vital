@@ -3,10 +3,9 @@ import * as doctorService from '../doctor/doctor.service.js';
 import { asyncHandler } from '../../middlewares/asyncHandler.middleware.js';
 import { NotFoundError } from '../../utils/errors.js';
 import { getQueryInt } from '../../shared/query.js';
-import type { AuthRequest } from '../../middlewares/auth.middleware.js';
 
-const resolveTenantId = (req: AuthRequest): string | undefined => {
-  if (req.query.all === 'true' && req.user?.role === 'superadmin') return undefined;
+const resolveTenantId = (req: any): string | undefined => {
+  if (req.query?.all === 'true' && req.user?.role === 'superadmin') return undefined;
   return req.tenant_id;
 };
 
