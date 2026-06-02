@@ -1,7 +1,7 @@
 import * as XLSX from 'xlsx';
 import * as analyticsService from './analytics.service.js';
 
-export const generateAnalyticsExcel = async (): Promise<Buffer> => {
+export const generateAnalyticsExcel = async (tenantId?: string): Promise<Buffer> => {
   const wb = XLSX.utils.book_new();
 
   const [
@@ -15,15 +15,15 @@ export const generateAnalyticsExcel = async (): Promise<Buffer> => {
     schedules,
     vitals,
   ] = await Promise.all([
-    analyticsService.getDashboardStats().catch(() => ({})),
-    analyticsService.getBookingsByMonth(12).catch(() => []),
-    analyticsService.getTopDoctors(50).catch(() => []),
-    analyticsService.getBookingStatusDistribution().catch(() => []),
-    analyticsService.getNoShowsByDoctor().catch(() => []),
-    analyticsService.getDiagnoses().catch(() => []),
-    analyticsService.getDemandForecast(90).catch(() => []),
-    analyticsService.getOptimalSchedules().catch(() => []),
-    analyticsService.getVitalSignsAnomalies().catch(() => []),
+    analyticsService.getDashboardStats(tenantId).catch(() => ({})),
+    analyticsService.getBookingsByMonth(12, tenantId).catch(() => []),
+    analyticsService.getTopDoctors(50, tenantId).catch(() => []),
+    analyticsService.getBookingStatusDistribution(tenantId).catch(() => []),
+    analyticsService.getNoShowsByDoctor(tenantId).catch(() => []),
+    analyticsService.getDiagnoses(tenantId).catch(() => []),
+    analyticsService.getDemandForecast(90, tenantId).catch(() => []),
+    analyticsService.getOptimalSchedules(tenantId).catch(() => []),
+    analyticsService.getVitalSignsAnomalies(tenantId).catch(() => []),
   ]);
 
   addSheet(wb, 'Dashboard', [
