@@ -759,6 +759,11 @@ const predictWithStatistical = (
     const seasonal = seasonality[dayOfWeek] || 1.0;
     
     const predicted = Math.round((ma7 + trend * 7) * seasonal);
+    if (isNaN(predicted) || !isFinite(predicted)) {
+      results.push({ value: Math.max(1, Math.round(avg || 10)), method: 'fallback' });
+      history.push(avg || 10);
+      continue;
+    }
     results.push({ value: Math.max(1, predicted), method: 'moving_average' });
     history.push(predicted);
   }

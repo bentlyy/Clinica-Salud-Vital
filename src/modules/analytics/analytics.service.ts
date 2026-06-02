@@ -172,7 +172,7 @@ export const getDemandForecast = async (days = 30, tenantId?: string) => {
   const tenantFilter = tenantId ? ' AND tenant_id = $2' : '';
   const params = tenantId ? [days, tenantId] : [days];
   try {
-    const forecast = await mlService.forecastDemand(days);
+    const forecast = await mlService.forecastDemand(days, tenantId);
 
     const result = await pool.query(`
       SELECT
@@ -207,9 +207,9 @@ export const getDemandForecast = async (days = 30, tenantId?: string) => {
   }
 };
 
-export const getOptimalSchedules = async (_tenantId?: string) => {
+export const getOptimalSchedules = async (tenantId?: string) => {
   try {
-    const schedules = await mlService.analyzeOptimalSchedules();
+    const schedules = await mlService.analyzeOptimalSchedules(tenantId);
     return schedules.map(s => ({
       day: s.day,
       bestTime: s.bestTime,
@@ -236,7 +236,7 @@ export const getOptimalSchedules = async (_tenantId?: string) => {
   }
 };
 
-export const getVitalSignsAnomalies = async (_tenantId?: string) => {
+export const getVitalSignsAnomalies = async (tenantId?: string) => {
   try {
     const result = await pool.query(`
       SELECT 
@@ -249,11 +249,12 @@ export const getVitalSignsAnomalies = async (_tenantId?: string) => {
       FROM clinical_records cr
       WHERE cr.vital_signs IS NOT NULL
         AND cr.created_at >= NOW() - INTERVAL '30 days'
+        ${tenantId ? 'AND cr.tenant_id = $1' : ''}
       ORDER BY cr.created_at DESC
       LIMIT 50
-    `);
+    `, tenantId ? [tenantId] : []);
 
-    await mlService.trainVitalSignsAnomalyDetector();
+    await mlService.trainVitalSignsAnomalyDetector(tenantId);
 
     const analyzed = await Promise.all(result.rows.map(async (row: VitalSignRow) => {
       const vs: VitalSignsInput = {
@@ -261,7 +262,7 @@ export const getVitalSignsAnomalies = async (_tenantId?: string) => {
         heartRate: row.heartRate,
         temperature: row.temperature
       };
-      const mlResult = await mlService.analyzeVitalSigns(vs);
+      const mlResult = await mlService.analyzeVitalSigns(vs, tenantId);
       return {
         patientId: row.patientId,
         date: row.date,
