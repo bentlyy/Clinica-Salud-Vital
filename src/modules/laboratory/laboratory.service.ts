@@ -77,8 +77,8 @@ export const createLabRequest = async (data: { patient_id: number; doctor_id?: n
         if (testResult.rows.length === 0) throw new BadRequestError('Lab test ' + test_id + ' not found or inactive');
 
         await client.query(
-          'INSERT INTO lab_request_items (lab_request_id, lab_test_id) VALUES ($1, $2)',
-          [request.id, test_id]
+          `INSERT INTO lab_request_items (lab_request_id, lab_test_id${tenantId ? ', tenant_id' : ''}) VALUES ($1, $2${tenantId ? ', $3' : ''})`,
+          tenantId ? [request.id, test_id, tenantId] : [request.id, test_id]
         );
       }
     }
@@ -150,10 +150,10 @@ export const getLabRequestById = async (requestId: number | string, tenantId?: s
   return result.rows[0];
 };
 
-export const updateLabRequestItemResult = async (itemId: number | string, result_value: string, result_notes?: string) => {
+export const updateLabRequestItemResult = async (itemId: number | string, result_value: string, result_notes?: string, tenantId?: string) => {
   const result = await pool.query(
-    'UPDATE lab_request_items SET result_value = $1, result_notes = $2, updated_at = NOW() WHERE id = $3 RETURNING *',
-    [result_value, result_notes || null, itemId]
+    `UPDATE lab_request_items SET result_value = $1, result_notes = $2, updated_at = NOW() WHERE id = $3${tenantId ? ' AND tenant_id = $4' : ''} RETURNING *`,
+    tenantId ? [result_value, result_notes || null, itemId, tenantId] : [result_value, result_notes || null, itemId]
   );
   if (result.rows.length === 0) throw new NotFoundError('Lab request item not found');
   return result.rows[0];

@@ -61,8 +61,8 @@ export const createInvoice = async (data: InvoiceInput, tenantId?: string) => {
     if (items && items.length > 0) {
       for (const item of items) {
         await client.query(
-          'INSERT INTO invoice_items (invoice_id, description, quantity, unit_price) VALUES ($1, $2, $3, $4)',
-          [invoice.id, item.description, String(item.quantity), String(item.unit_price)]
+          `INSERT INTO invoice_items (invoice_id, description, quantity, unit_price${tenantId ? ', tenant_id' : ''}) VALUES ($1, $2, $3, $4${tenantId ? ', $5' : ''})`,
+          tenantId ? [invoice.id, item.description, String(item.quantity), String(item.unit_price), tenantId] : [invoice.id, item.description, String(item.quantity), String(item.unit_price)]
         );
       }
     }

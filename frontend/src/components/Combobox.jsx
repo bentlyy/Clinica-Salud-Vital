@@ -9,7 +9,7 @@ export default function Combobox({ value, onChange, placeholder, required, class
 
   useEffect(() => {
     api.get('/specialties').then(res => {
-      setOptions(res.data.map(s => s.name));
+      setOptions(Array.isArray(res) ? res.map(s => s.name) : (res.data || []).map(s => s.name));
     }).catch(() => {});
   }, []);
 
