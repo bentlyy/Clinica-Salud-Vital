@@ -19,12 +19,13 @@ export default class ErrorBoundary extends Component {
 
   render() {
     if (this.state.hasError) {
+      const title = this.context?.t ? this.context.t('error_boundary.title') : 'Error inesperado';
       return (
         <div style={{
           display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
           minHeight: '60vh', padding: 40, textAlign: 'center'
         }}>
-          <h2 style={{ color: 'var(--danger-600, #dc3545)', marginBottom: 12 }}>{this.context.t('error_boundary.title')}</h2>
+          <h2 style={{ color: 'var(--danger-600, #dc3545)', marginBottom: 12 }}>{title}</h2>
           <p style={{ color: 'var(--text-secondary, #666)', marginBottom: 24, maxWidth: 400 }}>
             Ocurrió un error inesperado. Por favor, intenta recargar la página.
           </p>

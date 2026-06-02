@@ -104,7 +104,8 @@ export const useI18n = (locale) => {
 
 export const I18nProvider = ({ children, locale }) => {
   const i18n = useI18n(locale);
-  return createElement(I18nContext.Provider, { value: i18n }, children);
+  const safeValue = i18n || { t: (key) => key || '', tAll: () => ({}), locale: 'es' };
+  return createElement(I18nContext.Provider, { value: safeValue }, children);
 };
 
 export default useI18n;
