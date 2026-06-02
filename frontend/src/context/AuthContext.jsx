@@ -113,9 +113,10 @@ export const AuthProvider = ({ children }) => {
     return user;
   };
 
-  const register = async ({ email, password, rut, phone, tenant_id }) => {
+  const register = async ({ email, password, rut, phone, tenant_id, invite_token }) => {
     const body = { email, password, rut, phone };
     if (tenant_id) body.tenant_id = tenant_id;
+    if (invite_token) body.invite_token = invite_token;
     const res = await api.post('/auth/register', body);
     return res.data;
   };
