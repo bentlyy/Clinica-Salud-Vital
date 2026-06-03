@@ -130,6 +130,78 @@ describe('superAdminService.getGlobalStats', () => {
   });
 });
 
+describe('superAdminService.getGlobalDashboard', () => {
+  it('returns comprehensive global dashboard data', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [{
+      total_tenants: 10, active_tenants: 8, inactive_tenants: 2,
+      total_users: 500, admin_users: 10, patient_users: 400,
+      total_doctors: 50, total_bookings: 3000,
+      confirmed_bookings: 2000, cancelled_bookings: 500,
+      total_revenue: '50000', mrr: '4000',
+      active_subscriptions: 8, canceled_subscriptions: 2, trialing_subscriptions: 1,
+    }]});
+    const result = await superAdminService.getGlobalDashboard();
+    expect(result.total_tenants).toBe(10);
+    expect(result.active_subscriptions).toBe(8);
+    expect(result.mrr).toBe('4000');
+  });
+});
+
+describe('superAdminService.getPlanDistribution', () => {
+  it('returns plan distribution', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [
+      { plan: 'Pro', code: 'pro', count: '5' },
+      { plan: 'Free', code: 'free', count: '3' },
+    ]});
+    const result = await superAdminService.getPlanDistribution();
+    expect(result).toHaveLength(2);
+    expect(result[0].plan).toBe('Pro');
+  });
+});
+
+describe('superAdminService.getTopTenants', () => {
+  it('returns top tenants by default metric', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [
+      { id: 'tenant-1', name: 'Clinic A', metric_value: 100, total_bookings: 100, total_users: 20, total_doctors: 5 },
+    ]});
+    const result = await superAdminService.getTopTenants(5);
+    expect(result).toHaveLength(1);
+    expect(result[0].name).toBe('Clinic A');
+    expect(mockQuery).toHaveBeenCalledWith(expect.stringContaining('LIMIT $1'), [5]);
+  });
+
+  it('accepts different metric', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] });
+    await superAdminService.getTopTenants(10, 'revenue');
+    expect(mockQuery).toHaveBeenCalledWith(expect.stringContaining('subscription_invoices'), [10]);
+  });
+});
+
+describe('superAdminService.getRevenueAnalytics', () => {
+  it('returns monthly revenue breakdown', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [
+      { month: '2026-01', invoices: 5, revenue: '2500' },
+      { month: '2026-02', invoices: 7, revenue: '3500' },
+    ]});
+    const result = await superAdminService.getRevenueAnalytics(6);
+    expect(result).toHaveLength(2);
+    expect(result[0].revenue).toBe('2500');
+    expect(mockQuery).toHaveBeenCalledWith(expect.stringContaining('INTERVAL'), [6]);
+  });
+});
+
+describe('superAdminService.getGrowthMetrics', () => {
+  it('returns new tenants/users/bookings per month', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [
+      { month: '2026-01', new_tenants: 2, new_users: 50, new_bookings: 300 },
+      { month: '2026-02', new_tenants: 1, new_users: 30, new_bookings: 250 },
+    ]});
+    const result = await superAdminService.getGrowthMetrics(12);
+    expect(result).toHaveLength(2);
+    expect(result[0].new_tenants).toBe(2);
+  });
+});
+
 describe('superAdminService.adminCreateTenant', () => {
   it('creates tenant with admin user', async () => {
     mockClient.query.mockImplementation((sql) => {

@@ -25,10 +25,20 @@ export const getGuestBookingsByRut = asyncHandler(async (req, res: Response) => 
 });
 
 export const cancelGuestBooking = asyncHandler(async (req, res: Response) => {
-  if (!req.user) {
-    res.status(401).json({ error: 'Authentication required' });
+  const bookingId = Number(req.params.id);
+
+  if (req.user) {
+    const result = await guestService.cancelGuestBooking(bookingId, req.user.id, req.user.role, req.tenant_id);
+    res.json(result);
     return;
   }
-  const result = await guestService.cancelGuestBooking(Number(req.params.id), req.user!.id, req.user!.role, req.tenant_id);
+
+  const { rut } = req.body;
+  if (!rut) {
+    res.status(400).json({ error: 'RUT es requerido para cancelar como invitado' });
+    return;
+  }
+
+  const result = await guestService.cancelGuestBooking(bookingId, rut, undefined, req.tenant_id);
   res.json(result);
 });

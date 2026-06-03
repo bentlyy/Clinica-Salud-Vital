@@ -64,20 +64,32 @@ describe('getGuestBookingsByRut', () => {
 });
 
 describe('cancelGuestBooking', () => {
-  it('returns 401 when no user', async () => {
-    const req = { params: { id: '1' } };
+  it('returns 400 when no user and no rut', async () => {
+    const req = { params: { id: '1' }, body: {} };
     const res = mkRes();
 
     guestController.cancelGuestBooking(req, res, vi.fn());
     await flush();
 
-    expect(res.status).toHaveBeenCalledWith(401);
-    expect(res.json).toHaveBeenCalledWith({ error: 'Authentication required' });
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({ error: 'RUT es requerido para cancelar como invitado' });
+  });
+
+  it('cancels booking with rut (guest)', async () => {
+    vi.mocked(guestService.cancelGuestBooking).mockResolvedValue({ message: 'Cancelled' });
+    const req = { params: { id: '1' }, body: { rut: '12.345.678-5' }, tenant_id: 't1' };
+    const res = mkRes();
+
+    guestController.cancelGuestBooking(req, res, vi.fn());
+    await flush();
+
+    expect(guestService.cancelGuestBooking).toHaveBeenCalledWith(1, '12.345.678-5', undefined, 't1');
+    expect(res.json).toHaveBeenCalledWith({ message: 'Cancelled' });
   });
 
   it('cancels booking with authenticated user', async () => {
     vi.mocked(guestService.cancelGuestBooking).mockResolvedValue({ message: 'Cancelled' });
-    const req = { user: { id: 1, role: 'admin' }, params: { id: '1' }, tenant_id: 't1' };
+    const req = { user: { id: 1, role: 'admin' }, params: { id: '1' }, body: {}, tenant_id: 't1' };
     const res = mkRes();
 
     guestController.cancelGuestBooking(req, res, vi.fn());

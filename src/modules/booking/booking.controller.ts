@@ -35,6 +35,21 @@ export const getAvailableSlots = asyncHandler(async (req, res) => {
   res.json(slots);
 });
 
+export const getDailyDensity = asyncHandler(async (req, res) => {
+  const doctor = await doctorService.getDoctorByUserId(req.user!.id);
+  if (!doctor) throw new NotFoundError('Doctor profile not found');
+
+  const start = getQueryString(req.query, 'start', '');
+  const end = getQueryString(req.query, 'end', '');
+  if (!start || !end) {
+    res.status(400).json({ error: 'start and end query params are required (YYYY-MM-DD)' });
+    return;
+  }
+
+  const data = await bookingService.getDailyBookingDensity(doctor.id, start, end, req.tenant_id);
+  res.json({ data });
+});
+
 export const getDoctorBookings = asyncHandler(async (req, res) => {
   const doctor = await doctorService.getDoctorByUserId(req.user!.id);
 
