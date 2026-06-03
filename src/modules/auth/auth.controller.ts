@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import * as authService from './auth.service.js';
 import * as auth2faService from './auth-2fa.service.js';
+import * as authPasswordService from './auth-password.service.js';
 import { asyncHandler } from '../../middlewares/asyncHandler.middleware.js';
 import { verifyInviteToken } from '../doctor/doctor.service.js';
 
@@ -122,4 +123,14 @@ export const disable2FA = asyncHandler(async (req: Request, res: Response) => {
   }
   await auth2faService.disable2FA(req.user.id, req.body.password);
   res.json({ message: '2FA disabled successfully' });
+});
+
+export const forgotPassword = asyncHandler(async (req: Request, res: Response) => {
+  await authPasswordService.forgotPassword(req.body.email, req.tenant_id);
+  res.json({ message: 'If the email exists, a reset link has been sent' });
+});
+
+export const resetPassword = asyncHandler(async (req: Request, res: Response) => {
+  await authPasswordService.resetPassword(req.body.token, req.body.email, req.body.password, req.tenant_id);
+  res.json({ message: 'Password reset successfully' });
 });

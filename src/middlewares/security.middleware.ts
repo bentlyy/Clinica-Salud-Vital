@@ -48,6 +48,7 @@ export const securityMiddleware = [
 ];
 
 export const validateEnvSecurity = (): void => {
+  // JWT_SECRET validation
   const jwtSecret = process.env.JWT_SECRET;
   const defaultSecret = 'CHANGE_ME_USE_LONG_RANDOM_SECRET_IN_PRODUCTION';
 
@@ -62,6 +63,33 @@ export const validateEnvSecurity = (): void => {
     throw new UnauthorizedError('JWT_SECRET debe tener al menos 32 caracteres.');
   }
 
+  // INVITE_JWT_SECRET validation (must be different from JWT_SECRET)
+  const inviteSecret = process.env.INVITE_JWT_SECRET;
+  if (!inviteSecret) {
+    throw new UnauthorizedError('INVITE_JWT_SECRET no está definido. Debe ser diferente de JWT_SECRET.');
+  }
+  if (inviteSecret === jwtSecret) {
+    throw new UnauthorizedError('INVITE_JWT_SECRET debe ser diferente de JWT_SECRET.');
+  }
+  if (inviteSecret.length < 32) {
+    throw new UnauthorizedError('INVITE_JWT_SECRET debe tener al menos 32 caracteres.');
+  }
+
+  // ENCRYPTION_KEY validation
+  const encKey = process.env.ENCRYPTION_KEY;
+  if (!encKey) {
+    throw new UnauthorizedError('ENCRYPTION_KEY no está definida. Es necesaria para 2FA/TOTP.');
+  }
+  if (encKey.length < 16) {
+    throw new UnauthorizedError('ENCRYPTION_KEY debe tener al menos 16 caracteres.');
+  }
+
+  // DATABASE_URL validation
+  if (!process.env.DATABASE_URL) {
+    throw new UnauthorizedError('DATABASE_URL no está definida.');
+  }
+
+  // RECAPTCHA_SECRET_KEY (optional)
   if (!process.env.RECAPTCHA_SECRET_KEY) {
     logger.warn('⚠️ RECAPTCHA_SECRET_KEY no está definida. El CAPTCHA estará deshabilitado hasta que se configure.');
   }

@@ -351,17 +351,15 @@ export const refreshToken = async ({ refresh_token }: RefreshParams): Promise<{
 };
 
 export const logout = async (refresh_token: string, userId?: number): Promise<void> => {
+  const tokenHash = hashToken(refresh_token);
   if (userId) {
-    const tokenHash = hashToken(refresh_token);
-    const result = await pool.query(
-      'SELECT user_id FROM refresh_tokens WHERE token = $1 AND revoked = false',
-      [tokenHash]
+    await pool.query(
+      'UPDATE refresh_tokens SET revoked = true WHERE token = $1 AND user_id = $2 AND revoked = false',
+      [tokenHash, userId]
     );
-    if (result.rows.length === 0 || result.rows[0].user_id !== userId) {
-      return;
-    }
+  } else {
+    await revokeRefreshToken(refresh_token);
   }
-  await revokeRefreshToken(refresh_token);
 };
 
 export const logoutAll = async (userId: number): Promise<void> => {

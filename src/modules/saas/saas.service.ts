@@ -73,23 +73,25 @@ export const createSubscription = async (
 ): Promise<Subscription> => {
   const plan = await getPlanByCode(planCode);
 
-  const existing = await getTenantSubscription(tenantId);
-  if (existing) {
-    throw new BadRequestError('Tenant already has an active subscription');
-  }
-
   const now = new Date();
   const periodEnd = new Date(now);
   periodEnd.setMonth(periodEnd.getMonth() + 1);
 
-  const result = await pool.query<Subscription>(
-    `INSERT INTO subscriptions (tenant_id, plan_id, status, current_period_start, current_period_end, stripe_customer_id, stripe_subscription_id)
-     VALUES ($1, $2, 'active', $3, $4, $5, $6) RETURNING *`,
-    [tenantId, plan.id, now, periodEnd, stripeCustomerId || null, stripeSubscriptionId || null]
-  );
-
-  logger.info(`Subscription created for tenant ${tenantId}`, { plan: planCode });
-  return result.rows[0];
+  try {
+    const result = await pool.query<Subscription>(
+      `INSERT INTO subscriptions (tenant_id, plan_id, status, current_period_start, current_period_end, stripe_customer_id, stripe_subscription_id)
+       VALUES ($1, $2, 'active', $3, $4, $5, $6) RETURNING *`,
+      [tenantId, plan.id, now, periodEnd, stripeCustomerId || null, stripeSubscriptionId || null]
+    );
+    logger.info(`Subscription created for tenant ${tenantId}`, { plan: planCode });
+    return result.rows[0];
+  } catch (err: unknown) {
+    const pgErr = err as { code?: string; constraint?: string };
+    if (pgErr.code === '23505' && pgErr.constraint === 'idx_subscriptions_active_tenant') {
+      throw new BadRequestError('Tenant already has an active subscription');
+    }
+    throw err;
+  }
 };
 
 export const changePlan = async (

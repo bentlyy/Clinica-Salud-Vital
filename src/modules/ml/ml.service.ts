@@ -384,8 +384,7 @@ export const predictNoShow = async (doctorId: number | undefined, userId: number
 
   try {
     const { tensor2d: tensor2d2 } = await getTF();
-    const userResult = await pool.query(
-      `SELECT u.no_show_count, u.blocked_until, d.specialty,
+    let userQuery = `SELECT u.no_show_count, u.blocked_until, d.specialty,
         (
           SELECT COUNT(*)::float
           FROM bookings b2
@@ -394,16 +393,17 @@ export const predictNoShow = async (doctorId: number | undefined, userId: number
         ) as user_bookings_month
       FROM users u
       LEFT JOIN doctors d ON d.user_id = u.id
-      WHERE u.id = $1`,
-      [userId]
-    );
+      WHERE u.id = $1`;
+    const userParams: any[] = [userId];
+    if (tenantId) { userQuery += ' AND u.tenant_id = $2'; userParams.push(tenantId); }
+    const userResult = await pool.query(userQuery, userParams);
     const user = userResult.rows[0] as Record<string, unknown> || {};
 
     let doctorSpecialtyIdx = 0;
-    const doctorResult = await pool.query(
-      'SELECT specialty FROM doctors WHERE id = $1',
-      [doctorId]
-    );
+    let doctorQuery = 'SELECT specialty FROM doctors WHERE id = $1';
+    const doctorParams: any[] = [doctorId];
+    if (tenantId) { doctorQuery += ' AND tenant_id = $2'; doctorParams.push(tenantId); }
+    const doctorResult = await pool.query(doctorQuery, doctorParams);
     if (doctorResult.rows.length > 0) {
       const specialtyName = doctorResult.rows[0].specialty;
       const specialtyList = noShowModel?.specialtyList || [];
@@ -411,10 +411,11 @@ export const predictNoShow = async (doctorId: number | undefined, userId: number
       if (idx >= 0) doctorSpecialtyIdx = idx;
     }
 
-    const bookingResult = await pool.query(
-      'SELECT created_at::date as created_date FROM bookings WHERE doctor_id = $1 AND user_id = $2 AND date = $3::date LIMIT 1',
-      [doctorId, userId, date]
-    );
+    let bookingQuery = 'SELECT created_at::date as created_date FROM bookings WHERE doctor_id = $1 AND user_id = $2 AND date = $3::date';
+    const bookingParams: any[] = [doctorId, userId, date];
+    if (tenantId) { bookingQuery += ' AND tenant_id = $4'; bookingParams.push(tenantId); }
+    bookingQuery += ' LIMIT 1';
+    const bookingResult = await pool.query(bookingQuery, bookingParams);
     const bookingCreated = bookingResult.rows[0]?.created_date ? new Date(bookingResult.rows[0].created_date) : new Date();
     const daysAdvance = Math.max(1, Math.ceil((new Date(date).getTime() - bookingCreated.getTime()) / (1000 * 60 * 60 * 24)));
 

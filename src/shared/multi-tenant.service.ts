@@ -14,7 +14,7 @@ export interface Tenant {
 const tenants = new Map<string, Tenant>();
 let refreshInterval: ReturnType<typeof setInterval> | null = null;
 
-const REFRESH_INTERVAL_MS = 5 * 60 * 1000;
+const REFRESH_INTERVAL_MS = 30 * 1000;
 
 export const tenantService = {
   register(tenant: Tenant): void {
@@ -75,12 +75,24 @@ export const tenantService = {
   },
 };
 
+const ALLOWED_PARENT_DOMAINS = (process.env.ALLOWED_DOMAINS || '').split(',').filter(Boolean);
+
 export const extractTenantFromHost = (host: string): string | null => {
   if (!host) return null;
   const parts = host.split('.');
 
   if (parts.length >= 3) {
-    return parts[0];
+    const subdomain = parts[0];
+    const parentDomain = parts.slice(1).join('.');
+
+    if (ALLOWED_PARENT_DOMAINS.length > 0) {
+      const isAllowed = ALLOWED_PARENT_DOMAINS.some(allowed =>
+        parentDomain === allowed || parentDomain.endsWith('.' + allowed)
+      );
+      if (!isAllowed) return null;
+    }
+
+    return subdomain;
   }
   return null;
 };
