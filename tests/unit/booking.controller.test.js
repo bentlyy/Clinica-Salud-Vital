@@ -85,7 +85,7 @@ describe('bookingController.getDoctorBookings', () => {
     bookingController.getDoctorBookings(req, res, next);
     await flush();
 
-    expect(doctorService.getDoctorByUserId).toHaveBeenCalledWith(1);
+    expect(doctorService.getDoctorByUserId).toHaveBeenCalledWith(1, 'test');
     expect(bookingService.getBookingsByDoctor).toHaveBeenCalledWith(2, { page: 1, limit: 50 }, 'test');
     expect(res.json).toHaveBeenCalled();
   });

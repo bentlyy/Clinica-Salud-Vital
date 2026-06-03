@@ -159,32 +159,32 @@ describe('webhookService.deleteWebhook', () => {
 });
 
 describe('webhookService.isInternalHost', () => {
-  it('detects localhost', () => {
-    expect(webhookService.isInternalHost('http://localhost:3000/hook')).toBe(true);
+  it('detects localhost', async () => {
+    expect(await webhookService.isInternalHost('http://localhost:3000/hook')).toBe(true);
   });
 
-  it('detects 127.0.0.1', () => {
-    expect(webhookService.isInternalHost('http://127.0.0.1/hook')).toBe(true);
+  it('detects 127.0.0.1', async () => {
+    expect(await webhookService.isInternalHost('http://127.0.0.1/hook')).toBe(true);
   });
 
-  it('detects private IP ranges', () => {
-    expect(webhookService.isInternalHost('http://192.168.1.1/hook')).toBe(true);
-    expect(webhookService.isInternalHost('http://10.0.0.1/hook')).toBe(true);
-    expect(webhookService.isInternalHost('http://172.16.0.1/hook')).toBe(true);
+  it('detects private IP ranges', async () => {
+    expect(await webhookService.isInternalHost('http://192.168.1.1/hook')).toBe(true);
+    expect(await webhookService.isInternalHost('http://10.0.0.1/hook')).toBe(true);
+    expect(await webhookService.isInternalHost('http://172.16.0.1/hook')).toBe(true);
   });
 
-  it('detects .local and .internal domains', () => {
-    expect(webhookService.isInternalHost('http://my-service.local/hook')).toBe(true);
-    expect(webhookService.isInternalHost('http://my-service.internal/hook')).toBe(true);
+  it('detects .local and .internal domains', async () => {
+    expect(await webhookService.isInternalHost('http://my-service.local/hook')).toBe(true);
+    expect(await webhookService.isInternalHost('http://my-service.internal/hook')).toBe(true);
   });
 
-  it('allows external URLs', () => {
-    expect(webhookService.isInternalHost('https://example.com/hook')).toBe(false);
-    expect(webhookService.isInternalHost('https://api.github.com/hooks')).toBe(false);
+  it('allows external URLs', async () => {
+    expect(await webhookService.isInternalHost('https://example.com/hook')).toBe(false);
+    expect(await webhookService.isInternalHost('https://api.github.com/hooks')).toBe(false);
   });
 
-  it('returns true for invalid URLs', () => {
-    expect(webhookService.isInternalHost('not-a-url')).toBe(true);
+  it('returns true for invalid URLs', async () => {
+    expect(await webhookService.isInternalHost('not-a-url')).toBe(true);
   });
 });
 

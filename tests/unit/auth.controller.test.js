@@ -20,7 +20,7 @@ import * as auth2faService from '../../src/modules/auth/auth-2fa.service.js';
 import * as authController from '../../src/modules/auth/auth.controller.js';
 
 const flush = () => new Promise(resolve => setTimeout(resolve, 0));
-const mkRes = () => ({ json: vi.fn(), status: vi.fn().mockReturnThis() });
+const mkRes = () => ({ json: vi.fn(), status: vi.fn().mockReturnThis(), cookie: vi.fn(), clearCookie: vi.fn() });
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -93,13 +93,13 @@ describe('refresh', () => {
 
 describe('logout', () => {
   it('logs out with refresh_token', async () => {
-    const req = { body: { refresh_token: 'rt' } };
+    const req = { body: { refresh_token: 'rt' }, user: undefined };
     const res = mkRes();
 
     authController.logout(req, res, vi.fn());
     await flush();
 
-    expect(authService.logout).toHaveBeenCalledWith('rt');
+    expect(authService.logout).toHaveBeenCalledWith('rt', undefined);
     expect(res.json).toHaveBeenCalledWith({ message: 'Logged out successfully' });
   });
 
@@ -223,13 +223,13 @@ describe('disable2FA', () => {
   });
 
   it('disables 2FA', async () => {
-    const req = { user: { id: 1 }, body: {} };
+    const req = { user: { id: 1 }, body: { password: 'StrongPass1!' } };
     const res = mkRes();
 
     authController.disable2FA(req, res, vi.fn());
     await flush();
 
-    expect(auth2faService.disable2FA).toHaveBeenCalledWith(1);
+    expect(auth2faService.disable2FA).toHaveBeenCalledWith(1, 'StrongPass1!');
     expect(res.json).toHaveBeenCalledWith({ message: '2FA disabled successfully' });
   });
 });

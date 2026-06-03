@@ -108,7 +108,7 @@ export default function HomePage() {
       {/* Hero */}
       <section className="hero">
         <div className="hero-content">
-          <h1 className="hero-title" dangerouslySetInnerHTML={{ __html: t('home.hero_title') }} />
+          <h1 className="hero-title">{t('home.hero_title')}</h1>
           <p className="hero-subtitle">{t('home.hero_subtitle')}</p>
           <div className="hero-actions">
             <button onClick={() => navigate('/booking')} className="btn btn-primary btn-lg">

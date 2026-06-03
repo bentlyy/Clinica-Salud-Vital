@@ -38,31 +38,50 @@ export const createInvoice = async (data: InvoiceInput, tenantId?: string) => {
   try {
     await client.query('BEGIN');
 
-    const invoiceNumber = generateInvoiceNumber();
     const { patient_id, doctor_id, booking_id, concept, description, amount, tax_amount = 0, discount_amount = 0, due_date, notes, items } = data;
 
     const total = Number(amount) + Number(tax_amount) - Number(discount_amount);
 
-    const columns = ['invoice_number', 'patient_id', 'doctor_id', 'booking_id', 'concept', 'description', 'amount', 'tax_amount', 'discount_amount', 'total_amount', 'due_date', 'notes'];
-    const valuesList: any[] = [invoiceNumber, patient_id, doctor_id || null, booking_id || null, concept, description || null, amount, tax_amount, discount_amount, total, due_date, notes || null];
+    let invoiceNumber: string = '';
+    let inserted = false;
+    let retries = 0;
+    let invoice: Record<string, unknown> = {};
 
-    if (tenantId) {
-      columns.push('tenant_id');
-      valuesList.push(tenantId);
+    while (!inserted && retries < 3) {
+      invoiceNumber = generateInvoiceNumber();
+      const columns = ['invoice_number', 'patient_id', 'doctor_id', 'booking_id', 'concept', 'description', 'amount', 'tax_amount', 'discount_amount', 'total_amount', 'due_date', 'notes'];
+      const valuesList: any[] = [invoiceNumber, patient_id, doctor_id || null, booking_id || null, concept, description || null, amount, tax_amount, discount_amount, total, due_date, notes || null];
+
+      if (tenantId) {
+        columns.push('tenant_id');
+        valuesList.push(tenantId);
+      }
+
+      try {
+        const result = await client.query(`
+          INSERT INTO invoices (${columns.join(', ')})
+          VALUES (${valuesList.map((_, i) => '$' + (i + 1)).join(', ')})
+          RETURNING *
+        `, valuesList);
+        inserted = true;
+        invoice = result.rows[0];
+      } catch (err: unknown) {
+        const pgErr = err as { code?: string };
+        if (pgErr.code === '23505' && String((pgErr as Record<string, unknown>).constraint).includes('invoice_number') && retries < 3) {
+          retries++;
+          continue;
+        }
+        throw err;
+      }
     }
 
-    const invoiceResult = await client.query(
-      `INSERT INTO invoices (${columns.join(', ')}) VALUES (${valuesList.map((_, i) => '$' + (i + 1)).join(', ')}) RETURNING *`,
-      valuesList
-    );
-
-    const invoice = invoiceResult.rows[0];
+    if (!inserted) throw new Error('Failed to generate unique invoice number after retries');
 
     if (items && items.length > 0) {
       for (const item of items) {
         await client.query(
           `INSERT INTO invoice_items (invoice_id, description, quantity, unit_price${tenantId ? ', tenant_id' : ''}) VALUES ($1, $2, $3, $4${tenantId ? ', $5' : ''})`,
-          tenantId ? [invoice.id, item.description, String(item.quantity), String(item.unit_price), tenantId] : [invoice.id, item.description, String(item.quantity), String(item.unit_price)]
+          tenantId ? [invoice!.id, item.description, String(item.quantity), String(item.unit_price), tenantId] : [invoice!.id, item.description, String(item.quantity), String(item.unit_price)]
         );
       }
     }

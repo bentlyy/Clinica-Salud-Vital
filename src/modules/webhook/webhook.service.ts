@@ -3,7 +3,7 @@ import { logger } from '../../utils/logger.js';
 import crypto from 'crypto';
 import { URL } from 'url';
 
-interface Webhook {
+export interface Webhook {
   id: number;
   name: string;
   url: string;
@@ -50,7 +50,6 @@ export const updateWebhook = async (id: number, data: Partial<{
   name: string;
   url: string;
   events: string[];
-  secret: string;
   active: boolean;
 }>, tenantId?: string): Promise<Webhook | null> => {
   const fields: string[] = [];
@@ -60,7 +59,6 @@ export const updateWebhook = async (id: number, data: Partial<{
   if (data.name !== undefined) { fields.push(`name = $${paramIndex++}`); values.push(data.name); }
   if (data.url !== undefined) { fields.push(`url = $${paramIndex++}`); values.push(data.url); }
   if (data.events !== undefined) { fields.push(`events = $${paramIndex++}`); values.push(JSON.stringify(data.events)); }
-  if (data.secret !== undefined) { fields.push(`secret = $${paramIndex++}`); values.push(data.secret); }
   if (data.active !== undefined) { fields.push(`active = $${paramIndex++}`); values.push(data.active); }
 
   if (fields.length === 0) return getWebhookById(id, tenantId);
@@ -102,7 +100,7 @@ const isPrivateIP = (ip: string): boolean => {
   return PRIVATE_IP_RANGES.some(({ start, end }) => ipInt >= ipToInt(start) && ipInt <= ipToInt(end));
 };
 
-export const isInternalHost = (urlStr: string): boolean => {
+export const isInternalHost = async (urlStr: string): Promise<boolean> => {
   try {
     const parsed = new URL(urlStr);
 
@@ -120,11 +118,16 @@ export const isInternalHost = (urlStr: string): boolean => {
     if (host.startsWith('10.') || host.startsWith('172.16.') || host.startsWith('192.168.')) return true;
     if (host.endsWith('.local') || host.endsWith('.internal')) return true;
 
-    dnsLookup(host).then(({ address }) => {
+    try {
+      const { address } = await dnsLookup(host);
       if (isPrivateIP(address)) {
         logger.error(`Webhook blocked via DNS resolve: ${host} -> ${address}`);
+        return true;
       }
-    }).catch(() => {});
+    } catch {
+      logger.warn(`Webhook DNS lookup failed for ${host}, blocking`);
+      return true;
+    }
 
     return false;
   } catch {
@@ -144,7 +147,7 @@ export const dispatchEvent = async (event: string, payload: Record<string, unkno
   );
 
   for (const webhook of webhooks.rows) {
-    if (isInternalHost(webhook.url)) {
+    if (await isInternalHost(webhook.url)) {
       logger.error(`Webhook blocked: internal URL not allowed`, { webhookId: webhook.id, url: webhook.url });
       await pool.query(
         `INSERT INTO webhook_deliveries (webhook_id, event, status, error)

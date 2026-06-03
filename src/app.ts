@@ -1,10 +1,12 @@
 import express, { Express, Request, Response } from 'express';
 import cors from 'cors';
 import compression from 'compression';
+import cookieParser from 'cookie-parser';
 import rateLimit from 'express-rate-limit';
 import 'dotenv/config';
 import { resolve } from 'path';
 import fs from 'fs';
+import crypto from 'crypto';
 
 import { seed, backfillInvoices } from './seed/seed.js';
 import { pool } from './shared/db.js';
@@ -13,12 +15,15 @@ import { seedDefaultTenant, seedSuperAdmin, seedTestTenants } from './seed/admin
 import { startReminderJob } from './jobs/reminder.job.js';
 import { securityMiddleware, validateEnvSecurity } from './middlewares/security.middleware.js';
 import { tenantMiddleware } from './middlewares/tenant.middleware.js';
+import { csrfProtection } from './middlewares/csrf.middleware.js';
+import { apiVersionRedirect } from './middlewares/apiVersionRedirect.middleware.js';
 import { validateEmailConfig } from './shared/email.service.js';
 import { requestLogger } from './middlewares/requestLogger.middleware.js';
 import { errorHandler, notFoundHandler } from './middlewares/errorHandler.middleware.js';
 import { monitoringService, monitoringMiddleware } from './middlewares/monitoring.middleware.js';
 import { dbMonitor } from './shared/db-monitor.service.js';
 import { trackActivity } from './middlewares/sessionActivity.middleware.js';
+import { initSentry, setupExpressErrorHandler } from './shared/sentry.service.js';
 import { logger } from './utils/logger.js';
 
 import doctorRoutes from './modules/doctor/doctor.routes.js';
@@ -43,6 +48,10 @@ import i18nRoutes from './modules/i18n/i18n.routes.js';
 import monitoringRoutes from './modules/monitoring/monitoring.routes.js';
 
 const app: Express = express();
+
+app.set('trust proxy', ['loopback', 'linklocal', 'uniquelocal']);
+
+initSentry(app);
 
 app.get('/health', async (req: Request, res: Response) => {
   try {
@@ -82,24 +91,33 @@ const allowedOrigins = [
 app.use(cors({
   origin: (origin, callback) => {
     if (!origin && process.env.NODE_ENV !== 'production') {
-      return callback(null, true);
+      return callback(null, 'http://localhost:5173');
     }
     if (!origin) {
       return callback(null, false);
     }
     if (allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
-      callback(null, true);
+      callback(null, origin);
     } else {
       callback(new Error('Not allowed by CORS'));
     }
   },
-  credentials: false,
+  credentials: true,
 }));
 
 app.use(compression());
+app.use(cookieParser());
 
 app.use('/api/saas/webhook/stripe', express.raw({ type: 'application/json' }));
 app.use('/api/v1/saas/webhook/stripe', express.raw({ type: 'application/json' }));
+
+app.use(apiVersionRedirect);
+app.use((req, res, next) => {
+  if (req.path.startsWith('/api/saas/webhook/') || req.path.startsWith('/api/v1/saas/webhook/')) {
+    return next();
+  }
+  csrfProtection(req, res, next);
+});
 app.use(express.json({ limit: '100kb' }));
 app.use(requestLogger);
 
@@ -109,7 +127,7 @@ const globalLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Too many requests, please try again later' },
-  keyGenerator: (req) => req.ip || req.headers['x-forwarded-for'] as string || 'unknown',
+  keyGenerator: (req) => req.ip || 'unknown',
   skip: (req) => req.path === '/health',
 });
 app.use(globalLimiter);
@@ -120,7 +138,7 @@ const authLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Too many login attempts, please try again later' },
-  keyGenerator: (req) => req.ip || req.headers['x-forwarded-for'] as string || 'unknown',
+  keyGenerator: (req) => req.ip || 'unknown',
 });
 
 const changePasswordLimiter = rateLimit({
@@ -129,7 +147,7 @@ const changePasswordLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Too many password change attempts, please try again later' },
-  keyGenerator: (req) => req.ip || req.headers['x-forwarded-for'] as string || 'unknown',
+  keyGenerator: (req) => req.ip || 'unknown',
 });
 
 const twoFALimiter = rateLimit({
@@ -138,7 +156,7 @@ const twoFALimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Too many 2FA attempts, please try again later' },
-  keyGenerator: (req) => req.ip || req.headers['x-forwarded-for'] as string || 'unknown',
+  keyGenerator: (req) => req.ip || 'unknown',
 });
 
 const logoutAllLimiter = rateLimit({
@@ -147,7 +165,7 @@ const logoutAllLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Too many logout-all attempts, please try again later' },
-  keyGenerator: (req) => req.ip || req.headers['x-forwarded-for'] as string || 'unknown',
+  keyGenerator: (req) => req.ip || 'unknown',
 });
 
 const API_PREFIX = '/api/v1';
@@ -155,6 +173,7 @@ const API_PREFIX = '/api/v1';
 app.use(`${API_PREFIX}/auth/change-password`, changePasswordLimiter);
 app.use(`${API_PREFIX}/auth/2fa`, twoFALimiter);
 app.use(`${API_PREFIX}/auth/logout-all`, logoutAllLimiter);
+app.use(`${API_PREFIX}/auth/invite-info`, authLimiter);
 app.use(`${API_PREFIX}/auth`, authLimiter, authRoutes);
 app.use(`${API_PREFIX}/doctors`, doctorRoutes);
 app.use(`${API_PREFIX}/bookings`, bookingRoutes);
@@ -176,30 +195,6 @@ app.use(`${API_PREFIX}/super-admin`, superAdminRoutes);
 app.use(`${API_PREFIX}/i18n`, i18nRoutes);
 app.use(`${API_PREFIX}/monitoring`, monitoringRoutes);
 
-/* Backward compat: /api/ → /api/v1/ */
-app.use('/api/auth/change-password', changePasswordLimiter);
-app.use('/api/auth/2fa', twoFALimiter);
-app.use('/api/auth/logout-all', logoutAllLimiter);
-app.use('/api/auth', authLimiter, authRoutes);
-app.use('/api/doctors', doctorRoutes);
-app.use('/api/bookings', bookingRoutes);
-app.use('/api/availability', availabilityRoutes);
-app.use('/api/exceptions', exceptionRoutes);
-app.use('/api/guest', guestRoutes);
-app.use('/api/clinical-records', clinicalRecordRoutes);
-app.use('/api/audit', auditRoutes);
-app.use('/api/analytics', analyticsRoutes);
-app.use('/api/billing', billingRoutes);
-app.use('/api/laboratory', laboratoryRoutes);
-app.use('/api/rbac', rbacRoutes);
-app.use('/api/ml', mlRoutes);
-app.use('/api/specialties', specialtiesRoutes);
-app.use('/api/webhooks', webhookRoutes);
-app.use('/api/saas', saasRoutes);
-app.use('/api/super-admin', superAdminRoutes);
-app.use('/api/i18n', i18nRoutes);
-app.use('/api/monitoring', monitoringRoutes);
-
 /* Serve frontend static files in production */
 if (process.env.NODE_ENV === 'production') {
   const frontendPath = resolve(__dirname, '../frontend/dist');
@@ -209,6 +204,7 @@ if (process.env.NODE_ENV === 'production') {
   });
 }
 
+setupExpressErrorHandler(app);
 app.use(notFoundHandler);
 app.use(errorHandler);
 
@@ -224,6 +220,15 @@ const runMigration = async (): Promise<void> => {
       const initSql = fs.readFileSync(initPath, 'utf-8');
       await pool.query(initSql);
       logger.info('Esquema inicial (init.sql) aplicado');
+    }
+    /* Aplicar migrations faltantes después de init.sql */
+    const migrationsDir = resolve(__dirname, '../db/migrations');
+    if (fs.existsSync(migrationsDir)) {
+      await pool.query(
+        `CREATE TABLE IF NOT EXISTS _migrations (id SERIAL PRIMARY KEY, name VARCHAR(255) UNIQUE NOT NULL, applied_at TIMESTAMP DEFAULT NOW())`
+      );
+      await pool.query('DELETE FROM _migrations');
+      logger.info('Migraciones previas limpiadas para re-ejecución');
     }
   }
 
@@ -263,6 +268,30 @@ const runMigration = async (): Promise<void> => {
     await pool.query(sql);
     await pool.query('INSERT INTO _migrations (name) VALUES ($1)', [file]);
     logger.info(`Migración ${file} aplicada`);
+  }
+
+  /* Schema drift detection */
+  const initPath = resolve(__dirname, '../db/init.sql');
+  if (fs.existsSync(initPath)) {
+    const initContent = fs.readFileSync(initPath, 'utf-8');
+    const initHash = crypto.createHash('sha256').update(initContent).digest('hex').slice(0, 16);
+
+    await pool.query(
+      `CREATE TABLE IF NOT EXISTS _schema_meta (key VARCHAR(255) PRIMARY KEY, value TEXT NOT NULL)`
+    );
+
+    const { rows: [stored] } = await pool.query(
+      `SELECT value FROM _schema_meta WHERE key = 'init_hash'`
+    );
+
+    if (!stored) {
+      await pool.query(
+        `INSERT INTO _schema_meta (key, value) VALUES ('init_hash', $1) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,
+        [initHash]
+      );
+    } else if (stored.value !== initHash) {
+      logger.warn(`[SCHEMA DRIFT] init.sql hash changed from ${stored.value} to ${initHash}. Migrations may be out of sync with base schema.`);
+    }
   }
 };
 

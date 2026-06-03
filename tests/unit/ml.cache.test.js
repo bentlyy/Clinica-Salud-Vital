@@ -106,7 +106,7 @@ describe('cacheMiddleware', () => {
     res1.json(jsonData);
 
     expect(next1).toHaveBeenCalled();
-    const cached = await mlCache.get('ml:GET:/ml/test:{}');
+    const cached = await mlCache.get('ml:GET:_ml_test:{}');
     expect(cached).toEqual(jsonData);
   });
 
@@ -124,7 +124,7 @@ describe('cacheMiddleware', () => {
 
   it('returns cached data on hit', async () => {
     const { cacheMiddleware, mlCache } = await import('../../src/modules/ml/ml.cache.js');
-    await mlCache.set('ml:GET:/ml/test:{}', { result: 'cached' });
+    await mlCache.set('ml:GET:_ml_test:{}', { result: 'cached' });
 
     const middleware = cacheMiddleware();
     const req = { method: 'GET', originalUrl: '/ml/test', query: {} };

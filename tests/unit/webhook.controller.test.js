@@ -18,15 +18,16 @@ beforeEach(() => {
 
 describe('webhookController.create', () => {
   it('creates webhook and returns 201', async () => {
-    vi.mocked(webhookService.createWebhook).mockResolvedValue({ id: 1, name: 'Test' });
-    const req = { tenant_id: 'test', body: { name: 'Test', url: 'https://example.com/hook' } };
+    const mockResult = { id: 1, name: 'Test', url: 'https://example.com/hook', events: ['booking.created'] };
+    vi.mocked(webhookService.createWebhook).mockResolvedValue(mockResult);
+    const req = { tenant_id: 'test', body: { name: 'Test', url: 'https://example.com/hook', events: ['booking.created'] } };
     const res = { status: vi.fn().mockReturnThis(), json: vi.fn() };
     const next = vi.fn();
 
     await webhookController.create(req, res, next);
-    expect(webhookService.createWebhook).toHaveBeenCalledWith({ name: 'Test', url: 'https://example.com/hook', tenant_id: 'test' });
+    expect(webhookService.createWebhook).toHaveBeenCalledWith({ name: 'Test', url: 'https://example.com/hook', events: ['booking.created'], tenant_id: 'test' });
     expect(res.status).toHaveBeenCalledWith(201);
-    expect(res.json).toHaveBeenCalledWith({ id: 1, name: 'Test' });
+    expect(res.json).toHaveBeenCalledWith(mockResult);
   });
 });
 

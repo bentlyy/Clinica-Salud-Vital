@@ -35,8 +35,8 @@ app.use(express.json());
 const generateToken = (payload) =>
   jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1d' });
 
-const userToken = generateToken({ id: 1, email: 'user@test.com', role: 'user' });
-const doctorToken = generateToken({ id: 2, email: 'doc@test.com', role: 'doctor' });
+const userToken = generateToken({ id: 1, email: 'user@test.com', role: 'user', token_version: 0 });
+const doctorToken = generateToken({ id: 2, email: 'doc@test.com', role: 'doctor', token_version: 0 });
 
 app.use('/api/bookings', bookingRoutes);
 app.use(errorHandler);
@@ -114,11 +114,13 @@ describe('GET /api/bookings/me', () => {
   });
 
   it('returns bookings for authenticated user', async () => {
-    mockQuery.mockResolvedValueOnce({
-      rows: [
-        { id: 1, date: '2025-01-15', time: '10:00', doctor_name: 'Dr. Test', specialty: 'General' },
-      ],
-    });
+    mockQuery
+      .mockResolvedValueOnce({ rows: [{ token_version: 0 }] })
+      .mockResolvedValueOnce({
+        rows: [
+          { id: 1, date: '2025-01-15', time: '10:00', doctor_name: 'Dr. Test', specialty: 'General' },
+        ],
+      });
     mockQuery.mockResolvedValueOnce({ rows: [{ count: '1' }] });
 
     const res = await request(app)
@@ -138,7 +140,9 @@ describe('DELETE /api/bookings/:id', () => {
   });
 
   it('cancels booking successfully', async () => {
-    mockQuery.mockResolvedValueOnce({ rows: [{ id: 1 }] });
+    mockQuery
+      .mockResolvedValueOnce({ rows: [{ token_version: 0 }] })
+      .mockResolvedValueOnce({ rows: [{ id: 1 }] });
 
     const res = await request(app)
       .delete('/api/bookings/1')
@@ -159,7 +163,9 @@ describe('GET /api/bookings/doctor', () => {
   });
 
   it('returns 404 if doctor profile not found', async () => {
-    mockQuery.mockResolvedValueOnce({ rows: [] });
+    mockQuery
+      .mockResolvedValueOnce({ rows: [{ token_version: 0 }] })
+      .mockResolvedValueOnce({ rows: [] });
 
     const res = await request(app)
       .get('/api/bookings/doctor')
@@ -171,6 +177,7 @@ describe('GET /api/bookings/doctor', () => {
 
   it('returns bookings for doctor', async () => {
     mockQuery
+      .mockResolvedValueOnce({ rows: [{ token_version: 0 }] })
       .mockResolvedValueOnce({ rows: [{ id: 1, name: 'Dr. Test', user_id: 2, email: 'doc@test.com' }] })
       .mockResolvedValueOnce({ rows: [{ id: 1, date: '2025-01-15', time: '10:00', patient_email: 'test@test.com' }] })
       .mockResolvedValueOnce({ rows: [{ count: '1' }] });
