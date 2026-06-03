@@ -20,7 +20,7 @@ export default function LoginPage() {
   const [needs2FA, setNeeds2FA] = useState(false);
 
   const getCaptchaToken = () => {
-    if (!hasCaptcha) return '__captcha_disabled__';
+    if (!hasCaptcha) return undefined;
     return recaptchaRef.current?.getValue();
   };
 

@@ -1,0 +1,12 @@
+node_modules
+.git
+.gitignore
+*.md
+.env
+.env.*
+logs
+coverage
+tests
+frontend/node_modules
+frontend/src
+frontend/public

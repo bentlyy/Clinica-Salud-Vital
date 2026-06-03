@@ -27,11 +27,19 @@ const getConfig = () => ({
 const initStripe = async (): Promise<any> => {
   const { secretKey } = getConfig();
   const isConfigured = secretKey.startsWith('sk_test_') || secretKey.startsWith('sk_live_');
+
+  if (process.env.NODE_ENV === 'production' && !isConfigured) {
+    throw new Error('Stripe must be configured in production mode. Set STRIPE_SECRET_KEY environment variable.');
+  }
+
   if (isConfigured) {
     try {
       const { default: Stripe } = await import('stripe');
       return new Stripe(secretKey, { apiVersion: '2025-02-24.acacia' } as any);
     } catch {
+      if (process.env.NODE_ENV === 'production') {
+        throw new Error('Stripe package failed to load in production');
+      }
       logger.warn('Stripe package failed to load, using stub');
     }
   }

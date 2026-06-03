@@ -3,51 +3,25 @@ import api from '../api/axios';
 
 export const AuthContext = createContext();
 
-const parseJwtPayload = (token) => {
-  if (!token || typeof token !== 'string') return null;
-  const parts = token.split('.');
-  if (parts.length !== 3) return null;
-  try {
-    return JSON.parse(atob(parts[1]));
-  } catch {
-    return null;
-  }
-};
-
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
   const logout = useCallback(async () => {
-    const refreshToken = localStorage.getItem('refresh_token');
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
     localStorage.removeItem('user');
     setUser(null);
-    if (refreshToken) {
-      try {
-        await api.post('/auth/logout', { refresh_token: refreshToken });
-      } catch {
-      }
+    try {
+      await api.post('/auth/logout');
+    } catch {
     }
   }, []);
 
   useEffect(() => {
-    const token = localStorage.getItem('access_token');
     const savedUser = localStorage.getItem('user');
-    if (token && savedUser) {
-      const payload = parseJwtPayload(token);
-      if (payload && payload.exp * 1000 > Date.now()) {
-        try {
-          setUser(JSON.parse(savedUser));
-        } catch {
-          localStorage.removeItem('access_token');
-          localStorage.removeItem('refresh_token');
-          localStorage.removeItem('user');
-        }
-      } else {
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('refresh_token');
+    if (savedUser) {
+      try {
+        setUser(JSON.parse(savedUser));
+      } catch {
         localStorage.removeItem('user');
       }
     }
@@ -56,8 +30,6 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const handleAuthExpired = () => {
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('refresh_token');
       localStorage.removeItem('user');
       setUser(null);
       setLoading(false);
@@ -74,19 +46,16 @@ export const AuthProvider = ({ children }) => {
 
     const res = await api.post('/auth/login', payload);
 
-    const { access_token, refresh_token, user } = res.data;
+    const { user: userData } = res.data;
 
-    if (!access_token || !refresh_token || !user) {
+    if (!userData) {
       throw new Error('Invalid response from server');
     }
 
-    localStorage.setItem('access_token', access_token);
-    localStorage.setItem('refresh_token', refresh_token);
-    localStorage.setItem('user', JSON.stringify(user));
+    localStorage.setItem('user', JSON.stringify(userData));
+    setUser(userData);
 
-    setUser(user);
-
-    return user;
+    return userData;
   };
 
   const register = async ({ email, password, rut, phone, tenant_id, invite_token }) => {

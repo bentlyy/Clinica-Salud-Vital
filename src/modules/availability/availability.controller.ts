@@ -11,7 +11,7 @@ export const getAvailabilityByDoctor = asyncHandler(async (req, res) => {
 });
 
 export const getMyAvailability = asyncHandler(async (req, res) => {
-  const doctor = await doctorService.getDoctorByUserId(req.user!.id);
+  const doctor = await doctorService.getDoctorByUserId(req.user!.id, req.tenant_id);
   if (!doctor) throw new NotFoundError('Doctor profile not found');
 
   const data = await availabilityService.getAvailabilityByDoctor(doctor.id, req.tenant_id);
@@ -21,7 +21,7 @@ export const getMyAvailability = asyncHandler(async (req, res) => {
 export const createAvailability = asyncHandler(async (req, res) => {
   const { day_of_week, start_time, end_time } = req.body;
 
-  const doctor = await doctorService.getDoctorByUserId(req.user!.id);
+  const doctor = await doctorService.getDoctorByUserId(req.user!.id, req.tenant_id);
   if (!doctor) throw new NotFoundError('Doctor profile not found');
 
   const availability = await availabilityService.createAvailability({
@@ -35,7 +35,7 @@ export const createAvailability = asyncHandler(async (req, res) => {
 });
 
 export const deleteAvailability = asyncHandler(async (req, res) => {
-  const doctor = await doctorService.getDoctorByUserId(req.user!.id);
+  const doctor = await doctorService.getDoctorByUserId(req.user!.id, req.tenant_id);
   if (!doctor) throw new NotFoundError('Doctor profile not found');
 
   const result = await availabilityService.deleteAvailability(Number(req.params.id), doctor.id, req.tenant_id);

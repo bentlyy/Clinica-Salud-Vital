@@ -58,7 +58,7 @@ export const seedSuperAdmin = async (): Promise<void> => {
     ['superadmin@clinic.com', hash, 'Super Admin', 'superadmin', DEFAULT_TENANT_ID]
   );
 
-  logger.info('Superadmin created: superadmin@clinic.com / REPLACED_PASSWORD');
+  logger.info('Superadmin created');
 };
 
 const TEST_TENANTS = [

@@ -122,12 +122,17 @@ export const getMlReport = asyncHandler(async (_req: Request, res: Response) => 
 });
 
 export const getLogs = asyncHandler(async (req: Request, res: Response) => {
-  const logDir = process.env.LOG_DIR || 'logs';
+  const logDir = path.resolve(process.env.LOG_DIR || 'logs');
   const type = req.query.type as string || 'combined';
   const lines = parseInt(req.query.lines as string) || 100;
 
   const filename = type === 'error' ? 'error.log' : type === 'db' ? 'db-table-sizes.csv' : 'combined.log';
-  const filePath = path.join(logDir, filename);
+  const filePath = path.resolve(path.join(logDir, filename));
+
+  if (!filePath.startsWith(logDir)) {
+    res.status(400).json({ error: 'Invalid log file path' });
+    return;
+  }
 
   if (!fs.existsSync(filePath)) {
     res.status(404).json({ error: `Log file not found: ${filename}` });

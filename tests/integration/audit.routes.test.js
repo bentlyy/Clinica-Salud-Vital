@@ -32,9 +32,9 @@ app.use(errorHandler);
 const generateToken = (payload) =>
   jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1d' });
 
-const adminToken = generateToken({ id: 3, email: 'admin@test.com', role: 'admin' });
-const doctorToken = generateToken({ id: 2, email: 'doc@test.com', role: 'doctor' });
-const userToken = generateToken({ id: 1, email: 'user@test.com', role: 'user' });
+const adminToken = generateToken({ id: 3, email: 'admin@test.com', role: 'admin', token_version: 0 });
+const doctorToken = generateToken({ id: 2, email: 'doc@test.com', role: 'doctor', token_version: 0 });
+const userToken = generateToken({ id: 1, email: 'user@test.com', role: 'user', token_version: 0 });
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -43,7 +43,9 @@ beforeEach(() => {
 
 describe('GET /api/audit', () => {
   it('returns audit logs for admin', async () => {
-    mockQuery.mockResolvedValueOnce({ rows: [] });
+    mockQuery
+      .mockResolvedValueOnce({ rows: [{ token_version: 0 }] })
+      .mockResolvedValueOnce({ rows: [] });
 
     const res = await request(app)
       .get('/api/audit')

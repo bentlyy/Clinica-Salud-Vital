@@ -32,7 +32,7 @@ export const getBookingStatusDistribution = asyncHandler(async (req, res) => {
 });
 
 export const getMyDoctorStats = asyncHandler(async (req, res) => {
-  const doctor = await doctorService.getDoctorByUserId(req.user!.id);
+  const doctor = await doctorService.getDoctorByUserId(req.user!.id, req.tenant_id);
   if (!doctor) throw new NotFoundError('Doctor profile not found');
 
   const stats = await analyticsService.getDoctorStats(doctor.id, req.tenant_id);

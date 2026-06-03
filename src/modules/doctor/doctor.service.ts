@@ -3,7 +3,7 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { sendEmail } from '../../shared/email.service.js';
 import { doctorCredentialsEmail, invitationEmail } from './doctor.email.js';
-import { getJWTSecret } from '../../shared/jwt.js';
+import { getInviteJWTSecret } from '../../shared/jwt.js';
 import { BadRequestError, NotFoundError } from '../../utils/errors.js';
 import { logger } from '../../utils/logger.js';
 import crypto from 'crypto';
@@ -116,7 +116,7 @@ export const registerDoctor = async ({ name, specialty, email, rut, phone }: Doc
 
     const setupToken = jwt.sign(
       { id: userId, purpose: 'setup-password' },
-      getJWTSecret(),
+      getInviteJWTSecret(),
       { expiresIn: '24h' }
     );
 
@@ -201,19 +201,19 @@ export const createDoctor = async ({ name, specialty, email, user_id }: CreateDo
   }
 };
 
-export const getDoctorById = async (id: number): Promise<Doctor | null> => {
+export const getDoctorById = async (id: number, tenantId?: string): Promise<Doctor | null> => {
   const result = await pool.query<Doctor>(
-    'SELECT * FROM doctors WHERE id = $1',
-    [id]
+    `SELECT * FROM doctors WHERE id = $1${tenantId ? ' AND tenant_id = $2' : ''}`,
+    tenantId ? [id, tenantId] : [id]
   );
 
   return result.rows[0] || null;
 };
 
-export const getDoctorByUserId = async (user_id: number): Promise<Doctor | null> => {
+export const getDoctorByUserId = async (user_id: number, tenantId?: string): Promise<Doctor | null> => {
   const result = await pool.query<Doctor>(
-    'SELECT * FROM doctors WHERE user_id = $1',
-    [user_id]
+    `SELECT * FROM doctors WHERE user_id = $1${tenantId ? ' AND tenant_id = $2' : ''}`,
+    tenantId ? [user_id, tenantId] : [user_id]
   );
 
   return result.rows[0] || null;
@@ -240,7 +240,7 @@ export const invitePerson = async (input: InvitePersonInput, tenantId?: string):
 
   const inviteToken = jwt.sign(
     { email, name: name || email, role, specialty: specialty || null, tenant_id: tenantId || null, purpose: 'invite' },
-    getJWTSecret(),
+    getInviteJWTSecret(),
     { expiresIn: '7d' }
   );
 
@@ -262,7 +262,7 @@ export const invitePerson = async (input: InvitePersonInput, tenantId?: string):
 
 export const verifyInviteToken = (token: string): { email: string; name: string; role: string; specialty: string | null; tenant_id: string | null } => {
   try {
-    const payload = jwt.verify(token, getJWTSecret()) as { email: string; name: string; role: string; specialty: string | null; tenant_id: string | null; purpose: string };
+    const payload = jwt.verify(token, getInviteJWTSecret()) as { email: string; name: string; role: string; specialty: string | null; tenant_id: string | null; purpose: string };
     if (payload.purpose !== 'invite') throw new BadRequestError('Token inválido');
     return payload;
   } catch {
@@ -321,5 +321,11 @@ export const toggleUserActive = async (userId: number, tenantId: string): Promis
     [userId, tenantId]
   );
   if (result.rows.length === 0) throw new NotFoundError('Usuario no encontrado en este tenant');
+
+  const isNowActive = result.rows[0].active;
+  if (!isNowActive) {
+    await pool.query('UPDATE refresh_tokens SET revoked = true WHERE user_id = $1', [userId]);
+  }
+
   return result.rows[0];
 };

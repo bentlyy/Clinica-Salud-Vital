@@ -56,7 +56,7 @@ export const createGuestBooking = async ({ doctor_id, date, time, duration = 30,
       [doctor_id, date]
     );
 
-    const doctor = await doctorService.getDoctorById(doctor_id);
+    const doctor = await doctorService.getDoctorById(doctor_id, tenantId);
     if (!doctor) throw new BadRequestError('Doctor no encontrado');
 
     await validateBookingSlot({ doctorId: doctor_id, date, time, duration, client, tenantId });
@@ -121,7 +121,7 @@ export const getGuestBookingsByRut = async (rut: string, tenantId?: string): Pro
   return result.rows;
 };
 
-export const cancelGuestBooking = async (bookingId: number, userIdOrRut?: number | string, userRole?: string, tenantId?: string): Promise<{ message: string }> => {
+export const cancelGuestBooking = async (bookingId: number, userIdOrRut?: number | string, userRole?: string, tenantId?: string, confirmationToken?: string): Promise<{ message: string }> => {
   const canCancelAny = userRole === 'admin' || userRole === 'doctor';
   let result;
 
@@ -140,14 +140,18 @@ export const cancelGuestBooking = async (bookingId: number, userIdOrRut?: number
       tenantId ? [bookingId, userIdOrRut, tenantId] : [bookingId, userIdOrRut]
     );
   } else if (typeof userIdOrRut === 'string') {
+    if (!confirmationToken) {
+      throw new BadRequestError('Confirmation token required to cancel guest booking');
+    }
     const cleanedRut = userIdOrRut.replace(/[^0-9kK]/g, '').toUpperCase();
     result = await pool.query(
       `UPDATE bookings SET status = 'cancelled'
        WHERE id = $1
          AND REPLACE(REPLACE(guest_rut, '.', ''), '-', '') = $2
-         AND guest_rut IS NOT NULL${tenantId ? ' AND tenant_id = $3' : ''}
+         AND guest_rut IS NOT NULL
+         AND confirmation_token = $3${tenantId ? ' AND tenant_id = $4' : ''}
        RETURNING *`,
-      tenantId ? [bookingId, cleanedRut, tenantId] : [bookingId, cleanedRut]
+      tenantId ? [bookingId, cleanedRut, confirmationToken, tenantId] : [bookingId, cleanedRut, confirmationToken]
     );
   } else {
     throw new BadRequestError('Debe proporcionar autenticación o RUT para cancelar');

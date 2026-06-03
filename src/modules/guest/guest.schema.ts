@@ -21,6 +21,7 @@ export const guestBookingIdSchema = z.object({
 
 export const cancelGuestBookingSchema = z.object({
   rut: z.string().min(1, 'RUT es requerido para cancelar como invitado').optional(),
+  confirmation_token: z.string().optional(),
 });
 
 export const confirmTokenSchema = z.object({

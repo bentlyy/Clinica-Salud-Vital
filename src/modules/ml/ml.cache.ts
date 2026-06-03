@@ -1,6 +1,9 @@
 import type { Request, Response, NextFunction } from 'express';
 import { logger } from '../../utils/logger.js';
 
+const MAX_KEY_LENGTH = 200;
+const MAX_VALUE_SIZE_BYTES = 1024 * 100;
+
 interface CacheEntry<T> {
   data: T;
   expires: number;
@@ -14,6 +17,8 @@ interface CacheStats {
   misses: number;
   hitRate: string;
 }
+
+type ValidatorFn<T> = (data: unknown) => data is T;
 
 class MLCache {
   private memoryCache: Map<string, CacheEntry<unknown>>;
@@ -46,7 +51,7 @@ class MLCache {
     return Math.abs(hash).toString(36);
   }
 
-  async get<T>(key: string): Promise<T | null> {
+  async get<T>(key: string, validate?: ValidatorFn<T>): Promise<T | null> {
     const cached = this.memoryCache.get(key) as CacheEntry<T> | undefined;
     if (!cached) {
       this.misses++;
@@ -59,12 +64,30 @@ class MLCache {
       return null;
     }
 
+    if (validate && !validate(cached.data)) {
+      this.memoryCache.delete(key);
+      this.misses++;
+      logger.warn(`[ML Cache] Validation failed for key: ${key}, evicted`);
+      return null;
+    }
+
     this.hits++;
     cached.lastAccess = Date.now();
     return cached.data;
   }
 
   async set<T>(key: string, data: T, ttl = this.ttl): Promise<boolean> {
+    if (key.length > MAX_KEY_LENGTH) {
+      logger.warn(`[ML Cache] Key too long (${key.length} chars), truncating`);
+      key = key.slice(0, MAX_KEY_LENGTH);
+    }
+
+    const serialized = JSON.stringify(data);
+    if (serialized.length > MAX_VALUE_SIZE_BYTES) {
+      logger.warn(`[ML Cache] Value too large (${serialized.length} bytes), skipping cache`);
+      return false;
+    }
+
     if (this.memoryCache.size >= this.maxSize) {
       const oldestKey = this.findOldest();
       if (oldestKey) this.memoryCache.delete(oldestKey);
@@ -128,15 +151,29 @@ class MLCache {
 
 export const mlCache = new MLCache();
 
+const sanitizeCacheKeyComponent = (val: string): string => {
+  return val.replace(/[^a-zA-Z0-9\-_.~]/g, '_').slice(0, 60);
+};
+
 export const cacheMiddleware = (ttl = 300000) => {
   return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    const cacheKey = `ml:${req.method}:${req.originalUrl}:${JSON.stringify(req.query)}`;
+    const method = req.method;
+    const url = sanitizeCacheKeyComponent(req.originalUrl || req.url || '');
+    const queryStr = JSON.stringify(req.query).replace(/[^a-zA-Z0-9\-_.{},:[\]"]/g, '_').slice(0, 200);
+    const cacheKey = `ml:${method}:${url}:${queryStr}`;
+
+    if (cacheKey.length > MAX_KEY_LENGTH) {
+      next();
+      return;
+    }
 
     try {
-      const cached = await mlCache.get(cacheKey);
+      const cached = await mlCache.get<Record<string, unknown>>(cacheKey, (d): d is Record<string, unknown> =>
+        d !== null && typeof d === 'object' && !Array.isArray(d)
+      );
       if (cached && req.method === 'GET') {
         logger.debug(`[ML Cache] Hit: ${cacheKey}`);
-        res.json({ ...(cached as Record<string, unknown>), fromCache: true });
+        res.json({ ...cached, fromCache: true });
         return;
       }
     } catch (err) {

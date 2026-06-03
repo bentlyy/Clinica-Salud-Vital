@@ -2,12 +2,14 @@ import jwt, { JwtPayload } from 'jsonwebtoken';
 import { Request, Response, NextFunction } from 'express';
 import { getJWTSecret } from '../shared/jwt.js';
 import { UserRole } from '../types/index.js';
+import { pool } from '../shared/db.js';
 
 export interface JwtUser {
   id: number;
   email: string;
   role: UserRole;
   tenant_id: string;
+  token_version?: number;
 }
 
 export type AuthRequest = Request & { user?: JwtUser };
@@ -24,12 +26,13 @@ declare global {
 
 const extractAndVerifyUser = (token: string, req: Request): JwtUser | null => {
   try {
-    const decoded = jwt.verify(token, getJWTSecret()) as JwtPayload & JwtUser;
+    const decoded = jwt.verify(token, getJWTSecret(), { algorithms: ['HS256'] }) as JwtPayload & JwtUser;
     return {
       id: decoded.id,
       email: decoded.email,
       role: decoded.role as UserRole,
       tenant_id: decoded.tenant_id || req.tenant_id || process.env.DEFAULT_TENANT_ID || 'default',
+      token_version: decoded.token_version || 0,
     };
   } catch {
     return null;
@@ -44,10 +47,16 @@ export const setSecurityHeaders = (req: Request, res: Response, next: NextFuncti
   next();
 };
 
-export const authMiddleware = (req: Request, res: Response, next: NextFunction): void => {
+const extractToken = (req: Request): string | undefined => {
   const authHeader = req.headers.authorization;
+  if (authHeader?.startsWith('Bearer ')) {
+    return authHeader.split(' ')[1];
+  }
+  return req.cookies?.access_token;
+};
 
-  const tokenStr = authHeader?.split(' ')[1];
+export const authMiddleware = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  const tokenStr = extractToken(req);
 
   if (!tokenStr) {
     res.status(401).json({ error: 'Token required' });
@@ -68,16 +77,30 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction):
     return;
   }
 
+  if (req.tenant_id && user.tenant_id !== req.tenant_id) {
+    res.status(401).json({ error: 'Tenant mismatch' });
+    return;
+  }
+
+  try {
+    const { rows } = await pool.query('SELECT token_version FROM users WHERE id = $1', [user.id]);
+    if (rows.length && rows[0].token_version !== user.token_version) {
+      res.status(401).json({ error: 'Token revoked', code: 'TOKEN_REVOKED' });
+      return;
+    }
+  } catch {
+    // Degraded: allow request if DB is temporarily unavailable
+  }
+
   req.user = user;
   setSecurityHeaders(req, res, next);
 };
 
 export const optionalAuth = (req: Request, res: Response, next: NextFunction): void => {
-  const authHeader = req.headers.authorization;
-  const token = authHeader?.split(' ')[1];
+  const tokenStr = extractToken(req);
 
-  if (token) {
-    const user = extractAndVerifyUser(token, req);
+  if (tokenStr) {
+    const user = extractAndVerifyUser(tokenStr, req);
     if (user) req.user = user;
   }
 
