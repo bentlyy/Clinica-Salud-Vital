@@ -139,7 +139,14 @@ export default function SaasRegisterPage() {
               <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
                 <button type="button" className="btn btn--outline" style={{ flex: 1 }} onClick={() => setStep(1)}>{t('saas.back')}</button>
                 <button type="button" className="btn btn--primary" style={{ flex: 1 }}
-                  onClick={() => { if (form.admin_email && form.admin_password) setStep(3); }}>
+                  onClick={() => {
+                    setError('');
+                    if (!form.admin_email.trim()) { setError('El email del administrador es requerido'); return; }
+                    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.admin_email)) { setError('Email inválido'); return; }
+                    if (!form.admin_password) { setError('La contraseña es requerida'); return; }
+                    if (form.admin_password.length < 8) { setError('La contraseña debe tener al menos 8 caracteres'); return; }
+                    setStep(3);
+                  }}>
                   {t('saas.continue')}
                 </button>
               </div>

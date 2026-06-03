@@ -35,6 +35,9 @@ export default function RegisterPage() {
     setError(null);
 
     if (!tenantId && !inviteToken) { setError(t('register.invitation_required') || 'Necesitas un enlace de invitación para registrarte'); return; }
+    if (!form.email.trim()) { setError(t('register.email_required') || 'El correo es requerido'); return; }
+    if (!form.password) { setError(t('register.password_required') || 'La contraseña es requerida'); return; }
+    if (!form.confirmPassword) { setError(t('register.confirm_password_required') || 'Debe confirmar la contraseña'); return; }
     if (form.password !== form.confirmPassword) { setError(t('register.password_mismatch')); return; }
     const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
     if (!passwordRegex.test(form.password)) { setError(t('register.password_requirements')); return; }

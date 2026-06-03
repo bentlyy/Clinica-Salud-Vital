@@ -12,6 +12,7 @@ export default function SuperAdminTenantsPage() {
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
+  const [error, setError] = useState('');
 
   const limit = 20;
 
@@ -23,8 +24,9 @@ export default function SuperAdminTenantsPage() {
       const result = await listTenants(p, limit, filters);
       setTenants(result.data || []);
       setTotal(result.pagination?.total || 0);
-    } catch {
+    } catch (err) {
       setTenants([]);
+      setError(err.response?.data?.error || 'Error al cargar tenants');
     } finally {
       setLoading(false);
     }
@@ -43,8 +45,8 @@ export default function SuperAdminTenantsPage() {
       await deleteTenant(id);
       setDeleteConfirm(null);
       load();
-    } catch {
-      alert('Error deleting tenant');
+    } catch (err) {
+      setError(err.response?.data?.error || 'Error al eliminar tenant');
     }
   };
 
@@ -56,6 +58,8 @@ export default function SuperAdminTenantsPage() {
         <h1 style={{ margin: 0 }}>{t('superadmin.manage_tenants')}</h1>
         <button className="btn btn--primary" onClick={() => navigate('/super-admin/tenants/new')}>{t('superadmin.create_tenant')}</button>
       </div>
+
+      {error && <div className="alert alert--error" style={{ marginBottom: 16 }}>{error}</div>}
 
       <form onSubmit={handleSearch} style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
         <input
