@@ -30,6 +30,10 @@ vi.mock('../../src/modules/auth/auth-2fa.service.js', () => ({
   verifyToken: vi.fn(),
 }));
 
+vi.mock('../../src/utils/logger.js', () => ({
+  logger: { info: vi.fn(), error: vi.fn(), warn: vi.fn() },
+}));
+
 import * as authService from '../../src/modules/auth/auth.service.js';
 import bcrypt from 'bcrypt';
 import { verifyToken as mockVerify2FAToken } from '../../src/modules/auth/auth-2fa.service.js';
@@ -171,7 +175,7 @@ describe('authService.login', () => {
 
   it('throws if password incorrect', async () => {
     mockQuery.mockResolvedValueOnce({
-      rows: [{ id: 1, email: 'test@test.com', password: 'hashed', role: 'user', tenant_id: 'default' }],
+      rows: [{ id: 1, email: 'test@test.com', password: 'hashed', role: 'user', tenant_id: 'default', active: true }],
     });
     bcrypt.compare.mockResolvedValueOnce(false);
 
@@ -179,9 +183,19 @@ describe('authService.login', () => {
       .rejects.toThrow('Invalid credentials');
   });
 
+  it('throws if user is inactive', async () => {
+    mockQuery.mockResolvedValueOnce({
+      rows: [{ id: 1, email: 'inactive@test.com', password: 'hashed', role: 'user', tenant_id: 'default', active: false }],
+    });
+    bcrypt.compare.mockResolvedValueOnce(true);
+
+    await expect(authService.login({ email: 'inactive@test.com', password: validPassword, captcha_token: 'test-captcha' }))
+      .rejects.toThrow('Account is deactivated');
+  });
+
   it('returns token and user on success', async () => {
     mockQuery.mockResolvedValueOnce({
-      rows: [{ id: 1, email: 'test@test.com', password: 'hashed', role: 'user', tenant_id: 'default' }],
+      rows: [{ id: 1, email: 'test@test.com', password: 'hashed', role: 'user', tenant_id: 'default', active: true }],
     });
     bcrypt.compare.mockResolvedValueOnce(true);
 
@@ -195,7 +209,7 @@ describe('authService.login', () => {
 
   it('defaults role to user if null', async () => {
     mockQuery.mockResolvedValueOnce({
-      rows: [{ id: 1, email: 'test@test.com', password: 'hashed', role: null, tenant_id: 'default' }],
+      rows: [{ id: 1, email: 'test@test.com', password: 'hashed', role: null, tenant_id: 'default', active: true }],
     });
     bcrypt.compare.mockResolvedValueOnce(true);
 
@@ -206,7 +220,7 @@ describe('authService.login', () => {
 
   it('throws if 2FA token required but not provided', async () => {
     mockQuery.mockResolvedValueOnce({
-      rows: [{ id: 1, email: '2fa@test.com', password: 'hashed', role: 'user', tenant_id: 'default', totp_enabled: true, totp_secret: 'SECRET' }],
+      rows: [{ id: 1, email: '2fa@test.com', password: 'hashed', role: 'user', tenant_id: 'default', totp_enabled: true, totp_secret: 'SECRET', active: true }],
     });
     bcrypt.compare.mockResolvedValueOnce(true);
 
@@ -217,7 +231,7 @@ describe('authService.login', () => {
   it('throws if 2FA token is invalid', async () => {
     mockVerify2FAToken.mockReturnValue(false);
     mockQuery.mockResolvedValueOnce({
-      rows: [{ id: 1, email: '2fa@test.com', password: 'hashed', role: 'user', tenant_id: 'default', totp_enabled: true, totp_secret: 'SECRET' }],
+      rows: [{ id: 1, email: '2fa@test.com', password: 'hashed', role: 'user', tenant_id: 'default', totp_enabled: true, totp_secret: 'SECRET', active: true }],
     });
     bcrypt.compare.mockResolvedValueOnce(true);
 
@@ -228,7 +242,7 @@ describe('authService.login', () => {
   it('succeeds with valid 2FA token', async () => {
     mockVerify2FAToken.mockReturnValue(true);
     mockQuery.mockResolvedValueOnce({
-      rows: [{ id: 1, email: '2fa@test.com', password: 'hashed', role: 'user', tenant_id: 'default', totp_enabled: true, totp_secret: 'SECRET' }],
+      rows: [{ id: 1, email: '2fa@test.com', password: 'hashed', role: 'user', tenant_id: 'default', totp_enabled: true, totp_secret: 'SECRET', active: true }],
     });
     bcrypt.compare.mockResolvedValueOnce(true);
     mockQuery.mockResolvedValueOnce({ rows: [] });
@@ -241,7 +255,7 @@ describe('authService.login', () => {
 
   it('defaults password_changed and totp_enabled when undefined in user', async () => {
     mockQuery.mockResolvedValueOnce({
-      rows: [{ id: 1, email: 'partial@test.com', password: 'hashed', role: 'user', tenant_id: 'default' }],
+      rows: [{ id: 1, email: 'partial@test.com', password: 'hashed', role: 'user', tenant_id: 'default', active: true }],
     });
     bcrypt.compare.mockResolvedValueOnce(true);
     mockQuery.mockResolvedValueOnce({ rows: [] });
@@ -254,7 +268,7 @@ describe('authService.login', () => {
 
   it('defaults tenant_id when user tenant_id is null', async () => {
     mockQuery.mockResolvedValueOnce({
-      rows: [{ id: 1, email: 'notenant@test.com', password: 'hashed', role: 'user', tenant_id: null }],
+      rows: [{ id: 1, email: 'notenant@test.com', password: 'hashed', role: 'user', tenant_id: null, active: true }],
     });
     bcrypt.compare.mockResolvedValueOnce(true);
     mockQuery.mockResolvedValueOnce({ rows: [] });

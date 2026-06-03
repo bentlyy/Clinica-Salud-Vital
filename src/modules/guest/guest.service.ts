@@ -121,23 +121,36 @@ export const getGuestBookingsByRut = async (rut: string, tenantId?: string): Pro
   return result.rows;
 };
 
-export const cancelGuestBooking = async (bookingId: number, userId: number, userRole?: string, tenantId?: string): Promise<{ message: string }> => {
+export const cancelGuestBooking = async (bookingId: number, userIdOrRut?: number | string, userRole?: string, tenantId?: string): Promise<{ message: string }> => {
   const canCancelAny = userRole === 'admin' || userRole === 'doctor';
   let result;
-  if (canCancelAny) {
+
+  if (canCancelAny && typeof userIdOrRut === 'number') {
     result = await pool.query(
       `UPDATE bookings SET status = 'cancelled'
        WHERE id = $1${tenantId ? ' AND tenant_id = $2' : ''}
        RETURNING *`,
       tenantId ? [bookingId, tenantId] : [bookingId]
     );
-  } else {
+  } else if (typeof userIdOrRut === 'number') {
     result = await pool.query(
       `UPDATE bookings SET status = 'cancelled'
        WHERE id = $1 AND user_id = $2${tenantId ? ' AND tenant_id = $3' : ''}
        RETURNING *`,
-      tenantId ? [bookingId, userId, tenantId] : [bookingId, userId]
+      tenantId ? [bookingId, userIdOrRut, tenantId] : [bookingId, userIdOrRut]
     );
+  } else if (typeof userIdOrRut === 'string') {
+    const cleanedRut = userIdOrRut.replace(/[^0-9kK]/g, '').toUpperCase();
+    result = await pool.query(
+      `UPDATE bookings SET status = 'cancelled'
+       WHERE id = $1
+         AND REPLACE(REPLACE(guest_rut, '.', ''), '-', '') = $2
+         AND guest_rut IS NOT NULL${tenantId ? ' AND tenant_id = $3' : ''}
+       RETURNING *`,
+      tenantId ? [bookingId, cleanedRut, tenantId] : [bookingId, cleanedRut]
+    );
+  } else {
+    throw new BadRequestError('Debe proporcionar autenticación o RUT para cancelar');
   }
 
   if (result.rows.length === 0) throw new NotFoundError('Reserva no encontrada');

@@ -1,10 +1,11 @@
 import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import FullCalendar from '@fullcalendar/react';
 import timeGridPlugin from '@fullcalendar/timegrid';
+import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import { getAvailability } from '../api/availability';
 import { getExceptions, createException, deleteException } from '../api/exceptions';
-import { getDoctorBookings } from '../api/doctors';
+import { getDoctorBookings, getDailyDensity } from '../api/bookings';
 import { useTheme } from '../context/useTheme';
 import { useI18n } from '../i18n/useI18n';
 import LoadingState from '../components/LoadingState';
@@ -29,6 +30,44 @@ function mergeSlots(slots) {
   return merged;
 }
 
+function getMaxSlotsForDay(availability, dayOfWeek) {
+  const blocks = availability.filter(a => a.day_of_week === dayOfWeek);
+  if (!blocks.length) return 0;
+  let totalMinutes = 0;
+  for (const block of blocks) {
+    const [sh, sm] = block.start_time.split(':').map(Number);
+    const [eh, em] = block.end_time.split(':').map(Number);
+    totalMinutes += (eh * 60 + em) - (sh * 60 + sm);
+  }
+  return Math.floor(totalMinutes / 30);
+}
+
+function getDensityInfo(dayOfWeek, dateStr, availability, densityMap) {
+  const maxSlots = getMaxSlotsForDay(availability, dayOfWeek);
+  const count = densityMap.get(dateStr) || 0;
+  const hasAvail = maxSlots > 0;
+  const ratio = hasAvail ? count / maxSlots : 0;
+  return { maxSlots, count, ratio, hasAvail };
+}
+
+const DENSITY_COLORS = {
+  noSchedule: { bg: '#F5F5F5', text: '#BDBDBD', labelKey: 'density_no_schedule' },
+  empty: { bg: '#C8E6C9', text: '#2E7D32', labelKey: 'density_empty' },
+  low: { bg: '#FFF9C4', text: '#F57F17', labelKey: 'density_low' },
+  medium: { bg: '#FFE0B2', text: '#E65100', labelKey: 'density_medium' },
+  full: { bg: '#FFCDD2', text: '#C62828', labelKey: 'density_full' },
+};
+
+function getDensityColor(dayOfWeek, dateStr, availability, densityMap, isWeekend) {
+  const { maxSlots, count, hasAvail } = getDensityInfo(dayOfWeek, dateStr, availability, densityMap);
+  if (!hasAvail) return DENSITY_COLORS.noSchedule;
+  if (count === 0) return DENSITY_COLORS.empty;
+  const ratio = count / maxSlots;
+  if (ratio < 0.3) return DENSITY_COLORS.low;
+  if (ratio < 0.7) return DENSITY_COLORS.medium;
+  return DENSITY_COLORS.full;
+}
+
 export default function DoctorCalendarPage() {
   const { theme } = useTheme();
   const { t, locale } = useI18n();
@@ -36,6 +75,7 @@ export default function DoctorCalendarPage() {
   const [allAvailability, setAllAvailability] = useState([]);
   const [allExceptions, setAllExceptions] = useState([]);
   const [allBookings, setAllBookings] = useState([]);
+  const [densityData, setDensityData] = useState([]);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedBooking, setSelectedBooking] = useState(null);
@@ -49,7 +89,6 @@ export default function DoctorCalendarPage() {
   const COLORS = useMemo(() => ({
     available: isDark ? '#1B5E20' : '#C8E6C9',
     availableText: isDark ? '#A5D6A7' : '#2E7D32',
-    availableBorder: isDark ? '#2E7D32' : '#66BB6A',
     blocked: isDark ? '#B71C1C' : '#EF5350',
     blockedText: '#FFFFFF',
     blockedBorder: isDark ? '#C62828' : '#E53935',
@@ -93,6 +132,48 @@ export default function DoctorCalendarPage() {
   }, [t]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
+
+  const densityMap = useMemo(() => {
+    const map = new Map();
+    for (const d of densityData) {
+      map.set(d.date, d.count);
+    }
+    return map;
+  }, [densityData]);
+
+  const handleDatesSet = useCallback(async (info) => {
+    const start = info.startStr.slice(0, 10);
+    const end = info.endStr.slice(0, 10);
+    try {
+      const res = await getDailyDensity(start, end);
+      setDensityData(res?.data || []);
+    } catch {
+      // density es opcional
+    }
+  }, []);
+
+  const handleDayCellDidMount = useCallback((info) => {
+    if (info.view.type !== 'dayGridMonth') return;
+    const dateStr = info.dateStr;
+    const jsDay = info.date.getDay();
+    const dayOfWeek = jsDay === 0 ? 7 : jsDay;
+    const color = getDensityColor(dayOfWeek, dateStr, allAvailability, densityMap);
+    info.el.style.backgroundColor = color.bg;
+    const numEl = info.el.querySelector('.fc-daygrid-day-number');
+    if (numEl) numEl.style.color = color.text;
+    info.el.style.borderRadius = '4px';
+    info.el.style.transition = 'all 0.15s';
+    info.el.title = `${dateStr}: ${(densityMap.get(dateStr) || 0)} citas`;
+  }, [allAvailability, densityMap]);
+
+  const handleDateClick = useCallback((info) => {
+    if (info.view.type === 'dayGridMonth') {
+      const api = calendarRef.current?.getApi();
+      if (api) {
+        api.changeView('timeGridDay', info.dateStr);
+      }
+    }
+  }, []);
 
   const events = useMemo(() => {
     const list = [];
@@ -281,6 +362,32 @@ export default function DoctorCalendarPage() {
         {loading && <span style={{ fontSize: 12, color: 'var(--text-muted)', marginLeft: 8 }}>{t('doctor_calendar.updating')}</span>}
       </div>
 
+      <div style={{
+        display: 'flex', gap: 12, marginBottom: 12, flexWrap: 'wrap',
+        padding: '8px 16px', background: 'var(--bg-secondary)', borderRadius: 8,
+        fontSize: 12, alignItems: 'center',
+      }}>
+        <span style={{ fontWeight: 600, marginRight: 4 }}>{t('density_legend')}</span>
+        {[
+          { key: 'noSchedule', color: DENSITY_COLORS.noSchedule },
+          { key: 'empty', color: DENSITY_COLORS.empty },
+          { key: 'low', color: DENSITY_COLORS.low },
+          { key: 'medium', color: DENSITY_COLORS.medium },
+          { key: 'full', color: DENSITY_COLORS.full },
+        ].map((item) => (
+          <span key={item.key} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <span style={{
+              display: 'inline-block', width: 14, height: 14, borderRadius: 3,
+              background: item.color.bg, border: '1px solid ' + item.color.text,
+            }} />
+            <span style={{ color: 'var(--text-secondary)' }}>{t(item.color.labelKey)}</span>
+          </span>
+        ))}
+        <span style={{ marginLeft: 'auto', color: 'var(--text-muted)', fontSize: 11 }}>
+          {t('density_hint')}
+        </span>
+      </div>
+
       {loading && events.length === 0 ? (
         <LoadingState message={t('doctor_calendar.loading')} fullPage />
       ) : (
@@ -291,12 +398,15 @@ export default function DoctorCalendarPage() {
         }}>
           <FullCalendar
             ref={calendarRef}
-            plugins={[timeGridPlugin, interactionPlugin]}
-            initialView="timeGridWeek"
+            plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+            initialView="dayGridMonth"
             selectable
             select={handleSelect}
             eventClick={handleEventClick}
+            dateClick={handleDateClick}
             eventContent={renderEventContent}
+            dayCellDidMount={handleDayCellDidMount}
+            datesSet={handleDatesSet}
             slotDuration="00:30:00"
             slotMinTime="08:00"
             slotMaxTime="20:00"
@@ -308,9 +418,14 @@ export default function DoctorCalendarPage() {
             headerToolbar={{
               left: 'prev,next today',
               center: 'title',
-              right: 'timeGridWeek,timeGridDay',
+              right: 'dayGridMonth,timeGridWeek,timeGridDay',
             }}
-            buttonText={{ today: t('doctor_calendar.today'), week: locale === 'en' ? 'Week' : 'Semana', day: locale === 'en' ? 'Day' : 'Día' }}
+            buttonText={{
+              today: t('doctor_calendar.today'),
+              month: locale === 'en' ? 'Month' : 'Mes',
+              week: locale === 'en' ? 'Week' : 'Semana',
+              day: locale === 'en' ? 'Day' : 'Día',
+            }}
             slotLabelFormat={{ hour: '2-digit', minute: '2-digit', hour12: false }}
             eventTimeFormat={{ hour: '2-digit', minute: '2-digit', hour12: false }}
             nowIndicator
@@ -318,6 +433,9 @@ export default function DoctorCalendarPage() {
             editable={false}
             selectOverlap={false}
             stickyHeaderDates
+            dayMaxEvents={3}
+            fixedWeekCount={false}
+            showNonCurrentDates={false}
           />
         </div>
       )}
@@ -428,6 +546,9 @@ export default function DoctorCalendarPage() {
         .fc .fc-timegrid-bg-harness table {
           width: 100% !important;
         }
+        .fc .fc-daygrid-day-frame { cursor: pointer; }
+        .fc .fc-daygrid-day-frame:hover { filter: brightness(0.95); }
+        .fc .fc-daygrid-more-link { font-size: 11px; font-weight: 600; }
       `}</style>
     </div>
   );

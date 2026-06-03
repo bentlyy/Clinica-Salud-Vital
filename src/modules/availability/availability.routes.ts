@@ -6,8 +6,7 @@ import {
   deleteAvailability
 } from './availability.controller.js';
 
-import { authMiddleware } from '../../middlewares/auth.middleware.js';
-import { authorizeRoles } from '../../middlewares/role.middleware.js';
+import { authMiddleware, authorize } from '../../middlewares/auth.middleware.js';
 
 const router = Router();
 
@@ -15,7 +14,7 @@ const router = Router();
 router.get(
   '/me',
   authMiddleware,
-  authorizeRoles('doctor'),
+  authorize('doctor'),
   getMyAvailability
 );
 
@@ -24,14 +23,14 @@ router.get('/:id', getAvailabilityByDoctor);
 router.post(
   '/',
   authMiddleware,
-  authorizeRoles('doctor'),
+  authorize('doctor'),
   createAvailability
 );
 
 router.delete(
   '/:id',
   authMiddleware,
-  authorizeRoles('doctor'),
+  authorize('doctor'),
   deleteAvailability
 );
 

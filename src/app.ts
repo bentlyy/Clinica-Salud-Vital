@@ -11,7 +11,6 @@ import { pool } from './shared/db.js';
 import { tenantService } from './shared/multi-tenant.service.js';
 import { seedDefaultTenant, seedSuperAdmin, seedTestTenants } from './seed/admin.seed.js';
 import { startReminderJob } from './jobs/reminder.job.js';
-import { startConfirmationJob } from './jobs/confirmation.job.js';
 import { securityMiddleware, validateEnvSecurity } from './middlewares/security.middleware.js';
 import { tenantMiddleware } from './middlewares/tenant.middleware.js';
 import { validateEmailConfig } from './shared/email.service.js';
@@ -28,7 +27,7 @@ import bookingRoutes from './modules/booking/booking.routes.js';
 import availabilityRoutes from './modules/availability/availability.routes.js';
 import exceptionRoutes from './modules/exception/exception.routes.js';
 import guestRoutes from './modules/guest/guest.routes.js';
-import confirmationRoutes from './modules/confirmation/confirmation.routes.js';
+
 import clinicalRecordRoutes from './modules/clinical-record/clinical-record.routes.js';
 import auditRoutes from './modules/audit/audit.routes.js';
 import analyticsRoutes from './modules/analytics/analytics.routes.js';
@@ -100,6 +99,7 @@ app.use(cors({
 app.use(compression());
 
 app.use('/api/saas/webhook/stripe', express.raw({ type: 'application/json' }));
+app.use('/api/v1/saas/webhook/stripe', express.raw({ type: 'application/json' }));
 app.use(express.json({ limit: '100kb' }));
 app.use(requestLogger);
 
@@ -161,7 +161,7 @@ app.use(`${API_PREFIX}/bookings`, bookingRoutes);
 app.use(`${API_PREFIX}/availability`, availabilityRoutes);
 app.use(`${API_PREFIX}/exceptions`, exceptionRoutes);
 app.use(`${API_PREFIX}/guest`, guestRoutes);
-app.use(`${API_PREFIX}/confirmation`, confirmationRoutes);
+
 app.use(`${API_PREFIX}/clinical-records`, clinicalRecordRoutes);
 app.use(`${API_PREFIX}/audit`, auditRoutes);
 app.use(`${API_PREFIX}/analytics`, analyticsRoutes);
@@ -173,6 +173,7 @@ app.use(`${API_PREFIX}/specialties`, specialtiesRoutes);
 app.use(`${API_PREFIX}/webhooks`, webhookRoutes);
 app.use(`${API_PREFIX}/saas`, saasRoutes);
 app.use(`${API_PREFIX}/super-admin`, superAdminRoutes);
+app.use(`${API_PREFIX}/i18n`, i18nRoutes);
 app.use(`${API_PREFIX}/monitoring`, monitoringRoutes);
 
 /* Backward compat: /api/ → /api/v1/ */
@@ -185,7 +186,6 @@ app.use('/api/bookings', bookingRoutes);
 app.use('/api/availability', availabilityRoutes);
 app.use('/api/exceptions', exceptionRoutes);
 app.use('/api/guest', guestRoutes);
-app.use('/api/confirmation', confirmationRoutes);
 app.use('/api/clinical-records', clinicalRecordRoutes);
 app.use('/api/audit', auditRoutes);
 app.use('/api/analytics', analyticsRoutes);
@@ -194,6 +194,9 @@ app.use('/api/laboratory', laboratoryRoutes);
 app.use('/api/rbac', rbacRoutes);
 app.use('/api/ml', mlRoutes);
 app.use('/api/specialties', specialtiesRoutes);
+app.use('/api/webhooks', webhookRoutes);
+app.use('/api/saas', saasRoutes);
+app.use('/api/super-admin', superAdminRoutes);
 app.use('/api/i18n', i18nRoutes);
 app.use('/api/monitoring', monitoringRoutes);
 
@@ -287,7 +290,6 @@ const startServer = async (): Promise<void> => {
     });
 
     startReminderJob();
-    startConfirmationJob();
   } catch (error) {
     logger.error('Error starting server', { error: (error as Error).message, stack: (error as Error).stack });
     process.exit(1);

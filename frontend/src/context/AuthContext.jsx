@@ -76,7 +76,7 @@ export const AuthProvider = ({ children }) => {
 
     const { access_token, refresh_token, user } = res.data;
 
-    if (!access_token || !user) {
+    if (!access_token || !refresh_token || !user) {
       throw new Error('Invalid response from server');
     }
 

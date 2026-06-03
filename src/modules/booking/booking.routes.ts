@@ -5,9 +5,9 @@ import {
   cancelBooking,
   getAvailableSlots,
   getDoctorBookings,
+  getDailyDensity,
 } from './booking.controller.js';
-import { authMiddleware } from '../../middlewares/auth.middleware.js';
-import { authorizeRoles } from '../../middlewares/role.middleware.js';
+import { authMiddleware, authorize } from '../../middlewares/auth.middleware.js';
 import { validateZod } from '../../middlewares/validate.middleware.js';
 import { createBookingSchema, availableSlotsSchema, bookingIdSchema } from './booking.schema.js';
 
@@ -17,7 +17,8 @@ router.post('/', authMiddleware, validateZod(createBookingSchema), createBooking
 router.get('/me', authMiddleware, getMyBookings);
 router.delete('/:id', authMiddleware, validateZod(bookingIdSchema, 'params'), cancelBooking);
 router.get('/available-slots', validateZod(availableSlotsSchema, 'query'), getAvailableSlots);
-router.get('/doctor', authMiddleware, authorizeRoles('doctor'), getDoctorBookings);
+router.get('/doctor/daily-density', authMiddleware, authorize('doctor'), getDailyDensity);
+router.get('/doctor', authMiddleware, authorize('doctor'), getDoctorBookings);
 
 export default router;
 
