@@ -10,7 +10,7 @@ export const getDoctors = asyncHandler(async (req, res) => {
 
 export const getDoctorsPublic = asyncHandler(async (req, res) => {
   const doctors = await doctorService.getAllDoctors(req.tenant_id);
-  const safe = doctors.map((d: Record<string, unknown>) => ({
+  const safe = doctors.map((d) => ({
     id: d.id,
     name: d.name,
     specialty: d.specialty,
