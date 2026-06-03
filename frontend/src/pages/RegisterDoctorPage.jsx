@@ -19,6 +19,16 @@ function InviteTab({ t, onSent }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
+
+    if (!form.email.trim()) {
+      setError('El correo electrónico es requerido');
+      return;
+    }
+    if (role === 'doctor' && !form.specialty.trim()) {
+      setError('La especialidad es requerida para doctores');
+      return;
+    }
+
     try {
       setSubmitting(true);
       const payload = { email: form.email, role };

@@ -75,9 +75,22 @@ export default function BookingPage() {
   const handleConfirm = async () => {
     if (submitting) return;
 
+    setError(null);
+    if (!selectedDoctor) {
+      setError(t('booking.select_doctor_error') || 'Debe seleccionar un doctor');
+      return;
+    }
+    if (!date) {
+      setError(t('booking.select_date_error') || 'Debe seleccionar una fecha');
+      return;
+    }
+    if (!selectedTime) {
+      setError(t('booking.select_time_error') || 'Debe seleccionar un horario');
+      return;
+    }
+
     try {
       setSubmitting(true);
-      setError(null);
 
       await createBooking({
         doctor_id: selectedDoctor,

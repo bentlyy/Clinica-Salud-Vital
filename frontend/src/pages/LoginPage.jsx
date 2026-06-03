@@ -28,6 +28,15 @@ export default function LoginPage() {
     e.preventDefault();
     setError(null);
 
+    if (!form.email.trim()) {
+      setError(t('auth.email_required') || 'El correo es requerido');
+      return;
+    }
+    if (!form.password.trim()) {
+      setError(t('auth.password_required') || 'La contraseña es requerida');
+      return;
+    }
+
     const captcha_token = getCaptchaToken();
     if (hasCaptcha && !captcha_token) {
       setError(t('auth.captcha_required'));

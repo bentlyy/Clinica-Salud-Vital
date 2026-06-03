@@ -203,6 +203,16 @@ export default function DoctorClinicalRecordsPage() {
   const handleSave = async (status) => {
     setSaving(true);
     setError(null);
+
+    const pendingPrescriptions = prescriptions.filter(p => p._temp);
+    for (const p of pendingPrescriptions) {
+      if (!p.medication.trim() || !p.dosage.trim() || !p.frequency.trim()) {
+        setError('Cada receta debe tener medicamento, dosis y frecuencia');
+        setSaving(false);
+        return;
+      }
+    }
+
     try {
       const payload = {
         patient_id: Number(formData.patient_id),
