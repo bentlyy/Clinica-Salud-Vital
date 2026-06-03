@@ -36,3 +36,8 @@ export const confirmBooking = async (token) => {
   const res = await api.post('/confirmation/confirm', { token });
   return res.data;
 };
+
+export const getDailyDensity = async (start, end) => {
+  const res = await api.get(`/bookings/doctor/daily-density?start=${start}&end=${end}`);
+  return res.data;
+};

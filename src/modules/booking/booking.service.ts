@@ -304,6 +304,27 @@ export const getAvailableSlots = async (doctor_id: number, date: string, tenantI
   });
 };
 
+export const getDailyBookingDensity = async (
+  doctorId: number,
+  startDate: string,
+  endDate: string,
+  tenantId?: string
+): Promise<{ date: string; count: number }[]> => {
+  const params: (string | number)[] = [doctorId, startDate, endDate];
+  let tenantFilter = '';
+  if (tenantId) { tenantFilter = ' AND tenant_id = $4'; params.push(tenantId); }
+
+  const result = await pool.query(
+    `SELECT date, COUNT(*)::int as count
+     FROM bookings
+     WHERE doctor_id = $1 AND date >= $2 AND date <= $3 AND status != 'cancelled'${tenantFilter}
+     GROUP BY date
+     ORDER BY date`,
+    params
+  );
+  return result.rows;
+};
+
 export const getBookingsByDoctor = async (doctor_id: number, { page = 1, limit = 50 }: PaginationOptions = {}, tenantId?: string): Promise<BookingData> => {
   const offset = (page - 1) * limit;
   const params: (string | number)[] = [doctor_id, limit, offset];

@@ -127,7 +127,7 @@ export const getNoShowsByDoctor = async (tenantId?: string) => {
       d.id,
       d.name AS doctor,
       COUNT(b.id) AS total,
-      COUNT(b.id) FILTER (WHERE b.status = 'cancelled' OR b.date < CURRENT_DATE) AS no_shows
+      COUNT(b.id) FILTER (WHERE b.status = 'no_show') AS no_shows
     FROM doctors d
     LEFT JOIN bookings b ON d.id = b.doctor_id 
       AND b.date >= NOW() - INTERVAL '6 months'
@@ -203,6 +203,7 @@ export const getDemandForecast = async (days = 30, tenantId?: string) => {
     return result.rows.map((row: BookingRow) => ({
       date: row.date,
       bookings: parseInt(row.bookings),
+      predicted: null,
     }));
   }
 };

@@ -228,6 +228,107 @@ export const getGlobalStats = async (): Promise<{
   return result.rows[0];
 };
 
+export const getGlobalDashboard = async (): Promise<Record<string, unknown>> => {
+  const result = await pool.query(`
+    SELECT
+      (SELECT COUNT(*) FROM tenants)::int AS total_tenants,
+      (SELECT COUNT(*) FROM tenants WHERE active = true)::int AS active_tenants,
+      (SELECT COUNT(*) FROM tenants WHERE active = false)::int AS inactive_tenants,
+      (SELECT COUNT(*) FROM users)::int AS total_users,
+      (SELECT COUNT(*) FILTER (WHERE role = 'admin') FROM users)::int AS admin_users,
+      (SELECT COUNT(*) FILTER (WHERE role IN ('user', 'patient')) FROM users)::int AS patient_users,
+      (SELECT COUNT(*) FROM doctors)::int AS total_doctors,
+      (SELECT COUNT(*) FROM bookings)::int AS total_bookings,
+      (SELECT COUNT(*) FILTER (WHERE status = 'confirmed' OR confirmed = true) FROM bookings)::int AS confirmed_bookings,
+      (SELECT COUNT(*) FILTER (WHERE status = 'cancelled') FROM bookings)::int AS cancelled_bookings,
+      (SELECT COALESCE(SUM(amount), 0) FROM subscription_invoices WHERE status = 'paid')::numeric AS total_revenue,
+      (SELECT COALESCE(SUM(amount), 0) FROM subscription_invoices WHERE status = 'paid' AND paid_at >= NOW() - INTERVAL '30 days')::numeric AS mrr,
+      (SELECT COUNT(*) FILTER (WHERE status IN ('active', 'trialing')) FROM subscriptions)::int AS active_subscriptions,
+      (SELECT COUNT(*) FILTER (WHERE status = 'canceled') FROM subscriptions)::int AS canceled_subscriptions,
+      (SELECT COUNT(*) FILTER (WHERE status = 'trialing') FROM subscriptions)::int AS trialing_subscriptions
+  `);
+  return result.rows[0];
+};
+
+export const getPlanDistribution = async (): Promise<{ plan: string; code: string; count: string }[]> => {
+  const result = await pool.query(`
+    SELECT p.name AS plan, p.code, COUNT(*)::text AS count
+    FROM subscriptions s
+    JOIN plans p ON p.id = s.plan_id
+    WHERE s.status IN ('active', 'trialing')
+    GROUP BY p.id, p.name, p.code
+    ORDER BY count DESC
+  `);
+  return result.rows;
+};
+
+export const getTopTenants = async (
+  limit: number = 10,
+  metric: 'bookings' | 'users' | 'doctors' | 'revenue' = 'bookings'
+): Promise<Record<string, unknown>[]> => {
+  const metricMap: Record<string, string> = {
+    bookings: '(SELECT COUNT(*) FROM bookings b WHERE b.tenant_id = t.id)::int',
+    users: '(SELECT COUNT(*) FROM users u WHERE u.tenant_id = t.id)::int',
+    doctors: '(SELECT COUNT(*) FROM doctors d WHERE d.tenant_id = t.id)::int',
+    revenue: '(SELECT COALESCE(SUM(si.amount), 0) FROM subscription_invoices si WHERE si.tenant_id = t.id AND si.status = \'paid\')::numeric',
+  };
+  const metricSql = metricMap[metric] || metricMap.bookings;
+
+  const result = await pool.query(`
+    SELECT
+      t.id, t.name, t.domain, t.active, t.created_at,
+      ${metricSql} AS metric_value,
+      (SELECT COUNT(*) FROM bookings b WHERE b.tenant_id = t.id)::int AS total_bookings,
+      (SELECT COUNT(*) FROM users u WHERE u.tenant_id = t.id)::int AS total_users,
+      (SELECT COUNT(*) FROM doctors d WHERE d.tenant_id = t.id)::int AS total_doctors
+    FROM tenants t
+    ORDER BY metric_value DESC
+    LIMIT $1
+  `, [limit]);
+  return result.rows;
+};
+
+export const getRevenueAnalytics = async (months: number = 12): Promise<Record<string, unknown>[]> => {
+  const result = await pool.query(`
+    SELECT
+      TO_CHAR(paid_at, 'YYYY-MM') AS month,
+      COUNT(*)::int AS invoices,
+      SUM(amount)::numeric AS revenue
+    FROM subscription_invoices
+    WHERE status = 'paid' AND paid_at >= NOW() - INTERVAL '1 month' * $1
+    GROUP BY TO_CHAR(paid_at, 'YYYY-MM')
+    ORDER BY month
+  `, [months]);
+  return result.rows;
+};
+
+export const getGrowthMetrics = async (months: number = 12): Promise<Record<string, unknown>[]> => {
+  const result = await pool.query(`
+    SELECT
+      m.month,
+      COALESCE(t.new_tenants, 0)::int AS new_tenants,
+      COALESCE(u.new_users, 0)::int AS new_users,
+      COALESCE(b.new_bookings, 0)::int AS new_bookings
+    FROM (
+      SELECT TO_CHAR(generate_series(NOW() - INTERVAL '1 month' * $1, NOW(), '1 month'), 'YYYY-MM') AS month
+    ) m
+    LEFT JOIN (
+      SELECT TO_CHAR(created_at, 'YYYY-MM') AS month, COUNT(*) AS new_tenants
+      FROM tenants WHERE created_at >= NOW() - INTERVAL '1 month' * $1 GROUP BY 1
+    ) t ON t.month = m.month
+    LEFT JOIN (
+      SELECT TO_CHAR(created_at, 'YYYY-MM') AS month, COUNT(*) AS new_users
+      FROM users WHERE created_at >= NOW() - INTERVAL '1 month' * $1 GROUP BY 1
+    ) u ON u.month = m.month
+    LEFT JOIN (
+      SELECT TO_CHAR(created_at, 'YYYY-MM') AS month, COUNT(*) AS new_bookings
+      FROM bookings WHERE created_at >= NOW() - INTERVAL '1 month' * $1 GROUP BY 1
+    ) b ON b.month = m.month
+    ORDER BY m.month
+  `, [months]);
+  return result.rows;
+};
+
 export const adminCreateTenant = async (data: {
   id: string;
   name: string;

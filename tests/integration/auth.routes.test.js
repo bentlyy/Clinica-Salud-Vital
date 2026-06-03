@@ -89,7 +89,7 @@ describe('POST /api/auth/login', () => {
     bcrypt.compare.mockResolvedValueOnce(true);
 
     mockQuery.mockResolvedValueOnce({
-      rows: [{ id: 1, email: 'test@test.com', password: 'hashed', role: 'user', tenant_id: 'default' }],
+      rows: [{ id: 1, email: 'test@test.com', password: 'hashed', role: 'user', tenant_id: 'default', active: true }],
     });
 
     const res = await request(app)
@@ -103,7 +103,7 @@ describe('POST /api/auth/login', () => {
 
   it('returns 400 if credentials invalid', async () => {
     mockQuery.mockResolvedValueOnce({
-      rows: [{ id: 1, email: 'wrong@test.com', password: 'hashed', role: 'user', tenant_id: 'default' }],
+      rows: [{ id: 1, email: 'wrong@test.com', password: 'hashed', role: 'user', tenant_id: 'default', active: true }],
     });
     bcrypt.compare.mockResolvedValueOnce(false);
 
@@ -113,6 +113,21 @@ describe('POST /api/auth/login', () => {
 
     expect(res.status).toBe(400);
     expect(res.body.error).toBe('Invalid credentials');
+  });
+
+  it('returns 401 if user is deactivated', async () => {
+    bcrypt.compare.mockResolvedValueOnce(true);
+
+    mockQuery.mockResolvedValueOnce({
+      rows: [{ id: 1, email: 'disabled@test.com', password: 'hashed', role: 'user', tenant_id: 'default', active: false }],
+    });
+
+    const res = await request(app)
+      .post('/api/auth/login')
+      .send({ email: 'disabled@test.com', password: 'Test1234!', captcha_token: 'test-captcha' });
+
+    expect(res.status).toBe(401);
+    expect(res.body.error).toBe('Account is deactivated. Contact an administrator.');
   });
 
   it('returns 400 if email missing', async () => {

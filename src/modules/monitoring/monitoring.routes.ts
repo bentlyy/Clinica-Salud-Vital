@@ -1,7 +1,5 @@
 import { Router } from 'express';
-import { authMiddleware } from '../../middlewares/auth.middleware.js';
-import { authorizeRoles } from '../../middlewares/role.middleware.js';
-import { asyncHandler } from '../../middlewares/asyncHandler.middleware.js';
+import { authMiddleware, authorize } from '../../middlewares/auth.middleware.js';
 import {
   getSystemHealth,
   getMemoryReport,
@@ -18,18 +16,18 @@ import {
 
 const router = Router();
 
-const adminOnly = [authMiddleware, authorizeRoles('superadmin', 'admin')];
+const adminOnly = [authMiddleware, authorize('superadmin', 'admin')];
 
-router.get('/health', asyncHandler(getSystemHealth));
-router.get('/memory', ...adminOnly, asyncHandler(getMemoryReport));
-router.get('/database', ...adminOnly, asyncHandler(getDbReport));
-router.get('/database/slow-queries', ...adminOnly, asyncHandler(getDbSlowQueries));
-router.get('/database/table-sizes', ...adminOnly, asyncHandler(getDbTableSizes));
-router.get('/ml', ...adminOnly, asyncHandler(getMlReport));
-router.get('/logs', ...adminOnly, asyncHandler(getLogs));
-router.post('/database/export-sizes', ...adminOnly, asyncHandler(exportDbSizes));
-router.post('/ml/reset', ...adminOnly, asyncHandler(resetMetrics));
-router.post('/gc', ...adminOnly, asyncHandler(triggerGc));
-router.get('/dashboard', ...adminOnly, asyncHandler(getDashboardData));
+router.get('/health', getSystemHealth);
+router.get('/memory', ...adminOnly, getMemoryReport);
+router.get('/database', ...adminOnly, getDbReport);
+router.get('/database/slow-queries', ...adminOnly, getDbSlowQueries);
+router.get('/database/table-sizes', ...adminOnly, getDbTableSizes);
+router.get('/ml', ...adminOnly, getMlReport);
+router.get('/logs', ...adminOnly, getLogs);
+router.post('/database/export-sizes', ...adminOnly, exportDbSizes);
+router.post('/ml/reset', ...adminOnly, resetMetrics);
+router.post('/gc', ...adminOnly, triggerGc);
+router.get('/dashboard', ...adminOnly, getDashboardData);
 
 export default router;

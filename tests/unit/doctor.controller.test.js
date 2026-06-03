@@ -5,6 +5,8 @@ vi.mock('../../src/modules/doctor/doctor.service.js', () => ({
   registerDoctor: vi.fn(),
   createDoctor: vi.fn(),
   getDoctorByUserId: vi.fn(),
+  listTenantUsers: vi.fn(),
+  toggleUserActive: vi.fn(),
 }));
 
 import * as doctorService from '../../src/modules/doctor/doctor.service.js';
@@ -14,6 +16,23 @@ const flush = () => new Promise(r => setTimeout(r, 0));
 
 beforeEach(() => {
   vi.clearAllMocks();
+});
+
+describe('doctorController.getDoctorsPublic', () => {
+  it('returns public doctor info (safe fields only)', async () => {
+    vi.mocked(doctorService.getAllDoctors).mockResolvedValue([
+      { id: 1, name: 'Dr. Test', specialty: 'General', email: 'hidden@test.com' },
+    ]);
+    const req = { query: {}, tenant_id: 't1' };
+    const res = { json: vi.fn() };
+    const next = vi.fn();
+
+    doctorController.getDoctorsPublic(req, res, next);
+    await flush();
+
+    expect(doctorService.getAllDoctors).toHaveBeenCalledWith('t1');
+    expect(res.json).toHaveBeenCalledWith([{ id: 1, name: 'Dr. Test', specialty: 'General' }]);
+  });
 });
 
 describe('doctorController.getDoctors', () => {

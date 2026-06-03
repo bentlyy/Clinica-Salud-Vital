@@ -11,6 +11,11 @@ router.use(authorize('superadmin'));
 
 router.get('/stats', superAdminController.getGlobalStats);
 
+router.get('/analytics/dashboard', superAdminController.getDashboardData);
+router.get('/analytics/top-tenants', superAdminController.getTopTenantsData);
+router.get('/analytics/revenue', superAdminController.getRevenueData);
+router.get('/analytics/growth', superAdminController.getGrowthData);
+
 router.get('/tenants', superAdminController.listTenants);
 router.get('/tenants/:id', superAdminController.getTenantDetail);
 router.post('/tenants', validateZod(adminCreateTenantSchema), superAdminController.adminCreateTenant);

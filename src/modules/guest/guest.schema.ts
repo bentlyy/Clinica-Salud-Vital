@@ -19,6 +19,10 @@ export const guestBookingIdSchema = z.object({
   id: z.coerce.number().int().positive(),
 });
 
+export const cancelGuestBookingSchema = z.object({
+  rut: z.string().min(1, 'RUT es requerido para cancelar como invitado').optional(),
+});
+
 export const confirmTokenSchema = z.object({
   token: z.string().min(1, 'Token requerido'),
 });

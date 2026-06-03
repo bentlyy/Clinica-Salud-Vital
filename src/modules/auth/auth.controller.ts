@@ -15,12 +15,12 @@ export const inviteInfo = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export const register = asyncHandler(async (req: Request, res: Response) => {
-  const user = await authService.register({ ...req.body, tenant_id: req.body.tenant_id || req.tenant_id });
+  const user = await authService.register({ ...req.body, tenant_id: req.tenant_id });
   res.status(201).json(user);
 });
 
 export const login = asyncHandler(async (req: Request, res: Response) => {
-  const data = await authService.login(req.body, req.body.tenant_id || req.tenant_id);
+  const data = await authService.login(req.body, req.tenant_id);
   res.json(data);
 });
 

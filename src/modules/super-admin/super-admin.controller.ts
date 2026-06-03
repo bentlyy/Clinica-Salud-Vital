@@ -44,6 +44,34 @@ export const adminCreateTenant = asyncHandler(async (req: Request, res: Response
   res.status(201).json(result);
 });
 
+export const getDashboardData = asyncHandler(async (_req: Request, res: Response) => {
+  const [dashboard, planDistribution] = await Promise.all([
+    superAdminService.getGlobalDashboard(),
+    superAdminService.getPlanDistribution(),
+  ]);
+  res.json({ data: { ...dashboard, planDistribution } });
+});
+
+export const getTopTenantsData = asyncHandler(async (req: Request, res: Response) => {
+  const limit = parseInt(String(req.query.limit || '10'), 10);
+  const metric = (String(req.query.metric || 'bookings')) as 'bookings' | 'users' | 'doctors' | 'revenue';
+  const validMetrics = ['bookings', 'users', 'doctors', 'revenue'];
+  const data = await superAdminService.getTopTenants(limit, validMetrics.includes(metric) ? metric : 'bookings');
+  res.json({ data });
+});
+
+export const getRevenueData = asyncHandler(async (req: Request, res: Response) => {
+  const months = parseInt(String(req.query.months || '12'), 10);
+  const data = await superAdminService.getRevenueAnalytics(months);
+  res.json({ data });
+});
+
+export const getGrowthData = asyncHandler(async (req: Request, res: Response) => {
+  const months = parseInt(String(req.query.months || '12'), 10);
+  const data = await superAdminService.getGrowthMetrics(months);
+  res.json({ data });
+});
+
 export const listUsers = asyncHandler(async (req: Request, res: Response) => {
   const page = parseInt(String(req.query.page || '1'), 10);
   const limit = parseInt(String(req.query.limit || '50'), 10);
