@@ -1,33 +1,36 @@
+import { lazy, Suspense } from 'react';
 import { Routes, Route } from 'react-router-dom';
-import HomePage from '../pages/HomePage';
-import LoginPage from '../pages/LoginPage';
-import RegisterPage from '../pages/RegisterPage';
-import BookingPage from '../pages/BookingPage';
-import SpecialistsPage from '../pages/SpecialistsPage';
-
-import ConfirmPage from '../pages/ConfirmPage';
-import MyBookingsPage from '../pages/MyBookingsPage';
-import DoctorPanel from '../pages/DoctorPanel';
-import DoctorAvailabilityPage from '../pages/DoctorAvailabilityPage';
-import DoctorCalendarPage from '../pages/DoctorCalendarPage';
-import DoctorClinicalRecordsPage from '../pages/DoctorClinicalRecordsPage';
-import RegisterDoctorPage from '../pages/RegisterDoctorPage';
-import AnalyticsPage from '../pages/AnalyticsPage';
-import SaasRegisterPage from '../pages/SaasRegisterPage';
-import SaasPlansPage from '../pages/SaasPlansPage';
-import SaasSuccessPage from '../pages/SaasSuccessPage';
-import TenantDashboardPage from '../pages/TenantDashboardPage';
-import SuperAdminDashboardPage from '../pages/SuperAdminDashboardPage';
-import SuperAdminTenantsPage from '../pages/SuperAdminTenantsPage';
-import SuperAdminTenantDetailPage from '../pages/SuperAdminTenantDetailPage';
 import ProtectedRoute from './ProtectedRoute';
 import Navbar from '../components/Navbar';
+
+const HomePage = lazy(() => import('../pages/HomePage'));
+const LoginPage = lazy(() => import('../pages/LoginPage'));
+const RegisterPage = lazy(() => import('../pages/RegisterPage'));
+const BookingPage = lazy(() => import('../pages/BookingPage'));
+const SpecialistsPage = lazy(() => import('../pages/SpecialistsPage'));
+const ConfirmPage = lazy(() => import('../pages/ConfirmPage'));
+const MyBookingsPage = lazy(() => import('../pages/MyBookingsPage'));
+const DoctorPanel = lazy(() => import('../pages/DoctorPanel'));
+const DoctorAvailabilityPage = lazy(() => import('../pages/DoctorAvailabilityPage'));
+const DoctorCalendarPage = lazy(() => import('../pages/DoctorCalendarPage'));
+const DoctorClinicalRecordsPage = lazy(() => import('../pages/DoctorClinicalRecordsPage'));
+const RegisterDoctorPage = lazy(() => import('../pages/RegisterDoctorPage'));
+const AnalyticsPage = lazy(() => import('../pages/AnalyticsPage'));
+const SaasRegisterPage = lazy(() => import('../pages/SaasRegisterPage'));
+const SaasPlansPage = lazy(() => import('../pages/SaasPlansPage'));
+const SaasSuccessPage = lazy(() => import('../pages/SaasSuccessPage'));
+const TenantDashboardPage = lazy(() => import('../pages/TenantDashboardPage'));
+const SuperAdminDashboardPage = lazy(() => import('../pages/SuperAdminDashboardPage'));
+const SuperAdminTenantsPage = lazy(() => import('../pages/SuperAdminTenantsPage'));
+const SuperAdminTenantDetailPage = lazy(() => import('../pages/SuperAdminTenantDetailPage'));
 
 function AppLayout({ children }) {
   return (
     <>
       <Navbar />
-      {children}
+      <Suspense fallback={<div style={{ padding: '2rem', textAlign: 'center' }}>Cargando...</div>}>
+        {children}
+      </Suspense>
     </>
   );
 }

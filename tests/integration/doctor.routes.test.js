@@ -41,8 +41,8 @@ app.use(express.json());
 const generateToken = (payload) =>
   jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1d' });
 
-const adminToken = generateToken({ id: 1, email: 'admin@test.com', role: 'admin' });
-const doctorToken = generateToken({ id: 2, email: 'doc@test.com', role: 'doctor' });
+const adminToken = generateToken({ id: 1, email: 'admin@test.com', role: 'admin', token_version: 0 });
+const doctorToken = generateToken({ id: 2, email: 'doc@test.com', role: 'doctor', token_version: 0 });
 
 app.use('/api/doctors', doctorRoutes);
 
@@ -50,7 +50,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   mockConnect.mockReturnValue(mockClient);
   mockClient.query.mockReset();
-  mockQuery.mockResolvedValue({ rows: [{ id: 1, name: 'General' }] });
+  mockQuery.mockResolvedValue({ rows: [{ id: 1, name: 'General', token_version: 0 }] });
 });
 
 describe('GET /api/doctors/public', () => {
@@ -82,9 +82,11 @@ describe('GET /api/doctors', () => {
   });
 
   it('returns doctors for admin', async () => {
-    mockQuery.mockResolvedValueOnce({
-      rows: [{ id: 1, name: 'Dr. Test', specialty: 'General' }],
-    });
+    mockQuery
+      .mockResolvedValueOnce({ rows: [{ token_version: 0 }] })
+      .mockResolvedValueOnce({
+        rows: [{ id: 1, name: 'Dr. Test', specialty: 'General' }],
+      });
 
     const res = await request(app)
       .get('/api/doctors')
@@ -132,7 +134,9 @@ describe('GET /api/doctors/me', () => {
   });
 
   it('returns 404 if doctor profile not found', async () => {
-    mockQuery.mockResolvedValueOnce({ rows: [] });
+    mockQuery
+      .mockResolvedValueOnce({ rows: [{ token_version: 0 }] })
+      .mockResolvedValueOnce({ rows: [] });
 
     const res = await request(app)
       .get('/api/doctors/me')
@@ -142,7 +146,9 @@ describe('GET /api/doctors/me', () => {
   });
 
   it('returns doctor profile', async () => {
-    mockQuery.mockResolvedValueOnce({ rows: [{ id: 2, name: 'Dr. Test', user_id: 2 }] });
+    mockQuery
+      .mockResolvedValueOnce({ rows: [{ token_version: 0 }] })
+      .mockResolvedValueOnce({ rows: [{ id: 2, name: 'Dr. Test', user_id: 2 }] });
 
     const res = await request(app)
       .get('/api/doctors/me')

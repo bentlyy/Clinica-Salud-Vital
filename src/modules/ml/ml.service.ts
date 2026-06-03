@@ -123,6 +123,8 @@ interface TrainAllResults {
   partial?: Record<string, TrainingResult>;
 }
 
+const isMLSimplified = (): boolean => process.env.ML_SIMPLIFIED === 'true';
+
 let tf: TensorFlowModule | null = null;
 let tfLoaded = false;
 let noShowModel: SequentialModel | null = null;
@@ -157,6 +159,14 @@ const normalizeData = (data: number[]): number[] => {
   const max = Math.max(...data);
   if (max === min) return data.map(() => 0.5);
   return data.map(v => (v - min) / (max - min));
+};
+
+const normalizeZScore = (data: number[]): { normalized: number[]; mean: number; std: number } => {
+  if (!data || data.length === 0) return { normalized: [], mean: 0, std: 1 };
+  const mean = data.reduce((s, v) => s + v, 0) / data.length;
+  const variance = data.reduce((s, v) => s + (v - mean) ** 2, 0) / data.length;
+  const std = Math.sqrt(variance) || 1;
+  return { normalized: data.map(v => (v - mean) / std), mean, std };
 };
 
 const denormalize = (normalized: number[], originalData: number[]): number[] => {
@@ -774,6 +784,23 @@ const predictWithStatistical = (
 };
 
 export const forecastDemand = async (days = 7, tenantId?: string): Promise<ForecastResult[]> => {
+  if (isMLSimplified()) {
+    const samples = 30;
+    const defaultValues = [10, 12, 8, 15, 11, 9, 14];
+    const avg = defaultValues.reduce((a, b) => a + b, 0) / defaultValues.length;
+    const lastDate = new Date();
+    return Array.from({ length: days }, (_, i) => {
+      const date = new Date(lastDate);
+      date.setDate(date.getDate() + i + 1);
+      return {
+        date: date.toISOString().split('T')[0],
+        predicted: Math.max(1, Math.round(avg + (i % 7) * 0.1 * avg)),
+        confidence: 'low',
+        reason: 'simplified_mode'
+      };
+    });
+  }
+
   if (!demandModel || !demandModel.trained) {
     const result = await withTrainingLock('demand', () => trainDemandForecastModel(tenantId));
     if (!result.trained) {
@@ -1135,6 +1162,12 @@ export const getModelStatus = async (tenantId?: string): Promise<ModelStatus> =>
 };
 
 export const trainAllModels = async (tenantId?: string): Promise<TrainAllResults> => {
+  if (isMLSimplified()) {
+    logger.info('[ML] Simplified mode - skipping TF model training');
+    const skipped: TrainingResult = { trained: false, reason: 'simplified_mode' };
+    return { noShow: skipped, diagnosis: skipped, demand: skipped, vitals: skipped, totalDuration: 0 };
+  }
+  disposeAllModels();
   const results: TrainAllResults = {
     noShow: { trained: false },
     diagnosis: { trained: false },

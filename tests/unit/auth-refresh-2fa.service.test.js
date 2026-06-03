@@ -110,9 +110,11 @@ describe('authService.refreshToken', () => {
 describe('authService.logout', () => {
   it('revokes refresh token', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [] });
+    const { hashToken } = await import('../../src/shared/crypto.service.js');
+    const expectedHash = hashToken('token-to-revoke');
     const { logout } = await import('../../src/modules/auth/auth.service.js');
     await logout('token-to-revoke');
-    expect(mockQuery).toHaveBeenCalledWith(expect.stringContaining('UPDATE refresh_tokens SET revoked = true'), ['token-to-revoke']);
+    expect(mockQuery).toHaveBeenCalledWith(expect.stringContaining('UPDATE refresh_tokens SET revoked = true'), [expectedHash]);
   });
 });
 
@@ -208,36 +210,37 @@ describe('auth2faService', () => {
   });
 
   it('disable2FA clears secret', async () => {
+    mockCompare.mockResolvedValueOnce(true);
+    mockQuery.mockResolvedValueOnce({ rows: [{ password: '$2b$12$hashedpassword123' }] });
     mockQuery.mockResolvedValueOnce({ rows: [] });
     const { disable2FA } = await import('../../src/modules/auth/auth-2fa.service.js');
-    await disable2FA(1);
+    await disable2FA(1, 'StrongPass1!');
     expect(mockQuery).toHaveBeenCalledWith(expect.stringContaining('UPDATE users SET totp_secret = NULL'), [1]);
   });
 
   it('is2FARequired checks user status', async () => {
-    mockQuery.mockResolvedValueOnce({ rows: [{ totp_enabled: true }] });
+    mockQuery.mockResolvedValue({ rows: [{ totp_enabled: true }] });
     const { is2FARequired } = await import('../../src/modules/auth/auth-2fa.service.js');
     const result = await is2FARequired(1);
     expect(result).toBe(true);
   });
 
   it('is2FARequired returns false when not enabled', async () => {
-    mockQuery.mockResolvedValueOnce({ rows: [{ totp_enabled: false }] });
+    mockQuery.mockResolvedValue({ rows: [{ totp_enabled: false }] });
     const { is2FARequired } = await import('../../src/modules/auth/auth-2fa.service.js');
     const result = await is2FARequired(1);
     expect(result).toBe(false);
   });
 
   it('verifyAndEnable2FA throws if token invalid', async () => {
-    mockQuery.mockResolvedValueOnce({ rows: [{ totp_secret: 'JBSWY3DPEHPK3PXP' }] });
+    mockQuery.mockResolvedValue({ rows: [{ totp_secret: 'JBSWY3DPEHPK3PXP' }] });
 
     const { verifyAndEnable2FA } = await import('../../src/modules/auth/auth-2fa.service.js');
     await expect(verifyAndEnable2FA(1, '000000')).rejects.toThrow('Invalid 2FA token');
   });
 
   it('verifyAndEnable2FA succeeds with valid token', async () => {
-    mockQuery.mockResolvedValueOnce({ rows: [{ totp_secret: 'JBSWY3DPEHPK3PXP' }] });
-    mockQuery.mockResolvedValueOnce({ rows: [] });
+    mockQuery.mockResolvedValue({ rows: [{ totp_secret: 'JBSWY3DPEHPK3PXP' }] });
 
     const crypto = await import('crypto');
     const key = Buffer.from('valid-secret-key-here');

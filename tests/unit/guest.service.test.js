@@ -145,12 +145,12 @@ describe('guestService.cancelGuestBooking', () => {
   it('cancels guest booking by rut string', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [{ id: 1 }] });
 
-    const result = await guestService.cancelGuestBooking(1, '12.345.678-5');
+    const result = await guestService.cancelGuestBooking(1, '12.345.678-5', undefined, undefined, 'confirm-token-abc');
 
     expect(result.message).toBe('Reserva cancelada correctamente');
     expect(mockQuery).toHaveBeenCalledWith(
-      expect.stringContaining("REPLACE(REPLACE(guest_rut, '.', ''), '-', '') = $2"),
-      [1, '123456785']
+      expect.stringContaining("confirmation_token = $3"),
+      [1, '123456785', 'confirm-token-abc']
     );
   });
 
@@ -179,10 +179,10 @@ describe('guestService.cancelGuestBooking', () => {
   it('guest cancels by rut with tenantId', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [{ id: 1 }] });
 
-    const result = await guestService.cancelGuestBooking(1, '12.345.678-5', undefined, 'tenant-1');
+    const result = await guestService.cancelGuestBooking(1, '12.345.678-5', undefined, 'tenant-1', 'confirm-token-123');
 
     expect(result.message).toBe('Reserva cancelada correctamente');
-    expect(mockQuery).toHaveBeenCalledWith(expect.stringContaining('tenant_id = $3'), [1, '123456785', 'tenant-1']);
+    expect(mockQuery).toHaveBeenCalledWith(expect.stringContaining('confirmation_token = $3'), [1, '123456785', 'confirm-token-123', 'tenant-1']);
   });
 });
 

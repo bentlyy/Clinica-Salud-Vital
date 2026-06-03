@@ -1,16 +1,34 @@
 import { Request, Response } from 'express';
 import * as webhookService from './webhook.service.js';
 import { asyncHandler } from '../../middlewares/asyncHandler.middleware.js';
+import type { Webhook } from './webhook.service.js';
+
+const stripSecret = (wh: Webhook): Omit<Webhook, 'secret'> => {
+  const { secret: _, ...safe } = wh;
+  return safe;
+};
 
 export const create = asyncHandler(async (req: Request, res: Response) => {
-  const webhook = await webhookService.createWebhook({ ...req.body, tenant_id: req.tenant_id });
-  res.status(201).json(webhook);
+  const { name, url, events, secret, active } = req.body;
+  if (!name || !url || !events) {
+    res.status(400).json({ error: 'name, url, and events are required' });
+    return;
+  }
+  const webhook = await webhookService.createWebhook({
+    name,
+    url,
+    events,
+    secret: secret || undefined,
+    active: active !== undefined ? active : undefined,
+    tenant_id: req.tenant_id,
+  });
+  res.status(201).json(stripSecret(webhook));
 });
 
 export const list = asyncHandler(async (req: Request, res: Response) => {
   const activeOnly = req.query.active_only === 'true';
   const webhooks = await webhookService.getWebhooks(activeOnly, req.tenant_id);
-  res.json({ data: webhooks });
+  res.json({ data: webhooks.map(stripSecret) });
 });
 
 export const getById = asyncHandler(async (req: Request, res: Response) => {
@@ -19,16 +37,22 @@ export const getById = asyncHandler(async (req: Request, res: Response) => {
     res.status(404).json({ error: 'Webhook not found' });
     return;
   }
-  res.json(webhook);
+  res.json(stripSecret(webhook));
 });
 
 export const update = asyncHandler(async (req: Request, res: Response) => {
-  const webhook = await webhookService.updateWebhook(Number(req.params.id), req.body, req.tenant_id);
+  const { name, url, events, active } = req.body;
+  const updateData: Record<string, unknown> = {};
+  if (name !== undefined) updateData.name = name;
+  if (url !== undefined) updateData.url = url;
+  if (events !== undefined) updateData.events = events;
+  if (active !== undefined) updateData.active = active;
+  const webhook = await webhookService.updateWebhook(Number(req.params.id), updateData, req.tenant_id);
   if (!webhook) {
     res.status(404).json({ error: 'Webhook not found' });
     return;
   }
-  res.json(webhook);
+  res.json(stripSecret(webhook));
 });
 
 export const remove = asyncHandler(async (req: Request, res: Response) => {

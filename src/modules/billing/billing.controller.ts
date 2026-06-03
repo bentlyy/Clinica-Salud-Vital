@@ -18,7 +18,7 @@ export const getInvoices = asyncHandler(async (req, res) => {
   }
 
   if (req.user!.role === 'doctor') {
-    const doctor = await doctorService.getDoctorByUserId(req.user!.id);
+    const doctor = await doctorService.getDoctorByUserId(req.user!.id, req.tenant_id);
     if (!doctor) throw new NotFoundError('Doctor profile not found');
     const invoices = await billingService.getInvoices({ doctor_id: doctor.id, limit, offset }, req.tenant_id);
     return res.json(invoices);
@@ -45,7 +45,7 @@ export const getInvoiceById = asyncHandler(async (req, res) => {
   }
 
   if (req.user!.role === 'doctor') {
-    const doctor = await doctorService.getDoctorByUserId(req.user!.id);
+    const doctor = await doctorService.getDoctorByUserId(req.user!.id, req.tenant_id);
     if (!doctor || invoice.doctor_id !== doctor.id) {
       throw new BadRequestError('Access denied');
     }

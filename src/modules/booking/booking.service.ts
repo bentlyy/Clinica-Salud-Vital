@@ -94,7 +94,7 @@ export const createBooking = async ({ doctor_id, user_id, date, time, duration =
       [doctor_id, date]
     );
 
-    const doctor = await doctorService.getDoctorById(doctor_id);
+    const doctor = await doctorService.getDoctorById(doctor_id, tenantId);
     if (!doctor) throw new NotFoundError('Doctor not found');
 
     if (doctor.slot_duration && duration > doctor.slot_duration) {
