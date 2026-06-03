@@ -7,7 +7,8 @@ CREATE TABLE users (
   phone TEXT,
   blocked_until TIMESTAMP,
   no_show_count INT DEFAULT 0,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE doctors (
@@ -334,6 +335,12 @@ END;
 $$ language 'plpgsql';
 
 -- Triggers
+DROP TRIGGER IF EXISTS update_users_updated_at ON users;
+CREATE TRIGGER update_users_updated_at
+  BEFORE UPDATE ON users
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at_column();
+
 DROP TRIGGER IF EXISTS update_clinical_records_updated_at ON clinical_records;
 CREATE TRIGGER update_clinical_records_updated_at
   BEFORE UPDATE ON clinical_records

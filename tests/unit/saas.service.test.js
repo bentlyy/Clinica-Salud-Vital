@@ -106,7 +106,6 @@ describe('saasService.createSubscription', () => {
   it('creates subscription for tenant', async () => {
     const plan = { id: 1, code: 'free' };
     mockQuery.mockResolvedValueOnce({ rows: [plan] });
-    mockQuery.mockResolvedValueOnce({ rows: [] });
     const newSub = { id: 1, tenant_id: 'test', plan_id: 1, status: 'active' };
     mockQuery.mockResolvedValueOnce({ rows: [newSub] });
     const result = await saasService.createSubscription('test', 'free');
@@ -116,8 +115,11 @@ describe('saasService.createSubscription', () => {
   it('throws if tenant already has subscription', async () => {
     const plan = { id: 1, code: 'free' };
     mockQuery.mockResolvedValueOnce({ rows: [plan] });
-    mockQuery.mockResolvedValueOnce({ rows: [{ id: 1 }] });
-    await expect(saasService.createSubscription('test', 'free')).rejects.toThrow('already has an active subscription');
+    const pgError = new Error('duplicate key value violates unique constraint');
+    pgError.code = '23505';
+    pgError.constraint = 'idx_subscriptions_active_tenant';
+    mockQuery.mockRejectedValueOnce(pgError);
+    await expect(saasService.createSubscription('test', 'free')).rejects.toThrow('Tenant already has an active subscription');
   });
 
   it('throws if plan not found', async () => {

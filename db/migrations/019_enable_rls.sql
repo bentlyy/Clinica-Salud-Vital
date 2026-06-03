@@ -46,14 +46,15 @@ BEGIN
   LOOP
     EXECUTE format(
       'CREATE POLICY tenant_isolation ON %I FOR ALL USING (
-        tenant_id = COALESCE(NULLIF(current_setting(''app.tenant_id'', true), ''), tenant_id)
+        NULLIF(current_setting(''app.tenant_id'', true), '''') IS NOT NULL
+        AND tenant_id = NULLIF(current_setting(''app.tenant_id'', true), '''')
       )',
       tbl
     );
   END LOOP;
 END $$;
 
--- SaaS tables (subscriptions, etc.) use same pattern but already have FKs
+-- SaaS tables (subscriptions, etc.) use same pattern
 DO $$
 DECLARE
   tbl TEXT;
@@ -65,7 +66,8 @@ BEGIN
   LOOP
     EXECUTE format(
       'CREATE POLICY tenant_isolation ON %I FOR ALL USING (
-        tenant_id = COALESCE(NULLIF(current_setting(''app.tenant_id'', true), ''), tenant_id)
+        NULLIF(current_setting(''app.tenant_id'', true), '''') IS NOT NULL
+        AND tenant_id = NULLIF(current_setting(''app.tenant_id'', true), '''')
       )',
       tbl
     );

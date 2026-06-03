@@ -15,7 +15,7 @@ import { seedDefaultTenant, seedSuperAdmin, seedTestTenants } from './seed/admin
 import { startReminderJob } from './jobs/reminder.job.js';
 import { securityMiddleware, validateEnvSecurity } from './middlewares/security.middleware.js';
 import { tenantMiddleware } from './middlewares/tenant.middleware.js';
-import { csrfProtection } from './middlewares/csrf.middleware.js';
+import { csrfProtection, setCsrfCookie } from './middlewares/csrf.middleware.js';
 import { apiVersionRedirect } from './middlewares/apiVersionRedirect.middleware.js';
 import { validateEmailConfig } from './shared/email.service.js';
 import { requestLogger } from './middlewares/requestLogger.middleware.js';
@@ -90,19 +90,23 @@ const allowedOrigins = [
 
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin && process.env.NODE_ENV !== 'production') {
-      return callback(null, 'http://localhost:5173');
-    }
     if (!origin) {
+      if (process.env.NODE_ENV !== 'production') {
+        return callback(null, 'http://localhost:5173');
+      }
       return callback(null, false);
     }
-    if (allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
+    if (allowedOrigins.length === 0 && process.env.NODE_ENV === 'production') {
+      return callback(new Error('CORS misconfigured: no allowed origins in production'));
+    }
+    if (allowedOrigins.includes(origin)) {
       callback(null, origin);
     } else {
       callback(new Error('Not allowed by CORS'));
     }
   },
   credentials: true,
+  maxAge: 86400,
 }));
 
 app.use(compression());
@@ -112,8 +116,9 @@ app.use('/api/saas/webhook/stripe', express.raw({ type: 'application/json' }));
 app.use('/api/v1/saas/webhook/stripe', express.raw({ type: 'application/json' }));
 
 app.use(apiVersionRedirect);
+app.use(setCsrfCookie);
 app.use((req, res, next) => {
-  if (req.path.startsWith('/api/saas/webhook/') || req.path.startsWith('/api/v1/saas/webhook/')) {
+  if (req.path.startsWith('/api/saas/webhook/') || req.path.startsWith('/api/v1/saas/webhook/') || req.path === '/health') {
     return next();
   }
   csrfProtection(req, res, next);
@@ -138,6 +143,24 @@ const authLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Too many login attempts, please try again later' },
+  keyGenerator: (req) => req.ip || 'unknown',
+});
+
+const forgotPasswordLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 3,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many password reset attempts, please try again later' },
+  keyGenerator: (req) => req.ip || 'unknown',
+});
+
+const resetPasswordLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many reset attempts, please try again later' },
   keyGenerator: (req) => req.ip || 'unknown',
 });
 
@@ -174,7 +197,12 @@ app.use(`${API_PREFIX}/auth/change-password`, changePasswordLimiter);
 app.use(`${API_PREFIX}/auth/2fa`, twoFALimiter);
 app.use(`${API_PREFIX}/auth/logout-all`, logoutAllLimiter);
 app.use(`${API_PREFIX}/auth/invite-info`, authLimiter);
-app.use(`${API_PREFIX}/auth`, authLimiter, authRoutes);
+app.use(`${API_PREFIX}/auth/forgot-password`, forgotPasswordLimiter);
+app.use(`${API_PREFIX}/auth/reset-password`, resetPasswordLimiter);
+app.use(`${API_PREFIX}/auth/login`, authLimiter);
+app.use(`${API_PREFIX}/auth/register`, authLimiter);
+app.use(`${API_PREFIX}/auth/refresh`, authLimiter);
+app.use(`${API_PREFIX}/auth`, authRoutes);
 app.use(`${API_PREFIX}/doctors`, doctorRoutes);
 app.use(`${API_PREFIX}/bookings`, bookingRoutes);
 app.use(`${API_PREFIX}/availability`, availabilityRoutes);
