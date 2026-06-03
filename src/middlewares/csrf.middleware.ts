@@ -1,46 +1,44 @@
 import type { Request, Response, NextFunction } from 'express';
+import crypto from 'crypto';
 import { BadRequestError } from '../utils/errors.js';
 
 const STATE_CHANGING_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
+const CSRF_COOKIE = 'csrf-token';
+const CSRF_HEADER = 'x-csrf-token';
 
-export const csrfProtection = (req: Request, _res: Response, next: NextFunction) => {
+export const csrfProtection = (req: Request, res: Response, next: NextFunction) => {
   if (!STATE_CHANGING_METHODS.has(req.method)) {
     return next();
   }
 
-  const origin = req.headers.origin;
-  const referer = req.headers.referer;
+  const cookieToken = req.cookies?.[CSRF_COOKIE];
+  const headerToken = req.headers[CSRF_HEADER] as string | undefined;
 
-  if (!origin && !referer) {
-    if (process.env.NODE_ENV === 'production') {
-      return next(new BadRequestError('Missing Origin or Referer header'));
-    }
+  if (!cookieToken) {
     return next();
   }
 
-  const allowedHosts = [
-    ...(process.env.FRONTEND_URL ? [new URL(process.env.FRONTEND_URL).hostname] : []),
-    process.env.RENDER_EXTERNAL_URL ? new URL(process.env.RENDER_EXTERNAL_URL).hostname : null,
-  ].filter(Boolean) as string[];
-
-  const extractHost = (url: string) => {
-    try {
-      return new URL(url).hostname;
-    } catch {
-      return null;
-    }
-  };
-
-  const originHost = origin ? extractHost(origin) : null;
-  const refererHost = referer ? extractHost(referer) : null;
-
-  if (originHost && !allowedHosts.includes(originHost) && !originHost.endsWith('.localhost')) {
-    return next(new BadRequestError('Cross-origin request rejected'));
+  if (!headerToken) {
+    return next(new BadRequestError(`Missing ${CSRF_HEADER} header`));
   }
 
-  if (refererHost && !allowedHosts.includes(refererHost) && !refererHost.endsWith('.localhost')) {
-    return next(new BadRequestError('Cross-origin request rejected'));
+  if (!crypto.timingSafeEqual(Buffer.from(headerToken), Buffer.from(cookieToken))) {
+    return next(new BadRequestError('CSRF token mismatch'));
   }
 
+  next();
+};
+
+export const setCsrfCookie = (req: Request, res: Response, next: NextFunction): void => {
+  if (!req.cookies?.[CSRF_COOKIE]) {
+    const token = crypto.randomBytes(32).toString('hex');
+    res.cookie(CSRF_COOKIE, token, {
+      httpOnly: false,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      path: '/',
+      maxAge: 24 * 60 * 60 * 1000,
+    });
+  }
   next();
 };

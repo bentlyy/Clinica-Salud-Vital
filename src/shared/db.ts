@@ -16,9 +16,7 @@ const isInternalDb = (): boolean => {
 const poolMax = parseInt(process.env.DB_POOL_MAX || '20', 10);
 
 const sslConfig = !isInternalDb() && process.env.NODE_ENV === 'production'
-  ? (process.env.DATABASE_URL?.includes('sslmode=require') || process.env.DATABASE_URL?.includes('sslmode=verify-full')
-    ? undefined
-    : { rejectUnauthorized: false })
+  ? { rejectUnauthorized: true, ca: process.env.DB_CA_CERT || undefined }
   : false;
 
 export const pool = new Pool({
@@ -31,7 +29,6 @@ export const pool = new Pool({
 
 pool.on('connect', (client: pg.PoolClient) => {
   client.query('SET statement_timeout = 30000; SET idle_in_transaction_session_timeout = 60000;').catch(() => {});
-  client.query("SET SESSION app.tenant_id = 'default'").catch(() => {});
   logger.info('DB connected');
 });
 
@@ -42,11 +39,10 @@ pool.on('error', (err: Error) => {
 export const query = pool.query.bind(pool);
 export const getClient = pool.connect.bind(pool);
 
-export const setTenantContext = async (tenantId?: string): Promise<void> => {
-  const id = tenantId || process.env.DEFAULT_TENANT_ID || 'default';
-  const result = await pool.query('SELECT set_config($1, $2, true)', ['app.tenant_id', id]);
+export const setTenantContext = async (tenantId: string): Promise<void> => {
+  const result = await pool.query('SELECT set_config($1, $2, true)', ['app.tenant_id', tenantId]);
   if (result.rowCount === 0) {
-    logger.error('Failed to set tenant context — RLS will be bypassed');
+    logger.error('Failed to set tenant context — RLS may be bypassed');
   }
 };
 

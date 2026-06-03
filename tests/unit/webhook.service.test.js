@@ -114,7 +114,9 @@ describe('webhookService.updateWebhook', () => {
   it('updates only secret field', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [{ id: 1, secret: 'new-secret' }] });
     const result = await webhookService.updateWebhook(1, { secret: 'new-secret' });
-    expect(result.secret).toBe('new-secret');
+    const masked = result.secret;
+    expect(masked).not.toBe('new-secret');
+    expect(masked).toContain('****');
   });
 
   it('updates webhook with tenantId', async () => {

@@ -124,7 +124,29 @@ export const getUsageSummary = asyncHandler(async (req: Request, res: Response) 
   res.json(summary);
 });
 
+const verifyCaptchaOnboard = async (token: string): Promise<boolean> => {
+  const secret = process.env.RECAPTCHA_SECRET_KEY;
+  if (!secret) return true;
+  try {
+    const params = new URLSearchParams({ secret, response: token });
+    const res = await fetch('https://www.google.com/recaptcha/api/siteverify', {
+      method: 'POST',
+      body: params,
+      signal: AbortSignal.timeout(5000),
+    });
+    const data = await res.json() as { success: boolean };
+    return data.success === true;
+  } catch (err) {
+    logger.error('reCAPTCHA verification failed during onboard', { error: (err as Error).message });
+    return false;
+  }
+};
+
 export const onboardTenant = asyncHandler(async (req: Request, res: Response) => {
+  if (!(await verifyCaptchaOnboard(req.body.captcha_token || ''))) {
+    res.status(400).json({ error: 'CAPTCHA verification failed' });
+    return;
+  }
   const result = await saasService.onboardTenant({
     tenantName: req.body.tenant_name,
     domain: req.body.domain,

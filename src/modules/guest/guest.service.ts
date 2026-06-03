@@ -106,18 +106,28 @@ export const createGuestBooking = async ({ doctor_id, date, time, duration = 30,
 
 export const getGuestBookingsByRut = async (rut: string, tenantId?: string): Promise<unknown[]> => {
   const cleanedRut = rut.replace(/[^0-9kK]/g, '').toUpperCase();
-  const result = await pool.query(`
+  const params: any[] = [cleanedRut];
+  let paramIdx = 1;
+  let query = `
     SELECT b.id, b.date, b.time, b.duration, b.status, b.confirmed,
            d.name AS doctor_name, d.specialty
     FROM bookings b
     JOIN doctors d ON b.doctor_id = d.id
-    LEFT JOIN users u ON b.user_id = u.id
+    LEFT JOIN users u ON b.user_id = u.id AND u.tenant_id = b.tenant_id
     WHERE (
-      REPLACE(REPLACE(b.guest_rut, '.', ''), '-', '') = $1
-      OR REPLACE(REPLACE(u.rut, '.', ''), '-', '') = $1
-    ) AND b.status != 'cancelled'${tenantId ? ' AND b.tenant_id = $2' : ''}
-    ORDER BY b.date, b.time
-  `, tenantId ? [cleanedRut, tenantId] : [cleanedRut]);
+      REPLACE(REPLACE(b.guest_rut, '.', ''), '-', '') = $${paramIdx}
+      OR REPLACE(REPLACE(u.rut, '.', ''), '-', '') = $${paramIdx}
+    ) AND b.status != 'cancelled'`;
+  if (tenantId) {
+    paramIdx++;
+    query += ` AND b.tenant_id = $${paramIdx}`;
+    params.push(tenantId);
+    paramIdx++;
+    query += ` AND d.tenant_id = $${paramIdx}`;
+    params.push(tenantId);
+  }
+  query += ' ORDER BY b.date, b.time';
+  const result = await pool.query(query, params);
   return result.rows;
 };
 

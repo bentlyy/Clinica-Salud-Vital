@@ -13,6 +13,16 @@ export interface Webhook {
   created_at: Date;
 }
 
+const maskSecret = (secret: string): string => {
+  if (secret.length <= 8) return '****';
+  return secret.slice(0, 4) + '****' + secret.slice(-4);
+};
+
+const maskWebhookSecret = (wh: Webhook): Webhook => {
+  if (wh.secret) wh.secret = maskSecret(wh.secret);
+  return wh;
+};
+
 export const createWebhook = async (data: {
   name: string;
   url: string;
@@ -38,12 +48,13 @@ export const getWebhooks = async (activeOnly = false, tenantId?: string): Promis
   if (tenantId) { query += ` AND tenant_id = $${paramIdx++}`; params.push(tenantId); }
   query += ' ORDER BY created_at DESC';
   const result = await pool.query(query, params);
-  return result.rows;
+  return result.rows.map(maskWebhookSecret);
 };
 
 export const getWebhookById = async (id: number, tenantId?: string): Promise<Webhook | null> => {
   const result = await pool.query(`SELECT * FROM webhooks WHERE id = $1${tenantId ? ' AND tenant_id = $2' : ''}`, tenantId ? [id, tenantId] : [id]);
-  return result.rows[0] || null;
+  if (!result.rows[0]) return null;
+  return maskWebhookSecret(result.rows[0]);
 };
 
 export const updateWebhook = async (id: number, data: Partial<{
@@ -68,7 +79,8 @@ export const updateWebhook = async (id: number, data: Partial<{
     `UPDATE webhooks SET ${fields.join(', ')} WHERE id = $${paramIndex}${tenantId ? ` AND tenant_id = $${paramIndex + 1}` : ''} RETURNING *`,
     values
   );
-  return result.rows[0] || null;
+  if (!result.rows[0]) return null;
+  return maskWebhookSecret(result.rows[0]);
 };
 
 export const deleteWebhook = async (id: number, tenantId?: string): Promise<boolean> => {

@@ -3,6 +3,9 @@
 
 BEGIN;
 
+-- Add updated_at column to users (missing from init.sql)
+ALTER TABLE users ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT NOW();
+
 -- Add failed_attempts and locked_until for account lockout
 ALTER TABLE users ADD COLUMN IF NOT EXISTS failed_attempts INTEGER DEFAULT 0;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS locked_until TIMESTAMPTZ;
@@ -10,7 +13,7 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS locked_until TIMESTAMPTZ;
 -- Add token_version for invalidating all sessions on password change
 ALTER TABLE users ADD COLUMN IF NOT EXISTS token_version INTEGER DEFAULT 0;
 
--- Drop existing RLS policies and recreate WITH CHECK clause
+-- Drop existing RLS policies and recreate with fixed policy (no fallback to tenant_id)
 DO $$
 DECLARE
   tbl TEXT;
@@ -30,9 +33,11 @@ BEGIN
     EXECUTE format('DROP POLICY IF EXISTS tenant_isolation ON %I', tbl);
     EXECUTE format(
       'CREATE POLICY tenant_isolation ON %I FOR ALL USING (
-        tenant_id = COALESCE(NULLIF(current_setting(''app.tenant_id'', true), ''), tenant_id)
+        NULLIF(current_setting(''app.tenant_id'', true), '''') IS NOT NULL
+        AND tenant_id = NULLIF(current_setting(''app.tenant_id'', true), '''')
       ) WITH CHECK (
-        tenant_id = COALESCE(NULLIF(current_setting(''app.tenant_id'', true), ''), tenant_id)
+        NULLIF(current_setting(''app.tenant_id'', true), '''') IS NOT NULL
+        AND tenant_id = NULLIF(current_setting(''app.tenant_id'', true), '''')
       )',
       tbl
     );
@@ -82,27 +87,9 @@ BEGIN
   END IF;
 END $$;
 
--- Add missing updated_at triggers
-DO $$
-DECLARE
-  tbl TEXT;
-BEGIN
-  FOR tbl IN
-    SELECT unnest(ARRAY[
-      'users', 'doctors', 'bookings', 'clinical_records', 'prescriptions',
-      'invoices', 'payments', 'insurance_claims',
-      'lab_tests', 'lab_requests', 'lab_request_items',
-      'webhooks', 'webhook_deliveries'
-    ])
-  LOOP
-    EXECUTE format(
-      'CREATE OR REPLACE TRIGGER update_%I_updated_at
-       BEFORE UPDATE ON %I
-       FOR EACH ROW
-       EXECUTE FUNCTION update_updated_at_column()',
-      tbl, tbl
-    );
-  END LOOP;
-END $$;
+-- Add missing updated_at triggers (safe for tables with updated_at column)
+CREATE OR REPLACE TRIGGER update_users_updated_at
+  BEFORE UPDATE ON users
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 COMMIT;
