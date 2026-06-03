@@ -62,11 +62,14 @@ describe('labService.getLabTests', () => {
 
 describe('labService.createLabRequest', () => {
   it('creates lab request with items in transaction', async () => {
-    mockClient.query.mockImplementation((sql) => {
+    mockClient.query.mockImplementation((sql, params) => {
       if (sql === 'BEGIN') return Promise.resolve({});
       if (sql === 'COMMIT') return Promise.resolve({});
       if (sql.includes('INSERT INTO lab_requests')) return Promise.resolve({ rows: [{ id: 1, request_number: 'LAB-2026-00001' }] });
-      if (sql.includes('SELECT id FROM lab_tests WHERE id')) return Promise.resolve({ rows: [{ id: 1 }] });
+      if (sql.includes('SELECT id FROM lab_tests WHERE id')) {
+        const ids = Array.isArray(params?.[0]) ? params[0] : [params?.[0]];
+        return Promise.resolve({ rows: ids.map((id) => ({ id })) });
+      }
       if (sql.includes('INSERT INTO lab_request_items')) return Promise.resolve({ rows: [{ id: 1 }] });
       return Promise.resolve({ rows: [] });
     });
@@ -80,11 +83,14 @@ describe('labService.createLabRequest', () => {
   });
 
   it('creates lab request with tenantId', async () => {
-    mockClient.query.mockImplementation((sql) => {
+    mockClient.query.mockImplementation((sql, params) => {
       if (sql === 'BEGIN') return Promise.resolve({});
       if (sql === 'COMMIT') return Promise.resolve({});
       if (sql.includes('INSERT INTO lab_requests')) return Promise.resolve({ rows: [{ id: 2, request_number: 'LAB-2026-00002' }] });
-      if (sql.includes('SELECT id FROM lab_tests WHERE id')) return Promise.resolve({ rows: [{ id: 1 }] });
+      if (sql.includes('SELECT id FROM lab_tests WHERE id')) {
+        const ids = Array.isArray(params?.[0]) ? params[0] : [params?.[0]];
+        return Promise.resolve({ rows: ids.map((id) => ({ id })) });
+      }
       if (sql.includes('INSERT INTO lab_request_items')) return Promise.resolve({ rows: [{ id: 1 }] });
       return Promise.resolve({ rows: [] });
     });
@@ -98,10 +104,13 @@ describe('labService.createLabRequest', () => {
   });
 
   it('rolls back if lab test not found', async () => {
-    mockClient.query.mockImplementation((sql) => {
+    mockClient.query.mockImplementation((sql, params) => {
       if (sql === 'BEGIN') return Promise.resolve({});
       if (sql.includes('INSERT INTO lab_requests')) return Promise.resolve({ rows: [{ id: 1 }] });
-      if (sql.includes('SELECT id FROM lab_tests WHERE id')) return Promise.resolve({ rows: [] });
+      if (sql.includes('SELECT id FROM lab_tests WHERE id')) {
+        const ids = Array.isArray(params?.[0]) ? params[0] : [params?.[0]];
+        return Promise.resolve({ rows: ids.filter((id) => id !== 999).map((id) => ({ id })) });
+      }
       if (sql === 'ROLLBACK') return Promise.resolve({});
       return Promise.resolve({ rows: [] });
     });

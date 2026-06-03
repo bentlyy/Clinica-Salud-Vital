@@ -37,8 +37,8 @@ app.use(errorHandler);
 const generateToken = (payload) =>
   jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1d' });
 
-const userToken = generateToken({ id: 1, email: 'user@test.com', role: 'user' });
-const adminToken = generateToken({ id: 2, email: 'admin@test.com', role: 'admin' });
+const userToken = generateToken({ id: 1, email: 'user@test.com', role: 'user', token_version: 0 });
+const adminToken = generateToken({ id: 2, email: 'admin@test.com', role: 'admin', token_version: 0 });
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -105,7 +105,7 @@ describe('DELETE /api/guest/booking/:id', () => {
 
     const res = await request(app)
       .delete('/api/guest/booking/1')
-      .send({ rut: '12.345.678-5' });
+      .send({ rut: '12.345.678-5', confirmation_token: 'test-confirm-token' });
 
     expect(res.status).toBe(200);
     expect(res.body.message).toBe('Reserva cancelada correctamente');

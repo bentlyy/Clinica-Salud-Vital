@@ -77,13 +77,13 @@ describe('cancelGuestBooking', () => {
 
   it('cancels booking with rut (guest)', async () => {
     vi.mocked(guestService.cancelGuestBooking).mockResolvedValue({ message: 'Cancelled' });
-    const req = { params: { id: '1' }, body: { rut: '12.345.678-5' }, tenant_id: 't1' };
+    const req = { params: { id: '1' }, body: { rut: '12.345.678-5', confirmation_token: 'tok-123' }, tenant_id: 't1' };
     const res = mkRes();
 
     guestController.cancelGuestBooking(req, res, vi.fn());
     await flush();
 
-    expect(guestService.cancelGuestBooking).toHaveBeenCalledWith(1, '12.345.678-5', undefined, 't1');
+    expect(guestService.cancelGuestBooking).toHaveBeenCalledWith(1, '12.345.678-5', undefined, 't1', 'tok-123');
     expect(res.json).toHaveBeenCalledWith({ message: 'Cancelled' });
   });
 

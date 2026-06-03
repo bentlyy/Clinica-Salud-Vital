@@ -1,7 +1,9 @@
 import { pool } from '../../shared/db.js';
-import { BadRequestError } from '../../utils/errors.js';
+import { BadRequestError, UnauthorizedError } from '../../utils/errors.js';
 import crypto from 'crypto';
 import { base32Encode, base32Decode } from '../../shared/base32.js';
+import bcrypt from 'bcrypt';
+import { encrypt, decrypt } from '../../shared/crypto.service.js';
 
 export const generateSecret = (email: string): { secret: string; qrCodeUrl: string } => {
   const buf = crypto.randomBytes(20);
@@ -15,7 +17,12 @@ export const verifyToken = (secret: string, token: string): boolean => {
   if (!secret || !token) return false;
   if (token.length !== 6 || !/^\d{6}$/.test(token)) return false;
 
-  const key = base32Decode(secret);
+  let decryptedSecret = secret;
+  if (secret.includes(':')) {
+    try { decryptedSecret = decrypt(secret); } catch { return false; }
+  }
+
+  const key = base32Decode(decryptedSecret);
   const timeStep = 30;
   const currentTime = Math.floor(Date.now() / 1000);
   const currentStep = Math.floor(currentTime / timeStep);
@@ -48,20 +55,22 @@ export const verifyToken = (secret: string, token: string): boolean => {
 
 export const enable2FA = async (userId: number, email: string): Promise<{ secret: string; qrCodeUrl: string }> => {
   const { secret, qrCodeUrl } = generateSecret(email);
+  const encryptedSecret = encrypt(secret);
   await pool.query(
     'UPDATE users SET totp_secret = $1, totp_enabled = false WHERE id = $2',
-    [secret, userId]
+    [encryptedSecret, userId]
   );
   return { secret, qrCodeUrl };
 };
 
 export const verifyAndEnable2FA = async (userId: number, token: string): Promise<boolean> => {
   const result = await pool.query('SELECT totp_secret FROM users WHERE id = $1', [userId]);
-  if (!result.rows[0]?.totp_secret) {
+  const storedSecret = result.rows[0]?.totp_secret;
+  if (!storedSecret) {
     throw new BadRequestError('2FA not initialized');
   }
 
-  const isValid = verifyToken(result.rows[0].totp_secret, token);
+  const isValid = verifyToken(storedSecret, token);
   if (!isValid) {
     throw new BadRequestError('Invalid 2FA token');
   }
@@ -70,7 +79,14 @@ export const verifyAndEnable2FA = async (userId: number, token: string): Promise
   return true;
 };
 
-export const disable2FA = async (userId: number): Promise<void> => {
+export const disable2FA = async (userId: number, password: string): Promise<void> => {
+  if (!password) throw new BadRequestError('Password is required to disable 2FA');
+
+  const userResult = await pool.query('SELECT password FROM users WHERE id = $1', [userId]);
+  if (!userResult.rows[0]) throw new BadRequestError('User not found');
+  const isValid = await bcrypt.compare(password, userResult.rows[0].password);
+  if (!isValid) throw new UnauthorizedError('Current password is incorrect');
+
   await pool.query(
     'UPDATE users SET totp_secret = NULL, totp_enabled = false WHERE id = $1',
     [userId]

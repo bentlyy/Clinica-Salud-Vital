@@ -33,12 +33,12 @@ export const cancelGuestBooking = asyncHandler(async (req, res: Response) => {
     return;
   }
 
-  const { rut } = req.body;
+  const { rut, confirmation_token } = req.body;
   if (!rut) {
     res.status(400).json({ error: 'RUT es requerido para cancelar como invitado' });
     return;
   }
 
-  const result = await guestService.cancelGuestBooking(bookingId, rut, undefined, req.tenant_id);
+  const result = await guestService.cancelGuestBooking(bookingId, rut, undefined, req.tenant_id, confirmation_token);
   res.json(result);
 });

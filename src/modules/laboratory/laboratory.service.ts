@@ -72,15 +72,27 @@ export const createLabRequest = async (data: { patient_id: number; doctor_id?: n
     const request = requestResult.rows[0];
 
     if (test_ids && test_ids.length > 0) {
-      for (const test_id of test_ids) {
-        const testResult = await client.query('SELECT id FROM lab_tests WHERE id = $1 AND active = true', [test_id]);
-        if (testResult.rows.length === 0) throw new BadRequestError('Lab test ' + test_id + ' not found or inactive');
-
-        await client.query(
-          `INSERT INTO lab_request_items (lab_request_id, lab_test_id${tenantId ? ', tenant_id' : ''}) VALUES ($1, $2${tenantId ? ', $3' : ''})`,
-          tenantId ? [request.id, test_id, tenantId] : [request.id, test_id]
-        );
+      const testResult = await client.query(
+        'SELECT id FROM lab_tests WHERE id = ANY($1) AND active = true',
+        [test_ids]
+      );
+      if (testResult.rows.length !== test_ids.length) {
+        const found = new Set(testResult.rows.map(r => r.id));
+        const missing = test_ids.filter(id => !found.has(id));
+        throw new BadRequestError('Lab tests not found or inactive: ' + missing.join(', '));
       }
+
+      const itemsColumns = ['lab_request_id', 'lab_test_id'];
+      if (tenantId) itemsColumns.push('tenant_id');
+      const valueRows = test_ids.map((test_id, idx) => {
+        const base = idx * (itemsColumns.length);
+        return `(${itemsColumns.map((_, colIdx) => '$' + (base + colIdx + 1)).join(', ')})`;
+      });
+      const flatValues = test_ids.flatMap(test_id => tenantId ? [request.id, test_id, tenantId] : [request.id, test_id]);
+      await client.query(
+        `INSERT INTO lab_request_items (${itemsColumns.join(', ')}) VALUES ${valueRows.join(', ')}`,
+        flatValues
+      );
     }
 
     await client.query('COMMIT');

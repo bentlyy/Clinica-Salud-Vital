@@ -13,7 +13,7 @@ export const getClinicalRecords = asyncHandler(async (req: Request, res: Respons
   const offset = parseInt(String(req.query.offset)) || 0;
 
   if (req.user!.role === 'doctor') {
-    const doctor = await doctorService.getDoctorByUserId(req.user!.id);
+    const doctor = await doctorService.getDoctorByUserId(req.user!.id, req.tenant_id);
     if (!doctor) throw new NotFoundError('Doctor profile not found');
 
     const records = await clinicalRecordService.getAllClinicalRecords({
@@ -43,7 +43,7 @@ export const getClinicalRecordById = asyncHandler(async (req: Request, res: Resp
   const record = await clinicalRecordService.getClinicalRecordById(Number(req.params.id), req.tenant_id);
 
   if (req.user!.role === 'doctor') {
-    const doctor = await doctorService.getDoctorByUserId(req.user!.id);
+    const doctor = await doctorService.getDoctorByUserId(req.user!.id, req.tenant_id);
     if (!doctor || record.doctor_id !== doctor.id) throw new BadRequestError('Access denied');
   }
 
@@ -51,7 +51,7 @@ export const getClinicalRecordById = asyncHandler(async (req: Request, res: Resp
     throw new BadRequestError('Access denied');
   }
 
-  const prescriptions = await prescriptionService.getPrescriptionsByClinicalRecord(record.id);
+  const prescriptions = await prescriptionService.getPrescriptionsByClinicalRecord(record.id, req.tenant_id);
   res.json({ ...record, prescriptions });
 });
 
@@ -63,7 +63,7 @@ export const getClinicalRecordsByPatient = asyncHandler(async (req: Request, res
   }
 
   if (req.user!.role === 'doctor') {
-    const doctor = await doctorService.getDoctorByUserId(req.user!.id);
+    const doctor = await doctorService.getDoctorByUserId(req.user!.id, req.tenant_id);
     if (!doctor) throw new NotFoundError('Doctor profile not found');
 
     const hasRelationship = await clinicalRecordService.getClinicalRecordsByPatient(patientId, req.tenant_id);
@@ -80,7 +80,7 @@ export const getClinicalRecordsByPatient = asyncHandler(async (req: Request, res
 });
 
 export const createClinicalRecord = asyncHandler(async (req: Request, res: Response) => {
-  const doctor = await doctorService.getDoctorByUserId(req.user!.id);
+  const doctor = await doctorService.getDoctorByUserId(req.user!.id, req.tenant_id);
   if (!doctor) throw new NotFoundError('Doctor profile not found');
 
   const record = await clinicalRecordService.createClinicalRecord({
@@ -92,7 +92,7 @@ export const createClinicalRecord = asyncHandler(async (req: Request, res: Respo
 });
 
 export const updateClinicalRecord = asyncHandler(async (req: Request, res: Response) => {
-  const doctor = await doctorService.getDoctorByUserId(req.user!.id);
+  const doctor = await doctorService.getDoctorByUserId(req.user!.id, req.tenant_id);
   if (!doctor) throw new NotFoundError('Doctor profile not found');
 
   const record = await clinicalRecordService.updateClinicalRecord(
@@ -106,7 +106,7 @@ export const updateClinicalRecord = asyncHandler(async (req: Request, res: Respo
 });
 
 export const deleteClinicalRecord = asyncHandler(async (req: Request, res: Response) => {
-  const doctor = await doctorService.getDoctorByUserId(req.user!.id);
+  const doctor = await doctorService.getDoctorByUserId(req.user!.id, req.tenant_id);
   if (!doctor) throw new NotFoundError('Doctor profile not found');
 
   const result = await clinicalRecordService.deleteClinicalRecord(Number(req.params.id), doctor.id, req.tenant_id);
@@ -114,31 +114,31 @@ export const deleteClinicalRecord = asyncHandler(async (req: Request, res: Respo
 });
 
 export const getPrescriptionsByRecord = asyncHandler(async (req: Request, res: Response) => {
-  const prescriptions = await prescriptionService.getPrescriptionsByClinicalRecord(Number(req.params.record_id));
+  const prescriptions = await prescriptionService.getPrescriptionsByClinicalRecord(Number(req.params.record_id), req.tenant_id);
   res.json(prescriptions);
 });
 
 export const createPrescription = asyncHandler(async (req: Request, res: Response) => {
-  const doctor = await doctorService.getDoctorByUserId(req.user!.id);
+  const doctor = await doctorService.getDoctorByUserId(req.user!.id, req.tenant_id);
   if (!doctor) throw new NotFoundError('Doctor profile not found');
 
-  const prescription = await prescriptionService.createPrescription(req.body, doctor.id);
+  const prescription = await prescriptionService.createPrescription(req.body, doctor.id, req.tenant_id);
   res.status(201).json(prescription);
 });
 
 export const updatePrescription = asyncHandler(async (req: Request, res: Response) => {
-  const doctor = await doctorService.getDoctorByUserId(req.user!.id);
+  const doctor = await doctorService.getDoctorByUserId(req.user!.id, req.tenant_id);
   if (!doctor) throw new NotFoundError('Doctor profile not found');
 
-  const prescription = await prescriptionService.updatePrescription(Number(req.params.id), req.body, doctor.id);
+  const prescription = await prescriptionService.updatePrescription(Number(req.params.id), req.body, doctor.id, req.tenant_id);
   res.json(prescription);
 });
 
 export const deletePrescription = asyncHandler(async (req: Request, res: Response) => {
-  const doctor = await doctorService.getDoctorByUserId(req.user!.id);
+  const doctor = await doctorService.getDoctorByUserId(req.user!.id, req.tenant_id);
   if (!doctor) throw new NotFoundError('Doctor profile not found');
 
-  const result = await prescriptionService.deletePrescription(Number(req.params.id), doctor.id);
+  const result = await prescriptionService.deletePrescription(Number(req.params.id), doctor.id, req.tenant_id);
   res.json(result);
 });
 
@@ -166,16 +166,16 @@ export const getCie10Categories = asyncHandler(async (req: Request, res: Respons
 });
 
 export const downloadPrescriptionPDF = asyncHandler(async (req: Request, res: Response) => {
-  const doctor = await doctorService.getDoctorByUserId(req.user!.id);
+  const doctor = await doctorService.getDoctorByUserId(req.user!.id, req.tenant_id);
   if (!doctor) throw new NotFoundError('Doctor profile not found');
 
-  const prescription = await prescriptionService.getPrescriptionById(Number(req.params.id));
+  const prescription = await prescriptionService.getPrescriptionById(Number(req.params.id), req.tenant_id);
 
   if (prescription.doctor_id !== doctor.id) {
     throw new BadRequestError('Access denied');
   }
 
-  const pdfBuffer = await generatePrescriptionPDF(prescription.id);
+  const pdfBuffer = await generatePrescriptionPDF(prescription.id, req.tenant_id);
 
   res.setHeader('Content-Type', 'application/pdf');
   res.setHeader('Content-Disposition', `attachment; filename=receta-${prescription.id}.pdf`);

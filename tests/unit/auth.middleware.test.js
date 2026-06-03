@@ -8,6 +8,10 @@ vi.mock('jsonwebtoken', () => ({
   default: { verify: mockVerify },
 }));
 
+vi.mock('../../src/shared/db.js', () => ({
+  pool: { query: vi.fn().mockResolvedValue({ rows: [{ token_version: 0 }] }), connect: vi.fn(), on: vi.fn() },
+}));
+
 import { authMiddleware, authorize, optionalAuth } from '../../src/middlewares/auth.middleware.js';
 
 function mockReq(authorization) {
@@ -70,16 +74,16 @@ describe('authMiddleware', () => {
     expect(res.json).toHaveBeenCalledWith({ error: 'Token expired', code: 'TOKEN_EXPIRED' });
   });
 
-  it('calls next with decoded user on valid token', () => {
+  it('calls next with decoded user on valid token', async () => {
     const decoded = { id: 1, email: 'test@test.com', role: 'user', tenant_id: 'default' };
     mockVerify.mockReturnValue(decoded);
     const req = mockReq('Bearer valid-token');
     const res = mockRes();
     const next = vi.fn();
 
-    authMiddleware(req, res, next);
+    await authMiddleware(req, res, next);
 
-    expect(req.user).toEqual(decoded);
+    expect(req.user).toEqual({ ...decoded, token_version: 0 });
     expect(next).toHaveBeenCalled();
   });
 });
@@ -105,7 +109,7 @@ describe('optionalAuth', () => {
 
     optionalAuth(req, res, next);
 
-    expect(req.user).toEqual(decoded);
+    expect(req.user).toEqual({ ...decoded, token_version: 0 });
     expect(next).toHaveBeenCalled();
   });
 
