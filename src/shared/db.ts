@@ -18,7 +18,7 @@ const poolMax = parseInt(process.env.DB_POOL_MAX || '20', 10);
 const sslConfig = !isInternalDb() && process.env.NODE_ENV === 'production'
   ? (process.env.DATABASE_URL?.includes('sslmode=require') || process.env.DATABASE_URL?.includes('sslmode=verify-full')
     ? undefined
-    : { rejectUnauthorized: true })
+    : { rejectUnauthorized: false })
   : false;
 
 export const pool = new Pool({
