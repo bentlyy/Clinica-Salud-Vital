@@ -24,7 +24,8 @@ export default function SaasPlansPage() {
         ]);
         setPlans(Array.isArray(plansData) ? plansData : (plansData.data || []));
         setSubscription(subData?.subscription || null);
-      } catch {
+      } catch (err) {
+        setError(err.response?.data?.error || 'Error al cargar planes');
       } finally {
         setLoading(false);
       }

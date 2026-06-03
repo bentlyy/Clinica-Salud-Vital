@@ -69,12 +69,18 @@ export default function TenantDashboardPage() {
       await navigator.clipboard.writeText(registrationLink);
       setLinkCopied(true);
       setTimeout(() => setLinkCopied(false), 2000);
-    } catch {}
+    } catch (err) {
+      setError('No se pudo copiar el enlace');
+    }
   };
 
   const handleSaveConfig = async () => {
+    setError('');
+    if (!configName.trim()) {
+      setError(t('saas.clinic_name_required') || 'El nombre de la clínica es requerido');
+      return;
+    }
     try {
-      setError('');
       await updateTenant({ name: configName, locale: configTimezone ? configTimezone.slice(0, 2) : undefined });
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
