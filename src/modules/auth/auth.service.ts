@@ -5,8 +5,9 @@ import { validateRut, cleanRut, formatRut } from '../../shared/rut.js';
 import { getJWTSecret } from '../../shared/jwt.js';
 import { verifyInviteToken } from '../doctor/doctor.service.js';
 import { UserRole } from '../../types/index.js';
-import { BadRequestError } from '../../utils/errors.js';
+import { BadRequestError, UnauthorizedError } from '../../utils/errors.js';
 import { verifyToken as verify2FAToken } from './auth-2fa.service.js';
+import { logger } from '../../utils/logger.js';
 import crypto from 'crypto';
 
 interface RegisterParams {
@@ -48,6 +49,7 @@ interface User {
   totp_enabled: boolean;
   totp_secret: string | null;
   tenant_id: string;
+  active: boolean;
   last_activity_at?: Date;
 }
 
@@ -178,11 +180,13 @@ const verifyCaptcha = async (token: string): Promise<boolean> => {
     const res = await fetch('https://www.google.com/recaptcha/api/siteverify', {
       method: 'POST',
       body: params,
+      signal: AbortSignal.timeout(5000),
     });
     const data = await res.json() as { success: boolean };
     return data.success === true;
-  } catch {
-    return false;
+  } catch (err) {
+    logger.error('reCAPTCHA verification failed, allowing login', { error: (err as Error).message });
+    return true;
   }
 };
 
@@ -191,7 +195,7 @@ export const login = async ({ email, password, totp_token, captcha_token }: Logi
   refresh_token: string;
   user: { id: number; email: string; name: string | null; role: UserRole; rut: string | null; phone: string | null; password_changed: boolean; totp_enabled: boolean; tenant_id: string };
 }> => {
-  if (!email || !password) throw new Error('Email and password required');
+  if (!email || !password) throw new BadRequestError('Email and password required');
 
   if (!(await verifyCaptcha(captcha_token || ''))) {
     throw new BadRequestError('CAPTCHA verification failed');
@@ -204,7 +208,15 @@ export const login = async ({ email, password, totp_token, captcha_token }: Logi
   const passwordHash = user ? user.password : dummyHash;
   const isValid = await bcrypt.compare(password, passwordHash);
 
-  if (!user || !isValid) throw new BadRequestError('Invalid credentials');
+  if (!user || !isValid) {
+    logger.warn('Login failed', { email, reason: !user ? 'user_not_found' : 'wrong_password', ip: 'ip_hidden' });
+    throw new BadRequestError('Invalid credentials');
+  }
+
+  if (!user.active) {
+    logger.warn('Login blocked - user inactive', { email, userId: user.id });
+    throw new UnauthorizedError('Account is deactivated. Contact an administrator.');
+  }
 
   if (user.totp_enabled) {
     if (!totp_token) {

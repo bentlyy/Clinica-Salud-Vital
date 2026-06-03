@@ -47,7 +47,7 @@ export const generateAnalyticsExcel = async (tenantId?: string): Promise<Buffer>
   if (topDoctors.length) {
     addSheet(wb, 'Top Doctores', [
       ['Doctor', 'Especialidad', 'Citas'],
-      ...topDoctors.map(r => [r.doctor, r.specialty, r.count]),
+      ...topDoctors.map(r => [r.name, r.specialty, r.total_bookings]),
     ]);
   }
 

@@ -1,9 +1,9 @@
 import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
 import { createGuestBooking, getGuestBookingsByRut, cancelGuestBooking } from './guest.controller.js';
-import { authMiddleware } from '../../middlewares/auth.middleware.js';
+import { optionalAuth } from '../../middlewares/auth.middleware.js';
 import { validateZod } from '../../middlewares/validate.middleware.js';
-import { guestBookingSchema, guestRutSchema, guestBookingIdSchema } from './guest.schema.js';
+import { guestBookingSchema, guestRutSchema, guestBookingIdSchema, cancelGuestBookingSchema } from './guest.schema.js';
 
 const router = Router();
 
@@ -21,6 +21,6 @@ const guestBookingLimiter = rateLimit({
 
 router.post('/booking', guestBookingLimiter, validateZod(guestBookingSchema), createGuestBooking);
 router.get('/bookings/:rut', rutLookupLimiter, validateZod(guestRutSchema, 'params'), getGuestBookingsByRut);
-router.delete('/booking/:id', authMiddleware, validateZod(guestBookingIdSchema, 'params'), cancelGuestBooking);
+router.delete('/booking/:id', optionalAuth, validateZod(guestBookingIdSchema, 'params'), validateZod(cancelGuestBookingSchema, 'body'), cancelGuestBooking);
 
 export default router;

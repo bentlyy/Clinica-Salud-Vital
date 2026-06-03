@@ -119,12 +119,13 @@ describe('guestService.getGuestBookingsByRut', () => {
 });
 
 describe('guestService.cancelGuestBooking', () => {
-  it('cancels booking successfully', async () => {
+  it('cancels booking as authenticated user', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [{ id: 1 }] });
 
     const result = await guestService.cancelGuestBooking(1, 1);
 
     expect(result.message).toBe('Reserva cancelada correctamente');
+    expect(mockQuery).toHaveBeenCalledWith(expect.stringContaining('user_id = $2'), [1, 1]);
   });
 
   it('throws if booking not found', async () => {
@@ -139,6 +140,22 @@ describe('guestService.cancelGuestBooking', () => {
     const result = await guestService.cancelGuestBooking(1, 1, 'admin');
 
     expect(result.message).toBe('Reserva cancelada correctamente');
+  });
+
+  it('cancels guest booking by rut string', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [{ id: 1 }] });
+
+    const result = await guestService.cancelGuestBooking(1, '12.345.678-5');
+
+    expect(result.message).toBe('Reserva cancelada correctamente');
+    expect(mockQuery).toHaveBeenCalledWith(
+      expect.stringContaining("REPLACE(REPLACE(guest_rut, '.', ''), '-', '') = $2"),
+      [1, '123456785']
+    );
+  });
+
+  it('throws BadRequestError if no auth and no rut', async () => {
+    await expect(guestService.cancelGuestBooking(1, undefined)).rejects.toThrow('Debe proporcionar autenticación o RUT para cancelar');
   });
 
   it('cancels booking with tenantId', async () => {
@@ -157,6 +174,15 @@ describe('guestService.cancelGuestBooking', () => {
 
     expect(result.message).toBe('Reserva cancelada correctamente');
     expect(mockQuery).toHaveBeenCalledWith(expect.stringContaining('tenant_id = $2'), [1, 'tenant-1']);
+  });
+
+  it('guest cancels by rut with tenantId', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [{ id: 1 }] });
+
+    const result = await guestService.cancelGuestBooking(1, '12.345.678-5', undefined, 'tenant-1');
+
+    expect(result.message).toBe('Reserva cancelada correctamente');
+    expect(mockQuery).toHaveBeenCalledWith(expect.stringContaining('tenant_id = $3'), [1, '123456785', 'tenant-1']);
   });
 });
 

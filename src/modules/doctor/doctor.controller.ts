@@ -8,6 +8,16 @@ export const getDoctors = asyncHandler(async (req, res) => {
   res.json(doctors);
 });
 
+export const getDoctorsPublic = asyncHandler(async (req, res) => {
+  const doctors = await doctorService.getAllDoctors(req.tenant_id);
+  const safe = doctors.map((d: Record<string, unknown>) => ({
+    id: d.id,
+    name: d.name,
+    specialty: d.specialty,
+  }));
+  res.json(safe);
+});
+
 export const registerDoctor = asyncHandler(async (req, res) => {
   const result = await doctorService.registerDoctor(req.body, req.tenant_id);
   const response: Record<string, unknown> = {

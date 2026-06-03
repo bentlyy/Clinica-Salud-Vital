@@ -76,7 +76,7 @@ describe('generateAnalyticsExcel', () => {
       { month: '2026-01', count: 50 },
     ]);
     vi.mocked(analyticsService.getTopDoctors).mockResolvedValue([
-      { doctor: 'Dr. Juan', specialty: 'Cardiología', count: 30 },
+      { name: 'Dr. Juan', specialty: 'Cardiología', total_bookings: 30 },
     ]);
     vi.mocked(analyticsService.getBookingStatusDistribution).mockResolvedValue([
       { status: 'confirmed', count: 400 },
