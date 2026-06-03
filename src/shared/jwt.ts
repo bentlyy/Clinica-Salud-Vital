@@ -9,9 +9,12 @@ export const getJWTSecret = (): string => {
 };
 
 export const getInviteJWTSecret = (): string => {
-  const secret = process.env.INVITE_JWT_SECRET || process.env.JWT_SECRET;
+  const secret = process.env.INVITE_JWT_SECRET;
   if (!secret) {
-    throw new UnauthorizedError('INVITE_JWT_SECRET or JWT_SECRET environment variable is not set');
+    throw new UnauthorizedError('INVITE_JWT_SECRET environment variable must be set separately from JWT_SECRET');
+  }
+  if (secret === process.env.JWT_SECRET) {
+    throw new UnauthorizedError('INVITE_JWT_SECRET must be different from JWT_SECRET');
   }
   return secret;
 };

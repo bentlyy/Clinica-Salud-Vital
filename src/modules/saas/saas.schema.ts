@@ -24,4 +24,5 @@ export const onboardSchema = z.object({
   locale: z.enum(['es', 'en', 'pt', 'fr']).optional(),
   timezone: z.string().optional(),
   plan_code: z.string().optional(),
+  captcha_token: z.string().optional(),
 });

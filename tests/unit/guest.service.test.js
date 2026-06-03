@@ -114,7 +114,7 @@ describe('guestService.getGuestBookingsByRut', () => {
     const result = await guestService.getGuestBookingsByRut('12.345.678-5', 'tenant-1');
 
     expect(result).toHaveLength(1);
-    expect(mockQuery).toHaveBeenCalledWith(expect.stringContaining('tenant_id = $2'), ['123456785', 'tenant-1']);
+    expect(mockQuery).toHaveBeenCalledWith(expect.stringContaining('tenant_id = $2'), ['123456785', 'tenant-1', 'tenant-1']);
   });
 });
 

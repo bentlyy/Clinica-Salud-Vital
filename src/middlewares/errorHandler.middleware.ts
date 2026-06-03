@@ -5,6 +5,26 @@ export interface AppErrorWithStatus extends Error {
   statusCode?: number;
 }
 
+const isInternalError = (statusCode: number): boolean => statusCode >= 500;
+
+const sanitizeErrorMessage = (message: string): string => {
+  const sqlPatterns = [
+    /violates foreign key constraint/gi,
+    /violates unique constraint/gi,
+    /duplicate key/gi,
+    /relation "[^"]+" does not exist/gi,
+    /column "[^"]+" does not exist/gi,
+    /syntax error at or near/gi,
+  ];
+  let sanitized = message;
+  for (const pattern of sqlPatterns) {
+    if (pattern.test(sanitized)) {
+      return 'Internal server error';
+    }
+  }
+  return sanitized;
+};
+
 export const errorHandler = (
   err: AppErrorWithStatus,
   req: Request,
@@ -12,17 +32,19 @@ export const errorHandler = (
   next: NextFunction
 ): void => {
   const statusCode = err.statusCode || 500;
-  const message = err.message || 'Internal server error';
+  const isDev = process.env.NODE_ENV === 'development';
 
-  if (statusCode >= 500) {
+  if (isInternalError(statusCode)) {
     logger.error('Unhandled error', { error: err.message, stack: err.stack, url: req.originalUrl, method: req.method });
   } else {
     logger.warn('Client error', { error: err.message, statusCode, url: req.originalUrl, method: req.method });
   }
 
+  const message = isDev ? err.message : sanitizeErrorMessage(err.message);
+
   res.status(statusCode).json({
     error: message,
-    ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
+    ...(isDev && { stack: err.stack }),
   });
 };
 

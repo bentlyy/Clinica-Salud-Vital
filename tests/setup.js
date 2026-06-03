@@ -1,6 +1,7 @@
 import { vi } from 'vitest';
 
 process.env.JWT_SECRET = 'test-secret-for-unit-tests-only-32chars';
+process.env.INVITE_JWT_SECRET = 'test-invite-secret-for-unit-tests-32chars';
 process.env.ENCRYPTION_KEY = 'test-encryption-key-for-unit-tests-32chars';
 process.env.FRONTEND_URL = 'http://localhost:5173';
 process.env.EMAIL_USER = 'test@test.com';

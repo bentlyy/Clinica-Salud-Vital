@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import rateLimit from 'express-rate-limit';
 import { authMiddleware, authorize } from '../../middlewares/auth.middleware.js';
 import { validateZod } from '../../middlewares/validate.middleware.js';
 import * as saasController from './saas.controller.js';
@@ -6,21 +7,28 @@ import { checkoutSchema, changePlanSchema, onboardSchema } from './saas.schema.j
 
 const router = Router();
 
+const onboardLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 3,
+  message: { error: 'Too many onboard attempts, please try again later' },
+  keyGenerator: (req) => req.ip || 'unknown',
+});
+
 router.post('/webhook/stripe', saasController.stripeWebhook);
 
 router.get('/plans', saasController.getPlans);
 
-router.post('/onboard', validateZod(onboardSchema), saasController.onboardTenant);
+router.post('/onboard', onboardLimiter, validateZod(onboardSchema), saasController.onboardTenant);
 
 router.use(authMiddleware);
 
-router.get('/subscription', saasController.getMySubscription);
-router.post('/checkout', validateZod(checkoutSchema), saasController.createCheckout);
+router.get('/subscription', authorize('admin', 'superadmin'), saasController.getMySubscription);
+router.post('/checkout', authorize('admin', 'superadmin'), validateZod(checkoutSchema), saasController.createCheckout);
 router.post('/change-plan', authorize('admin', 'superadmin'), validateZod(changePlanSchema), saasController.changePlan);
 router.post('/cancel', authorize('admin', 'superadmin'), saasController.cancelSubscription);
-router.get('/usage', saasController.getUsage);
-router.get('/usage/summary', saasController.getUsageSummary);
-router.get('/limits', saasController.getLimits);
+router.get('/usage', authorize('admin', 'superadmin'), saasController.getUsage);
+router.get('/usage/summary', authorize('admin', 'superadmin'), saasController.getUsageSummary);
+router.get('/limits', authorize('admin', 'superadmin'), saasController.getLimits);
 router.patch('/tenant', authorize('admin', 'superadmin'), saasController.updateTenantConfig);
 
 export default router;
