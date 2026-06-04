@@ -1,6 +1,7 @@
 -- Migration: Ensure expires_at columns exist on all tables that reference them
 -- Fixes schema drift between init.sql (no expires_at) and migration 005
 -- Safe to run repeatedly (uses IF NOT EXISTS / IF EXISTS checks)
+-- Named 016a so it sorts BEFORE 017_timestamptz_migration.sql
 
 DO $$ BEGIN
   -- user_permissions: created by init.sql without expires_at,
