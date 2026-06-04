@@ -15,9 +15,13 @@ const isInternalDb = (): boolean => {
 
 const poolMax = parseInt(process.env.DB_POOL_MAX || '20', 10);
 
+const dbCaCert = process.env.DB_CA_CERT;
 const sslConfig = !isInternalDb() && process.env.NODE_ENV === 'production'
-  ? { rejectUnauthorized: true, ca: process.env.DB_CA_CERT || undefined }
+  ? { rejectUnauthorized: !!dbCaCert, ...(dbCaCert ? { ca: dbCaCert } : {}) }
   : false;
+if (!isInternalDb() && process.env.NODE_ENV === 'production' && !dbCaCert) {
+  logger.warn('⚠️ DB_CA_CERT no configurado — conexión SSL sin verificación de certificado');
+}
 
 export const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
