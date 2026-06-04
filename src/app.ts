@@ -343,6 +343,10 @@ const startServer = async (): Promise<void> => {
     await runMigration();
 
     await tenantService.loadFromDB();
+
+    /* Set tenant context for seed operations (RLS context) */
+    await pool.query(`SET SESSION app.tenant_id = 'default'`);
+
     await seedDefaultTenant();
     await seedSuperAdmin();
     await seedTestTenants();
