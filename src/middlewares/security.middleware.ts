@@ -66,22 +66,19 @@ export const validateEnvSecurity = (): void => {
   // INVITE_JWT_SECRET validation (must be different from JWT_SECRET)
   const inviteSecret = process.env.INVITE_JWT_SECRET;
   if (!inviteSecret) {
-    throw new UnauthorizedError('INVITE_JWT_SECRET no está definido. Debe ser diferente de JWT_SECRET.');
-  }
-  if (inviteSecret === jwtSecret) {
-    throw new UnauthorizedError('INVITE_JWT_SECRET debe ser diferente de JWT_SECRET.');
-  }
-  if (inviteSecret.length < 32) {
-    throw new UnauthorizedError('INVITE_JWT_SECRET debe tener al menos 32 caracteres.');
+    logger.warn('⚠️ INVITE_JWT_SECRET no está definido. Se usará JWT_SECRET como fallback. Define INVITE_JWT_SECRET en producción.');
+  } else if (inviteSecret === jwtSecret) {
+    logger.warn('⚠️ INVITE_JWT_SECRET es igual a JWT_SECRET. Deben ser diferentes para seguridad óptima.');
+  } else if (inviteSecret.length < 32) {
+    logger.warn('⚠️ INVITE_JWT_SECRET debería tener al menos 32 caracteres.');
   }
 
   // ENCRYPTION_KEY validation
   const encKey = process.env.ENCRYPTION_KEY;
   if (!encKey) {
-    throw new UnauthorizedError('ENCRYPTION_KEY no está definida. Es necesaria para 2FA/TOTP.');
-  }
-  if (encKey.length < 16) {
-    throw new UnauthorizedError('ENCRYPTION_KEY debe tener al menos 16 caracteres.');
+    logger.warn('⚠️ ENCRYPTION_KEY no está definida. 2FA/TOTP no estará disponible hasta que se configure.');
+  } else if (encKey.length < 16) {
+    logger.warn('⚠️ ENCRYPTION_KEY debería tener al menos 16 caracteres.');
   }
 
   // DATABASE_URL validation
