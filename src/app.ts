@@ -292,8 +292,17 @@ const runMigration = async (): Promise<void> => {
     const already = await pool.query('SELECT 1 FROM _migrations WHERE name = $1', [file]);
     if (already.rows.length > 0) continue;
 
+    logger.info(`Aplicando migración ${file}...`);
     const sql = fs.readFileSync(resolve(migrationsDir, file), 'utf-8');
-    await pool.query(sql);
+    try {
+      await pool.query(sql);
+    } catch (migErr) {
+      logger.error(`Error en migración ${file}`, {
+        error: (migErr as Error).message,
+        sql: sql.slice(0, 200),
+      });
+      throw migErr;
+    }
     await pool.query('INSERT INTO _migrations (name) VALUES ($1)', [file]);
     logger.info(`Migración ${file} aplicada`);
   }
