@@ -14,6 +14,7 @@ declare global {
 }
 
 const PUBLIC_PATHS = new Set([
+  '/',
   '/health',
   '/api/v1/auth/login',
   '/api/v1/auth/register',
