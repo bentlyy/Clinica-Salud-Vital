@@ -95,14 +95,18 @@ app.get('/health', async (req: Request, res: Response) => {
 app.use(securityMiddleware);
 app.use(monitoringMiddleware);
 
-/* Serve frontend static files before tenant middleware (no tenant needed) */
+/* Serve frontend static files + SPA catch-all before tenant middleware */
 if (process.env.NODE_ENV === 'production') {
   const frontendPath = resolve(__dirname, '../frontend/dist');
   app.use(express.static(frontendPath));
+  /* SPA: rutas que no empiezan con /api/ → sirven index.html sin tenant */
+  app.get(/^\/(?!api\/)/, (_req, res) => {
+    res.sendFile(resolve(frontendPath, 'index.html'));
+  });
 }
 
-/* Multi-tenancy */
-app.use(tenantMiddleware);
+/* Multi-tenancy (solo para API routes) */
+app.use('/api', tenantMiddleware);
 
 /* Session activity tracking (fire-and-forget for authenticated users) */
 app.use(trackActivity);
@@ -249,14 +253,6 @@ app.use(`${API_PREFIX}/i18n`, i18nRoutes);
 app.use(`${API_PREFIX}/monitoring`, monitoringRoutes);
 app.use(`${API_PREFIX}/compliance`, complianceRoutes);
 app.use(`${API_PREFIX}/fhir`, fhirRoutes);
-
-/* SPA catch-all for frontend (after API routes) */
-if (process.env.NODE_ENV === 'production') {
-  const frontendPath = resolve(__dirname, '../frontend/dist');
-  app.get('*', (_req, res) => {
-    res.sendFile(resolve(frontendPath, 'index.html'));
-  });
-}
 
 setupExpressErrorHandler(app);
 app.use(notFoundHandler);
