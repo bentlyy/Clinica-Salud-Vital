@@ -105,8 +105,8 @@ if (process.env.NODE_ENV === 'production') {
   });
 }
 
-/* Multi-tenancy (solo para API routes) */
-app.use('/api', tenantMiddleware);
+/* Multi-tenancy */
+app.use(tenantMiddleware);
 
 /* Session activity tracking (fire-and-forget for authenticated users) */
 app.use(trackActivity);
