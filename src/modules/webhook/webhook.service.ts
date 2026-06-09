@@ -51,8 +51,8 @@ export const getWebhooks = async (activeOnly = false, tenantId?: string): Promis
   return result.rows.map(maskWebhookSecret);
 };
 
-export const getWebhookById = async (id: number, tenantId?: string): Promise<Webhook | null> => {
-  const result = await pool.query(`SELECT * FROM webhooks WHERE id = $1${tenantId ? ' AND tenant_id = $2' : ''}`, tenantId ? [id, tenantId] : [id]);
+export const getWebhookById = async (id: number, tenantId: string = 'default'): Promise<Webhook | null> => {
+  const result = await pool.query('SELECT * FROM webhooks WHERE id = $1 AND tenant_id = $2', [id, tenantId]);
   if (!result.rows[0]) return null;
   return maskWebhookSecret(result.rows[0]);
 };
@@ -62,7 +62,7 @@ export const updateWebhook = async (id: number, data: Partial<{
   url: string;
   events: string[];
   active: boolean;
-}>, tenantId?: string): Promise<Webhook | null> => {
+}>, tenantId: string = 'default'): Promise<Webhook | null> => {
   const fields: string[] = [];
   const values: unknown[] = [];
   let paramIndex = 1;
@@ -74,17 +74,17 @@ export const updateWebhook = async (id: number, data: Partial<{
 
   if (fields.length === 0) return getWebhookById(id, tenantId);
 
-  values.push(id, tenantId);
+  values.push(id);
   const result = await pool.query(
-    `UPDATE webhooks SET ${fields.join(', ')} WHERE id = $${paramIndex}${tenantId ? ` AND tenant_id = $${paramIndex + 1}` : ''} RETURNING *`,
-    values
+    `UPDATE webhooks SET ${fields.join(', ')} WHERE id = $${paramIndex} AND tenant_id = $${paramIndex + 1} RETURNING *`,
+    [...values, tenantId]
   );
   if (!result.rows[0]) return null;
   return maskWebhookSecret(result.rows[0]);
 };
 
-export const deleteWebhook = async (id: number, tenantId?: string): Promise<boolean> => {
-  const result = await pool.query(`DELETE FROM webhooks WHERE id = $1${tenantId ? ' AND tenant_id = $2' : ''}`, tenantId ? [id, tenantId] : [id]);
+export const deleteWebhook = async (id: number, tenantId: string = 'default'): Promise<boolean> => {
+  const result = await pool.query('DELETE FROM webhooks WHERE id = $1 AND tenant_id = $2', [id, tenantId]);
   return (result.rowCount ?? 0) > 0;
 };
 

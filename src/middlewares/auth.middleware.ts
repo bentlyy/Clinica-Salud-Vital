@@ -1,6 +1,5 @@
-import jwt, { JwtPayload } from 'jsonwebtoken';
 import { Request, Response, NextFunction } from 'express';
-import { getJWTSecret } from '../shared/jwt.js';
+import { jwtManager } from '../shared/jwt.service.js';
 import { UserRole } from '../types/index.js';
 import { pool } from '../shared/db.js';
 
@@ -25,18 +24,15 @@ declare global {
 }
 
 const extractAndVerifyUser = (token: string, req: Request): JwtUser | null => {
-  try {
-    const decoded = jwt.verify(token, getJWTSecret(), { algorithms: ['HS256'] }) as JwtPayload & JwtUser;
-    return {
-      id: decoded.id,
-      email: decoded.email,
-      role: decoded.role as UserRole,
-      tenant_id: decoded.tenant_id || req.tenant_id || process.env.DEFAULT_TENANT_ID || 'default',
-      token_version: decoded.token_version || 0,
-    };
-  } catch {
-    return null;
-  }
+  const decoded = jwtManager.verify<JwtUser>(token);
+  if (!decoded) return null;
+  return {
+    id: decoded.id,
+    email: decoded.email,
+    role: decoded.role as UserRole,
+    tenant_id: decoded.tenant_id || req.tenant_id || process.env.DEFAULT_TENANT_ID || 'default',
+    token_version: decoded.token_version || 0,
+  };
 };
 
 export const setSecurityHeaders = (req: Request, res: Response, next: NextFunction): void => {
@@ -65,9 +61,14 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
 
   const user = extractAndVerifyUser(tokenStr, req);
   if (!user) {
+    // Check if token expired (not just invalid signature)
     try {
-      jwt.verify(tokenStr, getJWTSecret());
-    } catch (error) {
+      const { default: jwt } = await import('jsonwebtoken');
+      const secret = process.env.JWT_SECRET;
+      if (secret) {
+        jwt.verify(tokenStr, secret, { algorithms: ['HS256', 'RS256'], ignoreExpiration: false });
+      }
+    } catch (error: unknown) {
       if (error instanceof Error && error.name === 'TokenExpiredError') {
         res.status(401).json({ error: 'Token expired', code: 'TOKEN_EXPIRED' });
         return;

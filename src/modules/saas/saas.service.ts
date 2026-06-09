@@ -363,7 +363,8 @@ export const onboardTenant = async (data: {
 
     try {
       await (await import('../../shared/multi-tenant.service.js')).tenantService.loadFromDB();
-    } catch {
+    } catch (err) {
+      logger.error('[SaaS] Failed to reload tenant cache:', err);
     }
 
     logger.info(`Tenant onboarded: ${tenantId} (${tenantName})`);

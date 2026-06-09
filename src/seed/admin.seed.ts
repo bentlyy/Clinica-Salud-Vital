@@ -45,17 +45,23 @@ export const seedDefaultTenant = async (): Promise<void> => {
 };
 
 export const seedSuperAdmin = async (): Promise<void> => {
+  if (process.env.NODE_ENV === 'production' && !process.env.SUPERADMIN_PASSWORD) {
+    logger.warn('[SEED SKIPPED] SUPERADMIN_PASSWORD no definida en producción. Define SUPERADMIN_PASSWORD en las env vars.');
+    return;
+  }
+
   const exists = await pool.query('SELECT 1 FROM users WHERE role = $1 LIMIT 1', ['superadmin']);
   if (exists.rows.length > 0) {
     logger.info('Superadmin already exists');
     return;
   }
 
-  const hash = await bcrypt.hash('REPLACED_PASSWORD', 12);
+  const password = process.env.SUPERADMIN_PASSWORD || 'REPLACED_PASSWORD';
+  const hash = await bcrypt.hash(password, 12);
 
   await pool.query(
     'INSERT INTO users (email, password, name, role, tenant_id) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (email) DO NOTHING',
-    ['superadmin@clinic.com', hash, 'Super Admin', 'superadmin', DEFAULT_TENANT_ID]
+    [process.env.SUPERADMIN_EMAIL || 'superadmin@clinic.com', hash, 'Super Admin', 'superadmin', DEFAULT_TENANT_ID]
   );
 
   logger.info('Superadmin created');
@@ -79,7 +85,12 @@ const TEST_TENANTS = [
 ];
 
 export const seedTestTenants = async (): Promise<void> => {
-  const hash = await bcrypt.hash('REPLACED_PASSWORD', 12);
+  if (process.env.NODE_ENV === 'production') {
+    logger.info('[SEED SKIPPED] No se ejecutan tenants de prueba en producción');
+    return;
+  }
+
+  const hash = await bcrypt.hash(process.env.SEED_PASSWORD || 'REPLACED_PASSWORD', 12);
 
   for (const t of TEST_TENANTS) {
     const exists = await pool.query('SELECT 1 FROM tenants WHERE id = $1', [t.id]);
@@ -150,13 +161,18 @@ export const seedTestTenants = async (): Promise<void> => {
 };
 
 export const seedAdmin = async (): Promise<void> => {
+  if (process.env.NODE_ENV === 'production') {
+    logger.info('[SEED SKIPPED] No se ejecuta seed en producción');
+    return;
+  }
+
   const exists = await pool.query('SELECT 1 FROM users WHERE role = $1 LIMIT 1', ['admin']);
   if (exists.rows.length > 0) {
     logger.info('Seed ya ejecutado');
     return;
   }
 
-  const hash = await bcrypt.hash('REPLACED_PASSWORD', 12);
+  const hash = await bcrypt.hash(process.env.SEED_PASSWORD || 'REPLACED_PASSWORD', 12);
 
   await pool.query(
     'INSERT INTO users (email, password, role, rut, tenant_id) VALUES ($1, $2, $3, $4, $5)',

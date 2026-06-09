@@ -6,7 +6,7 @@ export const updateTenantSchema = z.object({
   timezone: z.string().optional(),
   active: z.boolean().optional(),
   config: z.record(z.string(), z.unknown()).optional(),
-});
+}).strict();
 
 export const adminCreateTenantSchema = z.object({
   id: z.string().min(1, 'Tenant ID is required').max(255)
@@ -24,4 +24,4 @@ export const adminCreateTenantSchema = z.object({
     .regex(/[a-z]/, 'Must contain a lowercase letter')
     .regex(/[0-9]/, 'Must contain a number')
     .regex(/[^A-Za-z0-9]/, 'Must contain a special character'),
-});
+}).strict();

@@ -10,18 +10,12 @@ import { logger } from '../../utils/logger.js';
 export const trainModels = asyncHandler(async (req: Request, res: Response) => {
   logger.info('[ML Controller] Train models requested');
 
-  const results = await mlService.trainAllModels(req.tenant_id);
-
-  if (results.error) {
-    return res.status(207).json({
-      message: 'Training completed with errors',
-      results
-    });
-  }
+  const { enqueueJob } = await import('../../shared/queue.service.js');
+  await enqueueJob('ml:train', { tenantId: req.tenant_id });
 
   return res.json({
-    message: 'All models trained successfully',
-    results
+    message: 'Training queued. Check /api/v1/ml/status for progress.',
+    tenantId: req.tenant_id
   });
 });
 

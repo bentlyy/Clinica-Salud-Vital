@@ -9,7 +9,7 @@ export const guestBookingSchema = z.object({
   name: z.string().optional(),
   phone: z.string().optional(),
   duration: z.coerce.number().int().min(1).max(480).optional().default(30),
-});
+}).strict();
 
 export const guestRutSchema = z.object({
   rut: z.string().min(1, 'RUT is required'),

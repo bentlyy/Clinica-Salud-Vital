@@ -59,24 +59,24 @@ describe('refresh', () => {
   it('returns 400 when refresh_token missing', async () => {
     const req = { body: {} };
     const res = mkRes();
+    const next = vi.fn();
 
-    authController.refresh(req, res, vi.fn());
+    authController.refresh(req, res, next);
     await flush();
 
-    expect(res.status).toHaveBeenCalledWith(400);
-    expect(res.json).toHaveBeenCalledWith({ error: 'Refresh token required' });
+    expect(next).toHaveBeenCalledWith(expect.any(Error));
   });
 
   it('returns 401 when refresh_token invalid', async () => {
     vi.mocked(authService.refreshToken).mockResolvedValue(null);
     const req = { body: { refresh_token: 'bad' } };
     const res = mkRes();
+    const next = vi.fn();
 
-    authController.refresh(req, res, vi.fn());
+    authController.refresh(req, res, next);
     await flush();
 
-    expect(res.status).toHaveBeenCalledWith(401);
-    expect(res.json).toHaveBeenCalledWith({ error: 'Invalid or expired refresh token' });
+    expect(next).toHaveBeenCalledWith(expect.any(Error));
   });
 
   it('returns new tokens when valid', async () => {
@@ -119,12 +119,12 @@ describe('logoutAll', () => {
   it('returns 401 when no user', async () => {
     const req = { body: {} };
     const res = mkRes();
+    const next = vi.fn();
 
-    authController.logoutAll(req, res, vi.fn());
+    authController.logoutAll(req, res, next);
     await flush();
 
-    expect(res.status).toHaveBeenCalledWith(401);
-    expect(res.json).toHaveBeenCalledWith({ error: 'Authentication required' });
+    expect(next).toHaveBeenCalledWith(expect.any(Error));
   });
 
   it('logs out all sessions', async () => {
@@ -143,11 +143,12 @@ describe('changePassword', () => {
   it('returns 401 when no user', async () => {
     const req = { body: {} };
     const res = mkRes();
+    const next = vi.fn();
 
-    authController.changePassword(req, res, vi.fn());
+    authController.changePassword(req, res, next);
     await flush();
 
-    expect(res.status).toHaveBeenCalledWith(401);
+    expect(next).toHaveBeenCalledWith(expect.any(Error));
   });
 
   it('changes password successfully', async () => {
@@ -168,11 +169,12 @@ describe('enable2FA', () => {
   it('returns 401 when no user', async () => {
     const req = { body: {} };
     const res = mkRes();
+    const next = vi.fn();
 
-    authController.enable2FA(req, res, vi.fn());
+    authController.enable2FA(req, res, next);
     await flush();
 
-    expect(res.status).toHaveBeenCalledWith(401);
+    expect(next).toHaveBeenCalledWith(expect.any(Error));
   });
 
   it('enables 2FA', async () => {
@@ -192,11 +194,12 @@ describe('verifyAndEnable2FA', () => {
   it('returns 401 when no user', async () => {
     const req = { body: {} };
     const res = mkRes();
+    const next = vi.fn();
 
-    authController.verifyAndEnable2FA(req, res, vi.fn());
+    authController.verifyAndEnable2FA(req, res, next);
     await flush();
 
-    expect(res.status).toHaveBeenCalledWith(401);
+    expect(next).toHaveBeenCalledWith(expect.any(Error));
   });
 
   it('verifies and enables 2FA', async () => {
@@ -215,11 +218,12 @@ describe('disable2FA', () => {
   it('returns 401 when no user', async () => {
     const req = { body: {} };
     const res = mkRes();
+    const next = vi.fn();
 
-    authController.disable2FA(req, res, vi.fn());
+    authController.disable2FA(req, res, next);
     await flush();
 
-    expect(res.status).toHaveBeenCalledWith(401);
+    expect(next).toHaveBeenCalledWith(expect.any(Error));
   });
 
   it('disables 2FA', async () => {
@@ -229,7 +233,7 @@ describe('disable2FA', () => {
     authController.disable2FA(req, res, vi.fn());
     await flush();
 
-    expect(auth2faService.disable2FA).toHaveBeenCalledWith(1, 'StrongPass1!');
+    expect(auth2faService.disable2FA).toHaveBeenCalledWith(1, 'StrongPass1!', undefined);
     expect(res.json).toHaveBeenCalledWith({ message: '2FA disabled successfully' });
   });
 });

@@ -5,6 +5,7 @@ import { pool } from '../../shared/db.js';
 import { logger } from '../../utils/logger.js';
 import { getMLMetrics, resetMLMetrics } from '../ml/ml.middleware.js';
 import { asyncHandler } from '../../middlewares/asyncHandler.middleware.js';
+import { BadRequestError, NotFoundError } from '../../utils/errors.js';
 import fs from 'fs';
 import path from 'path';
 
@@ -130,13 +131,11 @@ export const getLogs = asyncHandler(async (req: Request, res: Response) => {
   const filePath = path.resolve(path.join(logDir, filename));
 
   if (!filePath.startsWith(logDir)) {
-    res.status(400).json({ error: 'Invalid log file path' });
-    return;
+    throw new BadRequestError('Invalid log file path');
   }
 
   if (!fs.existsSync(filePath)) {
-    res.status(404).json({ error: `Log file not found: ${filename}` });
-    return;
+    throw new NotFoundError(`Log file not found: ${filename}`);
   }
 
   const content = fs.readFileSync(filePath, 'utf-8');
@@ -174,10 +173,7 @@ export const triggerGc = asyncHandler(async (_req: Request, res: Response) => {
       after: { heapUsed: Math.round(after.heapUsed / 1024 / 1024) },
     });
   } else {
-    res.status(400).json({
-      error: 'GC not exposed. Run with --expose-gc flag',
-      hint: 'Add --expose-gc to node args or set NODE_OPTIONS=--expose-gc',
-    });
+    throw new BadRequestError('GC not exposed. Run with --expose-gc flag');
   }
 });
 

@@ -1,11 +1,12 @@
 import { Router } from 'express';
-import { register, login, refresh, logout, logoutAll, changePassword, enable2FA, verifyAndEnable2FA, disable2FA, inviteInfo, forgotPassword, resetPassword } from './auth.controller.js';
+import { register, login, refresh, logout, logoutAll, changePassword, enable2FA, verifyAndEnable2FA, disable2FA, inviteInfo, forgotPassword, resetPassword, getJWKS } from './auth.controller.js';
 import { validateZod } from '../../middlewares/validate.middleware.js';
 import { registerSchema, loginSchema, refreshSchema, changePasswordSchema, forgotPasswordSchema, resetPasswordSchema } from './auth.schema.js';
 import { authMiddleware } from '../../middlewares/auth.middleware.js';
 
 const router = Router();
 
+router.get('/.well-known/jwks.json', getJWKS);
 router.get('/invite-info', inviteInfo);
 router.post('/register', validateZod(registerSchema), register);
 router.post('/login', validateZod(loginSchema), login);

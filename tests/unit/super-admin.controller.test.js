@@ -74,22 +74,22 @@ describe('superAdminController.updateTenant', () => {
 
 describe('superAdminController.deleteTenant', () => {
   it('deletes with confirmation', async () => {
-    const req = { params: { id: 'test' }, body: { confirm: true } };
+    const req = { params: { id: 'test' }, body: { confirm: true }, user: { id: 1 }, ip: '127.0.0.1', headers: {}, tenant_id: 'default' };
     const res = { json: vi.fn() };
     const next = vi.fn();
 
     await superAdminController.deleteTenant(req, res, next);
-    expect(superAdminService.deleteTenant).toHaveBeenCalledWith('test');
-    expect(res.json).toHaveBeenCalledWith({ message: 'Tenant deleted' });
+    expect(superAdminService.deleteTenant).toHaveBeenCalledWith('test', 1);
+    expect(res.json).toHaveBeenCalledWith({ message: 'Tenant soft-deleted. Data retained for compliance.' });
   });
 
-  it('returns 400 without confirmation', async () => {
+  it('throws without confirmation', async () => {
     const req = { params: { id: 'test' }, body: {} };
     const res = { status: vi.fn().mockReturnThis(), json: vi.fn() };
     const next = vi.fn();
 
     await superAdminController.deleteTenant(req, res, next);
-    expect(res.status).toHaveBeenCalledWith(400);
+    expect(next).toHaveBeenCalledWith(expect.any(Error));
     expect(superAdminService.deleteTenant).not.toHaveBeenCalled();
   });
 });

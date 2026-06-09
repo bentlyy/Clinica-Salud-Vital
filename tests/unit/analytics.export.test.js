@@ -47,7 +47,7 @@ describe('generateAnalyticsExcel', () => {
     vi.mocked(analyticsService.getOptimalSchedules).mockResolvedValue([]);
     vi.mocked(analyticsService.getVitalSignsAnomalies).mockResolvedValue([]);
 
-    const result = await generateAnalyticsExcel();
+    const result = await generateAnalyticsExcel('test-tenant');
 
     expect(result).toBeInstanceOf(Buffer);
     expect(mockBookNew).toHaveBeenCalled();
@@ -97,7 +97,7 @@ describe('generateAnalyticsExcel', () => {
       { patientId: 1, date: '2026-01-15', pressure: '120/80', heartRate: 72, temperature: 36.5, anomaly: false },
     ]);
 
-    const result = await generateAnalyticsExcel();
+    const result = await generateAnalyticsExcel('test-tenant');
 
     expect(result).toBeInstanceOf(Buffer);
     expect(mockBookAppendSheet).toHaveBeenCalledTimes(8);
@@ -116,7 +116,7 @@ describe('generateAnalyticsExcel', () => {
     vi.mocked(analyticsService.getOptimalSchedules).mockResolvedValue([]);
     vi.mocked(analyticsService.getVitalSignsAnomalies).mockResolvedValue([]);
 
-    await generateAnalyticsExcel();
+    await generateAnalyticsExcel('test-tenant');
 
     expect(mockAoaToSheet).toHaveBeenCalledWith(
       expect.arrayContaining([
@@ -137,7 +137,7 @@ describe('generateAnalyticsExcel', () => {
     vi.mocked(analyticsService.getOptimalSchedules).mockResolvedValue([]);
     vi.mocked(analyticsService.getVitalSignsAnomalies).mockResolvedValue([]);
 
-    const result = await generateAnalyticsExcel();
+    const result = await generateAnalyticsExcel('test-tenant');
     expect(result).toBeInstanceOf(Buffer);
     expect(mockBookAppendSheet).toHaveBeenCalledTimes(1);
   });
@@ -155,7 +155,7 @@ describe('generateAnalyticsExcel', () => {
     vi.mocked(analyticsService.getOptimalSchedules).mockResolvedValue([]);
     vi.mocked(analyticsService.getVitalSignsAnomalies).mockResolvedValue([]);
 
-    await generateAnalyticsExcel();
+    await generateAnalyticsExcel('test-tenant');
 
     expect(mockBookAppendSheet).toHaveBeenCalledWith(
       expect.any(Object),
@@ -177,7 +177,7 @@ describe('generateAnalyticsExcel', () => {
       { patientId: 1, date: '2026-01-15', pressure: '180/120', heartRate: 120, temperature: 39, anomaly: true },
     ]);
 
-    await generateAnalyticsExcel();
+    await generateAnalyticsExcel('test-tenant');
 
     expect(mockBookAppendSheet).toHaveBeenCalledWith(
       expect.any(Object),
@@ -199,7 +199,7 @@ describe('generateAnalyticsExcel', () => {
     vi.mocked(analyticsService.getOptimalSchedules).mockResolvedValue([]);
     vi.mocked(analyticsService.getVitalSignsAnomalies).mockResolvedValue([]);
 
-    await generateAnalyticsExcel();
+    await generateAnalyticsExcel('test-tenant');
 
     expect(mockBookAppendSheet).toHaveBeenNthCalledWith(
       2,
@@ -221,7 +221,7 @@ describe('generateAnalyticsExcel', () => {
     vi.mocked(analyticsService.getOptimalSchedules).mockRejectedValue(err);
     vi.mocked(analyticsService.getVitalSignsAnomalies).mockRejectedValue(err);
 
-    const result = await generateAnalyticsExcel();
+    const result = await generateAnalyticsExcel('test-tenant');
     expect(result).toBeInstanceOf(Buffer);
     expect(mockBookAppendSheet).toHaveBeenCalledTimes(1);
   });

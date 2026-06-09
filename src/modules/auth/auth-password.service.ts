@@ -10,14 +10,10 @@ import { hashToken } from '../../shared/crypto.service.js';
 
 const RESET_TOKEN_EXPIRY = '1h';
 
-export const forgotPassword = async (email: string, tenantId?: string): Promise<void> => {
-  const params: (string | number | undefined)[] = [email];
-  let tenantFilter = '';
-  if (tenantId) { tenantFilter = ' AND tenant_id = $2'; params.push(tenantId); }
-
+export const forgotPassword = async (email: string, tenantId: string): Promise<void> => {
   const result = await pool.query(
-    `SELECT id, email, name FROM users WHERE email = $1 AND active = true${tenantFilter}`,
-    params
+    `SELECT id, email, name FROM users WHERE email = $1 AND active = true AND tenant_id = $2`,
+    [email, tenantId]
   );
 
   if (result.rows.length === 0) {
@@ -55,7 +51,7 @@ export const forgotPassword = async (email: string, tenantId?: string): Promise<
   }
 };
 
-export const resetPassword = async (token: string, email: string, newPassword: string, tenantId?: string): Promise<void> => {
+export const resetPassword = async (token: string, email: string, newPassword: string, tenantId: string): Promise<void> => {
   if (newPassword.length < 8) throw new BadRequestError('Password must be at least 8 characters');
   if (!/[A-Z]/.test(newPassword)) throw new BadRequestError('Password must contain at least one uppercase letter');
   if (!/[a-z]/.test(newPassword)) throw new BadRequestError('Password must contain at least one lowercase letter');
@@ -78,13 +74,9 @@ export const resetPassword = async (token: string, email: string, newPassword: s
 
     const tokenRecord = result.rows[0];
 
-    const userParams: (string | number)[] = [tokenRecord.user_id];
-    let userFilter = '';
-    if (tenantId) { userFilter = ' AND tenant_id = $2'; userParams.push(tenantId); }
-
     const userResult = await client.query(
-      `SELECT id, email FROM users WHERE id = $1 AND active = true${userFilter}`,
-      userParams
+      `SELECT id, email FROM users WHERE id = $1 AND active = true AND tenant_id = $2`,
+      [tokenRecord.user_id, tenantId]
     );
 
     if (userResult.rows.length === 0) {

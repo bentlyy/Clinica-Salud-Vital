@@ -16,7 +16,7 @@ export const createInvoiceSchema = z.object({
     quantity: z.coerce.number().positive().default(1),
     unit_price: z.coerce.number().positive(),
   })).optional(),
-});
+}).strict();
 
 export const updateInvoiceStatusSchema = z.object({
   status: z.enum(['pending', 'paid', 'cancelled', 'refunded', 'overdue']),
@@ -25,7 +25,7 @@ export const updateInvoiceStatusSchema = z.object({
     method: z.string().optional(),
     reference: z.string().optional(),
   }).optional(),
-});
+}).strict();
 
 export const invoiceIdSchema = z.object({
   id: z.coerce.number().int().positive(),

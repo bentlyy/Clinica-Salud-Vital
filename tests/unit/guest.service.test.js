@@ -37,7 +37,7 @@ describe('guestService.checkRutBlocked', () => {
   it('returns false if user not found', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [] });
 
-    const result = await guestService.checkRutBlocked('12.345.678-5');
+    const result = await guestService.checkRutBlocked('12.345.678-5', 'default');
 
     expect(result).toBe(false);
   });
@@ -45,7 +45,7 @@ describe('guestService.checkRutBlocked', () => {
   it('returns false if blocked_until is null', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [{ blocked_until: null }] });
 
-    const result = await guestService.checkRutBlocked('12.345.678-5');
+    const result = await guestService.checkRutBlocked('12.345.678-5', 'default');
 
     expect(result).toBe(false);
   });
@@ -54,7 +54,7 @@ describe('guestService.checkRutBlocked', () => {
     const pastDate = new Date(Date.now() - 86400000).toISOString();
     mockQuery.mockResolvedValueOnce({ rows: [{ blocked_until: pastDate }] });
 
-    const result = await guestService.checkRutBlocked('12.345.678-5');
+    const result = await guestService.checkRutBlocked('12.345.678-5', 'default');
 
     expect(result).toBe(false);
   });
@@ -63,7 +63,7 @@ describe('guestService.checkRutBlocked', () => {
     const futureDate = new Date(Date.now() + 86400000).toISOString();
     mockQuery.mockResolvedValueOnce({ rows: [{ blocked_until: futureDate }] });
 
-    const result = await guestService.checkRutBlocked('12.345.678-5');
+    const result = await guestService.checkRutBlocked('12.345.678-5', 'default');
 
     expect(result).toBe(true);
   });
@@ -71,26 +71,26 @@ describe('guestService.checkRutBlocked', () => {
 
 describe('guestService.createGuestBooking', () => {
   it('throws if missing required fields', async () => {
-    await expect(guestService.createGuestBooking({})).rejects.toThrow('Missing required fields');
-    await expect(guestService.createGuestBooking({ doctor_id: 1 })).rejects.toThrow('Missing required fields');
+    await expect(guestService.createGuestBooking({}, 'default')).rejects.toThrow('Missing required fields');
+    await expect(guestService.createGuestBooking({ doctor_id: 1 }, 'default')).rejects.toThrow('Missing required fields');
   });
 
   it('throws if RUT invalid', async () => {
     await expect(guestService.createGuestBooking({
       doctor_id: 1, date: '2025-01-15', time: '10:00', rut: 'invalid', email: 'guest@test.com',
-    })).rejects.toThrow('RUT inválido');
+    }, 'default')).rejects.toThrow('RUT inválido');
   });
 
   it('throws if date format invalid', async () => {
     await expect(guestService.createGuestBooking({
       doctor_id: 1, date: 'bad', time: '10:00', rut: '12.345.678-5', email: 'guest@test.com',
-    })).rejects.toThrow('Formato de fecha inválido');
+    }, 'default')).rejects.toThrow('Formato de fecha inválido');
   });
 
   it('throws if time format invalid', async () => {
     await expect(guestService.createGuestBooking({
       doctor_id: 1, date: '2025-01-15', time: 'bad', rut: '12.345.678-5', email: 'guest@test.com',
-    })).rejects.toThrow('Formato de hora inválido');
+    }, 'default')).rejects.toThrow('Formato de hora inválido');
   });
 });
 
@@ -101,7 +101,7 @@ describe('guestService.getGuestBookingsByRut', () => {
     ];
     mockQuery.mockResolvedValueOnce({ rows: mockBookings });
 
-    const result = await guestService.getGuestBookingsByRut('12.345.678-5');
+    const result = await guestService.getGuestBookingsByRut('12.345.678-5', 'default');
 
     expect(result).toHaveLength(1);
     expect(result[0].doctor_name).toBe('Dr. Test');
@@ -114,7 +114,7 @@ describe('guestService.getGuestBookingsByRut', () => {
     const result = await guestService.getGuestBookingsByRut('12.345.678-5', 'tenant-1');
 
     expect(result).toHaveLength(1);
-    expect(mockQuery).toHaveBeenCalledWith(expect.stringContaining('tenant_id = $2'), ['123456785', 'tenant-1', 'tenant-1']);
+    expect(mockQuery).toHaveBeenCalledWith(expect.stringContaining('b.tenant_id = $2'), ['123456785', 'tenant-1']);
   });
 });
 
@@ -122,22 +122,22 @@ describe('guestService.cancelGuestBooking', () => {
   it('cancels booking as authenticated user', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [{ id: 1 }] });
 
-    const result = await guestService.cancelGuestBooking(1, 1);
+    const result = await guestService.cancelGuestBooking(1, 1, undefined, 'default');
 
     expect(result.message).toBe('Reserva cancelada correctamente');
-    expect(mockQuery).toHaveBeenCalledWith(expect.stringContaining('user_id = $2'), [1, 1]);
+    expect(mockQuery).toHaveBeenCalledWith(expect.stringContaining('user_id = $2 AND tenant_id = $3'), [1, 1, 'default']);
   });
 
   it('throws if booking not found', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [] });
 
-    await expect(guestService.cancelGuestBooking(999, 1)).rejects.toThrow('Reserva no encontrada');
+    await expect(guestService.cancelGuestBooking(999, 1, undefined, 'default')).rejects.toThrow('Reserva no encontrada');
   });
 
   it('allows admin to cancel any booking', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [{ id: 1 }] });
 
-    const result = await guestService.cancelGuestBooking(1, 1, 'admin');
+    const result = await guestService.cancelGuestBooking(1, 1, 'admin', 'default');
 
     expect(result.message).toBe('Reserva cancelada correctamente');
   });
@@ -145,17 +145,17 @@ describe('guestService.cancelGuestBooking', () => {
   it('cancels guest booking by rut string', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [{ id: 1 }] });
 
-    const result = await guestService.cancelGuestBooking(1, '12.345.678-5', undefined, undefined, 'confirm-token-abc');
+    const result = await guestService.cancelGuestBooking(1, '12.345.678-5', undefined, 'default', 'confirm-token-abc');
 
     expect(result.message).toBe('Reserva cancelada correctamente');
     expect(mockQuery).toHaveBeenCalledWith(
-      expect.stringContaining("confirmation_token = $3"),
-      [1, '123456785', 'confirm-token-abc']
+      expect.stringContaining("tenant_id = $4"),
+      [1, '123456785', 'confirm-token-abc', 'default']
     );
   });
 
   it('throws BadRequestError if no auth and no rut', async () => {
-    await expect(guestService.cancelGuestBooking(1, undefined)).rejects.toThrow('Debe proporcionar autenticación o RUT para cancelar');
+    await expect(guestService.cancelGuestBooking(1, undefined, undefined, 'default')).rejects.toThrow('Debe proporcionar autenticación o RUT para cancelar');
   });
 
   it('cancels booking with tenantId', async () => {
@@ -182,7 +182,7 @@ describe('guestService.cancelGuestBooking', () => {
     const result = await guestService.cancelGuestBooking(1, '12.345.678-5', undefined, 'tenant-1', 'confirm-token-123');
 
     expect(result.message).toBe('Reserva cancelada correctamente');
-    expect(mockQuery).toHaveBeenCalledWith(expect.stringContaining('confirmation_token = $3'), [1, '123456785', 'confirm-token-123', 'tenant-1']);
+    expect(mockQuery).toHaveBeenCalledWith(expect.stringContaining('tenant_id = $4'), [1, '123456785', 'confirm-token-123', 'tenant-1']);
   });
 });
 
@@ -210,7 +210,7 @@ describe('guestService.createGuestBooking advanced', () => {
 
     const result = await guestService.createGuestBooking({
       doctor_id: 1, date: '2026-06-15', time: '10:00', rut: '12.345.678-5', email: 'guest@test.com', name: 'Guest',
-    });
+    }, 'default');
 
     expect(result.id).toBe(2);
   });
@@ -229,7 +229,7 @@ describe('guestService.createGuestBooking advanced', () => {
 
     const result = await guestService.createGuestBooking({
       doctor_id: 1, date: '2026-06-15', time: '10:00', rut: '12.345.678-5', email: 'guest@test.com', name: 'Guest',
-    });
+    }, 'default');
 
     expect(result.id).toBe(1);
     expect(mockClient.query).toHaveBeenCalledWith('COMMIT');
@@ -251,7 +251,7 @@ describe('guestService.createGuestBooking advanced', () => {
 
     await expect(guestService.createGuestBooking({
       doctor_id: 1, date: '2026-06-15', time: '10:00', rut: '12.345.678-5', email: 'guest@test.com',
-    })).rejects.toThrow('Este horario ya está reservado');
+    }, 'default')).rejects.toThrow('Este horario ya está reservado');
 
     expect(mockClient.query).toHaveBeenCalledWith('ROLLBACK');
   });
@@ -262,7 +262,7 @@ describe('guestService.createGuestBooking advanced', () => {
 
     await expect(guestService.createGuestBooking({
       doctor_id: 1, date: '2026-06-15', time: '10:00', rut: '12.345.678-5', email: 'guest@test.com',
-    })).rejects.toThrow('bloqueado');
+    }, 'default')).rejects.toThrow('bloqueado');
   });
 
   it('throws if doctor not found', async () => {
@@ -277,7 +277,7 @@ describe('guestService.createGuestBooking advanced', () => {
 
     await expect(guestService.createGuestBooking({
       doctor_id: 999, date: '2026-06-15', time: '10:00', rut: '12.345.678-5', email: 'guest@test.com',
-    })).rejects.toThrow('Doctor no encontrado');
+    }, 'default')).rejects.toThrow('Doctor no encontrado');
 
     expect(mockClient.query).toHaveBeenCalledWith('ROLLBACK');
   });
@@ -298,7 +298,7 @@ describe('guestService.createGuestBooking advanced', () => {
 
     await expect(guestService.createGuestBooking({
       doctor_id: 1, date: '2026-06-15', time: '10:00', rut: '12.345.678-5', email: 'guest@test.com',
-    })).rejects.toThrow('Connection timeout');
+    }, 'default')).rejects.toThrow('Connection timeout');
 
     expect(mockClient.query).toHaveBeenCalledWith('ROLLBACK');
   });

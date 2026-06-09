@@ -25,7 +25,7 @@ describe('exceptionService.getExceptionsByDoctor', () => {
     ];
     mockQuery.mockResolvedValueOnce({ rows: mockExceptions });
 
-    const result = await exceptionService.getExceptionsByDoctor(1);
+    const result = await exceptionService.getExceptionsByDoctor(1, 'test-tenant');
 
     expect(result).toHaveLength(1);
     expect(result[0].is_full_day).toBe(true);
@@ -34,38 +34,38 @@ describe('exceptionService.getExceptionsByDoctor', () => {
 
 describe('exceptionService.createException', () => {
   it('throws if missing required fields', async () => {
-    await expect(exceptionService.createException({})).rejects.toThrow('doctor_id and date are required');
-    await expect(exceptionService.createException({ doctor_id: 1 })).rejects.toThrow('doctor_id and date are required');
+    await expect(exceptionService.createException({}, 'test-tenant')).rejects.toThrow('doctor_id and date are required');
+    await expect(exceptionService.createException({ doctor_id: 1 }, 'test-tenant')).rejects.toThrow('doctor_id and date are required');
   });
 
   it('throws if date format invalid', async () => {
-    await expect(exceptionService.createException({ doctor_id: 1, date: 'bad-date' }))
+    await expect(exceptionService.createException({ doctor_id: 1, date: 'bad-date' }, 'test-tenant'))
       .rejects.toThrow('Invalid date format');
   });
 
   it('throws if partial block missing times', async () => {
-    await expect(exceptionService.createException({ doctor_id: 1, date: '2025-01-20' }))
+    await expect(exceptionService.createException({ doctor_id: 1, date: '2025-01-20' }, 'test-tenant'))
       .rejects.toThrow('start_time and end_time required');
   });
 
   it('throws if time format invalid', async () => {
     await expect(exceptionService.createException({
       doctor_id: 1, date: '2025-01-20', start_time: 'bad', end_time: '12:00',
-    })).rejects.toThrow('Invalid time format');
+    }, 'test-tenant')).rejects.toThrow('Invalid time format');
 
     await expect(exceptionService.createException({
       doctor_id: 1, date: '2025-01-20', start_time: '10:00', end_time: 'bad',
-    })).rejects.toThrow('Invalid time format');
+    }, 'test-tenant')).rejects.toThrow('Invalid time format');
   });
 
   it('throws if start_time >= end_time', async () => {
     await expect(exceptionService.createException({
       doctor_id: 1, date: '2025-01-20', start_time: '14:00', end_time: '10:00',
-    })).rejects.toThrow('start_time must be before end_time');
+    }, 'test-tenant')).rejects.toThrow('start_time must be before end_time');
 
     await expect(exceptionService.createException({
       doctor_id: 1, date: '2025-01-20', start_time: '10:00', end_time: '10:00',
-    })).rejects.toThrow('start_time must be before end_time');
+    }, 'test-tenant')).rejects.toThrow('start_time must be before end_time');
   });
 
   it('creates full day exception', async () => {
@@ -75,7 +75,7 @@ describe('exceptionService.createException', () => {
 
     const result = await exceptionService.createException({
       doctor_id: 1, date: '2025-01-20', is_full_day: true,
-    });
+    }, 'test-tenant');
 
     expect(result.is_full_day).toBe(true);
   });
@@ -87,7 +87,7 @@ describe('exceptionService.createException', () => {
 
     const result = await exceptionService.createException({
       doctor_id: 1, date: '2025-01-20', start_time: '10:00', end_time: '12:00',
-    });
+    }, 'test-tenant');
 
     expect(result.start_time).toBe('10:00');
     expect(result.is_full_day).toBe(false);
@@ -110,14 +110,14 @@ describe('exceptionService.createException', () => {
 
 describe('exceptionService.deleteException', () => {
   it('throws if ids not integers', async () => {
-    await expect(exceptionService.deleteException('abc', 1)).rejects.toThrow('Invalid id');
-    await expect(exceptionService.deleteException(1, 'abc')).rejects.toThrow('Invalid id');
+    await expect(exceptionService.deleteException('abc', 1, 'test-tenant')).rejects.toThrow('Invalid id');
+    await expect(exceptionService.deleteException(1, 'abc', 'test-tenant')).rejects.toThrow('Invalid id');
   });
 
   it('deletes exception successfully', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [{ id: 1 }] });
 
-    const result = await exceptionService.deleteException(1, 1);
+    const result = await exceptionService.deleteException(1, 1, 'test-tenant');
 
     expect(result.message).toBe('Exception deleted');
   });
@@ -125,7 +125,7 @@ describe('exceptionService.deleteException', () => {
   it('throws if exception not found', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [] });
 
-    await expect(exceptionService.deleteException(999, 1)).rejects.toThrow('Exception not found or unauthorized');
+    await expect(exceptionService.deleteException(999, 1, 'test-tenant')).rejects.toThrow('Exception not found or unauthorized');
   });
 
   it('deletes with tenantId', async () => {
@@ -153,14 +153,14 @@ describe('exceptionService.getExceptionsByDoctor', () => {
 
 describe('exceptionService.deleteException', () => {
   it('throws if ids not integers', async () => {
-    await expect(exceptionService.deleteException('abc', 1)).rejects.toThrow('Invalid id');
-    await expect(exceptionService.deleteException(1, 'abc')).rejects.toThrow('Invalid id');
+    await expect(exceptionService.deleteException('abc', 1, 'test-tenant')).rejects.toThrow('Invalid id');
+    await expect(exceptionService.deleteException(1, 'abc', 'test-tenant')).rejects.toThrow('Invalid id');
   });
 
   it('deletes exception successfully', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [{ id: 1 }] });
 
-    const result = await exceptionService.deleteException(1, 1);
+    const result = await exceptionService.deleteException(1, 1, 'test-tenant');
 
     expect(result.message).toBe('Exception deleted');
   });
@@ -168,6 +168,6 @@ describe('exceptionService.deleteException', () => {
   it('throws if exception not found', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [] });
 
-    await expect(exceptionService.deleteException(999, 1)).rejects.toThrow('Exception not found or unauthorized');
+    await expect(exceptionService.deleteException(999, 1, 'test-tenant')).rejects.toThrow('Exception not found or unauthorized');
   });
 });
