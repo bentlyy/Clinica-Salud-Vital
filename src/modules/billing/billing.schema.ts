@@ -29,5 +29,5 @@ export const updateInvoiceStatusSchema = z.object({
 
 export const invoiceIdSchema = z.object({
   id: z.coerce.number().int().positive(),
-});
+}).strict();
 

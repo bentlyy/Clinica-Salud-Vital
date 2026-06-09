@@ -71,11 +71,11 @@ export const registerDoctor = async ({ name, specialty, email, rut, phone }: Doc
       if (!validateRut(cleaned)) throw new BadRequestError('RUT inválido');
       formattedRut = formatRut(cleaned);
 
-      const rutCheck = await client.query('SELECT 1 FROM users WHERE rut = $1', [formattedRut]);
+      const rutCheck = await client.query('SELECT 1 FROM users WHERE rut = $1 FOR UPDATE', [formattedRut]);
       if (rutCheck.rows.length > 0) throw new BadRequestError('RUT ya registrado');
     }
 
-    const emailCheck = await client.query('SELECT 1 FROM users WHERE email = $1', [email]);
+    const emailCheck = await client.query('SELECT 1 FROM users WHERE email = $1 FOR UPDATE', [email]);
     if (emailCheck.rows.length > 0) throw new BadRequestError('Email ya registrado');
 
     const tempPassword = generatePassword();
@@ -151,7 +151,7 @@ export const createDoctor = async ({ name, specialty, email, user_id }: CreateDo
     await ensureSpecialty(specialty);
 
     const user = await client.query(
-      'SELECT id, role FROM users WHERE id = $1',
+      'SELECT id, role FROM users WHERE id = $1 FOR UPDATE',
       [user_id]
     );
 

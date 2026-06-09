@@ -25,5 +25,5 @@ export const createExceptionSchema = z.object({
 
 export const exceptionIdSchema = z.object({
   id: z.coerce.number().int().positive(),
-});
+}).strict();
 

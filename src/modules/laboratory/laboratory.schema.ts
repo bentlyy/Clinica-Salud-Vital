@@ -10,5 +10,5 @@ export const createLabRequestSchema = z.object({
 
 export const labRequestIdSchema = z.object({
   id: z.coerce.number().int().positive(),
-});
+}).strict();
 
