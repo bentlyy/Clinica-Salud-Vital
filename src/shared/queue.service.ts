@@ -76,12 +76,12 @@ class QueueService {
       const redisUrl = process.env.REDIS_URL;
       if (redisUrl) {
         try {
-          const Redis = (await import('ioredis')).default;
-          const connection = new Redis(redisUrl, {
+          const IORedis: any = (await import('ioredis')).default || (await import('ioredis')).Redis;
+          const connection = new IORedis(redisUrl, {
             maxRetriesPerRequest: null,
             enableReadyCheck: false,
-            retryStrategy: (times) => {
-              if (times > 3) return null; // give up after 3 retries
+            retryStrategy: (times: number) => {
+              if (times > 3) return null;
               return Math.min(times * 200, 2000);
             },
             lazyConnect: true,
@@ -108,9 +108,9 @@ class QueueService {
         const { Queue: BullQueue } = await import('bullmq');
         let queue = this.bullQueues.get('default');
         if (!queue) {
-          const Redis = (await import('ioredis')).default;
+          const BullRedis: any = (await import('ioredis')).default || (await import('ioredis')).Redis;
           queue = new BullQueue('default', {
-            connection: new Redis(process.env.REDIS_URL as string, {
+            connection: new BullRedis(process.env.REDIS_URL as string, {
               maxRetriesPerRequest: null,
               enableReadyCheck: false,
             }),
@@ -142,7 +142,7 @@ class QueueService {
   private async startBullWorker(type: string, handler: JobHandler): Promise<void> {
     try {
       const { Worker: BullWorker } = await import('bullmq');
-      const Redis = (await import('ioredis')).default;
+      const WorkerRedis: any = (await import('ioredis')).default || (await import('ioredis')).Redis;
       const worker = new BullWorker(
         'default',
         async (job: any) => {
@@ -151,7 +151,7 @@ class QueueService {
           }
         },
         {
-          connection: new Redis(process.env.REDIS_URL as string, {
+          connection: new WorkerRedis(process.env.REDIS_URL as string, {
             maxRetriesPerRequest: null,
             enableReadyCheck: false,
           }),
