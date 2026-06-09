@@ -1,6 +1,6 @@
 # Módulos
 
-El backend sigue un patrón de **monolito modular** con 14 módulos + SaaS.
+El backend sigue un patrón de **monolito modular** con 23 módulos.
 
 ## Módulos Core
 
@@ -12,16 +12,25 @@ El backend sigue un patrón de **monolito modular** con 14 módulos + SaaS.
 | [[Modules/Availability\|Availability]] | Bloques semanales (day_of_week) |
 | [[Modules/Exception\|Exception]] | Bloques de excepción (full/partial day) |
 | [[Modules/Guest\|Guest]] | Booking para invitados + búsqueda RUT |
-| [[Modules/Confirmation\|Confirmation]] | Confirmación por email |
+| [[Modules/Patient\|Patient]] | Portal paciente (placeholder) |
+| [[Modules/Specialties\|Specialties]] | Catálogo de especialidades médicas |
 
-## Módulos de Datos
+## Módulos de Datos Clínicos
 
 | Módulo | Descripción |
 |--------|-------------|
 | [[Modules/ClinicalRecord\|Clinical Record]] | EHR, recetas, CIE-10, PDF |
+| [[Modules/Laboratory\|Laboratory]] | Exámenes, solicitudes, resultados |
+| [[Modules/FHIR\|FHIR]] | Interoperabilidad FHIR R4 |
+| [[Modules/Compliance\|Compliance]] | GDPR, portabilidad, derecho al olvido |
+
+## Módulos de Negocio
+
+| Módulo | Descripción |
+|--------|-------------|
 | [[Modules/Analytics\|Analytics]] | Dashboard, stats, integración ML |
 | [[Modules/Billing\|Billing]] | Facturas, pagos, seguros |
-| [[Modules/Laboratory\|Laboratory]] | Exámenes, solicitudes, resultados |
+| [[Modules/SaaS\|SaaS]] | Multi-tenant, planes, suscripciones |
 
 ## Módulos de Sistema
 
@@ -30,7 +39,11 @@ El backend sigue un patrón de **monolito modular** con 14 módulos + SaaS.
 | [[Modules/Audit\|Audit]] | Logs de auditoría (admin) |
 | [[Modules/RBAC\|RBAC]] | Permisos y roles |
 | [[Modules/ML\|Machine Learning]] | Modelos TF.js |
-| [[Modules/SaaS\|SaaS]] | Multi-tenant, planes, suscripciones |
+| [[Modules/Monitoring\|Monitoring]] | Health checks, métricas, DB stats |
+| [[Modules/Notification\|Notification]] | Notificaciones multicanal |
+| [[Modules/Webhook\|Webhook]] | Webhooks salientes con HMAC |
+| [[Modules/SuperAdmin\|Super Admin]] | Gestión global de tenants |
+| [[Modules/I18n\|i18n]] | Traducciones multi-idioma |
 
 ## Estructura Común
 
