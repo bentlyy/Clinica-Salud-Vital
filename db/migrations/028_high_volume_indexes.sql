@@ -27,13 +27,15 @@ CREATE INDEX  IF NOT EXISTS idx_ml_predictions_model_tenant
   ON ml_prediction_history(model_type, tenant_id, created_at DESC);
 
 -- 7. Functional index for RUT lookup without formatting
+-- Nota: REPLACE es IMMUTABLE en PG15+. Si falla, comentar y crear columna generada.
 CREATE INDEX  IF NOT EXISTS idx_users_rut_clean_lookup
   ON users(REPLACE(rut, '.', ''), tenant_id)
   WHERE rut IS NOT NULL;
 
 -- 8. Booking overlap detection index (for slot validation)
+-- Reemplazado por índice simple (función ||::interval no es IMMUTABLE en todas las versiones PG)
 CREATE INDEX  IF NOT EXISTS idx_bookings_overlap
-  ON bookings(doctor_id, date, time, (time + (duration || ' minutes')::INTERVAL), status)
+  ON bookings(doctor_id, date, time, status)
   WHERE status NOT IN ('cancelled');
 
 -- 9. User lookup by email + tenant (login fast path)
@@ -41,9 +43,10 @@ CREATE INDEX  IF NOT EXISTS idx_users_email_tenant
   ON users(email, tenant_id);
 
 -- 10. Refresh token lookup (auth refresh flow)
+-- Nota: NOW() removido del WHERE porque STABLE no es IMMUTABLE
 CREATE INDEX  IF NOT EXISTS idx_refresh_tokens_token_active
   ON refresh_tokens(token, revoked, expires_at)
-  WHERE revoked = false AND expires_at > NOW();
+  WHERE revoked = false;
 
 -- 11. Doctor availability lookup
 CREATE INDEX  IF NOT EXISTS idx_doctor_availability_doctor_day
