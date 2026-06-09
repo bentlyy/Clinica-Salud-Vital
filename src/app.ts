@@ -143,7 +143,13 @@ app.use('/api/v1/saas/webhook/stripe', express.raw({ type: 'application/json' })
 app.use(apiVersionRedirect);
 app.use(setCsrfCookie);
 app.use((req, res, next) => {
-  if (req.path.startsWith('/api/saas/webhook/') || req.path.startsWith('/api/v1/saas/webhook/') || req.path === '/health') {
+  if (
+    req.path.startsWith('/api/saas/webhook/') ||
+    req.path.startsWith('/api/v1/saas/webhook/') ||
+    req.path === '/health' ||
+    req.path.startsWith('/api/v1/auth/') ||
+    req.path.startsWith('/api/auth/')
+  ) {
     return next();
   }
   csrfProtection(req, res, next);
