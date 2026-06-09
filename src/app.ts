@@ -95,6 +95,12 @@ app.get('/health', async (req: Request, res: Response) => {
 app.use(securityMiddleware);
 app.use(monitoringMiddleware);
 
+/* Serve frontend static files before tenant middleware (no tenant needed) */
+if (process.env.NODE_ENV === 'production') {
+  const frontendPath = resolve(__dirname, '../frontend/dist');
+  app.use(express.static(frontendPath));
+}
+
 /* Multi-tenancy */
 app.use(tenantMiddleware);
 
@@ -244,10 +250,9 @@ app.use(`${API_PREFIX}/monitoring`, monitoringRoutes);
 app.use(`${API_PREFIX}/compliance`, complianceRoutes);
 app.use(`${API_PREFIX}/fhir`, fhirRoutes);
 
-/* Serve frontend static files in production */
+/* SPA catch-all for frontend (after API routes) */
 if (process.env.NODE_ENV === 'production') {
   const frontendPath = resolve(__dirname, '../frontend/dist');
-  app.use(express.static(frontendPath));
   app.get('*', (_req, res) => {
     res.sendFile(resolve(frontendPath, 'index.html'));
   });
