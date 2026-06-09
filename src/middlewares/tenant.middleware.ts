@@ -48,7 +48,8 @@ export const tenantMiddleware = async (req: Request, res: Response, next: NextFu
         host,
         method: req.method,
       });
-      throw new BadRequestError('X-Tenant-Id header is required');
+      next(new BadRequestError('X-Tenant-Id header is required'));
+      return;
     }
     req.tenant_id = process.env.DEFAULT_TENANT_ID || 'default';
     req.locale = getLocaleFromRequest(req);
@@ -71,7 +72,8 @@ export const tenantMiddleware = async (req: Request, res: Response, next: NextFu
     if (!tenant) {
       logger.warn('Tenant not found', { tenantId: rawTenantId, host });
       if (!isPublicPath) {
-        throw new NotFoundError('Tenant not found or inactive');
+        next(new NotFoundError('Tenant not found or inactive'));
+        return;
       }
       req.tenant_id = rawTenantId;
       req.locale = getLocaleFromRequest(req);
