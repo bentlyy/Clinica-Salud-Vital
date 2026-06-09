@@ -183,7 +183,9 @@ export const cacheMiddleware = (ttl = 300000) => {
     const originalJson = res.json.bind(res);
     res.json = (data: unknown) => {
       if (req.method === 'GET' && !(data as Record<string, unknown>).fromCache) {
-        mlCache.set(cacheKey, data, ttl).catch(() => {});
+        mlCache.set(cacheKey, data, ttl).catch((err) => {
+          logger.warn('[ML Cache] Failed to set cache:', err);
+        });
       }
       return originalJson(data);
     };

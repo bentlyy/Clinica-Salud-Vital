@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { extractTenantFromHost, tenantService, loadTenantsFromDB } from '../shared/multi-tenant.service.js';
 import { setTenantContext, verifyTenantContext } from '../shared/db.js';
 import { logger } from '../utils/logger.js';
+import { BadRequestError, NotFoundError } from '../utils/errors.js';
 
 declare global {
   namespace Express {
@@ -47,8 +48,7 @@ export const tenantMiddleware = async (req: Request, res: Response, next: NextFu
         host,
         method: req.method,
       });
-      res.status(400).json({ error: 'X-Tenant-Id header is required' });
-      return;
+      throw new BadRequestError('X-Tenant-Id header is required');
     }
     req.tenant_id = process.env.DEFAULT_TENANT_ID || 'default';
     req.locale = getLocaleFromRequest(req);
@@ -71,8 +71,7 @@ export const tenantMiddleware = async (req: Request, res: Response, next: NextFu
     if (!tenant) {
       logger.warn('Tenant not found', { tenantId: rawTenantId, host });
       if (!isPublicPath) {
-        res.status(403).json({ error: 'Tenant not found or inactive' });
-        return;
+        throw new NotFoundError('Tenant not found or inactive');
       }
       req.tenant_id = rawTenantId;
       req.locale = getLocaleFromRequest(req);

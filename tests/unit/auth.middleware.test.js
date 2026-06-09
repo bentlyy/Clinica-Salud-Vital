@@ -13,6 +13,7 @@ vi.mock('../../src/shared/db.js', () => ({
 }));
 
 import { authMiddleware, authorize, optionalAuth } from '../../src/middlewares/auth.middleware.js';
+import { UnauthorizedError, ForbiddenError } from '../../src/utils/errors.js';
 
 function mockReq(authorization) {
   return {
@@ -36,31 +37,25 @@ beforeEach(() => {
 });
 
 describe('authMiddleware', () => {
-  it('returns 401 if no authorization header', () => {
+  it('throws 401 if no authorization header', async () => {
     const req = mockReq();
     const res = mockRes();
     const next = vi.fn();
 
-    authMiddleware(req, res, next);
-
-    expect(res.status).toHaveBeenCalledWith(401);
-    expect(res.json).toHaveBeenCalledWith({ error: 'Token required' });
+    await expect(authMiddleware(req, res, next)).rejects.toThrow(UnauthorizedError);
     expect(next).not.toHaveBeenCalled();
   });
 
-  it('returns 401 if token is invalid', () => {
+  it('throws 401 if token is invalid', async () => {
     mockVerify.mockImplementation(() => { throw new Error('jwt malformed'); });
     const req = mockReq('Bearer invalid-token');
     const res = mockRes();
     const next = vi.fn();
 
-    authMiddleware(req, res, next);
-
-    expect(res.status).toHaveBeenCalledWith(401);
-    expect(res.json).toHaveBeenCalledWith({ error: 'Invalid token' });
+    await expect(authMiddleware(req, res, next)).rejects.toThrow(UnauthorizedError);
   });
 
-  it('returns 401 with TOKEN_EXPIRED code if token expired', () => {
+  it('throws 401 if token expired', async () => {
     const error = new Error('jwt expired');
     error.name = 'TokenExpiredError';
     mockVerify.mockImplementation(() => { throw error; });
@@ -68,10 +63,7 @@ describe('authMiddleware', () => {
     const res = mockRes();
     const next = vi.fn();
 
-    authMiddleware(req, res, next);
-
-    expect(res.status).toHaveBeenCalledWith(401);
-    expect(res.json).toHaveBeenCalledWith({ error: 'Token expired', code: 'TOKEN_EXPIRED' });
+    await expect(authMiddleware(req, res, next)).rejects.toThrow(UnauthorizedError);
   });
 
   it('calls next with decoded user on valid token', async () => {
@@ -127,27 +119,23 @@ describe('optionalAuth', () => {
 });
 
 describe('authorize', () => {
-  it('returns 401 if no user', () => {
+  it('throws 401 if no user', () => {
     const req = mockReq();
     const res = mockRes();
     const next = vi.fn();
 
-    authorize('admin')(req, res, next);
-
-    expect(res.status).toHaveBeenCalledWith(401);
-    expect(res.json).toHaveBeenCalledWith({ error: 'Authentication required' });
+    expect(() => authorize('admin')(req, res, next)).toThrow(UnauthorizedError);
+    expect(next).not.toHaveBeenCalled();
   });
 
-  it('returns 403 if role not allowed', () => {
+  it('throws 403 if role not allowed', () => {
     const req = mockReq();
     req.user = { id: 1, email: 'test@test.com', role: 'user', tenant_id: 'default' };
     const res = mockRes();
     const next = vi.fn();
 
-    authorize('admin')(req, res, next);
-
-    expect(res.status).toHaveBeenCalledWith(403);
-    expect(res.json).toHaveBeenCalledWith({ error: 'Access denied' });
+    expect(() => authorize('admin')(req, res, next)).toThrow(ForbiddenError);
+    expect(next).not.toHaveBeenCalled();
   });
 
   it('calls next if role is allowed', () => {

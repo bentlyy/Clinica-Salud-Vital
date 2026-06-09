@@ -256,7 +256,9 @@ class DbMonitorService {
             logger.warn(`[DB Monitor] Slow query (${q.duration}): ${q.query.substring(0, 200)}`);
           });
         }
-      } catch { /* silent */ }
+      } catch (err) {
+        logger.error('[DB Monitor] Error checking slow queries:', err);
+      }
     }, 60000);
   }
 

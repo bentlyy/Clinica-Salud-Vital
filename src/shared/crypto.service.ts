@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import { BadRequestError } from '../utils/errors.js';
 
 const ALGORITHM = 'aes-256-gcm';
 const IV_LENGTH = 16;
@@ -23,7 +24,7 @@ export function encrypt(text: string): string {
 export function decrypt(encoded: string): string {
   const key = getEncryptionKey();
   const parts = encoded.split(':');
-  if (parts.length !== 3) throw new Error('Invalid encrypted format');
+  if (parts.length !== 3) throw new BadRequestError('Invalid encrypted format');
   const [ivHex, tagHex, encrypted] = parts;
   const iv = Buffer.from(ivHex, 'hex');
   const tag = Buffer.from(tagHex, 'hex');

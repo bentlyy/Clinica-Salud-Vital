@@ -314,14 +314,14 @@ export const onboardTenant = async (data: {
   const { tenantName, domain, adminEmail, adminPassword, adminName, locale, timezone, planCode } = data;
   const tenantId = domain;
 
-  const existing = await pool.query('SELECT 1 FROM tenants WHERE id = $1 OR domain = $2', [tenantId, domain]);
-  if (existing.rows.length > 0) {
-    throw new BadRequestError('Tenant with this domain already exists');
-  }
-
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
+
+    const existing = await client.query('SELECT 1 FROM tenants WHERE id = $1 OR domain = $2 FOR UPDATE', [tenantId, domain]);
+    if (existing.rows.length > 0) {
+      throw new BadRequestError('Tenant with this domain already exists');
+    }
 
     await client.query(
       `INSERT INTO tenants (id, name, domain, locale, timezone, config, active)

@@ -13,17 +13,17 @@ export const guestBookingSchema = z.object({
 
 export const guestRutSchema = z.object({
   rut: z.string().min(1, 'RUT is required'),
-});
+}).strict();
 
 export const guestBookingIdSchema = z.object({
   id: z.coerce.number().int().positive(),
-});
+}).strict();
 
 export const cancelGuestBookingSchema = z.object({
   rut: z.string().min(1, 'RUT es requerido para cancelar como invitado').optional(),
   confirmation_token: z.string().optional(),
-});
+}).strict();
 
 export const confirmTokenSchema = z.object({
   token: z.string().min(1, 'Token requerido'),
-});
+}).strict();
