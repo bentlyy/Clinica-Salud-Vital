@@ -88,7 +88,8 @@ BEGIN
 END $$;
 
 -- Add missing updated_at triggers (safe for tables with updated_at column)
-CREATE OR REPLACE TRIGGER update_users_updated_at
+DROP TRIGGER IF EXISTS update_users_updated_at ON users;
+CREATE TRIGGER update_users_updated_at
   BEFORE UPDATE ON users
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
