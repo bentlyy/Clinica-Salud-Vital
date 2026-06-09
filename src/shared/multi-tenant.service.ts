@@ -77,9 +77,21 @@ export const tenantService = {
 
 const ALLOWED_PARENT_DOMAINS = (process.env.ALLOWED_DOMAINS || '').split(',').filter(Boolean);
 
+const RENDER_PUBLIC_SUFFIX = 'onrender.com';
+const LOCALHOST_ALIASES = new Set(['localhost', '127.0.0.1', '::1']);
+
 export const extractTenantFromHost = (host: string): string | null => {
   if (!host) return null;
-  const parts = host.split('.');
+
+  // Strip port if present
+  const hostname = host.split(':')[0];
+
+  if (LOCALHOST_ALIASES.has(hostname)) return null;
+
+  // Render public URLs (e.g. clinica-salud-vital.onrender.com) are NOT tenant subdomains
+  if (hostname.endsWith(RENDER_PUBLIC_SUFFIX)) return null;
+
+  const parts = hostname.split('.');
 
   if (parts.length >= 3) {
     const subdomain = parts[0];

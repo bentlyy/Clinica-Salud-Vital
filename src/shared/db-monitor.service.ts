@@ -142,7 +142,7 @@ class DbMonitorService {
       SELECT
         pid,
         query,
-        round((NOW() - query_start)::numeric, 2) || 's' as duration,
+        round(extract(epoch FROM NOW() - query_start)::numeric, 2) || 's' as duration,
         state,
         application_name as application,
         usename as username,
