@@ -15,7 +15,8 @@ export const validateZod = (schema: ZodValidationSchema, source: 'body' | 'param
       next();
     } catch (error) {
       if (error instanceof z.ZodError) {
-        throw new BadRequestError('Validation failed: ' + error.issues.map((e: z.ZodIssue) => `${e.path.join('.')}: ${e.message}`).join('; '));
+        next(new BadRequestError('Validation failed: ' + error.issues.map((e: z.ZodIssue) => `${e.path.join('.')}: ${e.message}`).join('; ')));
+        return;
       }
       next(error);
     }

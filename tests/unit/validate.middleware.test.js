@@ -42,11 +42,9 @@ describe('validateZod', () => {
 
     validateZod(testSchema, 'body')(req, res, next);
 
-    expect(res.status).toHaveBeenCalledWith(400);
-    expect(res.json).toHaveBeenCalledWith(
-      expect.objectContaining({ error: 'Validation failed' })
+    expect(next).toHaveBeenCalledWith(
+      expect.objectContaining({ message: expect.stringContaining('Validation failed') })
     );
-    expect(next).not.toHaveBeenCalled();
   });
 
   it('validates params source', () => {
@@ -57,7 +55,9 @@ describe('validateZod', () => {
 
     validateZod(paramsSchema, 'params')(req, res, next);
 
-    expect(res.status).toHaveBeenCalledWith(400);
+    expect(next).toHaveBeenCalledWith(
+      expect.objectContaining({ statusCode: 400 })
+    );
   });
 
   it('validates query source', () => {
@@ -68,7 +68,9 @@ describe('validateZod', () => {
 
     validateZod(querySchema, 'query')(req, res, next);
 
-    expect(res.status).toHaveBeenCalledWith(400);
+    expect(next).toHaveBeenCalledWith(
+      expect.objectContaining({ statusCode: 400 })
+    );
   });
 
   it('passes non-Zod errors to next', () => {
