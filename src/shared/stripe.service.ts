@@ -71,3 +71,27 @@ const _defaultExport: any = createStub();
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const stripe: any = _defaultExport;
 export const webhookSecret = '';
+
+// Idempotency store for Stripe webhooks (prevents double processing on retry)
+const idempotencyStore = new Map<string, { processed: boolean; timestamp: number }>();
+const IDEMPOTENCY_TTL = 24 * 60 * 60 * 1000; // 24 hours
+
+export const checkIdempotency = (key: string): boolean => {
+  const existing = idempotencyStore.get(key);
+  if (existing) {
+    logger.warn(`Stripe webhook idempotency hit for key: ${key}`);
+    return false; // already processed
+  }
+  idempotencyStore.set(key, { processed: true, timestamp: Date.now() });
+  return true; // new, process it
+};
+
+// Periodic cleanup of expired idempotency keys
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, value] of idempotencyStore.entries()) {
+    if (now - value.timestamp > IDEMPOTENCY_TTL) {
+      idempotencyStore.delete(key);
+    }
+  }
+}, 60 * 60 * 1000); // Cleanup every hour

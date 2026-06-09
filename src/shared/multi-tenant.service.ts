@@ -100,3 +100,5 @@ export const extractTenantFromHost = (host: string): string | null => {
 export const getTenantId = (req: { headers: Record<string, string | string[] | undefined>; tenant_id?: string }): string => {
   return req.tenant_id || process.env.DEFAULT_TENANT_ID || 'default';
 };
+
+export const loadTenantsFromDB = tenantService.loadFromDB.bind(tenantService);

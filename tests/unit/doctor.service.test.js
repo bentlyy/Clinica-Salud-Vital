@@ -41,7 +41,7 @@ describe('doctorService.getAllDoctors', () => {
     ];
     mockQuery.mockResolvedValueOnce({ rows: mockDoctors });
 
-    const result = await doctorService.getAllDoctors();
+    const result = await doctorService.getAllDoctors('test-tenant');
 
     expect(result).toHaveLength(1);
     expect(result[0].name).toBe('Dr. Test');
@@ -59,20 +59,20 @@ describe('doctorService.getAllDoctors', () => {
 
 describe('doctorService.registerDoctor', () => {
   it('throws if missing required fields', async () => {
-    await expect(doctorService.registerDoctor({})).rejects.toThrow('Nombre, especialidad y email son obligatorios');
-    await expect(doctorService.registerDoctor({ name: 'Dr. Test' })).rejects.toThrow('Nombre, especialidad y email son obligatorios');
+    await expect(doctorService.registerDoctor({}, 'test-tenant')).rejects.toThrow('Nombre, especialidad y email son obligatorios');
+    await expect(doctorService.registerDoctor({ name: 'Dr. Test' }, 'test-tenant')).rejects.toThrow('Nombre, especialidad y email son obligatorios');
   });
 
   it('throws if email invalid', async () => {
     await expect(doctorService.registerDoctor({
       name: 'Dr. Test', specialty: 'General', email: 'not-email',
-    })).rejects.toThrow('Email inválido');
+    }, 'test-tenant')).rejects.toThrow('Email inválido');
   });
 
   it('throws if RUT invalid', async () => {
     await expect(doctorService.registerDoctor({
       name: 'Dr. Test', specialty: 'General', email: 'doc@test.com', rut: 'invalid',
-    })).rejects.toThrow('RUT inválido');
+    }, 'test-tenant')).rejects.toThrow('RUT inválido');
   });
 
   it('throws if RUT already registered', async () => {
@@ -84,7 +84,7 @@ describe('doctorService.registerDoctor', () => {
 
     await expect(doctorService.registerDoctor({
       name: 'Dr. Test', specialty: 'General', email: 'doc@test.com', rut: '12.345.678-5',
-    })).rejects.toThrow('RUT ya registrado');
+    }, 'test-tenant')).rejects.toThrow('RUT ya registrado');
   });
 
   it('throws if email already registered', async () => {
@@ -97,7 +97,7 @@ describe('doctorService.registerDoctor', () => {
 
     await expect(doctorService.registerDoctor({
       name: 'Dr. Test', specialty: 'General', email: 'doc@test.com',
-    })).rejects.toThrow('Email ya registrado');
+    }, 'test-tenant')).rejects.toThrow('Email ya registrado');
   });
 
   it('creates doctor with availability', async () => {
@@ -114,7 +114,7 @@ describe('doctorService.registerDoctor', () => {
 
     const result = await doctorService.registerDoctor({
       name: 'Dr. Test', specialty: 'General', email: 'doc@test.com',
-    });
+    }, 'test-tenant');
 
     expect(result.doctor.name).toBe('Dr. Test');
     expect(result.credentials.email).toBe('doc@test.com');
@@ -135,7 +135,7 @@ describe('doctorService.registerDoctor', () => {
 
     const result = await doctorService.registerDoctor({
       name: 'Dr. EmailFail', specialty: 'General', email: 'emailfail@test.com',
-    });
+    }, 'test-tenant');
 
     expect(result.doctor.name).toBe('Dr. EmailFail');
   });
@@ -154,7 +154,7 @@ describe('doctorService.registerDoctor', () => {
 
     const result = await doctorService.registerDoctor({
       name: 'Dr. RUT', specialty: 'General', email: 'rutdoc@test.com', rut: '12.345.678-5',
-    });
+    }, 'test-tenant');
 
     expect(result.doctor.name).toBe('Dr. RUT');
   });
@@ -175,7 +175,7 @@ describe('doctorService.registerDoctor', () => {
 
     await expect(doctorService.registerDoctor({
       name: 'Dr. Dup', specialty: 'General', email: 'dup@test.com',
-    })).rejects.toThrow('Doctor o usuario ya existe');
+    }, 'test-tenant')).rejects.toThrow('Doctor o usuario ya existe');
 
     expect(mockClient.query).toHaveBeenCalledWith('ROLLBACK');
   });
@@ -206,7 +206,7 @@ describe('doctorService.registerDoctor', () => {
 
 describe('doctorService.createDoctor', () => {
   it('throws if missing required fields', async () => {
-    await expect(doctorService.createDoctor({})).rejects.toThrow('Missing required fields');
+    await expect(doctorService.createDoctor({}, 'test-tenant')).rejects.toThrow('Missing required fields');
   });
 
   it('throws if user not found', async () => {
@@ -218,7 +218,7 @@ describe('doctorService.createDoctor', () => {
 
     await expect(doctorService.createDoctor({
       name: 'Dr. Test', specialty: 'General', email: 'doc@test.com', user_id: 999,
-    })).rejects.toThrow('User not found');
+    }, 'test-tenant')).rejects.toThrow('User not found');
   });
 
   it('throws if user role is not doctor', async () => {
@@ -230,7 +230,7 @@ describe('doctorService.createDoctor', () => {
 
     await expect(doctorService.createDoctor({
       name: 'Dr. Test', specialty: 'General', email: 'doc@test.com', user_id: 1,
-    })).rejects.toThrow('User must have role doctor');
+    }, 'test-tenant')).rejects.toThrow('User must have role doctor');
   });
 
   it('creates doctor successfully', async () => {
@@ -245,7 +245,7 @@ describe('doctorService.createDoctor', () => {
 
     const result = await doctorService.createDoctor({
       name: 'Dr. Test', specialty: 'General', email: 'doc@test.com', user_id: 1,
-    });
+    }, 'test-tenant');
 
     expect(result.name).toBe('Dr. Test');
   });
@@ -265,7 +265,7 @@ describe('doctorService.createDoctor', () => {
 
     await expect(doctorService.createDoctor({
       name: 'Dr. Test', specialty: 'General', email: 'doc@test.com', user_id: 1,
-    })).rejects.toThrow('Doctor already exists');
+    }, 'test-tenant')).rejects.toThrow('Doctor already exists');
   });
 });
 
@@ -273,7 +273,7 @@ describe('doctorService.getDoctorById', () => {
   it('returns doctor by id', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [{ id: 1, name: 'Dr. Test' }] });
 
-    const result = await doctorService.getDoctorById(1);
+    const result = await doctorService.getDoctorById(1, 'test-tenant');
 
     expect(result.name).toBe('Dr. Test');
   });
@@ -281,7 +281,7 @@ describe('doctorService.getDoctorById', () => {
   it('returns undefined if not found', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [] });
 
-    const result = await doctorService.getDoctorById(999);
+    const result = await doctorService.getDoctorById(999, 'test-tenant');
 
     expect(result).toBeNull();
   });
@@ -291,7 +291,7 @@ describe('doctorService.getDoctorByUserId', () => {
   it('returns doctor by user_id', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [{ id: 1, name: 'Dr. Test', user_id: 5 }] });
 
-    const result = await doctorService.getDoctorByUserId(5);
+    const result = await doctorService.getDoctorByUserId(5, 'test-tenant');
 
     expect(result.user_id).toBe(5);
   });

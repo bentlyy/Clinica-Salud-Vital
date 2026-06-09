@@ -12,15 +12,15 @@ interface ExceptionInput {
 const isValidDate = (d: string): boolean => /^\d{4}-\d{2}-\d{2}$/.test(d);
 const isValidTime = (t: string): boolean => /^\d{2}:\d{2}$/.test(t);
 
-export const getExceptionsByDoctor = async (doctor_id: number, tenantId?: string): Promise<unknown[]> => {
+export const getExceptionsByDoctor = async (doctor_id: number, tenantId: string): Promise<unknown[]> => {
   const result = await pool.query(
-    `SELECT * FROM doctor_exceptions WHERE doctor_id = $1${tenantId ? ' AND tenant_id = $2' : ''} ORDER BY date`,
-    tenantId ? [doctor_id, tenantId] : [doctor_id]
+    `SELECT * FROM doctor_exceptions WHERE doctor_id = $1 AND tenant_id = $2 ORDER BY date`,
+    [doctor_id, tenantId]
   );
   return result.rows;
 };
 
-export const createException = async ({ doctor_id, date, start_time, end_time, is_full_day = false }: ExceptionInput, tenantId?: string): Promise<unknown> => {
+export const createException = async ({ doctor_id, date, start_time, end_time, is_full_day = false }: ExceptionInput, tenantId: string): Promise<unknown> => {
   if (!doctor_id || !date) throw new BadRequestError('doctor_id and date are required');
   if (!isValidDate(date)) throw new BadRequestError('Invalid date format, use YYYY-MM-DD');
 
@@ -31,22 +31,22 @@ export const createException = async ({ doctor_id, date, start_time, end_time, i
   }
 
   const result = await pool.query(
-    `INSERT INTO doctor_exceptions (doctor_id, date, start_time, end_time, is_full_day${tenantId ? ', tenant_id' : ''})
-     VALUES ($1, $2, $3, $4, $5${tenantId ? ', $6' : ''}) RETURNING *`,
-    tenantId ? [doctor_id, date, start_time || null, end_time || null, is_full_day, tenantId] : [doctor_id, date, start_time || null, end_time || null, is_full_day]
+    `INSERT INTO doctor_exceptions (doctor_id, date, start_time, end_time, is_full_day, tenant_id)
+     VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+    [doctor_id, date, start_time || null, end_time || null, is_full_day, tenantId]
   );
 
   return result.rows[0];
 };
 
-export const deleteException = async (exception_id: number, doctor_id: number, tenantId?: string): Promise<{ message: string }> => {
+export const deleteException = async (exception_id: number, doctor_id: number, tenantId: string): Promise<{ message: string }> => {
   if (!Number.isInteger(exception_id) || !Number.isInteger(doctor_id)) {
     throw new BadRequestError('Invalid id');
   }
 
   const result = await pool.query(
-    `DELETE FROM doctor_exceptions WHERE id = $1 AND doctor_id = $2${tenantId ? ' AND tenant_id = $3' : ''} RETURNING *`,
-    tenantId ? [exception_id, doctor_id, tenantId] : [exception_id, doctor_id]
+    `DELETE FROM doctor_exceptions WHERE id = $1 AND doctor_id = $2 AND tenant_id = $3 RETURNING *`,
+    [exception_id, doctor_id, tenantId]
   );
 
   if (result.rows.length === 0) throw new NotFoundError('Exception not found or unauthorized');

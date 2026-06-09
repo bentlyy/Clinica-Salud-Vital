@@ -1,5 +1,18 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
+vi.mock('../../src/shared/db.js', () => ({
+  pool: { query: vi.fn().mockResolvedValue({ rows: [] }), connect: vi.fn() },
+  logPhiAccess: vi.fn().mockResolvedValue(undefined),
+  setTenantContext: vi.fn().mockResolvedValue(undefined),
+  verifyTenantContext: vi.fn().mockResolvedValue(true),
+}));
+
+vi.mock('../../src/shared/phi-encryption.service.js', () => ({
+  encryptPHI: vi.fn((text) => text),
+  decryptPHI: vi.fn((text) => text),
+  clearKeyCache: vi.fn(),
+}));
+
 vi.mock('../../src/modules/clinical-record/clinical-record.service.js', () => ({
   getAllClinicalRecords: vi.fn(),
   getClinicalRecordById: vi.fn(),

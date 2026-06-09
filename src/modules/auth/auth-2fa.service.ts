@@ -79,13 +79,23 @@ export const verifyAndEnable2FA = async (userId: number, token: string): Promise
   return true;
 };
 
-export const disable2FA = async (userId: number, password: string): Promise<void> => {
+export const disable2FA = async (userId: number, password: string, totpToken?: string): Promise<void> => {
   if (!password) throw new BadRequestError('Password is required to disable 2FA');
 
-  const userResult = await pool.query('SELECT password FROM users WHERE id = $1', [userId]);
+  const userResult = await pool.query('SELECT password, totp_secret FROM users WHERE id = $1', [userId]);
   if (!userResult.rows[0]) throw new BadRequestError('User not found');
+
   const isValid = await bcrypt.compare(password, userResult.rows[0].password);
   if (!isValid) throw new UnauthorizedError('Current password is incorrect');
+
+  if (userResult.rows[0].totp_secret) {
+    if (!totpToken) {
+      throw new BadRequestError('Código TOTP requerido para deshabilitar 2FA. Ingresa el código de tu app de autenticación.');
+    }
+    if (!verifyToken(userResult.rows[0].totp_secret, totpToken)) {
+      throw new BadRequestError('Código TOTP inválido');
+    }
+  }
 
   await pool.query(
     'UPDATE users SET totp_secret = NULL, totp_enabled = false WHERE id = $1',

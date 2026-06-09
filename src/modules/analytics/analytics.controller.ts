@@ -2,32 +2,27 @@ import * as analyticsService from './analytics.service.js';
 import * as doctorService from '../doctor/doctor.service.js';
 import { asyncHandler } from '../../middlewares/asyncHandler.middleware.js';
 import { NotFoundError } from '../../utils/errors.js';
-import { getQueryInt } from '../../shared/query.js';
-
-const resolveTenantId = (req: any): string | undefined => {
-  if (req.query?.all === 'true' && req.user?.role === 'superadmin') return undefined;
-  return req.tenant_id;
-};
+import { getQueryInt, getQueryString } from '../../shared/query.js';
 
 export const getDashboardStats = asyncHandler(async (req, res) => {
-  const stats = await analyticsService.getDashboardStats(resolveTenantId(req));
+  const stats = await analyticsService.getDashboardStats(req.tenant_id);
   res.json({ data: stats });
 });
 
 export const getBookingsByMonth = asyncHandler(async (req, res) => {
   const months = getQueryInt(req.query, 'months', 12);
-  const data = await analyticsService.getBookingsByMonth(months, resolveTenantId(req));
+  const data = await analyticsService.getBookingsByMonth(months, req.tenant_id);
   res.json({ data });
 });
 
 export const getTopDoctors = asyncHandler(async (req, res) => {
   const limit = getQueryInt(req.query, 'limit', 10);
-  const data = await analyticsService.getTopDoctors(limit, resolveTenantId(req));
+  const data = await analyticsService.getTopDoctors(limit, req.tenant_id);
   res.json({ data });
 });
 
 export const getBookingStatusDistribution = asyncHandler(async (req, res) => {
-  const data = await analyticsService.getBookingStatusDistribution(resolveTenantId(req));
+  const data = await analyticsService.getBookingStatusDistribution(req.tenant_id);
   res.json({ data });
 });
 
@@ -40,34 +35,34 @@ export const getMyDoctorStats = asyncHandler(async (req, res) => {
 });
 
 export const getNoShows = asyncHandler(async (req, res) => {
-  const data = await analyticsService.getNoShowsByDoctor(resolveTenantId(req));
+  const data = await analyticsService.getNoShowsByDoctor(req.tenant_id);
   res.json({ data });
 });
 
 export const getDiagnosesAnalytics = asyncHandler(async (req, res) => {
-  const data = await analyticsService.getDiagnoses(resolveTenantId(req));
+  const data = await analyticsService.getDiagnoses(req.tenant_id);
   res.json({ data });
 });
 
 export const getDemand = asyncHandler(async (req, res) => {
   const days = getQueryInt(req.query, 'days', 30);
-  const data = await analyticsService.getDemandForecast(days, resolveTenantId(req));
+  const data = await analyticsService.getDemandForecast(days, req.tenant_id);
   res.json({ data });
 });
 
 export const getSchedules = asyncHandler(async (req, res) => {
-  const data = await analyticsService.getOptimalSchedules(resolveTenantId(req));
+  const data = await analyticsService.getOptimalSchedules(req.tenant_id);
   res.json({ data });
 });
 
 export const getVitalsAnomalies = asyncHandler(async (req, res) => {
-  const data = await analyticsService.getVitalSignsAnomalies(resolveTenantId(req));
+  const data = await analyticsService.getVitalSignsAnomalies(req.tenant_id);
   res.json({ data });
 });
 
 export const exportAnalytics = asyncHandler(async (req, res) => {
   const { generateAnalyticsExcel } = await import('./analytics.export.js');
-  const buffer = await generateAnalyticsExcel(resolveTenantId(req));
+  const buffer = await generateAnalyticsExcel(req.tenant_id);
   res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
   res.setHeader('Content-Disposition', `attachment; filename=analytics-powerbi-${new Date().toISOString().split('T')[0]}.xlsx`);
   res.send(buffer);

@@ -21,17 +21,19 @@ interface GuestBookingInput {
   phone?: string;
 }
 
-export const checkRutBlocked = async (rut: string, tenantId?: string): Promise<boolean> => {
+export const checkRutBlocked = async (rut: string, tenantId: string): Promise<boolean> => {
+  if (!tenantId) throw new BadRequestError('Tenant ID es requerido');
   const result = await pool.query(
-    `SELECT blocked_until FROM users WHERE rut = $1${tenantId ? ' AND tenant_id = $2' : ''}`,
-    tenantId ? [rut, tenantId] : [rut]
+    'SELECT blocked_until FROM users WHERE rut = $1 AND tenant_id = $2',
+    [rut, tenantId]
   );
   if (result.rows.length === 0) return false;
   if (!result.rows[0].blocked_until) return false;
   return new Date(result.rows[0].blocked_until) > new Date();
 };
 
-export const createGuestBooking = async ({ doctor_id, date, time, duration = 30, rut, name, email, phone }: GuestBookingInput, tenantId?: string): Promise<unknown> => {
+export const createGuestBooking = async ({ doctor_id, date, time, duration = 30, rut, name, email, phone }: GuestBookingInput, tenantId: string): Promise<unknown> => {
+  if (!tenantId) throw new BadRequestError('Tenant ID es requerido');
   if (!doctor_id || !date || !time || !rut || !email) {
     throw new BadRequestError('Missing required fields');
   }
@@ -41,7 +43,7 @@ export const createGuestBooking = async ({ doctor_id, date, time, duration = 30,
 
   const isBlocked = await checkRutBlocked(rut, tenantId);
   if (isBlocked) {
-    const result = await pool.query(`SELECT blocked_until FROM users WHERE rut = $1${tenantId ? ' AND tenant_id = $2' : ''}`, tenantId ? [rut, tenantId] : [rut]);
+    const result = await pool.query('SELECT blocked_until FROM users WHERE rut = $1 AND tenant_id = $2', [rut, tenantId]);
     const blockedUntil = new Date(result.rows[0].blocked_until).toLocaleDateString('es-CL');
     throw new BadRequestError(`Tu RUT está bloqueado hasta el ${blockedUntil} por inasistencia a citas anteriores.`);
   }
@@ -63,15 +65,15 @@ export const createGuestBooking = async ({ doctor_id, date, time, duration = 30,
 
     const formattedRut = formatRut(rut);
     const confirmToken = jwt.sign(
-      { rut, email, doctor_id, date, time },
+      { rut, email, doctor_id, date, time, tenant_id: tenantId },
       getJWTSecret(),
       { expiresIn: '7d' }
     );
 
     const result = await client.query(
-      `INSERT INTO bookings (doctor_id, date, time, duration, confirmed, guest_rut, guest_name, guest_email, guest_phone, confirmation_token${tenantId ? ', tenant_id' : ''})
-       VALUES ($1, $2, $3, $4, true, $5, $6, $7, $8, $9${tenantId ? ', $10' : ''}) RETURNING *`,
-      tenantId ? [doctor_id, date, time, duration, formattedRut, name, email, phone, confirmToken, tenantId] : [doctor_id, date, time, duration, formattedRut, name, email, phone, confirmToken]
+      `INSERT INTO bookings (doctor_id, date, time, duration, confirmed, guest_rut, guest_name, guest_email, guest_phone, confirmation_token, tenant_id)
+       VALUES ($1, $2, $3, $4, true, $5, $6, $7, $8, $9, $10) RETURNING *`,
+      [doctor_id, date, time, duration, formattedRut, name, email, phone, confirmToken, tenantId]
     );
 
     await client.query('COMMIT');
@@ -104,50 +106,41 @@ export const createGuestBooking = async ({ doctor_id, date, time, duration = 30,
   }
 };
 
-export const getGuestBookingsByRut = async (rut: string, tenantId?: string): Promise<unknown[]> => {
+export const getGuestBookingsByRut = async (rut: string, tenantId: string): Promise<unknown[]> => {
+  if (!tenantId) throw new BadRequestError('Tenant ID es requerido');
   const cleanedRut = rut.replace(/[^0-9kK]/g, '').toUpperCase();
-  const params: any[] = [cleanedRut];
-  let paramIdx = 1;
-  let query = `
+  const result = await pool.query(`
     SELECT b.id, b.date, b.time, b.duration, b.status, b.confirmed,
            d.name AS doctor_name, d.specialty
     FROM bookings b
     JOIN doctors d ON b.doctor_id = d.id
     LEFT JOIN users u ON b.user_id = u.id AND u.tenant_id = b.tenant_id
     WHERE (
-      REPLACE(REPLACE(b.guest_rut, '.', ''), '-', '') = $${paramIdx}
-      OR REPLACE(REPLACE(u.rut, '.', ''), '-', '') = $${paramIdx}
-    ) AND b.status != 'cancelled'`;
-  if (tenantId) {
-    paramIdx++;
-    query += ` AND b.tenant_id = $${paramIdx}`;
-    params.push(tenantId);
-    paramIdx++;
-    query += ` AND d.tenant_id = $${paramIdx}`;
-    params.push(tenantId);
-  }
-  query += ' ORDER BY b.date, b.time';
-  const result = await pool.query(query, params);
+      REPLACE(REPLACE(b.guest_rut, '.', ''), '-', '') = $1
+      OR REPLACE(REPLACE(u.rut, '.', ''), '-', '') = $1
+    )
+    AND b.status != 'cancelled'
+    AND b.tenant_id = $2
+    AND d.tenant_id = $2
+    ORDER BY b.date, b.time
+  `, [cleanedRut, tenantId]);
   return result.rows;
 };
 
-export const cancelGuestBooking = async (bookingId: number, userIdOrRut?: number | string, userRole?: string, tenantId?: string, confirmationToken?: string): Promise<{ message: string }> => {
+export const cancelGuestBooking = async (bookingId: number, userIdOrRut?: number | string, userRole?: string, tenantId: string = '', confirmationToken?: string): Promise<{ message: string }> => {
+  if (!tenantId) throw new BadRequestError('Tenant ID es requerido');
   const canCancelAny = userRole === 'admin' || userRole === 'doctor';
   let result;
 
   if (canCancelAny && typeof userIdOrRut === 'number') {
     result = await pool.query(
-      `UPDATE bookings SET status = 'cancelled'
-       WHERE id = $1${tenantId ? ' AND tenant_id = $2' : ''}
-       RETURNING *`,
-      tenantId ? [bookingId, tenantId] : [bookingId]
+      'UPDATE bookings SET status = \'cancelled\' WHERE id = $1 AND tenant_id = $2 RETURNING *',
+      [bookingId, tenantId]
     );
   } else if (typeof userIdOrRut === 'number') {
     result = await pool.query(
-      `UPDATE bookings SET status = 'cancelled'
-       WHERE id = $1 AND user_id = $2${tenantId ? ' AND tenant_id = $3' : ''}
-       RETURNING *`,
-      tenantId ? [bookingId, userIdOrRut, tenantId] : [bookingId, userIdOrRut]
+      'UPDATE bookings SET status = \'cancelled\' WHERE id = $1 AND user_id = $2 AND tenant_id = $3 RETURNING *',
+      [bookingId, userIdOrRut, tenantId]
     );
   } else if (typeof userIdOrRut === 'string') {
     if (!confirmationToken) {
@@ -159,9 +152,10 @@ export const cancelGuestBooking = async (bookingId: number, userIdOrRut?: number
        WHERE id = $1
          AND REPLACE(REPLACE(guest_rut, '.', ''), '-', '') = $2
          AND guest_rut IS NOT NULL
-         AND confirmation_token = $3${tenantId ? ' AND tenant_id = $4' : ''}
+         AND confirmation_token = $3
+         AND tenant_id = $4
        RETURNING *`,
-      tenantId ? [bookingId, cleanedRut, confirmationToken, tenantId] : [bookingId, cleanedRut, confirmationToken]
+      [bookingId, cleanedRut, confirmationToken, tenantId]
     );
   } else {
     throw new BadRequestError('Debe proporcionar autenticación o RUT para cancelar');

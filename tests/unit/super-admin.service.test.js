@@ -12,6 +12,7 @@ vi.mock('../../src/shared/db.js', () => ({
     connect: mockConnect,
     on: vi.fn(),
   },
+  logPhiAccess: vi.fn().mockResolvedValue(undefined),
 }));
 
 vi.mock('../../src/utils/logger.js', () => ({
@@ -108,10 +109,15 @@ describe('superAdminService.updateTenant', () => {
 });
 
 describe('superAdminService.deleteTenant', () => {
-  it('deletes tenant', async () => {
+  it('deletes tenant (soft-delete)', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [{ id: 'test' }] });
-    await superAdminService.deleteTenant('test');
-    expect(mockQuery).toHaveBeenCalledWith(expect.stringContaining('DELETE FROM tenants'), ['test']);
+    mockQuery.mockResolvedValueOnce(undefined);
+    mockQuery.mockResolvedValueOnce(undefined);
+    await superAdminService.deleteTenant('test', 1);
+    expect(mockQuery).toHaveBeenCalledWith(
+      expect.stringContaining('UPDATE tenants SET active = false, deleted_at'),
+      expect.arrayContaining(['test'])
+    );
   });
 
   it('throws if tenant not found', async () => {

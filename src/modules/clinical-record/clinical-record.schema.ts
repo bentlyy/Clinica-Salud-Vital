@@ -22,12 +22,12 @@ export const createClinicalRecordSchema = z.object({
   cie10_codes: z.array(z.string()).optional(),
   treatment_plan: z.string().optional(),
   notes: z.string().optional(),
-});
+}).strict();
 
 export const updateClinicalRecordSchema = createClinicalRecordSchema.partial().extend({
   id: z.coerce.number().int().positive(),
   status: z.enum(['draft', 'completed', 'cancelled']).optional(),
-});
+}).strict();
 
 export const prescriptionSchema = z.object({
   clinical_record_id: z.coerce.number().int().positive('clinical_record_id is required'),
@@ -37,7 +37,7 @@ export const prescriptionSchema = z.object({
   duration: z.string().max(100).optional(),
   instructions: z.string().optional(),
   route: z.enum(['oral', 'intravenous', 'intramuscular', 'subcutaneous', 'topical', 'rectal', 'sublingual', 'inhaled', 'ophthalmic', 'otic', 'nasal']).default('oral'),
-});
+}).strict();
 
 export const clinicalRecordIdSchema = z.object({
   id: z.coerce.number().int().positive(),
