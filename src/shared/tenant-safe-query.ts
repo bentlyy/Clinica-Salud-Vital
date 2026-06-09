@@ -84,7 +84,8 @@ export async function tenantQuery<T = any>(
   options: SafeQueryOptions = {}
 ): Promise<{ rows: T[]; rowCount: number }> {
   validateTenantIsolation(sql, params, options);
-  return pool.query(sql, params);
+  const result = await pool.query(sql, params);
+  return result as { rows: T[]; rowCount: number };
 }
 
 export async function tenantQueryWithClient<T = any>(
@@ -94,7 +95,8 @@ export async function tenantQueryWithClient<T = any>(
   options: SafeQueryOptions = {}
 ): Promise<{ rows: T[]; rowCount: number }> {
   validateTenantIsolation(sql, params, options);
-  return client.query(sql, params);
+  const result = await client.query(sql, params);
+  return result as { rows: T[]; rowCount: number };
 }
 
 export function assertTenantId(tenantId?: string): string {
