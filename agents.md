@@ -503,3 +503,10 @@ Features:
 - El Navbar hace `await logout()` antes de navegar para evitar race condition
 - Las reservas se auto-confirman al crearse (`confirmed=true`) — el email es solo notificación
 - SendGrid es el provider de email principal si `SENDGRID_API_KEY` está definida
+
+## Obsidian Wiki
+- El vault de Obsidian está en la raíz del proyecto (`.obsidian/`)
+- Contenido wiki en `wiki/` con notas sobre arquitectura, API, módulos, DB, ML, despliegue
+- Abrir carpeta raíz en Obsidian para ver todo el proyecto como vault
+- `.obsidian/workspace.json` y `appearance.json` son personales (gitignored)
+- `core-plugins.json`, `app.json` y `graph.json` son compartidos (tracked)
