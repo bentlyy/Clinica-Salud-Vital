@@ -1,9 +1,9 @@
 import { Request, Response } from 'express';
-import asyncHandler from '../../middlewares/asyncHandler.middleware.js';
+import { asyncHandler } from '../../middlewares/asyncHandler.middleware.js';
 import * as fhirService from './fhir.service.js';
 
 export const getPatient = asyncHandler(async (req: Request, res: Response) => {
-  const resource = await fhirService.getPatient(req.params.id, req.tenant_id!);
+  const resource = await fhirService.getPatient(req.params.id as string, req.tenant_id!);
   res.json(resource);
 });
 
@@ -18,7 +18,7 @@ export const searchPatients = asyncHandler(async (req: Request, res: Response) =
 });
 
 export const getAppointment = asyncHandler(async (req: Request, res: Response) => {
-  const resource = await fhirService.getAppointment(req.params.id, req.tenant_id!);
+  const resource = await fhirService.getAppointment(req.params.id as string, req.tenant_id!);
   res.json(resource);
 });
 
