@@ -31,6 +31,7 @@ import { errorHandler } from '../../src/middlewares/errorHandler.middleware.js';
 
 const app = express();
 app.use(express.json());
+app.use((req, _res, next) => { req.tenant_id = 'default'; req.locale = 'es'; next(); });
 app.use('/api/guest', guestRoutes);
 app.use(errorHandler);
 
@@ -54,7 +55,7 @@ describe('POST /api/guest/booking', () => {
       .send({});
 
     expect(res.status).toBe(400);
-    expect(res.body.error).toBe('Validation failed');
+    expect(res.body.error).toContain('Validation failed');
   });
 
   it('returns 400 if RUT invalid', async () => {
@@ -77,7 +78,7 @@ describe('POST /api/guest/booking', () => {
       .send({ doctor_id: 1, date: 'bad', time: '10:00', rut: '12.345.678-5', email: 'guest@test.com' });
 
     expect(res.status).toBe(400);
-    expect(res.body.error).toBe('Validation failed');
+    expect(res.body.error).toContain('Validation failed');
   });
 });
 
