@@ -6,23 +6,31 @@
 src/
 ├── app.ts                    # Entry point
 ├── middlewares/               # Pipeline Express
-├── modules/                   # 14 módulos (monolito modular)
-│   ├── auth/
-│   ├── booking/
-│   ├── doctor/
-│   ├── availability/
-│   ├── exception/
-│   ├── guest/
-│   ├── confirmation/
-│   ├── clinical-record/
+├── modules/                   # 23 módulos (monolito modular)
 │   ├── analytics/
-│   ├── billing/
-│   ├── laboratory/
 │   ├── audit/
-│   ├── rbac/
+│   ├── auth/
+│   ├── availability/
+│   ├── billing/
+│   ├── booking/
+│   ├── clinical-record/
+│   ├── compliance/            # GDPR, portabilidad, borrado
+│   ├── doctor/
+│   ├── exception/
+│   ├── fhir/                  # Interoperabilidad FHIR
+│   ├── guest/
+│   ├── i18n/                  # Traducciones multi-idioma
+│   ├── laboratory/
 │   ├── ml/
-│   └── saas/
-├── shared/                    # db.ts, jwt.ts, etc.
+│   ├── monitoring/            # Health, métricas, DB stats
+│   ├── notification/          # Canal único (email/sms/whatsapp)
+│   ├── patient/               # (placeholder)
+│   ├── rbac/
+│   ├── saas/
+│   ├── specialties/           # Catálogo de especialidades
+│   ├── super-admin/           # Gestión global de tenants
+│   └── webhook/
+├── shared/                    # db.ts, jwt.ts, i18n.service.ts, multi-tenant.service.ts, stripe.service.ts, booking-utils.ts, notification.service.ts, query.ts, usage.middleware.ts
 ├── utils/                     # logger.ts, errors.ts
 ├── jobs/                      # Cron jobs
 └── seed/                      # Seeds
@@ -65,4 +73,19 @@ module/
 - Shared DB con `tenant_id` en todas las tablas
 - Aislamiento via `WHERE tenant_id = ?`
 - JWT incluye `tenant_id`
-- Refresh de tenants cada 5 min desde DB
+- Refresh de tenants cada 5 min desde DB (`multi-tenant.service.ts`)
+
+## Shared Modules
+| Archivo | Propósito |
+|---------|-----------|
+| `db.ts` | Pool PostgreSQL (single instance) |
+| `jwt.ts` | JWT secret getter |
+| `rut.ts` | Validación RUT chileno |
+| `email.service.ts` | Transporte Nodemailer |
+| `i18n.service.ts` | 421+ claves × 4 locales |
+| `multi-tenant.service.ts` | Carga/refresh tenants |
+| `stripe.service.ts` | Stripe wrapper (stub mode) |
+| `booking-utils.ts` | Validación de slots compartida |
+| `notification.service.ts` | Notificaciones multicanal |
+| `query.ts` | Helpers getQueryInt/Str |
+| `usage.middleware.ts` | Tracking de uso por tenant |

@@ -21,8 +21,10 @@ Desplegado en Render. ML con TensorFlow.js.
 - [[Architecture]] — Arquitectura, patrones, estructura de carpetas
 - [[API]] — Endpoints, convenciones, auth
 - [[Database]] — Schema, tablas, migraciones
-- [[Modules/_Index|Módulos]] — Todos los módulos del backend
+- [[Modules/_Index|Módulos]] — Todos los módulos del backend (23)
 - [[ML/_Index|Machine Learning]] — Modelos TF.js
+- [[Security]] — Capas de seguridad
+- [[Testing]] — Stats, setup, gotchas
 - [[Deployment]] — Despliegue en Render
 
 ## Enlaces Útiles
