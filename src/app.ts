@@ -381,6 +381,16 @@ const startServer = async (): Promise<void> => {
     }
     logger.info('DB conectada');
 
+    /* Set database-wide timeouts for safety (one-time, persists across restarts) */
+    try {
+      const dbName = process.env.DATABASE_URL?.split('/').pop()?.split('?')[0] || 'clinic';
+      await pool.query(`ALTER DATABASE "${dbName}" SET statement_timeout = 30000`);
+      await pool.query(`ALTER DATABASE "${dbName}" SET idle_in_transaction_session_timeout = 60000`);
+      logger.info('Database timeouts configured');
+    } catch {
+      logger.warn('Could not set database-wide timeouts (non-superuser) — OK');
+    }
+
     await runMigration();
 
     /* Initialize async job queue (BullMQ if Redis available, memory fallback) */
@@ -424,7 +434,7 @@ process.on('SIGTERM', () => {
   logger.info('SIGTERM received. Shutting down gracefully...');
   monitoringService.stop();
   dbMonitor.stop();
-  pool.end().catch(() => {});
+  pool.end().catch((err: unknown) => logger.warn('Pool close error on SIGTERM', (err as Error).message));
   tenantService.stopRefresh();
   queueService.destroy();
   process.exit(0);
@@ -434,7 +444,7 @@ process.on('SIGINT', () => {
   logger.info('SIGINT received. Shutting down gracefully...');
   monitoringService.stop();
   dbMonitor.stop();
-  pool.end().catch(() => {});
+  pool.end().catch((err: unknown) => logger.warn('Pool close error on SIGINT', (err as Error).message));
   tenantService.stopRefresh();
   queueService.destroy();
   process.exit(0);
