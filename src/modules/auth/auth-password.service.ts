@@ -64,7 +64,7 @@ export const resetPassword = async (token: string, email: string, newPassword: s
 
     const tokenHash = hashToken(token);
     const result = await client.query(
-      'SELECT * FROM password_reset_tokens WHERE token = $1 AND used = false AND expires_at > NOW()',
+      'SELECT * FROM password_reset_tokens WHERE token = $1 AND used = false AND expires_at > NOW() FOR UPDATE',
       [tokenHash]
     );
 

@@ -10,9 +10,9 @@ export const createBookingSchema = z.object({
 export const availableSlotsSchema = z.object({
   doctor_id: z.string().transform((val) => parseInt(val, 10)).pipe(z.number().int().positive()),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format, use YYYY-MM-DD'),
-});
+}).strict();
 
 export const bookingIdSchema = z.object({
   id: z.coerce.number().int().positive(),
-});
+}).strict();
 

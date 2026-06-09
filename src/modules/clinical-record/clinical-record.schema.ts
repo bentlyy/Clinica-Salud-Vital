@@ -9,7 +9,7 @@ export const vitalSignsSchema = z.object({
   weight: z.coerce.number().optional(),
   height: z.coerce.number().optional(),
   bmi: z.coerce.number().optional(),
-});
+}).strict();
 
 export const createClinicalRecordSchema = z.object({
   patient_id: z.coerce.number().int().positive('patient_id is required'),
@@ -41,10 +41,10 @@ export const prescriptionSchema = z.object({
 
 export const clinicalRecordIdSchema = z.object({
   id: z.coerce.number().int().positive(),
-});
+}).strict();
 
 export const patientIdSchema = z.object({
   patient_id: z.coerce.number().int().positive(),
-});
+}).strict();
 
 
