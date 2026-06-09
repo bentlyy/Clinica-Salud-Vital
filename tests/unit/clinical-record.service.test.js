@@ -18,6 +18,11 @@ vi.mock('../../src/utils/logger.js', () => ({
   logger: { info: vi.fn(), error: vi.fn(), warn: vi.fn() },
 }));
 
+vi.mock('../../src/shared/phi-encryption.service.js', () => ({
+  encryptPHI: vi.fn((text) => Promise.resolve(`enc:${text}`)),
+  decryptPHI: vi.fn((text) => Promise.resolve(text.replace('enc:', ''))),
+}));
+
 import * as clinicalRecordService from '../../src/modules/clinical-record/clinical-record.service.js';
 
 beforeEach(() => {
@@ -35,13 +40,13 @@ describe('clinicalRecordService.getAllClinicalRecords', () => {
   it('filters by patient_id', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [] });
     await clinicalRecordService.getAllClinicalRecords({ patient_id: 1 });
-    expect(mockQuery).toHaveBeenCalledWith(expect.stringContaining('cr.patient_id = $1'), expect.any(Array));
+    expect(mockQuery).toHaveBeenCalledWith(expect.stringContaining('cr.patient_id = $2'), expect.any(Array));
   });
 
   it('filters by doctor_id', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [] });
     await clinicalRecordService.getAllClinicalRecords({ doctor_id: 2 });
-    expect(mockQuery).toHaveBeenCalledWith(expect.stringContaining('cr.doctor_id = $1'), expect.any(Array));
+    expect(mockQuery).toHaveBeenCalledWith(expect.stringContaining('cr.doctor_id = $2'), expect.any(Array));
   });
 
   it('filters by status', async () => {
@@ -107,7 +112,7 @@ describe('clinicalRecordService.createClinicalRecord', () => {
       booking_id: 10,
       chief_complaint: 'Dolor de cabeza',
       diagnosis: 'Migraña',
-    });
+    }, 'test-tenant');
 
     expect(result.chief_complaint).toBe('Dolor de cabeza');
     expect(mockClient.query).toHaveBeenCalledWith('COMMIT');
@@ -166,7 +171,7 @@ describe('clinicalRecordService.createClinicalRecord', () => {
       doctor_id: 2,
       booking_id: 999,
       chief_complaint: 'Test',
-    })).rejects.toThrow('Booking not found');
+    }, 'test-tenant')).rejects.toThrow('Booking not found');
   });
 });
 
@@ -180,7 +185,7 @@ describe('clinicalRecordService.updateClinicalRecord', () => {
       return Promise.resolve({ rows: [] });
     });
 
-    const result = await clinicalRecordService.updateClinicalRecord(1, { diagnosis: 'Nuevo diagnóstico' }, 5);
+    const result = await clinicalRecordService.updateClinicalRecord(1, { diagnosis: 'Nuevo diagnóstico' }, 5, 'test-tenant');
     expect(result.diagnosis).toBe('Nuevo diagnóstico');
   });
 
@@ -192,7 +197,7 @@ describe('clinicalRecordService.updateClinicalRecord', () => {
       return Promise.resolve({ rows: [] });
     });
 
-    await expect(clinicalRecordService.updateClinicalRecord(999, { diagnosis: 'X' }, 5)).rejects.toThrow('Clinical record not found');
+    await expect(clinicalRecordService.updateClinicalRecord(999, { diagnosis: 'X' }, 5, 'test-tenant')).rejects.toThrow('Clinical record not found');
   });
 
   it('throws if doctor does not own record', async () => {
@@ -203,7 +208,7 @@ describe('clinicalRecordService.updateClinicalRecord', () => {
       return Promise.resolve({ rows: [] });
     });
 
-    await expect(clinicalRecordService.updateClinicalRecord(1, { diagnosis: 'X' }, 5)).rejects.toThrow('You can only update your own records');
+    await expect(clinicalRecordService.updateClinicalRecord(1, { diagnosis: 'X' }, 5, 'test-tenant')).rejects.toThrow('You can only update your own records');
   });
 
   it('throws if status is completed', async () => {
@@ -214,7 +219,7 @@ describe('clinicalRecordService.updateClinicalRecord', () => {
       return Promise.resolve({ rows: [] });
     });
 
-    await expect(clinicalRecordService.updateClinicalRecord(1, { diagnosis: 'X' }, 5)).rejects.toThrow('Cannot update a completed record');
+    await expect(clinicalRecordService.updateClinicalRecord(1, { diagnosis: 'X' }, 5, 'test-tenant')).rejects.toThrow('Cannot update a completed record');
   });
 
   it('updates with vital_signs and tenantId', async () => {
@@ -242,20 +247,20 @@ describe('clinicalRecordService.updateClinicalRecord', () => {
       return Promise.resolve({ rows: [] });
     });
 
-    await expect(clinicalRecordService.updateClinicalRecord(1, {}, 5)).rejects.toThrow('No fields to update');
+    await expect(clinicalRecordService.updateClinicalRecord(1, {}, 5, 'test-tenant')).rejects.toThrow('No fields to update');
   });
 });
 
 describe('clinicalRecordService.deleteClinicalRecord', () => {
   it('cancels draft clinical record', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [{ id: 1, status: 'cancelled' }] });
-    const result = await clinicalRecordService.deleteClinicalRecord(1, 5);
+    const result = await clinicalRecordService.deleteClinicalRecord(1, 5, 'test-tenant');
     expect(result.message).toContain('cancelled');
   });
 
   it('throws if not found or cant be deleted', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [] });
-    await expect(clinicalRecordService.deleteClinicalRecord(999, 5)).rejects.toThrow('Clinical record not found');
+    await expect(clinicalRecordService.deleteClinicalRecord(999, 5, 'test-tenant')).rejects.toThrow('Clinical record not found');
   });
 
   it('filters by tenantId', async () => {
@@ -268,13 +273,13 @@ describe('clinicalRecordService.deleteClinicalRecord', () => {
 describe('clinicalRecordService.doesDoctorHaveBookingWithPatient', () => {
   it('returns true when booking exists', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [{ '?column?': 1 }] });
-    const result = await clinicalRecordService.doesDoctorHaveBookingWithPatient(1, 2);
+    const result = await clinicalRecordService.doesDoctorHaveBookingWithPatient(1, 2, 'test-tenant');
     expect(result).toBe(true);
   });
 
   it('returns false when no booking exists', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [] });
-    const result = await clinicalRecordService.doesDoctorHaveBookingWithPatient(1, 999);
+    const result = await clinicalRecordService.doesDoctorHaveBookingWithPatient(1, 999, 'test-tenant');
     expect(result).toBe(false);
   });
 });

@@ -1,15 +1,14 @@
 import { pool } from '../../shared/db.js';
 import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
 import { validateRut, cleanRut, formatRut } from '../../shared/rut.js';
-import { getJWTSecret } from '../../shared/jwt.js';
+import { jwtManager } from '../../shared/jwt.service.js';
 import { verifyInviteToken } from '../doctor/doctor.service.js';
 import { UserRole } from '../../types/index.js';
 import { BadRequestError, UnauthorizedError } from '../../utils/errors.js';
 import { verifyToken as verify2FAToken } from './auth-2fa.service.js';
 import { logger } from '../../utils/logger.js';
 import crypto from 'crypto';
-import { hashToken } from '../../shared/crypto.service.js';
+import { hashToken, encrypt } from '../../shared/crypto.service.js';
 
 interface RegisterParams {
   email: string;
@@ -61,10 +60,9 @@ const ACCESS_TOKEN_EXPIRY = '15m';
 const REFRESH_TOKEN_EXPIRY_DAYS = 30;
 
 const generateAccessToken = (user: { id: number; email: string; role: UserRole; tenant_id: string; token_version?: number }): string => {
-  return jwt.sign(
+  return jwtManager.sign(
     { id: user.id, email: user.email, role: user.role || 'user', tenant_id: user.tenant_id, token_version: user.token_version || 0 },
-    getJWTSecret(),
-    { algorithm: 'HS256', expiresIn: ACCESS_TOKEN_EXPIRY }
+    { expiresIn: ACCESS_TOKEN_EXPIRY }
   );
 };
 
@@ -194,7 +192,7 @@ const verifyCaptcha = async (token: string): Promise<boolean> => {
   }
 };
 
-export const login = async ({ email, password, totp_token, captcha_token }: LoginParams, tenantId?: string): Promise<{
+export const login = async ({ email, password, totp_token, captcha_token }: LoginParams, tenantId: string = 'default'): Promise<{
   access_token: string;
   refresh_token: string;
   user: { id: number; email: string; name: string | null; role: UserRole; rut: string | null; phone: string | null; password_changed: boolean; totp_enabled: boolean; tenant_id: string };
@@ -205,7 +203,7 @@ export const login = async ({ email, password, totp_token, captcha_token }: Logi
     throw new BadRequestError('CAPTCHA verification failed');
   }
 
-  const result = await pool.query<User>(`SELECT * FROM users WHERE email = $1${tenantId ? ' AND tenant_id = $2' : ''}`, tenantId ? [email, tenantId] : [email]);
+  const result = await pool.query<User>('SELECT * FROM users WHERE email = $1 AND tenant_id = $2', [email, tenantId]);
   const user = result.rows[0];
 
   if (!user) {
@@ -366,10 +364,10 @@ export const logoutAll = async (userId: number): Promise<void> => {
   await revokeAllUserRefreshTokens(userId);
 };
 
-export const changePassword = async ({ userId, currentPassword, newPassword }: ChangePasswordParams, tenantId?: string): Promise<void> => {
+export const changePassword = async ({ userId, currentPassword, newPassword }: ChangePasswordParams, tenantId: string = 'default'): Promise<void> => {
   validatePassword(newPassword);
 
-  const userResult = await pool.query(`SELECT password FROM users WHERE id = $1${tenantId ? ' AND tenant_id = $2' : ''}`, tenantId ? [userId, tenantId] : [userId]);
+  const userResult = await pool.query('SELECT password FROM users WHERE id = $1 AND tenant_id = $2', [userId, tenantId]);
   if (!userResult.rows[0]) throw new BadRequestError('User not found');
 
   const isValid = await bcrypt.compare(currentPassword, userResult.rows[0].password);
@@ -377,8 +375,8 @@ export const changePassword = async ({ userId, currentPassword, newPassword }: C
 
   const hashedPassword = await bcrypt.hash(newPassword, 12);
   await pool.query(
-    `UPDATE users SET password = $1, password_changed = true, token_version = COALESCE(token_version, 0) + 1 WHERE id = $2${tenantId ? ' AND tenant_id = $3' : ''}`,
-    tenantId ? [hashedPassword, userId, tenantId] : [hashedPassword, userId]
+    'UPDATE users SET password = $1, password_changed = true, token_version = COALESCE(token_version, 0) + 1 WHERE id = $2 AND tenant_id = $3',
+    [hashedPassword, userId, tenantId]
   );
 
   await revokeAllUserRefreshTokens(userId);

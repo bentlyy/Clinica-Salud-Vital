@@ -33,23 +33,23 @@ describe('checkDoctorAvailability', () => {
     mockQuery.mockResolvedValueOnce({
       rows: [{ start_time: '09:00', end_time: '13:00' }],
     });
-    await expect(checkDoctorAvailability(1, '2030-06-18', '10:00', 30)).resolves.toBeUndefined();
+    await expect(checkDoctorAvailability(1, '2030-06-18', '10:00', 30, undefined, 'test-tenant')).resolves.toBeUndefined();
     expect(mockQuery).toHaveBeenCalledWith(
       expect.stringContaining('doctor_availability'),
-      [1, 2]
+      [1, 2, 'test-tenant']
     );
   });
 
   it('throws when no availability rows', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [] });
-    await expect(checkDoctorAvailability(1, '2030-06-17', '10:00', 30)).rejects.toThrow(BadRequestError);
+    await expect(checkDoctorAvailability(1, '2030-06-17', '10:00', 30, undefined, 'test-tenant')).rejects.toThrow(BadRequestError);
   });
 
   it('throws when slot outside availability', async () => {
     mockQuery.mockResolvedValueOnce({
       rows: [{ start_time: '09:00', end_time: '13:00' }],
     });
-    await expect(checkDoctorAvailability(1, '2030-06-18', '14:00', 30)).rejects.toThrow(BadRequestError);
+    await expect(checkDoctorAvailability(1, '2030-06-18', '14:00', 30, undefined, 'test-tenant')).rejects.toThrow(BadRequestError);
   });
 
   it('queries with tenantId when provided', async () => {
@@ -63,14 +63,14 @@ describe('checkDoctorAvailability', () => {
     );
   });
 
-  it('queries without tenantId when not provided', async () => {
+  it('queries with default tenantId', async () => {
     mockQuery.mockResolvedValueOnce({
       rows: [{ start_time: '09:00', end_time: '17:00' }],
     });
-    await expect(checkDoctorAvailability(1, '2030-06-18', '09:00', 30)).resolves.toBeUndefined();
+    await expect(checkDoctorAvailability(1, '2030-06-18', '09:00', 30, undefined, 'default')).resolves.toBeUndefined();
     expect(mockQuery).toHaveBeenCalledWith(
       expect.any(String),
-      [1, 2]
+      [1, 2, 'default']
     );
   });
 });
@@ -78,35 +78,35 @@ describe('checkDoctorAvailability', () => {
 describe('checkDoctorExceptions', () => {
   it('passes when no exceptions exist', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [] });
-    await expect(checkDoctorExceptions(1, '2030-06-17', '10:00', 30)).resolves.toBeUndefined();
+    await expect(checkDoctorExceptions(1, '2030-06-17', '10:00', 30, undefined, 'test-tenant')).resolves.toBeUndefined();
   });
 
   it('throws on full day exception', async () => {
     mockQuery.mockResolvedValueOnce({
       rows: [{ is_full_day: true, start_time: null, end_time: null }],
     });
-    await expect(checkDoctorExceptions(1, '2030-06-17', '10:00', 30)).rejects.toThrow(BadRequestError);
+    await expect(checkDoctorExceptions(1, '2030-06-17', '10:00', 30, undefined, 'test-tenant')).rejects.toThrow(BadRequestError);
   });
 
   it('throws when time falls within exception range', async () => {
     mockQuery.mockResolvedValueOnce({
       rows: [{ is_full_day: false, start_time: '14:00', end_time: '15:00' }],
     });
-    await expect(checkDoctorExceptions(1, '2030-06-17', '14:30', 30)).rejects.toThrow(BadRequestError);
+    await expect(checkDoctorExceptions(1, '2030-06-17', '14:30', 30, undefined, 'test-tenant')).rejects.toThrow(BadRequestError);
   });
 
   it('passes when time is outside exception range', async () => {
     mockQuery.mockResolvedValueOnce({
       rows: [{ is_full_day: false, start_time: '14:00', end_time: '15:00' }],
     });
-    await expect(checkDoctorExceptions(1, '2030-06-18', '10:00', 30)).resolves.toBeUndefined();
+    await expect(checkDoctorExceptions(1, '2030-06-18', '10:00', 30, undefined, 'test-tenant')).resolves.toBeUndefined();
   });
 
   it('handles exception with only start_time (no end_time)', async () => {
     mockQuery.mockResolvedValueOnce({
       rows: [{ is_full_day: false, start_time: '14:00', end_time: null }],
     });
-    await expect(checkDoctorExceptions(1, '2030-06-18', '15:00', 30)).resolves.toBeUndefined();
+    await expect(checkDoctorExceptions(1, '2030-06-18', '15:00', 30, undefined, 'test-tenant')).resolves.toBeUndefined();
   });
 
   it('queries with tenantId when provided', async () => {
@@ -118,12 +118,12 @@ describe('checkDoctorExceptions', () => {
     );
   });
 
-  it('queries without tenantId when not provided', async () => {
+  it('queries with default tenantId', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [] });
-    await expect(checkDoctorExceptions(1, '2030-06-17', '10:00', 30)).resolves.toBeUndefined();
+    await expect(checkDoctorExceptions(1, '2030-06-17', '10:00', 30, undefined, 'default')).resolves.toBeUndefined();
     expect(mockQuery).toHaveBeenCalledWith(
       expect.any(String),
-      [1, '2030-06-17']
+      [1, '2030-06-17', 'default']
     );
   });
 });
@@ -131,12 +131,12 @@ describe('checkDoctorExceptions', () => {
 describe('checkSlotOverlap', () => {
   it('passes when no overlap exists', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [] });
-    await expect(checkSlotOverlap(1, '2030-06-17', '10:00', 30)).resolves.toBeUndefined();
+    await expect(checkSlotOverlap(1, '2030-06-17', '10:00', 30, undefined, 'test-tenant')).resolves.toBeUndefined();
   });
 
   it('throws on overlap', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [{ id: 1 }] });
-    await expect(checkSlotOverlap(1, '2030-06-17', '10:00', 30)).rejects.toThrow(BadRequestError);
+    await expect(checkSlotOverlap(1, '2030-06-17', '10:00', 30, undefined, 'test-tenant')).rejects.toThrow(BadRequestError);
   });
 
   it('queries with tenantId when provided', async () => {
@@ -148,12 +148,12 @@ describe('checkSlotOverlap', () => {
     );
   });
 
-  it('queries without tenantId when not provided', async () => {
+  it('queries with default tenantId', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [] });
-    await expect(checkSlotOverlap(1, '2030-06-17', '10:00', 30)).resolves.toBeUndefined();
+    await expect(checkSlotOverlap(1, '2030-06-17', '10:00', 30, undefined, 'default')).resolves.toBeUndefined();
     expect(mockQuery).toHaveBeenCalledWith(
       expect.any(String),
-      [1, '2030-06-17', '10:00', 30]
+      [1, '2030-06-17', '10:00', 30, 'default']
     );
   });
 });

@@ -73,6 +73,16 @@ export const validateEnvSecurity = (): void => {
     logger.warn('⚠️ INVITE_JWT_SECRET debería tener al menos 32 caracteres.');
   }
 
+  // PHI_ENCRYPTION_KEY validation (MANDATORY)
+  const phiKey = process.env.PHI_ENCRYPTION_KEY;
+  if (!phiKey) {
+    throw new UnauthorizedError('PHI_ENCRYPTION_KEY no está definida. Es obligatoria para cifrado PHI.');
+  }
+  const phiKeyBytes = Buffer.from(phiKey, 'hex');
+  if (phiKeyBytes.length !== 32) {
+    throw new UnauthorizedError('PHI_ENCRYPTION_KEY debe ser exactamente 64 caracteres hexadecimales (32 bytes).');
+  }
+
   // ENCRYPTION_KEY validation
   const encKey = process.env.ENCRYPTION_KEY;
   if (!encKey) {

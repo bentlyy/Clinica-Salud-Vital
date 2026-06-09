@@ -2,6 +2,7 @@ import { Response } from 'express';
 import * as guestService from './guest.service.js';
 import { cleanRut } from '../../shared/rut.js';
 import { asyncHandler } from '../../middlewares/asyncHandler.middleware.js';
+import { BadRequestError } from '../../utils/errors.js';
 export const createGuestBooking = asyncHandler(async (req, res: Response) => {
   const { doctor_id, date, time, duration, rut, name, email, phone } = req.body;
   const booking = await guestService.createGuestBooking({
@@ -35,8 +36,7 @@ export const cancelGuestBooking = asyncHandler(async (req, res: Response) => {
 
   const { rut, confirmation_token } = req.body;
   if (!rut) {
-    res.status(400).json({ error: 'RUT es requerido para cancelar como invitado' });
-    return;
+    throw new BadRequestError('RUT es requerido para cancelar como invitado');
   }
 
   const result = await guestService.cancelGuestBooking(bookingId, rut, undefined, req.tenant_id, confirmation_token);

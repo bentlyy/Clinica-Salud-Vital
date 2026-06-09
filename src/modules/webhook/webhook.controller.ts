@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import * as webhookService from './webhook.service.js';
 import { asyncHandler } from '../../middlewares/asyncHandler.middleware.js';
 import type { Webhook } from './webhook.service.js';
+import { BadRequestError, NotFoundError } from '../../utils/errors.js';
 
 const stripSecret = (wh: Webhook): Omit<Webhook, 'secret'> => {
   const { secret: _, ...safe } = wh;
@@ -11,8 +12,7 @@ const stripSecret = (wh: Webhook): Omit<Webhook, 'secret'> => {
 export const create = asyncHandler(async (req: Request, res: Response) => {
   const { name, url, events, secret, active } = req.body;
   if (!name || !url || !events) {
-    res.status(400).json({ error: 'name, url, and events are required' });
-    return;
+    throw new BadRequestError('name, url, and events are required');
   }
   const webhook = await webhookService.createWebhook({
     name,
@@ -34,8 +34,7 @@ export const list = asyncHandler(async (req: Request, res: Response) => {
 export const getById = asyncHandler(async (req: Request, res: Response) => {
   const webhook = await webhookService.getWebhookById(Number(req.params.id), req.tenant_id);
   if (!webhook) {
-    res.status(404).json({ error: 'Webhook not found' });
-    return;
+    throw new NotFoundError('Webhook not found');
   }
   res.json(stripSecret(webhook));
 });
@@ -49,8 +48,7 @@ export const update = asyncHandler(async (req: Request, res: Response) => {
   if (active !== undefined) updateData.active = active;
   const webhook = await webhookService.updateWebhook(Number(req.params.id), updateData, req.tenant_id);
   if (!webhook) {
-    res.status(404).json({ error: 'Webhook not found' });
-    return;
+    throw new NotFoundError('Webhook not found');
   }
   res.json(stripSecret(webhook));
 });
@@ -58,8 +56,7 @@ export const update = asyncHandler(async (req: Request, res: Response) => {
 export const remove = asyncHandler(async (req: Request, res: Response) => {
   const deleted = await webhookService.deleteWebhook(Number(req.params.id), req.tenant_id);
   if (!deleted) {
-    res.status(404).json({ error: 'Webhook not found' });
-    return;
+    throw new NotFoundError('Webhook not found');
   }
   res.json({ message: 'Webhook deleted' });
 });

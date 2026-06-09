@@ -17,47 +17,51 @@ beforeEach(() => {
 describe('createInvoice', () => {
   const baseData = { patient_id: 1, concept: 'Consulta', amount: 50000, due_date: '2026-06-01' };
 
-  it('creates invoice without items or tenant', async () => {
+  it('creates invoice with tenant', async () => {
     mockQuery
       .mockResolvedValueOnce({ rows: [] })                              // BEGIN
+      .mockResolvedValueOnce({ rows: [] })                              // advisory lock
       .mockResolvedValueOnce({ rows: [{ id: 1, invoice_number: 'INV-2026-123456' }] }) // INSERT
       .mockResolvedValueOnce({ rows: [] });                             // COMMIT
 
-    const result = await createInvoice(baseData);
+    const result = await createInvoice(baseData, 'tenant-1');
     expect(result.id).toBe(1);
-    expect(mockQuery.mock.calls[1][1]).not.toContain('tenant_id');
+    expect(mockQuery.mock.calls[2][1]).toContain('tenant-1');
   });
 
   it('creates invoice with tenant_id', async () => {
     mockQuery
       .mockResolvedValueOnce({ rows: [] })                    // BEGIN
+      .mockResolvedValueOnce({ rows: [] })                    // advisory lock
       .mockResolvedValueOnce({ rows: [{ id: 1 }] })           // INSERT
       .mockResolvedValueOnce({ rows: [] });                   // COMMIT
 
     await createInvoice(baseData, 'tenant-1');
-    expect(mockQuery.mock.calls[1][0]).toContain('tenant_id');
-    expect(mockQuery.mock.calls[1][1]).toContain('tenant-1');
+    expect(mockQuery.mock.calls[2][0]).toContain('tenant_id');
+    expect(mockQuery.mock.calls[2][1]).toContain('tenant-1');
   });
 
   it('creates invoice with items', async () => {
     mockQuery
       .mockResolvedValueOnce({ rows: [] })                    // BEGIN
+      .mockResolvedValueOnce({ rows: [] })                    // advisory lock
       .mockResolvedValueOnce({ rows: [{ id: 1 }] })           // INSERT invoice
       .mockResolvedValueOnce({ rows: [{ id: 10 }] })          // INSERT item
       .mockResolvedValueOnce({ rows: [] });                   // COMMIT
 
     const data = { ...baseData, items: [{ description: 'Radiografia', quantity: 1, unit_price: 20000 }] };
-    const result = await createInvoice(data);
+    const result = await createInvoice(data, 'tenant-1');
     expect(result.id).toBe(1);
-    expect(mockQuery.mock.calls[2][0]).toContain('INSERT INTO invoice_items');
+    expect(mockQuery.mock.calls[3][0]).toContain('INSERT INTO invoice_items');
   });
 
   it('rolls back on error', async () => {
     mockQuery
       .mockResolvedValueOnce({ rows: [] })                    // BEGIN
+      .mockResolvedValueOnce({ rows: [] })                    // advisory lock
       .mockRejectedValueOnce(new Error('DB error'));          // INSERT fails
 
-    await expect(createInvoice(baseData)).rejects.toThrow('DB error');
+    await expect(createInvoice(baseData, 'tenant-1')).rejects.toThrow('DB error');
     expect(mockQuery).toHaveBeenCalledWith('ROLLBACK');
   });
 });
@@ -65,13 +69,13 @@ describe('createInvoice', () => {
 describe('getInvoices', () => {
   it('returns all invoices when no filters', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [{ id: 1 }] });
-    const result = await getInvoices({});
+    const result = await getInvoices({}, 'tenant-1');
     expect(result).toHaveLength(1);
   });
 
   it('filters by patient_id, doctor_id, status', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [] });
-    await getInvoices({ patient_id: 1, doctor_id: 2, status: 'pending' });
+    await getInvoices({ patient_id: 1, doctor_id: 2, status: 'pending' }, 'tenant-1');
     const sql = mockQuery.mock.calls[0][0];
     expect(sql).toContain('patient_id');
     expect(sql).toContain('doctor_id');
@@ -90,13 +94,13 @@ describe('getInvoices', () => {
 describe('getInvoiceById', () => {
   it('returns invoice when found', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [{ id: 1, amount: 100 }] });
-    const result = await getInvoiceById(1);
+    const result = await getInvoiceById(1, 'tenant-1');
     expect(result.id).toBe(1);
   });
 
   it('throws when not found', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [] });
-    await expect(getInvoiceById(999)).rejects.toThrow('Invoice not found');
+    await expect(getInvoiceById(999, 'tenant-1')).rejects.toThrow('Invoice not found');
   });
 
   it('queries with tenant_id', async () => {
@@ -107,9 +111,9 @@ describe('getInvoiceById', () => {
 });
 
 describe('updateInvoiceStatus', () => {
-  it('updates status without payment data or tenant', async () => {
+  it('updates status without payment data', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [{ id: 1, status: 'paid' }] });
-    const result = await updateInvoiceStatus(1, 'paid');
+    const result = await updateInvoiceStatus(1, 'paid', undefined, 'tenant-1');
     expect(result.status).toBe('paid');
   });
 
@@ -120,11 +124,11 @@ describe('updateInvoiceStatus', () => {
     expect(mockQuery.mock.calls[0][1][1]).toContain('transfer');
   });
 
-  it('updates with payment data without tenant', async () => {
+  it('updates with payment data with tenant', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [{ id: 1 }] });
-    await updateInvoiceStatus(1, 'paid', { method: 'cash' });
+    await updateInvoiceStatus(1, 'paid', { method: 'cash' }, 'tenant-1');
     expect(mockQuery.mock.calls[0][1][1]).toContain('cash');
-    expect(mockQuery.mock.calls[0][0]).not.toContain('tenant_id');
+    expect(mockQuery.mock.calls[0][0]).toContain('tenant_id');
   });
 
   it('updates with tenant but no payment data', async () => {
@@ -136,7 +140,7 @@ describe('updateInvoiceStatus', () => {
 
   it('throws when not found', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [] });
-    await expect(updateInvoiceStatus(999, 'paid')).rejects.toThrow('Invoice not found');
+    await expect(updateInvoiceStatus(999, 'paid', undefined, 'tenant-1')).rejects.toThrow('Invoice not found');
   });
 });
 

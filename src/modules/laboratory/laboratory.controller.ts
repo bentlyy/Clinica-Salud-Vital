@@ -96,7 +96,7 @@ export const updateLabRequestStatus = asyncHandler(async (req, res) => {
 
 export const updateLabRequestItemResult = asyncHandler(async (req, res) => {
   const { result_value, result_notes } = req.body;
-  const item = await laboratoryService.updateLabRequestItemResult(Number(req.params.item_id), result_value, result_notes);
+  const item = await laboratoryService.updateLabRequestItemResult(Number(req.params.item_id), result_value, req.tenant_id, result_notes);
   res.json(item);
 });
 

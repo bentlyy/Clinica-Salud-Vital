@@ -1,7 +1,7 @@
 import * as XLSX from 'xlsx';
 import * as analyticsService from './analytics.service.js';
 
-export const generateAnalyticsExcel = async (tenantId?: string): Promise<Buffer> => {
+export const generateAnalyticsExcel = async (tenantId: string): Promise<Buffer> => {
   const wb = XLSX.utils.book_new();
 
   const [

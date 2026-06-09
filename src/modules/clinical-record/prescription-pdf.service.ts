@@ -3,7 +3,7 @@ import PDFDocument from 'pdfkit';
 import { pool } from '../../shared/db.js';
 import { NotFoundError } from '../../utils/errors.js';
 
-export const generatePrescriptionPDF = async (prescription_id: number | string, tenantId?: string): Promise<Buffer> => {
+export const generatePrescriptionPDF = async (prescription_id: number | string, tenantId: string): Promise<Buffer> => {
   const prescriptionResult = await pool.query(`
     SELECT 
       p.*,
@@ -22,8 +22,8 @@ export const generatePrescriptionPDF = async (prescription_id: number | string, 
     JOIN doctors d ON cr.doctor_id = d.id
     JOIN users u ON cr.patient_id = u.id
     LEFT JOIN patient_notes pn ON pn.patient_id = u.id
-    WHERE p.id = $1${tenantId ? ' AND p.tenant_id = $2' : ''}
-  `, tenantId ? [prescription_id, tenantId] : [prescription_id]);
+    WHERE p.id = $1 AND p.tenant_id = $2
+  `, [prescription_id, tenantId]);
 
   if (prescriptionResult.rows.length === 0) {
     throw new NotFoundError('Prescription not found');

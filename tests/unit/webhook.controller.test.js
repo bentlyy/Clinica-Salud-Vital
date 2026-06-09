@@ -1,5 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
+const flush = () => new Promise(resolve => setTimeout(resolve, 0));
+
 vi.mock('../../src/modules/webhook/webhook.service.js', () => ({
   createWebhook: vi.fn(),
   getWebhooks: vi.fn(),
@@ -62,8 +64,9 @@ describe('webhookController.getById', () => {
     const res = { status: vi.fn().mockReturnThis(), json: vi.fn() };
     const next = vi.fn();
 
-    await webhookController.getById(req, res, next);
-    expect(res.status).toHaveBeenCalledWith(404);
+    webhookController.getById(req, res, next);
+    await flush();
+    expect(next).toHaveBeenCalledWith(expect.any(Error));
   });
 });
 
@@ -85,8 +88,9 @@ describe('webhookController.update', () => {
     const res = { status: vi.fn().mockReturnThis(), json: vi.fn() };
     const next = vi.fn();
 
-    await webhookController.update(req, res, next);
-    expect(res.status).toHaveBeenCalledWith(404);
+    webhookController.update(req, res, next);
+    await flush();
+    expect(next).toHaveBeenCalledWith(expect.any(Error));
   });
 });
 
@@ -107,8 +111,9 @@ describe('webhookController.remove', () => {
     const res = { status: vi.fn().mockReturnThis(), json: vi.fn() };
     const next = vi.fn();
 
-    await webhookController.remove(req, res, next);
-    expect(res.status).toHaveBeenCalledWith(404);
+    webhookController.remove(req, res, next);
+    await flush();
+    expect(next).toHaveBeenCalledWith(expect.any(Error));
   });
 });
 

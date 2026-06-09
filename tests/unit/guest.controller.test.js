@@ -67,12 +67,12 @@ describe('cancelGuestBooking', () => {
   it('returns 400 when no user and no rut', async () => {
     const req = { params: { id: '1' }, body: {} };
     const res = mkRes();
+    const next = vi.fn();
 
-    guestController.cancelGuestBooking(req, res, vi.fn());
+    guestController.cancelGuestBooking(req, res, next);
     await flush();
 
-    expect(res.status).toHaveBeenCalledWith(400);
-    expect(res.json).toHaveBeenCalledWith({ error: 'RUT es requerido para cancelar como invitado' });
+    expect(next).toHaveBeenCalledWith(expect.any(Error));
   });
 
   it('cancels booking with rut (guest)', async () => {

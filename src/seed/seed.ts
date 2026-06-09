@@ -6,7 +6,7 @@ const DEFAULT_TENANT_ID = process.env.DEFAULT_TENANT_ID || 'default';
 
 let _HASH: string | null = null;
 const getHash = async (): Promise<string> => {
-  if (!_HASH) _HASH = await bcrypt.hash('REPLACED_PASSWORD', 12);
+  if (!_HASH) _HASH = await bcrypt.hash(process.env.SEED_PASSWORD || 'REPLACED_PASSWORD', 12);
   return _HASH!;
 };
 
@@ -45,6 +45,11 @@ const pick = <T>(arr: T[]): T => arr[randomInt(0, arr.length - 1)];
 const today = new Date();
 
 export const seed = async (): Promise<void> => {
+  if (process.env.NODE_ENV === 'production') {
+    logger.info('[SEED SKIPPED] No se ejecuta seed en producción');
+    return;
+  }
+
   const HASH = await getHash();
   const exists = await pool.query('SELECT 1 FROM users WHERE email = $1 LIMIT 1', ['admin@clinic.com']);
   if (exists.rows.length > 0) {

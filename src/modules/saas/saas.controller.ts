@@ -1,8 +1,9 @@
 import { Request, Response } from 'express';
 import { asyncHandler } from '../../middlewares/asyncHandler.middleware.js';
 import * as saasService from './saas.service.js';
-import { getStripe, getWebhookSecret, isStripeConfigured } from '../../shared/stripe.service.js';
+import { getStripe, getWebhookSecret, isStripeConfigured, checkIdempotency } from '../../shared/stripe.service.js';
 import { logger } from '../../utils/logger.js';
+import { BadRequestError } from '../../utils/errors.js';
 
 export const getPlans = asyncHandler(async (_req: Request, res: Response) => {
   const plans = await saasService.getPlans();
@@ -62,11 +63,26 @@ export const createCheckout = asyncHandler(async (req: Request, res: Response) =
 
 export const stripeWebhook = asyncHandler(async (req: Request, res: Response) => {
   const sig = req.headers['stripe-signature'] as string;
+  const idempotencyKey = (req.headers['idempotency-key'] || req.headers['Idempotency-Key'] || req.headers['Stripe-Idempotency-Key']) as string | undefined;
+
+  if (idempotencyKey && !checkIdempotency(idempotencyKey)) {
+    logger.info('Stripe webhook already processed (idempotency)', { key: idempotencyKey });
+    res.json({ received: true, deduplicated: true });
+    return;
+  }
+
   try {
     const stripe = await getStripe();
     const whSecret = getWebhookSecret();
     const webhooks = (stripe as Record<string, unknown>).webhooks as Record<string, unknown>;
     const event = (webhooks.constructEvent as Function)(req.body, sig, whSecret);
+    const eventId = event.id || idempotencyKey;
+
+    if (eventId && !checkIdempotency(eventId)) {
+      logger.info('Stripe webhook event already processed', { eventId });
+      res.json({ received: true, deduplicated: true });
+      return;
+    }
 
     switch (event.type) {
       case 'checkout.session.completed': {
@@ -92,7 +108,7 @@ export const stripeWebhook = asyncHandler(async (req: Request, res: Response) =>
     res.json({ received: true });
   } catch (err) {
     logger.error('Stripe webhook error:', err);
-    res.status(400).json({ error: 'Webhook signature verification failed' });
+    throw new BadRequestError('Webhook signature verification failed');
   }
 });
 
@@ -144,8 +160,7 @@ const verifyCaptchaOnboard = async (token: string): Promise<boolean> => {
 
 export const onboardTenant = asyncHandler(async (req: Request, res: Response) => {
   if (!(await verifyCaptchaOnboard(req.body.captcha_token || ''))) {
-    res.status(400).json({ error: 'CAPTCHA verification failed' });
-    return;
+    throw new BadRequestError('CAPTCHA verification failed');
   }
   const result = await saasService.onboardTenant({
     tenantName: req.body.tenant_name,
@@ -174,8 +189,7 @@ export const updateTenantConfig = asyncHandler(async (req: Request, res: Respons
     if (req.body[key] !== undefined) updates[key] = req.body[key];
   }
   if (Object.keys(updates).length === 0) {
-    res.status(400).json({ error: 'No valid fields to update' });
-    return;
+    throw new BadRequestError('No valid fields to update');
   }
   await saasService.updateTenantConfig(req.tenant_id, updates);
   res.json({ message: 'Configuration updated' });
