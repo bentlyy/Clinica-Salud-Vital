@@ -15,6 +15,7 @@ import { seedDefaultTenant, seedSuperAdmin, seedTestTenants } from './seed/admin
 import { startReminderJob } from './jobs/reminder.job.js';
 import { securityMiddleware, validateEnvSecurity } from './middlewares/security.middleware.js';
 import { tenantMiddleware } from './middlewares/tenant.middleware.js';
+import { optionalAuth } from './middlewares/auth.middleware.js';
 import { csrfProtection, setCsrfCookie } from './middlewares/csrf.middleware.js';
 import { apiVersionRedirect } from './middlewares/apiVersionRedirect.middleware.js';
 import { validateEmailConfig } from './shared/email.service.js';
@@ -105,7 +106,10 @@ if (process.env.NODE_ENV === 'production') {
   });
 }
 
-/* Multi-tenancy */
+/* Extract tenant_id from JWT before tenant middleware (autor: null si no hay token) */
+app.use(optionalAuth);
+
+/* Multi-tenancy (usa req.user?.tenant_id si existe) */
 app.use(tenantMiddleware);
 
 /* Session activity tracking (fire-and-forget for authenticated users) */
