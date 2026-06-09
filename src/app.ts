@@ -368,7 +368,17 @@ const startServer = async (): Promise<void> => {
       }
     }
 
-    await pool.query('SELECT 1');
+    /* Retry DB connection with backoff (Render startup race condition) */
+    for (let attempt = 1; attempt <= 10; attempt++) {
+      try {
+        await pool.query('SELECT 1');
+        break;
+      } catch (dbErr) {
+        if (attempt === 10) throw dbErr;
+        logger.warn(`DB connection attempt ${attempt}/10 failed, retrying...`, (dbErr as Error).message);
+        await new Promise((r: (value: unknown) => void) => setTimeout(r, attempt * 2000));
+      }
+    }
     logger.info('DB conectada');
 
     await runMigration();
