@@ -57,7 +57,7 @@ export const createCheckout = asyncHandler(async (req: Request, res: Response) =
     res.json({ url: (session as Record<string, unknown>).url, session_id: (session as Record<string, unknown>).id });
   } catch (err) {
     logger.error('Stripe checkout error:', err);
-    res.status(502).json({ error: 'Payment gateway error. Please try again.' });
+    throw new BadRequestError('Payment gateway error. Please try again.');
   }
 });
 

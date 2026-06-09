@@ -16,5 +16,5 @@ export const createAvailabilitySchema = z.object({
 
 export const availabilityIdSchema = z.object({
   id: z.coerce.number().int().positive(),
-});
+}).strict();
 

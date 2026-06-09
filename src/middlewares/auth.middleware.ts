@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { jwtManager } from '../shared/jwt.service.js';
 import { UserRole } from '../types/index.js';
 import { pool } from '../shared/db.js';
+import { UnauthorizedError, ForbiddenError } from '../utils/errors.js';
 
 export interface JwtUser {
   id: number;
@@ -55,8 +56,7 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
   const tokenStr = extractToken(req);
 
   if (!tokenStr) {
-    res.status(401).json({ error: 'Token required' });
-    return;
+    throw new UnauthorizedError('Token required');
   }
 
   const user = extractAndVerifyUser(tokenStr, req);
@@ -70,23 +70,20 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
       }
     } catch (error: unknown) {
       if (error instanceof Error && error.name === 'TokenExpiredError') {
-        res.status(401).json({ error: 'Token expired', code: 'TOKEN_EXPIRED' });
-        return;
+        throw new UnauthorizedError('Token expired');
       }
     }
-    res.status(401).json({ error: 'Invalid token' });
-    return;
+    throw new UnauthorizedError('Invalid token');
   }
 
   if (req.tenant_id && user.tenant_id !== req.tenant_id) {
-    res.status(401).json({ error: 'Tenant mismatch' });
-    return;
+    throw new UnauthorizedError('Tenant mismatch');
   }
 
   try {
     const { rows } = await pool.query('SELECT token_version FROM users WHERE id = $1', [user.id]);
     if (rows.length && rows[0].token_version !== user.token_version) {
-      res.status(401).json({ error: 'Token revoked', code: 'TOKEN_REVOKED' });
+      throw new UnauthorizedError('Token revoked');
       return;
     }
   } catch {
@@ -117,13 +114,11 @@ export const authMiddlewareNoCache = (req: Request, res: Response, next: NextFun
 export const authorize = (...allowedRoles: UserRole[]) => {
   return (req: Request, res: Response, next: NextFunction): void => {
     if (!req.user) {
-      res.status(401).json({ error: 'Authentication required' });
-      return;
+      throw new UnauthorizedError('Authentication required');
     }
 
     if (!allowedRoles.includes(req.user.role)) {
-      res.status(403).json({ error: 'Access denied' });
-      return;
+      throw new ForbiddenError('Access denied');
     }
 
     next();

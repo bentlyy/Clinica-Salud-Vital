@@ -8,7 +8,7 @@ export const createWebhookSchema = z.object({
   active: z.boolean().default(true),
 }).strict();
 
-export const updateWebhookSchema = createWebhookSchema.partial();
+export const updateWebhookSchema = createWebhookSchema.partial().strict();
 
 export const webhookEventSchema = z.object({
   event: z.string().min(1, 'Event is required'),
