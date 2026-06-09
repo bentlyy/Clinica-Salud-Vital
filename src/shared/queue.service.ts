@@ -173,7 +173,7 @@ class QueueService {
 
   destroy(): void {
     for (const queue of this.bullQueues.values()) {
-      queue.close().catch(() => {});
+      queue.close().catch((err: unknown) => logger.warn('Bull queue close error', (err as Error).message));
     }
     this.bullQueues.clear();
   }
