@@ -4,6 +4,7 @@ import * as auth2faService from './auth-2fa.service.js';
 import * as authPasswordService from './auth-password.service.js';
 import { asyncHandler } from '../../middlewares/asyncHandler.middleware.js';
 import { verifyInviteToken } from '../doctor/doctor.service.js';
+import { BadRequestError, UnauthorizedError } from '../../utils/errors.js';
 
 const ACCESS_COOKIE = 'access_token';
 const REFRESH_COOKIE = 'refresh_token';
@@ -28,8 +29,7 @@ const clearAuthCookies = (res: Response): void => {
 export const inviteInfo = asyncHandler(async (req: Request, res: Response) => {
   const { token } = req.query;
   if (!token || typeof token !== 'string') {
-    res.status(400).json({ error: 'Token requerido' });
-    return;
+    throw new BadRequestError('Token requerido');
   }
   const data = verifyInviteToken(token);
   res.json({ email: data.email, name: data.name, role: data.role, specialty: data.specialty });
@@ -49,14 +49,12 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
 export const refresh = asyncHandler(async (req: Request, res: Response) => {
   const refresh_token = req.body.refresh_token || req.cookies?.refresh_token;
   if (!refresh_token) {
-    res.status(400).json({ error: 'Refresh token required' });
-    return;
+    throw new BadRequestError('Refresh token required');
   }
   const data = await authService.refreshToken({ refresh_token });
   if (!data) {
     clearAuthCookies(res);
-    res.status(401).json({ error: 'Invalid or expired refresh token' });
-    return;
+    throw new UnauthorizedError('Invalid or expired refresh token');
   }
   setAuthCookies(res, data.access_token, data.refresh_token);
   res.json(data);
@@ -73,8 +71,7 @@ export const logout = asyncHandler(async (req: Request, res: Response) => {
 
 export const logoutAll = asyncHandler(async (req: Request, res: Response) => {
   if (!req.user) {
-    res.status(401).json({ error: 'Authentication required' });
-    return;
+    throw new UnauthorizedError('Authentication required');
   }
   clearAuthCookies(res);
   await authService.logoutAll(req.user.id);
@@ -83,8 +80,7 @@ export const logoutAll = asyncHandler(async (req: Request, res: Response) => {
 
 export const changePassword = asyncHandler(async (req: Request, res: Response) => {
   if (!req.user) {
-    res.status(401).json({ error: 'Authentication required' });
-    return;
+    throw new UnauthorizedError('Authentication required');
   }
   await authService.changePassword({
     userId: req.user.id,
@@ -96,8 +92,7 @@ export const changePassword = asyncHandler(async (req: Request, res: Response) =
 
 export const enable2FA = asyncHandler(async (req: Request, res: Response) => {
   if (!req.user) {
-    res.status(401).json({ error: 'Authentication required' });
-    return;
+    throw new UnauthorizedError('Authentication required');
   }
   const result = await auth2faService.enable2FA(req.user.id, req.user.email);
   res.json(result);
@@ -105,8 +100,7 @@ export const enable2FA = asyncHandler(async (req: Request, res: Response) => {
 
 export const verifyAndEnable2FA = asyncHandler(async (req: Request, res: Response) => {
   if (!req.user) {
-    res.status(401).json({ error: 'Authentication required' });
-    return;
+    throw new UnauthorizedError('Authentication required');
   }
   await auth2faService.verifyAndEnable2FA(req.user.id, req.body.token);
   res.json({ message: '2FA enabled successfully' });
@@ -114,14 +108,12 @@ export const verifyAndEnable2FA = asyncHandler(async (req: Request, res: Respons
 
 export const disable2FA = asyncHandler(async (req: Request, res: Response) => {
   if (!req.user) {
-    res.status(401).json({ error: 'Authentication required' });
-    return;
+    throw new UnauthorizedError('Authentication required');
   }
   if (!req.body.password) {
-    res.status(400).json({ error: 'Password is required to disable 2FA' });
-    return;
+    throw new BadRequestError('Password is required to disable 2FA');
   }
-  await auth2faService.disable2FA(req.user.id, req.body.password);
+  await auth2faService.disable2FA(req.user.id, req.body.password, req.body.totp_token);
   res.json({ message: '2FA disabled successfully' });
 });
 
@@ -133,4 +125,9 @@ export const forgotPassword = asyncHandler(async (req: Request, res: Response) =
 export const resetPassword = asyncHandler(async (req: Request, res: Response) => {
   await authPasswordService.resetPassword(req.body.token, req.body.email, req.body.password, req.tenant_id);
   res.json({ message: 'Password reset successfully' });
+});
+
+export const getJWKS = asyncHandler(async (_req: Request, res: Response) => {
+  const { getJWKS: fetchJWKS } = await import('../../shared/jwt.service.js');
+  res.json(fetchJWKS());
 });

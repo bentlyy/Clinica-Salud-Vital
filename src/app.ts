@@ -25,6 +25,7 @@ import { dbMonitor } from './shared/db-monitor.service.js';
 import { trackActivity } from './middlewares/sessionActivity.middleware.js';
 import { initSentry, setupExpressErrorHandler } from './shared/sentry.service.js';
 import { logger } from './utils/logger.js';
+import { queueService } from './shared/queue.service.js';
 
 import doctorRoutes from './modules/doctor/doctor.routes.js';
 import authRoutes from './modules/auth/auth.routes.js';
@@ -46,6 +47,8 @@ import saasRoutes from './modules/saas/saas.routes.js';
 import superAdminRoutes from './modules/super-admin/super-admin.routes.js';
 import i18nRoutes from './modules/i18n/i18n.routes.js';
 import monitoringRoutes from './modules/monitoring/monitoring.routes.js';
+import complianceRoutes from './modules/compliance/compliance.routes.js';
+import fhirRoutes from './modules/fhir/fhir.routes.js';
 
 const app: Express = express();
 
@@ -60,10 +63,26 @@ app.get('/health', async (req: Request, res: Response) => {
     const dbLatency = Date.now() - startDb;
     const mem = monitoringService.getMemoryUsage();
     const eventLoopLag = await monitoringService.getEventLoopLag();
+
+    const poolStatus = {
+      totalCount: pool.totalCount,
+      idleCount: pool.idleCount,
+      waitingCount: pool.waitingCount,
+    };
+
+    let redisStatus = 'not_configured';
+    try {
+      const { queueService: qs } = await import('./shared/queue.service.js');
+      if (qs) redisStatus = 'available';
+    } catch {
+      redisStatus = 'unavailable';
+    }
+
     res.json({
       status: 'ok',
       timestamp: new Date().toISOString(),
-      db: { status: 'connected', latency: `${dbLatency}ms` },
+      db: { status: 'connected', latency: `${dbLatency}ms`, pool: poolStatus },
+      redis: redisStatus,
       memory: mem,
       eventLoopLag: `${eventLoopLag}ms`,
       uptime: process.uptime(),
@@ -222,6 +241,8 @@ app.use(`${API_PREFIX}/saas`, saasRoutes);
 app.use(`${API_PREFIX}/super-admin`, superAdminRoutes);
 app.use(`${API_PREFIX}/i18n`, i18nRoutes);
 app.use(`${API_PREFIX}/monitoring`, monitoringRoutes);
+app.use(`${API_PREFIX}/compliance`, complianceRoutes);
+app.use(`${API_PREFIX}/fhir`, fhirRoutes);
 
 /* Serve frontend static files in production */
 if (process.env.NODE_ENV === 'production') {
@@ -337,10 +358,26 @@ const startServer = async (): Promise<void> => {
     validateEnvSecurity();
     validateEmailConfig();
 
+    /* Validate Stripe is configured in production */
+    if (process.env.NODE_ENV === 'production') {
+      const stripeKey = process.env.STRIPE_SECRET_KEY || '';
+      if (!stripeKey.startsWith('sk_live_')) {
+        throw new Error('STRIPE_SECRET_KEY must be configured with a live key in production mode');
+      }
+    }
+
     await pool.query('SELECT 1');
     logger.info('DB conectada');
 
     await runMigration();
+
+    /* Initialize async job queue (BullMQ if Redis available, memory fallback) */
+    try {
+      await queueService.initialize();
+      logger.info('Queue service initialized');
+    } catch (err) {
+      logger.warn('Queue service not available (emails will work synchronously)', { error: (err as Error).message });
+    }
 
     await tenantService.loadFromDB();
 
@@ -376,6 +413,8 @@ process.on('SIGTERM', () => {
   monitoringService.stop();
   dbMonitor.stop();
   pool.end().catch(() => {});
+  tenantService.stopRefresh();
+  queueService.destroy();
   process.exit(0);
 });
 
@@ -384,6 +423,8 @@ process.on('SIGINT', () => {
   monitoringService.stop();
   dbMonitor.stop();
   pool.end().catch(() => {});
+  tenantService.stopRefresh();
+  queueService.destroy();
   process.exit(0);
 });
 

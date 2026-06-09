@@ -1,7 +1,7 @@
 import * as bookingService from './booking.service.js';
 import * as doctorService from '../doctor/doctor.service.js';
 import { asyncHandler } from '../../middlewares/asyncHandler.middleware.js';
-import { NotFoundError } from '../../utils/errors.js';
+import { BadRequestError, NotFoundError } from '../../utils/errors.js';
 import { getQueryInt, getQueryString } from '../../shared/query.js';
 
 export const createBooking = asyncHandler(async (req, res) => {
@@ -42,8 +42,7 @@ export const getDailyDensity = asyncHandler(async (req, res) => {
   const start = getQueryString(req.query, 'start', '');
   const end = getQueryString(req.query, 'end', '');
   if (!start || !end) {
-    res.status(400).json({ error: 'start and end query params are required (YYYY-MM-DD)' });
-    return;
+    throw new BadRequestError('start and end query params are required (YYYY-MM-DD)');
   }
 
   const data = await bookingService.getDailyBookingDensity(doctor.id, start, end, req.tenant_id);

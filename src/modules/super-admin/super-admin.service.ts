@@ -1,5 +1,6 @@
-import { pool } from '../../shared/db.js';
+import { pool, logPhiAccess } from '../../shared/db.js';
 import { BadRequestError, NotFoundError } from '../../utils/errors.js';
+import { logger } from '../../utils/logger.js';
 
 interface TenantRow {
   id: string;
@@ -86,6 +87,14 @@ export const getTenantDetail = async (tenantId: string): Promise<{
     [tenantId]
   );
 
+  // PHI Access Logging para superadmin
+  logPhiAccess({
+    tenantId,
+    action: 'superadmin.view_tenant_detail',
+    entityType: 'tenant',
+    entityId: undefined,
+  }).catch(err => logger.error('[SuperAdmin] PHI access log error:', err));
+
   return {
     tenant,
     stats: statsResult.rows[0] || {},
@@ -125,15 +134,31 @@ export const updateTenant = async (
   try {
     const { tenantService } = await import('../../shared/multi-tenant.service.js');
     await tenantService.loadFromDB();
-  } catch {
+  } catch (err) {
+    logger.error('[SuperAdmin] Failed to reload tenant cache:', err);
   }
 
   return result.rows[0];
 };
 
-export const deleteTenant = async (tenantId: string): Promise<void> => {
-  const result = await pool.query('DELETE FROM tenants WHERE id = $1 RETURNING id', [tenantId]);
-  if (result.rows.length === 0) throw new NotFoundError('Tenant not found');
+export const deleteTenant = async (tenantId: string, deletedBy?: number): Promise<void> => {
+  const result = await pool.query(
+    'UPDATE tenants SET active = false, deleted_at = NOW(), deleted_by = $2 WHERE id = $1 AND deleted_at IS NULL RETURNING id',
+    [tenantId, deletedBy || null]
+  );
+  if (result.rows.length === 0) throw new NotFoundError('Tenant not found or already deleted');
+
+  // Revocar todos los refresh tokens del tenant
+  await pool.query(
+    'UPDATE refresh_tokens SET revoked = true WHERE tenant_id = $1',
+    [tenantId]
+  );
+
+  // Marcar usuarios como inactivos
+  await pool.query(
+    'UPDATE users SET active = false WHERE tenant_id = $1 AND active = true',
+    [tenantId]
+  );
 };
 
 interface ListUsersFilters {

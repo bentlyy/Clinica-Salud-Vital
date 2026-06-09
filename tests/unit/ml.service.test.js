@@ -332,14 +332,14 @@ describe('trainNoShowModel', () => {
     expect(mockQuery).toHaveBeenCalledWith(expect.stringContaining('FROM bookings'), ['tenant-1']);
   });
 
-  it('trains without tenant_id', async () => {
+  it('trains with tenant_id', async () => {
     const bookings = Array.from({ length: 10 }, (_, i) => makeBookingRow(i));
     mockQuery.mockResolvedValue({ rows: bookings });
     mockMlCache.get.mockResolvedValue(null);
     mockMlCache.set.mockResolvedValue(undefined);
-    const result = await trainNoShowModel();
+    const result = await trainNoShowModel('tenant-1');
     expect(result.trained).toBe(true);
-    expect(mockQuery).toHaveBeenCalledWith(expect.stringContaining('FROM bookings'), []);
+    expect(mockQuery).toHaveBeenCalledWith(expect.stringContaining('AND b.tenant_id = $1'), ['tenant-1']);
   });
 
   it('handles training error gracefully', async () => {

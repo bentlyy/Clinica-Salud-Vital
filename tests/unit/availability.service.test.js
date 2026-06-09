@@ -26,7 +26,7 @@ describe('availabilityService.getAvailabilityByDoctor', () => {
     ];
     mockQuery.mockResolvedValueOnce({ rows: mockRows });
 
-    const result = await availabilityService.getAvailabilityByDoctor(1);
+    const result = await availabilityService.getAvailabilityByDoctor(1, 'test-tenant');
 
     expect(result).toHaveLength(2);
     expect(result[0].day_of_week).toBe(1);
@@ -36,7 +36,7 @@ describe('availabilityService.getAvailabilityByDoctor', () => {
   it('returns empty array if no availability', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [] });
 
-    const result = await availabilityService.getAvailabilityByDoctor(999);
+    const result = await availabilityService.getAvailabilityByDoctor(999, 'test-tenant');
 
     expect(result).toEqual([]);
   });
@@ -54,26 +54,26 @@ describe('availabilityService.getAvailabilityByDoctor', () => {
 
 describe('availabilityService.createAvailability', () => {
   it('throws if missing required fields', async () => {
-    await expect(availabilityService.createAvailability({})).rejects.toThrow('Missing required fields');
-    await expect(availabilityService.createAvailability({ doctor_id: 1 })).rejects.toThrow('Missing required fields');
+    await expect(availabilityService.createAvailability({}, 'test-tenant')).rejects.toThrow('Missing required fields');
+    await expect(availabilityService.createAvailability({ doctor_id: 1 }, 'test-tenant')).rejects.toThrow('Missing required fields');
   });
 
   it('throws if day_of_week out of range', async () => {
     await expect(availabilityService.createAvailability({
       doctor_id: 1, day_of_week: 7, start_time: '09:00', end_time: '12:00',
-    })).rejects.toThrow('day_of_week must be an integer between 0 and 6');
+    }, 'test-tenant')).rejects.toThrow('day_of_week must be an integer between 0 and 6');
   });
 
   it('throws if invalid time format', async () => {
     await expect(availabilityService.createAvailability({
       doctor_id: 1, day_of_week: 1, start_time: 'bad', end_time: '12:00',
-    })).rejects.toThrow('Invalid time format');
+    }, 'test-tenant')).rejects.toThrow('Invalid time format');
   });
 
   it('throws if start_time >= end_time', async () => {
     await expect(availabilityService.createAvailability({
       doctor_id: 1, day_of_week: 1, start_time: '14:00', end_time: '09:00',
-    })).rejects.toThrow('Invalid time range: start_time must be before end_time');
+    }, 'test-tenant')).rejects.toThrow('Invalid time range: start_time must be before end_time');
   });
 
   it('detects overlapping slots', async () => {
@@ -81,7 +81,7 @@ describe('availabilityService.createAvailability', () => {
 
     await expect(availabilityService.createAvailability({
       doctor_id: 1, day_of_week: 1, start_time: '10:00', end_time: '11:00',
-    })).rejects.toThrow('Time range overlaps with existing availability');
+    }, 'test-tenant')).rejects.toThrow('Time range overlaps with existing availability');
   });
 
   it('creates availability successfully', async () => {
@@ -90,7 +90,7 @@ describe('availabilityService.createAvailability', () => {
 
     const result = await availabilityService.createAvailability({
       doctor_id: 1, day_of_week: 1, start_time: '09:00', end_time: '12:00',
-    });
+    }, 'test-tenant');
 
     expect(result.id).toBe(1);
     expect(result.doctor_id).toBe(1);
@@ -99,19 +99,19 @@ describe('availabilityService.createAvailability', () => {
 
 describe('availabilityService.deleteAvailability', () => {
   it('throws if invalid id', async () => {
-    await expect(availabilityService.deleteAvailability('abc', 1)).rejects.toThrow('Invalid id');
+    await expect(availabilityService.deleteAvailability('abc', 1, 'test-tenant')).rejects.toThrow('Invalid id');
   });
 
   it('throws if availability not found', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [] });
 
-    await expect(availabilityService.deleteAvailability(999, 1)).rejects.toThrow('Availability not found');
+    await expect(availabilityService.deleteAvailability(999, 1, 'test-tenant')).rejects.toThrow('Availability not found');
   });
 
   it('deletes availability successfully', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [{ id: 1 }] });
 
-    const result = await availabilityService.deleteAvailability(1, 1);
+    const result = await availabilityService.deleteAvailability(1, 1, 'test-tenant');
 
     expect(result.message).toBe('Availability deleted');
   });

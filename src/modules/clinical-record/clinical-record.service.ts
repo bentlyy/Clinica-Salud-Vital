@@ -1,6 +1,34 @@
 import { pool } from '../../shared/db.js';
 import { NotFoundError, BadRequestError } from '../../utils/errors.js';
-import { sanitizeText, sanitizeTextStrict } from '../../shared/sanitize.js';
+import { sanitizeTextStrict } from '../../shared/sanitize.js';
+import { encryptPHI, decryptPHI } from '../../shared/phi-encryption.service.js';
+
+const PHI_FIELDS = ['chief_complaint', 'anamnesis', 'physical_exam', 'diagnosis', 'treatment_plan', 'notes'] as const;
+
+const encryptFields = async (row: Record<string, unknown>, tenantId: string): Promise<Record<string, unknown>> => {
+  const result = { ...row };
+  for (const field of PHI_FIELDS) {
+    if (result[field] && typeof result[field] === 'string') {
+      result[field] = await encryptPHI(result[field] as string, tenantId);
+    }
+  }
+  return result;
+};
+
+const decryptRowFields = async (row: Record<string, unknown>): Promise<Record<string, unknown>> => {
+  if (!row) return row;
+  const result = { ...row };
+  for (const field of PHI_FIELDS) {
+    if (result[field] && typeof result[field] === 'string' && (result[field] as string).includes(':')) {
+      const decrypted = await decryptPHI(result[field] as string, result.tenant_id as string);
+      if (decrypted) result[field] = decrypted;
+    }
+  }
+  return result;
+};
+
+const decryptRows = async (rows: Record<string, unknown>[]): Promise<Record<string, unknown>[]> =>
+  Promise.all(rows.map(r => decryptRowFields(r)));
 
 interface ClinicalRecordQuery {
   patient_id?: number;
@@ -36,7 +64,7 @@ interface ClinicalRecordUpdate {
   status?: string;
 }
 
-export const getAllClinicalRecords = async ({ patient_id, doctor_id, status, limit = 100, offset = 0 }: ClinicalRecordQuery = {}, tenantId?: string) => {
+export const getAllClinicalRecords = async ({ patient_id, doctor_id, status, limit = 100, offset = 0 }: ClinicalRecordQuery = {}, tenantId: string) => {
   let query = `
     SELECT cr.*, 
            d.name AS doctor_name, d.specialty,
@@ -44,10 +72,10 @@ export const getAllClinicalRecords = async ({ patient_id, doctor_id, status, lim
     FROM clinical_records cr
     JOIN doctors d ON cr.doctor_id = d.id
     JOIN users u ON cr.patient_id = u.id
-    WHERE 1=1
+    WHERE cr.tenant_id = $1
   `;
-  const params: (number | string)[] = [];
-  let paramCount = 1;
+  const params: (number | string)[] = [tenantId];
+  let paramCount = 2;
 
   if (patient_id) {
     query += ` AND cr.patient_id = $${paramCount++}`;
@@ -64,21 +92,14 @@ export const getAllClinicalRecords = async ({ patient_id, doctor_id, status, lim
     params.push(status);
   }
 
-  if (tenantId) {
-    query += ` AND cr.tenant_id = $${paramCount++}`;
-    params.push(tenantId);
-  }
-
   query += ` ORDER BY cr.created_at DESC LIMIT $${paramCount++} OFFSET $${paramCount++}`;
   params.push(limit, offset);
 
   const result = await pool.query(query, params);
-  return result.rows;
+  return await decryptRows(result.rows);
 };
 
-export const getClinicalRecordById = async (id: string | number, tenantId?: string) => {
-  const params: (string | number)[] = [id];
-  if (tenantId) params.push(tenantId);
+export const getClinicalRecordById = async (id: string | number, tenantId: string) => {
   const result = await pool.query(`
     SELECT cr.*, 
            d.name AS doctor_name, d.specialty,
@@ -88,31 +109,46 @@ export const getClinicalRecordById = async (id: string | number, tenantId?: stri
     JOIN doctors d ON cr.doctor_id = d.id
     JOIN users u ON cr.patient_id = u.id
     LEFT JOIN bookings b ON cr.booking_id = b.id
-    WHERE cr.id = $1${tenantId ? ' AND cr.tenant_id = $2' : ''}
-  `, params);
+    WHERE cr.id = $1 AND cr.tenant_id = $2
+  `, [id, tenantId]);
 
   if (result.rows.length === 0) throw new NotFoundError('Clinical record not found');
-  return result.rows[0];
+  return await decryptRowFields(result.rows[0]);
 };
 
-export const getClinicalRecordsByPatient = async (patient_id: number, tenantId?: string) => {
+export const getClinicalRecordsByPatient = async (patient_id: number, tenantId: string) => {
   const result = await pool.query(`
     SELECT cr.*, 
            d.name AS doctor_name, d.specialty
     FROM clinical_records cr
     JOIN doctors d ON cr.doctor_id = d.id
-    WHERE cr.patient_id = $1 AND cr.status != 'cancelled'${tenantId ? ' AND cr.tenant_id = $2' : ''}
+    WHERE cr.patient_id = $1 AND cr.tenant_id = $2 AND cr.status != 'cancelled'
     ORDER BY cr.created_at DESC
-  `, tenantId ? [patient_id, tenantId] : [patient_id]);
+  `, [patient_id, tenantId]);
 
-  return result.rows;
+  return await decryptRows(result.rows);
 };
 
-export const createClinicalRecord = async (data: ClinicalRecordData, tenantId?: string) => {
+export const createClinicalRecord = async (data: ClinicalRecordData, tenantId: string) => {
   const client = await pool.connect();
 
   try {
     await client.query('BEGIN');
+
+    // Advisory lock to prevent duplicate records for same booking
+    if (data.booking_id) {
+      await client.query(
+        'SELECT pg_advisory_xact_lock(hashtext($1::text || $2))',
+        [`create_clinical_record:${data.booking_id}`, tenantId]
+      );
+      const existing = await client.query(
+        'SELECT id FROM clinical_records WHERE booking_id = $1 AND tenant_id = $2',
+        [data.booking_id, tenantId]
+      );
+      if (existing.rows.length > 0) {
+        throw new BadRequestError('Ya existe un registro clínico para esta reserva');
+      }
+    }
 
     const patientResult = await client.query('SELECT id FROM users WHERE id = $1', [data.patient_id]);
     if (patientResult.rows.length === 0) throw new BadRequestError('Patient not found');
@@ -124,23 +160,28 @@ export const createClinicalRecord = async (data: ClinicalRecordData, tenantId?: 
 
     const { patient_id, booking_id, chief_complaint, anamnesis, vital_signs, physical_exam, diagnosis, cie10_codes, treatment_plan, notes } = data;
 
-    const columns = ['patient_id', 'doctor_id', 'booking_id', 'chief_complaint', 'anamnesis', 'vital_signs', 'physical_exam', 'diagnosis', 'cie10_codes', 'treatment_plan', 'notes'];
+    const encryptedData = await encryptFields({
+      chief_complaint: sanitizeTextStrict(chief_complaint, 5000),
+      anamnesis: sanitizeTextStrict(anamnesis, 10000),
+      physical_exam: sanitizeTextStrict(physical_exam, 10000),
+      diagnosis: sanitizeTextStrict(diagnosis, 5000),
+      treatment_plan: sanitizeTextStrict(treatment_plan, 10000),
+      notes: sanitizeTextStrict(notes, 10000),
+    }, tenantId);
+
+    const columns = ['patient_id', 'doctor_id', 'booking_id', 'chief_complaint', 'anamnesis', 'vital_signs', 'physical_exam', 'diagnosis', 'cie10_codes', 'treatment_plan', 'notes', 'tenant_id'];
     const insertValues: any[] = [
       patient_id, data.doctor_id, booking_id || null,
-      sanitizeTextStrict(chief_complaint, 5000),
-      sanitizeTextStrict(anamnesis, 10000) || null,
+      encryptedData.chief_complaint || null,
+      encryptedData.anamnesis || null,
       vital_signs ? JSON.stringify(vital_signs) : null,
-      sanitizeTextStrict(physical_exam, 10000) || null,
-      sanitizeTextStrict(diagnosis, 5000) || null,
+      encryptedData.physical_exam || null,
+      encryptedData.diagnosis || null,
       cie10_codes || null,
-      sanitizeTextStrict(treatment_plan, 10000) || null,
-      sanitizeTextStrict(notes, 10000) || null,
+      encryptedData.treatment_plan || null,
+      encryptedData.notes || null,
+      tenantId,
     ];
-
-    if (tenantId) {
-      columns.push('tenant_id');
-      insertValues.push(tenantId);
-    }
 
     const result = await client.query(`
       INSERT INTO clinical_records 
@@ -151,7 +192,7 @@ export const createClinicalRecord = async (data: ClinicalRecordData, tenantId?: 
     `, insertValues);
 
     await client.query('COMMIT');
-    return result.rows[0];
+    return await decryptRowFields(result.rows[0]);
   } catch (error) {
     await client.query('ROLLBACK');
     throw error;
@@ -160,13 +201,16 @@ export const createClinicalRecord = async (data: ClinicalRecordData, tenantId?: 
   }
 };
 
-export const updateClinicalRecord = async (id: string | number, data: ClinicalRecordUpdate, doctor_id: number, tenantId?: string) => {
+export const updateClinicalRecord = async (id: string | number, data: ClinicalRecordUpdate, doctor_id: number, tenantId: string) => {
   const client = await pool.connect();
 
   try {
     await client.query('BEGIN');
 
-    const existing = await client.query(`SELECT id, doctor_id, status FROM clinical_records WHERE id = $1${tenantId ? ' AND tenant_id = $2' : ''}`, tenantId ? [id, tenantId] : [id]);
+    const existing = await client.query(
+      `SELECT id, doctor_id, status, updated_at FROM clinical_records WHERE id = $1 AND tenant_id = $2 FOR UPDATE`,
+      [id, tenantId]
+    );
     if (existing.rows.length === 0) throw new NotFoundError('Clinical record not found');
 
     if (existing.rows[0].doctor_id !== doctor_id) {
@@ -178,19 +222,24 @@ export const updateClinicalRecord = async (id: string | number, data: ClinicalRe
     }
 
     const fields: string[] = [];
-    const values: (string | number | null)[] = [];
+    const values: unknown[] = [];
     let paramCount = 1;
 
-    const allowedFields = ['chief_complaint', 'anamnesis', 'vital_signs', 'physical_exam', 'diagnosis', 'cie10_codes', 'treatment_plan', 'notes', 'status'];
-
-    for (const field of allowedFields) {
-      if (data[field as keyof ClinicalRecordUpdate] !== undefined) {
+    for (const field of ['chief_complaint', 'anamnesis', 'vital_signs', 'physical_exam', 'diagnosis', 'cie10_codes', 'treatment_plan', 'notes', 'status'] as const) {
+      if (data[field] !== undefined) {
         if (field === 'vital_signs') {
           fields.push(`${field} = $${paramCount}`);
           values.push(JSON.stringify(data[field]));
-        } else {
+        } else if (field === 'status') {
           fields.push(`${field} = $${paramCount}`);
-          values.push(data[field as keyof ClinicalRecordUpdate] as string);
+          values.push(data[field]);
+        } else if (field === 'cie10_codes') {
+          fields.push(`${field} = $${paramCount}`);
+          values.push(data[field] as string[]);
+        } else {
+          const encrypted = await encryptFields({ [field]: sanitizeTextStrict(data[field] as string, 10000) }, tenantId);
+          fields.push(`${field} = $${paramCount}`);
+          values.push(encrypted[field] as string || null);
         }
         paramCount++;
       }
@@ -199,20 +248,22 @@ export const updateClinicalRecord = async (id: string | number, data: ClinicalRe
     if (fields.length === 0) throw new BadRequestError('No fields to update');
 
     fields.push(`updated_at = NOW()`);
-    values.push(id as number);
-    if (tenantId) {
-      values.push(tenantId);
-    }
+    const oldUpdatedAt = existing.rows[0].updated_at;
+    values.push(id as number, tenantId, oldUpdatedAt);
 
     const result = await client.query(`
       UPDATE clinical_records 
       SET ${fields.join(', ')}
-      WHERE id = $${paramCount}${tenantId ? ` AND tenant_id = $${paramCount + 1}` : ''}
+      WHERE id = $${paramCount} AND tenant_id = $${paramCount + 1} AND updated_at = $${paramCount + 2}
       RETURNING *
     `, values);
 
+    if (result.rows.length === 0) {
+      throw new BadRequestError('El registro fue modificado por otro usuario. Recarga y reintenta.');
+    }
+
     await client.query('COMMIT');
-    return result.rows[0];
+    return await decryptRowFields(result.rows[0]);
   } catch (error) {
     await client.query('ROLLBACK');
     throw error;
@@ -221,22 +272,20 @@ export const updateClinicalRecord = async (id: string | number, data: ClinicalRe
   }
 };
 
-export const deleteClinicalRecord = async (id: string | number, doctor_id: number, tenantId?: string) => {
-  const params: (string | number)[] = [id, doctor_id];
-  if (tenantId) params.push(tenantId);
+export const deleteClinicalRecord = async (id: string | number, doctor_id: number, tenantId: string) => {
   const result = await pool.query(
-    `UPDATE clinical_records SET status = 'cancelled' WHERE id = $1 AND doctor_id = $2 AND status = 'draft'${tenantId ? ' AND tenant_id = $3' : ''} RETURNING *`,
-    params
+    `UPDATE clinical_records SET status = 'cancelled' WHERE id = $1 AND doctor_id = $2 AND tenant_id = $3 AND status = 'draft' RETURNING *`,
+    [id, doctor_id, tenantId]
   );
 
   if (result.rows.length === 0) throw new NotFoundError('Clinical record not found or cannot be deleted');
   return { message: 'Clinical record cancelled successfully' };
 };
 
-export const doesDoctorHaveBookingWithPatient = async (doctorId: number, patientId: number, tenantId?: string): Promise<boolean> => {
+export const doesDoctorHaveBookingWithPatient = async (doctorId: number, patientId: number, tenantId: string): Promise<boolean> => {
   const result = await pool.query(
-    `SELECT 1 FROM bookings WHERE doctor_id = $1 AND user_id = $2${tenantId ? ' AND tenant_id = $3' : ''} LIMIT 1`,
-    tenantId ? [doctorId, patientId, tenantId] : [doctorId, patientId]
+    `SELECT 1 FROM bookings WHERE doctor_id = $1 AND user_id = $2 AND tenant_id = $3 LIMIT 1`,
+    [doctorId, patientId, tenantId]
   );
   return result.rows.length > 0;
 };

@@ -2,6 +2,7 @@ import { pool } from '../../shared/db.js';
 import * as doctorService from '../doctor/doctor.service.js';
 import { sendEmail } from '../../shared/email.service.js';
 import { bookingConfirmationTemplate } from './booking.email.js';
+import { enqueueJob } from '../../shared/queue.service.js';
 import jwt from 'jsonwebtoken';
 import { getJWTSecret } from '../../shared/jwt.js';
 import { BadRequestError, NotFoundError } from '../../utils/errors.js';
@@ -35,11 +36,9 @@ interface BookingData {
   };
 }
 
-export const getAllBookings = async ({ page = 1, limit = 50 }: PaginationOptions = {}, tenantId?: string): Promise<BookingData> => {
+export const getAllBookings = async ({ page = 1, limit = 50 }: PaginationOptions = {}, tenantId: string): Promise<BookingData> => {
   const offset = (page - 1) * limit;
-  const params: (string | number)[] = [limit, offset];
-  let tenantFilter = '';
-  if (tenantId) { tenantFilter = ` AND b.tenant_id = $3`; params.push(tenantId); }
+  const params: (string | number)[] = [limit, offset, tenantId];
 
   const result = await pool.query(`
     SELECT
@@ -50,16 +49,13 @@ export const getAllBookings = async ({ page = 1, limit = 50 }: PaginationOptions
     FROM bookings b
     JOIN doctors d ON b.doctor_id = d.id
     LEFT JOIN users u ON b.user_id = u.id
-    WHERE b.status != 'cancelled'${tenantFilter}
+    WHERE b.status != 'cancelled' AND b.tenant_id = $3
     ORDER BY b.date, b.time
     LIMIT $1 OFFSET $2
   `, params);
 
-  const countParams: (string | number)[] = [];
-  let countFilter = '';
-  if (tenantId) { countFilter = ' AND tenant_id = $1'; countParams.push(tenantId); }
   const countResult = await pool.query(
-    `SELECT COUNT(*) FROM bookings WHERE status != 'cancelled'${countFilter}`, countParams
+    'SELECT COUNT(*) FROM bookings WHERE status != $1 AND tenant_id = $2', ['cancelled', tenantId]
   );
 
   return {
@@ -73,7 +69,7 @@ export const getAllBookings = async ({ page = 1, limit = 50 }: PaginationOptions
   };
 };
 
-export const createBooking = async ({ doctor_id, user_id, date, time, duration = 30 }: BookingInput, tenantId?: string): Promise<unknown> => {
+export const createBooking = async ({ doctor_id, user_id, date, time, duration = 30 }: BookingInput, tenantId: string): Promise<unknown> => {
   if (!doctor_id || !user_id || !date || !time) throw new BadRequestError('Missing required fields');
   if (!isValidDate(date)) throw new BadRequestError('Invalid date format, use YYYY-MM-DD');
   if (!isValidTime(time)) throw new BadRequestError('Invalid time format, use HH:MM');
@@ -120,45 +116,30 @@ export const createBooking = async ({ doctor_id, user_id, date, time, duration =
       { expiresIn: '7d' }
     );
 
-    const insertCols = '(doctor_id, user_id, date, time, duration, confirmed, confirmation_token';
-    const insertVals = '($1, $2, $3, $4, $5, true, $6';
-    const insertParams: (string | number | undefined)[] = [doctor_id, user_id, date, time, duration, confirmToken];
-    let booking: unknown;
-    if (tenantId) {
-      const result = await client.query(
-        `INSERT INTO bookings ${insertCols}, tenant_id) VALUES ${insertVals}, $7) RETURNING *`,
-        [...insertParams, tenantId]
-      );
-      booking = result.rows[0];
-    } else {
-      const result = await client.query(
-        `INSERT INTO bookings ${insertCols}) VALUES ${insertVals}) RETURNING *`,
-        insertParams
-      );
-      booking = result.rows[0];
-    }
+    const result = await client.query(
+      `INSERT INTO bookings (doctor_id, user_id, date, time, duration, confirmed, confirmation_token, tenant_id)
+       VALUES ($1, $2, $3, $4, $5, true, $6, $7) RETURNING *`,
+      [doctor_id, user_id, date, time, duration, confirmToken, tenantId]
+    );
+    const booking = result.rows[0];
 
     await client.query('COMMIT');
 
-    setTimeout(async () => {
-      try {
-        const r = await sendEmail({
-          to: user.email,
-          subject: 'Cita agendada - Salud Vital',
-          html: bookingConfirmationTemplate({
-            doctor: doctor.name,
-            date,
-            time,
-            confirmToken,
-            frontendUrl: process.env.FRONTEND_URL,
-          }),
-          tenantId,
-        });
-        if (!r.sent) logger.error('Email de confirmación no enviado:', { to: user.email, error: r.error });
-      } catch (emailErr) {
-        logger.error('Error enviando email de confirmación:', { to: user.email, error: (emailErr as Error).message });
-      }
-    }, 0);
+    enqueueJob('email:send', {
+      type: 'booking-confirmation',
+      to: user.email,
+      subject: 'Cita agendada - Salud Vital',
+      html: bookingConfirmationTemplate({
+        doctor: doctor.name,
+        date,
+        time,
+        confirmToken,
+        frontendUrl: process.env.FRONTEND_URL,
+      }),
+      tenantId,
+    }).catch((err) => {
+      logger.error('Error encolando email de confirmación:', { to: user.email, error: (err as Error).message });
+    });
 
     return booking;
 
@@ -173,27 +154,23 @@ export const createBooking = async ({ doctor_id, user_id, date, time, duration =
   }
 };
 
-export const getBookingsByUser = async (user_id: number, { page = 1, limit = 20 }: PaginationOptions = {}, tenantId?: string): Promise<BookingData> => {
+export const getBookingsByUser = async (user_id: number, { page = 1, limit = 20 }: PaginationOptions = {}, tenantId: string): Promise<BookingData> => {
   const offset = (page - 1) * limit;
-  const params: (string | number)[] = [user_id, limit, offset];
-  let tenantFilter = '';
-  if (tenantId) { tenantFilter = ` AND b.tenant_id = $4`; params.push(tenantId); }
+  const params: (string | number)[] = [user_id, limit, offset, tenantId];
 
   const result = await pool.query(`
     SELECT b.id, b.date, b.time, b.duration, b.status, b.confirmed,
            d.name AS doctor_name, d.specialty
     FROM bookings b
     JOIN doctors d ON b.doctor_id = d.id
-    WHERE b.user_id = $1 AND b.status != 'cancelled'${tenantFilter}
+    WHERE b.user_id = $1 AND b.status != 'cancelled' AND b.tenant_id = $4
     ORDER BY b.date, b.time
     LIMIT $2 OFFSET $3
   `, params);
 
-  const countParams: (string | number)[] = [user_id];
-  let countFilter = '';
-  if (tenantId) { countFilter = ' AND tenant_id = $2'; countParams.push(tenantId); }
   const countResult = await pool.query(
-    `SELECT COUNT(*) FROM bookings WHERE user_id = $1 AND status != 'cancelled'${countFilter}`, countParams
+    'SELECT COUNT(*) FROM bookings WHERE user_id = $1 AND status != $2 AND tenant_id = $3',
+    [user_id, 'cancelled', tenantId]
   );
 
   return {
@@ -207,20 +184,16 @@ export const getBookingsByUser = async (user_id: number, { page = 1, limit = 20 
   };
 };
 
-export const deleteBooking = async (booking_id: number, user_id: number, tenantId?: string): Promise<{ message: string }> => {
+export const deleteBooking = async (booking_id: number, user_id: number, tenantId: string): Promise<{ message: string }> => {
   if (!Number.isInteger(booking_id) || !Number.isInteger(user_id)) {
     throw new BadRequestError('Invalid booking id');
   }
 
-  const params: (string | number)[] = [booking_id, user_id];
-  let tenantFilter = '';
-  if (tenantId) { tenantFilter = ' AND tenant_id = $3'; params.push(tenantId); }
-
   const result = await pool.query(
     `UPDATE bookings SET status = 'cancelled'
-     WHERE id = $1 AND user_id = $2${tenantFilter}
+     WHERE id = $1 AND user_id = $2 AND tenant_id = $3
      RETURNING *`,
-    params
+    [booking_id, user_id, tenantId]
   );
 
   if (result.rows.length === 0) throw new NotFoundError('Booking not found or unauthorized');
@@ -228,7 +201,7 @@ export const deleteBooking = async (booking_id: number, user_id: number, tenantI
   return { message: 'Booking cancelled successfully' };
 };
 
-export const getAvailableSlots = async (doctor_id: number, date: string, tenantId?: string): Promise<string[]> => {
+export const getAvailableSlots = async (doctor_id: number, date: string, tenantId: string): Promise<string[]> => {
   if (!doctor_id || !date) throw new BadRequestError('doctor_id and date are required');
   if (!isValidDate(date)) throw new BadRequestError('Invalid date format, use YYYY-MM-DD');
 
@@ -236,15 +209,15 @@ export const getAvailableSlots = async (doctor_id: number, date: string, tenantI
 
   const availabilityResult = await pool.query(
     `SELECT start_time, end_time FROM doctor_availability
-     WHERE doctor_id = $1 AND day_of_week = $2${tenantId ? ' AND tenant_id = $3' : ''} ORDER BY start_time`,
-    tenantId ? [doctor_id, day, tenantId] : [doctor_id, day]
+     WHERE doctor_id = $1 AND day_of_week = $2 AND tenant_id = $3 ORDER BY start_time`,
+    [doctor_id, day, tenantId]
   );
 
   if (availabilityResult.rows.length === 0) return [];
 
   const doctorResult = await pool.query(
-    `SELECT slot_duration FROM doctors WHERE id = $1${tenantId ? ' AND tenant_id = $2' : ''}`,
-    tenantId ? [doctor_id, tenantId] : [doctor_id]
+    'SELECT slot_duration FROM doctors WHERE id = $1 AND tenant_id = $2',
+    [doctor_id, tenantId]
   );
   const duration = doctorResult.rows[0]?.slot_duration || 30;
 
@@ -266,17 +239,14 @@ export const getAvailableSlots = async (doctor_id: number, date: string, tenantI
     }
   }
 
-  const bookedParams: (string | number)[] = [doctor_id, date];
-  let bookedFilter = '';
-  if (tenantId) { bookedFilter = ' AND tenant_id = $3'; bookedParams.push(tenantId); }
   const booked = await pool.query(
-    `SELECT time, duration FROM bookings WHERE doctor_id = $1 AND date = $2 AND status != 'cancelled'${bookedFilter}`,
-    bookedParams
+    `SELECT time, duration FROM bookings WHERE doctor_id = $1 AND date = $2 AND status != 'cancelled' AND tenant_id = $3`,
+    [doctor_id, date, tenantId]
   );
 
   const exceptions = await pool.query(
-    `SELECT * FROM doctor_exceptions WHERE doctor_id = $1 AND date = $2${tenantId ? ' AND tenant_id = $3' : ''}`,
-    tenantId ? [doctor_id, date, tenantId] : [doctor_id, date]
+    'SELECT * FROM doctor_exceptions WHERE doctor_id = $1 AND date = $2 AND tenant_id = $3',
+    [doctor_id, date, tenantId]
   );
 
   return slots.filter(slot => {
@@ -308,28 +278,22 @@ export const getDailyBookingDensity = async (
   doctorId: number,
   startDate: string,
   endDate: string,
-  tenantId?: string
+  tenantId: string
 ): Promise<{ date: string; count: number }[]> => {
-  const params: (string | number)[] = [doctorId, startDate, endDate];
-  let tenantFilter = '';
-  if (tenantId) { tenantFilter = ' AND tenant_id = $4'; params.push(tenantId); }
-
   const result = await pool.query(
     `SELECT date, COUNT(*)::int as count
      FROM bookings
-     WHERE doctor_id = $1 AND date >= $2 AND date <= $3 AND status != 'cancelled'${tenantFilter}
+     WHERE doctor_id = $1 AND date >= $2 AND date <= $3 AND status != 'cancelled' AND tenant_id = $4
      GROUP BY date
      ORDER BY date`,
-    params
+    [doctorId, startDate, endDate, tenantId]
   );
   return result.rows;
 };
 
-export const getBookingsByDoctor = async (doctor_id: number, { page = 1, limit = 50 }: PaginationOptions = {}, tenantId?: string): Promise<BookingData> => {
+export const getBookingsByDoctor = async (doctor_id: number, { page = 1, limit = 50 }: PaginationOptions = {}, tenantId: string): Promise<BookingData> => {
   const offset = (page - 1) * limit;
-  const params: (string | number)[] = [doctor_id, limit, offset];
-  let tenantFilter = '';
-  if (tenantId) { tenantFilter = ` AND b.tenant_id = $4`; params.push(tenantId); }
+  const params: (string | number)[] = [doctor_id, limit, offset, tenantId];
 
   const result = await pool.query(`
     SELECT b.id, b.date, b.time, b.duration, b.status, b.confirmed,
@@ -338,16 +302,14 @@ export const getBookingsByDoctor = async (doctor_id: number, { page = 1, limit =
            b.guest_name, b.guest_email, b.guest_phone, b.guest_rut
     FROM bookings b
     LEFT JOIN users u ON b.user_id = u.id
-    WHERE b.doctor_id = $1 AND b.status != 'cancelled'${tenantFilter}
+    WHERE b.doctor_id = $1 AND b.status != 'cancelled' AND b.tenant_id = $4
     ORDER BY b.date, b.time
     LIMIT $2 OFFSET $3
   `, params);
 
-  const countParams: (string | number)[] = [doctor_id];
-  let countFilter = '';
-  if (tenantId) { countFilter = ' AND tenant_id = $2'; countParams.push(tenantId); }
   const countResult = await pool.query(
-    `SELECT COUNT(*) FROM bookings WHERE doctor_id = $1 AND status != 'cancelled'${countFilter}`, countParams
+    'SELECT COUNT(*) FROM bookings WHERE doctor_id = $1 AND status != $2 AND tenant_id = $3',
+    [doctor_id, 'cancelled', tenantId]
   );
 
   return {

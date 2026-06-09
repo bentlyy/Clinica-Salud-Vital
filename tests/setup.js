@@ -8,5 +8,6 @@ process.env.EMAIL_USER = 'test@test.com';
 process.env.EMAIL_PASS = 'test-pass';
 process.env.DATABASE_URL = 'postgresql://test:test@localhost:5432/test';
 process.env.RECAPTCHA_SECRET_KEY = 'test-recaptcha-key';
+process.env.PHI_ENCRYPTION_KEY = '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef';
 
 global.fetch = vi.fn().mockResolvedValue({ json: async () => ({ success: true }) });

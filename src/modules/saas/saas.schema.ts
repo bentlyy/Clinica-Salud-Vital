@@ -4,11 +4,11 @@ export const checkoutSchema = z.object({
   plan_code: z.string().min(1, 'Plan code is required'),
   success_url: z.string().url().optional(),
   cancel_url: z.string().url().optional(),
-});
+}).strict();
 
 export const changePlanSchema = z.object({
   plan_code: z.string().min(1, 'Plan code is required'),
-});
+}).strict();
 
 export const onboardSchema = z.object({
   tenant_name: z.string().min(1, 'Tenant name is required').max(255),
@@ -25,4 +25,4 @@ export const onboardSchema = z.object({
   timezone: z.string().optional(),
   plan_code: z.string().optional(),
   captcha_token: z.string().optional(),
-});
+}).strict();

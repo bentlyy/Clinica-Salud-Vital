@@ -34,17 +34,12 @@ interface Doctor {
   slot_duration: number | null;
 }
 
-export const getAllDoctors = async (tenantId?: string): Promise<Doctor[]> => {
-  let query = `
+export const getAllDoctors = async (tenantId: string): Promise<Doctor[]> => {
+  const result = await pool.query(`
     SELECT d.id, d.name, d.specialty, d.email, d.user_id
     FROM doctors d
-  `;
-  const params: string[] = [];
-  if (tenantId) {
-    query += ' WHERE d.tenant_id = $1';
-    params.push(tenantId);
-  }
-  const result = await pool.query(query, params);
+    WHERE d.tenant_id = $1
+  `, [tenantId]);
   return result.rows;
 };
 
@@ -57,7 +52,7 @@ const generatePassword = (): string => {
   return password;
 };
 
-export const registerDoctor = async ({ name, specialty, email, rut, phone }: DoctorInput, tenantId?: string): Promise<{ doctor: Doctor; credentials: { email: string } }> => {
+export const registerDoctor = async ({ name, specialty, email, rut, phone }: DoctorInput, tenantId: string): Promise<{ doctor: Doctor; credentials: { email: string } }> => {
   if (!name || !specialty || !email) {
     throw new BadRequestError('Nombre, especialidad y email son obligatorios');
   }
@@ -87,28 +82,28 @@ export const registerDoctor = async ({ name, specialty, email, rut, phone }: Doc
     const hashedPassword = await bcrypt.hash(tempPassword, 12);
 
     const userResult = await client.query(
-      `INSERT INTO users (email, password, role, rut, phone${tenantId ? ', tenant_id' : ''})
-       VALUES ($1, $2, 'doctor', $3, $4${tenantId ? ', $5' : ''})
+      `INSERT INTO users (email, password, role, rut, phone, tenant_id)
+       VALUES ($1, $2, 'doctor', $3, $4, $5)
        RETURNING id, email`,
-      tenantId ? [email, hashedPassword, formattedRut, phone || null, tenantId] : [email, hashedPassword, formattedRut, phone || null]
+      [email, hashedPassword, formattedRut, phone || null, tenantId]
     );
 
     const userId = userResult.rows[0].id;
 
     const doctorResult = await client.query(
-      `INSERT INTO doctors (name, specialty, email, user_id${tenantId ? ', tenant_id' : ''})
-       VALUES ($1, $2, $3, $4${tenantId ? ', $5' : ''})
+      `INSERT INTO doctors (name, specialty, email, user_id, tenant_id)
+       VALUES ($1, $2, $3, $4, $5)
        RETURNING *`,
-      tenantId ? [name, specialty, email, userId, tenantId] : [name, specialty, email, userId]
+      [name, specialty, email, userId, tenantId]
     );
 
     const doctor = doctorResult.rows[0] as Doctor;
 
     for (let day = 1; day <= 5; day++) {
       await client.query(
-        `INSERT INTO doctor_availability (doctor_id, day_of_week, start_time, end_time${tenantId ? ', tenant_id' : ''})
-         VALUES ($1, $2, $3, $4${tenantId ? ', $5' : ''})`,
-        tenantId ? [doctor.id, day, '09:00', '17:00', tenantId] : [doctor.id, day, '09:00', '17:00']
+        `INSERT INTO doctor_availability (doctor_id, day_of_week, start_time, end_time, tenant_id)
+         VALUES ($1, $2, $3, $4, $5)`,
+        [doctor.id, day, '09:00', '17:00', tenantId]
       );
     }
 
@@ -144,7 +139,7 @@ export const registerDoctor = async ({ name, specialty, email, rut, phone }: Doc
   }
 };
 
-export const createDoctor = async ({ name, specialty, email, user_id }: CreateDoctorInput, tenantId?: string): Promise<Doctor> => {
+export const createDoctor = async ({ name, specialty, email, user_id }: CreateDoctorInput, tenantId: string): Promise<Doctor> => {
   if (!name || !specialty || !email || !user_id) {
     throw new BadRequestError('Missing required fields');
   }
@@ -169,19 +164,19 @@ export const createDoctor = async ({ name, specialty, email, user_id }: CreateDo
     }
 
     const result = await client.query(
-      `INSERT INTO doctors (name, specialty, email, user_id${tenantId ? ', tenant_id' : ''})
-       VALUES ($1, $2, $3, $4${tenantId ? ', $5' : ''})
+      `INSERT INTO doctors (name, specialty, email, user_id, tenant_id)
+       VALUES ($1, $2, $3, $4, $5)
        RETURNING *`,
-      tenantId ? [name, specialty, email, user_id, tenantId] : [name, specialty, email, user_id]
+      [name, specialty, email, user_id, tenantId]
     );
 
     const doctor = result.rows[0] as Doctor;
 
     for (let day = 1; day <= 5; day++) {
       await client.query(
-        `INSERT INTO doctor_availability (doctor_id, day_of_week, start_time, end_time${tenantId ? ', tenant_id' : ''})
-         VALUES ($1, $2, $3, $4${tenantId ? ', $5' : ''})`,
-        tenantId ? [doctor.id, day, '09:00', '17:00', tenantId] : [doctor.id, day, '09:00', '17:00']
+        `INSERT INTO doctor_availability (doctor_id, day_of_week, start_time, end_time, tenant_id)
+         VALUES ($1, $2, $3, $4, $5)`,
+        [doctor.id, day, '09:00', '17:00', tenantId]
       );
     }
 
@@ -201,19 +196,19 @@ export const createDoctor = async ({ name, specialty, email, user_id }: CreateDo
   }
 };
 
-export const getDoctorById = async (id: number, tenantId?: string): Promise<Doctor | null> => {
+export const getDoctorById = async (id: number, tenantId: string): Promise<Doctor | null> => {
   const result = await pool.query<Doctor>(
-    `SELECT * FROM doctors WHERE id = $1${tenantId ? ' AND tenant_id = $2' : ''}`,
-    tenantId ? [id, tenantId] : [id]
+    'SELECT * FROM doctors WHERE id = $1 AND tenant_id = $2',
+    [id, tenantId]
   );
 
   return result.rows[0] || null;
 };
 
-export const getDoctorByUserId = async (user_id: number, tenantId?: string): Promise<Doctor | null> => {
+export const getDoctorByUserId = async (user_id: number, tenantId: string): Promise<Doctor | null> => {
   const result = await pool.query<Doctor>(
-    `SELECT * FROM doctors WHERE user_id = $1${tenantId ? ' AND tenant_id = $2' : ''}`,
-    tenantId ? [user_id, tenantId] : [user_id]
+    'SELECT * FROM doctors WHERE user_id = $1 AND tenant_id = $2',
+    [user_id, tenantId]
   );
 
   return result.rows[0] || null;
@@ -226,7 +221,7 @@ interface InvitePersonInput {
   specialty?: string;
 }
 
-export const invitePerson = async (input: InvitePersonInput, tenantId?: string): Promise<void> => {
+export const invitePerson = async (input: InvitePersonInput, tenantId: string): Promise<void> => {
   const { email, name, role, specialty } = input;
 
   if (!email) throw new BadRequestError('Email es obligatorio');
@@ -235,11 +230,11 @@ export const invitePerson = async (input: InvitePersonInput, tenantId?: string):
 
   if (role === 'doctor' && !specialty) throw new BadRequestError('Especialidad es obligatoria para doctores');
 
-  const existing = await pool.query('SELECT 1 FROM users WHERE email = $1', [email]);
-  if (existing.rows.length > 0) throw new BadRequestError('Email ya registrado');
+  const existing = await pool.query('SELECT 1 FROM users WHERE email = $1 AND tenant_id = $2', [email, tenantId]);
+  if (existing.rows.length > 0) throw new BadRequestError('Email ya registrado en este tenant');
 
   const inviteToken = jwt.sign(
-    { email, name: name || email, role, specialty: specialty || null, tenant_id: tenantId || null, purpose: 'invite' },
+    { email, name: name || email, role, specialty: specialty || null, tenant_id: tenantId, purpose: 'invite' },
     getInviteJWTSecret(),
     { expiresIn: '7d' }
   );
