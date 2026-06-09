@@ -358,10 +358,12 @@ const startServer = async (): Promise<void> => {
     validateEnvSecurity();
     validateEmailConfig();
 
-    /* Validate Stripe is configured in production */
+    /* Validate Stripe is configured in production (optional) */
     if (process.env.NODE_ENV === 'production') {
       const stripeKey = process.env.STRIPE_SECRET_KEY || '';
-      if (!stripeKey.startsWith('sk_live_')) {
+      if (!stripeKey) {
+        logger.warn('⚠️ STRIPE_SECRET_KEY no configurada — pagos SaaS deshabilitados');
+      } else if (!stripeKey.startsWith('sk_live_')) {
         throw new Error('STRIPE_SECRET_KEY must be configured with a live key in production mode');
       }
     }
