@@ -97,7 +97,7 @@ describe('saasController.createCheckout', () => {
     expect(res.json).toHaveBeenCalledWith({ url: 'https://stripe.com/pay', session_id: 'cs_123' });
   });
 
-  it('returns 502 on Stripe error', async () => {
+  it('returns 400 on Stripe error', async () => {
     vi.mocked(saasService.getPlanByCode).mockResolvedValue({ id: 2, code: 'pro', name: 'Pro', description: '', price_monthly: 79 });
     const { getStripe, isStripeConfigured } = await import('../../src/shared/stripe.service.js');
     vi.mocked(isStripeConfigured).mockReturnValue(true);
@@ -106,11 +106,14 @@ describe('saasController.createCheckout', () => {
     });
 
     const req = { tenant_id: 'test', user: { email: 'admin@test.com' }, headers: { origin: 'http://localhost:5173' }, body: { plan_code: 'pro' } };
-    const res = { status: vi.fn().mockReturnThis(), json: vi.fn() };
+    const next = vi.fn();
+    const res = { json: vi.fn() };
 
-    saasController.createCheckout(req, res, vi.fn());
+    saasController.createCheckout(req, res, next);
     await flush();
-    expect(res.status).toHaveBeenCalledWith(502);
+    expect(next).toHaveBeenCalledWith(
+      expect.objectContaining({ statusCode: 400, message: expect.stringContaining('Payment gateway error') })
+    );
   });
 });
 
@@ -157,11 +160,14 @@ describe('saasController.stripeWebhook', () => {
     });
 
     const req = { headers: { 'stripe-signature': 'sig' }, body: {} };
-    const res = { status: vi.fn().mockReturnThis(), json: vi.fn() };
+    const next = vi.fn();
+    const res = { json: vi.fn() };
 
-    saasController.stripeWebhook(req, res, vi.fn());
+    saasController.stripeWebhook(req, res, next);
     await flush();
-    expect(res.status).toHaveBeenCalledWith(400);
+    expect(next).toHaveBeenCalledWith(
+      expect.objectContaining({ statusCode: 400, message: expect.stringContaining('signature') })
+    );
   });
 });
 
@@ -261,10 +267,13 @@ describe('saasController.updateTenantConfig', () => {
 
   it('returns 400 when no valid fields', async () => {
     const req = { tenant_id: 'test', body: {} };
-    const res = { status: vi.fn().mockReturnThis(), json: vi.fn() };
+    const next = vi.fn();
+    const res = { json: vi.fn() };
 
-    saasController.updateTenantConfig(req, res, vi.fn());
+    saasController.updateTenantConfig(req, res, next);
     await flush();
-    expect(res.status).toHaveBeenCalledWith(400);
+    expect(next).toHaveBeenCalledWith(
+      expect.objectContaining({ statusCode: 400, message: expect.stringContaining('No valid fields') })
+    );
   });
 });

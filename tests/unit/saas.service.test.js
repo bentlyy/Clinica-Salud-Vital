@@ -461,9 +461,8 @@ describe('saasService.onboardTenant', () => {
     const proPlan = { id: 2, code: 'pro' };
 
     mockQuery
-      .mockResolvedValueOnce({ rows: [] })                   // SELECT 1 FROM tenants
       .mockResolvedValueOnce({ rows: [proPlan] })             // getPlanByCode('pro')
-      .mockResolvedValueOnce({ rows: [] });                   // INSERT fallback
+      .mockResolvedValueOnce({ rows: [] });                   // fallback
 
     mockClient.query.mockImplementation((sql) => {
       if (sql === 'BEGIN' || sql === 'COMMIT') return Promise.resolve({});
@@ -483,7 +482,12 @@ describe('saasService.onboardTenant', () => {
   });
 
   it('throws if domain already exists', async () => {
-    mockQuery.mockResolvedValueOnce({ rows: [{ id: 'existing' }] });
+    mockClient.query.mockImplementation((sql) => {
+      if (sql.includes('SELECT 1 FROM tenants')) return Promise.resolve({ rows: [{ id: 'existing' }] });
+      if (sql === 'BEGIN') return Promise.resolve({});
+      if (sql === 'ROLLBACK') return Promise.resolve({});
+      return Promise.resolve({ rows: [] });
+    });
     await expect(saasService.onboardTenant({
       tenantName: 'Test',
       domain: 'existing',

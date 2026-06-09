@@ -46,6 +46,10 @@ vi.mock('../../src/modules/ml/ml.cache.js', () => ({
   cacheMiddleware: vi.fn(() => (req, res, next) => next()),
 }));
 
+vi.mock('../../src/shared/queue.service.js', () => ({
+  enqueueJob: vi.fn(),
+}));
+
 vi.mock('../../src/utils/logger.js', () => ({
   logger: { info: vi.fn(), error: vi.fn(), warn: vi.fn(), debug: vi.fn() },
 }));
@@ -54,6 +58,7 @@ import * as mlService from '../../src/modules/ml/ml.service.js';
 import * as validator from '../../src/modules/ml/ml.validator.js';
 import * as mlController from '../../src/modules/ml/ml.controller.js';
 import { mlCache } from '../../src/modules/ml/ml.cache.js';
+import { enqueueJob } from '../../src/shared/queue.service.js';
 
 const flush = () => new Promise(r => setTimeout(r, 0));
 
@@ -62,24 +67,18 @@ beforeEach(() => {
 });
 
 describe('trainModels', () => {
-  it('returns success when training completes', async () => {
-    vi.mocked(mlService.trainAllModels).mockResolvedValue({ noShow: 'trained' });
-    const req = { tenant_id: 'test' };
+  it('queues training job and returns confirmation', async () => {
+    vi.mocked(enqueueJob).mockResolvedValue(undefined);
+    const req = { tenant_id: 'test-tenant' };
     const res = { json: vi.fn() };
     const next = vi.fn();
     mlController.trainModels(req, res, next);
     await flush();
-    expect(res.json).toHaveBeenCalledWith({ message: 'All models trained successfully', results: { noShow: 'trained' } });
-  });
-
-  it('returns 207 when training has errors', async () => {
-    vi.mocked(mlService.trainAllModels).mockResolvedValue({ noShow: 'error', error: 'Training failed' });
-    const req = { tenant_id: 'test' };
-    const res = { status: vi.fn().mockReturnThis(), json: vi.fn() };
-    const next = vi.fn();
-    mlController.trainModels(req, res, next);
-    await flush();
-    expect(res.status).toHaveBeenCalledWith(207);
+    expect(enqueueJob).toHaveBeenCalledWith('ml:train', { tenantId: 'test-tenant' });
+    expect(res.json).toHaveBeenCalledWith({
+      message: 'Training queued. Check /api/v1/ml/status for progress.',
+      tenantId: 'test-tenant'
+    });
   });
 });
 
