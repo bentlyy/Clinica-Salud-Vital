@@ -114,7 +114,7 @@ BEGIN
       tbl, format('ck_%I_tenant_id_not_empty', tbl)
     );
     EXECUTE format(
-      'ALTER TABLE %I ADD CONSTRAINT %I CHECK (tenant_id IS NOT NULL AND tenant_id <> '')',
+      'ALTER TABLE %I ADD CONSTRAINT %I CHECK (tenant_id IS NOT NULL AND tenant_id <> '''' )',
       tbl, format('ck_%I_tenant_id_not_empty', tbl)
     );
   END LOOP;
