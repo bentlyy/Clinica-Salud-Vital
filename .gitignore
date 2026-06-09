@@ -32,12 +32,9 @@ desktop.ini
 *~
 
 # Obsidian (user-specific layout)
-.obsidian/workspace.json
-.obsidian/workspace/
-.obsidian/appearance.json
-
-# Old vault directory
-ClinicWiki/
+wiki/.obsidian/workspace.json
+wiki/.obsidian/workspace/
+wiki/.obsidian/appearance.json
 
 # Testing
 coverage/
