@@ -40,15 +40,26 @@ BEGIN
 END $$;
 
 -- 2. Crear rol de superadmin real para PostgreSQL (no por string)
+-- Opcional: falla silenciosamente si el usuario de DB no tiene CREATEROLE
 DO $$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'saas_superadmin') THEN
-    CREATE ROLE saas_superadmin WITH LOGIN INHERIT;
+    BEGIN
+      CREATE ROLE saas_superadmin WITH LOGIN INHERIT;
+    EXCEPTION WHEN insufficient_privilege THEN
+      RAISE WARNING 'No se pudo crear rol saas_superadmin (permiso denegado) — continuando sin rol de superadmin';
+    END;
   END IF;
 END $$;
 
 -- 3. Otorgar bypass RLS al rol superadmin real
-ALTER ROLE saas_superadmin BYPASSRLS;
+-- Opcional: falla silenciosamente si el usuario de DB no es superuser
+DO $$
+BEGIN
+  ALTER ROLE saas_superadmin BYPASSRLS;
+EXCEPTION WHEN insufficient_privilege THEN
+  RAISE WARNING 'No se pudo otorgar BYPASSRLS (permiso denegado) — RLS para superadmin puede no funcionar';
+END $$;
 
 -- 4. Función helper para que la app.setTenantContext valide el tenant existe
 CREATE OR REPLACE FUNCTION validate_tenant_context()
