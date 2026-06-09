@@ -54,9 +54,7 @@ CREATE INDEX  IF NOT EXISTS idx_invoices_patient_tenant
 CREATE INDEX  IF NOT EXISTS idx_audit_logs_tenant_created
   ON audit_logs (tenant_id, created_at DESC);
 
--- Phi access log: búsqueda temporal
-CREATE INDEX  IF NOT EXISTS idx_phi_access_log_tenant
-  ON phi_access_log (tenant_id, created_at DESC);
+-- Phi access log: ya indexado en 027 (idx_phi_access_log_tenant_date)
 
 -- Refresh tokens: búsqueda por token + no revocado
 CREATE INDEX  IF NOT EXISTS idx_refresh_tokens_active
