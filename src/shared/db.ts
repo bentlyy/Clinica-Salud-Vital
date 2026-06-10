@@ -47,22 +47,35 @@ pool.on('error', (err: Error) => {
 });
 
 const originalPoolQuery = pool.query.bind(pool);
+const originalConnect = pool.connect.bind(pool);
 
-export function query(text: string | pg.QueryConfig, values?: any[]): ReturnType<typeof pool.query> {
+const wrappedQuery = function (this: typeof pool, text: string | pg.QueryConfig, values?: any[]) {
   const ctx = tenantAls.getStore();
   if (ctx) {
     const prefixedText = `SELECT set_config('app.tenant_id', $1, false); `;
     if (typeof text === 'string') {
-      return originalPoolQuery(prefixedText + text, [ctx.tenantId, ...(values || [])]) as unknown as ReturnType<typeof pool.query>;
+      return originalPoolQuery(prefixedText + text, [ctx.tenantId, ...(values || [])]);
     }
     const config = text as pg.QueryConfig;
-    return originalPoolQuery(
-      prefixedText + (config.text || ''),
-      [ctx.tenantId, ...(config.values || [])]
-    ) as unknown as ReturnType<typeof pool.query>;
+    return originalPoolQuery(prefixedText + (config.text || ''), [ctx.tenantId, ...(config.values || [])]);
   }
-  return originalPoolQuery(text, values) as unknown as ReturnType<typeof pool.query>;
-}
+  return originalPoolQuery(text, values);
+} as unknown as typeof pool.query;
+
+// Override pool.query so ALL existing pool.query calls use the wrapper
+pool.query = wrappedQuery;
+export const query = pool.query.bind(pool);
+
+// Override pool.connect to propagate tenant context to dedicated clients
+pool.connect = function () {
+  return originalConnect().then((client) => {
+    const ctx = tenantAls.getStore();
+    if (ctx) {
+      return client.query("SELECT set_config('app.tenant_id', $1, false)", [ctx.tenantId]).then(() => client);
+    }
+    return client;
+  });
+} as typeof pool.connect;
 export const getClient = pool.connect.bind(pool);
 
 export const setTenantContext = async (tenantId: string): Promise<void> => {
