@@ -15,6 +15,11 @@ vi.mock('../../src/shared/db.js', () => ({
     connect: mockConnect,
     on: vi.fn(),
   },
+  logPhiAccess: vi.fn().mockResolvedValue(undefined),
+  setTenantContext: vi.fn().mockResolvedValue(undefined),
+  verifyTenantContext: vi.fn().mockResolvedValue(true),
+  tenantAls: { run: vi.fn((_store, fn) => fn()), getStore: vi.fn(() => null) },
+  query: mockQuery,
 }));
 
 process.env.JWT_SECRET = 'test-secret-integration';

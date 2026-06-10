@@ -56,7 +56,8 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
   const tokenStr = extractToken(req);
 
   if (!tokenStr) {
-    throw new UnauthorizedError('Token required');
+    next(new UnauthorizedError('Token required'));
+    return;
   }
 
   const user = extractAndVerifyUser(tokenStr, req);
@@ -70,20 +71,23 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
       }
     } catch (error: unknown) {
       if (error instanceof Error && error.name === 'TokenExpiredError') {
-        throw new UnauthorizedError('Token expired');
+        next(new UnauthorizedError('Token expired'));
+        return;
       }
     }
-    throw new UnauthorizedError('Invalid token');
+    next(new UnauthorizedError('Invalid token'));
+    return;
   }
 
   if (req.tenant_id && user.tenant_id !== req.tenant_id) {
-    throw new UnauthorizedError('Tenant mismatch');
+    next(new UnauthorizedError('Tenant mismatch'));
+    return;
   }
 
   try {
     const { rows } = await pool.query('SELECT token_version FROM users WHERE id = $1', [user.id]);
     if (rows.length && rows[0].token_version !== user.token_version) {
-      throw new UnauthorizedError('Token revoked');
+      next(new UnauthorizedError('Token revoked'));
       return;
     }
   } catch {

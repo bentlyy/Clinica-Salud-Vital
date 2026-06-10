@@ -96,28 +96,7 @@ app.get('/health', async (req: Request, res: Response) => {
 app.use(securityMiddleware);
 app.use(monitoringMiddleware);
 
-/* Serve frontend static files + SPA catch-all before tenant middleware */
-if (process.env.NODE_ENV === 'production') {
-  const frontendPath = resolve(__dirname, '../frontend/dist');
-  app.use(express.static(frontendPath));
-  /* SPA: rutas que no empiezan con /api/ → sirven index.html sin tenant */
-  app.get(/^\/(?!api\/)/, (_req, res) => {
-    res.sendFile(resolve(frontendPath, 'index.html'));
-  });
-}
-
-/* Parse cookies before auth/tenant middleware (access_token cookie) */
-app.use(cookieParser());
-
-/* Extract tenant_id from JWT before tenant middleware (no falla si no hay token) */
-app.use(optionalAuth);
-
-/* Multi-tenancy (usa req.user?.tenant_id si existe) */
-app.use(tenantMiddleware);
-
-/* Session activity tracking (fire-and-forget for authenticated users) */
-app.use(trackActivity);
-
+/* CORS must be before tenantMiddleware (OPTIONS preflight has no tenant) */
 const allowedOrigins = [
   'http://localhost:5173',
   process.env.FRONTEND_URL,
@@ -144,6 +123,28 @@ app.use(cors({
   credentials: true,
   maxAge: 86400,
 }));
+
+/* Serve frontend static files + SPA catch-all before tenant middleware */
+if (process.env.NODE_ENV === 'production') {
+  const frontendPath = resolve(__dirname, '../frontend/dist');
+  app.use(express.static(frontendPath));
+  /* SPA: rutas que no empiezan con /api/ → sirven index.html sin tenant */
+  app.get(/^\/(?!api\/)/, (_req, res) => {
+    res.sendFile(resolve(frontendPath, 'index.html'));
+  });
+}
+
+/* Parse cookies before auth/tenant middleware (access_token cookie) */
+app.use(cookieParser());
+
+/* Extract tenant_id from JWT before tenant middleware (no falla si no hay token) */
+app.use(optionalAuth);
+
+/* Multi-tenancy (usa req.user?.tenant_id si existe) */
+app.use(tenantMiddleware);
+
+/* Session activity tracking (fire-and-forget for authenticated users) */
+app.use(trackActivity);
 
 app.use(compression());
 
