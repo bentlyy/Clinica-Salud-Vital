@@ -106,7 +106,10 @@ if (process.env.NODE_ENV === 'production') {
   });
 }
 
-/* Extract tenant_id from JWT before tenant middleware (autor: null si no hay token) */
+/* Parse cookies before auth/tenant middleware (access_token cookie) */
+app.use(cookieParser());
+
+/* Extract tenant_id from JWT before tenant middleware (no falla si no hay token) */
 app.use(optionalAuth);
 
 /* Multi-tenancy (usa req.user?.tenant_id si existe) */
@@ -143,7 +146,6 @@ app.use(cors({
 }));
 
 app.use(compression());
-app.use(cookieParser());
 
 app.use('/api/saas/webhook/stripe', express.raw({ type: 'application/json' }));
 app.use('/api/v1/saas/webhook/stripe', express.raw({ type: 'application/json' }));
