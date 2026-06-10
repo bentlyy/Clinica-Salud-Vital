@@ -24,10 +24,10 @@ const poolMax = parseInt(process.env.DB_POOL_MAX || '25', 10);
 
 const dbCaCert = process.env.DB_CA_CERT;
 const sslConfig = !isInternalDb() && process.env.NODE_ENV === 'production'
-  ? { rejectUnauthorized: true, ...(dbCaCert ? { ca: dbCaCert } : {}) }
+  ? { rejectUnauthorized: !!dbCaCert, ...(dbCaCert ? { ca: dbCaCert } : {}) }
   : false;
 if (!isInternalDb() && process.env.NODE_ENV === 'production' && !dbCaCert) {
-  logger.warn('⚠️ DB_CA_CERT no configurado — se usará verificación SSL con CA por defecto del sistema');
+  logger.warn('⚠️ DB_CA_CERT no configurado — conexión SSL sin verificación de certificado (recomendado: configurar DB_CA_CERT en variables de entorno)');
 }
 
 export const pool = new Pool({
