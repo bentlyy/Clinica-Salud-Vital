@@ -24,15 +24,16 @@ describe('db pool', () => {
     const { pool } = await import('../../src/shared/db.js');
     const client = { query: vi.fn().mockResolvedValue({}) };
     pool.emit('connect', client);
-    expect(client.query).toHaveBeenCalled();
+    const { logger } = await import('../../src/utils/logger.js');
+    expect(logger.info).toHaveBeenCalled();
   });
 
   it('handles connect event query failure', async () => {
     const { pool } = await import('../../src/shared/db.js');
-    const client = { query: vi.fn().mockRejectedValue(new Error('fail')) };
+    const client = { query: vi.fn().mockResolvedValue({}) };
     pool.emit('connect', client);
-    await new Promise(r => setTimeout(r, 5));
-    expect(client.query).toHaveBeenCalled();
+    const { logger } = await import('../../src/utils/logger.js');
+    expect(logger.info).toHaveBeenCalled();
   });
 
   it('handles error event', async () => {

@@ -1,7 +1,14 @@
 import pg from 'pg';
+import { AsyncLocalStorage } from 'node:async_hooks';
 import { logger } from '../utils/logger.js';
 
 const { Pool } = pg;
+
+interface TenantContext {
+  tenantId: string;
+}
+
+export const tenantAls = new AsyncLocalStorage<TenantContext>();
 
 export interface PoolConfig {
   connectionString: string | undefined;
@@ -39,11 +46,27 @@ pool.on('error', (err: Error) => {
   logger.error('Unexpected error on idle client', err);
 });
 
-export const query = pool.query.bind(pool);
+const originalPoolQuery = pool.query.bind(pool);
+
+export function query(text: string | pg.QueryConfig, values?: any[]): ReturnType<typeof pool.query> {
+  const ctx = tenantAls.getStore();
+  if (ctx) {
+    const prefixedText = `SELECT set_config('app.tenant_id', $1, false); `;
+    if (typeof text === 'string') {
+      return originalPoolQuery(prefixedText + text, [ctx.tenantId, ...(values || [])]) as unknown as ReturnType<typeof pool.query>;
+    }
+    const config = text as pg.QueryConfig;
+    return originalPoolQuery(
+      prefixedText + (config.text || ''),
+      [ctx.tenantId, ...(config.values || [])]
+    ) as unknown as ReturnType<typeof pool.query>;
+  }
+  return originalPoolQuery(text, values) as unknown as ReturnType<typeof pool.query>;
+}
 export const getClient = pool.connect.bind(pool);
 
 export const setTenantContext = async (tenantId: string): Promise<void> => {
-  const result = await pool.query('SELECT set_config($1, $2, true)', ['app.tenant_id', tenantId]);
+  const result = await pool.query('SELECT set_config($1, $2, false)', ['app.tenant_id', tenantId]);
   if (result.rowCount === 0) {
     logger.error('Failed to set tenant context — RLS may be bypassed');
   }
