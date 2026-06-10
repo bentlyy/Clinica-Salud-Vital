@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { extractTenantFromHost, tenantService, loadTenantsFromDB } from '../shared/multi-tenant.service.js';
-import { setTenantContext, verifyTenantContext } from '../shared/db.js';
+import { setTenantContext, verifyTenantContext, tenantAls } from '../shared/db.js';
 import { logger } from '../utils/logger.js';
 import { BadRequestError, NotFoundError } from '../utils/errors.js';
 
@@ -42,7 +42,7 @@ export const tenantMiddleware = async (req: Request, res: Response, next: NextFu
   // Priority: JWT user tenant > X-Tenant-Id header > subdomain
   const rawTenantId = userTenantId || headerTenantId || extractTenantFromHost(host);
 
-  if (!rawTenantId || rawTenantId === 'default') {
+  if (!rawTenantId) {
     if (process.env.NODE_ENV === 'production' && !isPublicPath) {
       logger.warn('Request rejected: missing tenant_id', {
         path: req.path,
@@ -55,7 +55,7 @@ export const tenantMiddleware = async (req: Request, res: Response, next: NextFu
     req.tenant_id = process.env.DEFAULT_TENANT_ID || 'default';
     req.locale = getLocaleFromRequest(req);
     await setTenantContext(req.tenant_id);
-    next();
+    tenantAls.run({ tenantId: req.tenant_id }, () => { next(); });
     return;
   }
 
@@ -79,7 +79,7 @@ export const tenantMiddleware = async (req: Request, res: Response, next: NextFu
       req.tenant_id = rawTenantId;
       req.locale = getLocaleFromRequest(req);
       await setTenantContext(req.tenant_id);
-      next();
+      tenantAls.run({ tenantId: req.tenant_id }, () => { next(); });
       return;
     }
   }
@@ -97,5 +97,5 @@ export const tenantMiddleware = async (req: Request, res: Response, next: NextFu
     });
   }
 
-  next();
+  tenantAls.run({ tenantId: req.tenant_id }, () => { next(); });
 };

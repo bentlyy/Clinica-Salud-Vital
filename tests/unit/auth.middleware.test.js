@@ -37,25 +37,26 @@ beforeEach(() => {
 });
 
 describe('authMiddleware', () => {
-  it('throws 401 if no authorization header', async () => {
+  it('calls next with 401 if no authorization header', async () => {
     const req = mockReq();
     const res = mockRes();
     const next = vi.fn();
 
-    await expect(authMiddleware(req, res, next)).rejects.toThrow(UnauthorizedError);
-    expect(next).not.toHaveBeenCalled();
+    await authMiddleware(req, res, next);
+    expect(next).toHaveBeenCalledWith(expect.any(UnauthorizedError));
   });
 
-  it('throws 401 if token is invalid', async () => {
+  it('calls next with 401 if token is invalid', async () => {
     mockVerify.mockImplementation(() => { throw new Error('jwt malformed'); });
     const req = mockReq('Bearer invalid-token');
     const res = mockRes();
     const next = vi.fn();
 
-    await expect(authMiddleware(req, res, next)).rejects.toThrow(UnauthorizedError);
+    await authMiddleware(req, res, next);
+    expect(next).toHaveBeenCalledWith(expect.any(UnauthorizedError));
   });
 
-  it('throws 401 if token expired', async () => {
+  it('calls next with 401 if token expired', async () => {
     const error = new Error('jwt expired');
     error.name = 'TokenExpiredError';
     mockVerify.mockImplementation(() => { throw error; });
@@ -63,7 +64,8 @@ describe('authMiddleware', () => {
     const res = mockRes();
     const next = vi.fn();
 
-    await expect(authMiddleware(req, res, next)).rejects.toThrow(UnauthorizedError);
+    await authMiddleware(req, res, next);
+    expect(next).toHaveBeenCalledWith(expect.any(UnauthorizedError));
   });
 
   it('calls next with decoded user on valid token', async () => {
