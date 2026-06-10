@@ -15,3 +15,11 @@ export const getInviteJWTSecret = (): string => {
   }
   return secret;
 };
+
+export const getConfirmJWTSecret = (): string => {
+  const secret = process.env.CONFIRM_JWT_SECRET;
+  if (!secret || secret === process.env.JWT_SECRET) {
+    return getJWTSecret();
+  }
+  return secret;
+};

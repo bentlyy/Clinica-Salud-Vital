@@ -62,19 +62,6 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
 
   const user = extractAndVerifyUser(tokenStr, req);
   if (!user) {
-    // Check if token expired (not just invalid signature)
-    try {
-      const { default: jwt } = await import('jsonwebtoken');
-      const secret = process.env.JWT_SECRET;
-      if (secret) {
-        jwt.verify(tokenStr, secret, { algorithms: ['HS256', 'RS256'], ignoreExpiration: false });
-      }
-    } catch (error: unknown) {
-      if (error instanceof Error && error.name === 'TokenExpiredError') {
-        next(new UnauthorizedError('Token expired'));
-        return;
-      }
-    }
     next(new UnauthorizedError('Invalid token'));
     return;
   }

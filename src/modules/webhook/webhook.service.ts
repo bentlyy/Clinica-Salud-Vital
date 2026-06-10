@@ -227,14 +227,19 @@ export const dispatchEvent = async (event: string, payload: Record<string, unkno
   }
 };
 
-export const getDeliveries = async (webhookId?: number, limit = 50): Promise<unknown[]> => {
-  let query = 'SELECT * FROM webhook_deliveries';
+export const getDeliveries = async (webhookId?: number, limit = 50, tenantId?: string): Promise<unknown[]> => {
+  let query = 'SELECT wd.* FROM webhook_deliveries wd JOIN webhooks w ON w.id = wd.webhook_id WHERE 1=1';
   const values: unknown[] = [];
+  let paramIdx = 1;
   if (webhookId) {
-    query += ' WHERE webhook_id = $1';
+    query += ` AND wd.webhook_id = $${paramIdx++}`;
     values.push(webhookId);
   }
-  query += ' ORDER BY created_at DESC LIMIT $' + (values.length + 1);
+  if (tenantId) {
+    query += ` AND w.tenant_id = $${paramIdx++}`;
+    values.push(tenantId);
+  }
+  query += ' ORDER BY wd.created_at DESC LIMIT $' + (paramIdx++);
   values.push(limit);
   const result = await pool.query(query, values);
   return result.rows;

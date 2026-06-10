@@ -4,6 +4,7 @@ import App from './App.jsx';
 import { BrowserRouter } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
+import { I18nProvider } from './i18n/useI18n';
 import './index.css';
 import './components/ui.css';
 
@@ -12,7 +13,9 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     <BrowserRouter>
       <AuthProvider>
         <ThemeProvider>
-          <App />
+          <I18nProvider>
+            <App />
+          </I18nProvider>
         </ThemeProvider>
       </AuthProvider>
     </BrowserRouter>

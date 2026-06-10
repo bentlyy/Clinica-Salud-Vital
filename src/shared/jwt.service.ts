@@ -162,26 +162,12 @@ class JWTManager {
 
       const pair = this.keyHistory.get(kid);
       if (!pair) {
-        try {
-          const secret = process.env.JWT_SECRET;
-          if (secret) {
-            return jwt.verify(token, secret, { algorithms: ['HS256'] }) as JwtPayload & T;
-          }
-        } catch {
-        }
         logger.warn(`JWT RS256: Key ID ${kid} no encontrada en keys/`);
         return null;
       }
 
       return jwt.verify(token, pair.publicKey, { algorithms: ['RS256'] }) as JwtPayload & T;
-    } catch (err) {
-      try {
-        const secret = process.env.JWT_SECRET;
-        if (secret) {
-          return jwt.verify(token, secret, { algorithms: ['HS256'] }) as JwtPayload & T;
-        }
-      } catch {
-      }
+    } catch {
       return null;
     }
   }
