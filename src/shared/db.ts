@@ -51,15 +51,23 @@ const originalConnect = pool.connect.bind(pool);
 
 const wrappedQuery = function (this: typeof pool, text: string | pg.QueryConfig, values?: any[]) {
   const ctx = tenantAls.getStore();
-  if (ctx) {
-    const prefixedText = `SELECT set_config('app.tenant_id', $1, false); `;
-    if (typeof text === 'string') {
-      return originalPoolQuery(prefixedText + text, [ctx.tenantId, ...(values || [])]);
-    }
-    const config = text as pg.QueryConfig;
-    return originalPoolQuery(prefixedText + (config.text || ''), [ctx.tenantId, ...(config.values || [])]);
+  if (!ctx) {
+    return originalPoolQuery(text, values);
   }
-  return originalPoolQuery(text, values);
+
+  // Set tenant context FIRST on this connection, THEN run the actual query.
+  // Using separate queries avoids multi-statement issues with pg (extended protocol).
+  const setConfig = originalPoolQuery(
+    "SELECT set_config('app.tenant_id', $1, false)",
+    [ctx.tenantId]
+  );
+
+  if (typeof text === 'string') {
+    return setConfig.then(() => originalPoolQuery(text, values));
+  }
+
+  const config = text as pg.QueryConfig;
+  return setConfig.then(() => originalPoolQuery(config));
 } as unknown as typeof pool.query;
 
 // Override pool.query so ALL existing pool.query calls use the wrapper
