@@ -22,6 +22,18 @@ vi.mock('../../src/shared/db.js', () => ({
   query: mockQuery,
 }));
 
+vi.mock('../../src/shared/jwt.service.js', () => ({
+  jwtManager: {
+    verify: vi.fn((token) => {
+      try {
+        return JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
+      } catch { return null; }
+    }),
+    sign: vi.fn(() => 'mock-token'),
+    getJWKS: vi.fn(() => ({ keys: [] })),
+  },
+}));
+
 process.env.JWT_SECRET = 'test-secret-integration';
 process.env.FRONTEND_URL = 'http://localhost:5173';
 

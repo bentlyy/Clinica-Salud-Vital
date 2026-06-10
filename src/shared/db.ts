@@ -24,10 +24,10 @@ const poolMax = parseInt(process.env.DB_POOL_MAX || '25', 10);
 
 const dbCaCert = process.env.DB_CA_CERT;
 const sslConfig = !isInternalDb() && process.env.NODE_ENV === 'production'
-  ? { rejectUnauthorized: !!dbCaCert, ...(dbCaCert ? { ca: dbCaCert } : {}) }
+  ? { rejectUnauthorized: true, ...(dbCaCert ? { ca: dbCaCert } : {}) }
   : false;
 if (!isInternalDb() && process.env.NODE_ENV === 'production' && !dbCaCert) {
-  logger.warn('⚠️ DB_CA_CERT no configurado — conexión SSL sin verificación de certificado');
+  logger.warn('⚠️ DB_CA_CERT no configurado — se usará verificación SSL con CA por defecto del sistema');
 }
 
 export const pool = new Pool({
@@ -47,7 +47,6 @@ pool.on('error', (err: Error) => {
 });
 
 const originalPoolQuery = pool.query.bind(pool);
-const originalConnect = pool.connect.bind(pool);
 
 const wrappedQuery = function (this: typeof pool, text: string | pg.QueryConfig, values?: any[]) {
   const ctx = tenantAls.getStore();
@@ -55,20 +54,20 @@ const wrappedQuery = function (this: typeof pool, text: string | pg.QueryConfig,
     return originalPoolQuery(text, values);
   }
 
-  // Use a dedicated client so set_config and the real query
-  // execute on the SAME connection (pool.query may use different ones)
-  return originalConnect().then((client) => {
-    return client
-      .query("SELECT set_config('app.tenant_id', $1, false)", [ctx.tenantId])
-      .then(() => {
-        if (typeof text === 'string') {
-          return client.query(text, values);
-        }
-        return client.query(text as pg.QueryConfig);
-      })
-      .finally(() => {
-        client.release();
-      });
+  // Prepend set_config as a literal (tenant_id comes from app context, not user input)
+  // This ensures set_config and the query run on the SAME connection without
+  // the overhead of pool.connect()/client.release() per query.
+  const escapedTenantId = ctx.tenantId.replace(/'/g, "''");
+  if (typeof text === 'string') {
+    return originalPoolQuery(
+      `SELECT set_config('app.tenant_id', '${escapedTenantId}', false); ${text}`,
+      values
+    );
+  }
+  return originalPoolQuery({
+    ...text as pg.QueryConfig,
+    text: `SELECT set_config('app.tenant_id', '${escapedTenantId}', false); ${(text as pg.QueryConfig).text}`,
+    values: (text as pg.QueryConfig).values,
   });
 } as unknown as typeof pool.query;
 

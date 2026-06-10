@@ -8,28 +8,24 @@ const generateInvoiceNumber = () => {
   return 'INV-' + year + '-' + random;
 };
 
-// Idempotency store for preventing duplicate invoice creation
-const idempotencyStore = new Map<string, { processed: boolean; timestamp: number }>();
-const IDEMPOTENCY_TTL = 24 * 60 * 60 * 1000; // 24 horas
+// Idempotency store for preventing duplicate invoice creation (now DB-backed)
+const IDEMPOTENCY_TTL = '24 hours';
 
-const checkIdempotencyKey = (key: string): boolean => {
-  const existing = idempotencyStore.get(key);
-  if (existing) {
-    return false;
+const checkIdempotencyKey = async (key: string): Promise<boolean> => {
+  try {
+    const result = await pool.query(
+      `INSERT INTO idempotency_keys (key, expires_at)
+       VALUES ($1, NOW() + $2::interval)
+       ON CONFLICT (key) DO NOTHING
+       RETURNING id`,
+      [key, IDEMPOTENCY_TTL]
+    );
+    return result.rows.length > 0;
+  } catch {
+    // Degraded: allow through if DB is temporarily unavailable
+    return true;
   }
-  idempotencyStore.set(key, { processed: true, timestamp: Date.now() });
-  return true;
 };
-
-// Limpieza periódica de claves expiradas
-setInterval(() => {
-  const now = Date.now();
-  for (const [key, value] of idempotencyStore.entries()) {
-    if (now - value.timestamp > IDEMPOTENCY_TTL) {
-      idempotencyStore.delete(key);
-    }
-  }
-}, 60 * 60 * 1000);
 
 export interface InvoiceFilters {
   patient_id?: number;
@@ -56,7 +52,7 @@ interface InvoiceInput {
 }
 
 export const createInvoice = async (data: InvoiceInput, tenantId: string, idempotencyKey?: string) => {
-  if (idempotencyKey && !checkIdempotencyKey(idempotencyKey)) {
+  if (idempotencyKey && !(await checkIdempotencyKey(idempotencyKey))) {
     throw new BadRequestError('Esta solicitud ya fue procesada (idempotency key duplicada)');
   }
 
