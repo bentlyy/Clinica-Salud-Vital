@@ -181,8 +181,9 @@ describe('saasService.changePlan', () => {
     mockQuery
       .mockResolvedValueOnce({ rows: [newPlan] })            // getPlanByCode('basic')
       .mockResolvedValueOnce({ rows: [sub] })                 // getTenantSubscription
-      .mockResolvedValueOnce({ rows: [sub] })                 // getTenantPlan → getTenantSubscription
-      .mockResolvedValueOnce({ rows: [oldPlan] })             // getPlanById(old plan)
+      .mockResolvedValueOnce({ rows: [] })                    // checkLimits → pg_advisory_xact_lock
+      .mockResolvedValueOnce({ rows: [sub] })                 // checkLimits → getTenantPlan → getTenantSubscription
+      .mockResolvedValueOnce({ rows: [oldPlan] })             // checkLimits → getPlanById
       .mockResolvedValueOnce({ rows: [{ count: '5' }] })      // checkLimits COUNT doctors
       .mockResolvedValueOnce({ rows: [] });                   // fallback
 
@@ -199,12 +200,14 @@ describe('saasService.changePlan', () => {
     mockQuery
       .mockResolvedValueOnce({ rows: [newPlan] })            // getPlanByCode('basic')
       .mockResolvedValueOnce({ rows: [sub] })                 // getTenantSubscription
-      .mockResolvedValueOnce({ rows: [sub] })                 // getTenantPlan → getTenantSubscription
-      .mockResolvedValueOnce({ rows: [oldPlan] })             // getPlanById(old plan)
-      .mockResolvedValueOnce({ rows: [{ count: '5' }] })      // checkLimits COUNT doctors
-      .mockResolvedValueOnce({ rows: [sub] })                 // getTenantPlan → getTenantSubscription(2nd)
-      .mockResolvedValueOnce({ rows: [oldPlan] })             // getPlanById(old plan)
-      .mockResolvedValueOnce({ rows: [{ count: '300' }] })    // checkLimits COUNT patients(users)
+      .mockResolvedValueOnce({ rows: [] })                    // checkLimits(doctors) → pg_advisory_xact_lock
+      .mockResolvedValueOnce({ rows: [sub] })                 // checkLimits(doctors) → getTenantPlan → getTenantSubscription
+      .mockResolvedValueOnce({ rows: [oldPlan] })             // checkLimits(doctors) → getPlanById
+      .mockResolvedValueOnce({ rows: [{ count: '5' }] })      // checkLimits(doctors) COUNT doctors
+      .mockResolvedValueOnce({ rows: [] })                    // checkLimits(patients) → pg_advisory_xact_lock
+      .mockResolvedValueOnce({ rows: [sub] })                 // checkLimits(patients) → getTenantPlan → getTenantSubscription
+      .mockResolvedValueOnce({ rows: [oldPlan] })             // checkLimits(patients) → getPlanById
+      .mockResolvedValueOnce({ rows: [{ count: '300' }] })    // checkLimits(patients) COUNT patients(users)
       .mockResolvedValueOnce({ rows: [] });                   // fallback
 
     mockClient.query.mockResolvedValue({ rows: [] });
@@ -317,6 +320,7 @@ describe('saasService.checkFeatureAccess', () => {
 
 describe('saasService.checkLimits', () => {
   it('returns doctor counts', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] });
     mockQuery.mockResolvedValueOnce({ rows: [{ plan_id: 1 }] });
     mockQuery.mockResolvedValueOnce({ rows: [{ id: 1, max_doctors: 5 }] });
     mockQuery.mockResolvedValueOnce({ rows: [{ count: '3' }] });
@@ -327,6 +331,7 @@ describe('saasService.checkLimits', () => {
   });
 
   it('returns patients counts', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] });
     mockQuery.mockResolvedValueOnce({ rows: [{ plan_id: 1 }] });
     mockQuery.mockResolvedValueOnce({ rows: [{ id: 1, max_doctors: -1, max_patients: 200 }] });
     mockQuery.mockResolvedValueOnce({ rows: [{ count: '10' }] });
@@ -337,6 +342,7 @@ describe('saasService.checkLimits', () => {
   });
 
   it('returns storage usage', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] });
     mockQuery.mockResolvedValueOnce({ rows: [{ plan_id: 1 }] });
     mockQuery.mockResolvedValueOnce({ rows: [{ id: 1, max_doctors: -1, max_patients: -1, storage_gb: 1, features: {} }] });
     mockQuery.mockResolvedValueOnce({ rows: [{ bytes: '52428800' }] });
@@ -346,6 +352,7 @@ describe('saasService.checkLimits', () => {
   });
 
   it('returns ml_predictions usage', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] });
     mockQuery.mockResolvedValueOnce({ rows: [{ plan_id: 1 }] });
     mockQuery.mockResolvedValueOnce({ rows: [{ id: 1, max_doctors: -1, max_patients: -1, storage_gb: 1, features: { ml: true } }] });
     mockQuery.mockResolvedValueOnce({ rows: [{ total: '500' }] });
@@ -355,6 +362,7 @@ describe('saasService.checkLimits', () => {
   });
 
   it('returns ml_predictions with explicit limit', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] });
     mockQuery.mockResolvedValueOnce({ rows: [{ plan_id: 1 }] });
     mockQuery.mockResolvedValueOnce({ rows: [{ id: 1, max_doctors: -1, max_patients: -1, storage_gb: 1, features: { ml_predictions_limit: 2000 } }] });
     mockQuery.mockResolvedValueOnce({ rows: [{ total: '500' }] });
@@ -363,6 +371,7 @@ describe('saasService.checkLimits', () => {
   });
 
   it('returns ml_predictions with ml disabled', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] });
     mockQuery.mockResolvedValueOnce({ rows: [{ plan_id: 1 }] });
     mockQuery.mockResolvedValueOnce({ rows: [{ id: 1, max_doctors: -1, max_patients: -1, storage_gb: 1, features: {} }] });
     mockQuery.mockResolvedValueOnce({ rows: [{ total: '500' }] });
@@ -371,6 +380,7 @@ describe('saasService.checkLimits', () => {
   });
 
   it('returns ml_training usage', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] });
     mockQuery.mockResolvedValueOnce({ rows: [{ plan_id: 1 }] });
     mockQuery.mockResolvedValueOnce({ rows: [{ id: 1, max_doctors: -1, max_patients: -1, storage_gb: 1, features: { ml: true } }] });
     mockQuery.mockResolvedValueOnce({ rows: [{ total: '5' }] });
@@ -380,6 +390,7 @@ describe('saasService.checkLimits', () => {
   });
 
   it('returns ml_training with explicit limit', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] });
     mockQuery.mockResolvedValueOnce({ rows: [{ plan_id: 1 }] });
     mockQuery.mockResolvedValueOnce({ rows: [{ id: 1, max_doctors: -1, max_patients: -1, storage_gb: 1, features: { ml_training_limit: 50 } }] });
     mockQuery.mockResolvedValueOnce({ rows: [{ total: '5' }] });
@@ -388,6 +399,7 @@ describe('saasService.checkLimits', () => {
   });
 
   it('returns ml_training with ml disabled', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] });
     mockQuery.mockResolvedValueOnce({ rows: [{ plan_id: 1 }] });
     mockQuery.mockResolvedValueOnce({ rows: [{ id: 1, max_doctors: -1, max_patients: -1, storage_gb: 1, features: {} }] });
     mockQuery.mockResolvedValueOnce({ rows: [{ total: '5' }] });
@@ -396,6 +408,7 @@ describe('saasService.checkLimits', () => {
   });
 
   it('returns false when no plan', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] });
     mockQuery.mockResolvedValueOnce({ rows: [] });
     const result = await saasService.checkLimits('test', 'doctors');
     expect(result.allowed).toBe(false);

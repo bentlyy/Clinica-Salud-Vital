@@ -11,11 +11,6 @@ export default defineConfig({
         target: process.env.VITE_API_PROXY_TARGET || 'http://localhost:3000',
         changeOrigin: true,
         cookieDomainRewrite: 'localhost'
-      },
-      '/api/v1': {
-        target: process.env.VITE_API_PROXY_TARGET || 'http://localhost:3000',
-        changeOrigin: true,
-        cookieDomainRewrite: 'localhost'
       }
     }
   }

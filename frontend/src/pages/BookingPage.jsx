@@ -49,7 +49,8 @@ export default function BookingPage() {
   const today = new Date().toISOString().split('T')[0];
 
   useEffect(() => {
-    getDoctors()
+    const controller = new AbortController();
+    getDoctors({ signal: controller.signal })
       .then((data) => {
         const docs = Array.isArray(data) ? data : (data.data || []);
         setDoctors(docs);
@@ -63,13 +64,16 @@ export default function BookingPage() {
       })
       .catch(() => setError(t('booking.error')))
       .finally(() => setLoadingDoctors(false));
+    return () => controller.abort();
   }, [searchParams]);
 
   useEffect(() => {
     if (!selectedDoctor || !date) return;
-    getAvailableSlots(selectedDoctor, date)
+    const controller = new AbortController();
+    getAvailableSlots(selectedDoctor, date, { signal: controller.signal })
       .then((data) => { setSlots(Array.isArray(data) ? data : []); setSelectedTime(null); })
       .catch(() => setError(t('booking.error')));
+    return () => controller.abort();
   }, [selectedDoctor, date]);
 
   const handleConfirm = async () => {

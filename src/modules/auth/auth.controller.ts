@@ -3,6 +3,7 @@ import * as authService from './auth.service.js';
 import * as auth2faService from './auth-2fa.service.js';
 import * as authPasswordService from './auth-password.service.js';
 import { asyncHandler } from '../../middlewares/asyncHandler.middleware.js';
+import { pool } from '../../shared/db.js';
 import { verifyInviteToken } from '../doctor/doctor.service.js';
 import { BadRequestError, UnauthorizedError } from '../../utils/errors.js';
 
@@ -94,7 +95,9 @@ export const enable2FA = asyncHandler(async (req: Request, res: Response) => {
   if (!req.user) {
     throw new UnauthorizedError('Authentication required');
   }
-  const result = await auth2faService.enable2FA(req.user.id, req.user.email);
+  const { rows } = await pool.query('SELECT email FROM users WHERE id = $1', [req.user.id]);
+  const email = rows[0]?.email || 'user';
+  const result = await auth2faService.enable2FA(req.user.id, email);
   res.json(result);
 });
 

@@ -17,7 +17,7 @@ jobs:
           node-version: 22
           cache: 'npm'
       - run: npm ci
-      - run: npm audit --audit-level=high || echo "npm audit found issues (non-blocking)"
+      - run: npm audit --audit-level=high
       - run: npm run typecheck
 
   test:

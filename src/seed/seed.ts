@@ -61,7 +61,7 @@ export const seed = async (): Promise<void> => {
     ];
     for (const p of simplePatients) {
       await pool.query(
-        'INSERT INTO users (email, password, name, role, rut, phone, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (email) DO UPDATE SET name = EXCLUDED.name',
+        'INSERT INTO users (email, password, name, role, rut, phone, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (tenant_id, email) DO UPDATE SET name = EXCLUDED.name',
         [p.email, HASH, p.email.split('@')[0], 'user', p.rut, p.phone, DEFAULT_TENANT_ID]
       );
     }
@@ -167,7 +167,7 @@ export const seed = async (): Promise<void> => {
   ];
   for (const p of simplePatients) {
     await pool.query(
-      'INSERT INTO users (email, password, name, role, rut, phone, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (email) DO NOTHING',
+      'INSERT INTO users (email, password, name, role, rut, phone, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (tenant_id, email) DO NOTHING',
       [p.email, HASH, p.email.split('@')[0], 'user', p.rut, p.phone, DEFAULT_TENANT_ID]
     );
   }
@@ -465,7 +465,7 @@ export const seed = async (): Promise<void> => {
   for (let i = 0; i < 50; i++) {
     try {
       await pool.query(
-      `INSERT INTO audit_logs (user_id, action, entity_type, entity_id, ip_address, created_at, tenant_id)
+      `INSERT INTO audit_logs (user_id, action, resource_type, resource_id, ip_address, created_at, tenant_id)
        VALUES ($1, $2, $3, $4, $5, $6, $7)`,
         [
           pick(patients.concat(doctors.map(d => ({ id: d.userId, name: '', email: '' })))).id,

@@ -22,6 +22,7 @@ vi.mock('../../src/shared/jwt.service.js', () => ({
       } catch { return null; }
     }),
     sign: vi.fn(() => 'mock-token'),
+    signInvite: vi.fn(() => 'mock-invite-token'),
     getJWKS: vi.fn(() => ({ keys: [] })),
   },
 }));

@@ -15,6 +15,7 @@ class JWTManager {
   private currentKeyPair: KeyPair | null = null;
   private keyHistory: Map<string, KeyPair> = new Map();
   private refreshTimer: NodeJS.Timeout | null = null;
+  private keysLoadedFromEnv = false;
 
   private get keysDir(): string {
     return process.env.JWT_KEYS_DIR || path.resolve(process.cwd(), 'keys');
@@ -49,6 +50,7 @@ class JWTManager {
   }
 
   private persistKeyPair(pair: KeyPair): void {
+    if (this.keysLoadedFromEnv) return;
     const dir = this.keysDir;
     this.ensureKeysDir();
     const privPath = path.join(dir, `jwt-${pair.kid}.pem`);
@@ -58,6 +60,7 @@ class JWTManager {
   }
 
   private deleteKeyFile(kid: string): void {
+    if (this.keysLoadedFromEnv) return;
     const dir = this.keysDir;
     try {
       fs.unlinkSync(path.join(dir, `jwt-${kid}.pem`));
@@ -66,8 +69,32 @@ class JWTManager {
     }
   }
 
+  private initializeFromEnv(): boolean {
+    const privateKey = process.env.JWT_PRIVATE_KEY;
+    const publicKey = process.env.JWT_PUBLIC_KEY;
+    if (privateKey && publicKey) {
+      const kid = crypto.randomBytes(8).toString('hex');
+      const pair: KeyPair = {
+        privateKey,
+        publicKey,
+        kid,
+        createdAt: new Date(),
+      };
+      this.keyHistory.set(kid, pair);
+      this.currentKeyPair = pair;
+      this.keysLoadedFromEnv = true;
+      logger.info('JWT RS256: Cargado par de llaves desde variables de entorno');
+      return true;
+    }
+    return false;
+  }
+
   private initialize(): void {
-    this.ensureKeysDir();
+    if (this.initializeFromEnv()) {
+      this.startKeyRotation();
+      return;
+    }
+
     const dir = this.keysDir;
     let loadedCount = 0;
 
@@ -187,6 +214,10 @@ class JWTManager {
       });
     }
     return { keys };
+  }
+
+  signInvite(payload: Record<string, unknown>, expiresIn?: string): string {
+    return this.sign(payload, { expiresIn: expiresIn || '24h' });
   }
 
   getKeyCount(): number {

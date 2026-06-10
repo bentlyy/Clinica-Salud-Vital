@@ -150,11 +150,11 @@ export const createClinicalRecord = async (data: ClinicalRecordData, tenantId: s
       }
     }
 
-    const patientResult = await client.query('SELECT id FROM users WHERE id = $1', [data.patient_id]);
+    const patientResult = await client.query('SELECT id FROM users WHERE id = $1 AND tenant_id = $2', [data.patient_id, tenantId]);
     if (patientResult.rows.length === 0) throw new BadRequestError('Patient not found');
 
     if (data.booking_id) {
-      const bookingResult = await client.query('SELECT id FROM bookings WHERE id = $1', [data.booking_id]);
+      const bookingResult = await client.query('SELECT id FROM bookings WHERE id = $1 AND tenant_id = $2', [data.booking_id, tenantId]);
       if (bookingResult.rows.length === 0) throw new BadRequestError('Booking not found');
     }
 

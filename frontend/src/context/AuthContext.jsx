@@ -20,7 +20,8 @@ export const AuthProvider = ({ children }) => {
     const savedUser = localStorage.getItem('user');
     if (savedUser) {
       try {
-        setUser(JSON.parse(savedUser));
+        const parsed = JSON.parse(savedUser);
+        setUser(parsed);
       } catch {
         localStorage.removeItem('user');
       }
@@ -48,23 +49,19 @@ export const AuthProvider = ({ children }) => {
 
     const body = res.body || res.data;
     const userData = body.user || body;
-    const accessToken = body.access_token || body.token;
-    const refreshToken = body.refresh_token;
 
-    if (!userData || !accessToken) {
+    if (!userData) {
       throw new Error('Invalid response from server');
     }
 
-    localStorage.setItem('access_token', accessToken);
-    if (refreshToken) localStorage.setItem('refresh_token', refreshToken);
-    localStorage.setItem('user', JSON.stringify({ id: userData.id, role: userData.role }));
+    localStorage.setItem('user', JSON.stringify(userData));
     setUser(userData);
 
     return userData;
   };
 
-  const register = async ({ email, password, rut, phone, tenant_id, invite_token }) => {
-    const body = { email, password, rut, phone };
+  const register = async ({ email, password, name, rut, phone, tenant_id, invite_token }) => {
+    const body = { email, password, name, rut, phone };
     if (tenant_id) body.tenant_id = tenant_id;
     if (invite_token) body.invite_token = invite_token;
     const res = await api.post('/auth/register', body);

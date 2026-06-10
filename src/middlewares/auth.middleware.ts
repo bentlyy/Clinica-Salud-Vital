@@ -6,7 +6,7 @@ import { UnauthorizedError, ForbiddenError } from '../utils/errors.js';
 
 export interface JwtUser {
   id: number;
-  email: string;
+  email?: string;
   role: UserRole;
   tenant_id: string;
   token_version?: number;

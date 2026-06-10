@@ -6,6 +6,40 @@ const ALGORITHM = 'aes-256-gcm';
 const KEY_LENGTH = 32;
 const IV_LENGTH = 16;
 
+/**
+ * Envelope encryption: wraps a Data Encryption Key (DEK) with a Master Key.
+ * The master key is read from PHI_MASTER_KEY env var (64 hex chars = 256 bits).
+ * Falls back to no wrapping if PHI_MASTER_KEY is not set (degraded mode for dev).
+ */
+export function wrapKey(plaintextKey: Buffer): Buffer {
+  const masterKeyHex = process.env.PHI_MASTER_KEY;
+  if (!masterKeyHex) return plaintextKey;
+
+  const masterKey = Buffer.from(masterKeyHex, 'hex');
+  if (masterKey.length !== 32) throw new Error('PHI_MASTER_KEY must be 64 hex chars (32 bytes)');
+
+  const iv = crypto.randomBytes(16);
+  const cipher = crypto.createCipheriv('aes-256-gcm', masterKey, iv);
+  const encrypted = Buffer.concat([cipher.update(plaintextKey), cipher.final()]);
+  const tag = cipher.getAuthTag();
+
+  return Buffer.concat([iv, tag, encrypted]);
+}
+
+export function unwrapKey(wrappedKey: Buffer): Buffer {
+  const masterKeyHex = process.env.PHI_MASTER_KEY;
+  if (!masterKeyHex) return wrappedKey;
+
+  const masterKey = Buffer.from(masterKeyHex, 'hex');
+  const iv = wrappedKey.subarray(0, 16);
+  const tag = wrappedKey.subarray(16, 32);
+  const encrypted = wrappedKey.subarray(32);
+
+  const decipher = crypto.createDecipheriv('aes-256-gcm', masterKey, iv);
+  decipher.setAuthTag(tag);
+  return Buffer.concat([decipher.update(encrypted), decipher.final()]);
+}
+
 interface CachedKeys {
   active: crypto.KeyObject;
   history: Map<string, crypto.KeyObject>;
@@ -15,7 +49,7 @@ const keyCache = new Map<string, CachedKeys>();
 
 const getTenantKeyData = async (tenantId: string): Promise<{ keyData: Buffer; keyIdentifier: string }> => {
   const result = await pool.query(
-    `SELECT key_identifier, key_data FROM encryption_keys
+    `SELECT key_identifier, key_data_encrypted AS key_data FROM encryption_keys
      WHERE tenant_id = $1 AND status = 'active'
      ORDER BY created_at DESC LIMIT 1`,
     [tenantId]
@@ -24,13 +58,13 @@ const getTenantKeyData = async (tenantId: string): Promise<{ keyData: Buffer; ke
     const newKey = crypto.randomBytes(KEY_LENGTH);
     const keyIdentifier = `${tenantId}-${Date.now()}`;
     await pool.query(
-      `INSERT INTO encryption_keys (tenant_id, key_identifier, key_data, algorithm)
+      `INSERT INTO encryption_keys (tenant_id, key_identifier, key_data_encrypted, algorithm)
        VALUES ($1, $2, $3, $4)`,
-      [tenantId, keyIdentifier, newKey.toString('hex'), ALGORITHM]
+      [tenantId, keyIdentifier, wrapKey(newKey).toString('hex'), ALGORITHM]
     );
     return { keyData: newKey, keyIdentifier };
   }
-  return { keyData: Buffer.from(result.rows[0].key_data, 'hex'), keyIdentifier: result.rows[0].key_identifier };
+  return { keyData: unwrapKey(Buffer.from(result.rows[0].key_data, 'hex')), keyIdentifier: result.rows[0].key_identifier };
 };
 
 const getTenantKey = async (tenantId: string): Promise<crypto.KeyObject> => {
@@ -50,14 +84,14 @@ const getKeyByIdentifier = async (tenantId: string, keyIdentifier: string): Prom
     return cached.history.get(keyIdentifier)!;
   }
   const result = await pool.query(
-    `SELECT key_data FROM encryption_keys
+    `SELECT key_data_encrypted AS key_data FROM encryption_keys
      WHERE tenant_id = $1 AND key_identifier = $2`,
     [tenantId, keyIdentifier]
   );
   if (result.rows.length === 0) {
     throw new Error(`PHI key ${keyIdentifier} not found for tenant ${tenantId}`);
   }
-  const key = crypto.createSecretKey(Buffer.from(result.rows[0].key_data, 'hex'));
+  const key = crypto.createSecretKey(unwrapKey(Buffer.from(result.rows[0].key_data, 'hex')));
   if (cached) cached.history.set(keyIdentifier, key);
   return key;
 };

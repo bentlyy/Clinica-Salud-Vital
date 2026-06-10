@@ -150,12 +150,11 @@ export const isInternalHost = async (urlStr: string): Promise<boolean> => {
 const sleep = (ms: number): Promise<void> => new Promise(resolve => setTimeout(resolve, ms));
 
 const MAX_RETRIES = 3;
-const RETRY_DELAY_MS = 1000;
 
-export const dispatchEvent = async (event: string, payload: Record<string, unknown>, tenantId?: string): Promise<void> => {
+export const dispatchEvent = async (event: string, payload: Record<string, unknown>, tenantId: string): Promise<void> => {
   const webhooks = await pool.query(
-    `SELECT * FROM webhooks WHERE active = true AND events @> $1${tenantId ? ' AND tenant_id = $2' : ''}`,
-    tenantId ? [JSON.stringify([event]), tenantId] : [JSON.stringify([event])]
+    `SELECT * FROM webhooks WHERE active = true AND events @> $1 AND tenant_id = $2`,
+    [JSON.stringify([event]), tenantId]
   );
 
   for (const webhook of webhooks.rows) {
@@ -177,8 +176,14 @@ export const dispatchEvent = async (event: string, payload: Record<string, unkno
 
     let lastError: string = '';
     let success = false;
+    const deliveryStartTime = Date.now();
+    const TOTAL_TIMEOUT_MS = 60000;
 
     for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+      if (Date.now() - deliveryStartTime > TOTAL_TIMEOUT_MS) {
+        lastError = 'Total delivery timeout exceeded';
+        break;
+      }
       try {
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 10000);
@@ -211,7 +216,11 @@ export const dispatchEvent = async (event: string, payload: Record<string, unkno
         lastError = (err as Error).message;
         logger.warn(`Webhook delivery attempt ${attempt}/${MAX_RETRIES} failed`, { webhookId: webhook.id, event, error: lastError });
         if (attempt < MAX_RETRIES) {
-          await sleep(RETRY_DELAY_MS * attempt);
+          const baseDelay = 1000;
+          const maxDelay = 30000;
+          const exponentialDelay = Math.min(baseDelay * Math.pow(2, attempt - 1), maxDelay);
+          const jitter = Math.random() * 1000;
+          await sleep(exponentialDelay + jitter);
         }
       }
     }
@@ -227,19 +236,15 @@ export const dispatchEvent = async (event: string, payload: Record<string, unkno
   }
 };
 
-export const getDeliveries = async (webhookId?: number, limit = 50, tenantId?: string): Promise<unknown[]> => {
-  let query = 'SELECT wd.* FROM webhook_deliveries wd JOIN webhooks w ON w.id = wd.webhook_id WHERE 1=1';
-  const values: unknown[] = [];
-  let paramIdx = 1;
+export const getDeliveries = async (tenantId: string, webhookId?: number, limit = 50): Promise<unknown[]> => {
+  let query = 'SELECT wd.* FROM webhook_deliveries wd JOIN webhooks w ON w.id = wd.webhook_id WHERE w.tenant_id = $1';
+  const values: unknown[] = [tenantId];
+  let paramIdx = 2;
   if (webhookId) {
     query += ` AND wd.webhook_id = $${paramIdx++}`;
     values.push(webhookId);
   }
-  if (tenantId) {
-    query += ` AND w.tenant_id = $${paramIdx++}`;
-    values.push(tenantId);
-  }
-  query += ' ORDER BY wd.created_at DESC LIMIT $' + (paramIdx++);
+  query += ' ORDER BY wd.created_at DESC LIMIT $' + paramIdx;
   values.push(limit);
   const result = await pool.query(query, values);
   return result.rows;

@@ -60,7 +60,7 @@ export const seedSuperAdmin = async (): Promise<void> => {
   const hash = await bcrypt.hash(password, 12);
 
   await pool.query(
-    'INSERT INTO users (email, password, name, role, tenant_id) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (email) DO NOTHING',
+    'INSERT INTO users (email, password, name, role, tenant_id) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (tenant_id, email) DO NOTHING',
     [process.env.SUPERADMIN_EMAIL || 'superadmin@clinic.com', hash, 'Super Admin', 'superadmin', DEFAULT_TENANT_ID]
   );
 
@@ -122,7 +122,7 @@ export const seedTestTenants = async (): Promise<void> => {
     );
 
     await pool.query(
-      'INSERT INTO users (email, password, name, role, rut, tenant_id) VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT (email) DO UPDATE SET name = EXCLUDED.name',
+      'INSERT INTO users (email, password, name, role, rut, tenant_id) VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT (tenant_id, email) DO UPDATE SET name = EXCLUDED.name',
       [t.adminEmail, hash, t.name, 'admin', t.adminRut, t.id]
     );
 

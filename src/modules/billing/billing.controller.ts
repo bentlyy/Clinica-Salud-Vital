@@ -55,7 +55,8 @@ export const getInvoiceById = asyncHandler(async (req, res) => {
 });
 
 export const createInvoice = asyncHandler(async (req, res) => {
-  const invoice = await billingService.createInvoice(req.body, req.tenant_id);
+  const idempotencyKey = req.headers['idempotency-key'] as string | undefined;
+  const invoice = await billingService.createInvoice(req.body, req.tenant_id, idempotencyKey);
   res.status(201).json(invoice);
 });
 
