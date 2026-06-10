@@ -13,6 +13,7 @@ import { pool } from './shared/db.js';
 import { tenantService } from './shared/multi-tenant.service.js';
 import { seedDefaultTenant, seedSuperAdmin, seedTestTenants } from './seed/admin.seed.js';
 import { startReminderJob } from './jobs/reminder.job.js';
+import { verifyAuditChain } from './jobs/audit-integrity.job.js';
 import { securityMiddleware, validateEnvSecurity } from './middlewares/security.middleware.js';
 import { tenantMiddleware } from './middlewares/tenant.middleware.js';
 import { optionalAuth } from './middlewares/auth.middleware.js';
@@ -26,7 +27,9 @@ import { dbMonitor } from './shared/db-monitor.service.js';
 import { trackActivity } from './middlewares/sessionActivity.middleware.js';
 import { initSentry, setupExpressErrorHandler } from './shared/sentry.service.js';
 import { logger } from './utils/logger.js';
-import { queueService } from './shared/queue.service.js';
+import cron from 'node-cron';
+import { queueService, registerWorkers } from './shared/queue.service.js';
+import pkg from '../package.json';
 
 import doctorRoutes from './modules/doctor/doctor.routes.js';
 import authRoutes from './modules/auth/auth.routes.js';
@@ -57,41 +60,51 @@ app.set('trust proxy', ['loopback', 'linklocal', 'uniquelocal']);
 
 initSentry(app);
 
-app.get('/health', async (req: Request, res: Response) => {
+const healthHandler = async (_req: Request, res: Response) => {
   try {
     const startDb = Date.now();
-    await pool.query('SELECT 1');
-    const dbLatency = Date.now() - startDb;
-    const mem = monitoringService.getMemoryUsage();
-    const eventLoopLag = await monitoringService.getEventLoopLag();
-
-    const poolStatus = {
-      totalCount: pool.totalCount,
-      idleCount: pool.idleCount,
-      waitingCount: pool.waitingCount,
-    };
-
-    let redisStatus = 'not_configured';
+    let dbStatus = 'ok';
+    let dbLatency = 0;
     try {
-      const { queueService: qs } = await import('./shared/queue.service.js');
-      if (qs) redisStatus = 'available';
+      await pool.query('SELECT 1');
+      dbLatency = Date.now() - startDb;
     } catch {
-      redisStatus = 'unavailable';
+      dbStatus = 'error';
     }
 
+    const mem = process.memoryUsage();
+    const memUsed = Math.round(mem.heapUsed / 1024 / 1024);
+    const memTotal = Math.round(mem.heapTotal / 1024 / 1024);
+
+    let stripeStatus = 'configured';
+    if (global.stripeWarning) stripeStatus = 'stub_mode';
+
     res.json({
-      status: 'ok',
+      status: dbStatus === 'ok' ? 'ok' : 'degraded',
       timestamp: new Date().toISOString(),
-      db: { status: 'connected', latency: `${dbLatency}ms`, pool: poolStatus },
-      redis: redisStatus,
-      memory: mem,
-      eventLoopLag: `${eventLoopLag}ms`,
-      uptime: process.uptime(),
+      version: pkg.version,
+      checks: {
+        database: { status: dbStatus, latency_ms: dbLatency },
+        stripe: { status: stripeStatus },
+        memory: { status: 'ok', heap_used_mb: memUsed, heap_total_mb: memTotal },
+      },
     });
   } catch {
-    res.status(500).json({ status: 'error', db: 'down' });
+    res.status(500).json({
+      status: 'error',
+      timestamp: new Date().toISOString(),
+      version: pkg.version,
+      checks: {
+        database: { status: 'error', latency_ms: 0 },
+        stripe: { status: 'unknown' },
+        memory: { status: 'unknown', heap_used_mb: 0, heap_total_mb: 0 },
+      },
+    });
   }
-});
+};
+
+app.get('/health', healthHandler);
+app.get('/api/v1/health', healthHandler);
 
 app.use(securityMiddleware);
 app.use(monitoringMiddleware);
@@ -154,7 +167,7 @@ app.use('/api/v1/saas/webhook/stripe', express.raw({ type: 'application/json' })
 app.use(apiVersionRedirect);
 app.use(setCsrfCookie);
 app.use((req, res, next) => {
-  if (req.path.startsWith('/api/saas/webhook/') || req.path.startsWith('/api/v1/saas/webhook/') || req.path === '/health') {
+  if (req.path.startsWith('/api/saas/webhook/') || req.path.startsWith('/api/v1/saas/webhook/') || req.path === '/health' || req.path === '/api/v1/health') {
     return next();
   }
   csrfProtection(req, res, next);
@@ -168,8 +181,11 @@ const globalLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Too many requests, please try again later' },
-  keyGenerator: (req) => req.ip || 'unknown',
-  skip: (req) => req.path === '/health',
+  keyGenerator: (req) => {
+    if (req.tenant_id) return `tenant:${req.tenant_id}:${req.ip || 'unknown'}`;
+    return `ip:${req.ip || 'unknown'}`;
+  },
+  skip: (req) => req.path === '/health' || req.path === '/api/v1/health',
 });
 app.use(globalLimiter);
 
@@ -180,6 +196,46 @@ const authLimiter = rateLimit({
   legacyHeaders: false,
   message: { error: 'Too many login attempts, please try again later' },
   keyGenerator: (req) => req.ip || 'unknown',
+});
+
+const emailAuthLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Demasiados intentos para este correo. Intenta de nuevo más tarde.' },
+  keyGenerator: (req) => req.body?.email || req.ip,
+});
+
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  message: { error: 'Demasiados intentos de inicio de sesión. Intenta de nuevo en 15 minutos.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => req.body?.email || req.ip,
+});
+
+const registerLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 3,
+  message: { error: 'Demasiados intentos de registro. Intenta de nuevo en 15 minutos.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => req.ip,
+});
+
+const refreshLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: { error: 'Demasiadas solicitudes de renovación. Intenta de nuevo en 15 minutos.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => {
+    const token = req.body?.refresh_token || req.cookies?.refresh_token || '';
+    const hash = crypto.createHash('sha256').update(token).digest('hex').slice(0, 16);
+    return `refresh:${hash}`;
+  },
 });
 
 const forgotPasswordLimiter = rateLimit({
@@ -227,6 +283,24 @@ const logoutAllLimiter = rateLimit({
   keyGenerator: (req) => req.ip || 'unknown',
 });
 
+const phiWriteLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many PHI write requests. Please slow down.' },
+  keyGenerator: (req) => req.tenant_id ? `phi:${req.tenant_id}:${req.user?.id || req.ip}` : `phi:${req.ip}`,
+});
+
+const complianceLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many data export/erase requests. Please slow down.' },
+  keyGenerator: (req) => req.tenant_id ? `compliance:${req.tenant_id}:${req.user?.id || req.ip}` : `compliance:${req.ip}`,
+});
+
 const API_PREFIX = '/api/v1';
 
 app.use(`${API_PREFIX}/auth/change-password`, changePasswordLimiter);
@@ -235,9 +309,9 @@ app.use(`${API_PREFIX}/auth/logout-all`, logoutAllLimiter);
 app.use(`${API_PREFIX}/auth/invite-info`, authLimiter);
 app.use(`${API_PREFIX}/auth/forgot-password`, forgotPasswordLimiter);
 app.use(`${API_PREFIX}/auth/reset-password`, resetPasswordLimiter);
-app.use(`${API_PREFIX}/auth/login`, authLimiter);
-app.use(`${API_PREFIX}/auth/register`, authLimiter);
-app.use(`${API_PREFIX}/auth/refresh`, authLimiter);
+app.use(`${API_PREFIX}/auth/login`, loginLimiter, emailAuthLimiter);
+app.use(`${API_PREFIX}/auth/register`, registerLimiter);
+app.use(`${API_PREFIX}/auth/refresh`, refreshLimiter);
 app.use(`${API_PREFIX}/auth`, authRoutes);
 app.use(`${API_PREFIX}/doctors`, doctorRoutes);
 app.use(`${API_PREFIX}/bookings`, bookingRoutes);
@@ -245,6 +319,7 @@ app.use(`${API_PREFIX}/availability`, availabilityRoutes);
 app.use(`${API_PREFIX}/exceptions`, exceptionRoutes);
 app.use(`${API_PREFIX}/guest`, guestRoutes);
 
+app.use(`${API_PREFIX}/clinical-records`, phiWriteLimiter);
 app.use(`${API_PREFIX}/clinical-records`, clinicalRecordRoutes);
 app.use(`${API_PREFIX}/audit`, auditRoutes);
 app.use(`${API_PREFIX}/analytics`, analyticsRoutes);
@@ -258,6 +333,7 @@ app.use(`${API_PREFIX}/saas`, saasRoutes);
 app.use(`${API_PREFIX}/super-admin`, superAdminRoutes);
 app.use(`${API_PREFIX}/i18n`, i18nRoutes);
 app.use(`${API_PREFIX}/monitoring`, monitoringRoutes);
+app.use(`${API_PREFIX}/compliance`, complianceLimiter);
 app.use(`${API_PREFIX}/compliance`, complianceRoutes);
 app.use(`${API_PREFIX}/fhir`, fhirRoutes);
 
@@ -370,9 +446,17 @@ const startServer = async (): Promise<void> => {
     if (process.env.NODE_ENV === 'production') {
       const stripeKey = process.env.STRIPE_SECRET_KEY || '';
       if (!stripeKey) {
-        logger.warn('⚠️ STRIPE_SECRET_KEY no configurada — pagos SaaS deshabilitados');
-      } else if (!stripeKey.startsWith('sk_live_')) {
-        throw new Error('STRIPE_SECRET_KEY must be configured with a live key in production mode');
+        logger.error('████████████████████████████████████████████████████████████████');
+        logger.error('█ CRITICAL: STRIPE_SECRET_KEY no configurada                   █');
+        logger.error('█ El sistema SaaS NO procesará pagos reales                    █');
+        logger.error('█ Configure STRIPE_SECRET_KEY en las variables de entorno      █');
+        logger.error('████████████████████████████████████████████████████████████████');
+        global.stripeWarning = true;
+      } else if (stripeKey.startsWith('sk_test_')) {
+        logger.warn('████████████████████████████████████████████████████████████████');
+        logger.warn('█ WARNING: STRIPE_SECRET_KEY es de prueba (sk_test_)           █');
+        logger.warn('█ Cambiar a sk_live_ para producción real                       █');
+        logger.warn('████████████████████████████████████████████████████████████████');
       }
     }
 
@@ -404,6 +488,7 @@ const startServer = async (): Promise<void> => {
     /* Initialize async job queue (BullMQ if Redis available, memory fallback) */
     try {
       await queueService.initialize();
+      registerWorkers();
       logger.info('Queue service initialized');
     } catch (err) {
       logger.warn('Queue service not available (emails will work synchronously)', { error: (err as Error).message });
@@ -427,6 +512,20 @@ const startServer = async (): Promise<void> => {
     });
 
     startReminderJob();
+
+    cron.schedule('0 */6 * * *', async () => {
+      try {
+        const result = await verifyAuditChain();
+        if (!result.valid) {
+          logger.warn(`Audit chain integrity check: ${result.brokenLinks} broken links out of ${result.checked}`);
+        } else {
+          logger.info(`Audit chain integrity check passed: ${result.checked} logs verified`);
+        }
+      } catch (error) {
+        logger.error('Audit chain integrity cron job failed', { error: (error as Error).message });
+      }
+    });
+    logger.info('Audit chain integrity cron scheduled (every 6 hours)');
   } catch (error) {
     logger.error('Error starting server', { error: (error as Error).message, stack: (error as Error).stack });
     process.exit(1);

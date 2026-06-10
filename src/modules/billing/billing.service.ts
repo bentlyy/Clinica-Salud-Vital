@@ -135,18 +135,19 @@ export const createInvoice = async (data: InvoiceInput, tenantId: string, idempo
 };
 
 export const getInvoices = async ({ patient_id, doctor_id, status, start_date, end_date, limit = 20, offset = 0 }: InvoiceFilters = {}, tenantId: string) => {
-  let query = 'SELECT * FROM invoices WHERE 1=1';
-  const params: any[] = [];
+  const conditions: string[] = [];
+  const params: (string | number)[] = [];
   let paramCount = 1;
 
-  if (patient_id) { query += ' AND patient_id = $' + paramCount++; params.push(patient_id); }
-  if (doctor_id) { query += ' AND doctor_id = $' + paramCount++; params.push(doctor_id); }
-  if (status) { query += ' AND status = $' + paramCount++; params.push(status); }
-  if (start_date) { query += ' AND created_at >= $' + paramCount++; params.push(start_date); }
-  if (end_date) { query += ' AND created_at <= $' + paramCount++; params.push(end_date); }
-  query += ' AND tenant_id = $' + paramCount++; params.push(tenantId);
+  if (patient_id) { conditions.push(`patient_id = $${paramCount++}`); params.push(patient_id); }
+  if (doctor_id) { conditions.push(`doctor_id = $${paramCount++}`); params.push(doctor_id); }
+  if (status) { conditions.push(`status = $${paramCount++}`); params.push(status); }
+  if (start_date) { conditions.push(`created_at >= $${paramCount++}`); params.push(start_date); }
+  if (end_date) { conditions.push(`created_at <= $${paramCount++}`); params.push(end_date); }
+  conditions.push(`tenant_id = $${paramCount++}`); params.push(tenantId);
 
-  query += ' ORDER BY created_at DESC LIMIT $' + paramCount++ + ' OFFSET $' + paramCount++;
+  const whereClause = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : '';
+  const query = `SELECT * FROM invoices ${whereClause} ORDER BY created_at DESC LIMIT $${paramCount++} OFFSET $${paramCount++}`;
   params.push(limit, offset);
 
   const result = await pool.query(query, params);

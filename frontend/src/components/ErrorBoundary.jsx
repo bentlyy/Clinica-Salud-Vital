@@ -1,5 +1,6 @@
 import { Component } from 'react';
 import { I18nContext } from '../i18n/useI18n';
+import { logger } from '../utils/logger.js';
 
 export default class ErrorBoundary extends Component {
   static contextType = I18nContext;
@@ -14,7 +15,7 @@ export default class ErrorBoundary extends Component {
   }
 
   componentDidCatch(error, info) {
-    console.error('ErrorBoundary caught:', error, info);
+    logger.error('ErrorBoundary caught:', error, info);
   }
 
   render() {

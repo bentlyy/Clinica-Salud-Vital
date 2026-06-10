@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/useAuth';
 import { useI18n } from '../i18n/useI18n';
 import ReCAPTCHA from 'react-google-recaptcha';
+import { sanitizeError } from '../utils/error-sanitizer.js';
 
 const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
 const hasCaptcha = Boolean(RECAPTCHA_SITE_KEY);
@@ -61,7 +62,7 @@ export default function LoginPage() {
       if (err.response?.data?.code === '2FA_REQUIRED' || err.response?.data?.error === '2FA token required') {
         setNeeds2FA(true);
       } else {
-        setError(err.response?.data?.error || t('auth.invalid_credentials'));
+        setError(sanitizeError(err) || t('auth.invalid_credentials'));
       }
       recaptchaRef.current?.reset();
     } finally {

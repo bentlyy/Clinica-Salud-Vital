@@ -190,32 +190,32 @@ export function registerWorker(type: string, handler: JobHandler): void {
   queueService.registerWorker(type, handler);
 }
 
-// Register email worker
-registerWorker('email:send', async (job) => {
-  const { type: emailType, to, subject, html, tenantId } = job.data as Record<string, any>;
+export function registerWorkers(): void {
+  registerWorker('email:send', async (job) => {
+    const { type: emailType, to, subject, html, tenantId } = job.data as Record<string, any>;
 
-  const { sendEmail } = await import('./email.service.js');
-  const result = await sendEmail({ to, subject, html, tenantId });
+    const { sendEmail } = await import('./email.service.js');
+    const result = await sendEmail({ to, subject, html, tenantId });
 
-  if (!result.sent) {
-    logger.error(`Email worker failed for "${emailType}"`, { to, error: result.error });
-    throw new Error(result.error || 'Email send failed');
-  }
+    if (!result.sent) {
+      logger.error(`Email worker failed for "${emailType}"`, { to, error: result.error });
+      throw new Error(result.error || 'Email send failed');
+    }
 
-  logger.info(`Email sent: ${emailType} -> ${to}`);
-});
+    logger.info(`Email sent: ${emailType} -> ${to}`);
+  });
 
-// Register ML training worker
-registerWorker('ml:train', async (job) => {
-  const { tenantId } = job.data as Record<string, any>;
-  logger.info(`ML training worker started for tenant: ${tenantId}`);
+  registerWorker('ml:train', async (job) => {
+    const { tenantId } = job.data as Record<string, any>;
+    logger.info(`ML training worker started for tenant: ${tenantId}`);
 
-  try {
-    const { trainAllModels } = await import('../modules/ml/ml.training.js');
-    const results = await trainAllModels(tenantId);
-    logger.info(`ML training worker completed for tenant: ${tenantId}`, results);
-  } catch (err) {
-    logger.error(`ML training worker failed for tenant: ${tenantId}`, { error: (err as Error).message });
-    throw err;
-  }
-});
+    try {
+      const { trainAllModels } = await import('../modules/ml/ml.training.js');
+      const results = await trainAllModels(tenantId);
+      logger.info(`ML training worker completed for tenant: ${tenantId}`, results);
+    } catch (err) {
+      logger.error(`ML training worker failed for tenant: ${tenantId}`, { error: (err as Error).message });
+      throw err;
+    }
+  });
+}

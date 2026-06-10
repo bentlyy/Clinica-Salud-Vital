@@ -163,6 +163,6 @@ export const toggleUserActive = asyncHandler(async (req: Request, res: Response)
 
   logger.info('SUPERADMIN TOGGLE USER ACTIVE', { targetUserId: userId, active, adminId: req.user?.id });
 
-  const user = await superAdminService.setUserActive(userId, active);
+  const user = await superAdminService.setUserActive(userId, active, req.tenant_id);
   res.json(user);
 });

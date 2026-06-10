@@ -22,6 +22,7 @@ vi.mock('../../src/shared/jwt.service.js', () => ({
   jwtManager: {
     verify: vi.fn(() => ({ id: 1, email: 'admin@test.com', role: 'admin', tenant_id: 'default', token_version: 0 })),
     sign: vi.fn(() => 'mock-token'),
+    signInvite: vi.fn(() => 'mock-invite-token'),
     getJWKS: vi.fn(() => ({ keys: [] })),
   },
 }));

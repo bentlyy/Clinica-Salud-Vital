@@ -15,9 +15,10 @@ export default function SuperAdminTenantDetailPage() {
   const [success, setSuccess] = useState('');
 
   useEffect(() => {
-    const load = async () => {
+    const controller = new AbortController();
+    (async () => {
       try {
-        const data = await getTenantDetail(id);
+        const data = await getTenantDetail(id, { signal: controller.signal });
         setDetail(data);
         setForm({
           name: data.tenant.name || '',
@@ -30,8 +31,8 @@ export default function SuperAdminTenantDetailPage() {
       } finally {
         setLoading(false);
       }
-    };
-    load();
+    })();
+    return () => controller.abort();
   }, [id]);
 
   const handleSave = async () => {

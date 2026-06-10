@@ -16,12 +16,12 @@ export default function SuperAdminTenantsPage() {
 
   const limit = 20;
 
-  const load = async (p = page, s = search) => {
+  const load = async (p = page, s = search, options = {}) => {
     setLoading(true);
     try {
       const filters = {};
       if (s) filters.search = s;
-      const result = await listTenants(p, limit, filters);
+      const result = await listTenants(p, limit, filters, options);
       setTenants(result.data || []);
       setTotal(result.pagination?.total || 0);
     } catch (err) {
@@ -32,7 +32,11 @@ export default function SuperAdminTenantsPage() {
     }
   };
 
-  useEffect(() => { load(); }, [page]);
+  useEffect(() => {
+    const controller = new AbortController();
+    load(page, search, { signal: controller.signal });
+    return () => controller.abort();
+  }, [page]);
 
   const handleSearch = (e) => {
     e.preventDefault();

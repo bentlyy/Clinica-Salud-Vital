@@ -3,8 +3,7 @@ import * as doctorService from '../doctor/doctor.service.js';
 import { validateRut, formatRut } from '../../shared/rut.js';
 import { sendEmail } from '../../shared/email.service.js';
 import { guestConfirmationEmail } from './guest.email.js';
-import jwt from 'jsonwebtoken';
-import { getJWTSecret } from '../../shared/jwt.js';
+import { jwtManager } from '../../shared/jwt.service.js';
 import { BadRequestError, NotFoundError } from '../../utils/errors.js';
 import { logger } from '../../utils/logger.js';
 import { isValidDate, isValidTime } from '../../shared/date.js';
@@ -64,10 +63,9 @@ export const createGuestBooking = async ({ doctor_id, date, time, duration = 30,
     await validateBookingSlot({ doctorId: doctor_id, date, time, duration, client, tenantId });
 
     const formattedRut = formatRut(rut);
-    const confirmToken = jwt.sign(
+    const confirmToken = jwtManager.signInvite(
       { rut, email, doctor_id, date, time, tenant_id: tenantId },
-      getJWTSecret(),
-      { expiresIn: '7d' }
+      '7d'
     );
 
     const result = await client.query(

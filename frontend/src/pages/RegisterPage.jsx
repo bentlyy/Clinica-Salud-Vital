@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/useAuth';
 import { useI18n } from '../i18n/useI18n';
 import { formatRut, validateRut, cleanRut } from '../utils/rut.js';
+import { sanitizeError } from '../utils/error-sanitizer.js';
 import api from '../api/axios';
 
 export default function RegisterPage() {
@@ -20,7 +21,7 @@ export default function RegisterPage() {
 
   useEffect(() => {
     if (inviteToken) {
-      api.get(`/auth/invite-info?token=${encodeURIComponent(inviteToken)}`)
+      api.post('/auth/invite-info', { token: inviteToken })
         .then((res) => {
           setInviteData(res.data);
           setForm((prev) => ({ ...prev, email: res.data.email, name: res.data.name || '' }));
@@ -51,7 +52,7 @@ export default function RegisterPage() {
       await register(body);
       navigate(tenantId ? `/login?tenant=${tenantId}` : '/login');
     } catch (err) {
-      setError(err.response?.data?.error || t('register.error'));
+      setError(sanitizeError(err) || t('register.error'));
     } finally {
       setSubmitting(false);
     }

@@ -1,66 +1,66 @@
 import api from './axios';
 
-export const getClinicalRecords = async (params = {}) => {
-  const res = await api.get('/clinical-records', { params });
+export const getClinicalRecords = async (params = {}, options = {}) => {
+  const res = await api.get('/clinical-records', { ...options, params });
   return res.data;
 };
 
-export const getClinicalRecordById = async (id) => {
-  const res = await api.get(`/clinical-records/${id}`);
+export const getClinicalRecordById = async (id, options = {}) => {
+  const res = await api.get(`/clinical-records/${id}`, options);
   return res.data;
 };
 
-export const getClinicalRecordsByPatient = async (patientId) => {
-  const res = await api.get(`/clinical-records/patient/${patientId}`);
+export const getClinicalRecordsByPatient = async (patientId, options = {}) => {
+  const res = await api.get(`/clinical-records/patient/${patientId}`, options);
   return res.data;
 };
 
-export const createClinicalRecord = async (data) => {
-  const res = await api.post('/clinical-records', data);
+export const createClinicalRecord = async (data, options = {}) => {
+  const res = await api.post('/clinical-records', data, options);
   return res.data;
 };
 
-export const updateClinicalRecord = async (id, data) => {
-  const res = await api.put(`/clinical-records/${id}`, data);
+export const updateClinicalRecord = async (id, data, options = {}) => {
+  const res = await api.put(`/clinical-records/${id}`, data, options);
   return res.data;
 };
 
-export const deleteClinicalRecord = async (id) => {
-  const res = await api.delete(`/clinical-records/${id}`);
+export const deleteClinicalRecord = async (id, options = {}) => {
+  const res = await api.delete(`/clinical-records/${id}`, options);
   return res.data;
 };
 
-export const searchCie10 = async (query) => {
-  const res = await api.get('/clinical-records/cie10/search', { params: { q: query } });
+export const searchCie10 = async (query, options = {}) => {
+  const res = await api.get('/clinical-records/cie10/search', { ...options, params: { q: query } });
   return res.data;
 };
 
-export const getCie10Categories = async () => {
-  const res = await api.get('/clinical-records/cie10/categories');
+export const getCie10Categories = async (options = {}) => {
+  const res = await api.get('/clinical-records/cie10/categories', options);
   return res.data;
 };
 
-export const getDoctorBookings = async () => {
-  const res = await api.get('/bookings/doctor');
+export const getDoctorBookings = async (options = {}) => {
+  const res = await api.get('/bookings/doctor', options);
   return res.data;
 };
 
-export const createPrescription = async (data) => {
-  const res = await api.post('/clinical-records/prescriptions', data);
+export const createPrescription = async (data, options = {}) => {
+  const res = await api.post('/clinical-records/prescriptions', data, options);
   return res.data;
 };
 
-export const updatePrescription = async (id, data) => {
-  const res = await api.put(`/clinical-records/prescriptions/${id}`, data);
+export const updatePrescription = async (id, data, options = {}) => {
+  const res = await api.put(`/clinical-records/prescriptions/${id}`, data, options);
   return res.data;
 };
 
-export const deletePrescription = async (id) => {
-  const res = await api.delete(`/clinical-records/prescriptions/${id}`);
+export const deletePrescription = async (id, options = {}) => {
+  const res = await api.delete(`/clinical-records/prescriptions/${id}`, options);
   return res.data;
 };
 
-export const getPrescriptionsByRecord = async (recordId) => {
-  const res = await api.get(`/clinical-records/${recordId}/prescriptions`);
+export const getPrescriptionsByRecord = async (recordId, options = {}) => {
+  const res = await api.get(`/clinical-records/${recordId}/prescriptions`, options);
   return res.data;
 };

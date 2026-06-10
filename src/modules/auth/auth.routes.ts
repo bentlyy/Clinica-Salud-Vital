@@ -21,4 +21,3 @@ router.post('/forgot-password', validateZod(forgotPasswordSchema), forgotPasswor
 router.post('/reset-password', validateZod(resetPasswordSchema), resetPassword);
 
 export default router;
-
