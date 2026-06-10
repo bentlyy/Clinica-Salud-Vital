@@ -29,6 +29,11 @@ const PUBLIC_PATHS = new Set([
   '/api/v1/auth/.well-known/jwks.json',
 ]);
 
+const PUBLIC_WITH_TENANT = new Set([
+  '/api/v1/booking/slots',
+  '/api/v1/specialties',
+]);
+
 const getLocaleFromRequest = (req: Request): string => {
   return req.headers['accept-language']?.toString().slice(0, 2) || process.env.APP_LOCALE || 'es';
 };
@@ -40,7 +45,23 @@ export const tenantMiddleware = async (req: Request, res: Response, next: NextFu
   const isPublicPath = PUBLIC_PATHS.has(req.path);
 
   // Priority: JWT user tenant > X-Tenant-Id header > subdomain
-  const rawTenantId = userTenantId || headerTenantId || extractTenantFromHost(host);
+  // On public paths, validate X-Tenant-Id against known tenants to prevent spoofing
+  let rawTenantId: string | null;
+  if (isPublicPath && headerTenantId && !userTenantId) {
+    if (PUBLIC_WITH_TENANT.has(req.path)) {
+      const knownTenant = tenantService.getById(headerTenantId) || tenantService.getByDomain(headerTenantId);
+      if (!knownTenant) {
+        logger.warn('X-Tenant-Id spoofing attempt on public path', { headerTenantId, path: req.path });
+        next(new BadRequestError('Invalid tenant'));
+        return;
+      }
+      rawTenantId = knownTenant.id;
+    } else {
+      rawTenantId = extractTenantFromHost(host) || process.env.DEFAULT_TENANT_ID || 'default';
+    }
+  } else {
+    rawTenantId = userTenantId || headerTenantId || extractTenantFromHost(host);
+  }
 
   if (!rawTenantId) {
     if (process.env.NODE_ENV === 'production' && !isPublicPath) {

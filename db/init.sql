@@ -1,9 +1,9 @@
 CREATE TABLE users (
   id SERIAL PRIMARY KEY,
-  email TEXT UNIQUE NOT NULL,
+  email TEXT NOT NULL,
   password TEXT NOT NULL,
   role TEXT DEFAULT 'user',
-  rut TEXT UNIQUE,
+  rut TEXT,
   phone TEXT,
   blocked_until TIMESTAMP,
   no_show_count INT DEFAULT 0,

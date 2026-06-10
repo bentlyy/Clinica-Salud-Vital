@@ -200,7 +200,7 @@ describe('webhookService.getDeliveries', () => {
   it('filters by webhookId', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [] });
     await webhookService.getDeliveries(1, 50);
-    expect(mockQuery).toHaveBeenCalledWith(expect.stringContaining('WHERE webhook_id = $1'), expect.any(Array));
+    expect(mockQuery).toHaveBeenCalledWith(expect.stringContaining('wd.webhook_id = $1'), expect.any(Array));
   });
 });
 

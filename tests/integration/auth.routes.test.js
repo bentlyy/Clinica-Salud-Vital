@@ -9,25 +9,40 @@ const { mockQuery } = vi.hoisted(() => ({
 vi.mock('../../src/shared/db.js', () => ({
   pool: {
     query: mockQuery,
-    connect: vi.fn(() => ({
-      query: vi.fn(),
-      release: vi.fn(),
-    })),
+    connect: mockConnect,
     on: vi.fn(),
+  },
+}));
+
+vi.mock('../../src/shared/jwt.service.js', () => ({
+  jwtManager: {
+    verify: vi.fn((token) => {
+      try {
+        return JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
+      } catch { return null; }
+    }),
+    sign: vi.fn(() => 'mock-token'),
+    getJWKS: vi.fn(() => ({ keys: [] })),
   },
 }));
 
 vi.mock('bcrypt', () => ({
   default: {
-    hash: vi.fn().mockResolvedValue('$2b$12$hashedpassword123'),
-    compare: vi.fn(),
+    hash: vi.fn().mockResolvedValue('$2b$12$hashed'),
+    compare: vi.fn().mockResolvedValue(true),
   },
 }));
 
-process.env.JWT_SECRET = 'test-secret-integration';
-process.env.FRONTEND_URL = 'http://localhost:5173';
+vi.mock('nodemailer', () => ({
+  default: {
+    createTransport: () => ({ sendMail: vi.fn().mockResolvedValue({}) }),
+  },
+}));
 
-import bcrypt from 'bcrypt';
+process.env.JWT_SECRET = 'test-secret-32chars-minimum-length!!';
+process.env.FRONTEND_URL = 'http://localhost:5173';
+process.env.NODE_ENV = 'test';
+
 import authRoutes from '../../src/modules/auth/auth.routes.js';
 import { errorHandler } from '../../src/middlewares/errorHandler.middleware.js';
 

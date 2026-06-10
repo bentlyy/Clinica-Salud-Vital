@@ -4,8 +4,8 @@ const { mockVerify } = vi.hoisted(() => ({
   mockVerify: vi.fn(),
 }));
 
-vi.mock('jsonwebtoken', () => ({
-  default: { verify: mockVerify },
+vi.mock('../../src/shared/jwt.service.js', () => ({
+  jwtManager: { verify: mockVerify },
 }));
 
 vi.mock('../../src/shared/db.js', () => ({
@@ -47,7 +47,7 @@ describe('authMiddleware', () => {
   });
 
   it('calls next with 401 if token is invalid', async () => {
-    mockVerify.mockImplementation(() => { throw new Error('jwt malformed'); });
+    mockVerify.mockReturnValue(null);
     const req = mockReq('Bearer invalid-token');
     const res = mockRes();
     const next = vi.fn();
@@ -57,9 +57,7 @@ describe('authMiddleware', () => {
   });
 
   it('calls next with 401 if token expired', async () => {
-    const error = new Error('jwt expired');
-    error.name = 'TokenExpiredError';
-    mockVerify.mockImplementation(() => { throw error; });
+    mockVerify.mockReturnValue(null);
     const req = mockReq('Bearer expired-token');
     const res = mockRes();
     const next = vi.fn();
@@ -108,7 +106,7 @@ describe('optionalAuth', () => {
   });
 
   it('skips setting user on invalid token', () => {
-    mockVerify.mockImplementation(() => { throw new Error('jwt malformed'); });
+    mockVerify.mockReturnValue(null);
     const req = mockReq('Bearer invalid-token');
     const res = mockRes();
     const next = vi.fn();

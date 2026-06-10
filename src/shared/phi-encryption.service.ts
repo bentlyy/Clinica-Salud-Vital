@@ -6,33 +6,59 @@ const ALGORITHM = 'aes-256-gcm';
 const KEY_LENGTH = 32;
 const IV_LENGTH = 16;
 
-const keyCache = new Map<string, crypto.KeyObject>();
+interface CachedKeys {
+  active: crypto.KeyObject;
+  history: Map<string, crypto.KeyObject>;
+}
 
-const getTenantKeyData = async (tenantId: string): Promise<Buffer> => {
+const keyCache = new Map<string, CachedKeys>();
+
+const getTenantKeyData = async (tenantId: string): Promise<{ keyData: Buffer; keyIdentifier: string }> => {
   const result = await pool.query(
-    `SELECT key_data FROM encryption_keys
+    `SELECT key_identifier, key_data FROM encryption_keys
      WHERE tenant_id = $1 AND status = 'active'
      ORDER BY created_at DESC LIMIT 1`,
     [tenantId]
   );
   if (result.rows.length === 0) {
     const newKey = crypto.randomBytes(KEY_LENGTH);
+    const keyIdentifier = `${tenantId}-${Date.now()}`;
     await pool.query(
       `INSERT INTO encryption_keys (tenant_id, key_identifier, key_data, algorithm)
        VALUES ($1, $2, $3, $4)`,
-      [tenantId, `${tenantId}-${Date.now()}`, newKey.toString('hex'), ALGORITHM]
+      [tenantId, keyIdentifier, newKey.toString('hex'), ALGORITHM]
     );
-    return newKey;
+    return { keyData: newKey, keyIdentifier };
   }
-  return Buffer.from(result.rows[0].key_data, 'hex');
+  return { keyData: Buffer.from(result.rows[0].key_data, 'hex'), keyIdentifier: result.rows[0].key_identifier };
 };
 
 const getTenantKey = async (tenantId: string): Promise<crypto.KeyObject> => {
   const cached = keyCache.get(tenantId);
-  if (cached) return cached;
-  const keyData = await getTenantKeyData(tenantId);
+  if (cached) return cached.active;
+  const { keyData } = await getTenantKeyData(tenantId);
   const key = crypto.createSecretKey(keyData);
-  keyCache.set(tenantId, key);
+  const history = new Map<string, crypto.KeyObject>();
+  history.set('active', key);
+  keyCache.set(tenantId, { active: key, history });
+  return key;
+};
+
+const getKeyByIdentifier = async (tenantId: string, keyIdentifier: string): Promise<crypto.KeyObject> => {
+  const cached = keyCache.get(tenantId);
+  if (cached?.history.has(keyIdentifier)) {
+    return cached.history.get(keyIdentifier)!;
+  }
+  const result = await pool.query(
+    `SELECT key_data FROM encryption_keys
+     WHERE tenant_id = $1 AND key_identifier = $2`,
+    [tenantId, keyIdentifier]
+  );
+  if (result.rows.length === 0) {
+    throw new Error(`PHI key ${keyIdentifier} not found for tenant ${tenantId}`);
+  }
+  const key = crypto.createSecretKey(Buffer.from(result.rows[0].key_data, 'hex'));
+  if (cached) cached.history.set(keyIdentifier, key);
   return key;
 };
 
@@ -50,29 +76,49 @@ export const encryptPHI = async (plaintext: string, tenantId: string): Promise<s
   }
 };
 
-export const decryptPHI = async (ciphertext: string, tenantId: string): Promise<string> => {
+export const decryptPHI = async (ciphertext: string, tenantId: string, keyIdentifier?: string): Promise<string> => {
   try {
     if (!ciphertext || !ciphertext.includes(':')) return ciphertext;
     const parts = ciphertext.split(':');
+    if (parts.length === 4) {
+      const key = await getKeyByIdentifier(tenantId, parts[0]);
+      const iv = Buffer.from(parts[1], 'hex');
+      const tag = Buffer.from(parts[2], 'hex');
+      const encrypted = Buffer.from(parts[3], 'hex');
+      const decipher = crypto.createDecipheriv(ALGORITHM, key, iv);
+      decipher.setAuthTag(tag);
+      const decrypted = Buffer.concat([decipher.update(encrypted), decipher.final()]);
+      return decrypted.toString('utf8');
+    }
     if (parts.length !== 3) return ciphertext;
     const iv = Buffer.from(parts[0], 'hex');
     const tag = Buffer.from(parts[1], 'hex');
     const encrypted = Buffer.from(parts[2], 'hex');
-    const key = await getTenantKey(tenantId);
+    const key = keyIdentifier
+      ? await getKeyByIdentifier(tenantId, keyIdentifier)
+      : await getTenantKey(tenantId);
     const decipher = crypto.createDecipheriv(ALGORITHM, key, iv);
     decipher.setAuthTag(tag);
     const decrypted = Buffer.concat([decipher.update(encrypted), decipher.final()]);
     return decrypted.toString('utf8');
   } catch (err) {
-    logger.error('PHI decryption failed', { error: (err as Error).message });
-    return '';
+    logger.error('PHI decryption failed', { error: (err as Error).message, tenantId });
+    throw err;
   }
 };
 
-export const clearKeyCache = (tenantId?: string): void => {
-  if (tenantId) {
+export const clearKeyCache = (tenantId?: string, keyIdentifier?: string): void => {
+  if (tenantId && keyIdentifier) {
+    const cached = keyCache.get(tenantId);
+    if (cached) cached.history.delete(keyIdentifier);
+  } else if (tenantId) {
     keyCache.delete(tenantId);
   } else {
     keyCache.clear();
   }
+};
+
+export const getActiveKeyIdentifier = async (tenantId: string): Promise<string> => {
+  const { keyIdentifier } = await getTenantKeyData(tenantId);
+  return keyIdentifier;
 };

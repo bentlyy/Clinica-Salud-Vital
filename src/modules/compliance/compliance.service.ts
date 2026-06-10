@@ -1,6 +1,7 @@
 import { pool } from '../../shared/db.js';
 import { BadRequestError, NotFoundError } from '../../utils/errors.js';
 import { logger } from '../../utils/logger.js';
+import { decryptPHI } from '../../shared/phi-encryption.service.js';
 
 export async function exportUserData(userId: number, tenantId: string) {
   const [userRes, bookingsRes, recordsRes, invoicesRes] = await Promise.all([
@@ -12,12 +13,22 @@ export async function exportUserData(userId: number, tenantId: string) {
 
   if (!userRes.rows[0]) throw new NotFoundError('User not found');
 
+  const clinicalRecords = await Promise.all(recordsRes.rows.map(async (r: Record<string, unknown>) => ({
+    ...r,
+    chief_complaint: typeof r.chief_complaint === 'string' && r.chief_complaint.includes(':')
+      ? await decryptPHI(r.chief_complaint as string, tenantId).catch(() => r.chief_complaint)
+      : r.chief_complaint,
+    diagnosis: typeof r.diagnosis === 'string' && r.diagnosis.includes(':')
+      ? await decryptPHI(r.diagnosis as string, tenantId).catch(() => r.diagnosis)
+      : r.diagnosis,
+  })));
+
   return {
     exportedAt: new Date().toISOString(),
     data: {
       profile: userRes.rows[0],
       bookings: bookingsRes.rows,
-      clinicalRecords: recordsRes.rows,
+      clinicalRecords,
       invoices: invoicesRes.rows,
     },
   };

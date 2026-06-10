@@ -17,6 +17,18 @@ vi.mock('../../src/shared/db.js', () => ({
   },
 }));
 
+vi.mock('../../src/shared/jwt.service.js', () => ({
+  jwtManager: {
+    verify: vi.fn((token) => {
+      try {
+        return JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
+      } catch { return null; }
+    }),
+    sign: vi.fn(() => 'mock-token'),
+    getJWKS: vi.fn(() => ({ keys: [] })),
+  },
+}));
+
 vi.mock('nodemailer', () => ({
   default: {
     createTransport: () => ({ sendMail: vi.fn().mockResolvedValue({}) }),
