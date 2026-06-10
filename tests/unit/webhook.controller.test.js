@@ -130,11 +130,11 @@ describe('webhookController.getDeliveries', () => {
 
   it('filters by webhook_id', async () => {
     vi.mocked(webhookService.getDeliveries).mockResolvedValue([]);
-    const req = { params: { webhook_id: '1' }, query: { limit: '10' } };
+    const req = { tenant_id: 'test', params: { webhook_id: '1' }, query: { limit: '10' } };
     const res = { json: vi.fn() };
     const next = vi.fn();
 
     await webhookController.getDeliveries(req, res, next);
-    expect(webhookService.getDeliveries).toHaveBeenCalledWith(1, 10);
+    expect(webhookService.getDeliveries).toHaveBeenCalledWith('test', 1, 10);
   });
 });

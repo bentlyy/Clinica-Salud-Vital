@@ -27,7 +27,7 @@ const sslConfig = !isInternalDb() && process.env.NODE_ENV === 'production'
   ? { rejectUnauthorized: !!dbCaCert, ...(dbCaCert ? { ca: dbCaCert } : {}) }
   : false;
 if (!isInternalDb() && process.env.NODE_ENV === 'production' && !dbCaCert) {
-  logger.warn('⚠️ DB_CA_CERT no configurado — conexión SSL sin verificación de certificado (recomendado: configurar DB_CA_CERT en variables de entorno)');
+  logger.error('❌ DB_CA_CERT no configurado — conexión SSL SIN VERIFICACIÓN DE CERTIFICADO (riesgo MITM). Configura DB_CA_CERT con el certificado CA de tu base de datos PostgreSQL en producción.');
 }
 
 export const pool = new Pool({
@@ -36,6 +36,8 @@ export const pool = new Pool({
   max: poolMax,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 15000,
+  statement_timeout: 30000, // 30s default
+  idle_in_transaction_session_timeout: 60000, // 60s
 });
 
 pool.on('connect', (_client: pg.PoolClient) => {
@@ -54,21 +56,17 @@ const wrappedQuery = function (this: typeof pool, text: string | pg.QueryConfig,
   if (!ctx) {
     return originalPoolQuery(text, values);
   }
-
-  // Prepend set_config as a literal (tenant_id comes from app context, not user input)
-  // This ensures set_config and the query run on the SAME connection without
-  // the overhead of pool.connect()/client.release() per query.
   const escapedTenantId = ctx.tenantId.replace(/'/g, "''");
+  const setConfigSql = `SELECT set_config('app.tenant_id', '${escapedTenantId}', false); `;
+
   if (typeof text === 'string') {
-    return originalPoolQuery(
-      `SELECT set_config('app.tenant_id', '${escapedTenantId}', false); ${text}`,
-      values
-    );
+    return originalPoolQuery(setConfigSql + text, values);
   }
+
   return originalPoolQuery({
-    ...text as pg.QueryConfig,
-    text: `SELECT set_config('app.tenant_id', '${escapedTenantId}', false); ${(text as pg.QueryConfig).text}`,
-    values: (text as pg.QueryConfig).values,
+    ...text,
+    text: setConfigSql + text.text,
+    values: text.values || values,
   });
 } as unknown as typeof pool.query;
 
@@ -111,6 +109,11 @@ export const verifyTenantContext = async (expectedTenantId: string): Promise<boo
     return false;
   }
 };
+
+// Read replica pool — same as primary if DATABASE_URL_READ_ONLY not configured
+// Set DATABASE_URL_READ_ONLY env var to route analytics/reporting queries to a read replica
+// TODO: Reemplazar con pool real a DATABASE_URL_READ_ONLY cuando esté disponible
+export const readPool = pool;
 
 export type Pool = typeof pool;
 export type PoolClient = ReturnType<typeof pool.connect>;

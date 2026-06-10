@@ -3,8 +3,7 @@ import * as doctorService from '../doctor/doctor.service.js';
 import { sendEmail } from '../../shared/email.service.js';
 import { bookingConfirmationTemplate } from './booking.email.js';
 import { enqueueJob } from '../../shared/queue.service.js';
-import jwt from 'jsonwebtoken';
-import { getConfirmJWTSecret } from '../../shared/jwt.js';
+import { jwtManager } from '../../shared/jwt.service.js';
 import { BadRequestError, NotFoundError } from '../../utils/errors.js';
 import { logger } from '../../utils/logger.js';
 import { isValidDate, isValidTime, getDayOfWeek } from '../../shared/date.js';
@@ -74,6 +73,7 @@ export const createBooking = async ({ doctor_id, user_id, date, time, duration =
   if (!isValidDate(date)) throw new BadRequestError('Invalid date format, use YYYY-MM-DD');
   if (!isValidTime(time)) throw new BadRequestError('Invalid time format, use HH:MM');
   if (duration <= 0 || duration > 480) throw new BadRequestError('Duration must be between 1 and 480 minutes');
+  if (duration % 5 !== 0) throw new BadRequestError('Duration must be a multiple of 5 minutes');
 
   const bookingDate = new Date(date);
   const today = new Date();
@@ -110,10 +110,9 @@ export const createBooking = async ({ doctor_id, user_id, date, time, duration =
 
     await validateBookingSlot({ doctorId: doctor_id, date, time, duration, client, tenantId });
 
-    const confirmToken = jwt.sign(
+    const confirmToken = jwtManager.signInvite(
       { user_id, doctor_id, date, time },
-      getConfirmJWTSecret(),
-      { expiresIn: '7d' }
+      '7d'
     );
 
     const result = await client.query(

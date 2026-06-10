@@ -21,29 +21,31 @@ export default function DoctorsPage() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchDoctors = async () => {
+    const controller = new AbortController();
+    (async () => {
       try {
-        const data = await getDoctors();
+        const data = await getDoctors({ signal: controller.signal });
         setDoctors(Array.isArray(data) ? data : (data.data || []));
       } catch {
         setError(t('doctors.error'));
       } finally {
         setLoadingDoctors(false);
       }
-    };
-    fetchDoctors();
+    })();
+    return () => controller.abort();
   }, [t]);
 
   useEffect(() => {
     if (!selectedDoctor || !date) return;
+    const controller = new AbortController();
 
-    const loadSlots = async () => {
+    (async () => {
       try {
         setLoadingSlots(true);
         setError(null);
         setSuccessMsg(null);
 
-        const data = await getAvailableSlots(selectedDoctor, date);
+        const data = await getAvailableSlots(selectedDoctor, date, { signal: controller.signal });
         setSlots(Array.isArray(data) ? data : []);
         setSelectedTime(null);
       } catch {
@@ -51,9 +53,9 @@ export default function DoctorsPage() {
       } finally {
         setLoadingSlots(false);
       }
-    };
+    })();
 
-    loadSlots();
+    return () => controller.abort();
   }, [selectedDoctor, date, t]);
 
   const handleBooking = async () => {

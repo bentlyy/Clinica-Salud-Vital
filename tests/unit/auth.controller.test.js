@@ -1,5 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
+const mockQuery = vi.hoisted(() => vi.fn());
+
+vi.mock('../../src/shared/db.js', () => ({
+  pool: { query: mockQuery },
+}));
+
 vi.mock('../../src/modules/auth/auth.service.js', () => ({
   register: vi.fn(),
   login: vi.fn(),
@@ -178,8 +184,9 @@ describe('enable2FA', () => {
   });
 
   it('enables 2FA', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [{ email: 'test@test.com' }] });
     vi.mocked(auth2faService.enable2FA).mockResolvedValue({ secret: 'JBSWY3DPEHPK3PXP' });
-    const req = { user: { id: 1, email: 'test@test.com' }, body: {} };
+    const req = { user: { id: 1 }, body: {} };
     const res = mkRes();
 
     authController.enable2FA(req, res, vi.fn());

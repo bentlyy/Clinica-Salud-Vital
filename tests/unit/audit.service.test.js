@@ -10,10 +10,12 @@ import { logAction, getAuditLogs } from '../../src/modules/audit/audit.service.j
 
 beforeEach(() => {
   vi.clearAllMocks();
+  process.env.AUDIT_HMAC_SECRET = 'test-secret-32-chars-minimum-length!!';
 });
 
 describe('logAction', () => {
   it('logs action with null user_id', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] });
     mockQuery.mockResolvedValueOnce({ rows: [] });
 
     await logAction({
@@ -21,10 +23,12 @@ describe('logAction', () => {
       resource_type: 'system',
     });
 
-    expect(mockQuery.mock.calls[0][1][0]).toBeNull();
+    const insertCall = mockQuery.mock.calls.find(c => c[0].startsWith('INSERT'));
+    expect(insertCall[1][0]).toBeNull();
   });
 
   it('logs action without tenant_id', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] });
     mockQuery.mockResolvedValueOnce({ rows: [] });
 
     await logAction({
@@ -34,13 +38,15 @@ describe('logAction', () => {
       ip_address: '127.0.0.1',
     });
 
-    expect(mockQuery).toHaveBeenCalledWith(
-      expect.not.stringContaining('tenant_id'),
-      expect.arrayContaining([1, 'CREATE', 'user'])
-    );
+    const insertCall = mockQuery.mock.calls.find(c => c[0].startsWith('INSERT'));
+    expect(insertCall[0]).not.toContain('tenant_id');
+    expect(insertCall[1]).toContain(1);
+    expect(insertCall[1]).toContain('CREATE');
+    expect(insertCall[1]).toContain('user');
   });
 
   it('logs action with tenant_id', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] });
     mockQuery.mockResolvedValueOnce({ rows: [] });
 
     await logAction({
@@ -50,11 +56,13 @@ describe('logAction', () => {
       tenant_id: 'tenant-1',
     });
 
-    expect(mockQuery.mock.calls[0][0]).toContain('tenant_id');
-    expect(mockQuery.mock.calls[0][1]).toContain('tenant-1');
+    const insertCall = mockQuery.mock.calls.find(c => c[0].startsWith('INSERT'));
+    expect(insertCall[0]).toContain('tenant_id');
+    expect(insertCall[1]).toContain('tenant-1');
   });
 
   it('includes resource_id and new_values', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] });
     mockQuery.mockResolvedValueOnce({ rows: [] });
 
     await logAction({
@@ -65,11 +73,13 @@ describe('logAction', () => {
       new_values: { status: 'confirmed' },
     });
 
-    expect(mockQuery.mock.calls[0][1]).toContain(42);
-    expect(mockQuery.mock.calls[0][1]).toContain(JSON.stringify({ status: 'confirmed' }));
+    const insertCall = mockQuery.mock.calls.find(c => c[0].startsWith('INSERT'));
+    expect(insertCall[1]).toContain(42);
+    expect(insertCall[1]).toContain(JSON.stringify({ status: 'confirmed' }));
   });
 
   it('includes old_values, ip_address and user_agent', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] });
     mockQuery.mockResolvedValueOnce({ rows: [] });
 
     await logAction({
@@ -82,9 +92,10 @@ describe('logAction', () => {
       user_agent: 'TestAgent/1.0',
     });
 
-    expect(mockQuery.mock.calls[0][1]).toContain(JSON.stringify({ status: 'pending' }));
-    expect(mockQuery.mock.calls[0][1]).toContain('192.168.1.1');
-    expect(mockQuery.mock.calls[0][1]).toContain('TestAgent/1.0');
+    const insertCall = mockQuery.mock.calls.find(c => c[0].startsWith('INSERT'));
+    expect(insertCall[1]).toContain(JSON.stringify({ status: 'pending' }));
+    expect(insertCall[1]).toContain('192.168.1.1');
+    expect(insertCall[1]).toContain('TestAgent/1.0');
   });
 });
 

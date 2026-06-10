@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import { pool } from '../../shared/db.js';
 import { logger } from '../../utils/logger.js';
 import { BadRequestError, NotFoundError } from '../../utils/errors.js';
@@ -195,10 +196,17 @@ export const checkFeatureAccess = async (tenantId: string, featureKey: string): 
   return false;
 };
 
+const limitLockId = (tenantId: string, resource: string): number => {
+  const hash = crypto.createHash('md5').update(`${tenantId}:${resource}`).digest();
+  return hash.readUInt32LE(0);
+};
+
 export const checkLimits = async (
   tenantId: string,
   resource: 'doctors' | 'patients' | 'storage' | 'ml_predictions' | 'ml_training'
 ): Promise<{ allowed: boolean; current: number; limit: number }> => {
+  await pool.query('SELECT pg_advisory_xact_lock($1)', [limitLockId(tenantId, resource)]);
+
   const plan = await getTenantPlan(tenantId);
   if (!plan) return { allowed: false, current: 0, limit: 0 };
 

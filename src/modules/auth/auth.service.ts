@@ -61,7 +61,7 @@ const REFRESH_TOKEN_EXPIRY_DAYS = 30;
 
 const generateAccessToken = (user: { id: number; email: string; role: UserRole; tenant_id: string; token_version?: number }): string => {
   return jwtManager.sign(
-    { id: user.id, email: user.email, role: user.role || 'user', tenant_id: user.tenant_id, token_version: user.token_version || 0 },
+    { id: user.id, role: user.role || 'user', tenant_id: user.tenant_id, token_version: user.token_version || 0 },
     { expiresIn: ACCESS_TOKEN_EXPIRY }
   );
 };
@@ -372,6 +372,10 @@ export const changePassword = async ({ userId, currentPassword, newPassword }: C
 
   const isValid = await bcrypt.compare(currentPassword, userResult.rows[0].password);
   if (!isValid) throw new BadRequestError('Current password is incorrect');
+
+  if (currentPassword === newPassword) {
+    throw new BadRequestError('New password must be different from current password');
+  }
 
   const hashedPassword = await bcrypt.hash(newPassword, 12);
   await pool.query(

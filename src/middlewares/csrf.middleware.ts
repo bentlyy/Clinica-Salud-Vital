@@ -26,7 +26,7 @@ export const csrfProtection = (req: Request, res: Response, next: NextFunction) 
   // Si el frontend envía ambos, validamos (defense-in-depth).
   // Si falta header, igual permitimos — SameSite ya protege.
   if (!cookieToken || !headerToken) {
-    return next();
+    return next(new BadRequestError('CSRF token missing'));
   }
 
   if (!crypto.timingSafeEqual(Buffer.from(headerToken), Buffer.from(cookieToken))) {
@@ -41,12 +41,13 @@ export const setCsrfCookie = (req: Request, res: Response, next: NextFunction): 
     const csrfToken = crypto.randomBytes(32).toString('hex');
     req.csrfToken = csrfToken;
     res.cookie(CSRF_COOKIE, csrfToken, {
-      httpOnly: false,
+      httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
       path: '/',
       maxAge: 24 * 60 * 60 * 1000,
     });
+    res.setHeader('X-CSRF-Token', csrfToken);
   }
   next();
 };
