@@ -9,12 +9,11 @@ api.interceptors.response.use(
   (response) => {
     const body = response.data;
     if (body && typeof body === 'object' && Array.isArray(body.data)) {
-      const { data, ...rest } = body;
+      const { data, pagination, ...rest } = body;
       response.data = data;
       response.body = body;
-      if (Object.keys(rest).length > 0) {
-        Object.assign(response, rest);
-      }
+      if (pagination) response.pagination = pagination;
+      if (Object.keys(rest).length > 0) response.meta = rest;
     }
     return response;
   },

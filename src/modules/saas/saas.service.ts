@@ -311,7 +311,8 @@ export const onboardTenant = async (data: {
   timezone?: string;
   planCode?: string;
 }): Promise<{ tenantId: string; message: string }> => {
-  const { tenantName, domain, adminEmail, adminPassword, adminName, locale, timezone, planCode } = data;
+  const { tenantName, domain, adminEmail, adminPassword, adminName, locale, timezone, planCode: rawPlanCode } = data;
+  const planCode = rawPlanCode && !['free', 'basic'].includes(rawPlanCode) ? 'free' : (rawPlanCode || 'free');
   const tenantId = domain;
 
   const client = await pool.connect();

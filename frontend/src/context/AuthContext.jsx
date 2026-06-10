@@ -46,13 +46,18 @@ export const AuthProvider = ({ children }) => {
 
     const res = await api.post('/auth/login', payload);
 
-    const { user: userData } = res.data;
+    const body = res.body || res.data;
+    const userData = body.user || body;
+    const accessToken = body.access_token || body.token;
+    const refreshToken = body.refresh_token;
 
-    if (!userData) {
+    if (!userData || !accessToken) {
       throw new Error('Invalid response from server');
     }
 
-    localStorage.setItem('user', JSON.stringify(userData));
+    localStorage.setItem('access_token', accessToken);
+    if (refreshToken) localStorage.setItem('refresh_token', refreshToken);
+    localStorage.setItem('user', JSON.stringify({ id: userData.id, role: userData.role }));
     setUser(userData);
 
     return userData;

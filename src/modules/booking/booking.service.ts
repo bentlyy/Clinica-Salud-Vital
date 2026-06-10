@@ -4,7 +4,7 @@ import { sendEmail } from '../../shared/email.service.js';
 import { bookingConfirmationTemplate } from './booking.email.js';
 import { enqueueJob } from '../../shared/queue.service.js';
 import jwt from 'jsonwebtoken';
-import { getJWTSecret } from '../../shared/jwt.js';
+import { getConfirmJWTSecret } from '../../shared/jwt.js';
 import { BadRequestError, NotFoundError } from '../../utils/errors.js';
 import { logger } from '../../utils/logger.js';
 import { isValidDate, isValidTime, getDayOfWeek } from '../../shared/date.js';
@@ -112,7 +112,7 @@ export const createBooking = async ({ doctor_id, user_id, date, time, duration =
 
     const confirmToken = jwt.sign(
       { user_id, doctor_id, date, time },
-      getJWTSecret(),
+      getConfirmJWTSecret(),
       { expiresIn: '7d' }
     );
 
