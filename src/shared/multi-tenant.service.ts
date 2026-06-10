@@ -11,7 +11,8 @@ export interface Tenant {
   active: boolean;
 }
 
-const tenants = new Map<string, Tenant>();
+let tenants = new Map<string, Tenant>();
+let loadingLock: Promise<void> | null = null;
 let refreshInterval: ReturnType<typeof setInterval> | null = null;
 
 const REFRESH_INTERVAL_MS = 30 * 1000;
@@ -37,29 +38,34 @@ export const tenantService = {
   },
 
   clear(): void {
-    tenants.clear();
+    tenants = new Map();
   },
 
   async loadFromDB(): Promise<void> {
-    try {
-      const result = await pool.query<Tenant>(
-        'SELECT id, name, domain, locale, timezone, config, active FROM tenants WHERE active = true'
-      );
-      const loaded = result.rows;
-      const oldCount = tenantService.getAll().length;
-      const newMap = new Map<string, Tenant>();
-      for (const tenant of loaded) {
-        newMap.set(tenant.id, tenant);
-        newMap.set(tenant.domain, tenant);
+    // Deduplicate concurrent calls: only one load at a time
+    if (loadingLock) return loadingLock;
+    loadingLock = (async () => {
+      try {
+        const result = await pool.query<Tenant>(
+          'SELECT id, name, domain, locale, timezone, config, active FROM tenants WHERE active = true'
+        );
+        const loaded = result.rows;
+        const oldCount = tenantService.getAll().length;
+        const newMap = new Map<string, Tenant>();
+        for (const tenant of loaded) {
+          newMap.set(tenant.id, tenant);
+          newMap.set(tenant.domain, tenant);
+        }
+        // Atomic reference swap — no race window
+        tenants = newMap;
+        logger.info(`Tenants loaded from DB: ${loaded.length} (was ${oldCount})`);
+      } catch (error) {
+        logger.error('Failed to load tenants from DB', { error: (error as Error).message });
+      } finally {
+        loadingLock = null;
       }
-      tenants.clear();
-      for (const [key, value] of newMap) {
-        tenants.set(key, value);
-      }
-      logger.info(`Tenants loaded from DB: ${loaded.length} (was ${oldCount})`);
-    } catch (error) {
-      logger.error('Failed to load tenants from DB', { error: (error as Error).message });
-    }
+    })();
+    return loadingLock;
   },
 
   startRefresh(): void {

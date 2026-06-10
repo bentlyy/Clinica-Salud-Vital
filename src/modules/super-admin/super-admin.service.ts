@@ -224,10 +224,10 @@ export const listUsers = async (
   };
 };
 
-export const setUserActive = async (userId: number, active: boolean): Promise<Record<string, unknown>> => {
+export const setUserActive = async (userId: number, active: boolean, tenantId?: string): Promise<Record<string, unknown>> => {
   const result = await pool.query(
-    `UPDATE users SET active = $1 WHERE id = $2 RETURNING id, email, name, role, active, tenant_id`,
-    [active, userId]
+    `UPDATE users SET active = $1 WHERE id = $2${tenantId ? ' AND tenant_id = $3' : ''} RETURNING id, email, name, role, active, tenant_id`,
+    tenantId ? [active, userId, tenantId] : [active, userId]
   );
   if (result.rows.length === 0) throw new NotFoundError('User not found');
   return result.rows[0];

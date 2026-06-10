@@ -73,14 +73,35 @@ export const validateEnvSecurity = (): void => {
     logger.warn('⚠️ INVITE_JWT_SECRET debería tener al menos 32 caracteres.');
   }
 
-  // PHI_ENCRYPTION_KEY validation (MANDATORY)
-  const phiKey = process.env.PHI_ENCRYPTION_KEY;
-  if (!phiKey) {
-    throw new UnauthorizedError('PHI_ENCRYPTION_KEY no está definida. Es obligatoria para cifrado PHI.');
+  // PHI_MASTER_KEY validation (MANDATORY — envelope encryption master key)
+  const phiMasterKey = process.env.PHI_MASTER_KEY;
+  if (!phiMasterKey) {
+    throw new UnauthorizedError('PHI_MASTER_KEY no está definida. Es obligatoria para cifrado PHI (64 hex chars).');
   }
-  const phiKeyBytes = Buffer.from(phiKey, 'hex');
+  const phiKeyBytes = Buffer.from(phiMasterKey, 'hex');
   if (phiKeyBytes.length !== 32) {
-    throw new UnauthorizedError('PHI_ENCRYPTION_KEY debe ser exactamente 64 caracteres hexadecimales (32 bytes).');
+    throw new UnauthorizedError('PHI_MASTER_KEY debe ser exactamente 64 caracteres hexadecimales (32 bytes).');
+  }
+
+  // AUDIT_HMAC_SECRET validation (MANDATORY — audit chain integrity)
+  const auditSecret = process.env.AUDIT_HMAC_SECRET;
+  if (!auditSecret) {
+    throw new UnauthorizedError('AUDIT_HMAC_SECRET no está definida. Es obligatoria para la integridad del audit log.');
+  }
+  if (auditSecret.length < 32) {
+    throw new UnauthorizedError('AUDIT_HMAC_SECRET debe tener al menos 32 caracteres.');
+  }
+
+  // JWT_PRIVATE_KEY / JWT_PUBLIC_KEY validation (production only)
+  if (isProduction) {
+    const jwtPriv = process.env.JWT_PRIVATE_KEY;
+    const jwtPub = process.env.JWT_PUBLIC_KEY;
+    if (jwtPriv && !jwtPub) {
+      throw new UnauthorizedError('JWT_PRIVATE_KEY está definida pero JWT_PUBLIC_KEY no. Deben definirse ambas.');
+    }
+    if (jwtPub && !jwtPriv) {
+      throw new UnauthorizedError('JWT_PUBLIC_KEY está definida pero JWT_PRIVATE_KEY no. Deben definirse ambas.');
+    }
   }
 
   // ENCRYPTION_KEY validation

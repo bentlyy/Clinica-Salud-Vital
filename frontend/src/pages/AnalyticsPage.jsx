@@ -3,6 +3,7 @@ import { useTheme } from '../context/useTheme';
 import { useI18n } from '../i18n/useI18n';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, AreaChart, Area } from 'recharts';
 import api from '../api/axios';
+import { logger } from '../utils/logger.js';
 
 const LIGHT_COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
 const DARK_COLORS = ['#4A9EFF', '#00E6A7', '#FFD444', '#FF9955', '#A78BFA', '#6EE7B7'];
@@ -361,7 +362,7 @@ export default function AnalyticsPage() {
       });
       setModelStatus(status.data || {});
     } catch (err) {
-      console.error('Error fetching analytics:', err);
+      logger.error('Error fetching analytics:', err);
       setFetchError(true);
     } finally {
       setLoading(false);
@@ -373,7 +374,7 @@ export default function AnalyticsPage() {
       const status = await api.get('/ml/status');
       setModelStatus(status.data);
     } catch (err) {
-      console.error('Error fetching model status:', err);
+      logger.error('Error fetching model status:', err);
     }
   };
 
@@ -390,7 +391,7 @@ export default function AnalyticsPage() {
       await fetchAllData();
       downloadExport();
     } catch (err) {
-      console.error('Error training models:', err);
+      logger.error('Error training models:', err);
     } finally {
       setTraining(false);
     }
@@ -408,7 +409,7 @@ export default function AnalyticsPage() {
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
     } catch (err) {
-      console.error('Error exporting analytics:', err);
+      logger.error('Error exporting analytics:', err);
     }
   };
 

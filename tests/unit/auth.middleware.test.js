@@ -5,7 +5,7 @@ const { mockVerify } = vi.hoisted(() => ({
 }));
 
 vi.mock('../../src/shared/jwt.service.js', () => ({
-  jwtManager: { verify: mockVerify },
+  jwtManager: { verify: mockVerify, signInvite: vi.fn(() => 'mock-invite-token') },
 }));
 
 vi.mock('../../src/shared/db.js', () => ({

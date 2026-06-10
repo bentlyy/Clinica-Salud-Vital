@@ -64,6 +64,6 @@ export const remove = asyncHandler(async (req: Request, res: Response) => {
 export const getDeliveries = asyncHandler(async (req: Request, res: Response) => {
   const webhookId = req.params.webhook_id ? Number(req.params.webhook_id) : undefined;
   const limit = Number(req.query.limit) || 50;
-  const deliveries = await webhookService.getDeliveries(webhookId, limit);
+  const deliveries = await webhookService.getDeliveries(req.tenant_id, webhookId, limit);
   res.json({ data: deliveries });
 });

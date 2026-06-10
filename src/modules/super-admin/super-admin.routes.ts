@@ -7,22 +7,21 @@ import { updateTenantSchema, adminCreateTenantSchema } from './super-admin.schem
 const router = Router();
 
 router.use(authMiddleware);
-router.use(authorize('superadmin'));
 
-router.get('/stats', superAdminController.getGlobalStats);
+router.get('/stats', authorize('superadmin'), superAdminController.getGlobalStats);
 
-router.get('/analytics/dashboard', superAdminController.getDashboardData);
-router.get('/analytics/top-tenants', superAdminController.getTopTenantsData);
-router.get('/analytics/revenue', superAdminController.getRevenueData);
-router.get('/analytics/growth', superAdminController.getGrowthData);
+router.get('/analytics/dashboard', authorize('superadmin'), superAdminController.getDashboardData);
+router.get('/analytics/top-tenants', authorize('superadmin'), superAdminController.getTopTenantsData);
+router.get('/analytics/revenue', authorize('superadmin'), superAdminController.getRevenueData);
+router.get('/analytics/growth', authorize('superadmin'), superAdminController.getGrowthData);
 
-router.get('/tenants', superAdminController.listTenants);
-router.get('/tenants/:id', superAdminController.getTenantDetail);
-router.post('/tenants', validateZod(adminCreateTenantSchema), superAdminController.adminCreateTenant);
-router.patch('/tenants/:id', validateZod(updateTenantSchema), superAdminController.updateTenant);
-router.delete('/tenants/:id', superAdminController.deleteTenant);
+router.get('/tenants', authorize('superadmin'), superAdminController.listTenants);
+router.get('/tenants/:id', authorize('superadmin'), superAdminController.getTenantDetail);
+router.post('/tenants', authorize('superadmin'), validateZod(adminCreateTenantSchema), superAdminController.adminCreateTenant);
+router.patch('/tenants/:id', authorize('superadmin'), validateZod(updateTenantSchema), superAdminController.updateTenant);
+router.delete('/tenants/:id', authorize('superadmin'), superAdminController.deleteTenant);
 
-router.get('/users', superAdminController.listUsers);
-router.patch('/users/:userId/active', superAdminController.toggleUserActive);
+router.get('/users', authorize('superadmin'), superAdminController.listUsers);
+router.patch('/users/:userId/active', authorize('superadmin'), superAdminController.toggleUserActive);
 
 export default router;

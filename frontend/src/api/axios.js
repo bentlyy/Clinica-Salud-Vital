@@ -5,8 +5,25 @@ const api = axios.create({
   withCredentials: true,
 });
 
+api.interceptors.request.use(
+  (config) => {
+    if (config.method && !['get', 'head', 'options'].includes(config.method)) {
+      const csrfToken = localStorage.getItem('csrf_token');
+      if (csrfToken) {
+        config.headers['X-CSRF-Token'] = csrfToken;
+      }
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
 api.interceptors.response.use(
   (response) => {
+    const csrfHeader = response.headers['x-csrf-token'];
+    if (csrfHeader) {
+      localStorage.setItem('csrf_token', csrfHeader);
+    }
     const body = response.data;
     if (body && typeof body === 'object' && Array.isArray(body.data)) {
       const { data, pagination, ...rest } = body;
@@ -18,16 +35,20 @@ api.interceptors.response.use(
     return response;
   },
   async (error) => {
+    if (axios.isCancel(error)) return Promise.reject(error);
+
     const status = error.response?.status;
     const code = error.response?.data?.code;
 
     if (status === 401 && code === 'TOKEN_EXPIRED') {
       try {
-        await axios.post(
+        const { data } = await axios.post(
           `${api.defaults.baseURL}/auth/refresh`,
           {},
           { withCredentials: true }
         );
+
+        error.config.headers['Authorization'] = 'Bearer ' + data.access_token;
         return api(error.config);
       } catch {
         localStorage.removeItem('user');

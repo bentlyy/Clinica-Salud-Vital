@@ -193,14 +193,14 @@ describe('webhookService.isInternalHost', () => {
 describe('webhookService.getDeliveries', () => {
   it('returns deliveries', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [{ id: 1, status: 'delivered' }] });
-    const result = await webhookService.getDeliveries();
+    const result = await webhookService.getDeliveries('default');
     expect(result).toHaveLength(1);
   });
 
   it('filters by webhookId', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [] });
-    await webhookService.getDeliveries(1, 50);
-    expect(mockQuery).toHaveBeenCalledWith(expect.stringContaining('wd.webhook_id = $1'), expect.any(Array));
+    await webhookService.getDeliveries('default', 1, 50);
+    expect(mockQuery).toHaveBeenCalledWith(expect.stringContaining('tenant_id = $1'), expect.any(Array));
   });
 });
 

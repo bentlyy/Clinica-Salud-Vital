@@ -8,6 +8,10 @@ export const getJWTSecret = (): string => {
   return secret;
 };
 
+/**
+ * @deprecated Desde v3.2 — Migrado a RS256 vía jwtManager.signInvite().
+ *             Los tokens de invitación ahora usan el mismo par RSA-4096 que access tokens.
+ */
 export const getInviteJWTSecret = (): string => {
   const secret = process.env.INVITE_JWT_SECRET;
   if (!secret || secret === process.env.JWT_SECRET) {
@@ -16,6 +20,10 @@ export const getInviteJWTSecret = (): string => {
   return secret;
 };
 
+/**
+ * @deprecated Desde v3.2 — Migrado a RS256 vía jwtManager.signInvite().
+ *             Los tokens de confirmación ahora usan el mismo par RSA-4096 que access tokens.
+ */
 export const getConfirmJWTSecret = (): string => {
   const secret = process.env.CONFIRM_JWT_SECRET;
   if (!secret || secret === process.env.JWT_SECRET) {

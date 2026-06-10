@@ -1,9 +1,8 @@
 import { pool } from '../../shared/db.js';
 import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
 import { sendEmail } from '../../shared/email.service.js';
 import { doctorCredentialsEmail, invitationEmail } from './doctor.email.js';
-import { getInviteJWTSecret } from '../../shared/jwt.js';
+import { jwtManager } from '../../shared/jwt.service.js';
 import { BadRequestError, NotFoundError } from '../../utils/errors.js';
 import { logger } from '../../utils/logger.js';
 import crypto from 'crypto';
@@ -109,10 +108,9 @@ export const registerDoctor = async ({ name, specialty, email, rut, phone }: Doc
 
     await client.query('COMMIT');
 
-    const setupToken = jwt.sign(
+    const setupToken = jwtManager.signInvite(
       { id: userId, purpose: 'setup-password' },
-      getInviteJWTSecret(),
-      { expiresIn: '24h' }
+      '24h'
     );
 
     sendEmail({
@@ -233,10 +231,9 @@ export const invitePerson = async (input: InvitePersonInput, tenantId: string): 
   const existing = await pool.query('SELECT 1 FROM users WHERE email = $1 AND tenant_id = $2', [email, tenantId]);
   if (existing.rows.length > 0) throw new BadRequestError('Email ya registrado en este tenant');
 
-  const inviteToken = jwt.sign(
+  const inviteToken = jwtManager.signInvite(
     { email, name: name || email, role, specialty: specialty || null, tenant_id: tenantId, purpose: 'invite' },
-    getInviteJWTSecret(),
-    { expiresIn: '7d' }
+    '7d'
   );
 
   const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
@@ -256,13 +253,11 @@ export const invitePerson = async (input: InvitePersonInput, tenantId: string): 
 };
 
 export const verifyInviteToken = (token: string): { email: string; name: string; role: string; specialty: string | null; tenant_id: string | null } => {
-  try {
-    const payload = jwt.verify(token, getInviteJWTSecret()) as { email: string; name: string; role: string; specialty: string | null; tenant_id: string | null; purpose: string };
-    if (payload.purpose !== 'invite') throw new BadRequestError('Token inválido');
-    return payload;
-  } catch {
+  const payload = jwtManager.verify<{ email: string; name: string; role: string; specialty: string | null; tenant_id: string | null; purpose: string }>(token);
+  if (!payload || payload.purpose !== 'invite') {
     throw new BadRequestError('Token de invitación inválido o expirado');
   }
+  return payload;
 };
 
 export const listTenantUsers = async (

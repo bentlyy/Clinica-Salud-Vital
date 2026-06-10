@@ -122,7 +122,7 @@ describe('billingController.getInvoiceById', () => {
 describe('billingController.createInvoice', () => {
   it('creates and returns 201', async () => {
     vi.mocked(billingService.createInvoice).mockResolvedValue({ id: 1 });
-    const req = { tenant_id: 'test', body: { patient_id: 1, total: 100 } };
+    const req = { tenant_id: 'test', body: { patient_id: 1, total: 100 }, headers: {} };
     const res = { status: vi.fn().mockReturnThis(), json: vi.fn() };
     const next = vi.fn();
 

@@ -1,7 +1,7 @@
-import { Request, Response } from 'express';
+import { Request, Response, RequestHandler } from 'express';
 import { asyncHandler } from '../../middlewares/asyncHandler.middleware.js';
 import * as complianceService from './compliance.service.js';
-import { BadRequestError, UnauthorizedError } from '../../utils/errors.js';
+import { BadRequestError, UnauthorizedError, NotFoundError } from '../../utils/errors.js';
 
 export const exportMyData = asyncHandler(async (req: Request, res: Response) => {
   if (!req.user) {
@@ -43,4 +43,30 @@ export const updateConsent = asyncHandler(async (req: Request, res: Response) =>
     req.ip || ''
   );
   res.json({ message: 'Consent updated' });
+});
+
+export const erasePatientData: RequestHandler = asyncHandler(async (req: Request, res: Response) => {
+  if (!req.user) {
+    throw new UnauthorizedError('Authentication required');
+  }
+  const rawId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+  const patientId = parseInt(rawId, 10);
+  if (isNaN(patientId)) {
+    throw new BadRequestError('Invalid patient ID');
+  }
+  const result = await complianceService.deletePatientData(patientId, req.tenant_id);
+  res.json(result);
+});
+
+export const getPatientDataExport: RequestHandler = asyncHandler(async (req: Request, res: Response) => {
+  if (!req.user) {
+    throw new UnauthorizedError('Authentication required');
+  }
+  const rawId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+  const patientId = parseInt(rawId, 10);
+  if (isNaN(patientId)) {
+    throw new BadRequestError('Invalid patient ID');
+  }
+  const data = await complianceService.exportPatientData(patientId, req.tenant_id);
+  res.json(data);
 });

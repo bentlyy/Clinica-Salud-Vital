@@ -77,9 +77,9 @@ ALTER TABLE IF EXISTS subscriptions ALTER COLUMN tenant_id SET DEFAULT 'default'
 ALTER TABLE IF EXISTS tenant_features ALTER COLUMN tenant_id SET NOT NULL;
 ALTER TABLE IF EXISTS tenant_features ALTER COLUMN tenant_id SET DEFAULT 'default';
 
--- Usage records
-ALTER TABLE IF EXISTS usage_records ALTER COLUMN tenant_id SET NOT NULL;
-ALTER TABLE IF EXISTS usage_records ALTER COLUMN tenant_id SET DEFAULT 'default';
+-- Tenant usage (real table name, not usage_records)
+ALTER TABLE IF EXISTS tenant_usage ALTER COLUMN tenant_id SET NOT NULL;
+ALTER TABLE IF EXISTS tenant_usage ALTER COLUMN tenant_id SET DEFAULT 'default';
 
 -- User consents (GDPR)
 ALTER TABLE IF EXISTS user_consents ALTER COLUMN tenant_id SET NOT NULL;

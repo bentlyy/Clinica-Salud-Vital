@@ -29,6 +29,9 @@ const initStripe = async (): Promise<any> => {
   const isConfigured = secretKey.startsWith('sk_test_') || secretKey.startsWith('sk_live_');
 
   if (!isConfigured) {
+    if (process.env.NODE_ENV === 'production') {
+      logger.error('⚠️⚠️⚠️ STRIPE EN MODO STUB EN PRODUCCIÓN — Los pagos NO se procesarán. Configura STRIPE_SECRET_KEY.');
+    }
     logger.info('Stripe in stub mode (no valid key configured)');
     return createStub();
   }
