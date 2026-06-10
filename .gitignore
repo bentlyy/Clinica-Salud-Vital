@@ -46,6 +46,9 @@ coverage/
 # Docker
 db_data/
 
+# Generated keys (tests, JWKS rotation)
+keys/
+
 # Temporary files
 tmp/
 temp/
