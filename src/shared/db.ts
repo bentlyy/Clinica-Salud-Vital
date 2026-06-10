@@ -47,6 +47,7 @@ pool.on('error', (err: Error) => {
 });
 
 const originalPoolQuery = pool.query.bind(pool);
+const originalConnect = pool.connect.bind(pool);
 
 const wrappedQuery = function (this: typeof pool, text: string | pg.QueryConfig, values?: any[]) {
   const ctx = tenantAls.getStore();
