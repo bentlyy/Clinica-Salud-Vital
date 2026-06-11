@@ -9,6 +9,7 @@ export const AuthProvider = ({ children }) => {
 
   const logout = useCallback(async () => {
     localStorage.removeItem('user');
+    localStorage.removeItem('tenant_id');
     setUser(null);
     try {
       await api.post('/auth/logout');
@@ -32,6 +33,7 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const handleAuthExpired = () => {
       localStorage.removeItem('user');
+      localStorage.removeItem('tenant_id');
       setUser(null);
       setLoading(false);
     };
@@ -55,6 +57,9 @@ export const AuthProvider = ({ children }) => {
     }
 
     localStorage.setItem('user', JSON.stringify(userData));
+    if (userData.tenant_id) {
+      localStorage.setItem('tenant_id', userData.tenant_id);
+    }
     setUser(userData);
 
     return userData;
