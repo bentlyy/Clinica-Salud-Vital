@@ -43,9 +43,6 @@ export const pool = new Pool({
 
 pool.on('connect', (client: pg.PoolClient) => {
   logger.info('DB connected');
-  client.query("SET statement_timeout = '30000'").catch((err: Error) => {
-    logger.warn('Could not SET statement_timeout on connection', { error: err.message });
-  });
 });
 
 pool.on('error', (err: Error) => {
