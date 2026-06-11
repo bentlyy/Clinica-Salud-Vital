@@ -23,7 +23,7 @@ export const securityMiddleware = [
         baseUri: ["'none'"],
       },
     },
-    crossOriginEmbedderPolicy: { policy: 'require-corp' },
+    crossOriginEmbedderPolicy: { policy: 'credentialless' },
     crossOriginOpenerPolicy: { policy: 'same-origin' },
     crossOriginResourcePolicy: { policy: 'same-origin' },
     dnsPrefetchControl: true,
