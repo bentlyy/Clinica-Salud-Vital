@@ -141,10 +141,15 @@ app.use(cors({
 /* Serve frontend static files + SPA catch-all before tenant middleware */
 if (process.env.NODE_ENV === 'production') {
   const frontendPath = resolve(__dirname, '../frontend/dist');
+  const indexPath = resolve(frontendPath, 'index.html');
   app.use(express.static(frontendPath));
   /* SPA: rutas que no empiezan con /api/ → sirven index.html sin tenant */
   app.get(/^\/(?!api\/)/, (_req, res) => {
-    res.sendFile(resolve(frontendPath, 'index.html'));
+    res.sendFile(indexPath, (err) => {
+      if (err) {
+        res.type('html').send(`<!doctype html><html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>Salud Vital</title></head><body><div id="root"></div><script>window.__INITIAL_STATE__={translations:{}}</script></body></html>`);
+      }
+    });
   });
 }
 
