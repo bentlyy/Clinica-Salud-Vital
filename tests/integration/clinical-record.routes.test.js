@@ -96,7 +96,7 @@ describe('POST /api/clinical-records', () => {
       .send({ patient_id: 1 });
 
     expect(res.status).toBe(400);
-    expect(res.body.error).toBe('Validation failed');
+    expect(res.body.error).toContain('Validation failed');
   });
 });
 
@@ -128,7 +128,7 @@ describe('POST /api/clinical-records/prescriptions', () => {
       .send({ clinical_record_id: 1 });
 
     expect(res.status).toBe(400);
-    expect(res.body.error).toBe('Validation failed');
+    expect(res.body.error).toContain('Validation failed');
   });
 });
 

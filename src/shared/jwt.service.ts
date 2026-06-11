@@ -217,7 +217,7 @@ class JWTManager {
   }
 
   signInvite(payload: Record<string, unknown>, expiresIn?: string): string {
-    return this.sign(payload, { expiresIn: expiresIn || '24h' });
+    return this.sign(payload, { expiresIn: expiresIn || '24h' } as SignOptions);
   }
 
   getKeyCount(): number {
