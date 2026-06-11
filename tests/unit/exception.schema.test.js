@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { createExceptionSchema, exceptionIdSchema } from '../../src/modules/exception/exception.schema.js';
+import { createExceptionSchema, exceptionIdSchema } from '../../src/modules/availability/availability.schema.js';
 
 describe('createExceptionSchema', () => {
   it('accepts full day exception', () => {

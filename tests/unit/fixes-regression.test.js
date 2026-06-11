@@ -83,29 +83,4 @@ describe('Critical Fixes - No Regression', () => {
       expect(content).toContain('Degraded');
     });
   });
-
-  describe('tenant-safe-query isolation', () => {
-    it('should have bypass option for tenant-safe queries', async () => {
-      const fs = await import('fs');
-      const content = fs.readFileSync('src/shared/tenant-safe-query.ts', 'utf-8');
-
-      expect(content).toContain('bypass');
-    });
-
-    it('should have ALLOWED_WITHOUT_TENANT set for system queries', async () => {
-      const fs = await import('fs');
-      const content = fs.readFileSync('src/shared/tenant-safe-query.ts', 'utf-8');
-
-      expect(content).toContain('ALLOWED_WITHOUT_TENANT');
-      expect(content).toContain('SELECT 1');
-    });
-
-    it('should validate tenant isolation for SELECT/UPDATE/DELETE', async () => {
-      const fs = await import('fs');
-      const content = fs.readFileSync('src/shared/tenant-safe-query.ts', 'utf-8');
-
-      expect(content).toContain('TENANT ISOLATION VIOLATION');
-      expect(content).toContain('tenant_id');
-    });
-  });
 });

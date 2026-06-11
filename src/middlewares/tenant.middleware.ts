@@ -111,11 +111,13 @@ export const tenantMiddleware = async (req: Request, res: Response, next: NextFu
 
   await setTenantContext(req.tenant_id);
 
-  // Verify RLS context was set correctly (non-blocking)
+  // Verify RLS context was set correctly (blocking, returns 500 on failure)
   if (process.env.NODE_ENV === 'production') {
-    verifyTenantContext(req.tenant_id).catch((err) => {
-      logger.error('RLS context verification failed', { tenantId: req.tenant_id, error: err.message });
-    });
+    const isContextValid = await verifyTenantContext(req.tenant_id);
+    if (!isContextValid) {
+      next(new Error('RLS context verification failed — aborting request'));
+      return;
+    }
   }
 
   tenantAls.run({ tenantId: req.tenant_id }, () => { next(); });

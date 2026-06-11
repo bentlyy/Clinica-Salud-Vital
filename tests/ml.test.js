@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import * as mlValidator from '../src/modules/ml/ml.validator.js';
 import { mlCache } from '../src/modules/ml/ml.cache.js';
 import { getMLMetrics, resetMLMetrics, trackTrainingMetric } from '../src/modules/ml/ml.middleware.js';
-import { getStopWords, tokenizeText, vectorizeDiagnosis } from '../src/modules/ml/ml.service.js';
+
 
 describe('ML Validator', () => {
   describe('validateNoShowPrediction', () => {
@@ -44,27 +44,6 @@ describe('ML Validator', () => {
     });
   });
 
-  describe('validateDiagnosisClassification', () => {
-    it('should validate correct chief complaint', () => {
-      const result = mlValidator.validateDiagnosisClassification({
-        chiefComplaint: 'Dolor de cabeza intenso'
-      });
-      expect(result.valid).toBe(true);
-    });
-
-    it('should reject short complaint', () => {
-      const result = mlValidator.validateDiagnosisClassification({
-        chiefComplaint: 'a'
-      });
-      expect(result.valid).toBe(false);
-    });
-
-    it('should reject missing complaint', () => {
-      const result = mlValidator.validateDiagnosisClassification({});
-      expect(result.valid).toBe(false);
-    });
-  });
-
   describe('validateVitalSignsAnalysis', () => {
     it('should validate correct vital signs', () => {
       const result = mlValidator.validateVitalSignsAnalysis({
@@ -102,13 +81,6 @@ describe('ML Validator', () => {
   });
 
   describe('sanitizeMLInput', () => {
-    it('should sanitize chief complaint', () => {
-      const result = mlValidator.sanitizeMLInput({
-        chiefComplaint: '<script>alert("xss")</script> dolor de cabeza'
-      });
-      expect(result.chiefComplaint).not.toContain('<script>');
-    });
-
     it('should handle null input', () => {
       const result = mlValidator.sanitizeMLInput(null);
       expect(result).toEqual({});
@@ -209,85 +181,6 @@ describe('validateDemandForecast', () => {
   });
 });
 
-describe('ML Text Utilities', () => {
-  describe('getStopWords', () => {
-    it('should return a non-empty set', () => {
-      const words = getStopWords();
-      expect(words.size).toBeGreaterThan(0);
-    });
-
-    it('should contain common Spanish stop words', () => {
-      const words = getStopWords();
-      expect(words.has('el')).toBe(true);
-      expect(words.has('de')).toBe(true);
-      expect(words.has('que')).toBe(true);
-    });
-  });
-
-  describe('tokenizeText', () => {
-    it('should lowercase and split text', () => {
-      const tokens = tokenizeText('Fiebre y Cabeza Intenso');
-      expect(tokens).toContain('fiebre');
-      expect(tokens).toContain('cabeza');
-      expect(tokens).toContain('intenso');
-    });
-
-    it('should remove stop words', () => {
-      const tokens = tokenizeText('el fiebre de la cabeza');
-      expect(tokens).not.toContain('el');
-      expect(tokens).not.toContain('de');
-      expect(tokens).not.toContain('la');
-      expect(tokens).toContain('fiebre');
-      expect(tokens).toContain('cabeza');
-    });
-
-    it('should strip punctuation', () => {
-      const tokens = tokenizeText('¡Fiebre, intenso!');
-      expect(tokens).toContain('fiebre');
-      expect(tokens).toContain('intenso');
-    });
-
-    it('should filter short tokens', () => {
-      const tokens = tokenizeText('ir a tu casa');
-      expect(tokens.every(t => t.length > 2)).toBe(true);
-    });
-
-    it('should return empty array for empty input', () => {
-      expect(tokenizeText('')).toEqual([]);
-    });
-  });
-
-  describe('vectorizeDiagnosis', () => {
-    const vocab = ['cabeza', 'fiebre', 'pecho'];
-    const idf = [2.0, 1.8, 1.5];
-    const maxVals = [2, 2, 1];
-
-    it('should return a vector of vocab length', () => {
-      const vector = vectorizeDiagnosis('cabeza fiebre', vocab, idf, maxVals);
-      expect(vector).toHaveLength(vocab.length);
-    });
-
-    it('should compute non-zero for present terms', () => {
-      const vector = vectorizeDiagnosis('cabeza cabeza fiebre', vocab, idf, maxVals);
-      expect(vector[0]).toBeGreaterThan(0); // cabeza present (tf=2)
-      expect(vector[1]).toBeGreaterThan(0); // fiebre present (tf=1)
-      expect(vector[2]).toBe(0); // pecho absent
-    });
-
-    it('should handle empty text', () => {
-      const vector = vectorizeDiagnosis('', vocab, idf, maxVals);
-      expect(vector.every(v => v === 0)).toBe(true);
-    });
-
-    it('should handle maxVals of zero (division guard)', () => {
-      const zeroMax = [0, 0, 0];
-      const vector = vectorizeDiagnosis('cabeza fiebre', vocab, idf, zeroMax);
-      expect(vector[0]).toBeGreaterThan(0);
-      expect(vector[1]).toBeGreaterThan(0);
-    });
-  });
-});
-
 describe('ML Cache advanced', () => {
   beforeEach(() => {
     mlCache.clear();
@@ -336,14 +229,6 @@ describe('Validation edge cases', () => {
     expect(result.errors).toHaveLength(1);
   });
 
-  it('sanitizeMLInput should strip angle brackets and quotes', () => {
-    const result = mlValidator.sanitizeMLInput({
-      chiefComplaint: '<b>dolor</b> <img src=x onerror=alert(1)>'
-    });
-    expect(result.chiefComplaint).not.toContain('<');
-    expect(result.chiefComplaint).not.toContain('>');
-  });
-
   it('validateNoShowPrediction should reject invalid userId', () => {
     const result = mlValidator.validateNoShowPrediction({
       doctorId: 1, userId: 0,
@@ -357,16 +242,6 @@ describe('Validation edge cases', () => {
       doctorId: 1, date: '2026-05-10'
     });
     expect(result.valid).toBe(true);
-  });
-
-  it('validateDiagnosisClassification should reject non-string', () => {
-    const result = mlValidator.validateDiagnosisClassification({ chiefComplaint: 123 });
-    expect(result.valid).toBe(false);
-  });
-
-  it('validateDiagnosisClassification should reject > 1000 chars', () => {
-    const result = mlValidator.validateDiagnosisClassification({ chiefComplaint: 'a'.repeat(1001) });
-    expect(result.valid).toBe(false);
   });
 
   it('validateVitalSignsAnalysis should accept missing fields', () => {
@@ -409,16 +284,16 @@ describe('Validation edge cases', () => {
   });
 
   it('sanitizeMLInput should handle undefined vitalSigns', () => {
-    const result = mlValidator.sanitizeMLInput({ chiefComplaint: 'dolor' });
-    expect(result.chiefComplaint).toBe('dolor');
-    expect(result.vitalSigns).toBeUndefined();
+    const result = mlValidator.sanitizeMLInput({});
+    expect(result).toEqual({});
   });
 
-  it('sanitizeMLInput should handle non-string values', () => {
+  it('sanitizeMLInput should handle non-string values in vitalSigns', () => {
     const result = mlValidator.sanitizeMLInput({
-      chiefComplaint: 12345
+      vitalSigns: { pressure: 12345 }
     });
-    expect(result.chiefComplaint).toBe('');
+    expect(result.vitalSigns).toBeDefined();
+    expect(result.vitalSigns.pressure).toBe('12345');
   });
 
   it('validateNoShowPrediction should accept missing doctorId and userId', () => {

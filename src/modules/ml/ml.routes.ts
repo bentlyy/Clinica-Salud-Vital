@@ -10,7 +10,6 @@ import {
   clearCache,
   getHealthCheck,
   predictNoShow,
-  classifyDiagnosis,
   getDemandForecast,
   getOptimalSchedules,
   analyzeVitals,
@@ -52,7 +51,6 @@ router.get('/metrics', getMetrics);
 router.post('/cache/clear', clearCache);
 
 router.post('/predict-noshow', mlPredictLimiter, requireFeature('ml'), predictNoShow);
-router.post('/classify-diagnosis', mlPredictLimiter, requireFeature('ml'), classifyDiagnosis);
 router.get('/demand-forecast', requireFeature('ml'), getDemandForecast);
 router.get('/optimal-schedules', requireFeature('ml'), getOptimalSchedules);
 router.post('/analyze-vitals', mlPredictLimiter, requireFeature('ml'), analyzeVitals);

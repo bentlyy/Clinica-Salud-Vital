@@ -358,129 +358,54 @@ CREATE TABLE IF NOT EXISTS ml_demand_forecast (
   tenant_id TEXT NOT NULL DEFAULT 'default'
 );
 
--- Indexes
-CREATE INDEX IF NOT EXISTS idx_bookings_doctor ON bookings(doctor_id);
-CREATE INDEX IF NOT EXISTS idx_bookings_user   ON bookings(user_id);
-CREATE INDEX IF NOT EXISTS idx_bookings_date   ON bookings(date);
+-- Indexes (selective: no GIN, no low-cardinality status, no UNIQUE-duplicates)
 CREATE INDEX IF NOT EXISTS idx_bookings_doctor_date ON bookings(doctor_id, date);
 CREATE INDEX IF NOT EXISTS idx_bookings_guest_rut ON bookings(guest_rut);
-CREATE INDEX IF NOT EXISTS idx_bookings_confirmation_token ON bookings(confirmation_token);
-CREATE INDEX IF NOT EXISTS idx_bookings_status ON bookings(status);
-CREATE INDEX IF NOT EXISTS idx_bookings_confirmed ON bookings(confirmed);
-
-CREATE INDEX IF NOT EXISTS idx_availability_doctor ON doctor_availability(doctor_id);
-
-CREATE INDEX IF NOT EXISTS idx_exceptions_doctor ON doctor_exceptions(doctor_id);
-CREATE INDEX IF NOT EXISTS idx_exceptions_date   ON doctor_exceptions(date);
-CREATE INDEX IF NOT EXISTS idx_exceptions_doctor_date ON doctor_exceptions(doctor_id, date);
-
-CREATE INDEX IF NOT EXISTS idx_users_rut ON users(rut);
-CREATE INDEX IF NOT EXISTS idx_users_rut_clean ON users(REPLACE(REPLACE(rut, '.', ''), '-', '')) WHERE rut IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_bookings_user_date_status ON bookings(user_id, date, status);
 CREATE INDEX IF NOT EXISTS idx_bookings_doctor_date_status ON bookings(doctor_id, date, status);
-CREATE INDEX IF NOT EXISTS idx_clinical_records_doctor_status_date ON clinical_records(doctor_id, status, created_at DESC);
-
-CREATE INDEX IF NOT EXISTS idx_clinical_records_patient ON clinical_records(patient_id);
-CREATE INDEX IF NOT EXISTS idx_clinical_records_doctor ON clinical_records(doctor_id);
-CREATE INDEX IF NOT EXISTS idx_clinical_records_booking ON clinical_records(booking_id);
-CREATE INDEX IF NOT EXISTS idx_clinical_records_status ON clinical_records(status);
-CREATE INDEX IF NOT EXISTS idx_prescriptions_record ON prescriptions(clinical_record_id);
-CREATE INDEX IF NOT EXISTS idx_cie10_code ON cie10_catalog(code);
-
-CREATE INDEX IF NOT EXISTS idx_audit_logs_user ON audit_logs(user_id);
-CREATE INDEX IF NOT EXISTS idx_audit_logs_action ON audit_logs(action);
-CREATE INDEX IF NOT EXISTS idx_audit_logs_resource ON audit_logs(resource_type, resource_id);
-CREATE INDEX IF NOT EXISTS idx_audit_logs_created ON audit_logs(created_at);
-
-CREATE INDEX IF NOT EXISTS idx_invoices_patient ON invoices(patient_id);
-CREATE INDEX IF NOT EXISTS idx_invoices_status ON invoices(status);
-CREATE INDEX IF NOT EXISTS idx_invoices_booking ON invoices(booking_id);
-
-CREATE INDEX IF NOT EXISTS idx_payments_invoice ON payments(invoice_id);
-CREATE INDEX IF NOT EXISTS idx_payments_status ON payments(status);
-
-CREATE INDEX IF NOT EXISTS idx_insurance_claims_patient ON insurance_claims(patient_id);
-CREATE INDEX IF NOT EXISTS idx_insurance_claims_status ON insurance_claims(status);
-
-CREATE INDEX IF NOT EXISTS idx_lab_tests_code ON lab_tests(code);
-
-CREATE INDEX IF NOT EXISTS idx_lab_requests_patient ON lab_requests(patient_id);
-CREATE INDEX IF NOT EXISTS idx_lab_requests_status ON lab_requests(status);
-
-CREATE INDEX IF NOT EXISTS idx_invoices_created_at ON invoices(created_at);
-
--- Multi-tenant indexes
-CREATE INDEX IF NOT EXISTS idx_users_tenant ON users(tenant_id, id);
-CREATE INDEX IF NOT EXISTS idx_doctors_tenant ON doctors(tenant_id, id);
-CREATE INDEX IF NOT EXISTS idx_bookings_tenant ON bookings(tenant_id, doctor_id, date);
-CREATE INDEX IF NOT EXISTS idx_clinical_records_tenant ON clinical_records(tenant_id, patient_id);
-CREATE INDEX IF NOT EXISTS idx_invoices_tenant ON invoices(tenant_id, patient_id);
-
--- Additional indexes from migrations 006-051
-CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
-CREATE INDEX IF NOT EXISTS idx_users_email_tenant ON users(email, tenant_id);
-CREATE INDEX IF NOT EXISTS idx_users_tenant_email ON users(tenant_id, email);
-CREATE INDEX IF NOT EXISTS idx_users_role_tenant ON users(role, tenant_id);
-CREATE INDEX IF NOT EXISTS idx_users_last_activity ON users(last_activity_at);
-CREATE INDEX IF NOT EXISTS idx_users_failed_attempts ON users(failed_attempts) WHERE failed_attempts > 0;
-CREATE INDEX IF NOT EXISTS idx_users_rut_clean_lookup ON users(REPLACE(rut, '.', ''), tenant_id) WHERE rut IS NOT NULL;
-
-CREATE INDEX IF NOT EXISTS idx_doctors_specialty ON doctors(specialty);
-CREATE INDEX IF NOT EXISTS idx_doctors_user_id ON doctors(user_id);
-
-CREATE INDEX IF NOT EXISTS idx_bookings_created_at ON bookings(created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_bookings_status_confirmed ON bookings(status, confirmed);
 CREATE INDEX IF NOT EXISTS idx_bookings_doctor_date_time ON bookings(doctor_id, date, time);
 CREATE INDEX IF NOT EXISTS idx_bookings_doctor_date_active ON bookings(doctor_id, date) WHERE status != 'cancelled';
 CREATE INDEX IF NOT EXISTS idx_bookings_overlap ON bookings(doctor_id, date, time, status) WHERE status NOT IN ('cancelled');
-CREATE INDEX IF NOT EXISTS idx_bookings_active ON bookings(tenant_id, date, status) WHERE status = 'confirmed';
+CREATE INDEX IF NOT EXISTS idx_bookings_tenant ON bookings(tenant_id, doctor_id, date);
 CREATE INDEX IF NOT EXISTS idx_bookings_tenant_date ON bookings(tenant_id, date DESC) WHERE status != 'cancelled';
 CREATE INDEX IF NOT EXISTS idx_bookings_tenant_doctor_date_active ON bookings(tenant_id, doctor_id, date) WHERE status != 'cancelled';
 CREATE INDEX IF NOT EXISTS idx_bookings_tenant_date_status ON bookings(tenant_id, date, status);
-CREATE INDEX IF NOT EXISTS idx_bookings_guest_rut_clean ON bookings(REPLACE(REPLACE(COALESCE(guest_rut, ''), '.', ''), '-', '')) WHERE guest_rut IS NOT NULL;
 
-CREATE INDEX IF NOT EXISTS idx_availability_day ON doctor_availability(day_of_week);
 CREATE INDEX IF NOT EXISTS idx_availability_doctor_day ON doctor_availability(doctor_id, day_of_week, tenant_id);
 
 CREATE INDEX IF NOT EXISTS idx_exceptions_doctor_date ON doctor_exceptions(doctor_id, date, tenant_id);
 
-CREATE INDEX IF NOT EXISTS idx_clinical_records_tenant_patient ON clinical_records(tenant_id, patient_id);
+CREATE INDEX IF NOT EXISTS idx_users_rut ON users(rut);
+CREATE INDEX IF NOT EXISTS idx_users_rut_clean_lookup ON users(REPLACE(rut, '.', ''), tenant_id) WHERE rut IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_users_email_tenant ON users(email, tenant_id);
+CREATE INDEX IF NOT EXISTS idx_users_tenant_email ON users(tenant_id, email);
+CREATE INDEX IF NOT EXISTS idx_users_role_tenant ON users(role, tenant_id);
+CREATE INDEX IF NOT EXISTS idx_users_tenant ON users(tenant_id, id);
+
+CREATE INDEX IF NOT EXISTS idx_doctors_tenant ON doctors(tenant_id, id);
+CREATE INDEX IF NOT EXISTS idx_doctors_specialty ON doctors(specialty);
+
 CREATE INDEX IF NOT EXISTS idx_clinical_records_patient_tenant ON clinical_records(patient_id, tenant_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_clinical_records_doctor_tenant ON clinical_records(doctor_id, tenant_id, created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_clinical_records_vitals_gin ON clinical_records USING GIN(vital_signs jsonb_path_ops);
+CREATE INDEX IF NOT EXISTS idx_prescriptions_record ON prescriptions(clinical_record_id);
 
-CREATE INDEX IF NOT EXISTS idx_prescriptions_tenant ON prescriptions(tenant_id, clinical_record_id);
-
-CREATE INDEX IF NOT EXISTS idx_audit_logs_tenant ON audit_logs(tenant_id, created_at);
 CREATE INDEX IF NOT EXISTS idx_audit_logs_tenant_created ON audit_logs(tenant_id, created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_audit_logs_hash_chain ON audit_logs(previous_hash, hash);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_resource ON audit_logs(resource_type, resource_id);
 
-CREATE INDEX IF NOT EXISTS idx_invoices_doctor ON invoices(doctor_id);
-CREATE INDEX IF NOT EXISTS idx_invoices_due_date ON invoices(due_date);
 CREATE INDEX IF NOT EXISTS idx_invoices_patient_tenant ON invoices(patient_id, tenant_id, created_at DESC);
 
-CREATE INDEX IF NOT EXISTS idx_payments_transaction ON payments(transaction_id);
 CREATE INDEX IF NOT EXISTS idx_payments_tenant ON payments(tenant_id, invoice_id);
-CREATE INDEX IF NOT EXISTS idx_payments_metadata_gin ON payments USING gin(metadata);
 
-CREATE INDEX IF NOT EXISTS idx_insurance_claims_invoice ON insurance_claims(invoice_id);
 CREATE INDEX IF NOT EXISTS idx_insurance_claims_tenant ON insurance_claims(tenant_id, patient_id);
 
 CREATE INDEX IF NOT EXISTS idx_lab_requests_tenant ON lab_requests(tenant_id, patient_id);
 
-CREATE INDEX IF NOT EXISTS idx_role_permissions_role ON role_permissions(role);
 CREATE INDEX IF NOT EXISTS idx_user_permissions_user ON user_permissions(user_id);
 CREATE INDEX IF NOT EXISTS idx_permissions_resource_action ON permissions(resource, action);
 
-CREATE INDEX IF NOT EXISTS idx_ml_predictions_model_tenant ON ml_prediction_history(model_type, tenant_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_ml_predictions_tenant_model ON ml_prediction_history(tenant_id, model_type, prediction_date DESC);
-CREATE INDEX IF NOT EXISTS idx_ml_prediction_input_gin ON ml_prediction_history USING gin(input_data);
-CREATE INDEX IF NOT EXISTS idx_ml_prediction_result_gin ON ml_prediction_history USING gin(prediction_result);
 
-CREATE INDEX IF NOT EXISTS idx_tenants_active ON tenants(active) WHERE active = true;
-CREATE INDEX IF NOT EXISTS idx_tenants_deleted ON tenants(deleted_at) WHERE deleted_at IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_tenants_domain ON tenants(domain);
-CREATE INDEX IF NOT EXISTS idx_tenants_config_gin ON tenants USING gin(config);
 
 -- Function for updated_at trigger
 CREATE OR REPLACE FUNCTION update_updated_at_column()
@@ -638,12 +563,7 @@ CREATE TABLE IF NOT EXISTS refresh_tokens (
   tenant_id TEXT NOT NULL DEFAULT 'default'
 );
 
-CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user ON refresh_tokens(user_id);
-CREATE INDEX IF NOT EXISTS idx_refresh_tokens_token ON refresh_tokens(token);
-CREATE INDEX IF NOT EXISTS idx_refresh_tokens_tenant ON refresh_tokens(tenant_id, user_id);
-CREATE INDEX IF NOT EXISTS idx_refresh_tokens_expires ON refresh_tokens(expires_at);
 CREATE INDEX IF NOT EXISTS idx_refresh_tokens_token_active ON refresh_tokens(token, revoked, expires_at) WHERE revoked = false;
-CREATE INDEX IF NOT EXISTS idx_refresh_tokens_active ON refresh_tokens(token) WHERE revoked = false;
 
 -- 007: Webhooks for event-driven integrations
 CREATE TABLE IF NOT EXISTS webhooks (
@@ -658,9 +578,7 @@ CREATE TABLE IF NOT EXISTS webhooks (
   tenant_id TEXT NOT NULL DEFAULT 'default'
 );
 
-CREATE INDEX IF NOT EXISTS idx_webhooks_active ON webhooks(active);
 CREATE INDEX IF NOT EXISTS idx_webhooks_tenant ON webhooks(tenant_id);
-CREATE INDEX IF NOT EXISTS idx_webhooks_events ON webhooks USING GIN(events);
 
 CREATE TABLE IF NOT EXISTS webhook_deliveries (
   id SERIAL PRIMARY KEY,
@@ -741,13 +659,7 @@ CREATE TABLE IF NOT EXISTS subscriptions (
   updated_at TIMESTAMP DEFAULT NOW()
 );
 
-CREATE INDEX IF NOT EXISTS idx_subscriptions_tenant ON subscriptions(tenant_id);
-CREATE INDEX IF NOT EXISTS idx_subscriptions_stripe ON subscriptions(stripe_subscription_id);
-CREATE INDEX IF NOT EXISTS idx_subscriptions_plan ON subscriptions(plan_id);
-CREATE INDEX IF NOT EXISTS idx_subscriptions_tenant_status ON subscriptions(tenant_id, status);
-CREATE INDEX IF NOT EXISTS idx_subscriptions_tenant_active ON subscriptions(tenant_id, status) WHERE status IN ('active', 'trialing');
 CREATE UNIQUE INDEX IF NOT EXISTS idx_subscriptions_unique_active ON subscriptions(tenant_id) WHERE status IN ('active', 'trialing');
-CREATE INDEX IF NOT EXISTS idx_subscriptions_metadata_gin ON subscriptions USING gin(metadata);
 
 -- 010: Subscription invoices (SaaS billing)
 CREATE TABLE IF NOT EXISTS subscription_invoices (
@@ -878,9 +790,6 @@ CREATE TABLE IF NOT EXISTS password_reset_tokens (
   created_at TIMESTAMP DEFAULT NOW()
 );
 
-CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_user ON password_reset_tokens(user_id);
-CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_token ON password_reset_tokens(token);
-CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_tenant_token ON password_reset_tokens(tenant_id, token);
 CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_active ON password_reset_tokens(token) WHERE used = false;
 
 -- 024: RLS audit tracking
@@ -932,8 +841,6 @@ CREATE TABLE IF NOT EXISTS phi_access_log (
   created_at TIMESTAMP DEFAULT NOW()
 );
 
-CREATE INDEX IF NOT EXISTS idx_phi_access_log_tenant_date ON phi_access_log(tenant_id, accessed_at DESC);
-CREATE INDEX IF NOT EXISTS idx_phi_access_log_user ON phi_access_log(user_id, accessed_at DESC);
 CREATE INDEX IF NOT EXISTS idx_phi_access_log_tenant ON phi_access_log(tenant_id, accessed_at DESC);
 
 CREATE TABLE IF NOT EXISTS encryption_keys (
@@ -975,7 +882,6 @@ CREATE TABLE IF NOT EXISTS idempotency_keys (
 );
 
 CREATE INDEX IF NOT EXISTS idx_idempotency_keys_expires ON idempotency_keys(expires_at);
-CREATE INDEX IF NOT EXISTS idx_idempotency_keys_key ON idempotency_keys(key);
 
 -- 042: Query performance monitoring
 CREATE TABLE IF NOT EXISTS slow_query_log (
