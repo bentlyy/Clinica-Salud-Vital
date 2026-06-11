@@ -110,10 +110,22 @@ export const verifyTenantContext = async (expectedTenantId: string): Promise<boo
   }
 };
 
-// Read replica pool — same as primary if DATABASE_URL_READ_ONLY not configured
-// Set DATABASE_URL_READ_ONLY env var to route analytics/reporting queries to a read replica
-// TODO: Reemplazar con pool real a DATABASE_URL_READ_ONLY cuando esté disponible
-export const readPool = pool;
+// Read replica pool — routes analytics/reporting queries to DATABASE_URL_READ_ONLY when configured
+const readOnlyUrl = process.env.DATABASE_URL_READ_ONLY;
+export const readPool = readOnlyUrl
+  ? new Pool({
+      connectionString: readOnlyUrl,
+      ssl: sslConfig,
+      max: Math.max(Math.floor(poolMax / 2), 5),
+      idleTimeoutMillis: 30000,
+      connectionTimeoutMillis: 15000,
+      statement_timeout: 60000,
+    })
+  : pool;
+
+if (readOnlyUrl) {
+  logger.info('📊 Read replica pool configured via DATABASE_URL_READ_ONLY');
+}
 
 export type Pool = typeof pool;
 export type PoolClient = ReturnType<typeof pool.connect>;

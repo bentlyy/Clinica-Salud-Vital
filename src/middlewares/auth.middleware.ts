@@ -6,7 +6,7 @@ import { UnauthorizedError, ForbiddenError } from '../utils/errors.js';
 
 export interface JwtUser {
   id: number;
-  email?: string;
+  email: string;
   role: UserRole;
   tenant_id: string;
   token_version?: number;
@@ -29,7 +29,7 @@ const extractAndVerifyUser = (token: string, req: Request): JwtUser | null => {
   if (!decoded) return null;
   return {
     id: decoded.id,
-    email: decoded.email,
+    email: decoded.email || '',
     role: decoded.role as UserRole,
     tenant_id: decoded.tenant_id || req.tenant_id || process.env.DEFAULT_TENANT_ID || 'default',
     token_version: decoded.token_version || 0,

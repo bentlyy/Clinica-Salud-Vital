@@ -31,6 +31,10 @@ import cron from 'node-cron';
 import { queueService, registerWorkers } from './shared/queue.service.js';
 import pkg from '../package.json';
 
+declare global {
+  var stripeWarning: boolean | undefined;
+}
+
 import doctorRoutes from './modules/doctor/doctor.routes.js';
 import authRoutes from './modules/auth/auth.routes.js';
 import bookingRoutes from './modules/booking/booking.routes.js';
@@ -213,7 +217,7 @@ const loginLimiter = rateLimit({
   message: { error: 'Demasiados intentos de inicio de sesión. Intenta de nuevo en 15 minutos.' },
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => req.body?.email || req.ip,
+  keyGenerator: (req: Request) => (req.body?.email || req.ip) as string,
 });
 
 const registerLimiter = rateLimit({
@@ -222,7 +226,7 @@ const registerLimiter = rateLimit({
   message: { error: 'Demasiados intentos de registro. Intenta de nuevo en 15 minutos.' },
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => req.ip,
+  keyGenerator: (req: Request) => req.ip as string,
 });
 
 const refreshLimiter = rateLimit({
