@@ -40,8 +40,9 @@ export const pool = new Pool({
   idle_in_transaction_session_timeout: 60000, // 60s
 });
 
-pool.on('connect', (_client: pg.PoolClient) => {
+pool.on('connect', (client: pg.PoolClient) => {
   logger.info('DB connected');
+  client.query("SET statement_timeout = '30000'").catch(() => {});
 });
 
 pool.on('error', (err: Error) => {
