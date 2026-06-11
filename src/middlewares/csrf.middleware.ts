@@ -25,10 +25,18 @@ export const csrfProtection = (req: Request, res: Response, next: NextFunction) 
   // SameSite=Strict en la cookie ya previene CSRF en browsers modernos.
   // Si el frontend envía ambos, validamos (defense-in-depth).
   // Si falta header, igual permitimos — SameSite ya protege.
-  if (!cookieToken || !headerToken) {
-    return next(new BadRequestError('CSRF token missing'));
+
+  // No hay cookie: sesión nueva, setCsrfCookie la acaba de crear en la response
+  if (!cookieToken) {
+    return next();
   }
 
+  // Cookie presente pero sin header: SameSite=Strict ya protege
+  if (!headerToken) {
+    return next();
+  }
+
+  // Ambos presentes: validación defense-in-depth
   if (!crypto.timingSafeEqual(Buffer.from(headerToken), Buffer.from(cookieToken))) {
     return next(new BadRequestError('CSRF token mismatch'));
   }
