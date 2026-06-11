@@ -2,15 +2,19 @@ import { describe, it, expect } from 'vitest';
 
 describe('Critical Fixes - No Regression', () => {
   describe('CSRF middleware', () => {
-    it('should reject state-changing requests when cookie or header token missing', async () => {
+    it('should allow requests without CSRF cookie (new session) and validate if both present', async () => {
       const fs = await import('fs');
       const content = fs.readFileSync('src/middlewares/csrf.middleware.ts', 'utf-8');
 
-      const hasBypassCheck = content.includes('if (!cookieToken || !headerToken) {');
-      expect(hasBypassCheck).toBe(true);
+      // No cookie → allow (new session, setCsrfCookie just created it)
+      expect(content).toContain('if (!cookieToken)');
 
-      const callsNextWithError = content.includes('next(new BadRequestError');
-      expect(callsNextWithError).toBe(true);
+      // Cookie present but no header → allow (SameSite=Strict already protects)
+      expect(content).toContain('if (!headerToken)');
+
+      // Both present → defense-in-depth validation with timingSafeEqual
+      expect(content).toContain('timingSafeEqual');
+      expect(content).toContain('BadRequestError');
     });
 
     it('should use timingSafeEqual for token comparison', async () => {

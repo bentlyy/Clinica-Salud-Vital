@@ -15,6 +15,7 @@ export const registerSchema = z.object({
   rut: z.string().optional(),
   phone: z.string().optional(),
   invite_token: z.string().optional(),
+  tenant_id: z.string().optional(),
 }).strict();
 
 export const loginSchema = z.object({
@@ -22,6 +23,7 @@ export const loginSchema = z.object({
   password: z.string().min(1, 'Password is required'),
   totp_token: z.string().optional(),
   captcha_token: z.string().min(1, 'Captcha token is required'),
+  tenant_id: z.string().optional(),
 }).strict();
 
 export const refreshSchema = z.object({
