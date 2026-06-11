@@ -484,36 +484,6 @@ const startServer = async (): Promise<void> => {
     }
     logger.info('DB conectada');
 
-    step('Set database timeouts');
-    /* Set database-wide timeouts for safety (one-time, persists across restarts) */
-    try {
-      const dbName = process.env.DATABASE_URL?.split('/').pop()?.split('?')[0] || 'clinic';
-      await pool.query(`ALTER DATABASE "${dbName}" SET statement_timeout = 30000`);
-      await pool.query(`ALTER DATABASE "${dbName}" SET idle_in_transaction_session_timeout = 60000`);
-      logger.info('Database timeouts configured');
-    } catch {
-      logger.warn('Could not set database-wide timeouts (non-superuser) — OK');
-    }
-
-    step('runMigration');
-    await runMigration();
-    step('registerWorkers');
-    /* Register in-memory job queue workers (emails + ML training via setImmediate) */
-    registerWorkers();
-    step('loadFromDB');
-    await tenantService.loadFromDB();
-    step('SET SESSION tenant_id');
-    /* Set tenant context for seed operations (RLS context) */
-    await pool.query(`SET SESSION app.tenant_id = 'default'`);
-    step('seedDefaultTenant');
-    await seedDefaultTenant();
-    step('seedSuperAdmin');
-    await seedSuperAdmin();
-    step('seedTestTenants');
-    await seedTestTenants();
-    step('startRefresh');
-    tenantService.startRefresh();
-
     step(`app.listen(PORT=${PORT})`);
     clearTimeout(watchdog);
     const server = app.listen(PORT, () => {
@@ -524,25 +494,58 @@ const startServer = async (): Promise<void> => {
       process.exit(1);
     });
 
-    /* Seed y backfill después de abrir el puerto para que Render detecte el puerto a tiempo */
-    await seed();
-    await backfillInvoices();
-
-    startReminderJob();
-
-    cron.schedule('0 */6 * * *', async () => {
+    /* Post-bind: migrations, seeds, cron — async para que Render detecte el puerto a tiempo */
+    setImmediate(async () => {
       try {
-        const result = await verifyAuditChain();
-        if (!result.valid) {
-          logger.warn(`Audit chain integrity check: ${result.brokenLinks} broken links out of ${result.checked}`);
-        } else {
-          logger.info(`Audit chain integrity check passed: ${result.checked} logs verified`);
+        step('Set database timeouts');
+        try {
+          const dbName = process.env.DATABASE_URL?.split('/').pop()?.split('?')[0] || 'clinic';
+          await pool.query(`ALTER DATABASE "${dbName}" SET statement_timeout = 30000`);
+          await pool.query(`ALTER DATABASE "${dbName}" SET idle_in_transaction_session_timeout = 60000`);
+          logger.info('Database timeouts configured');
+        } catch {
+          logger.warn('Could not set database-wide timeouts (non-superuser) — OK');
         }
-      } catch (error) {
-        logger.error('Audit chain integrity cron job failed', { error: (error as Error).message });
+
+        step('runMigration');
+        await runMigration();
+        step('registerWorkers');
+        registerWorkers();
+        step('loadFromDB');
+        await tenantService.loadFromDB();
+        step('SET SESSION tenant_id');
+        await pool.query(`SET SESSION app.tenant_id = 'default'`);
+        step('seedDefaultTenant');
+        await seedDefaultTenant();
+        step('seedSuperAdmin');
+        await seedSuperAdmin();
+        step('seedTestTenants');
+        await seedTestTenants();
+        step('startRefresh');
+        tenantService.startRefresh();
+
+        await seed();
+        await backfillInvoices();
+
+        startReminderJob();
+
+        cron.schedule('0 */6 * * *', async () => {
+          try {
+            const result = await verifyAuditChain();
+            if (!result.valid) {
+              logger.warn(`Audit chain integrity check: ${result.brokenLinks} broken links out of ${result.checked}`);
+            } else {
+              logger.info(`Audit chain integrity check passed: ${result.checked} logs verified`);
+            }
+          } catch (error) {
+            logger.error('Audit chain integrity cron job failed', { error: (error as Error).message });
+          }
+        });
+        logger.info('Audit chain integrity cron scheduled (every 6 hours)');
+      } catch (err) {
+        logger.error('Post-boot initialization failed', { error: (err as Error).message, stack: (err as Error).stack });
       }
     });
-    logger.info('Audit chain integrity cron scheduled (every 6 hours)');
   } catch (error) {
     clearTimeout(watchdog);
     logger.error('Error starting server', { error: (error as Error).message, stack: (error as Error).stack });
