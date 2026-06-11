@@ -474,7 +474,7 @@ const startServer = async (): Promise<void> => {
     step('DB retry loop');
     for (let attempt = 1; attempt <= 10; attempt++) {
       try {
-        await pool.query({ text: 'SELECT 1', query_timeout: 10000 });
+        await pool.query({ text: 'SELECT 1', query_timeout: 10000 } as any);
         break;
       } catch (dbErr) {
         logger.warn(`DB connection attempt ${attempt}/10 failed`, { error: (dbErr as Error).message, code: (dbErr as NodeJS.ErrnoException).code });
