@@ -1,5 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
+vi.mock('../../src/shared/db.js', () => ({
+  pool: { query: vi.fn(), connect: vi.fn() },
+  logPhiAccess: vi.fn().mockResolvedValue(undefined),
+  readPool: { query: vi.fn(), connect: vi.fn() },
+  tenantAls: { getStore: vi.fn(), run: vi.fn() },
+  query: vi.fn(),
+}));
+
 vi.mock('../../src/modules/super-admin/super-admin.service.js', () => ({
   listTenants: vi.fn(),
   getTenantDetail: vi.fn(),
