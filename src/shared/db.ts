@@ -57,7 +57,7 @@ const wrappedQuery = function (this: typeof pool, text: string | pg.QueryConfig,
     return originalPoolQuery(text, values);
   }
 
-  const setConfigSql = `SELECT set_config('app.tenant_id', $1, false); `;
+  const setConfigSql = `SELECT set_config('app.tenant_id', $1, true); `;
 
   if (typeof text === 'string') {
     if (values && values.length > 0) {
@@ -97,31 +97,6 @@ pool.connect = function () {
     return client;
   });
 } as typeof pool.connect;
-export const getClient = pool.connect.bind(pool);
-
-export const setTenantContext = async (tenantId: string): Promise<void> => {
-  const result = await pool.query('SELECT set_config($1, $2, false)', ['app.tenant_id', tenantId]);
-  if (result.rowCount === 0) {
-    logger.error('Failed to set tenant context — RLS may be bypassed');
-  }
-};
-
-export const verifyTenantContext = async (expectedTenantId: string): Promise<boolean> => {
-  try {
-    const { rows } = await pool.query(
-      `SELECT NULLIF(current_setting('app.tenant_id', true), '') AS tenant_id`
-    );
-    const actualTenantId = rows[0]?.tenant_id;
-    if (actualTenantId !== expectedTenantId) {
-      logger.error('RLS CONTEXT MISMATCH', { expected: expectedTenantId, actual: actualTenantId });
-      return false;
-    }
-    return true;
-  } catch (err) {
-    logger.error('Failed to verify RLS context', err);
-    return false;
-  }
-};
 
 // Read replica pool — routes analytics/reporting queries to DATABASE_URL_READ_ONLY when configured
 const readOnlyUrl = process.env.DATABASE_URL_READ_ONLY;

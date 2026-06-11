@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { extractTenantFromHost, tenantService, loadTenantsFromDB } from '../shared/multi-tenant.service.js';
-import { setTenantContext, verifyTenantContext, tenantAls } from '../shared/db.js';
+import { tenantAls } from '../shared/db.js';
 import { logger } from '../utils/logger.js';
 import { BadRequestError, NotFoundError } from '../utils/errors.js';
 
@@ -75,7 +75,6 @@ export const tenantMiddleware = async (req: Request, res: Response, next: NextFu
     }
     req.tenant_id = process.env.DEFAULT_TENANT_ID || 'default';
     req.locale = getLocaleFromRequest(req);
-    await setTenantContext(req.tenant_id);
     tenantAls.run({ tenantId: req.tenant_id }, () => { next(); });
     return;
   }
@@ -99,7 +98,6 @@ export const tenantMiddleware = async (req: Request, res: Response, next: NextFu
       }
       req.tenant_id = rawTenantId;
       req.locale = getLocaleFromRequest(req);
-      await setTenantContext(req.tenant_id);
       tenantAls.run({ tenantId: req.tenant_id }, () => { next(); });
       return;
     }
@@ -108,17 +106,6 @@ export const tenantMiddleware = async (req: Request, res: Response, next: NextFu
   req.tenant_id = tenant.id;
   req.locale = tenant.locale;
   res.setHeader('X-Tenant-Id', req.tenant_id);
-
-  await setTenantContext(req.tenant_id);
-
-  // Verify RLS context was set correctly (blocking, returns 500 on failure)
-  if (process.env.NODE_ENV === 'production') {
-    const isContextValid = await verifyTenantContext(req.tenant_id);
-    if (!isContextValid) {
-      next(new Error('RLS context verification failed — aborting request'));
-      return;
-    }
-  }
 
   tenantAls.run({ tenantId: req.tenant_id }, () => { next(); });
 };
