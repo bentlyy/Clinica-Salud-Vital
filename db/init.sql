@@ -565,35 +565,6 @@ CREATE TABLE IF NOT EXISTS refresh_tokens (
 
 CREATE INDEX IF NOT EXISTS idx_refresh_tokens_token_active ON refresh_tokens(token, revoked, expires_at) WHERE revoked = false;
 
--- 007: Webhooks for event-driven integrations
-CREATE TABLE IF NOT EXISTS webhooks (
-  id SERIAL PRIMARY KEY,
-  name VARCHAR(100) NOT NULL,
-  url TEXT NOT NULL,
-  events JSONB NOT NULL DEFAULT '[]',
-  secret TEXT NOT NULL,
-  active BOOLEAN DEFAULT true,
-  created_at TIMESTAMP DEFAULT NOW(),
-  updated_at TIMESTAMP DEFAULT NOW(),
-  tenant_id TEXT NOT NULL DEFAULT 'default'
-);
-
-CREATE INDEX IF NOT EXISTS idx_webhooks_tenant ON webhooks(tenant_id);
-
-CREATE TABLE IF NOT EXISTS webhook_deliveries (
-  id SERIAL PRIMARY KEY,
-  webhook_id INTEGER NOT NULL REFERENCES webhooks(id) ON DELETE CASCADE,
-  event VARCHAR(100) NOT NULL,
-  status VARCHAR(20) NOT NULL DEFAULT 'pending',
-  status_code INTEGER,
-  response_body TEXT,
-  error TEXT,
-  created_at TIMESTAMP DEFAULT NOW(),
-  tenant_id TEXT NOT NULL DEFAULT 'default'
-);
-
-CREATE INDEX IF NOT EXISTS idx_webhook_deliveries_webhook ON webhook_deliveries(webhook_id);
-
 -- 007: Notification preferences per user/channel
 CREATE TABLE IF NOT EXISTS notification_preferences (
   id SERIAL PRIMARY KEY,
@@ -909,21 +880,6 @@ CREATE TABLE IF NOT EXISTS table_size_snapshot (
 -- ADDITIONAL TRIGGERS AND FUNCTIONS (migrations 007-049)
 -- ============================================================
 
--- Webhooks updated_at trigger
-CREATE OR REPLACE FUNCTION update_webhooks_updated_at()
-RETURNS TRIGGER AS $$
-BEGIN
-  NEW.updated_at = NOW();
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-DROP TRIGGER IF EXISTS update_webhooks_updated_at ON webhooks;
-CREATE TRIGGER update_webhooks_updated_at
-  BEFORE UPDATE ON webhooks
-  FOR EACH ROW
-  EXECUTE FUNCTION update_webhooks_updated_at();
-
 -- Plans trigger
 DROP TRIGGER IF EXISTS update_plans_updated_at ON plans;
 CREATE TRIGGER update_plans_updated_at
@@ -988,7 +944,7 @@ BEGIN
     SELECT unnest(ARRAY[
       'users', 'doctors', 'bookings', 'clinical_records', 'invoices',
       'lab_requests', 'audit_logs', 'ml_prediction_history',
-      'webhooks', 'subscriptions', 'refresh_tokens'
+      'subscriptions', 'refresh_tokens'
     ])
   LOOP
     EXECUTE format('DROP TRIGGER IF EXISTS trg_enforce_tenant_id ON %I', tbl);
@@ -1048,7 +1004,7 @@ DECLARE
     'permissions', 'role_permissions', 'user_permissions',
     'ml_prediction_history', 'ml_model_metrics', 'ml_demand_forecast',
     'ml_experiments', 'ml_runs', 'ml_run_params', 'ml_run_metrics', 'ml_run_artifacts',
-    'refresh_tokens', 'webhooks', 'webhook_deliveries', 'notification_preferences',
+    'refresh_tokens', 'notification_preferences',
     'password_reset_tokens',
     'subscriptions', 'subscription_invoices', 'tenant_features', 'tenant_usage',
     'user_consents', 'data_retention_policy', 'phi_access_log', 'encryption_keys',

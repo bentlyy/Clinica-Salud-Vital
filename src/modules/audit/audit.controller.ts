@@ -1,15 +1,6 @@
 import * as auditService from './audit.service.js';
 import { asyncHandler } from '../../middlewares/asyncHandler.middleware.js';
-
-const getQuery = (query: Record<string, unknown>, key: string): string | undefined => {
-  const val = query[key];
-  return val ? String(val) : undefined;
-};
-
-const getQueryInt = (query: Record<string, unknown>, key: string, def: number): number => {
-  const val = query[key];
-  return val ? parseInt(String(val), 10) : def;
-};
+import { getQuery, getQueryInt } from '../../shared/query.js';
 
 export const getAuditLogs = asyncHandler(async (req, res) => {
   const user_id = getQueryInt(req.query, 'user_id', 0);
