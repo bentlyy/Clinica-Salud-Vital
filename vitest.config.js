@@ -4,6 +4,7 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'node',
+    pool: 'forks',
     setupFiles: ['./tests/setup.js'],
     coverage: {
       provider: 'v8',
