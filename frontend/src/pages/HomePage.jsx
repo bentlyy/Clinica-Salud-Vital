@@ -107,6 +107,8 @@ export default function HomePage() {
     <div className="page-container-wide">
       {/* Hero */}
       <section className="hero">
+        <div className="hero-decoration hero-decoration-1">+</div>
+        <div className="hero-decoration hero-decoration-2">+</div>
         <div className="hero-content">
           <h1 className="hero-title">{t('home.hero_title')}</h1>
           <p className="hero-subtitle">{t('home.hero_subtitle')}</p>
