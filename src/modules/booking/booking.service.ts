@@ -46,8 +46,8 @@ export const getAllBookings = async ({ page = 1, limit = 50 }: PaginationOptions
       u.id AS user_id, u.email AS user_email,
       b.guest_rut, b.guest_name, b.guest_email
     FROM bookings b
-    JOIN doctors d ON b.doctor_id = d.id
-    LEFT JOIN users u ON b.user_id = u.id
+    JOIN doctors d ON b.doctor_id = d.id AND d.tenant_id = b.tenant_id
+    LEFT JOIN users u ON b.user_id = u.id AND u.tenant_id = b.tenant_id
     WHERE b.status != 'cancelled' AND b.tenant_id = $3
     ORDER BY b.date, b.time
     LIMIT $1 OFFSET $2
@@ -300,7 +300,7 @@ export const getBookingsByDoctor = async (doctor_id: number, { page = 1, limit =
            u.rut AS patient_rut,
            b.guest_name, b.guest_email, b.guest_phone, b.guest_rut
     FROM bookings b
-    LEFT JOIN users u ON b.user_id = u.id
+    LEFT JOIN users u ON b.user_id = u.id AND u.tenant_id = b.tenant_id
     WHERE b.doctor_id = $1 AND b.status != 'cancelled' AND b.tenant_id = $4
     ORDER BY b.date, b.time
     LIMIT $2 OFFSET $3
