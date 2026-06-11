@@ -1,29 +1,30 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { confirmBooking } from '../api/bookings';
-import { useParams } from 'react-router-dom';
 import { useI18n } from '../i18n/useI18n';
 
+type PageStatus = 'loading' | 'success' | 'error' | 'info';
+
 export default function ConfirmPage() {
-  const { token } = useParams();
+  const { token } = useParams<{ token: string }>();
   const navigate = useNavigate();
   const { t } = useI18n();
-  const [status, setStatus] = useState('loading');
+  const [status, setStatus] = useState<PageStatus>('loading');
   const [message, setMessage] = useState('');
 
   useEffect(() => {
     if (!token) { setStatus('error'); setMessage(t('confirm.error_desc')); return; }
     confirmBooking(token)
-      .then((r) => {
+      .then((r: { alreadyConfirmed?: boolean }) => {
         if (r.alreadyConfirmed) { setStatus('info'); setMessage(t('confirm.success_desc')); return; }
         setStatus('success'); setMessage(t('confirm.success_desc'));
       })
       .catch(() => { setStatus('error'); setMessage(t('confirm.error_desc')); });
   }, [token]);
 
-  const icons = { loading: '⏳', success: '✅', error: '❌', info: 'ℹ️' };
-  const titles = { loading: t('confirm.confirming'), success: t('confirm.success_title'), error: t('confirm.error_title'), info: t('confirm.title') };
-  const colors = { success: 'var(--primary-700)', error: 'var(--danger-600)', info: 'var(--chart-warning)' };
+  const icons: Record<PageStatus, string> = { loading: '⏳', success: '✅', error: '❌', info: 'ℹ️' };
+  const titles: Record<PageStatus, string> = { loading: t('confirm.confirming'), success: t('confirm.success_title'), error: t('confirm.error_title'), info: t('confirm.title') };
+  const colors: Record<PageStatus, string> = { success: 'var(--primary-700)', error: 'var(--danger-600)', info: 'var(--chart-warning)', loading: 'var(--gray-300)' };
 
   return (
     <div className="page-container" style={{ maxWidth: 500 }}>
