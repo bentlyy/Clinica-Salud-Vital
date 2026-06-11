@@ -77,3 +77,18 @@ jobs:
     steps:
       - name: Trigger Render deploy
         run: curl -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
+      - name: Wait for deployment
+        run: |
+          echo "Waiting for deploy to complete..."
+          for i in $(seq 1 30); do
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "${{ secrets.RENDER_APP_URL }}/health" || echo "000")
+            if [ "$HTTP_CODE" = "200" ]; then
+              echo "Health check passed!"
+              exit 0
+            fi
+            echo "Attempt $i/30: HTTP $HTTP_CODE - waiting 10s..."
+            sleep 10
+          done
+          echo "Deploy health check failed after 30 retries"
+          exit 1
+        shell: bash

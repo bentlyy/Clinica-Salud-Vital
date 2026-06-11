@@ -191,6 +191,10 @@ const globalLimiter = rateLimit({
     return `ip:${req.ip || 'unknown'}`;
   },
   skip: (req) => req.path === '/health' || req.path === '/api/v1/health',
+  handler: (req, res) => {
+    logger.warn('Rate limit exceeded (global)', { path: req.path, ip: req.ip, tenant_id: req.tenant_id });
+    res.status(429).json({ error: 'Too many requests, please try again later' });
+  },
 });
 app.use(globalLimiter);
 
@@ -219,6 +223,10 @@ const loginLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   keyGenerator: (req: Request) => (req.body?.email || req.ip) as string,
+  handler: (req: Request, res: Response) => {
+    logger.warn('Rate limit exceeded (login)', { email: req.body?.email, ip: req.ip });
+    res.status(429).json({ error: 'Demasiados intentos de inicio de sesión. Intenta de nuevo en 15 minutos.' });
+  },
 });
 
 const registerLimiter = rateLimit({
@@ -228,6 +236,10 @@ const registerLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   keyGenerator: (req: Request) => req.ip as string,
+  handler: (req: Request, res: Response) => {
+    logger.warn('Rate limit exceeded (register)', { ip: req.ip });
+    res.status(429).json({ error: 'Demasiados intentos de registro. Intenta de nuevo en 15 minutos.' });
+  },
 });
 
 const refreshLimiter = rateLimit({
@@ -240,6 +252,10 @@ const refreshLimiter = rateLimit({
     const token = req.body?.refresh_token || req.cookies?.refresh_token || '';
     const hash = crypto.createHash('sha256').update(token).digest('hex').slice(0, 16);
     return `refresh:${hash}`;
+  },
+  handler: (req, res) => {
+    logger.warn('Rate limit exceeded (refresh)', { ip: req.ip });
+    res.status(429).json({ error: 'Demasiadas solicitudes de renovación. Intenta de nuevo en 15 minutos.' });
   },
 });
 
