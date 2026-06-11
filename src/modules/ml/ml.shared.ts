@@ -1,18 +1,14 @@
 import { logger } from '../../utils/logger.js';
-import type { TensorFlowModule, SequentialModel, VitalAnomalyModel } from './ml.types.js';
+import type { StatisticalModel, VitalAnomalyModel } from './ml.types.js';
 
-export const isMLSimplified = (): boolean => process.env.ML_SIMPLIFIED === 'true';
+export const isMLSimplified = (): boolean => true;
 
-export let tf: TensorFlowModule | null = null;
-export let tfLoaded = false;
-export let noShowModel: SequentialModel | null = null;
-export let diagnosisModel: SequentialModel | null = null;
-export let demandModel: SequentialModel | null = null;
+export let noShowModel: StatisticalModel | null = null;
+export let demandModel: StatisticalModel | null = null;
 export let vitalAnomalyModel: VitalAnomalyModel | null = null;
 
-export function setNoShowModel(m: SequentialModel | null) { noShowModel = m; }
-export function setDiagnosisModel(m: SequentialModel | null) { diagnosisModel = m; }
-export function setDemandModel(m: SequentialModel | null) { demandModel = m; }
+export function setNoShowModel(m: StatisticalModel | null) { noShowModel = m; }
+export function setDemandModel(m: StatisticalModel | null) { demandModel = m; }
 export function setVitalAnomalyModel(m: VitalAnomalyModel | null) { vitalAnomalyModel = m; }
 
 export const trainingLocks: Record<string, Promise<unknown> | null> = {};
@@ -21,17 +17,6 @@ export const withTrainingLock = async <T>(key: string, fn: () => Promise<T>): Pr
   if (trainingLocks[key]) return trainingLocks[key] as Promise<T>;
   trainingLocks[key] = fn().finally(() => { trainingLocks[key] = null; });
   return trainingLocks[key] as Promise<T>;
-};
-
-export const getTF = async (): Promise<TensorFlowModule> => {
-  if (!tfLoaded) {
-    logger.info('[ML] Loading TensorFlow (lazy load)...');
-    const tfModule = await import('@tensorflow/tfjs');
-    tf = tfModule as unknown as TensorFlowModule;
-    tfLoaded = true;
-    logger.info('[ML] TensorFlow loaded');
-  }
-  return tf!;
 };
 
 export const normalizeData = (data: number[]): number[] => {
@@ -56,17 +41,4 @@ export const denormalize = (normalized: number[], originalData: number[]): numbe
   const max = Math.max(...originalData);
   if (max === min) return normalized;
   return normalized.map(v => Math.round(v * (max - min) + min));
-};
-
-export const safeDispose = (tensor: unknown): void => {
-  if (tensor && typeof tensor === 'object' && 'dispose' in tensor && typeof (tensor as { dispose: () => void }).dispose === 'function') {
-    try { (tensor as { dispose: () => void }).dispose(); } catch (e) { logger.warn('[ML] Error disposing tensor:', (e as Error).message); }
-  }
-};
-
-export const trainWithTimeout = async <T>(trainingFn: () => Promise<T>, timeout = 60000): Promise<T> => {
-  return Promise.race([
-    trainingFn(),
-    new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Training timeout')), timeout))
-  ]);
 };

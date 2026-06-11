@@ -28,28 +28,6 @@ describe('mlMetricsMiddleware', () => {
     expect(metrics.predictions.noShow.success).toBe(1);
   });
 
-  it('tracks failed prediction', async () => {
-    const mod = await import('../../src/modules/ml/ml.middleware.js');
-    const middleware = mod.mlMetricsMiddleware('diagnosis');
-
-    const req = { path: '/ml/classify' };
-    const res = { on: vi.fn((event, cb) => {
-      if (event === 'finish') cb();
-    }), statusCode: 500 };
-    const next = vi.fn();
-
-    middleware(req, res, next);
-    expect(next).toHaveBeenCalled();
-
-    const metrics = mod.getMLMetrics();
-    expect(metrics.predictions.diagnosis.total).toBe(1);
-    expect(metrics.predictions.diagnosis.error).toBe(1);
-
-    expect(metrics.errors.length).toBeGreaterThan(0);
-    expect(metrics.errors[0].type).toBe('diagnosis');
-    expect(metrics.errors[0].status).toBe(500);
-  });
-
   it('limits errors to 100', async () => {
     const mod = await import('../../src/modules/ml/ml.middleware.js');
     const middleware = mod.mlMetricsMiddleware('demand');

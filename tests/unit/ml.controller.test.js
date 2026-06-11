@@ -5,7 +5,6 @@ vi.mock('../../src/modules/ml/ml.service.js', () => ({
   getModelStatus: vi.fn(),
   disposeAllModels: vi.fn(),
   predictNoShow: vi.fn(),
-  predictDiagnosis: vi.fn(),
   forecastDemand: vi.fn(),
   analyzeOptimalSchedules: vi.fn(),
   analyzeVitalSigns: vi.fn(),
@@ -16,7 +15,6 @@ vi.mock('../../src/modules/ml/ml.service.js', () => ({
 
 vi.mock('../../src/modules/ml/ml.validator.js', () => ({
   validateNoShowPrediction: vi.fn(),
-  validateDiagnosisClassification: vi.fn(),
   validateDemandForecast: vi.fn(),
   validateVitalSignsAnalysis: vi.fn(),
   sanitizeMLInput: vi.fn(),
@@ -138,7 +136,7 @@ describe('clearCache', () => {
 describe('getHealthCheck', () => {
   it('returns healthy when all models trained', async () => {
     vi.mocked(mlService.getModelStatus).mockResolvedValue({
-      noShowModel: 'trained', diagnosisModel: 'trained', demandModel: 'trained', vitalAnomalyModel: 'trained',
+      noShowModel: 'trained', demandModel: 'trained', vitalAnomalyModel: 'trained',
       cacheStats: { hits: 1 },
     });
     const req = {};
@@ -151,7 +149,7 @@ describe('getHealthCheck', () => {
 
   it('returns degraded when some models not trained', async () => {
     vi.mocked(mlService.getModelStatus).mockResolvedValue({
-      noShowModel: 'untrained', diagnosisModel: 'trained', demandModel: 'trained', vitalAnomalyModel: 'trained',
+      noShowModel: 'untrained', demandModel: 'trained', vitalAnomalyModel: 'trained',
       cacheStats: {},
     });
     const req = {};
@@ -182,32 +180,6 @@ describe('predictNoShow', () => {
     const res = { json: vi.fn() };
     const next = vi.fn();
     const handlers = mlController.predictNoShow;
-    handlers[1](req, res, next);
-    await flush();
-    expect(next).toHaveBeenCalledWith(expect.any(Error));
-  });
-});
-
-describe('classifyDiagnosis', () => {
-  it('returns diagnosis classification', async () => {
-    vi.mocked(validator.validateDiagnosisClassification).mockReturnValue({ valid: true, errors: [] });
-    vi.mocked(validator.sanitizeMLInput).mockReturnValue({ chiefComplaint: 'headache' });
-    vi.mocked(mlService.predictDiagnosis).mockResolvedValue({ diagnosis: 'Migraine', confidence: 0.9 });
-    const req = { tenant_id: 'test', body: { chiefComplaint: 'headache' } };
-    const res = { json: vi.fn() };
-    const next = vi.fn();
-    const handlers = mlController.classifyDiagnosis;
-    handlers[1](req, res, next);
-    await flush();
-    expect(res.json).toHaveBeenCalledWith({ diagnosis: 'Migraine', confidence: 0.9 });
-  });
-
-  it('calls next with validation error', async () => {
-    vi.mocked(validator.validateDiagnosisClassification).mockReturnValue({ valid: false, errors: [{ message: 'Missing chiefComplaint' }] });
-    const req = { body: {} };
-    const res = { json: vi.fn() };
-    const next = vi.fn();
-    const handlers = mlController.classifyDiagnosis;
     handlers[1](req, res, next);
     await flush();
     expect(next).toHaveBeenCalledWith(expect.any(Error));
@@ -416,7 +388,7 @@ describe('powerBiExport', () => {
     vi.mocked(mlService.getPredictionHistory).mockResolvedValue([]);
     vi.mocked(mlService.getModelMetricsHistory).mockResolvedValue([]);
     vi.mocked(mlService.getDemandForecastHistory).mockResolvedValue([]);
-    vi.mocked(mlService.getModelStatus).mockResolvedValue({ noShowModel: 'trained', diagnosisModel: 'trained', demandModel: 'trained', vitalAnomalyModel: 'trained', cacheStats: { hits: 1, misses: 0, hitRate: '100%', size: 1 } });
+    vi.mocked(mlService.getModelStatus).mockResolvedValue({ noShowModel: 'trained', demandModel: 'trained', vitalAnomalyModel: 'trained', cacheStats: { hits: 1, misses: 0, hitRate: '100%', size: 1 } });
     const req = { tenant_id: 'test' };
     const res = { json: vi.fn() };
     const next = vi.fn();

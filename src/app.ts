@@ -23,12 +23,11 @@ import { validateEmailConfig } from './shared/email.service.js';
 import { requestLogger } from './middlewares/requestLogger.middleware.js';
 import { errorHandler, notFoundHandler } from './middlewares/errorHandler.middleware.js';
 import { monitoringService, monitoringMiddleware } from './middlewares/monitoring.middleware.js';
-import { dbMonitor } from './shared/db-monitor.service.js';
 import { trackActivity } from './middlewares/sessionActivity.middleware.js';
 import { initSentry, setupExpressErrorHandler } from './shared/sentry.service.js';
 import { logger } from './utils/logger.js';
 import cron from 'node-cron';
-import { queueService, registerWorkers } from './shared/queue.service.js';
+import { registerWorkers } from './shared/queue.service.js';
 import pkg from '../package.json';
 
 declare global {
@@ -38,8 +37,7 @@ declare global {
 import doctorRoutes from './modules/doctor/doctor.routes.js';
 import authRoutes from './modules/auth/auth.routes.js';
 import bookingRoutes from './modules/booking/booking.routes.js';
-import availabilityRoutes from './modules/availability/availability.routes.js';
-import exceptionRoutes from './modules/exception/exception.routes.js';
+import { availabilityRouter, exceptionRouter } from './modules/availability/availability.routes.js';
 import guestRoutes from './modules/guest/guest.routes.js';
 
 import clinicalRecordRoutes from './modules/clinical-record/clinical-record.routes.js';
@@ -56,7 +54,7 @@ import superAdminRoutes from './modules/super-admin/super-admin.routes.js';
 import i18nRoutes from './modules/i18n/i18n.routes.js';
 import monitoringRoutes from './modules/monitoring/monitoring.routes.js';
 import complianceRoutes from './modules/compliance/compliance.routes.js';
-import fhirRoutes from './modules/fhir/fhir.routes.js';
+
 
 const app: Express = express();
 
@@ -271,7 +269,7 @@ const changePasswordLimiter = rateLimit({
 
 const twoFALimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 10,
+  max: 3,
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Too many 2FA attempts, please try again later' },
@@ -319,8 +317,8 @@ app.use(`${API_PREFIX}/auth/refresh`, refreshLimiter);
 app.use(`${API_PREFIX}/auth`, authRoutes);
 app.use(`${API_PREFIX}/doctors`, doctorRoutes);
 app.use(`${API_PREFIX}/bookings`, bookingRoutes);
-app.use(`${API_PREFIX}/availability`, availabilityRoutes);
-app.use(`${API_PREFIX}/exceptions`, exceptionRoutes);
+app.use(`${API_PREFIX}/availability`, availabilityRouter);
+app.use(`${API_PREFIX}/exceptions`, exceptionRouter);
 app.use(`${API_PREFIX}/guest`, guestRoutes);
 
 app.use(`${API_PREFIX}/clinical-records`, phiWriteLimiter);
@@ -339,7 +337,7 @@ app.use(`${API_PREFIX}/i18n`, i18nRoutes);
 app.use(`${API_PREFIX}/monitoring`, monitoringRoutes);
 app.use(`${API_PREFIX}/compliance`, complianceLimiter);
 app.use(`${API_PREFIX}/compliance`, complianceRoutes);
-app.use(`${API_PREFIX}/fhir`, fhirRoutes);
+
 
 setupExpressErrorHandler(app);
 app.use(notFoundHandler);
@@ -489,14 +487,8 @@ const startServer = async (): Promise<void> => {
 
     await runMigration();
 
-    /* Initialize async job queue (BullMQ if Redis available, memory fallback) */
-    try {
-      await queueService.initialize();
-      registerWorkers();
-      logger.info('Queue service initialized');
-    } catch (err) {
-      logger.warn('Queue service not available (emails will work synchronously)', { error: (err as Error).message });
-    }
+    /* Register in-memory job queue workers (emails + ML training via setImmediate) */
+    registerWorkers();
 
     await tenantService.loadFromDB();
 
@@ -545,20 +537,16 @@ process.on('unhandledRejection', (reason) => {
 process.on('SIGTERM', () => {
   logger.info('SIGTERM received. Shutting down gracefully...');
   monitoringService.stop();
-  dbMonitor.stop();
   pool.end().catch((err: unknown) => logger.warn('Pool close error on SIGTERM', (err as Error).message));
   tenantService.stopRefresh();
-  queueService.destroy();
   process.exit(0);
 });
 
 process.on('SIGINT', () => {
   logger.info('SIGINT received. Shutting down gracefully...');
   monitoringService.stop();
-  dbMonitor.stop();
   pool.end().catch((err: unknown) => logger.warn('Pool close error on SIGINT', (err as Error).message));
   tenantService.stopRefresh();
-  queueService.destroy();
   process.exit(0);
 });
 

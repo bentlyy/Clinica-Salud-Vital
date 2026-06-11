@@ -52,7 +52,6 @@ export const getHealthCheck = asyncHandler(async (req: Request, res: Response) =
   const uptime = process.uptime();
 
   const allTrained = status.noShowModel === 'trained' &&
-                     status.diagnosisModel === 'trained' &&
                      status.demandModel === 'trained' &&
                      status.vitalAnomalyModel === 'trained';
 
@@ -77,23 +76,6 @@ export const predictNoShow = [
     const prediction = await mlService.predictNoShow(doctorId, userId, date, time, bookingId, req.tenant_id);
 
     res.json(prediction);
-  })
-];
-
-export const classifyDiagnosis = [
-  mlMetricsMiddleware('diagnosis'),
-  asyncHandler(async (req: Request, res: Response) => {
-    const validation = validator.validateDiagnosisClassification(req.body);
-    if (!validation.valid) {
-      throw new BadRequestError(
-        (validation.errors as Array<{ message: string }>).map(e => e.message).join(', ')
-      );
-    }
-
-    const sanitized = validator.sanitizeMLInput(req.body);
-    const result = await mlService.predictDiagnosis(sanitized.chiefComplaint ?? '', req.tenant_id);
-
-    res.json(result);
   })
 ];
 
@@ -272,7 +254,6 @@ export const powerBiExport = asyncHandler(async (req: Request, res: Response) =>
     demand_forecasts: forecasts,
     model_status: {
       noShowModel: status.noShowModel,
-      diagnosisModel: status.diagnosisModel,
       demandModel: status.demandModel,
       vitalAnomalyModel: status.vitalAnomalyModel,
       cache_hits: status.cacheStats?.hits || 0,
