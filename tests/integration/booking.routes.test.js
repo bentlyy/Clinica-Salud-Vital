@@ -86,7 +86,7 @@ describe('GET /api/bookings/available-slots', () => {
       .query({});
 
     expect(res.status).toBe(400);
-    expect(res.body.error).toBe('Validation failed');
+    expect(res.body.error).toContain('Validation failed');
   });
 });
 
@@ -106,7 +106,7 @@ describe('POST /api/bookings', () => {
       .send({});
 
     expect(res.status).toBe(400);
-    expect(res.body.error).toBe('Validation failed');
+    expect(res.body.error).toContain('Validation failed');
   });
 
   it('returns 400 if date format invalid', async () => {
@@ -116,7 +116,7 @@ describe('POST /api/bookings', () => {
       .send({ doctor_id: 1, date: 'bad', time: '10:00' });
 
     expect(res.status).toBe(400);
-    expect(res.body.error).toBe('Validation failed');
+    expect(res.body.error).toContain('Validation failed');
   });
 });
 

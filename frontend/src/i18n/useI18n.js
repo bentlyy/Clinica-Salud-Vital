@@ -1,16 +1,28 @@
 import { createContext, createElement, useMemo, useState, useEffect } from 'react';
-import fallbackTranslations from './translations';
 import api from '../api/axios';
 
 export const I18nContext = createContext(null);
 
 const FALLBACK_LOCALE = 'es';
+const KNOWN_LOCALES = ['es', 'en', 'pt', 'fr'];
 const LOCALE_KEY = 'app_locale';
 const CACHE_KEY = 'app_translations_cache';
 const CACHE_TTL = 5 * 60 * 1000;
 
 let cachedTranslations = null;
 let fetchPromise = null;
+let fallbackTranslations = null;
+let fallbackInit = null;
+
+const initFallback = async () => {
+  if (fallbackTranslations) return fallbackTranslations;
+  if (fallbackInit) return fallbackInit;
+  fallbackInit = (async () => {
+    fallbackTranslations = (await import('./translations')).default;
+    return fallbackTranslations;
+  })();
+  return fallbackInit;
+};
 
 const loadTranslations = async () => {
   const cached = localStorage.getItem(CACHE_KEY);
@@ -27,6 +39,7 @@ const loadTranslations = async () => {
   if (fetchPromise) return fetchPromise;
 
   fetchPromise = (async () => {
+    const fb = await initFallback();
     try {
       const res = await api.get('/i18n/translations');
       const data = res.data;
@@ -34,8 +47,8 @@ const loadTranslations = async () => {
       localStorage.setItem(CACHE_KEY, JSON.stringify({ data, timestamp: Date.now() }));
       return data;
     } catch {
-      cachedTranslations = fallbackTranslations;
-      return fallbackTranslations;
+      cachedTranslations = fb;
+      return fb;
     } finally {
       fetchPromise = null;
     }
@@ -53,10 +66,14 @@ export const setStoredLocale = (locale) => {
   window.dispatchEvent(new CustomEvent('locale:changed', { detail: locale }));
 };
 
-const supportedLocales = Object.keys(fallbackTranslations);
-
 export const useI18n = (locale) => {
-  const [translations, setTranslations] = useState(cachedTranslations || fallbackTranslations);
+  const [translations, setTranslations] = useState(() => {
+    if (cachedTranslations) return cachedTranslations;
+    initFallback().then((fb) => {
+      if (!cachedTranslations) setTranslations(fb);
+    });
+    return {};
+  });
   const [localeVersion, setLocaleVersion] = useState(0);
 
   useEffect(() => {
@@ -72,15 +89,16 @@ export const useI18n = (locale) => {
   }, []);
 
   const currentLocale = locale || getStoredLocale();
-  const lang = supportedLocales.includes(currentLocale) ? currentLocale : FALLBACK_LOCALE;
+  const lang = KNOWN_LOCALES.includes(currentLocale) ? currentLocale : FALLBACK_LOCALE;
 
   return useMemo(() => {
-    const dict = translations[lang] || fallbackTranslations[lang];
+    const fb = fallbackTranslations || {};
+    const dict = translations[lang] || fb[lang];
 
     const t = (key, params) => {
       let msg = dict?.[key];
       if (!msg) {
-        msg = fallbackTranslations[FALLBACK_LOCALE]?.[key] || key;
+        msg = fb[FALLBACK_LOCALE]?.[key] || key;
       }
       if (params) {
         for (const [k, v] of Object.entries(params)) {
@@ -92,8 +110,8 @@ export const useI18n = (locale) => {
 
     const tAll = (key) => {
       const result = {};
-      for (const locale of supportedLocales) {
-        result[locale] = translations[locale]?.[key] || fallbackTranslations[locale]?.[key] || key;
+      for (const locale of KNOWN_LOCALES) {
+        result[locale] = translations[locale]?.[key] || fb[locale]?.[key] || key;
       }
       return result;
     };
