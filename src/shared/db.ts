@@ -36,13 +36,16 @@ export const pool = new Pool({
   max: poolMax,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 15000,
-  statement_timeout: 30000, // 30s default
+  statement_timeout: 30000, // sent as PG protocol startup param
+  query_timeout: 30000, // JS-side timeout (setTimeout) — funciona incluso si proxy ignora statement_timeout
   idle_in_transaction_session_timeout: 60000, // 60s
 });
 
 pool.on('connect', (client: pg.PoolClient) => {
   logger.info('DB connected');
-  client.query("SET statement_timeout = '30000'").catch(() => {});
+  client.query("SET statement_timeout = '30000'").catch((err: Error) => {
+    logger.warn('Could not SET statement_timeout on connection', { error: err.message });
+  });
 });
 
 pool.on('error', (err: Error) => {
