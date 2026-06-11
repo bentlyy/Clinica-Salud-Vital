@@ -41,3 +41,36 @@ export const deleteAvailability = asyncHandler(async (req, res) => {
   const result = await availabilityService.deleteAvailability(Number(req.params.id), doctor.id, req.tenant_id);
   res.json(result);
 });
+
+export const getMyExceptions = asyncHandler(async (req, res) => {
+  const doctor = await doctorService.getDoctorByUserId(req.user!.id, req.tenant_id);
+  if (!doctor) throw new NotFoundError('Doctor profile not found');
+
+  const data = await availabilityService.getExceptionsByDoctor(doctor.id, req.tenant_id);
+  res.json(data);
+});
+
+export const createException = asyncHandler(async (req, res) => {
+  const { date, start_time, end_time, is_full_day } = req.body;
+
+  const doctor = await doctorService.getDoctorByUserId(req.user!.id, req.tenant_id);
+  if (!doctor) throw new NotFoundError('Doctor profile not found');
+
+  const data = await availabilityService.createException({
+    doctor_id: doctor.id,
+    date,
+    start_time,
+    end_time,
+    is_full_day,
+  }, req.tenant_id);
+
+  res.status(201).json(data);
+});
+
+export const deleteException = asyncHandler(async (req, res) => {
+  const doctor = await doctorService.getDoctorByUserId(req.user!.id, req.tenant_id);
+  if (!doctor) throw new NotFoundError('Doctor profile not found');
+
+  const data = await availabilityService.deleteException(Number(req.params.id), doctor.id, req.tenant_id);
+  res.json(data);
+});

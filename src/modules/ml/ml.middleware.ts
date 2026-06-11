@@ -25,7 +25,6 @@ interface MLError {
 interface MLMetricsData {
   predictions: {
     noShow: PredictionMetrics;
-    diagnosis: PredictionMetrics;
     demand: PredictionMetrics;
     vitals: PredictionMetrics;
   };
@@ -36,7 +35,6 @@ interface MLMetricsData {
 const mlMetrics: MLMetricsData = {
   predictions: {
     noShow: { total: 0, success: 0, error: 0, avgTime: 0 },
-    diagnosis: { total: 0, success: 0, error: 0, avgTime: 0 },
     demand: { total: 0, success: 0, error: 0, avgTime: 0 },
     vitals: { total: 0, success: 0, error: 0, avgTime: 0 },
   },

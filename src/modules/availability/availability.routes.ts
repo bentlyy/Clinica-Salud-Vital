@@ -3,36 +3,66 @@ import {
   createAvailability,
   getAvailabilityByDoctor,
   getMyAvailability,
-  deleteAvailability
+  deleteAvailability,
+  getMyExceptions,
+  createException,
+  deleteException
 } from './availability.controller.js';
 
 import { authMiddleware, authorize } from '../../middlewares/auth.middleware.js';
+import { validateZod } from '../../middlewares/validate.middleware.js';
+import { createAvailabilitySchema, availabilityIdSchema, createExceptionSchema, exceptionIdSchema } from './availability.schema.js';
 
-const router = Router();
+const availabilityRouter = Router();
 
-// debe ir ANTES de /:id
-router.get(
+availabilityRouter.get(
   '/me',
   authMiddleware,
   authorize('doctor'),
   getMyAvailability
 );
 
-router.get('/:id', getAvailabilityByDoctor);
+availabilityRouter.get('/:id', getAvailabilityByDoctor);
 
-router.post(
+availabilityRouter.post(
   '/',
   authMiddleware,
   authorize('doctor'),
+  validateZod(createAvailabilitySchema),
   createAvailability
 );
 
-router.delete(
+availabilityRouter.delete(
   '/:id',
   authMiddleware,
   authorize('doctor'),
+  validateZod(availabilityIdSchema, 'params'),
   deleteAvailability
 );
 
-export default router;
+const exceptionRouter = Router();
 
+exceptionRouter.get(
+  '/me',
+  authMiddleware,
+  authorize('doctor'),
+  getMyExceptions
+);
+
+exceptionRouter.post(
+  '/',
+  authMiddleware,
+  authorize('doctor'),
+  validateZod(createExceptionSchema),
+  createException
+);
+
+exceptionRouter.delete(
+  '/:id',
+  authMiddleware,
+  authorize('doctor'),
+  validateZod(exceptionIdSchema, 'params'),
+  deleteException
+);
+
+export { availabilityRouter, exceptionRouter };

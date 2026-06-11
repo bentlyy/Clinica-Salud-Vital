@@ -1,6 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
 import { logger } from '../utils/logger.js';
-import { pool } from '../shared/db.js';
 
 interface MemorySnapshot {
   timestamp: string;
@@ -11,25 +10,11 @@ interface MemorySnapshot {
   arrayBuffers: number;
 }
 
-interface MemoryAlert {
-  timestamp: string;
-  type: 'high_heap' | 'high_rss' | 'leak_suspect' | 'gc_pressure';
-  value: number;
-  threshold: number;
-  message: string;
-}
-
 class MonitoringService {
-  private snapshots: MemorySnapshot[] = [];
-  private alerts: MemoryAlert[] = [];
-  private maxSnapshots = 60;
-  private maxAlerts = 100;
   private heapWarningThreshold = 0.85;
   private rssWarningThreshold = 0.85;
-  private gcPressureThreshold = 0.9;
-  private lastGCCount = 0;
-  private gcInterval: NodeJS.Timeout | null = null;
   private checkInterval: NodeJS.Timeout | null = null;
+  private gcInterval: NodeJS.Timeout | null = null;
 
   constructor() {
     this.startPeriodicChecks();
@@ -49,19 +34,8 @@ class MonitoringService {
 
   takeSnapshot(): MemorySnapshot {
     const snap = this.getMemoryUsage();
-    this.snapshots.push(snap);
-    if (this.snapshots.length > this.maxSnapshots) {
-      this.snapshots.shift();
-    }
+    logger.info(`[Metrics] memory: heap=${snap.heapUsed}MB/${snap.heapTotal}MB rss=${snap.rss}MB external=${snap.external}MB`);
     return snap;
-  }
-
-  getSnapshots(): MemorySnapshot[] {
-    return [...this.snapshots];
-  }
-
-  getAlerts(): MemoryAlert[] {
-    return [...this.alerts];
   }
 
   getSystemInfo() {
@@ -100,53 +74,17 @@ class MonitoringService {
     });
   }
 
-  getGCMetrics() {
-    return { gcCount: 0, gcTime: 0 };
-  }
-
   checkThresholds(current: MemorySnapshot) {
     const heapRatio = current.heapUsed / current.heapTotal;
     const systemMem = (() => { try { return require('os').totalmem() / 1024 / 1024; } catch { return Infinity; } })();
     const rssRatio = current.rss / systemMem;
 
     if (heapRatio > this.heapWarningThreshold && current.heapUsed > 200) {
-      this.addAlert({
-        type: 'high_heap',
-        value: current.heapUsed,
-        threshold: current.heapTotal * this.heapWarningThreshold,
-        message: `Heap usage critical: ${current.heapUsed}MB / ${current.heapTotal}MB (${(heapRatio * 100).toFixed(1)}%)`,
-      });
+      logger.warn(`[Metrics] Heap usage critical: ${current.heapUsed}MB / ${current.heapTotal}MB (${(heapRatio * 100).toFixed(1)}%)`);
     }
 
     if (rssRatio > this.rssWarningThreshold && systemMem !== Infinity) {
-      this.addAlert({
-        type: 'high_rss',
-        value: current.rss,
-        threshold: systemMem * this.rssWarningThreshold,
-        message: `RSS usage critical: ${current.rss}MB / ${Math.round(systemMem)}MB (${(rssRatio * 100).toFixed(1)}%)`,
-      });
-    }
-
-    const recent = this.snapshots.slice(-10);
-    if (recent.length >= 10) {
-      const trend = recent[recent.length - 1].heapUsed - recent[0].heapUsed;
-      if (trend > 50 && recent[0].heapUsed > 0) {
-        this.addAlert({
-          type: 'leak_suspect',
-          value: trend,
-          threshold: 50,
-          message: `Possible memory leak: heap grew ${trend}MB in last ${recent.length} snapshots`,
-        });
-      }
-    }
-  }
-
-  private addAlert(alert: Omit<MemoryAlert, 'timestamp'>) {
-    const full: MemoryAlert = { ...alert, timestamp: new Date().toISOString() };
-    this.alerts.push(full);
-    logger.warn(`[Monitoring] ${full.message}`);
-    if (this.alerts.length > this.maxAlerts) {
-      this.alerts.shift();
+      logger.warn(`[Metrics] RSS usage critical: ${current.rss}MB / ${Math.round(systemMem)}MB (${(rssRatio * 100).toFixed(1)}%)`);
     }
   }
 
@@ -157,7 +95,7 @@ class MonitoringService {
     }, 30000);
 
     this.gcInterval = setInterval(() => {
-      logger.debug('[Monitoring] GC check skipped (manual GC disabled)');
+      logger.debug('[Metrics] GC check skipped (manual GC disabled)');
     }, 300000);
   }
 

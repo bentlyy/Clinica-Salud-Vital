@@ -12,7 +12,7 @@ vi.mock('../../src/shared/db.js', () => ({
   },
 }));
 
-import * as exceptionService from '../../src/modules/exception/exception.service.js';
+import * as exceptionService from '../../src/modules/availability/availability.service.js';
 
 beforeEach(() => {
   vi.clearAllMocks();

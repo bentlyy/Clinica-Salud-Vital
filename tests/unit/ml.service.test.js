@@ -8,36 +8,19 @@ const mockMlCache = vi.hoisted(() => ({
   generateKey: vi.fn(),
 }));
 const mockTrackTrainingMetric = vi.hoisted(() => vi.fn());
+const mockEnqueueJob = vi.hoisted(() => vi.fn().mockResolvedValue(undefined));
 
 vi.mock('../../src/shared/db.js', () => ({ pool: { query: mockQuery } }));
 vi.mock('../../src/utils/logger.js', () => ({ logger: mockLogger }));
 vi.mock('../../src/modules/ml/ml.cache.js', () => ({ mlCache: mockMlCache }));
 vi.mock('../../src/modules/ml/ml.middleware.js', () => ({ trackTrainingMetric: mockTrackTrainingMetric }));
-
-vi.mock('@tensorflow/tfjs', () => ({
-  tensor2d: vi.fn(() => ({ data: () => Promise.resolve(new Float32Array([1])), dispose: vi.fn() })),
-  tensor3d: vi.fn(() => ({ data: () => Promise.resolve(new Float32Array([1])), dispose: vi.fn() })),
-  sequential: vi.fn(() => ({
-    add: vi.fn(),
-    compile: vi.fn(),
-    fit: vi.fn().mockResolvedValue({}),
-    predict: vi.fn(() => ({ data: () => Promise.resolve(new Float32Array([0.5])), dispose: vi.fn() })),
-    dispose: vi.fn(),
-  })),
-  layers: {
-    dense: vi.fn(() => ({ units: 1 })),
-    lstm: vi.fn(() => ({ units: 1 })),
-  },
-  train: { adam: vi.fn(() => ({})) },
-}));
+vi.mock('../../src/shared/queue.service.js', () => ({ enqueueJob: mockEnqueueJob }));
 
 import {
-  getStopWords, tokenizeText, vectorizeDiagnosis,
   savePrediction, saveModelMetrics, saveDemandForecast,
   getPredictionHistory, getModelMetricsHistory, getDemandForecastHistory,
   getModelStatus, disposeAllModels, trainAllModels,
   trainNoShowModel, predictNoShow,
-  trainDiagnosisClassifier, predictDiagnosis,
   trainDemandForecastModel, forecastDemand,
   analyzeOptimalSchedules, analyzeVitalSigns, trainVitalSignsAnomalyDetector,
 } from '../../src/modules/ml/ml.service.js';
@@ -62,51 +45,6 @@ function makeBookingRow(i = 0, overrides = {}) {
   };
 }
 
-function makeClinicalRecordRow(i = 0) {
-  return {
-    chief_complaint: 'dolor de cabeza',
-    diagnosis: i < 3 ? 'Migraña' : 'Cefalea tensional',
-  };
-}
-
-// ─── Pure utility functions ───────────────────────────────────────────────
-
-describe('getStopWords', () => {
-  it('returns a set of stop words', () => {
-    const words = getStopWords();
-    expect(words).toBeInstanceOf(Set);
-    expect(words.has('el')).toBe(true);
-    expect(words.has('noexisteword')).toBe(false);
-  });
-});
-
-describe('tokenizeText', () => {
-  it('tokenizes text removing stop words and short words', () => {
-    expect(tokenizeText('El paciente tiene dolor')).toEqual(['paciente', 'dolor']);
-  });
-
-  it('removes punctuation and filters short tokens', () => {
-    expect(tokenizeText('Hola, cómo estás? Bien.')).toEqual(['hola', 'est', 'bien']);
-  });
-
-  it('returns empty array for stop words only', () => {
-    expect(tokenizeText('el la de')).toEqual([]);
-  });
-
-  it('handles empty string', () => {
-    expect(tokenizeText('')).toEqual([]);
-  });
-});
-
-describe('vectorizeDiagnosis', () => {
-  it('returns normalized vector', () => {
-    const result = vectorizeDiagnosis('dolor cabeza', ['dolor', 'cabeza', 'fiebre'], [2, 1.5, 1], [2, 1.5, 1]);
-    expect(result).toHaveLength(3);
-    expect(result[0]).toBe(1);
-    expect(result[1]).toBe(1);
-    expect(result[2]).toBe(0);
-  });
-});
 
 // ─── DB wrapper functions ─────────────────────────────────────────────────
 
@@ -289,7 +227,6 @@ describe('getModelStatus', () => {
   it('returns not_trained after disposeAllModels', async () => {
     const status = await getModelStatus('tenant-1');
     expect(status.noShowModel).toBe('not_trained');
-    expect(status.diagnosisModel).toBe('not_trained');
     expect(status.demandModel).toBe('not_trained');
     expect(status.vitalAnomalyModel).toBe('not_trained');
     expect(status).toHaveProperty('cacheStats');
@@ -314,7 +251,7 @@ describe('trainNoShowModel', () => {
   });
 
   it('returns cached model when available', async () => {
-    const cachedModel = { trained: true, dispose: vi.fn(), add: vi.fn(), compile: vi.fn(), fit: vi.fn() };
+    const cachedModel = { trained: true, mean: [0.5], std: [0.1], specialtyList: ['general'] };
     mockMlCache.get.mockResolvedValue({ model: cachedModel });
     const result = await trainNoShowModel('tenant-1');
     expect(result.trained).toBe(true);
@@ -323,7 +260,7 @@ describe('trainNoShowModel', () => {
   });
 
   it('trains with sufficient booking data', async () => {
-    const bookings = Array.from({ length: 15 }, (_, i) => makeBookingRow(i));
+    const bookings = Array.from({ length: 55 }, (_, i) => makeBookingRow(i));
     mockQuery.mockResolvedValue({ rows: bookings });
     mockMlCache.get.mockResolvedValue(null);
     mockMlCache.set.mockResolvedValue(undefined);
@@ -333,7 +270,7 @@ describe('trainNoShowModel', () => {
   });
 
   it('trains with tenant_id', async () => {
-    const bookings = Array.from({ length: 10 }, (_, i) => makeBookingRow(i));
+    const bookings = Array.from({ length: 55 }, (_, i) => makeBookingRow(i));
     mockQuery.mockResolvedValue({ rows: bookings });
     mockMlCache.get.mockResolvedValue(null);
     mockMlCache.set.mockResolvedValue(undefined);
@@ -399,103 +336,6 @@ describe('predictNoShow', () => {
   });
 });
 
-// ─── Training: Diagnosis ──────────────────────────────────────────────────
-
-describe('trainDiagnosisClassifier', () => {
-  it('returns not trained with insufficient data', async () => {
-    mockQuery.mockResolvedValue({ rows: [] });
-    mockMlCache.get.mockResolvedValue(null);
-    const result = await trainDiagnosisClassifier('tenant-1');
-    expect(result.trained).toBe(false);
-  });
-
-  it('returns cached model when available', async () => {
-    const cachedModel = { trained: true, vocab: [], diagnoses: [], idf: [], maxVals: [], dispose: vi.fn() };
-    mockMlCache.get.mockResolvedValue({ model: cachedModel });
-    const result = await trainDiagnosisClassifier('tenant-1');
-    expect(result.trained).toBe(true);
-    expect(result.cached).toBe(true);
-  });
-
-  it('trains with sufficient data', async () => {
-    const records = Array.from({ length: 10 }, (_, i) => {
-      const diags = ['Migraña', 'Cefalea tensional', 'Amigdalitis'];
-      return { chief_complaint: `dolor ${i % 2 === 0 ? 'cabeza fuerte' : 'garganta'}`, diagnosis: diags[i % 3] };
-    });
-    mockQuery.mockResolvedValue({ rows: records });
-    mockMlCache.get.mockResolvedValue(null);
-    mockMlCache.set.mockResolvedValue(undefined);
-    const result = await trainDiagnosisClassifier('tenant-1');
-    expect(result.trained).toBe(true);
-  });
-
-  it('trains with same diagnosis (falls back to insufficient variety)', async () => {
-    const records = Array.from({ length: 10 }, () => ({
-      chief_complaint: 'dolor de cabeza', diagnosis: 'Migraña'
-    }));
-    mockQuery.mockResolvedValue({ rows: records });
-    mockMlCache.get.mockResolvedValue(null);
-    const result = await trainDiagnosisClassifier('tenant-1');
-    expect(result.trained).toBe(false);
-    expect(result.reason).toBe('insufficient_variety');
-  });
-
-  it('handles training error gracefully', async () => {
-    mockQuery.mockRejectedValue(new Error('DB error'));
-    mockMlCache.get.mockResolvedValue(null);
-    const result = await trainDiagnosisClassifier('tenant-1');
-    expect(result.trained).toBe(false);
-    expect(result).toHaveProperty('error');
-  });
-});
-
-// ─── Prediction: Diagnosis ────────────────────────────────────────────────
-
-describe('predictDiagnosis', () => {
-  it('returns invalid input for short complaint', async () => {
-    const result = await predictDiagnosis('a', 'tenant-1');
-    expect(result).toHaveProperty('error', 'Invalid input');
-  });
-
-  it('returns no prediction when model not trained', async () => {
-    disposeAllModels();
-    const result = await predictDiagnosis('dolor de cabeza', 'tenant-1');
-    expect(result.predictions).toEqual([]);
-    expect(result).toHaveProperty('reason');
-  });
-
-  it('returns cached prediction when available', async () => {
-    mockMlCache.get.mockResolvedValue({ predictions: [{ diagnosis: 'Migraña', confidence: 85 }] });
-    const result = await predictDiagnosis('dolor de cabeza', 'tenant-1');
-    expect(result.predictions).toHaveLength(1);
-  });
-
-  it('uses trained model for prediction', async () => {
-    const records = Array.from({ length: 10 }, (_, i) => {
-      const diags = ['Migraña', 'Cefalea tensional'];
-      return { chief_complaint: `dolor ${i % 2 === 0 ? 'cabeza' : 'nuca'}`, diagnosis: diags[i % 2] };
-    });
-    mockQuery.mockResolvedValue({ rows: records });
-    mockMlCache.get.mockResolvedValueOnce(null);
-    mockMlCache.set.mockResolvedValue(undefined);
-    await trainDiagnosisClassifier('tenant-1');
-
-    mockMlCache.get.mockReset();
-    mockMlCache.get.mockResolvedValue(null);
-    const result = await predictDiagnosis('dolor de cabeza intenso', 'tenant-1');
-    expect(result.predictions.length).toBeGreaterThan(0);
-  });
-
-  it('handles prediction error gracefully', async () => {
-    disposeAllModels();
-    mockQuery.mockRejectedValue(new Error('DB error'));
-    mockMlCache.get.mockResolvedValue(null);
-    const result = await predictDiagnosis('dolor de cabeza', 'tenant-1');
-    expect(result.predictions).toEqual([]);
-    expect(result).toHaveProperty('reason');
-  });
-});
-
 // ─── Training: Demand Forecast ────────────────────────────────────────────
 
 describe('trainDemandForecastModel', () => {
@@ -507,14 +347,14 @@ describe('trainDemandForecastModel', () => {
   });
 
   it('returns cached model when available', async () => {
-    const cachedModel = { trained: true, dispose: vi.fn(), add: vi.fn(), compile: vi.fn(), fit: vi.fn() };
+    const cachedModel = { trained: true, mean: [10], std: [2], originalData: [10, 12, 8], windowSize: 7 };
     mockMlCache.get.mockResolvedValue({ model: cachedModel });
     const result = await trainDemandForecastModel('tenant-1');
     expect(result.trained).toBe(true);
     expect(result.cached).toBe(true);
   });
 
-  it('trains with sufficient data (LSTM path)', async () => {
+  it('trains with sufficient data', async () => {
     const rows = Array.from({ length: 30 }, (_, i) => ({
       date: `2026-01-${(i + 1).toString().padStart(2, '0')}`,
       count: 10 + (i % 5),
@@ -526,7 +366,7 @@ describe('trainDemandForecastModel', () => {
     expect(result.trained).toBe(true);
   });
 
-  it('returns insufficient_sequences when not enough sequences', async () => {
+  it('returns insufficient_data when not enough data points', async () => {
     const rows = Array.from({ length: 10 }, (_, i) => ({
       date: `2026-01-${(i + 1).toString().padStart(2, '0')}`,
       count: 10,
@@ -637,7 +477,7 @@ describe('trainVitalSignsAnomalyDetector', () => {
   });
 
   it('trains with sufficient vital signs data', async () => {
-    const rows = Array.from({ length: 25 }, () => ({
+    const rows = Array.from({ length: 55 }, () => ({
       vital_signs: { pressure: '120/80', heartRate: 72, temperature: 36.5 },
     }));
     mockQuery.mockResolvedValue({ rows });
@@ -648,7 +488,7 @@ describe('trainVitalSignsAnomalyDetector', () => {
   });
 
   it('handles empty vital_signs objects', async () => {
-    const rows = Array.from({ length: 25 }, (_, i) => ({
+    const rows = Array.from({ length: 110 }, (_, i) => ({
       vital_signs: i % 2 === 0 ? { pressure: '120/80', heartRate: 72, temperature: 36.5 } : {},
     }));
     mockQuery.mockResolvedValue({ rows });
@@ -684,7 +524,7 @@ describe('analyzeVitalSigns', () => {
   });
 
   it('analyzes with trained anomaly model', async () => {
-    const rows = Array.from({ length: 25 }, () => ({
+    const rows = Array.from({ length: 55 }, () => ({
       vital_signs: { pressure: '120/80', heartRate: 72, temperature: 36.5 },
     }));
     mockQuery.mockResolvedValue({ rows });
@@ -697,7 +537,7 @@ describe('analyzeVitalSigns', () => {
   });
 
   it('analyzes with cardiovascular risk factors', async () => {
-    const rows = Array.from({ length: 25 }, () => ({
+    const rows = Array.from({ length: 55 }, () => ({
       vital_signs: { pressure: '120/80', heartRate: 72, temperature: 36.5 },
     }));
     mockQuery.mockResolvedValue({ rows });
@@ -721,27 +561,21 @@ describe('analyzeVitalSigns', () => {
 
 describe('trainAllModels', () => {
   it('trains all models with data', async () => {
-    const bookings = Array.from({ length: 15 }, (_, i) => makeBookingRow(i));
-    const crRows = Array.from({ length: 10 }, (_, i) => ({
-      chief_complaint: `dolor ${i % 2 === 0 ? 'cabeza fuerte' : 'garganta'}`,
-      diagnosis: i < 5 ? 'Migraña' : 'Cefalea',
-    }));
+    const bookings = Array.from({ length: 55 }, (_, i) => makeBookingRow(i));
     const demandRows = Array.from({ length: 30 }, (_, i) => ({
       date: `2026-01-${(i + 1).toString().padStart(2, '0')}`,
       count: 10 + (i % 5),
     }));
-    const vitalsRows = Array.from({ length: 25 }, () => ({
+    const vitalsRows = Array.from({ length: 55 }, () => ({
       vital_signs: { pressure: '120/80', heartRate: 72, temperature: 36.5 },
     }));
     mockQuery.mockResolvedValueOnce({ rows: bookings });
-    mockQuery.mockResolvedValueOnce({ rows: crRows });
     mockQuery.mockResolvedValueOnce({ rows: demandRows });
     mockQuery.mockResolvedValueOnce({ rows: vitalsRows });
     mockMlCache.get.mockResolvedValue(null);
     mockMlCache.set.mockResolvedValue(undefined);
     const result = await trainAllModels('tenant-1');
     expect(result).toHaveProperty('noShow');
-    expect(result).toHaveProperty('diagnosis');
     expect(result).toHaveProperty('demand');
     expect(result).toHaveProperty('vitals');
     expect(result).toHaveProperty('totalDuration');
@@ -752,7 +586,6 @@ describe('trainAllModels', () => {
     mockMlCache.get.mockResolvedValue(null);
     const result = await trainAllModels('tenant-1');
     expect(result.noShow.trained).toBe(false);
-    expect(result.diagnosis.trained).toBe(false);
     expect(result.demand.trained).toBe(false);
     expect(result.vitals.trained).toBe(false);
     expect(result).toHaveProperty('totalDuration');

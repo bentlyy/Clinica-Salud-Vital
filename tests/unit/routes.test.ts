@@ -29,7 +29,7 @@ const mockCtrl = Object.fromEntries([
   'getLabTests', 'getLabRequests', 'getLabRequestById', 'createLabRequest', 'updateLabRequestStatus', 'updateLabRequestItemResult', 'cancelLabRequest',
   // ml
   'trainModels', 'getModelStatus', 'resetModels', 'getMetrics', 'clearCache', 'getHealthCheck',
-  'predictNoShow', 'classifyDiagnosis', 'getDemandForecast', 'getOptimalSchedules', 'analyzeVitals',
+  'predictNoShow', 'getDemandForecast', 'getOptimalSchedules', 'analyzeVitals',
   'getPredictionHistory', 'getModelMetricsHistory', 'getDemandForecastHistory',
   'exportPredictionData', 'exportMetricsData', 'exportDemandForecastData', 'powerBiExport',
   // availability
@@ -77,8 +77,12 @@ vi.mock('../../src/modules/webhook/webhook.controller.js', () => mockCtrl);
 vi.mock('../../src/modules/webhook/webhook.schema.js', () => mockSchema);
 vi.mock('../../src/modules/super-admin/super-admin.controller.js', () => mockCtrl);
 vi.mock('../../src/modules/super-admin/super-admin.schema.js', () => mockSchema);
-vi.mock('../../src/modules/exception/exception.controller.js', () => mockCtrl);
-vi.mock('../../src/modules/exception/exception.schema.js', () => mockSchema);
+vi.mock('../../src/modules/availability/availability.controller.js', () => ({
+  ...mockCtrl,
+  getMyExceptions: mockCtrl.getMyExceptions,
+  createException: mockCtrl.createException,
+  deleteException: mockCtrl.deleteException,
+}));
 vi.mock('../../src/modules/rbac/rbac.controller.js', () => mockCtrl);
 vi.mock('../../src/modules/i18n/i18n.controller.js', () => mockCtrl);
 vi.mock('../../src/modules/specialties/specialties.controller.js', () => mockCtrl);
@@ -93,7 +97,7 @@ vi.mock('express-rate-limit', () => ({ default: vi.fn(() => mockMw) }));
 describe('route exports', () => {
   it('availability routes', async () => {
     const mod = await import('../../src/modules/availability/availability.routes.js');
-    expect(mod.default).toBeDefined();
+    expect(mod.availabilityRouter).toBeDefined();
     expect(mockRouter.get).toHaveBeenCalled();
   });
 
@@ -103,8 +107,8 @@ describe('route exports', () => {
   });
 
   it('exception routes', async () => {
-    const mod = await import('../../src/modules/exception/exception.routes.js');
-    expect(mod.default).toBeDefined();
+    const mod = await import('../../src/modules/availability/availability.routes.js');
+    expect(mod.exceptionRouter).toBeDefined();
   });
 
   it('i18n routes', async () => {

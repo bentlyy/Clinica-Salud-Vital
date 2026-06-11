@@ -16,8 +16,7 @@ export const getSystemHealth = asyncHandler(async (_req: Request, res: Response)
 
   const systemInfo = monitoringService.getSystemInfo();
   const eventLoopLag = await monitoringService.getEventLoopLag();
-  const snapshots = monitoringService.getSnapshots();
-  const lastSnap = snapshots[snapshots.length - 1];
+  const currentMemory = monitoringService.getMemoryUsage();
 
   res.json({
     status: 'ok',
@@ -30,32 +29,19 @@ export const getSystemHealth = asyncHandler(async (_req: Request, res: Response)
     cpu: systemInfo.cpu,
     eventLoopLag: `${eventLoopLag}ms`,
     uptime: systemInfo.uptime,
-    recentMemory: snapshots.slice(-5),
+    currentMemory,
     ml: getMLMetrics(),
   });
 });
 
 export const getMemoryReport = asyncHandler(async (_req: Request, res: Response) => {
-  const snapshots = monitoringService.getSnapshots();
-  const alerts = monitoringService.getAlerts();
   const systemInfo = monitoringService.getSystemInfo();
   const eventLoopLag = await monitoringService.getEventLoopLag();
-
-  const memoryTrend = snapshots.length >= 2 ? {
-    heapGrowth: snapshots[snapshots.length - 1].heapUsed - snapshots[0].heapUsed,
-    rssGrowth: snapshots[snapshots.length - 1].rss - snapshots[0].rss,
-    avgHeapUsed: Math.round(snapshots.reduce((a, b) => a + b.heapUsed, 0) / snapshots.length),
-    maxHeapUsed: Math.max(...snapshots.map(s => s.heapUsed)),
-    minHeapUsed: Math.min(...snapshots.map(s => s.heapUsed)),
-  } : null;
 
   res.json({
     current: systemInfo.memory,
     eventLoopLag: `${eventLoopLag}ms`,
-    snapshots: snapshots.slice(-30),
-    alerts: alerts.slice(-20),
-    trend: memoryTrend,
-    snapshotsCount: snapshots.length,
+    note: 'Historic snapshots removed — metrics stream to stdout every 30s',
   });
 });
 
@@ -182,28 +168,19 @@ export const getDashboardData = asyncHandler(async (_req: Request, res: Response
   const dbStats = await dbMonitor.getStats();
   const poolHealth = await dbMonitor.getPoolHealth();
   const eventLoopLag = await monitoringService.getEventLoopLag();
-  const snapshots = monitoringService.getSnapshots();
-  const alerts = monitoringService.getAlerts();
   const mlMetrics = getMLMetrics();
-
-  const memoryTrend = snapshots.length >= 2 ? {
-    heapGrowth: snapshots[snapshots.length - 1].heapUsed - snapshots[0].heapUsed,
-    avgHeapUsed: Math.round(snapshots.reduce((a, b) => a + b.heapUsed, 0) / snapshots.length),
-    maxHeapUsed: Math.max(...snapshots.map(s => s.heapUsed)),
-  } : null;
 
   res.json({
     timestamp: new Date().toISOString(),
     system: {
       ...systemInfo,
       eventLoopLag: `${eventLoopLag}ms`,
-      memoryTrend,
     },
     database: {
       ...dbStats,
       poolHealth,
     },
     ml: mlMetrics,
-    alerts: alerts.slice(-10),
+    note: 'Historic alerts removed — metrics stream to stdout every 30s',
   });
 });

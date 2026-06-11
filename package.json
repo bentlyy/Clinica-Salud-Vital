@@ -40,7 +40,6 @@
   "dependencies": {
     "@sendgrid/mail": "^8.1.6",
     "@sentry/node": "^10.56.0",
-    "@tensorflow/tfjs": "^4.22.0",
     "@types/bcrypt": "^5.0.2",
     "@types/compression": "^1.8.1",
     "@types/cookie-parser": "^1.4.10",

@@ -16,10 +16,6 @@ interface NoShowPredictionData {
   time?: string;
 }
 
-interface DiagnosisClassificationData {
-  chiefComplaint?: string;
-}
-
 interface VitalSignsData {
   pressure?: string;
   heartRate?: string | number;
@@ -31,7 +27,6 @@ interface VitalSignsAnalysisData {
 }
 
 interface SanitizedMLInput {
-  chiefComplaint?: string;
   vitalSigns?: {
     pressure?: string;
     heartRate?: string | number;
@@ -58,20 +53,20 @@ export const validateNoShowPrediction = (data: NoShowPredictionData): Validation
 
   if (data.doctorId !== undefined) {
     if (typeof data.doctorId !== 'number' || data.doctorId < 1) {
-      errors.push('doctorId debe ser un n�mero positivo');
+      errors.push('doctorId debe ser un n\u00famero positivo');
     }
   }
 
   if (data.userId !== undefined) {
     if (typeof data.userId !== 'number' || data.userId < 1) {
-      errors.push('userId debe ser un n�mero positivo');
+      errors.push('userId debe ser un n\u00famero positivo');
     }
   }
 
   if (!data.date) {
     errors.push('date es requerido');
   } else if (!isValidDate(data.date)) {
-    errors.push('date debe ser una fecha v�lida');
+    errors.push('date debe ser una fecha v\u00e1lida');
   }
 
   if (data.time) {
@@ -81,22 +76,6 @@ export const validateNoShowPrediction = (data: NoShowPredictionData): Validation
   }
 
   return { valid: errors.length === 0, errors };
-};
-
-export const validateDiagnosisClassification = (data: DiagnosisClassificationData): ValidationResult => {
-  const errors: string[] = [];
-
-  if (!data.chiefComplaint) {
-    errors.push('chiefComplaint es requerido');
-  } else if (typeof data.chiefComplaint !== 'string') {
-    errors.push('chiefComplaint debe ser texto');
-  } else if (data.chiefComplaint.length < 2) {
-    errors.push('chiefComplaint debe tener al menos 2 caracteres');
-  } else if (data.chiefComplaint.length > 1000) {
-    errors.push('chiefComplaint debe tener m�ximo 1000 caracteres');
-  }
-
-  return { valid: errors.length === 0, errors: errors.map(e => ({ field: 'chiefComplaint', message: e })) };
 };
 
 export const validateDemandForecast = (query: Record<string, unknown>): ValidationResult => {
@@ -124,14 +103,14 @@ export const validateVitalSignsAnalysis = (data: VitalSignsAnalysisData): Valida
     if (vs.pressure) {
       const pressureRegex = /^(\d{2,3})\/(\d{2,3})$/;
       if (!pressureRegex.test(String(vs.pressure))) {
-        errors.push('pressure debe tener formato sistólica/diastólica');
+        errors.push('pressure debe tener formato sist\u00f3lica/diast\u00f3lica');
       } else {
         const [sys, dia] = String(vs.pressure).split('/').map(Number);
         if (sys < 60 || sys > 250) {
-          errors.push('presión sistólica fuera de rango (60-250)');
+          errors.push('presi\u00f3n sist\u00f3lica fuera de rango (60-250)');
         }
         if (dia < 40 || dia > 150) {
-          errors.push('presión diastólica fuera de rango (40-150)');
+          errors.push('presi\u00f3n diast\u00f3lica fuera de rango (40-150)');
         }
       }
     }
@@ -158,10 +137,6 @@ export const sanitizeMLInput = (data: Record<string, unknown>): SanitizedMLInput
   if (!data || typeof data !== 'object') return {};
 
   const sanitized: SanitizedMLInput = {};
-
-  if (data.chiefComplaint) {
-    sanitized.chiefComplaint = sanitizeString(data.chiefComplaint);
-  }
 
   if (data.vitalSigns && typeof data.vitalSigns === 'object') {
     const vs = data.vitalSigns as Record<string, unknown>;
