@@ -440,117 +440,105 @@ const runMigration = async (): Promise<void> => {
 };
 
 const startServer = async (): Promise<void> => {
-  /* Startup watchdog: log if startup takes >50s (before Render's ~60s timeout) */
-  const watchdog = setTimeout(() => {
-    logger.error(`STARTUP TIMEOUT: Server did not start within 50s. Last step: (unknown). PORT=${process.env.PORT || 'undefined'} NODE_ENV=${process.env.NODE_ENV || 'undefined'}`);
-  }, 50000);
-
-  try {
-    logger.info(`[STARTUP] begin PORT=${process.env.PORT || 'undefined'}`);
-    step('validateEnvSecurity');
-    validateEnvSecurity();
-    step('validateEmailConfig');
-    validateEmailConfig();
-
-    /* Validate Stripe is configured in production (optional) */
-    if (process.env.NODE_ENV === 'production') {
-      const stripeKey = process.env.STRIPE_SECRET_KEY || '';
-      if (!stripeKey) {
-        logger.error('████████████████████████████████████████████████████████████████');
-        logger.error('█ CRITICAL: STRIPE_SECRET_KEY no configurada                   █');
-        logger.error('█ El sistema SaaS NO procesará pagos reales                    █');
-        logger.error('█ Configure STRIPE_SECRET_KEY en las variables de entorno      █');
-        logger.error('████████████████████████████████████████████████████████████████');
-        global.stripeWarning = true;
-      } else if (stripeKey.startsWith('sk_test_')) {
-        logger.warn('████████████████████████████████████████████████████████████████');
-        logger.warn('█ WARNING: STRIPE_SECRET_KEY es de prueba (sk_test_)           █');
-        logger.warn('█ Cambiar a sk_live_ para producción real                       █');
-        logger.warn('████████████████████████████████████████████████████████████████');
-      }
-    }
-
-    /* Retry DB connection with backoff (Render startup race condition) */
-    step('DB retry loop');
-    for (let attempt = 1; attempt <= 10; attempt++) {
-      try {
-        await pool.query({ text: 'SELECT 1', query_timeout: 10000 } as any);
-        break;
-      } catch (dbErr) {
-        logger.warn(`DB connection attempt ${attempt}/10 failed`, { error: (dbErr as Error).message, code: (dbErr as NodeJS.ErrnoException).code });
-        if (attempt === 10) throw dbErr;
-        await new Promise((r: (value: unknown) => void) => setTimeout(r, attempt * 2000));
-      }
-    }
-    logger.info('DB conectada');
-
-    step(`app.listen(PORT=${PORT})`);
-    clearTimeout(watchdog);
-    const server = app.listen(PORT, () => {
-      logger.info(`API running on http://localhost:${PORT}`);
-    });
-    server.on('error', (err: NodeJS.ErrnoException) => {
-      logger.error(`SERVER BIND FAILED: port=${PORT} code=${err.code} message=${err.message}`);
-      process.exit(1);
-    });
-
-    /* Post-bind: migrations, seeds, cron — async para que Render detecte el puerto a tiempo */
-    setImmediate(async () => {
-      try {
-        step('Set database timeouts');
-        try {
-          const dbName = process.env.DATABASE_URL?.split('/').pop()?.split('?')[0] || 'clinic';
-          await pool.query(`ALTER DATABASE "${dbName}" SET statement_timeout = 30000`);
-          await pool.query(`ALTER DATABASE "${dbName}" SET idle_in_transaction_session_timeout = 60000`);
-          logger.info('Database timeouts configured');
-        } catch {
-          logger.warn('Could not set database-wide timeouts (non-superuser) — OK');
-        }
-
-        step('runMigration');
-        await runMigration();
-        step('registerWorkers');
-        registerWorkers();
-        step('loadFromDB');
-        await tenantService.loadFromDB();
-        step('SET SESSION tenant_id');
-        await pool.query(`SET SESSION app.tenant_id = 'default'`);
-        step('seedDefaultTenant');
-        await seedDefaultTenant();
-        step('seedSuperAdmin');
-        await seedSuperAdmin();
-        step('seedTestTenants');
-        await seedTestTenants();
-        step('startRefresh');
-        tenantService.startRefresh();
-
-        await seed();
-        await backfillInvoices();
-
-        startReminderJob();
-
-        cron.schedule('0 */6 * * *', async () => {
-          try {
-            const result = await verifyAuditChain();
-            if (!result.valid) {
-              logger.warn(`Audit chain integrity check: ${result.brokenLinks} broken links out of ${result.checked}`);
-            } else {
-              logger.info(`Audit chain integrity check passed: ${result.checked} logs verified`);
-            }
-          } catch (error) {
-            logger.error('Audit chain integrity cron job failed', { error: (error as Error).message });
-          }
-        });
-        logger.info('Audit chain integrity cron scheduled (every 6 hours)');
-      } catch (err) {
-        logger.error('Post-boot initialization failed', { error: (err as Error).message, stack: (err as Error).stack });
-      }
-    });
-  } catch (error) {
-    clearTimeout(watchdog);
-    logger.error('Error starting server', { error: (error as Error).message, stack: (error as Error).stack });
+  /* Bind port FIRST — Render debe detectar el puerto inmediatamente, antes de DB, env, etc. */
+  const server = app.listen(PORT, () => {
+    logger.info(`API running on http://localhost:${PORT}`);
+  });
+  server.on('error', (err: NodeJS.ErrnoException) => {
+    logger.error(`SERVER BIND FAILED: port=${PORT} code=${err.code} message=${err.message}`);
     process.exit(1);
-  }
+  });
+
+  /* Todo lo demás async: env, DB, migrations, seeds, cron */
+  setImmediate(async () => {
+    try {
+      logger.info(`[STARTUP] begin PORT=${process.env.PORT || 'undefined'}`);
+
+      step('validateEnvSecurity');
+      validateEnvSecurity();
+
+      step('validateEmailConfig');
+      validateEmailConfig();
+
+      if (process.env.NODE_ENV === 'production') {
+        const stripeKey = process.env.STRIPE_SECRET_KEY || '';
+        if (!stripeKey) {
+          logger.error('████████████████████████████████████████████████████████████████');
+          logger.error('█ CRITICAL: STRIPE_SECRET_KEY no configurada                   █');
+          logger.error('█ El sistema SaaS NO procesará pagos reales                    █');
+          logger.error('█ Configure STRIPE_SECRET_KEY en las variables de entorno      █');
+          logger.error('████████████████████████████████████████████████████████████████');
+          global.stripeWarning = true;
+        } else if (stripeKey.startsWith('sk_test_')) {
+          logger.warn('████████████████████████████████████████████████████████████████');
+          logger.warn('█ WARNING: STRIPE_SECRET_KEY es de prueba (sk_test_)           █');
+          logger.warn('█ Cambiar a sk_live_ para producción real                       █');
+          logger.warn('████████████████████████████████████████████████████████████████');
+        }
+      }
+
+      step('DB retry loop');
+      for (let attempt = 1; attempt <= 10; attempt++) {
+        try {
+          await pool.query({ text: 'SELECT 1', signal: AbortSignal.timeout(10000) } as any);
+          break;
+        } catch (dbErr) {
+          logger.warn(`DB connection attempt ${attempt}/10 failed`, { error: (dbErr as Error).message, code: (dbErr as NodeJS.ErrnoException).code });
+          if (attempt === 10) throw dbErr;
+          await new Promise((r: (value: unknown) => void) => setTimeout(r, attempt * 2000));
+        }
+      }
+      logger.info('DB conectada');
+
+      step('Set database timeouts');
+      try {
+        const dbName = process.env.DATABASE_URL?.split('/').pop()?.split('?')[0] || 'clinic';
+        await pool.query(`ALTER DATABASE "${dbName}" SET statement_timeout = 30000`);
+        await pool.query(`ALTER DATABASE "${dbName}" SET idle_in_transaction_session_timeout = 60000`);
+        logger.info('Database timeouts configured');
+      } catch {
+        logger.warn('Could not set database-wide timeouts (non-superuser) — OK');
+      }
+
+      step('runMigration');
+      await runMigration();
+      step('registerWorkers');
+      registerWorkers();
+      step('loadFromDB');
+      await tenantService.loadFromDB();
+      step('SET SESSION tenant_id');
+      await pool.query(`SET SESSION app.tenant_id = 'default'`);
+      step('seedDefaultTenant');
+      await seedDefaultTenant();
+      step('seedSuperAdmin');
+      await seedSuperAdmin();
+      step('seedTestTenants');
+      await seedTestTenants();
+      step('startRefresh');
+      tenantService.startRefresh();
+
+      await seed();
+      await backfillInvoices();
+
+      startReminderJob();
+
+      cron.schedule('0 */6 * * *', async () => {
+        try {
+          const result = await verifyAuditChain();
+          if (!result.valid) {
+            logger.warn(`Audit chain integrity check: ${result.brokenLinks} broken links out of ${result.checked}`);
+          } else {
+            logger.info(`Audit chain integrity check passed: ${result.checked} logs verified`);
+          }
+        } catch (error) {
+          logger.error('Audit chain integrity cron job failed', { error: (error as Error).message });
+        }
+      });
+      logger.info('Audit chain integrity cron scheduled (every 6 hours)');
+    } catch (error) {
+      logger.error('Post-boot initialization failed', { error: (error as Error).message, stack: (error as Error).stack });
+    }
+  });
 };
 
 process.on('unhandledRejection', (reason) => {
