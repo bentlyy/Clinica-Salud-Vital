@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, ReactNode } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import ProtectedRoute from './ProtectedRoute';
 import Navbar from '../components/Navbar';
@@ -24,7 +24,7 @@ const SuperAdminDashboardPage = lazy(() => import('../pages/SuperAdminDashboardP
 const SuperAdminTenantsPage = lazy(() => import('../pages/SuperAdminTenantsPage'));
 const SuperAdminTenantDetailPage = lazy(() => import('../pages/SuperAdminTenantDetailPage'));
 
-function AppLayout({ children }) {
+function AppLayout({ children }: { children: ReactNode }) {
   return (
     <>
       <Navbar />
@@ -45,7 +45,6 @@ export default function AppRoutes() {
       <Route path="/booking" element={<AppLayout><BookingPage /></AppLayout>} />
       <Route path="/specialists" element={<AppLayout><SpecialistsPage /></AppLayout>} />
       <Route path="/doctors" element={<ProtectedRoute><AppLayout><BookingPage /></AppLayout></ProtectedRoute>} />
-
 
       <Route path="/confirm/:token" element={<AppLayout><ConfirmPage /></AppLayout>} />
       <Route path="/my-bookings" element={<ProtectedRoute><AppLayout><MyBookingsPage /></AppLayout></ProtectedRoute>} />

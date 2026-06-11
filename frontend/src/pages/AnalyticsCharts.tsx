@@ -96,10 +96,7 @@ export function DiagnosesPanel({ data, colors, chartGreen }) {
       </div>
 
       <div className="analytics-card">
-        <h3>{t('analytics.diagnosis_classification')}</h3>
-        <p style={{ fontSize: 14, color: 'var(--text-secondary)', marginBottom: 16 }}>
-          {t('analytics.diagnosis_classification_desc')}
-        </p>
+        <h3>{t('analytics.top_diagnoses')}</h3>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
           {data.slice(0, 6).map((d, i) => (
             <div key={i} style={{ background: 'var(--bg-primary)', padding: 12, borderRadius: 8, border: '1px solid var(--border-light)' }}>
