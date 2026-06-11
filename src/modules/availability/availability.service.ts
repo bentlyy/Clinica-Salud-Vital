@@ -1,5 +1,6 @@
 import { pool } from '../../shared/db.js';
 import { BadRequestError, NotFoundError } from '../../utils/errors.js';
+import { isValidDate, isValidTime } from '../../shared/date.js';
 
 interface AvailabilityInput {
   doctor_id: number;
@@ -15,9 +16,6 @@ interface ExceptionInput {
   end_time?: string;
   is_full_day?: boolean;
 }
-
-const isValidTime = (t: string): boolean => /^\d{2}:\d{2}$/.test(t);
-const isValidDate = (d: string): boolean => /^\d{4}-\d{2}-\d{2}$/.test(d);
 
 export const getAvailabilityByDoctor = async (doctor_id: number, tenantId: string): Promise<unknown[]> => {
   const result = await pool.query(
