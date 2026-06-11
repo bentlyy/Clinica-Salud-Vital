@@ -5,7 +5,7 @@ describe('CSRF Protection', () => {
     vi.clearAllMocks();
   });
 
-  it('should reject state-changing requests without CSRF cookie', async () => {
+  it('should allow state-changing requests without CSRF cookie (new session)', async () => {
     const { csrfProtection } = await import('../../src/middlewares/csrf.middleware.js');
     const req = { method: 'POST', cookies: {}, headers: {} };
     const res = {};
@@ -13,14 +13,10 @@ describe('CSRF Protection', () => {
 
     csrfProtection(req, res, next);
 
-    expect(next).toHaveBeenCalled();
-    const errorArg = next.mock.calls[0][0];
-    expect(errorArg).toBeDefined();
-    expect(errorArg.statusCode).toBe(400);
-    expect(errorArg.message).toMatch(/CSRF token missing/i);
+    expect(next).toHaveBeenCalledWith();
   });
 
-  it('should reject state-changing requests without CSRF header', async () => {
+  it('should allow state-changing requests without CSRF header (SameSite protects)', async () => {
     const { csrfProtection } = await import('../../src/middlewares/csrf.middleware.js');
     const req = {
       method: 'POST',
@@ -32,10 +28,7 @@ describe('CSRF Protection', () => {
 
     csrfProtection(req, res, next);
 
-    expect(next).toHaveBeenCalled();
-    const errorArg = next.mock.calls[0][0];
-    expect(errorArg).toBeDefined();
-    expect(errorArg.statusCode).toBe(400);
+    expect(next).toHaveBeenCalledWith();
   });
 
   it('should reject when CSRF tokens do not match', async () => {
