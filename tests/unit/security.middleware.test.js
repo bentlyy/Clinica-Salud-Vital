@@ -7,12 +7,16 @@ vi.mock('../../src/utils/logger.js', () => ({
 }));
 
 const originalEnv = process.env;
+const VALID_PHI_KEY = '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef';
+const VALID_AUDIT_SECRET = 'a'.repeat(32);
 
 beforeEach(() => {
   vi.clearAllMocks();
   vi.resetModules();
   process.env = { ...originalEnv };
   delete process.env.JWT_SECRET;
+  delete process.env.PHI_MASTER_KEY;
+  delete process.env.AUDIT_HMAC_SECRET;
 });
 
 describe('security.middleware', () => {
@@ -36,12 +40,16 @@ describe('security.middleware', () => {
 
     it('passes with valid JWT_SECRET', async () => {
       process.env.JWT_SECRET = 'a'.repeat(32);
+      process.env.PHI_MASTER_KEY = VALID_PHI_KEY;
+      process.env.AUDIT_HMAC_SECRET = VALID_AUDIT_SECRET;
       const { validateEnvSecurity } = await import('../../src/middlewares/security.middleware.js');
       expect(() => validateEnvSecurity()).not.toThrow();
     });
 
     it('logs warning in development mode', async () => {
       process.env.JWT_SECRET = 'a'.repeat(32);
+      process.env.PHI_MASTER_KEY = VALID_PHI_KEY;
+      process.env.AUDIT_HMAC_SECRET = VALID_AUDIT_SECRET;
       process.env.NODE_ENV = 'development';
       mockLogger.warn.mockClear();
       const { validateEnvSecurity } = await import('../../src/middlewares/security.middleware.js');
@@ -51,6 +59,8 @@ describe('security.middleware', () => {
 
     it('does not log warning in production', async () => {
       process.env.JWT_SECRET = 'a'.repeat(32);
+      process.env.PHI_MASTER_KEY = VALID_PHI_KEY;
+      process.env.AUDIT_HMAC_SECRET = VALID_AUDIT_SECRET;
       process.env.NODE_ENV = 'production';
       mockLogger.warn.mockClear();
       const { validateEnvSecurity } = await import('../../src/middlewares/security.middleware.js');

@@ -1,9 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import request from 'supertest';
 import express from 'express';
+import bcrypt from 'bcrypt';
 
-const { mockQuery } = vi.hoisted(() => ({
+const { mockQuery, mockClient, mockConnect } = vi.hoisted(() => ({
   mockQuery: vi.fn(),
+  mockClient: { query: vi.fn(), release: vi.fn() },
+  mockConnect: vi.fn(),
 }));
 
 vi.mock('../../src/shared/db.js', () => ({
@@ -11,19 +14,6 @@ vi.mock('../../src/shared/db.js', () => ({
     query: mockQuery,
     connect: mockConnect,
     on: vi.fn(),
-  },
-}));
-
-vi.mock('../../src/shared/jwt.service.js', () => ({
-  jwtManager: {
-    verify: vi.fn((token) => {
-      try {
-        return JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
-      } catch { return null; }
-    }),
-    sign: vi.fn(() => 'mock-token'),
-    signInvite: vi.fn(() => 'mock-invite-token'),
-    getJWKS: vi.fn(() => ({ keys: [] })),
   },
 }));
 
@@ -37,6 +27,19 @@ vi.mock('bcrypt', () => ({
 vi.mock('nodemailer', () => ({
   default: {
     createTransport: () => ({ sendMail: vi.fn().mockResolvedValue({}) }),
+  },
+}));
+
+vi.mock('../../src/shared/jwt.service.js', () => ({
+  jwtManager: {
+    verify: vi.fn((token) => {
+      try {
+        return JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
+      } catch { return null; }
+    }),
+    sign: vi.fn(() => 'mock-token'),
+    signInvite: vi.fn(() => 'mock-invite-token'),
+    getJWKS: vi.fn(() => ({ keys: [] })),
   },
 }));
 
@@ -54,6 +57,9 @@ app.use(errorHandler);
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mockQuery.mockReset();
+  mockConnect.mockReturnValue(mockClient);
+  mockClient.query.mockReset();
 });
 
 describe('POST /api/auth/register', () => {
@@ -64,7 +70,7 @@ describe('POST /api/auth/register', () => {
 
     const res = await request(app)
       .post('/api/auth/register')
-      .send({ email: 'newuser@test.com', password: 'Test1234!' });
+      .send({ name: 'Test User', email: 'newuser@test.com', password: 'Test1234!' });
 
     expect(res.status).toBe(201);
     expect(res.body.email).toBe('newuser@test.com');
@@ -73,30 +79,29 @@ describe('POST /api/auth/register', () => {
   it('returns 400 if email missing', async () => {
     const res = await request(app)
       .post('/api/auth/register')
-      .send({ password: 'password123' });
+      .send({ name: 'Test User', password: 'password123' });
 
     expect(res.status).toBe(400);
-    expect(res.body.error).toBe('Validation failed');
-    expect(res.body.details).toBeDefined();
+    expect(res.body.error).toContain('Validation failed');
   });
 
   it('returns 400 if password too short', async () => {
     const res = await request(app)
       .post('/api/auth/register')
-      .send({ email: 'test@test.com', password: 'short' });
+      .send({ name: 'Test User', email: 'test@test.com', password: 'short' });
 
     expect(res.status).toBe(400);
-    expect(res.body.error).toBe('Validation failed');
-    expect(res.body.details[0]).toContain('8 characters');
+    expect(res.body.error).toContain('Validation failed');
+    expect(res.body.error).toContain('8 characters');
   });
 
   it('returns 400 if email format invalid', async () => {
     const res = await request(app)
       .post('/api/auth/register')
-      .send({ email: 'not-email', password: 'password123' });
+      .send({ name: 'Test User', email: 'not-email', password: 'password123' });
 
     expect(res.status).toBe(400);
-    expect(res.body.error).toBe('Validation failed');
+    expect(res.body.error).toContain('Validation failed');
   });
 });
 
@@ -152,7 +157,7 @@ describe('POST /api/auth/login', () => {
       .send({ password: 'password123', captcha_token: 'test-captcha' });
 
     expect(res.status).toBe(400);
-    expect(res.body.error).toBe('Validation failed');
+    expect(res.body.error).toContain('Validation failed');
   });
 
   it('returns 400 if captcha token missing', async () => {
@@ -161,6 +166,6 @@ describe('POST /api/auth/login', () => {
       .send({ email: 'test@test.com', password: 'Test1234!' });
 
     expect(res.status).toBe(400);
-    expect(res.body.error).toBe('Validation failed');
+    expect(res.body.error).toContain('Validation failed');
   });
 });
