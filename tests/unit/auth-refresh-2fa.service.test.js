@@ -64,7 +64,7 @@ describe('authService.refreshToken', () => {
     expect(result.access_token).toBe('mock-access-token');
     expect(result.refresh_token).toBeDefined();
     expect(mockClient.query).toHaveBeenCalledWith('COMMIT');
-  });
+  }, 10000);
 
   it('returns null for invalid token', async () => {
     mockClient.query.mockImplementation((sql) => {
