@@ -23,6 +23,7 @@ const PUBLIC_PATHS = new Set([
   '/api/v1/i18n/translations',
   '/api/v1/booking/slots',
   '/api/v1/specialties',
+  '/api/v1/doctors/public',
   '/api/v1/saas/plans',
   '/api/v1/saas/checkout',
   '/api/v1/stripe/webhook',
