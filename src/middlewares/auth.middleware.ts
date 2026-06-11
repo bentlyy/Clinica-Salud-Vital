@@ -66,7 +66,7 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
     return;
   }
 
-  if (req.tenant_id && user.tenant_id !== req.tenant_id) {
+  if (req.tenant_id && user.tenant_id !== req.tenant_id && user.role !== 'superadmin') {
     next(new UnauthorizedError('Tenant mismatch'));
     return;
   }
