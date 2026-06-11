@@ -474,11 +474,11 @@ const startServer = async (): Promise<void> => {
     step('DB retry loop');
     for (let attempt = 1; attempt <= 10; attempt++) {
       try {
-        await pool.query('SELECT 1');
+        await pool.query("SET LOCAL statement_timeout = '10000'; SELECT 1");
         break;
       } catch (dbErr) {
+        logger.warn(`DB connection attempt ${attempt}/10 failed`, { error: (dbErr as Error).message, code: (dbErr as NodeJS.ErrnoException).code });
         if (attempt === 10) throw dbErr;
-        logger.warn(`DB connection attempt ${attempt}/10 failed, retrying...`, (dbErr as Error).message);
         await new Promise((r: (value: unknown) => void) => setTimeout(r, attempt * 2000));
       }
     }
