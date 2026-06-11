@@ -7,6 +7,11 @@ const api = axios.create({
 
 api.interceptors.request.use(
   (config) => {
+    const tenantId = localStorage.getItem('tenant_id');
+    if (tenantId) {
+      config.headers['X-Tenant-Id'] = tenantId;
+    }
+
     if (config.method && !['get', 'head', 'options'].includes(config.method)) {
       const csrfToken = localStorage.getItem('csrf_token');
       if (csrfToken) {

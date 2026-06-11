@@ -109,6 +109,7 @@ app.get('/api/v1/health', healthHandler);
 
 app.use(securityMiddleware);
 app.use(monitoringMiddleware);
+app.use(compression());
 
 /* CORS must be before tenantMiddleware (OPTIONS preflight has no tenant) */
 const allowedOrigins = [
@@ -164,8 +165,6 @@ app.use(tenantMiddleware);
 
 /* Session activity tracking (fire-and-forget for authenticated users) */
 app.use(trackActivity);
-
-app.use(compression());
 
 app.use('/api/saas/webhook/stripe', express.raw({ type: 'application/json' }));
 app.use('/api/v1/saas/webhook/stripe', express.raw({ type: 'application/json' }));
