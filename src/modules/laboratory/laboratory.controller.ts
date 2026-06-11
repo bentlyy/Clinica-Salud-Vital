@@ -2,16 +2,7 @@ import * as laboratoryService from './laboratory.service.js';
 import * as doctorService from '../doctor/doctor.service.js';
 import { asyncHandler } from '../../middlewares/asyncHandler.middleware.js';
 import { NotFoundError, BadRequestError } from '../../utils/errors.js';
-
-const getQuery = (query: Record<string, unknown>, key: string): string | undefined => {
-  const val = query[key];
-  return val ? String(val) : undefined;
-};
-
-const getQueryInt = (query: Record<string, unknown>, key: string, def: number): number => {
-  const val = query[key];
-  return val ? parseInt(String(val), 10) : def;
-};
+import { getQuery, getQueryInt } from '../../shared/query.js';
 
 export const getLabTests = asyncHandler(async (req, res) => {
   const category = getQuery(req.query, 'category');

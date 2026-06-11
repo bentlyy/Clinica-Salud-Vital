@@ -43,8 +43,6 @@ const mockCtrl = Object.fromEntries([
   // super-admin
   'getGlobalStats', 'listTenants', 'getTenantDetail', 'adminCreateTenant', 'updateTenant', 'deleteTenant', 'listUsers', 'toggleUserActive',
   'getDashboardData', 'getTopTenantsData', 'getRevenueData', 'getGrowthData',
-  // webhook
-  'list', 'getDeliveries', 'remove',
   // specialties
   'getSpecialties', 'createSpecialty',
   // i18n
@@ -73,8 +71,6 @@ vi.mock('../../src/modules/ml/ml.controller.js', () => mockCtrl);
 vi.mock('../../src/modules/saas/saas.features.js', () => ({ requireFeature: mockRequireFeature }));
 vi.mock('../../src/modules/saas/saas.controller.js', () => mockCtrl);
 vi.mock('../../src/modules/saas/saas.schema.js', () => mockSchema);
-vi.mock('../../src/modules/webhook/webhook.controller.js', () => mockCtrl);
-vi.mock('../../src/modules/webhook/webhook.schema.js', () => mockSchema);
 vi.mock('../../src/modules/super-admin/super-admin.controller.js', () => mockCtrl);
 vi.mock('../../src/modules/super-admin/super-admin.schema.js', () => mockSchema);
 vi.mock('../../src/modules/availability/availability.controller.js', () => ({
@@ -143,11 +139,6 @@ describe('route exports', () => {
 
   it('super-admin routes', async () => {
     const mod = await import('../../src/modules/super-admin/super-admin.routes.js');
-    expect(mod.default).toBeDefined();
-  });
-
-  it('webhook routes', async () => {
-    const mod = await import('../../src/modules/webhook/webhook.routes.js');
     expect(mod.default).toBeDefined();
   });
 
