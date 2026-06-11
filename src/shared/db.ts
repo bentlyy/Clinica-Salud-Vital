@@ -56,17 +56,30 @@ const wrappedQuery = function (this: typeof pool, text: string | pg.QueryConfig,
   if (!ctx) {
     return originalPoolQuery(text, values);
   }
-  const escapedTenantId = ctx.tenantId.replace(/'/g, "''");
-  const setConfigSql = `SELECT set_config('app.tenant_id', '${escapedTenantId}', false); `;
+
+  const setConfigSql = `SELECT set_config('app.tenant_id', $1, false); `;
 
   if (typeof text === 'string') {
-    return originalPoolQuery(setConfigSql + text, values);
+    if (values && values.length > 0) {
+      text = text.replace(/\$(\d+)/g, (_, num) => `$${parseInt(num, 10) + 1}`);
+      return originalPoolQuery(setConfigSql + text, [ctx.tenantId, ...values]);
+    }
+    return originalPoolQuery(setConfigSql + text, [ctx.tenantId]);
   }
 
+  const originalText = text.text;
+  if (text.values && text.values.length > 0) {
+    const shiftedText = originalText.replace(/\$(\d+)/g, (_, num) => `$${parseInt(num, 10) + 1}`);
+    return originalPoolQuery({
+      ...text,
+      text: setConfigSql + shiftedText,
+      values: [ctx.tenantId, ...text.values],
+    });
+  }
   return originalPoolQuery({
     ...text,
-    text: setConfigSql + text.text,
-    values: text.values || values,
+    text: setConfigSql + originalText,
+    values: [ctx.tenantId],
   });
 } as unknown as typeof pool.query;
 

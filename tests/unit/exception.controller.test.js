@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-vi.mock('../../src/modules/exception/exception.service.js', () => ({
+vi.mock('../../src/modules/availability/availability.service.js', () => ({
   getExceptionsByDoctor: vi.fn(),
   createException: vi.fn(),
   deleteException: vi.fn(),
@@ -10,9 +10,9 @@ vi.mock('../../src/modules/doctor/doctor.service.js', () => ({
   getDoctorByUserId: vi.fn(),
 }));
 
-import * as exceptionService from '../../src/modules/exception/exception.service.js';
+import * as exceptionService from '../../src/modules/availability/availability.service.js';
 import * as doctorService from '../../src/modules/doctor/doctor.service.js';
-import * as exceptionController from '../../src/modules/exception/exception.controller.js';
+import * as exceptionController from '../../src/modules/availability/availability.controller.js';
 
 const flush = () => new Promise(r => setTimeout(r, 0));
 
