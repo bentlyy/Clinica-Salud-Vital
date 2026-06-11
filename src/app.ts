@@ -508,12 +508,13 @@ const startServer = async (): Promise<void> => {
     await seedTestTenants();
     tenantService.startRefresh();
 
-    await seed();
-    await backfillInvoices();
-
     app.listen(PORT, () => {
       logger.info(`API running on http://localhost:${PORT}`);
     });
+
+    /* Seed y backfill después de abrir el puerto para que Render detecte el puerto a tiempo */
+    await seed();
+    await backfillInvoices();
 
     startReminderJob();
 
