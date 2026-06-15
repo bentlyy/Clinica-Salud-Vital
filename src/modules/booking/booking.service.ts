@@ -98,8 +98,8 @@ export const createBooking = async ({ doctor_id, user_id, date, time, duration =
     }
 
     const userResult = await client.query(
-      'SELECT email, rut, phone, blocked_until FROM users WHERE id = $1',
-      [user_id]
+      'SELECT email, rut, phone, blocked_until FROM users WHERE id = $1 AND tenant_id = $2',
+      [user_id, tenantId]
     );
     if (userResult.rows.length === 0) throw new NotFoundError('User not found');
 

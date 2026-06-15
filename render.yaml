@@ -35,3 +35,21 @@ services:
         value: es
       - key: LOG_LEVEL
         value: info
+      - key: PHI_MASTER_KEY
+        sync: false
+      - key: AUDIT_HMAC_SECRET
+        sync: false
+      - key: ENCRYPTION_KEY
+        sync: false
+      - key: INVITE_JWT_SECRET
+        sync: false
+      - key: RECAPTCHA_SECRET_KEY
+        sync: false
+      - key: SUPERADMIN_PASSWORD
+        sync: false
+      - key: JWT_PRIVATE_KEY
+        sync: false
+      - key: JWT_PUBLIC_KEY
+        sync: false
+      - key: ALLOWED_DOMAINS
+        sync: false

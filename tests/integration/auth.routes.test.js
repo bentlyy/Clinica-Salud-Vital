@@ -160,12 +160,14 @@ describe('POST /api/auth/login', () => {
     expect(res.body.error).toContain('Validation failed');
   });
 
-  it('returns 400 if captcha token missing', async () => {
+  it('returns 400 if captcha token missing (now optional, falls to auth failure)', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] });
+
     const res = await request(app)
       .post('/api/auth/login')
       .send({ email: 'test@test.com', password: 'Test1234!' });
 
     expect(res.status).toBe(400);
-    expect(res.body.error).toContain('Validation failed');
+    expect(res.body.error).toBe('Invalid credentials');
   });
 });
