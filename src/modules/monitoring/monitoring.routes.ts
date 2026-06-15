@@ -6,10 +6,8 @@ import {
   getDbReport,
   getDbSlowQueries,
   getDbTableSizes,
-  getMlReport,
   getLogs,
   exportDbSizes,
-  resetMetrics,
   triggerGc,
   getDashboardData,
 } from './monitoring.controller.js';
@@ -23,10 +21,8 @@ router.get('/memory', ...adminOnly, getMemoryReport);
 router.get('/database', ...adminOnly, getDbReport);
 router.get('/database/slow-queries', ...adminOnly, getDbSlowQueries);
 router.get('/database/table-sizes', ...adminOnly, getDbTableSizes);
-router.get('/ml', ...adminOnly, getMlReport);
 router.get('/logs', ...adminOnly, getLogs);
 router.post('/database/export-sizes', ...adminOnly, exportDbSizes);
-router.post('/ml/reset', ...adminOnly, resetMetrics);
 router.post('/gc', ...adminOnly, triggerGc);
 router.get('/dashboard', ...adminOnly, getDashboardData);
 
