@@ -196,34 +196,19 @@ const globalLimiter = rateLimit({
 });
 app.use(globalLimiter);
 
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 5,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { error: 'Too many login attempts, please try again later' },
-  keyGenerator: (req) => req.ip || 'unknown',
-});
-
-const emailAuthLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 5,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { error: 'Demasiados intentos para este correo. Intenta de nuevo más tarde.' },
-  keyGenerator: (req) => req.body?.email || req.ip,
-});
-
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 5,
-  message: { error: 'Demasiados intentos de inicio de sesión. Intenta de nuevo en 15 minutos.' },
+  max: 10,
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req: Request) => (req.body?.email || req.ip) as string,
+  message: { error: 'Demasiados intentos. Intenta de nuevo en 15 minutos.' },
+  keyGenerator: (req: Request) => {
+    const email = (req.body?.email || '') as string;
+    return `login:${req.ip}:${email}`;
+  },
   handler: (req: Request, res: Response) => {
     logger.warn('Rate limit exceeded (login)', { email: req.body?.email, ip: req.ip });
-    res.status(429).json({ error: 'Demasiados intentos de inicio de sesión. Intenta de nuevo en 15 minutos.' });
+    res.status(429).json({ error: 'Demasiados intentos. Intenta de nuevo en 15 minutos.' });
   },
 });
 
@@ -325,10 +310,9 @@ const API_PREFIX = '/api/v1';
 app.use(`${API_PREFIX}/auth/change-password`, changePasswordLimiter);
 app.use(`${API_PREFIX}/auth/2fa`, twoFALimiter);
 app.use(`${API_PREFIX}/auth/logout-all`, logoutAllLimiter);
-app.use(`${API_PREFIX}/auth/invite-info`, authLimiter);
 app.use(`${API_PREFIX}/auth/forgot-password`, forgotPasswordLimiter);
 app.use(`${API_PREFIX}/auth/reset-password`, resetPasswordLimiter);
-app.use(`${API_PREFIX}/auth/login`, loginLimiter, emailAuthLimiter);
+app.use(`${API_PREFIX}/auth/login`, loginLimiter);
 app.use(`${API_PREFIX}/auth/register`, registerLimiter);
 app.use(`${API_PREFIX}/auth/refresh`, refreshLimiter);
 app.use(`${API_PREFIX}/auth`, authRoutes);
