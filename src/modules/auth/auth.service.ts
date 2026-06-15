@@ -73,8 +73,8 @@ const generateRefreshToken = async (userId: number): Promise<string> => {
   expiresAt.setDate(expiresAt.getDate() + REFRESH_TOKEN_EXPIRY_DAYS);
 
   await pool.query(
-    'INSERT INTO refresh_tokens (user_id, token, expires_at) VALUES ($1, $2, $3)',
-    [userId, tokenHash, expiresAt]
+    'INSERT INTO refresh_tokens (user_id, token, expires_at, token_version) VALUES ($1, $2, $3, (SELECT COALESCE(token_version, 0) FROM users WHERE id = $4))',
+    [userId, tokenHash, expiresAt, userId]
   );
 
   return token;
@@ -304,6 +304,14 @@ export const refreshToken = async ({ refresh_token }: RefreshParams): Promise<{
       return null;
     }
 
+    const currentTokenVersion = user.token_version || 0;
+    const refreshTokenVersion = tokenRecord.token_version || 0;
+    if (currentTokenVersion !== refreshTokenVersion) {
+      await client.query('UPDATE refresh_tokens SET revoked = true WHERE id = $1', [tokenRecord.id]);
+      await client.query('COMMIT');
+      return null;
+    }
+
     if (user.last_activity_at) {
       const inactiveMinutes = (Date.now() - new Date(user.last_activity_at).getTime()) / 60000;
       if (inactiveMinutes > 30) {
@@ -330,8 +338,8 @@ export const refreshToken = async ({ refresh_token }: RefreshParams): Promise<{
     expiresAt.setDate(expiresAt.getDate() + REFRESH_TOKEN_EXPIRY_DAYS);
 
     await client.query(
-      'INSERT INTO refresh_tokens (user_id, token, expires_at) VALUES ($1, $2, $3)',
-      [user.id, newTokenHash, expiresAt]
+      'INSERT INTO refresh_tokens (user_id, token, expires_at, token_version) VALUES ($1, $2, $3, $4)',
+      [user.id, newTokenHash, expiresAt, user.token_version || 0]
     );
 
     await client.query('COMMIT');
