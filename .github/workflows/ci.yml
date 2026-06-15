@@ -77,14 +77,19 @@ jobs:
     steps:
       - name: Trigger Render deploy
         run: curl -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
-      - name: Wait for deployment
+      - name: Wait for deployment and health check
         run: |
           echo "Waiting for deploy to complete..."
           for i in $(seq 1 30); do
             HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "${{ secrets.RENDER_APP_URL }}/health" || echo "000")
             if [ "$HTTP_CODE" = "200" ]; then
-              echo "Health check passed!"
-              exit 0
+              BODY=$(curl -s "${{ secrets.RENDER_APP_URL }}/health")
+              DB_STATUS=$(echo "$BODY" | python3 -c "import sys,json; print(json.load(sys.stdin).get('checks',{}).get('database',{}).get('status','error'))" 2>/dev/null || echo "error")
+              if [ "$DB_STATUS" = "ok" ]; then
+                echo "Health check passed! App + DB are running."
+                exit 0
+              fi
+              echo "Health endpoint returned 200 but DB status is $DB_STATUS — still waiting..."
             fi
             echo "Attempt $i/30: HTTP $HTTP_CODE - waiting 10s..."
             sleep 10

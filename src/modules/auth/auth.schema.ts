@@ -22,7 +22,7 @@ export const loginSchema = z.object({
   email: z.string().email('Invalid email format'),
   password: z.string().min(1, 'Password is required'),
   totp_token: z.string().optional(),
-  captcha_token: z.string().min(1, 'Captcha token is required'),
+  captcha_token: z.string().optional(),
   tenant_id: z.string().optional(),
 }).strict();
 
