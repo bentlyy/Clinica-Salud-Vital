@@ -34,7 +34,7 @@ const mockCtrl = Object.fromEntries([
   // saas
   'stripeWebhook', 'getPlans', 'onboardTenant', 'getMySubscription', 'createCheckout', 'changePlan', 'cancelSubscription', 'getUsage', 'getUsageSummary', 'getLimits', 'updateTenantConfig',
   // specialties
-  'getSpecialties', 'createSpecialty',
+  'getSpecialties',
   // i18n
   'getTranslationsHandler',
 ].map(k => [k, vi.fn()]));
@@ -44,7 +44,7 @@ const mockSchema = Object.fromEntries([
   'createExceptionSchema', 'exceptionIdSchema',
   'createLabRequestSchema', 'labRequestIdSchema',
   'checkoutSchema', 'changePlanSchema', 'onboardSchema',
-  'createSpecialtySchema',
+
   'createWebhookSchema', 'updateWebhookSchema',
 ].map(k => [k, {}]));
 
@@ -65,7 +65,6 @@ vi.mock('../../src/modules/availability/availability.controller.js', () => ({
 vi.mock('../../src/modules/i18n/i18n.controller.js', () => mockCtrl);
 vi.mock('../../src/modules/specialties/specialties.controller.js', () => mockCtrl);
 vi.mock('../../src/modules/specialties/specialties.service.js', () => mockCtrl);
-vi.mock('../../src/modules/specialties/specialties.schema.js', () => mockSchema);
 vi.mock('../../src/utils/logger.js', () => ({ logger: { info: vi.fn(), error: vi.fn(), warn: vi.fn() } }));
 vi.mock('../../src/shared/query.js', () => ({ tenantQuery: { whereParam: vi.fn(), andWhereParam: vi.fn() } }));
 
