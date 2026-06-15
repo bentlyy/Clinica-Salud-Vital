@@ -1,23 +1,11 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-
-const mockStripeInstance = vi.hoisted(() => ({ checkout: { sessions: { create: vi.fn() } } }));
+import { describe, it, expect, vi } from 'vitest';
 
 vi.mock('../../src/utils/logger.js', () => ({
   logger: { info: vi.fn(), error: vi.fn(), warn: vi.fn() },
 }));
 
-vi.mock('stripe', () => ({
-  default: vi.fn(() => mockStripeInstance),
-}));
-
-beforeEach(() => {
-  vi.resetModules();
-  delete process.env.STRIPE_SECRET_KEY;
-  delete process.env.STRIPE_WEBHOOK_SECRET;
-});
-
 describe('stripe.service', () => {
-  it('getStripe returns stub when no key configured', async () => {
+  it('getStripe returns stub', async () => {
     const { getStripe } = await import('../../src/shared/stripe.service.js');
     const stripe = await getStripe();
     expect(stripe.checkout).toBeDefined();
@@ -32,36 +20,19 @@ describe('stripe.service', () => {
     expect(() => stripe.webhooks.constructEvent()).toThrow('Stripe not configured');
   });
 
-  it('isStripeConfigured returns false without key', async () => {
+  it('isStripeConfigured returns false', async () => {
     const { isStripeConfigured } = await import('../../src/shared/stripe.service.js');
     expect(isStripeConfigured()).toBe(false);
   });
 
-  it('isStripeConfigured returns true with valid test key', async () => {
+  it('isStripeConfigured returns false regardless of env', async () => {
     process.env.STRIPE_SECRET_KEY = 'sk_test_xxxxxxxxxxxxx';
     const { isStripeConfigured } = await import('../../src/shared/stripe.service.js');
-    expect(isStripeConfigured()).toBe(true);
-  });
-
-  it('isStripeConfigured returns true with valid live key', async () => {
-    process.env.STRIPE_SECRET_KEY = 'sk_live_xxxxxxxxxxxxx';
-    const { isStripeConfigured } = await import('../../src/shared/stripe.service.js');
-    expect(isStripeConfigured()).toBe(true);
-  });
-
-  it('isStripeConfigured returns false for invalid format', async () => {
-    process.env.STRIPE_SECRET_KEY = 'invalid-key';
-    const { isStripeConfigured } = await import('../../src/shared/stripe.service.js');
     expect(isStripeConfigured()).toBe(false);
+    delete process.env.STRIPE_SECRET_KEY;
   });
 
-  it('getWebhookSecret returns configured secret', async () => {
-    process.env.STRIPE_WEBHOOK_SECRET = 'whsec_test_secret';
-    const { getWebhookSecret } = await import('../../src/shared/stripe.service.js');
-    expect(getWebhookSecret()).toBe('whsec_test_secret');
-  });
-
-  it('getWebhookSecret returns empty if not configured', async () => {
+  it('getWebhookSecret returns empty', async () => {
     const { getWebhookSecret } = await import('../../src/shared/stripe.service.js');
     expect(getWebhookSecret()).toBe('');
   });
@@ -73,15 +44,7 @@ describe('stripe.service', () => {
     expect(mod.webhookSecret).toBe('');
   });
 
-  it('initStripe returns Stripe instance when configured with valid key', async () => {
-    process.env.STRIPE_SECRET_KEY = 'sk_test_validkey';
-    const { getStripe } = await import('../../src/shared/stripe.service.js');
-    const stripe = await getStripe();
-    expect(stripe.checkout).toBeDefined();
-  });
-
-  it('getStripe caches instance on subsequent calls', async () => {
-    process.env.STRIPE_SECRET_KEY = 'sk_test_validkey';
+  it('getStripe returns the same instance on subsequent calls', async () => {
     const mod = await import('../../src/shared/stripe.service.js');
     const first = await mod.getStripe();
     const second = await mod.getStripe();

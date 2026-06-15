@@ -14,8 +14,6 @@ const mockMw = vi.fn();
 const mockAuthorize = vi.fn(() => mockMw);
 const mockAuthorizeRoles = vi.fn(() => mockMw);
 const mockValidateZod = vi.fn(() => mockMw);
-const mockRequireFeature = vi.fn(() => mockMw);
-
 vi.mock('../../src/middlewares/auth.middleware.js', () => ({ authMiddleware: mockMw, authorize: mockAuthorize, optionalAuth: mockMw }));
 vi.mock('../../src/middlewares/role.middleware.js', () => ({ authorizeRoles: mockAuthorizeRoles }));
 vi.mock('../../src/middlewares/validate.middleware.js', () => ({ validateZod: mockValidateZod }));
@@ -53,7 +51,6 @@ vi.mock('../../src/modules/billing/billing.controller.js', () => mockCtrl);
 vi.mock('../../src/modules/billing/billing.schema.js', () => mockSchema);
 vi.mock('../../src/modules/laboratory/laboratory.controller.js', () => mockCtrl);
 vi.mock('../../src/modules/laboratory/laboratory.schema.js', () => mockSchema);
-vi.mock('../../src/modules/saas/saas.features.js', () => ({ requireFeature: mockRequireFeature }));
 vi.mock('../../src/modules/saas/saas.controller.js', () => mockCtrl);
 vi.mock('../../src/modules/saas/saas.schema.js', () => mockSchema);
 vi.mock('../../src/modules/availability/availability.controller.js', () => ({
