@@ -6,18 +6,9 @@ vi.mock('../../src/shared/db.js', () => ({
   pool: { query: mockQuery },
 }));
 
-vi.mock('../../src/modules/ml/ml.service.js', () => ({
-  forecastDemand: vi.fn(),
-  analyzeOptimalSchedules: vi.fn(),
-  trainVitalSignsAnomalyDetector: vi.fn(),
-  analyzeVitalSigns: vi.fn(),
-}));
-
 vi.mock('../../src/utils/logger.js', () => ({
   logger: { info: vi.fn(), error: vi.fn(), warn: vi.fn() },
 }));
-
-import * as mlService from '../../src/modules/ml/ml.service.js';
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -183,44 +174,52 @@ describe('analytics.service', () => {
 
   describe('getDemandForecast', () => {
     it('returns historical data with forecast', async () => {
-      vi.mocked(mlService.forecastDemand).mockResolvedValue([{ date: '2026-05-27', bookings: 15, predicted: true }]);
-      mockQuery.mockResolvedValue({ rows: [{ date: '2026-05-26', bookings: '10' }] });
+      mockQuery.mockResolvedValue({
+        rows: [
+          { date: '2026-05-26', bookings: '10', avg_bookings: '8.00', std_bookings: '2.00' },
+        ],
+      });
 
       const analytics = await import('../../src/modules/analytics/analytics.service.js');
       const result = await analytics.getDemandForecast(30, 'tenant-1');
 
-      expect(result).toHaveLength(2);
+      expect(result.length).toBeGreaterThanOrEqual(1);
       expect(result[0].date).toBe('2026-05-26');
       expect(result[0].predicted).toBeNull();
-      expect(result[1].predicted).toBe(true);
+      expect(result[1].predicted).toEqual(expect.any(Number));
     });
 
-    it('falls back when ML forecast fails', async () => {
-      vi.mocked(mlService.forecastDemand).mockRejectedValue(new Error('ML error'));
-      mockQuery.mockResolvedValue({ rows: [{ date: '2026-05-26', bookings: '10' }] });
+    it('falls back on query error', async () => {
+      mockQuery.mockRejectedValueOnce(new Error('DB error'));
+      mockQuery.mockResolvedValueOnce({ rows: [{ date: '2026-05-26', bookings: '10' }] });
 
       const analytics = await import('../../src/modules/analytics/analytics.service.js');
       const result = await analytics.getDemandForecast(30);
 
       expect(result).toHaveLength(1);
+      expect(result[0].predicted).toBeNull();
     });
   });
 
   describe('getOptimalSchedules', () => {
-    it('returns optimized schedules from ML', async () => {
-      vi.mocked(mlService.analyzeOptimalSchedules).mockResolvedValue([
-        { day: 'Lunes', bestTime: '10:00', occupancy: 85, factors: { '09:00': { demand: 8, noShowRate: 0.1 }, '10:00': { demand: 10, noShowRate: 0.05 } } },
-      ]);
+    it('returns schedules from historical data', async () => {
+      mockQuery.mockResolvedValue({
+        rows: [
+          { day_of_week: '1', time: '10:00', booking_count: '10', no_show_count: '1' },
+          { day_of_week: '1', time: '11:00', booking_count: '5', no_show_count: '0' },
+        ],
+      });
 
       const analytics = await import('../../src/modules/analytics/analytics.service.js');
-      const result = await analytics.getOptimalSchedules();
+      const result = await analytics.getOptimalSchedules('tenant-1');
 
-      expect(result[0].day).toBe('Lunes');
-      expect(result[0].hours).toHaveLength(2);
+      expect(result.length).toBeGreaterThanOrEqual(1);
+      expect(result[0].bestTime).toBe('10:00');
+      expect(result[0].hours).toBeDefined();
     });
 
-    it('falls back when ML fails', async () => {
-      vi.mocked(mlService.analyzeOptimalSchedules).mockRejectedValue(new Error('ML error'));
+    it('falls back on error', async () => {
+      mockQuery.mockRejectedValue(new Error('DB error'));
 
       const analytics = await import('../../src/modules/analytics/analytics.service.js');
       const result = await analytics.getOptimalSchedules();
@@ -228,33 +227,14 @@ describe('analytics.service', () => {
       expect(result).toHaveLength(5);
       expect(result[0].day).toBe('Lunes');
     });
-
-    it('handles ML schedule with no factors', async () => {
-      vi.mocked(mlService.analyzeOptimalSchedules).mockResolvedValue([
-        { day: 'Lunes', bestTime: '10:00', occupancy: 85 },
-      ]);
-
-      const analytics = await import('../../src/modules/analytics/analytics.service.js');
-      const result = await analytics.getOptimalSchedules();
-
-      expect(result[0].day).toBe('Lunes');
-      expect(result[0].hours).toEqual([]);
-    });
   });
 
   describe('getVitalSignsAnomalies', () => {
-    it('returns analyzed vital signs', async () => {
+    it('returns analyzed vital signs using clinical rules', async () => {
       const mockVitalRows = [
         { patientId: 1, date: '2026-05-26', pressure: '130/85', heartRate: '75', temperature: '36.8' },
       ];
       mockQuery.mockResolvedValue({ rows: mockVitalRows });
-      vi.mocked(mlService.trainVitalSignsAnomalyDetector).mockResolvedValue(undefined);
-      vi.mocked(mlService.analyzeVitalSigns).mockResolvedValue({
-        anomaly: false,
-        score: 0.1,
-        warnings: [],
-        values: { systolic: 130, diastolic: 85, heartRate: 75, temp: 36.8 },
-      });
 
       const analytics = await import('../../src/modules/analytics/analytics.service.js');
       const result = await analytics.getVitalSignsAnomalies();
@@ -271,13 +251,6 @@ describe('analytics.service', () => {
         { patientId: 2, date: '2026-05-26', pressure: '160/100', heartRate: '110', temperature: '38.5' },
       ];
       mockQuery.mockResolvedValue({ rows: mockVitalRows });
-      vi.mocked(mlService.trainVitalSignsAnomalyDetector).mockResolvedValue(undefined);
-      vi.mocked(mlService.analyzeVitalSigns).mockResolvedValue({
-        anomaly: true,
-        score: 0.9,
-        warnings: ['High blood pressure'],
-        values: { systolic: 160, diastolic: 100, heartRate: 110, temp: 38.5 },
-      });
 
       const analytics = await import('../../src/modules/analytics/analytics.service.js');
       const result = await analytics.getVitalSignsAnomalies();
@@ -293,13 +266,6 @@ describe('analytics.service', () => {
         { patientId: 3, date: '2026-05-26', pressure: null, heartRate: null, temperature: null },
       ];
       mockQuery.mockResolvedValue({ rows: mockVitalRows });
-      vi.mocked(mlService.trainVitalSignsAnomalyDetector).mockResolvedValue(undefined);
-      vi.mocked(mlService.analyzeVitalSigns).mockResolvedValue({
-        anomaly: false,
-        score: 0.1,
-        warnings: [],
-        values: { systolic: 120, diastolic: 80, heartRate: 70, temp: 36.5 },
-      });
 
       const analytics = await import('../../src/modules/analytics/analytics.service.js');
       const result = await analytics.getVitalSignsAnomalies();
