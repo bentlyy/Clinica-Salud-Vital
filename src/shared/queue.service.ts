@@ -70,18 +70,5 @@ export function registerWorkers(): void {
     logger.info(`Email sent: ${emailType} -> ${to}`);
   });
 
-  registerWorker('ml:train', async (job) => {
-    const { tenantId } = job.data as Record<string, any>;
-    logger.info(`ML training worker queued for tenant: ${tenantId}`);
 
-    setImmediate(async () => {
-      try {
-        const { trainAllModels } = await import('../modules/ml/ml.training.js');
-        const results = await trainAllModels(tenantId);
-        logger.info(`ML training worker completed for tenant: ${tenantId}`, results);
-      } catch (err) {
-        logger.error(`ML training worker failed for tenant: ${tenantId}`, { error: (err as Error).message });
-      }
-    });
-  });
 }
