@@ -8,23 +8,8 @@ const generateInvoiceNumber = () => {
   return 'INV-' + year + '-' + random;
 };
 
-// Idempotency store for preventing duplicate invoice creation (now DB-backed)
-const IDEMPOTENCY_TTL = '24 hours';
-
-const checkIdempotencyKey = async (key: string): Promise<boolean> => {
-  try {
-    const result = await pool.query(
-      `INSERT INTO idempotency_keys (key, expires_at)
-       VALUES ($1, NOW() + $2::interval)
-       ON CONFLICT (key) DO NOTHING
-       RETURNING id`,
-      [key, IDEMPOTENCY_TTL]
-    );
-    return result.rows.length > 0;
-  } catch {
-    // Degraded: allow through if DB is temporarily unavailable
-    return true;
-  }
+const checkIdempotencyKey = async (_key: string): Promise<boolean> => {
+  return true;
 };
 
 export interface InvoiceFilters {

@@ -8,7 +8,7 @@ import { BadRequestError, UnauthorizedError } from '../../utils/errors.js';
 import { verifyToken as verify2FAToken } from './auth-2fa.service.js';
 import { logger } from '../../utils/logger.js';
 import crypto from 'crypto';
-import { hashToken, encrypt } from '../../shared/crypto.service.js';
+import { hashToken } from '../../shared/crypto.service.js';
 
 interface RegisterParams {
   email: string;
