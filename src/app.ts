@@ -22,7 +22,6 @@ import { apiVersionRedirect } from './middlewares/apiVersionRedirect.middleware.
 import { validateEmailConfig } from './shared/email.service.js';
 import { requestLogger } from './middlewares/requestLogger.middleware.js';
 import { errorHandler, notFoundHandler } from './middlewares/errorHandler.middleware.js';
-import { monitoringService, monitoringMiddleware } from './middlewares/monitoring.middleware.js';
 import { trackActivity } from './middlewares/sessionActivity.middleware.js';
 import { initSentry, setupExpressErrorHandler } from './shared/sentry.service.js';
 import { logger } from './utils/logger.js';
@@ -45,13 +44,9 @@ import auditRoutes from './modules/audit/audit.routes.js';
 import analyticsRoutes from './modules/analytics/analytics.routes.js';
 import billingRoutes from './modules/billing/billing.routes.js';
 import laboratoryRoutes from './modules/laboratory/laboratory.routes.js';
-import rbacRoutes from './modules/rbac/rbac.routes.js';
 import specialtiesRoutes from './modules/specialties/specialties.routes.js';
 import saasRoutes from './modules/saas/saas.routes.js';
-import superAdminRoutes from './modules/super-admin/super-admin.routes.js';
 import i18nRoutes from './modules/i18n/i18n.routes.js';
-import monitoringRoutes from './modules/monitoring/monitoring.routes.js';
-import complianceRoutes from './modules/compliance/compliance.routes.js';
 
 
 const app: Express = express();
@@ -107,7 +102,6 @@ app.get('/health', healthHandler);
 app.get('/api/v1/health', healthHandler);
 
 app.use(securityMiddleware);
-app.use(monitoringMiddleware);
 app.use(compression());
 
 /* CORS must be before tenantMiddleware (OPTIONS preflight has no tenant) */
@@ -295,15 +289,6 @@ const phiWriteLimiter = rateLimit({
   keyGenerator: (req) => req.tenant_id ? `phi:${req.tenant_id}:${req.user?.id || req.ip}` : `phi:${req.ip}`,
 });
 
-const complianceLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 10,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { error: 'Too many data export/erase requests. Please slow down.' },
-  keyGenerator: (req) => req.tenant_id ? `compliance:${req.tenant_id}:${req.user?.id || req.ip}` : `compliance:${req.ip}`,
-});
-
 const API_PREFIX = '/api/v1';
 
 app.use(`${API_PREFIX}/auth/change-password`, changePasswordLimiter);
@@ -327,14 +312,9 @@ app.use(`${API_PREFIX}/audit`, auditRoutes);
 app.use(`${API_PREFIX}/analytics`, analyticsRoutes);
 app.use(`${API_PREFIX}/billing`, billingRoutes);
 app.use(`${API_PREFIX}/laboratory`, laboratoryRoutes);
-app.use(`${API_PREFIX}/rbac`, rbacRoutes);
 app.use(`${API_PREFIX}/specialties`, specialtiesRoutes);
 app.use(`${API_PREFIX}/saas`, saasRoutes);
-app.use(`${API_PREFIX}/super-admin`, superAdminRoutes);
 app.use(`${API_PREFIX}/i18n`, i18nRoutes);
-app.use(`${API_PREFIX}/monitoring`, monitoringRoutes);
-app.use(`${API_PREFIX}/compliance`, complianceLimiter);
-app.use(`${API_PREFIX}/compliance`, complianceRoutes);
 
 
 setupExpressErrorHandler(app);
@@ -548,7 +528,6 @@ process.on('unhandledRejection', (reason) => {
 
 process.on('SIGTERM', () => {
   logger.info('SIGTERM received. Shutting down gracefully...');
-  monitoringService.stop();
   pool.end().catch((err: unknown) => logger.warn('Pool close error on SIGTERM', (err as Error).message));
   tenantService.stopRefresh();
   process.exit(0);
@@ -556,7 +535,6 @@ process.on('SIGTERM', () => {
 
 process.on('SIGINT', () => {
   logger.info('SIGINT received. Shutting down gracefully...');
-  monitoringService.stop();
   pool.end().catch((err: unknown) => logger.warn('Pool close error on SIGINT', (err as Error).message));
   tenantService.stopRefresh();
   process.exit(0);
