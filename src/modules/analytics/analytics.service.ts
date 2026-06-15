@@ -1,5 +1,4 @@
 import { pool } from '../../shared/db.js';
-import * as mlService from '../ml/ml.service.js';
 import { logger } from '../../utils/logger.js';
 
 interface NoShowRow {
@@ -21,13 +20,6 @@ interface BookingRow {
 interface VitalSignRow {
   patientId: number;
   date: string;
-  pressure: string;
-  heartRate: string;
-  temperature: string;
-}
-
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
-interface VitalSignsInput extends Record<string, unknown> {
   pressure: string;
   heartRate: string;
   temperature: string;
@@ -152,16 +144,46 @@ export const getDiagnoses = async (tenantId: string) => {
 
 export const getOptimalSchedules = async (tenantId: string) => {
   try {
-    const schedules = await mlService.analyzeOptimalSchedules(tenantId);
-    return schedules.map(s => ({
-      day: s.day,
-      bestTime: s.bestTime,
-      occupancy: s.occupancy,
-      hours: Object.entries(s.factors || {}).map(([time, data]) => ({
+    const result = await pool.query(`
+      SELECT
+        EXTRACT(DOW FROM date) AS day_of_week,
         time,
-        score: Math.min(100, Math.round(data.demand * (1 - data.noShowRate) * 10)),
-      })),
-    }));
+        COUNT(*) AS booking_count,
+        COUNT(*) FILTER (WHERE status = 'no_show') AS no_show_count
+      FROM bookings
+      WHERE date >= NOW() - INTERVAL '6 months'
+        AND tenant_id = $1
+      GROUP BY EXTRACT(DOW FROM date), time
+      ORDER BY day_of_week, booking_count DESC
+    `, [tenantId]);
+
+    const dayNames = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+    const grouped: Record<string, { total: number; noShows: number; hours: Array<{ time: string; count: number }> }> = {};
+
+    for (const row of result.rows) {
+      const dayName = dayNames[parseInt(row.day_of_week)] || 'Desconocido';
+      if (!grouped[dayName]) grouped[dayName] = { total: 0, noShows: 0, hours: [] };
+      grouped[dayName].total += parseInt(row.booking_count);
+      grouped[dayName].noShows += parseInt(row.no_show_count) || 0;
+      grouped[dayName].hours.push({
+        time: row.time,
+        count: parseInt(row.booking_count),
+      });
+    }
+
+    return Object.entries(grouped).map(([day, data]) => {
+      const bestHour = data.hours.sort((a, b) => b.count - a.count)[0];
+      const occupancy = Math.min(100, Math.round((data.total / 30) * 100));
+      return {
+        day,
+        bestTime: bestHour?.time || '10:00',
+        occupancy,
+        hours: data.hours.map(h => ({
+          time: h.time,
+          score: Math.min(100, Math.round((h.count / Math.max(...data.hours.map(x => x.count))) * 100)),
+        })),
+      };
+    });
   } catch (err) {
     logger.error('[Analytics] Error getting optimal schedules:', err);
     const days = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'];
@@ -197,31 +219,30 @@ export const getVitalSignsAnomalies = async (tenantId: string) => {
       LIMIT 50
     `, [tenantId]);
 
-    await mlService.trainVitalSignsAnomalyDetector(tenantId);
+    return result.rows.map((row: VitalSignRow) => {
+      const systolic = parseInt((row.pressure || '120').split('/')[0]) || 120;
+      const diastolic = parseInt((row.pressure || '80').split('/')[1]) || 80;
+      const heartRate = parseInt(row.heartRate) || 70;
+      const temperature = parseFloat(row.temperature) || 36.5;
 
-    const analyzed = await Promise.all(result.rows.map(async (row: VitalSignRow) => {
-      const vs: VitalSignsInput = {
-        pressure: row.pressure,
-        heartRate: row.heartRate,
-        temperature: row.temperature
-      };
-      const mlResult = await mlService.analyzeVitalSigns(vs, tenantId);
+      const pressureAnomaly = systolic > 140 || diastolic > 90;
+      const heartRateAnomaly = heartRate > 100 || heartRate < 60;
+      const tempAnomaly = temperature > 37.5 || temperature < 36;
+
       return {
         patientId: row.patientId,
         date: row.date,
         pressure: row.pressure || '120/80',
-        pressureAnomaly: mlResult.values?.systolic > 140 || mlResult.values?.diastolic > 90,
-        heartRate: parseInt(row.heartRate) || 70,
-        heartRateAnomaly: mlResult.values?.heartRate > 100 || mlResult.values?.heartRate < 60,
-        temperature: parseFloat(row.temperature) || 36.5,
-        tempAnomaly: mlResult.values?.temp > 37.5 || mlResult.values?.temp < 36,
-        anomaly: mlResult.anomaly,
-        mlScore: mlResult.score,
-        warnings: mlResult.warnings
+        pressureAnomaly,
+        heartRate,
+        heartRateAnomaly,
+        temperature,
+        tempAnomaly,
+        anomaly: pressureAnomaly || heartRateAnomaly || tempAnomaly,
+        mlScore: 0,
+        warnings: pressureAnomaly || heartRateAnomaly || tempAnomaly ? ['Anomalía detectada por reglas clínicas'] : [],
       };
-    }));
-
-    return analyzed;
+    });
   } catch (err) {
     logger.error('[Analytics] Error analyzing vital signs:', err);
     return [];
@@ -230,25 +251,48 @@ export const getVitalSignsAnomalies = async (tenantId: string) => {
 
 export const getDemandForecast = async (days = 30, tenantId: string) => {
   try {
-    const forecast = await mlService.forecastDemand(days, tenantId);
-
     const result = await pool.query(`
-      SELECT
-        date::text AS date,
-        COUNT(*) AS bookings
-      FROM bookings
-      WHERE date >= NOW() - INTERVAL '1 days' * $1
-        AND status != 'cancelled'
-        AND tenant_id = $2
-      GROUP BY date
-      ORDER BY date
+      WITH daily AS (
+        SELECT
+          date::date AS day,
+          COUNT(*) AS bookings
+        FROM bookings
+        WHERE date >= NOW() - INTERVAL '1 days' * $1
+          AND status != 'cancelled'
+          AND tenant_id = $2
+        GROUP BY date::date
+        ORDER BY day
+      ),
+      stats AS (
+        SELECT AVG(bookings)::numeric(10,2) AS avg_bookings,
+               STDDEV(bookings)::numeric(10,2) AS std_bookings
+        FROM daily
+      )
+      SELECT day::text AS date, bookings, avg_bookings, std_bookings
+      FROM daily, stats
+      ORDER BY day
     `, [days, tenantId]);
 
-    const historical = result.rows.map((row: BookingRow) => ({
+    const rows = result.rows;
+    const avg = parseFloat(rows[0]?.avg_bookings || '5');
+    const std = parseFloat(rows[0]?.std_bookings || '2');
+
+    const historical = rows.map((row: BookingRow & { avg_bookings: string; std_bookings: string }) => ({
       date: row.date,
       bookings: parseInt(row.bookings),
       predicted: null,
     }));
+
+    const forecast = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date();
+      d.setDate(d.getDate() + i + 1);
+      const dateStr = d.toISOString().split('T')[0];
+      return {
+        date: dateStr,
+        bookings: 0,
+        predicted: Math.max(0, Math.round(avg + (Math.random() - 0.5) * std)),
+      };
+    });
 
     return [...historical, ...forecast];
   } catch (err) {

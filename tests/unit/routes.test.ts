@@ -27,11 +27,6 @@ const mockCtrl = Object.fromEntries([
   'getInvoices', 'getInvoiceById', 'createInvoice', 'updateInvoiceStatus', 'deleteInvoice', 'getBillingStats',
   // laboratory
   'getLabTests', 'getLabRequests', 'getLabRequestById', 'createLabRequest', 'updateLabRequestStatus', 'updateLabRequestItemResult', 'cancelLabRequest',
-  // ml
-  'trainModels', 'getModelStatus', 'resetModels', 'getMetrics', 'clearCache', 'getHealthCheck',
-  'predictNoShow', 'getDemandForecast', 'getOptimalSchedules', 'analyzeVitals',
-  'getPredictionHistory', 'getModelMetricsHistory', 'getDemandForecastHistory',
-  'exportPredictionData', 'exportMetricsData', 'exportDemandForecastData', 'powerBiExport',
   // availability
   'createAvailability', 'getAvailabilityByDoctor', 'getMyAvailability', 'deleteAvailability',
   // exception
@@ -49,7 +44,7 @@ const mockCtrl = Object.fromEntries([
   'getTranslationsHandler',
   // monitoring
   'getSystemHealth', 'getMemoryReport', 'getDbReport', 'getDbSlowQueries', 'getDbTableSizes',
-  'getMlReport', 'getLogs', 'exportDbSizes', 'resetMetrics', 'triggerGc', 'getDashboardData',
+  'getLogs', 'exportDbSizes', 'triggerGc', 'getDashboardData',
 ].map(k => [k, vi.fn()]));
 
 const mockSchema = Object.fromEntries([
@@ -67,7 +62,6 @@ vi.mock('../../src/modules/billing/billing.controller.js', () => mockCtrl);
 vi.mock('../../src/modules/billing/billing.schema.js', () => mockSchema);
 vi.mock('../../src/modules/laboratory/laboratory.controller.js', () => mockCtrl);
 vi.mock('../../src/modules/laboratory/laboratory.schema.js', () => mockSchema);
-vi.mock('../../src/modules/ml/ml.controller.js', () => mockCtrl);
 vi.mock('../../src/modules/saas/saas.features.js', () => ({ requireFeature: mockRequireFeature }));
 vi.mock('../../src/modules/saas/saas.controller.js', () => mockCtrl);
 vi.mock('../../src/modules/saas/saas.schema.js', () => mockSchema);
@@ -114,11 +108,6 @@ describe('route exports', () => {
 
   it('laboratory routes', async () => {
     const mod = await import('../../src/modules/laboratory/laboratory.routes.js');
-    expect(mod.default).toBeDefined();
-  });
-
-  it('ml routes', async () => {
-    const mod = await import('../../src/modules/ml/ml.routes.js');
     expect(mod.default).toBeDefined();
   });
 

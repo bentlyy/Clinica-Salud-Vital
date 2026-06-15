@@ -3,7 +3,6 @@ import { monitoringService } from '../../middlewares/monitoring.middleware.js';
 import { dbMonitor } from '../../shared/db-monitor.service.js';
 import { pool } from '../../shared/db.js';
 import { logger } from '../../utils/logger.js';
-import { getMLMetrics, resetMLMetrics } from '../ml/ml.middleware.js';
 import { asyncHandler } from '../../middlewares/asyncHandler.middleware.js';
 import { BadRequestError, NotFoundError } from '../../utils/errors.js';
 import fs from 'fs';
@@ -30,7 +29,6 @@ export const getSystemHealth = asyncHandler(async (_req: Request, res: Response)
     eventLoopLag: `${eventLoopLag}ms`,
     uptime: systemInfo.uptime,
     currentMemory,
-    ml: getMLMetrics(),
   });
 });
 
@@ -95,19 +93,6 @@ export const getDbTableSizes = asyncHandler(async (_req: Request, res: Response)
   });
 });
 
-export const getMlReport = asyncHandler(async (_req: Request, res: Response) => {
-  const mlMetrics = getMLMetrics();
-  const systemInfo = monitoringService.getSystemInfo();
-  res.json({
-    ml: mlMetrics,
-    memory: systemInfo.memory,
-    modelMemory: {
-      estimatedTfjsHeap: systemInfo.memory.external,
-      note: 'TF.js models store weights in external memory (ArrayBuffer)',
-    },
-  });
-});
-
 export const getLogs = asyncHandler(async (req: Request, res: Response) => {
   const logDir = path.resolve(process.env.LOG_DIR || 'logs');
   const type = req.query.type as string || 'combined';
@@ -140,11 +125,6 @@ export const exportDbSizes = asyncHandler(async (_req: Request, res: Response) =
   res.json({ success: true, message: 'Table sizes exported to logs/db-table-sizes.csv' });
 });
 
-export const resetMetrics = asyncHandler(async (_req: Request, res: Response) => {
-  resetMLMetrics();
-  res.json({ success: true, message: 'ML metrics reset' });
-});
-
 export const triggerGc = asyncHandler(async (_req: Request, res: Response) => {
   if (global.gc) {
     const before = process.memoryUsage();
@@ -168,7 +148,6 @@ export const getDashboardData = asyncHandler(async (_req: Request, res: Response
   const dbStats = await dbMonitor.getStats();
   const poolHealth = await dbMonitor.getPoolHealth();
   const eventLoopLag = await monitoringService.getEventLoopLag();
-  const mlMetrics = getMLMetrics();
 
   res.json({
     timestamp: new Date().toISOString(),
@@ -180,7 +159,6 @@ export const getDashboardData = asyncHandler(async (_req: Request, res: Response
       ...dbStats,
       poolHealth,
     },
-    ml: mlMetrics,
     note: 'Historic alerts removed — metrics stream to stdout every 30s',
   });
 });
