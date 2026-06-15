@@ -24,6 +24,24 @@ describe('onboardSchema', () => {
     expect(result.success).toBe(true);
   });
 
+  it('accepts valid locale', () => {
+    const result = onboardSchema.safeParse({
+      tenant_name: 'My Clinic', domain: 'my-clinic',
+      admin_email: 'admin@test.com', admin_password: 'Str0ng!pass',
+      locale: 'en',
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('rejects pt locale', () => {
+    const result = onboardSchema.safeParse({
+      tenant_name: 'My Clinic', domain: 'my-clinic',
+      admin_email: 'admin@test.com', admin_password: 'Str0ng!pass',
+      locale: 'pt',
+    });
+    expect(result.success).toBe(false);
+  });
+
   it('rejects weak password', () => {
     const result = onboardSchema.safeParse({
       tenant_name: 'My Clinic', domain: 'my-clinic',

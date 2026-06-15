@@ -3,7 +3,7 @@ import rateLimit from 'express-rate-limit';
 import { authMiddleware, authorize } from '../../middlewares/auth.middleware.js';
 import { validateZod } from '../../middlewares/validate.middleware.js';
 import * as saasController from './saas.controller.js';
-import { checkoutSchema, changePlanSchema, onboardSchema } from './saas.schema.js';
+import { onboardSchema } from './saas.schema.js';
 
 const router = Router();
 
@@ -23,8 +23,8 @@ router.post('/onboard', onboardLimiter, validateZod(onboardSchema), saasControll
 router.use(authMiddleware);
 
 router.get('/subscription', authorize('admin', 'superadmin'), saasController.getMySubscription);
-router.post('/checkout', authorize('admin', 'superadmin'), validateZod(checkoutSchema), saasController.createCheckout);
-router.post('/change-plan', authorize('admin', 'superadmin'), validateZod(changePlanSchema), saasController.changePlan);
+router.post('/checkout', authorize('admin', 'superadmin'), saasController.createCheckout);
+router.post('/change-plan', authorize('admin', 'superadmin'), saasController.changePlan);
 router.post('/cancel', authorize('admin', 'superadmin'), saasController.cancelSubscription);
 router.get('/usage', authorize('admin', 'superadmin'), saasController.getUsage);
 router.get('/usage/summary', authorize('admin', 'superadmin'), saasController.getUsageSummary);
