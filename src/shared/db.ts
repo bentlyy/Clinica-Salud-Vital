@@ -6,6 +6,7 @@ const { Pool } = pg;
 
 interface TenantContext {
   tenantId: string;
+  userRole?: string;
 }
 
 export const tenantAls = new AsyncLocalStorage<TenantContext>();
@@ -58,29 +59,30 @@ const wrappedQuery = function (this: typeof pool, text: string | pg.QueryConfig,
     return originalPoolQuery(text, values);
   }
 
-  const setConfigSql = `SELECT set_config('app.tenant_id', $1, true); `;
+  const setConfigSql = `SELECT set_config('app.tenant_id', $1, true), set_config('app.user_role', COALESCE($2, ''), true); `;
 
+  const userRole = ctx.userRole || '';
   if (typeof text === 'string') {
     if (values && values.length > 0) {
-      text = text.replace(/\$(\d+)/g, (_, num) => `$${parseInt(num, 10) + 1}`);
-      return originalPoolQuery(setConfigSql + text, [ctx.tenantId, ...values]);
+      text = text.replace(/\$(\d+)/g, (_, num) => `$${parseInt(num, 10) + 2}`);
+      return originalPoolQuery(setConfigSql + text, [ctx.tenantId, userRole, ...values]);
     }
-    return originalPoolQuery(setConfigSql + text, [ctx.tenantId]);
+    return originalPoolQuery(setConfigSql + text, [ctx.tenantId, userRole]);
   }
 
   const originalText = text.text;
   if (text.values && text.values.length > 0) {
-    const shiftedText = originalText.replace(/\$(\d+)/g, (_, num) => `$${parseInt(num, 10) + 1}`);
+    const shiftedText = originalText.replace(/\$(\d+)/g, (_, num) => `$${parseInt(num, 10) + 2}`);
     return originalPoolQuery({
       ...text,
       text: setConfigSql + shiftedText,
-      values: [ctx.tenantId, ...text.values],
+      values: [ctx.tenantId, userRole, ...text.values],
     });
   }
   return originalPoolQuery({
     ...text,
     text: setConfigSql + originalText,
-    values: [ctx.tenantId],
+    values: [ctx.tenantId, userRole],
   });
 } as unknown as typeof pool.query;
 
@@ -93,7 +95,8 @@ pool.connect = function () {
   return originalConnect().then((client) => {
     const ctx = tenantAls.getStore();
     if (ctx) {
-      return client.query("SELECT set_config('app.tenant_id', $1, false)", [ctx.tenantId]).then(() => client);
+      const userRole = ctx.userRole || '';
+      return client.query("SELECT set_config('app.tenant_id', $1, false), set_config('app.user_role', $2, false)", [ctx.tenantId, userRole]).then(() => client);
     }
     return client;
   });
