@@ -30,14 +30,14 @@ import * as doctorService from '../../src/modules/doctor/doctor.service.js';
 beforeEach(() => {
   vi.clearAllMocks();
   mockConnect.mockReturnValue(mockClient);
-  mockQuery.mockResolvedValue({ rows: [{ id: 1, name: 'General' }] });
+  mockQuery.mockResolvedValue({ rows: [{ id: 1, name: 'Medicina General' }] });
   mockSendEmail.mockResolvedValue({ sent: true });
 });
 
 describe('doctorService.getAllDoctors', () => {
   it('returns all doctors', async () => {
     const mockDoctors = [
-      { id: 1, name: 'Dr. Test', specialty: 'General', email: 'doc@test.com' },
+      { id: 1, name: 'Dr. Test', specialty: 'Medicina General', email: 'doc@test.com' },
     ];
     mockQuery.mockResolvedValueOnce({ rows: mockDoctors });
 
@@ -65,13 +65,13 @@ describe('doctorService.registerDoctor', () => {
 
   it('throws if email invalid', async () => {
     await expect(doctorService.registerDoctor({
-      name: 'Dr. Test', specialty: 'General', email: 'not-email',
+      name: 'Dr. Test', specialty: 'Medicina General', email: 'not-email',
     }, 'test-tenant')).rejects.toThrow('Email inválido');
   });
 
   it('throws if RUT invalid', async () => {
     await expect(doctorService.registerDoctor({
-      name: 'Dr. Test', specialty: 'General', email: 'doc@test.com', rut: 'invalid',
+      name: 'Dr. Test', specialty: 'Medicina General', email: 'doc@test.com', rut: 'invalid',
     }, 'test-tenant')).rejects.toThrow('RUT inválido');
   });
 
@@ -83,7 +83,7 @@ describe('doctorService.registerDoctor', () => {
     });
 
     await expect(doctorService.registerDoctor({
-      name: 'Dr. Test', specialty: 'General', email: 'doc@test.com', rut: '12.345.678-5',
+      name: 'Dr. Test', specialty: 'Medicina General', email: 'doc@test.com', rut: '12.345.678-5',
     }, 'test-tenant')).rejects.toThrow('RUT ya registrado');
   });
 
@@ -96,7 +96,7 @@ describe('doctorService.registerDoctor', () => {
     });
 
     await expect(doctorService.registerDoctor({
-      name: 'Dr. Test', specialty: 'General', email: 'doc@test.com',
+      name: 'Dr. Test', specialty: 'Medicina General', email: 'doc@test.com',
     }, 'test-tenant')).rejects.toThrow('Email ya registrado');
   });
 
@@ -106,14 +106,14 @@ describe('doctorService.registerDoctor', () => {
       if (sql.includes('SELECT 1 FROM users WHERE rut')) return Promise.resolve({ rows: [] });
       if (sql.includes('SELECT 1 FROM users WHERE email')) return Promise.resolve({ rows: [] });
       if (sql.includes('INSERT INTO users')) return Promise.resolve({ rows: [{ id: 1, email: 'doc@test.com' }] });
-      if (sql.includes('INSERT INTO doctors')) return Promise.resolve({ rows: [{ id: 1, name: 'Dr. Test', specialty: 'General' }] });
+      if (sql.includes('INSERT INTO doctors')) return Promise.resolve({ rows: [{ id: 1, name: 'Dr. Test', specialty: 'Medicina General' }] });
       if (sql.includes('INSERT INTO doctor_availability')) return Promise.resolve({ rows: [] });
       if (sql === 'COMMIT') return Promise.resolve({});
       return Promise.resolve({ rows: [] });
     });
 
     const result = await doctorService.registerDoctor({
-      name: 'Dr. Test', specialty: 'General', email: 'doc@test.com',
+      name: 'Dr. Test', specialty: 'Medicina General', email: 'doc@test.com',
     }, 'test-tenant');
 
     expect(result.doctor.name).toBe('Dr. Test');
@@ -127,14 +127,14 @@ describe('doctorService.registerDoctor', () => {
       if (sql.includes('SELECT 1 FROM users WHERE rut')) return Promise.resolve({ rows: [] });
       if (sql.includes('SELECT 1 FROM users WHERE email')) return Promise.resolve({ rows: [] });
       if (sql.includes('INSERT INTO users')) return Promise.resolve({ rows: [{ id: 5, email: 'emailfail@test.com' }] });
-      if (sql.includes('INSERT INTO doctors')) return Promise.resolve({ rows: [{ id: 5, name: 'Dr. EmailFail', specialty: 'General' }] });
+      if (sql.includes('INSERT INTO doctors')) return Promise.resolve({ rows: [{ id: 5, name: 'Dr. EmailFail', specialty: 'Medicina General' }] });
       if (sql.includes('INSERT INTO doctor_availability')) return Promise.resolve({ rows: [] });
       if (sql === 'COMMIT') return Promise.resolve({});
       return Promise.resolve({ rows: [] });
     });
 
     const result = await doctorService.registerDoctor({
-      name: 'Dr. EmailFail', specialty: 'General', email: 'emailfail@test.com',
+      name: 'Dr. EmailFail', specialty: 'Medicina General', email: 'emailfail@test.com',
     }, 'test-tenant');
 
     expect(result.doctor.name).toBe('Dr. EmailFail');
@@ -146,14 +146,14 @@ describe('doctorService.registerDoctor', () => {
       if (sql.includes('SELECT 1 FROM users WHERE rut')) return Promise.resolve({ rows: [] });
       if (sql.includes('SELECT 1 FROM users WHERE email')) return Promise.resolve({ rows: [] });
       if (sql.includes('INSERT INTO users')) return Promise.resolve({ rows: [{ id: 2, email: 'rutdoc@test.com' }] });
-      if (sql.includes('INSERT INTO doctors')) return Promise.resolve({ rows: [{ id: 2, name: 'Dr. RUT', specialty: 'General' }] });
+      if (sql.includes('INSERT INTO doctors')) return Promise.resolve({ rows: [{ id: 2, name: 'Dr. RUT', specialty: 'Medicina General' }] });
       if (sql.includes('INSERT INTO doctor_availability')) return Promise.resolve({ rows: [] });
       if (sql === 'COMMIT') return Promise.resolve({});
       return Promise.resolve({ rows: [] });
     });
 
     const result = await doctorService.registerDoctor({
-      name: 'Dr. RUT', specialty: 'General', email: 'rutdoc@test.com', rut: '12.345.678-5',
+      name: 'Dr. RUT', specialty: 'Medicina General', email: 'rutdoc@test.com', rut: '12.345.678-5',
     }, 'test-tenant');
 
     expect(result.doctor.name).toBe('Dr. RUT');
@@ -174,7 +174,7 @@ describe('doctorService.registerDoctor', () => {
     });
 
     await expect(doctorService.registerDoctor({
-      name: 'Dr. Dup', specialty: 'General', email: 'dup@test.com',
+      name: 'Dr. Dup', specialty: 'Medicina General', email: 'dup@test.com',
     }, 'test-tenant')).rejects.toThrow('Doctor o usuario ya existe');
 
     expect(mockClient.query).toHaveBeenCalledWith('ROLLBACK');
@@ -186,14 +186,14 @@ describe('doctorService.registerDoctor', () => {
       if (sql.includes('SELECT 1 FROM users WHERE rut')) return Promise.resolve({ rows: [] });
       if (sql.includes('SELECT 1 FROM users WHERE email')) return Promise.resolve({ rows: [] });
       if (sql.includes('INSERT INTO users')) return Promise.resolve({ rows: [{ id: 3, email: 'tenantdoc@test.com' }] });
-      if (sql.includes('INSERT INTO doctors')) return Promise.resolve({ rows: [{ id: 3, name: 'Dr. Tenant', specialty: 'General' }] });
+      if (sql.includes('INSERT INTO doctors')) return Promise.resolve({ rows: [{ id: 3, name: 'Dr. Tenant', specialty: 'Medicina General' }] });
       if (sql.includes('INSERT INTO doctor_availability')) return Promise.resolve({ rows: [] });
       if (sql === 'COMMIT') return Promise.resolve({});
       return Promise.resolve({ rows: [] });
     });
 
     const result = await doctorService.registerDoctor({
-      name: 'Dr. Tenant', specialty: 'General', email: 'tenantdoc@test.com',
+      name: 'Dr. Tenant', specialty: 'Medicina General', email: 'tenantdoc@test.com',
     }, 'tenant-1');
 
     expect(result.doctor.name).toBe('Dr. Tenant');
@@ -217,7 +217,7 @@ describe('doctorService.createDoctor', () => {
     });
 
     await expect(doctorService.createDoctor({
-      name: 'Dr. Test', specialty: 'General', email: 'doc@test.com', user_id: 999,
+      name: 'Dr. Test', specialty: 'Medicina General', email: 'doc@test.com', user_id: 999,
     }, 'test-tenant')).rejects.toThrow('User not found');
   });
 
@@ -229,7 +229,7 @@ describe('doctorService.createDoctor', () => {
     });
 
     await expect(doctorService.createDoctor({
-      name: 'Dr. Test', specialty: 'General', email: 'doc@test.com', user_id: 1,
+      name: 'Dr. Test', specialty: 'Medicina General', email: 'doc@test.com', user_id: 1,
     }, 'test-tenant')).rejects.toThrow('User must have role doctor');
   });
 
@@ -244,7 +244,7 @@ describe('doctorService.createDoctor', () => {
     });
 
     const result = await doctorService.createDoctor({
-      name: 'Dr. Test', specialty: 'General', email: 'doc@test.com', user_id: 1,
+      name: 'Dr. Test', specialty: 'Medicina General', email: 'doc@test.com', user_id: 1,
     }, 'test-tenant');
 
     expect(result.name).toBe('Dr. Test');
@@ -264,7 +264,7 @@ describe('doctorService.createDoctor', () => {
     });
 
     await expect(doctorService.createDoctor({
-      name: 'Dr. Test', specialty: 'General', email: 'doc@test.com', user_id: 1,
+      name: 'Dr. Test', specialty: 'Medicina General', email: 'doc@test.com', user_id: 1,
     }, 'test-tenant')).rejects.toThrow('Doctor already exists');
   });
 });

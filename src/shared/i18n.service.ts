@@ -1,4 +1,4 @@
-export type Locale = 'es' | 'en' | 'pt' | 'fr';
+export type Locale = 'es' | 'en';
 
 // NOTA: pt y fr están incompletos. pt tiene ~106 claves (vs 363 de es).
 //       fr es una copia de es — NO son traducciones reales al francés.
@@ -948,6 +948,7 @@ const translations: Record<string, Record<string, string>> = {
     'tenant.limits_title': 'Limits',
     'tenant.config_title': 'Clinic Configuration',
   },
+  // DEPRECADO: pt será eliminado. Solo es/en están activos.
   pt: {
 
     'analytics.actual': 'Actual',
@@ -1420,6 +1421,7 @@ const translations: Record<string, Record<string, string>> = {
     'tenant.limits_title': 'Limites',
     'tenant.config_title': 'Configuração da Clínica',
   },
+  // DEPRECADO: fr será eliminado. Solo es/en están activos.
   fr: {
 
     'analytics.actual': 'Actual',
@@ -1896,8 +1898,10 @@ const translations: Record<string, Record<string, string>> = {
 
 let currentLocale: Locale = (process.env.APP_LOCALE as Locale) || 'es';
 
+const ACTIVE_LOCALES: Locale[] = ['es', 'en'];
+
 export const setLocale = (locale: Locale): void => {
-  if (translations[locale]) {
+  if (ACTIVE_LOCALES.includes(locale)) {
     currentLocale = locale;
   }
 };
@@ -1917,7 +1921,7 @@ export const t = (key: string, locale?: Locale, params?: Record<string, string |
 
 export const tAll = (key: string): Record<Locale, string> => {
   const result = {} as Record<Locale, string>;
-  for (const locale of Object.keys(translations) as Locale[]) {
+  for (const locale of ACTIVE_LOCALES) {
     result[locale] = translations[locale]?.[key] || key;
   }
   return result;
@@ -1927,4 +1931,7 @@ export const translate = (key: string, locale?: Locale, params?: Record<string, 
   return t(key, locale, params);
 };
 
-export const getTranslations = (): Record<string, Record<string, string>> => translations;
+export const getTranslations = (): Record<string, Record<string, string>> => {
+  const { es, en } = translations;
+  return { es, en };
+};

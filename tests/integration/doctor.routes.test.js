@@ -114,7 +114,7 @@ describe('POST /api/doctors/register', () => {
   it('returns 401 without auth', async () => {
     const res = await request(app)
       .post('/api/doctors/register')
-      .send({ name: 'Dr. New', specialty: 'General', email: 'new@test.com' });
+      .send({ name: 'Dr. New', specialty: 'Medicina General', email: 'new@test.com' });
 
     expect(res.status).toBe(401);
   });
@@ -134,7 +134,7 @@ describe('POST /api/doctors/register', () => {
     const res = await request(app)
       .post('/api/doctors/register')
       .set('Authorization', `Bearer ${adminToken}`)
-      .send({ name: 'Dr. New', specialty: 'General', email: 'new@test.com' });
+      .send({ name: 'Dr. New', specialty: 'Medicina General', email: 'new@test.com' });
 
     expect(res.status).toBe(201);
   });
