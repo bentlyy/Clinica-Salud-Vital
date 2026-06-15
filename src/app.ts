@@ -17,7 +17,6 @@ import { verifyAuditChain } from './jobs/audit-integrity.job.js';
 import { securityMiddleware, validateEnvSecurity } from './middlewares/security.middleware.js';
 import { tenantMiddleware } from './middlewares/tenant.middleware.js';
 import { optionalAuth } from './middlewares/auth.middleware.js';
-import { csrfProtection, setCsrfCookie } from './middlewares/csrf.middleware.js';
 import { apiVersionRedirect } from './middlewares/apiVersionRedirect.middleware.js';
 import { validateEmailConfig } from './shared/email.service.js';
 import { requestLogger } from './middlewares/requestLogger.middleware.js';
@@ -161,13 +160,6 @@ app.use('/api/saas/webhook/stripe', express.raw({ type: 'application/json' }));
 app.use('/api/v1/saas/webhook/stripe', express.raw({ type: 'application/json' }));
 
 app.use(apiVersionRedirect);
-app.use(setCsrfCookie);
-app.use((req, res, next) => {
-  if (req.path.startsWith('/api/saas/webhook/') || req.path.startsWith('/api/v1/saas/webhook/') || req.path === '/health' || req.path === '/api/v1/health') {
-    return next();
-  }
-  csrfProtection(req, res, next);
-});
 app.use(express.json({ limit: '100kb' }));
 app.use(requestLogger);
 

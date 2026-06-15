@@ -1,34 +1,21 @@
 import { pool } from '../../shared/db.js';
 import { NotFoundError, BadRequestError } from '../../utils/errors.js';
 import { sanitizeTextStrict } from '../../shared/sanitize.js';
-import { encryptPHI, decryptPHI } from '../../shared/phi-encryption.service.js';
 
 const PHI_FIELDS = ['chief_complaint', 'anamnesis', 'physical_exam', 'diagnosis', 'treatment_plan', 'notes'] as const;
 
-const encryptFields = async (row: Record<string, unknown>, tenantId: string): Promise<Record<string, unknown>> => {
+const sanitizeFields = (row: Record<string, unknown>): Record<string, unknown> => {
   const result = { ...row };
   for (const field of PHI_FIELDS) {
     if (result[field] && typeof result[field] === 'string') {
-      result[field] = await encryptPHI(result[field] as string, tenantId);
+      result[field] = sanitizeTextStrict(result[field] as string, 10000);
     }
   }
   return result;
 };
 
-const decryptRowFields = async (row: Record<string, unknown>): Promise<Record<string, unknown>> => {
-  if (!row) return row;
-  const result = { ...row };
-  for (const field of PHI_FIELDS) {
-    if (result[field] && typeof result[field] === 'string' && (result[field] as string).includes(':')) {
-      const decrypted = await decryptPHI(result[field] as string, result.tenant_id as string);
-      if (decrypted) result[field] = decrypted;
-    }
-  }
-  return result;
-};
-
-const decryptRows = async (rows: Record<string, unknown>[]): Promise<Record<string, unknown>[]> =>
-  Promise.all(rows.map(r => decryptRowFields(r)));
+const sanitizeRows = (rows: Record<string, unknown>[]): Record<string, unknown>[] =>
+  rows.map(r => sanitizeFields(r));
 
 interface ClinicalRecordQuery {
   patient_id?: number;
@@ -96,7 +83,7 @@ export const getAllClinicalRecords = async ({ patient_id, doctor_id, status, lim
   params.push(limit, offset);
 
   const result = await pool.query(query, params);
-  return await decryptRows(result.rows);
+  return sanitizeRows(result.rows);
 };
 
 export const getClinicalRecordById = async (id: string | number, tenantId: string) => {
@@ -113,7 +100,7 @@ export const getClinicalRecordById = async (id: string | number, tenantId: strin
   `, [id, tenantId]);
 
   if (result.rows.length === 0) throw new NotFoundError('Clinical record not found');
-  return await decryptRowFields(result.rows[0]);
+  return sanitizeFields(result.rows[0]);
 };
 
 export const getClinicalRecordsByPatient = async (patient_id: number, tenantId: string) => {
@@ -126,7 +113,7 @@ export const getClinicalRecordsByPatient = async (patient_id: number, tenantId: 
     ORDER BY cr.created_at DESC
   `, [patient_id, tenantId]);
 
-  return await decryptRows(result.rows);
+  return sanitizeRows(result.rows);
 };
 
 export const createClinicalRecord = async (data: ClinicalRecordData, tenantId: string) => {
@@ -135,7 +122,6 @@ export const createClinicalRecord = async (data: ClinicalRecordData, tenantId: s
   try {
     await client.query('BEGIN');
 
-    // Advisory lock to prevent duplicate records for same booking
     if (data.booking_id) {
       await client.query(
         'SELECT pg_advisory_xact_lock(hashtext($1::text || $2))',
@@ -160,26 +146,26 @@ export const createClinicalRecord = async (data: ClinicalRecordData, tenantId: s
 
     const { patient_id, booking_id, chief_complaint, anamnesis, vital_signs, physical_exam, diagnosis, cie10_codes, treatment_plan, notes } = data;
 
-    const encryptedData = await encryptFields({
+    const sanitized = sanitizeFields({
       chief_complaint: sanitizeTextStrict(chief_complaint, 5000),
       anamnesis: sanitizeTextStrict(anamnesis, 10000),
       physical_exam: sanitizeTextStrict(physical_exam, 10000),
       diagnosis: sanitizeTextStrict(diagnosis, 5000),
       treatment_plan: sanitizeTextStrict(treatment_plan, 10000),
       notes: sanitizeTextStrict(notes, 10000),
-    }, tenantId);
+    });
 
     const columns = ['patient_id', 'doctor_id', 'booking_id', 'chief_complaint', 'anamnesis', 'vital_signs', 'physical_exam', 'diagnosis', 'cie10_codes', 'treatment_plan', 'notes', 'tenant_id'];
     const insertValues: any[] = [
       patient_id, data.doctor_id, booking_id || null,
-      encryptedData.chief_complaint || null,
-      encryptedData.anamnesis || null,
+      sanitized.chief_complaint || null,
+      sanitized.anamnesis || null,
       vital_signs ? JSON.stringify(vital_signs) : null,
-      encryptedData.physical_exam || null,
-      encryptedData.diagnosis || null,
+      sanitized.physical_exam || null,
+      sanitized.diagnosis || null,
       cie10_codes || null,
-      encryptedData.treatment_plan || null,
-      encryptedData.notes || null,
+      sanitized.treatment_plan || null,
+      sanitized.notes || null,
       tenantId,
     ];
 
@@ -192,7 +178,7 @@ export const createClinicalRecord = async (data: ClinicalRecordData, tenantId: s
     `, insertValues);
 
     await client.query('COMMIT');
-    return await decryptRowFields(result.rows[0]);
+    return sanitizeFields(result.rows[0]);
   } catch (error) {
     await client.query('ROLLBACK');
     throw error;
@@ -237,9 +223,8 @@ export const updateClinicalRecord = async (id: string | number, data: ClinicalRe
           fields.push(`${field} = $${paramCount}`);
           values.push(data[field] as string[]);
         } else {
-          const encrypted = await encryptFields({ [field]: sanitizeTextStrict(data[field] as string, 10000) }, tenantId);
           fields.push(`${field} = $${paramCount}`);
-          values.push(encrypted[field] as string || null);
+          values.push(sanitizeTextStrict(data[field] as string, 10000));
         }
         paramCount++;
       }
@@ -263,7 +248,7 @@ export const updateClinicalRecord = async (id: string | number, data: ClinicalRe
     }
 
     await client.query('COMMIT');
-    return await decryptRowFields(result.rows[0]);
+    return sanitizeFields(result.rows[0]);
   } catch (error) {
     await client.query('ROLLBACK');
     throw error;

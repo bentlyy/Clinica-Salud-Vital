@@ -18,11 +18,6 @@ vi.mock('../../src/utils/logger.js', () => ({
   logger: { info: vi.fn(), error: vi.fn(), warn: vi.fn() },
 }));
 
-vi.mock('../../src/shared/phi-encryption.service.js', () => ({
-  encryptPHI: vi.fn((text) => Promise.resolve(`enc:${text}`)),
-  decryptPHI: vi.fn((text) => Promise.resolve(text.replace('enc:', ''))),
-}));
-
 import * as clinicalRecordService from '../../src/modules/clinical-record/clinical-record.service.js';
 
 beforeEach(() => {

@@ -7,12 +7,6 @@ vi.mock('../../src/shared/db.js', () => ({
   verifyTenantContext: vi.fn().mockResolvedValue(true),
 }));
 
-vi.mock('../../src/shared/phi-encryption.service.js', () => ({
-  encryptPHI: vi.fn((text) => text),
-  decryptPHI: vi.fn((text) => text),
-  clearKeyCache: vi.fn(),
-}));
-
 vi.mock('../../src/modules/clinical-record/clinical-record.service.js', () => ({
   getAllClinicalRecords: vi.fn(),
   getClinicalRecordById: vi.fn(),
