@@ -31,20 +31,12 @@ const mockCtrl = Object.fromEntries([
   'createAvailability', 'getAvailabilityByDoctor', 'getMyAvailability', 'deleteAvailability',
   // exception
   'getMyExceptions', 'createException', 'deleteException',
-  // rbac
-  'getMyPermissions',
   // saas
   'stripeWebhook', 'getPlans', 'onboardTenant', 'getMySubscription', 'createCheckout', 'changePlan', 'cancelSubscription', 'getUsage', 'getUsageSummary', 'getLimits', 'updateTenantConfig',
-  // super-admin
-  'getGlobalStats', 'listTenants', 'getTenantDetail', 'adminCreateTenant', 'updateTenant', 'deleteTenant', 'listUsers', 'toggleUserActive',
-  'getDashboardData', 'getTopTenantsData', 'getRevenueData', 'getGrowthData',
   // specialties
   'getSpecialties', 'createSpecialty',
   // i18n
   'getTranslationsHandler',
-  // monitoring
-  'getSystemHealth', 'getMemoryReport', 'getDbReport', 'getDbSlowQueries', 'getDbTableSizes',
-  'getLogs', 'exportDbSizes', 'triggerGc', 'getDashboardData',
 ].map(k => [k, vi.fn()]));
 
 const mockSchema = Object.fromEntries([
@@ -53,7 +45,6 @@ const mockSchema = Object.fromEntries([
   'createLabRequestSchema', 'labRequestIdSchema',
   'checkoutSchema', 'changePlanSchema', 'onboardSchema',
   'createSpecialtySchema',
-  'updateTenantSchema', 'adminCreateTenantSchema',
   'createWebhookSchema', 'updateWebhookSchema',
 ].map(k => [k, {}]));
 
@@ -65,20 +56,16 @@ vi.mock('../../src/modules/laboratory/laboratory.schema.js', () => mockSchema);
 vi.mock('../../src/modules/saas/saas.features.js', () => ({ requireFeature: mockRequireFeature }));
 vi.mock('../../src/modules/saas/saas.controller.js', () => mockCtrl);
 vi.mock('../../src/modules/saas/saas.schema.js', () => mockSchema);
-vi.mock('../../src/modules/super-admin/super-admin.controller.js', () => mockCtrl);
-vi.mock('../../src/modules/super-admin/super-admin.schema.js', () => mockSchema);
 vi.mock('../../src/modules/availability/availability.controller.js', () => ({
   ...mockCtrl,
   getMyExceptions: mockCtrl.getMyExceptions,
   createException: mockCtrl.createException,
   deleteException: mockCtrl.deleteException,
 }));
-vi.mock('../../src/modules/rbac/rbac.controller.js', () => mockCtrl);
 vi.mock('../../src/modules/i18n/i18n.controller.js', () => mockCtrl);
 vi.mock('../../src/modules/specialties/specialties.controller.js', () => mockCtrl);
 vi.mock('../../src/modules/specialties/specialties.service.js', () => mockCtrl);
 vi.mock('../../src/modules/specialties/specialties.schema.js', () => mockSchema);
-vi.mock('../../src/modules/monitoring/monitoring.controller.js', () => mockCtrl);
 vi.mock('../../src/utils/logger.js', () => ({ logger: { info: vi.fn(), error: vi.fn(), warn: vi.fn() } }));
 vi.mock('../../src/shared/query.js', () => ({ tenantQuery: { whereParam: vi.fn(), andWhereParam: vi.fn() } }));
 
@@ -111,11 +98,6 @@ describe('route exports', () => {
     expect(mod.default).toBeDefined();
   });
 
-  it('rbac routes', async () => {
-    const mod = await import('../../src/modules/rbac/rbac.routes.js');
-    expect(mod.default).toBeDefined();
-  });
-
   it('saas routes', async () => {
     const mod = await import('../../src/modules/saas/saas.routes.js');
     expect(mod.default).toBeDefined();
@@ -123,16 +105,6 @@ describe('route exports', () => {
 
   it('specialties routes', async () => {
     const mod = await import('../../src/modules/specialties/specialties.routes.js');
-    expect(mod.default).toBeDefined();
-  });
-
-  it('super-admin routes', async () => {
-    const mod = await import('../../src/modules/super-admin/super-admin.routes.js');
-    expect(mod.default).toBeDefined();
-  });
-
-  it('monitoring routes', async () => {
-    const mod = await import('../../src/modules/monitoring/monitoring.routes.js');
     expect(mod.default).toBeDefined();
   });
 });
