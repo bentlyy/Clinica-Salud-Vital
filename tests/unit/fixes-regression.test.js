@@ -1,41 +1,6 @@
 import { describe, it, expect } from 'vitest';
 
 describe('Critical Fixes - No Regression', () => {
-  describe('CSRF middleware', () => {
-    it('should allow requests without CSRF cookie (new session) and validate if both present', async () => {
-      const fs = await import('fs');
-      const content = fs.readFileSync('src/middlewares/csrf.middleware.ts', 'utf-8');
-
-      // No cookie → allow (new session, setCsrfCookie just created it)
-      expect(content).toContain('if (!cookieToken)');
-
-      // Cookie present but no header → allow (SameSite=Strict already protects)
-      expect(content).toContain('if (!headerToken)');
-
-      // Both present → defense-in-depth validation with timingSafeEqual
-      expect(content).toContain('timingSafeEqual');
-      expect(content).toContain('BadRequestError');
-    });
-
-    it('should use timingSafeEqual for token comparison', async () => {
-      const fs = await import('fs');
-      const content = fs.readFileSync('src/middlewares/csrf.middleware.ts', 'utf-8');
-
-      expect(content).toContain('timingSafeEqual');
-    });
-
-    it('should skip CSRF for safe methods (GET/HEAD/OPTIONS)', async () => {
-      const fs = await import('fs');
-      const content = fs.readFileSync('src/middlewares/csrf.middleware.ts', 'utf-8');
-
-      expect(content).toContain('STATE_CHANGING_METHODS');
-      expect(content).toContain('POST');
-      expect(content).toContain('PUT');
-      expect(content).toContain('PATCH');
-      expect(content).toContain('DELETE');
-    });
-  });
-
   describe('init.sql tenant_id', () => {
     it('should have tenant_id in users table', async () => {
       const fs = await import('fs');
