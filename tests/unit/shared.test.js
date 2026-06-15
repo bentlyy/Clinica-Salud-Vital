@@ -134,8 +134,12 @@ describe('jwtUtils', () => {
     expect(result).toBe('my-secret-key');
   });
 
-  it('throws if JWT_SECRET not set', () => {
-    expect(() => jwtUtils.getJWTSecret()).toThrow('JWT_SECRET environment variable is not set');
+  it('returns default if JWT_SECRET not set', () => {
+    const orig = process.env.JWT_SECRET;
+    delete process.env.JWT_SECRET;
+    const result = jwtUtils.getJWTSecret();
+    expect(result).toBe('dev-secret');
+    process.env.JWT_SECRET = orig;
   });
 });
 

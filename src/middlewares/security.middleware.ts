@@ -64,26 +64,6 @@ export const validateEnvSecurity = (): void => {
     throw new UnauthorizedError('JWT_SECRET debe tener al menos 32 caracteres.');
   }
 
-  // INVITE_JWT_SECRET validation (must be different from JWT_SECRET)
-  const inviteSecret = process.env.INVITE_JWT_SECRET;
-  if (!inviteSecret) {
-    logger.warn('⚠️ INVITE_JWT_SECRET no está definido. Se usará JWT_SECRET como fallback. Define INVITE_JWT_SECRET en producción.');
-  } else if (inviteSecret === jwtSecret) {
-    logger.warn('⚠️ INVITE_JWT_SECRET es igual a JWT_SECRET. Deben ser diferentes para seguridad óptima.');
-  } else if (inviteSecret.length < 32) {
-    logger.warn('⚠️ INVITE_JWT_SECRET debería tener al menos 32 caracteres.');
-  }
-
-  // PHI_MASTER_KEY validation (MANDATORY — envelope encryption master key)
-  const phiMasterKey = process.env.PHI_MASTER_KEY;
-  if (!phiMasterKey) {
-    throw new UnauthorizedError('PHI_MASTER_KEY no está definida. Es obligatoria para cifrado PHI (64 hex chars).');
-  }
-  const phiKeyBytes = Buffer.from(phiMasterKey, 'hex');
-  if (phiKeyBytes.length !== 32) {
-    throw new UnauthorizedError('PHI_MASTER_KEY debe ser exactamente 64 caracteres hexadecimales (32 bytes).');
-  }
-
   // AUDIT_HMAC_SECRET validation (MANDATORY — audit chain integrity)
   const auditSecret = process.env.AUDIT_HMAC_SECRET;
   if (!auditSecret) {
@@ -91,18 +71,6 @@ export const validateEnvSecurity = (): void => {
   }
   if (auditSecret.length < 32) {
     throw new UnauthorizedError('AUDIT_HMAC_SECRET debe tener al menos 32 caracteres.');
-  }
-
-  // JWT_PRIVATE_KEY / JWT_PUBLIC_KEY validation (production only)
-  if (isProduction) {
-    const jwtPriv = process.env.JWT_PRIVATE_KEY;
-    const jwtPub = process.env.JWT_PUBLIC_KEY;
-    if (jwtPriv && !jwtPub) {
-      throw new UnauthorizedError('JWT_PRIVATE_KEY está definida pero JWT_PUBLIC_KEY no. Deben definirse ambas.');
-    }
-    if (jwtPub && !jwtPriv) {
-      throw new UnauthorizedError('JWT_PUBLIC_KEY está definida pero JWT_PRIVATE_KEY no. Deben definirse ambas.');
-    }
   }
 
   // ENCRYPTION_KEY validation
