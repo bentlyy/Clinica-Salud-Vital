@@ -1,34 +1,67 @@
-import { pool } from '../../shared/db.js';
 import { BadRequestError } from '../../utils/errors.js';
 
+export const SPECIALTIES = [
+  'Medicina General',
+  'Pediatría',
+  'Cardiología',
+  'Dermatología',
+  'Ginecología',
+  'Obstetricia',
+  'Traumatología',
+  'Oftalmología',
+  'Otorrinolaringología',
+  'Neurología',
+  'Psiquiatría',
+  'Psicología',
+  'Nutrición',
+  'Fonoaudiología',
+  'Kinesiología',
+  'Medicina Interna',
+  'Cirugía General',
+  'Urología',
+  'Endocrinología',
+  'Reumatología',
+  'Gastroenterología',
+  'Neumología',
+  'Nefrología',
+  'Oncología',
+  'Hematología',
+  'Medicina Deportiva',
+  'Medicina Familiar',
+  'Geriatría',
+  'Alergología',
+  'Infectología',
+  'Medicina del Trabajo',
+  'Medicina Estética',
+  'Dolor y Cuidados Paliativos',
+  'Radiología',
+  'Anestesiología',
+  'Medicina de Urgencia',
+  'Dentista',
+  'Cirugía Plástica',
+  'Medicina Nuclear',
+  'Patología',
+  'Otra',
+];
+
+const SPECIALTIES_MAP = SPECIALTIES.map((name, i) => ({ id: i + 1, name }));
+
 export const getAllSpecialties = async (): Promise<{ id: number; name: string }[]> => {
-  const result = await pool.query('SELECT id, name FROM specialties ORDER BY name');
-  return result.rows;
+  return SPECIALTIES_MAP;
 };
 
 export const createSpecialty = async (name: string): Promise<{ id: number; name: string }> => {
   if (!name || name.trim().length === 0) throw new BadRequestError('Name is required');
-  try {
-    const result = await pool.query(
-      'INSERT INTO specialties (name) VALUES ($1) RETURNING id, name',
-      [name.trim()]
-    );
-    return result.rows[0];
-  } catch (err: unknown) {
-    const pgError = err as { code?: string };
-    if (pgError.code === '23505') throw new BadRequestError('La especialidad ya existe');
-    throw err;
-  }
+  const trimmed = name.trim();
+  const idx = SPECIALTIES.indexOf(trimmed);
+  if (idx === -1) throw new BadRequestError('La especialidad no es válida');
+  return { id: idx + 1, name: trimmed };
 };
 
 export const ensureSpecialty = async (name: string): Promise<{ id: number; name: string }> => {
   const trimmed = name.trim();
   if (!trimmed) throw new BadRequestError('Name is required');
-  const result = await pool.query(
-    `INSERT INTO specialties (name) VALUES ($1)
-     ON CONFLICT (name) DO UPDATE SET name = EXCLUDED.name
-     RETURNING id, name`,
-    [trimmed]
-  );
-  return result.rows[0];
+  const idx = SPECIALTIES.indexOf(trimmed);
+  if (idx === -1) throw new BadRequestError(`Invalid specialty: ${trimmed}`);
+  return { id: idx + 1, name: trimmed };
 };
