@@ -76,7 +76,7 @@ export const tenantMiddleware = async (req: Request, res: Response, next: NextFu
     }
     req.tenant_id = process.env.DEFAULT_TENANT_ID || 'default';
     req.locale = getLocaleFromRequest(req);
-    tenantAls.run({ tenantId: req.tenant_id }, () => { next(); });
+    tenantAls.run({ tenantId: req.tenant_id, userRole: (req as any).user?.role }, () => { next(); });
     return;
   }
 
@@ -99,7 +99,7 @@ export const tenantMiddleware = async (req: Request, res: Response, next: NextFu
       }
       req.tenant_id = rawTenantId;
       req.locale = getLocaleFromRequest(req);
-      tenantAls.run({ tenantId: req.tenant_id }, () => { next(); });
+      tenantAls.run({ tenantId: req.tenant_id, userRole: (req as any).user?.role }, () => { next(); });
       return;
     }
   }
@@ -108,5 +108,5 @@ export const tenantMiddleware = async (req: Request, res: Response, next: NextFu
   req.locale = tenant.locale;
   res.setHeader('X-Tenant-Id', req.tenant_id);
 
-  tenantAls.run({ tenantId: req.tenant_id }, () => { next(); });
+  tenantAls.run({ tenantId: req.tenant_id, userRole: (req as any).user?.role }, () => { next(); });
 };
