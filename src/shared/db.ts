@@ -1,15 +1,7 @@
 import pg from 'pg';
-import { AsyncLocalStorage } from 'node:async_hooks';
 import { logger } from '../utils/logger.js';
 
 const { Pool } = pg;
-
-interface TenantContext {
-  tenantId: string;
-  userRole?: string;
-}
-
-export const tenantAls = new AsyncLocalStorage<TenantContext>();
 
 export interface PoolConfig {
   connectionString: string | undefined;
@@ -37,12 +29,12 @@ export const pool = new Pool({
   max: poolMax,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 15000,
-  statement_timeout: 30000, // sent as PG protocol startup param
-  query_timeout: 30000, // JS-side timeout (setTimeout) — funciona incluso si proxy ignora statement_timeout
-  idle_in_transaction_session_timeout: 60000, // 60s
+  statement_timeout: 30000,
+  query_timeout: 30000,
+  idle_in_transaction_session_timeout: 60000,
 });
 
-pool.on('connect', (client: pg.PoolClient) => {
+pool.on('connect', () => {
   logger.info('DB connected');
 });
 
@@ -50,59 +42,8 @@ pool.on('error', (err: Error) => {
   logger.error('Unexpected error on idle client', err);
 });
 
-const originalPoolQuery = pool.query.bind(pool);
-const originalConnect = pool.connect.bind(pool);
-
-const wrappedQuery = function (this: typeof pool, text: string | pg.QueryConfig, values?: any[]) {
-  const ctx = tenantAls.getStore();
-  if (!ctx) {
-    return originalPoolQuery(text, values);
-  }
-
-  const setConfigSql = `SELECT set_config('app.tenant_id', $1, true), set_config('app.user_role', COALESCE($2, ''), true); `;
-
-  const userRole = ctx.userRole || '';
-  if (typeof text === 'string') {
-    if (values && values.length > 0) {
-      text = text.replace(/\$(\d+)/g, (_, num) => `$${parseInt(num, 10) + 2}`);
-      return originalPoolQuery(setConfigSql + text, [ctx.tenantId, userRole, ...values]);
-    }
-    return originalPoolQuery(setConfigSql + text, [ctx.tenantId, userRole]);
-  }
-
-  const originalText = text.text;
-  if (text.values && text.values.length > 0) {
-    const shiftedText = originalText.replace(/\$(\d+)/g, (_, num) => `$${parseInt(num, 10) + 2}`);
-    return originalPoolQuery({
-      ...text,
-      text: setConfigSql + shiftedText,
-      values: [ctx.tenantId, userRole, ...text.values],
-    });
-  }
-  return originalPoolQuery({
-    ...text,
-    text: setConfigSql + originalText,
-    values: [ctx.tenantId, userRole],
-  });
-} as unknown as typeof pool.query;
-
-// Override pool.query so ALL existing pool.query calls use the wrapper
-pool.query = wrappedQuery;
 export const query = pool.query.bind(pool);
 
-// Override pool.connect to propagate tenant context to dedicated clients
-pool.connect = function () {
-  return originalConnect().then((client) => {
-    const ctx = tenantAls.getStore();
-    if (ctx) {
-      const userRole = ctx.userRole || '';
-      return client.query("SELECT set_config('app.tenant_id', $1, false), set_config('app.user_role', $2, false)", [ctx.tenantId, userRole]).then(() => client);
-    }
-    return client;
-  });
-} as typeof pool.connect;
-
-// Read replica pool — routes analytics/reporting queries to DATABASE_URL_READ_ONLY when configured
 const readOnlyUrl = process.env.DATABASE_URL_READ_ONLY;
 export const readPool = readOnlyUrl
   ? new Pool({
@@ -122,32 +63,3 @@ if (readOnlyUrl) {
 export type Pool = typeof pool;
 export type PoolClient = ReturnType<typeof pool.connect>;
 export type QueryResult = ReturnType<typeof pool.query>;
-
-export const logPhiAccess = async (params: {
-  userId?: number;
-  tenantId: string;
-  action: string;
-  entityType: string;
-  entityId?: number;
-  ipAddress?: string;
-  userAgent?: string;
-  durationMs?: number;
-}): Promise<void> => {
-  try {
-    await pool.query(`
-      INSERT INTO phi_access_log (user_id, tenant_id, action, entity_type, entity_id, ip_address, user_agent, duration_ms)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-    `, [
-      params.userId || null,
-      params.tenantId,
-      params.action,
-      params.entityType,
-      params.entityId || null,
-      params.ipAddress || null,
-      params.userAgent || null,
-      params.durationMs || null,
-    ]);
-  } catch (err) {
-    logger.error('Failed to log PHI access', { error: (err as Error).message });
-  }
-};

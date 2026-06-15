@@ -386,29 +386,6 @@ const runMigration = async (): Promise<void> => {
     logger.info(`Migración ${file} aplicada`);
   }
 
-  /* Schema drift detection */
-  const initPath = resolve(__dirname, '../db/init.sql');
-  if (fs.existsSync(initPath)) {
-    const initContent = fs.readFileSync(initPath, 'utf-8');
-    const initHash = crypto.createHash('sha256').update(initContent).digest('hex').slice(0, 16);
-
-    await pool.query(
-      `CREATE TABLE IF NOT EXISTS _schema_meta (key VARCHAR(255) PRIMARY KEY, value TEXT NOT NULL)`
-    );
-
-    const { rows: [stored] } = await pool.query(
-      `SELECT value FROM _schema_meta WHERE key = 'init_hash'`
-    );
-
-    if (!stored) {
-      await pool.query(
-        `INSERT INTO _schema_meta (key, value) VALUES ('init_hash', $1) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,
-        [initHash]
-      );
-    } else if (stored.value !== initHash) {
-      logger.warn(`[SCHEMA DRIFT] init.sql hash changed from ${stored.value} to ${initHash}. Migrations may be out of sync with base schema.`);
-    }
-  }
 };
 
 const startServer = async (): Promise<void> => {
