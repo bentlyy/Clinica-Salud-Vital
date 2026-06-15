@@ -6,20 +6,6 @@ import * as doctorService from '../doctor/doctor.service.js';
 import { asyncHandler } from '../../middlewares/asyncHandler.middleware.js';
 import { NotFoundError, BadRequestError, ForbiddenError } from '../../utils/errors.js';
 import { generatePrescriptionPDF } from './prescription-pdf.service.js';
-import { logPhiAccess } from '../../shared/db.js';
-
-const phiLog = (req: Request, record: any, action: string) => {
-  logPhiAccess({
-    userId: req.user?.id,
-    tenantId: req.tenant_id,
-    action,
-    entityType: 'clinical_record',
-    entityId: record?.id,
-    ipAddress: req.ip,
-    userAgent: req.headers?.['user-agent'],
-    durationMs: record?.startTime ? Date.now() - record.startTime : undefined,
-  });
-};
 
 export const getClinicalRecords = asyncHandler(async (req: Request, res: Response) => {
   const { patient_id, status } = req.query;
@@ -38,7 +24,6 @@ export const getClinicalRecords = asyncHandler(async (req: Request, res: Respons
       offset,
     }, req.tenant_id);
 
-    phiLog(req, { startTime: Date.now() }, 'list');
     return res.json(records);
   }
 
@@ -50,7 +35,6 @@ export const getClinicalRecords = asyncHandler(async (req: Request, res: Respons
       offset,
     }, req.tenant_id);
 
-    phiLog(req, { startTime: Date.now() }, 'list');
     return res.json(records);
   }
 
@@ -71,7 +55,6 @@ export const getClinicalRecordById = asyncHandler(async (req: Request, res: Resp
 
   const prescriptions = await prescriptionService.getPrescriptionsByClinicalRecord(Number(record.id), req.tenant_id);
 
-  phiLog(req, record, 'read');
   res.json({ ...record, prescriptions });
 });
 
@@ -93,13 +76,11 @@ export const getClinicalRecordsByPatient = asyncHandler(async (req: Request, res
     }
     const records = await clinicalRecordService.getClinicalRecordsByPatient(patientId, req.tenant_id);
 
-    phiLog(req, { id: patientId, startTime: Date.now() }, 'list');
     return res.json(records);
   }
 
   const records = await clinicalRecordService.getClinicalRecordsByPatient(patientId, req.tenant_id);
 
-  phiLog(req, { id: patientId, startTime: Date.now() }, 'list');
   return res.json(records);
 });
 
@@ -112,7 +93,6 @@ export const createClinicalRecord = asyncHandler(async (req: Request, res: Respo
     doctor_id: doctor.id,
   }, req.tenant_id);
 
-  phiLog(req, record, 'create');
   res.status(201).json(record);
 });
 
@@ -127,7 +107,6 @@ export const updateClinicalRecord = asyncHandler(async (req: Request, res: Respo
     req.tenant_id
   );
 
-  phiLog(req, record, 'update');
   res.json(record);
 });
 
@@ -137,7 +116,6 @@ export const deleteClinicalRecord = asyncHandler(async (req: Request, res: Respo
 
   const result = await clinicalRecordService.deleteClinicalRecord(Number(req.params.id), doctor.id, req.tenant_id);
 
-  phiLog(req, { id: Number(req.params.id), startTime: Date.now() }, 'delete');
   res.json(result);
 });
 
