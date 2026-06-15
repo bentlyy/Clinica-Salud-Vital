@@ -1,0 +1,648 @@
+# PROMPT: ESTRATEGIA DE DESARROLLO POR FASES
+
+## Cómo usar este prompt
+
+Copia y pega este mensaje completo en tu próxima conversación con la IA. Cada fase contiene:
+
+- **Objetivo**: qué se busca lograr
+- **Checklist**: tareas concretas
+- **Criterio de éxito**: cómo saber que la fase está completa
+- **Tests y verificación**: comandos para validar
+
+IMPORTANTE: Trabaja UNA fase a la vez. No pases a la siguiente hasta que la fase actual esté completamente verificada.
+
+---
+
+## FASE 0: Preparación y snapshot de seguridad
+
+**Antes de tocar código**, crea un punto de restauración:
+
+```bash
+git checkout -b refactor/fase-0-preparacion
+```
+
+Ejecuta los tests actuales para tener una baseline:
+
+```bash
+npm test 2>&1 | tail -20
+```
+
+Registra el output en un archivo:
+
+```bash
+npm test 2>&1 | tee logs/test-baseline.log
+```
+
+Verifica que los tests pasen (1122 tests, 0 failures es el baseline esperado).
+
+**Criterio de éxito:** Tests verdes. Snapshot creado. Ramas creadas.
+
+---
+
+## FASE 1: Bugfixes críticos (día 1-2)
+
+### 1.1 Refresh token no valida token_version
+
+**Archivo:** `src/modules/auth/auth.service.ts`
+
+**Problema:** `refreshToken()` no compara `user.token_version` con el del token. Después de cambiar contraseña, un refresh token robado sigue funcionando.
+
+**Solución:** En la función `refreshToken`, después de obtener el usuario, agregar:
+
+```typescript
+// auth.service.ts ~line 306
+const userResult = await client.query<User>('SELECT * FROM users WHERE id = $1 AND active = true', [tokenRecord.user_id]);
+const user = userResult.rows[0];
+if (!user) {
+  await client.query('ROLLBACK');
+  return null;
+}
+
+// ✨ AGREGAR:
+const currentTokenVersion = user.token_version || 0;
+// Leer token_version del refresh token (lo guardamos al crear)
+const refreshTokenVersion = tokenRecord.token_version || 0;
+if (currentTokenVersion !== refreshTokenVersion) {
+  await client.query('UPDATE refresh_tokens SET revoked = true WHERE id = $1', [tokenRecord.id]);
+  await client.query('COMMIT');
+  return null;
+}
+```
+
+Además, al crear el refresh token, guarda el `token_version` actual:
+```typescript
+// En generateRefreshToken ~line 75
+await pool.query(
+  'INSERT INTO refresh_tokens (user_id, token, expires_at, token_version) VALUES ($1, $2, $3, (SELECT COALESCE(token_version, 0) FROM users WHERE id = $4))',
+  [userId, tokenHash, expiresAt, userId]
+);
+```
+
+Y agregar columna `token_version` a `refresh_tokens`:
+```sql
+ALTER TABLE refresh_tokens ADD COLUMN IF NOT EXISTS token_version INTEGER DEFAULT 0;
+```
+
+### 1.2 RLS superadmin_bypass no funciona
+
+**Archivos:** `db/init.sql`, `src/shared/db.ts`
+
+**Problema:** La policy RLS `superadmin_bypass` usa `current_setting('app.user_role', true)` pero `app.user_role` NUNCA se configura. Los superadmins no pueden ver datos de otros tenants.
+
+**Solución:** En `db.ts`, en el wrapper de `pool.query`, después de setear `app.tenant_id`, también setear `app.user_role`:
+
+```typescript
+// db.ts ~line 61
+const setConfigSql = `SELECT set_config('app.tenant_id', $1, true), set_config('app.user_role', COALESCE($2, ''), true); `;
+
+// Ajustar parámetros para pasar user_role también
+```
+
+Esto requiere modificar el wrapper para aceptar un segundo parámetro opcional. Simplifica: mejor que el middleware setee ambas variables de sesión.
+
+### 1.3 Rate limiters en cadena
+
+**Archivo:** `src/app.ts`
+
+**Problema:** `loginLimiter`, `emailAuthLimiter`, y `authLimiter` se aplican al mismo endpoint. Atacante rota emails.
+
+**Solución:** Reemplazar los 3 limiters por UNO solo:
+
+```typescript
+// Reemplazar ~line 199-241 con:
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Demasiados intentos. Intenta de nuevo en 15 minutos.' },
+  keyGenerator: (req: Request) => {
+    const email = (req.body?.email || '') as string;
+    return `login:${req.ip}:${email}`;
+  },
+  handler: (req: Request, res: Response) => {
+    logger.warn('Rate limit exceeded (login)', { email: req.body?.email, ip: req.ip });
+    res.status(429).json({ error: 'Demasiados intentos. Intenta de nuevo en 15 minutos.' });
+  },
+});
+```
+
+Luego ELIMINAR `authLimiter`, `emailAuthLimiter`, y `loginLimiter` originales. Mantener solo `registerLimiter`, `refreshLimiter`, `forgotPasswordLimiter`, y `resetPasswordLimiter`.
+
+### Criterio de éxito Fase 1
+
+```bash
+# Tests existentes siguen pasando
+npm test 2>&1 | tail -10
+
+# Login con 2 intentos rápidos funciona
+curl -s -X POST http://localhost:3000/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"admin@clinic.com","password":"REPLACED_PASSWORD"}' | head -c 200
+
+# Verificar que refresh retorna error si cambiaste password
+# (prueba manual: login → change-password → refresh con old token → debe fallar)
+```
+
+---
+
+## FASE 2: Eliminar ML Module (día 2-3)
+
+### Archivos a eliminar (12 archivos)
+
+```
+src/modules/ml/
+├── ml.cache.ts          → ELIMINAR
+├── ml.controller.ts     → ELIMINAR
+├── ml.middleware.ts     → ELIMINAR
+├── ml.monitoring.ts     → ELIMINAR
+├── ml.prediction.ts     → ELIMINAR
+├── ml.registry.ts       → ELIMINAR
+├── ml.routes.ts         → ELIMINAR
+├── ml.service.ts        → ELIMINAR
+├── ml.shared.ts         → ELIMINAR
+├── ml.training.ts       → ELIMINAR
+├── ml.types.ts          → ELIMINAR
+├── ml.validator.ts      → ELIMINAR
+```
+
+### Tablas a eliminar (6 tablas)
+
+```sql
+DROP TABLE IF EXISTS ml_run_artifacts CASCADE;
+DROP TABLE IF EXISTS ml_run_metrics CASCADE;
+DROP TABLE IF EXISTS ml_run_params CASCADE;
+DROP TABLE IF EXISTS ml_runs CASCADE;
+DROP TABLE IF EXISTS ml_experiments CASCADE;
+DROP TABLE IF EXISTS ml_demand_forecast CASCADE;
+DROP TABLE IF EXISTS ml_model_metrics CASCADE;
+DROP TABLE IF EXISTS ml_prediction_history CASCADE;
+```
+
+### Migración SQL
+
+Crear `db/migrations/050_remove_ml.sql`:
+```sql
+-- 050: Eliminar módulo ML
+DROP TABLE IF EXISTS ml_run_artifacts CASCADE;
+DROP TABLE IF EXISTS ml_run_metrics CASCADE;
+DROP TABLE IF EXISTS ml_run_params CASCADE;
+DROP TABLE IF EXISTS ml_runs CASCADE;
+DROP TABLE IF EXISTS ml_experiments CASCADE;
+DROP TABLE IF EXISTS ml_demand_forecast CASCADE;
+DROP TABLE IF EXISTS ml_model_metrics CASCADE;
+DROP TABLE IF EXISTS ml_prediction_history CASCADE;
+
+DROP INDEX IF EXISTS idx_ml_predictions_tenant_model;
+DROP INDEX IF EXISTS idx_ml_experiments_tenant;
+DROP INDEX IF EXISTS idx_ml_runs_experiment;
+DROP INDEX IF EXISTS idx_ml_runs_tenant;
+DROP INDEX IF EXISTS idx_ml_runs_model_type;
+DROP INDEX IF EXISTS idx_ml_run_params_run;
+DROP INDEX IF EXISTS idx_ml_run_params_tenant;
+DROP INDEX IF EXISTS idx_ml_run_metrics_run;
+DROP INDEX IF EXISTS idx_ml_run_metrics_tenant;
+DROP INDEX IF EXISTS idx_ml_run_artifacts_run;
+DROP INDEX IF EXISTS idx_ml_run_artifacts_tenant;
+```
+
+### Código a modificar
+
+1. **`src/app.ts`**: Eliminar import e inicialización de ML routes y workers
+   ```typescript
+   // ELIMINAR esta línea:
+   import mlRoutes from './modules/ml/ml.routes.js';
+   // y:
+   app.use(`${API_PREFIX}/ml`, mlRoutes);
+   ```
+
+2. **`src/modules/analytics/analytics.service.ts`**: Eliminar imports y llamadas a ML service. Reemplazar con lógica simple inline. Los métodos que usan ML:
+   - `getOptimalSchedules()` → reemplazar con query SQL de ocupación histórica
+   - `getVitalSignsAnomalies()` → reemplazar con reglas if/else simples
+   - `getDemandForecast()` → reemplazar con promedio móvil inline
+
+3. **`src/shared/queue.service.ts`**: Eliminar el worker `ml:train`
+   ```typescript
+   // ELIMINAR ~line 73-86:
+   registerWorker('ml:train', async (job) => { ... });
+   ```
+
+4. **`src/modules/analytics/analytics.routes.ts`**: Verificar que no referencie ML.
+
+5. **`src/modules/analytics/analytics.controller.ts`**: Verificar imports y reemplazar referencias a ML service.
+
+### Verificación
+
+```bash
+# Compila sin errores
+npm run typecheck
+
+# Tests pasan
+npm test 2>&1 | tail -20
+
+# Verificar que no quedan imports rotos
+rg -l "ml\.service" src/
+rg -l "ml\.prediction" src/
+rg -l "ml\.training" src/
+```
+
+---
+
+## FASE 3: Eliminar Compliance, Monitoring, RBAC, Super Admin (día 3-5)
+
+### 3.1 Eliminar Compliance Module
+
+**Archivos a eliminar:**
+```
+src/modules/compliance/compliance.service.ts
+src/modules/compliance/compliance.routes.ts
+src/modules/compliance/compliance.controller.ts
+```
+
+**Tablas a eliminar:**
+```sql
+DROP TABLE IF EXISTS user_consents CASCADE;
+DROP TABLE IF EXISTS data_retention_policy CASCADE;
+DROP TABLE IF EXISTS phi_access_log CASCADE;
+DROP TABLE IF EXISTS encryption_keys CASCADE;
+```
+
+**Migración: `db/migrations/051_remove_compliance.sql`**
+
+**Código a modificar:**
+- `src/app.ts`: eliminar `import complianceRoutes` y `app.use(... complianceRoutes)`
+- `src/app.ts`: eliminar `complianceLimiter`
+
+### 3.2 Eliminar Monitoring Module
+
+**Archivos a eliminar:**
+```
+src/modules/monitoring/monitoring.controller.ts
+src/modules/monitoring/monitoring.routes.ts
+```
+
+**Código a modificar:**
+- `src/app.ts`: eliminar `import monitoringRoutes` y `app.use(... monitoringRoutes)`
+- `src/middlewares/monitoring.middleware.ts`: ELIMINAR (o simplificar a solo el health check básico)
+- `src/shared/db-monitor.service.ts`: ELIMINAR
+
+### 3.3 Eliminar RBAC Module
+
+**Archivos a eliminar:**
+```
+src/modules/rbac/rbac.controller.ts
+src/modules/rbac/rbac.routes.ts
+src/modules/rbac/rbac.service.ts
+```
+
+**Tablas a eliminar:**
+```sql
+DROP TABLE IF EXISTS user_permissions CASCADE;
+DROP TABLE IF EXISTS role_permissions CASCADE;
+DROP TABLE IF EXISTS permissions CASCADE;
+```
+
+**Código a modificar:**
+- `src/app.ts`: eliminar `import rbacRoutes` y `app.use(... rbacRoutes)`
+- Mantener `authorizeRoles()` en `role.middleware.ts` (usa roles hardcodeados, no necesita tablas)
+
+### 3.4 Eliminar Super Admin Module
+
+**Archivos a eliminar:**
+```
+src/modules/super-admin/super-admin.controller.ts
+src/modules/super-admin/super-admin.routes.ts
+src/modules/super-admin/super-admin.schema.ts
+src/modules/super-admin/super-admin.service.ts
+```
+
+**Código a modificar:**
+- `src/app.ts`: eliminar `import superAdminRoutes` y `app.use(... superAdminRoutes)`
+- Mantener superadmin como rol (puede gestionar tenants desde el admin normal)
+
+### Verificación
+
+```bash
+git add -A && git commit -m "refactor: remove compliance, monitoring, rbac, superadmin modules"
+npm run typecheck
+npm test
+```
+
+---
+
+## FASE 4: Simplificar i18n y Especialidades (día 3-4)
+
+### 4.1 Simplificar i18n
+
+**Objetivo:** Reducir de 4 a 2 idiomas (es, en). Simplificar backend.
+
+**Acción:** No eliminar archivos, sino marcar pt/fr como deprecados y dejar solo es/en activos. Simplificar `i18n.service.ts` para que solo cargue es/en.
+
+### 4.2 Simplificar Specialties
+
+**Objetivo:** Pasar de tabla DB a enum hardcodeado (son 12 especialidades que no cambian).
+
+**Migración: `db/migrations/052_specialties_to_enum.sql`:**
+```sql
+-- Mantener tabla specialties pero no depender de ella para validación
+-- O migrar a columna con CHECK constraint
+```
+
+**Código a modificar:**
+`src/modules/specialties/specialties.service.ts` → reemplazar queries DB con array hardcodeado.
+
+---
+
+## FASE 5: Simplificar SaaS (día 4-5)
+
+### 5.1 Simplificar planes
+
+**Objetivo:** Reemplazar planes (free/basic/pro/enterprise) con tarifa plana única.
+
+**Migración: `db/migrations/053_simplify_plans.sql`:**
+```sql
+-- Mantener solo plan único
+UPDATE plans SET active = false WHERE code != 'pro';
+UPDATE plans SET price_monthly = 79, max_doctors = -1, max_patients = -1 WHERE code = 'pro';
+```
+
+### 5.2 Simplificar Stripe
+
+**Objetivo:** Stripe en stub mode siempre (sin clave configurada, funciona en stub). Para 20 clínicas con pago manual (transferencia/cuenta corriente), Stripe no es necesario.
+
+**Código a modificar:**
+- `src/shared/stripe.service.ts`: Simplificar a stub siempre
+- `src/modules/saas/saas.service.ts`: Eliminar referencias a Stripe, simplificar a pago manual
+
+### 5.3 Eliminar feature gating
+
+**Objetivo:** Eliminar `requireFeature()` y `requireLimit()`. Todos los features habilitados para todos.
+
+**Archivos:**
+- `src/modules/saas/saas.features.ts`: ELIMINAR (o simplificar a siempre true)
+
+**Tablas a eliminar:**
+```sql
+DROP TABLE IF EXISTS tenant_features CASCADE;
+DROP TABLE IF EXISTS tenant_usage CASCADE;
+DROP TABLE IF EXISTS subscription_invoices CASCADE;
+```
+
+---
+
+## FASE 6: Simplificar Seguridad (día 5)
+
+### 6.1 JWT: HS256 en lugar de RS256
+
+**Archivo:** `src/shared/jwt.service.ts`
+
+**Reemplazar** todo el contenido con una versión simple usando HMAC-SHA256:
+
+```typescript
+import jwt from 'jsonwebtoken';
+import { getJWTSecret } from './jwt.js';
+
+class SimpleJWTManager {
+  sign(payload: Record<string, unknown>, options?: { expiresIn?: string }): string {
+    return jwt.sign(payload, getJWTSecret(), {
+      algorithm: 'HS256',
+      expiresIn: options?.expiresIn || '15m',
+    });
+  }
+
+  verify<T>(token: string): T | null {
+    try {
+      return jwt.verify(token, getJWTSecret(), { algorithms: ['HS256'] }) as T;
+    } catch {
+      return null;
+    }
+  }
+
+  signInvite(payload: Record<string, unknown>, expiresIn?: string): string {
+    return this.sign(payload, { expiresIn: expiresIn || '24h' });
+  }
+
+  getPublicJWKS() {
+    return { keys: [] }; // HS256 no tiene JWKS
+  }
+}
+
+export const jwtManager = new SimpleJWTManager();
+export function getJWKS() { return jwtManager.getPublicJWKS(); }
+```
+
+**Eliminar:** `jwt.ts` (mantenerlo o simplificar a solo `getJWTSecret()`)
+
+### 6.2 Eliminar CSRF middleware
+
+**Archivo:** `src/middlewares/csrf.middleware.ts`
+
+Eliminar archivo y referencias en `src/app.ts`.
+
+### 6.3 Eliminar PHI encryption
+
+**Archivos:**
+- `src/shared/phi-encryption.service.ts`: ELIMINAR
+- `src/shared/crypto.service.ts`: Mantener solo `hashToken()`, eliminar `encrypt()/decrypt()`
+
+**Código a modificar:**
+- `src/modules/compliance/compliance.service.ts`: Ya eliminado en Fase 3
+- Cualquier otro archivo que importe phi-encryption
+
+### 6.4 Unificar rate limiters
+
+Reducir de 14 a:
+
+```typescript
+// 1. Global (500/15min)
+// 2. Auth (10/15min) — para login, register, refresh
+// 3. Password ops (5/15min) — forgot, reset, change-password
+// 4. 2FA (3/15min)
+// 5. PHI Write (30/15min) — solo clinical records
+```
+
+---
+
+## FASE 7: Eliminar RLS y Simplificar Multi-tenancy (día 5-7)
+
+### 7.1 Eliminar RLS
+
+**Migración: `db/migrations/054_remove_rls.sql`:**
+```sql
+-- Deshabilitar RLS en todas las tablas
+DO $$
+DECLARE
+  tbl TEXT;
+BEGIN
+  FOR tbl IN
+    SELECT unnest(ARRAY[
+      'users', 'doctors', 'bookings', 'clinical_records', 'invoices',
+      'lab_requests', 'audit_logs', 'subscriptions'
+    ])
+  LOOP
+    EXECUTE format('ALTER TABLE %I DISABLE ROW LEVEL SECURITY', tbl);
+    EXECUTE format('ALTER TABLE %I NO FORCE ROW LEVEL SECURITY', tbl);
+    EXECUTE format('DROP POLICY IF EXISTS tenant_isolation_policy ON %I', tbl);
+    EXECUTE format('DROP POLICY IF EXISTS superadmin_bypass ON %I', tbl);
+  END LOOP;
+END $$;
+
+DROP TABLE IF EXISTS _rls_audit CASCADE;
+```
+
+### 7.2 Eliminar triggers enforce_tenant_id
+
+**Migración: `db/migrations/055_remove_enforce_tenant_id.sql`:**
+```sql
+DROP TRIGGER IF EXISTS trg_enforce_tenant_id ON users;
+DROP TRIGGER IF EXISTS trg_enforce_tenant_id ON doctors;
+-- etc. para cada tabla
+DROP FUNCTION IF EXISTS enforce_tenant_id;
+```
+
+### 7.3 Simplificar db.ts
+
+**Archivo:** `src/shared/db.ts`
+
+Eliminar:
+- `tenantAls` (AsyncLocalStorage)
+- `wrappedQuery` (wrapper de pool.query)
+- Override de `pool.query`
+- Override de `pool.connect`
+- `logPhiAccess()`
+
+Dejar solo:
+```typescript
+import pg from 'pg';
+import { logger } from '../utils/logger.js';
+
+const { Pool } = pg;
+const pool = new Pool({ ...config });
+
+export { pool };
+export const query = pool.query.bind(pool);
+```
+
+### 7.4 Simplificar tenant.middleware.ts
+
+**Archivo:** `src/middlewares/tenant.middleware.ts`
+
+Simplificar para que solo resuelva `req.tenant_id` y `req.locale`, sin usar `tenantAls.run()`.
+
+---
+
+## FASE 8: Simplificar Base de Datos y Limpieza Final (día 7-10)
+
+### 8.1 Eliminar tablas ya no usadas
+
+**Migración: `db/migrations/056_cleanup_orphaned_tables.sql`:**
+```sql
+DROP TABLE IF EXISTS subscription_invoices CASCADE;
+DROP TABLE IF EXISTS tenant_features CASCADE;
+DROP TABLE IF EXISTS tenant_usage CASCADE;
+DROP TABLE IF EXISTS slow_query_log CASCADE;
+DROP TABLE IF EXISTS table_size_snapshot CASCADE;
+DROP TABLE IF EXISTS clinical_record_versions CASCADE;
+DROP TABLE IF EXISTS idempotency_keys CASCADE;
+DROP TABLE IF EXISTS _schema_meta CASCADE;
+DROP TABLE IF EXISTS notification_preferences CASCADE;
+```
+
+### 8.2 Eliminar triggers de versionado
+
+```sql
+DROP TRIGGER IF EXISTS trg_clinical_record_version ON clinical_records;
+DROP FUNCTION IF EXISTS fn_snapshot_clinical_record;
+```
+
+### 8.3 Consolidar índices
+
+Revisar y eliminar índices redundantes. Mantener solo:
+- `idx_bookings_doctor_date` (principal)
+- `idx_bookings_user_date_status` (mis reservas)
+- `idx_users_email_tenant` (login)
+- `idx_bookings_tenant_date` (admin dashboard)
+- `idx_clinical_records_patient_tenant` (EHR)
+- `idx_invoices_patient_tenant` (billing)
+
+### 8.4 Simplificar frontend pages
+
+Eliminar páginas de SuperAdmin, SaaS register/plans/success, TenantDashboard.
+
+Mantener:
+- Home, Login, Register, Booking, MyBookings, DoctorPanel, DoctorCalendar, DoctorAvailability
+- DoctorClinicalRecords, Analytics (simplificado), Specialists
+- ConfirmPage, RegisterDoctorPage
+
+---
+
+## FASE 9: Tests y Estabilización (día 10-11)
+
+### 9.1 Ejecutar suite completa
+
+```bash
+npm test
+```
+
+### 9.2 Verificar typecheck
+
+```bash
+npm run typecheck
+```
+
+### 9.3 Pruebas manuales de flujo crítico
+
+1. Login → logout → login
+2. Login → refresh → usar nuevo token
+3. Login → change-password → old refresh falla
+4. Crear cita → ver en mis citas
+5. Admin crear doctor → ver en lista
+6. Multi-tenant: login en Tenant A, no ver datos de Tenant B
+
+### 9.4 Build de producción
+
+```bash
+npm run build
+```
+
+---
+
+## RESUMEN DE COMANDOS ÚTILES
+
+```bash
+# TypeCheck
+npm run typecheck
+
+# Tests
+npm test
+
+# Tests en watch (para desarrollo)
+npm run test:watch
+
+# Build
+npm run build:backend
+
+# Dev server
+npm run dev
+
+# Ver archivos que importan un módulo específico
+rg "from.*ml\.service" src/ --type ts
+rg "import.*csrf" src/ --type ts
+
+# Ver tablas en DB (psql interactivo)
+docker compose exec -T db psql -U postgres -d clinic -c "\dt"
+```
+
+---
+
+## PRINCIPIOS RECTORES
+
+1. **Una fase a la vez.** No mezcles fases.
+2. **Cada fase termina con `git commit`.** Si algo sale mal, puedes revertir.
+3. **Los tests deben pasar después de cada fase.** Si no pasan, no avances.
+4. **TypeCheck debe pasar.** Es tu red de seguridad.
+5. **Si un cambio es muy grande, divídelo en sub-fases.**
+6. **No elimines código hasta tener la certeza de que no se usa.** Usa `rg` para verificar imports.
+7. **Mantén AGENTS.md actualizado** con lo que vas eliminando.
+```
+

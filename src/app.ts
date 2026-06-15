@@ -121,10 +121,8 @@ const allowedOrigins = [
 app.use(cors({
   origin: (origin, callback) => {
     if (!origin) {
-      if (process.env.NODE_ENV !== 'production') {
-        return callback(null, 'http://localhost:5173');
-      }
-      return callback(null, false);
+      // Allow requests without Origin (same-origin POST, curl, server-to-server, health checks)
+      return callback(null, true);
     }
     if (allowedOrigins.length === 0 && process.env.NODE_ENV === 'production') {
       return callback(new Error('CORS misconfigured: no allowed origins in production'));
