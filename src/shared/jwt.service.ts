@@ -110,7 +110,15 @@ class JWTManager {
 
       const pair = this.keyHistory.get(kid);
       if (!pair) {
-        logger.warn(`JWT RS256: Key ID ${kid} no encontrada en memoria`);
+        logger.warn(`JWT RS256: Key ID ${kid} no encontrada en memoria — probando con currentKeyPair`);
+        if (this.currentKeyPair) {
+          try {
+            return jwt.verify(token, this.currentKeyPair.publicKey, { algorithms: ['RS256'] }) as JwtPayload & T;
+          } catch {
+            logger.warn('JWT RS256: Fallback verify con currentKeyPair también falló');
+            return null;
+          }
+        }
         return null;
       }
 

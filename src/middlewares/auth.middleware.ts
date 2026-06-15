@@ -31,7 +31,7 @@ const extractAndVerifyUser = (token: string, req: Request): JwtUser | null => {
     id: decoded.id,
     email: decoded.email || '',
     role: decoded.role as UserRole,
-    tenant_id: decoded.tenant_id || req.tenant_id || process.env.DEFAULT_TENANT_ID || 'default',
+    tenant_id: decoded.tenant_id || process.env.DEFAULT_TENANT_ID || 'default',
     token_version: decoded.token_version || 0,
   };
 };
