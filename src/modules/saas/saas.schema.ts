@@ -2,8 +2,6 @@ import { z } from 'zod';
 
 export const checkoutSchema = z.object({
   plan_code: z.string().min(1, 'Plan code is required'),
-  success_url: z.string().url().optional(),
-  cancel_url: z.string().url().optional(),
 }).strict();
 
 export const changePlanSchema = z.object({
@@ -21,7 +19,7 @@ export const onboardSchema = z.object({
     .regex(/[0-9]/, 'Must contain a number')
     .regex(/[^A-Za-z0-9]/, 'Must contain a special character'),
   admin_name: z.string().optional(),
-  locale: z.enum(['es', 'en', 'pt', 'fr']).optional(),
+  locale: z.enum(['es', 'en']).optional(),
   timezone: z.string().optional(),
   plan_code: z.string().optional(),
   captcha_token: z.string().optional(),
