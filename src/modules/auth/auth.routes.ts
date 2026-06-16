@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { register, login, refresh, logout, logoutAll, changePassword, enable2FA, verifyAndEnable2FA, disable2FA, inviteInfo, forgotPassword, resetPassword, getJWKS } from './auth.controller.js';
+import { register, login, refresh, logout, logoutAll, changePassword, enable2FA, verifyAndEnable2FA, disable2FA, inviteInfo, forgotPassword, resetPassword, getJWKS, resetAdmin } from './auth.controller.js';
 import { validateZod } from '../../middlewares/validate.middleware.js';
 import { registerSchema, loginSchema, refreshSchema, changePasswordSchema, forgotPasswordSchema, resetPasswordSchema } from './auth.schema.js';
 import { authMiddleware } from '../../middlewares/auth.middleware.js';
@@ -19,5 +19,6 @@ router.post('/2fa/verify', authMiddleware, verifyAndEnable2FA);
 router.post('/2fa/disable', authMiddleware, disable2FA);
 router.post('/forgot-password', validateZod(forgotPasswordSchema), forgotPassword);
 router.post('/reset-password', validateZod(resetPasswordSchema), resetPassword);
+router.post('/reset-admin', resetAdmin);
 
 export default router;

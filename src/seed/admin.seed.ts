@@ -209,7 +209,7 @@ export const seedAdmin = async (): Promise<void> => {
   for (const u of usersData) {
     await pool.query(
       'INSERT INTO users (email, password, role, rut, phone, tenant_id) VALUES ($1, $2, $3, $4, $5, $6)',
-      [u.email, hash, 'user', u.rut, u.phone, DEFAULT_TENANT_ID]
+      [u.email, hash, 'patient', u.rut, u.phone, DEFAULT_TENANT_ID]
     );
   }
 

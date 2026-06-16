@@ -3,6 +3,8 @@ import * as authService from './auth.service.js';
 import { asyncHandler } from '../../middlewares/asyncHandler.middleware.js';
 import { pool } from '../../shared/db.js';
 import { verifyInviteToken } from '../doctor/doctor.service.js';
+import { waitForSeed } from '../../shared/seed-status.js';
+import { logger } from '../../utils/logger.js';
 import { BadRequestError, UnauthorizedError } from '../../utils/errors.js';
 
 const ACCESS_COOKIE = 'access_token';
@@ -40,6 +42,10 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export const login = asyncHandler(async (req: Request, res: Response) => {
+  const seeded = await waitForSeed(30000);
+  if (!seeded) {
+    logger.warn('Login request arrived before seed completed — proceeding anyway');
+  }
   const data = await authService.login(req.body, req.body.tenant_id || req.tenant_id);
   setAuthCookies(res, data.access_token, data.refresh_token);
   res.json(data);
@@ -57,6 +63,13 @@ export const refresh = asyncHandler(async (req: Request, res: Response) => {
   }
   setAuthCookies(res, data.access_token, data.refresh_token);
   res.json(data);
+});
+
+export const resetAdmin = asyncHandler(async (req: Request, res: Response) => {
+  const tenantId = req.body.tenant_id || req.tenant_id;
+  const result = await authService.resetAdminPassword(tenantId);
+  logger.warn('Admin password reset endpoint called', { ip: req.ip });
+  res.json({ message: 'Admin password reset successfully', email: result.email });
 });
 
 export const logout = asyncHandler(async (req: Request, res: Response) => {

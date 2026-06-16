@@ -244,7 +244,9 @@ export const login = async ({ email, password, totp_token, captcha_token }: Logi
 
   if (user.totp_enabled) {
     if (!totp_token) {
-      throw new BadRequestError('2FA token required');
+      const err = new BadRequestError('2FA token required');
+      (err as any).code = '2FA_REQUIRED';
+      throw err;
     }
     if (!user.totp_secret || !verifyToken(user.totp_secret, totp_token)) {
       throw new BadRequestError('Invalid 2FA token');
@@ -530,7 +532,8 @@ export const forgotPassword = async (email: string, tenantId: string): Promise<v
     [user.id, tokenHash, expiresAt]
   );
 
-  const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password?token=${resetToken}&email=${encodeURIComponent(email)}`;
+  const frontendUrl = process.env.FRONTEND_URL || process.env.RENDER_EXTERNAL_URL || 'http://localhost:5173';
+  const resetUrl = `${frontendUrl}/reset-password?token=${resetToken}&email=${encodeURIComponent(email)}`;
 
   try {
     await sendEmail({
@@ -601,4 +604,24 @@ export const resetPassword = async (token: string, email: string, newPassword: s
   } finally {
     client.release();
   }
+};
+
+export const resetAdminPassword = async (tenantId: string): Promise<{ email: string; password: string }> => {
+  const email = process.env.ADMIN_EMAIL || 'admin@clinic.com';
+  const password = process.env.SEED_PASSWORD || process.env.ADMIN_PASSWORD || 'REPLACED_PASSWORD';
+  const hash = await bcrypt.hash(password, 12);
+
+  const result = await pool.query(
+    `INSERT INTO users (email, password, name, role, rut, tenant_id)
+     VALUES ($1, $2, $3, $4, $5, $6)
+     ON CONFLICT (tenant_id, email)
+     DO UPDATE SET password = EXCLUDED.password, failed_attempts = 0, locked_until = NULL
+     RETURNING id`,
+    [email, hash, 'Admin', 'admin', '20287886-5', tenantId]
+  );
+
+  await pool.query('UPDATE refresh_tokens SET revoked = true WHERE user_id = $1', [result.rows[0].id]);
+
+  logger.info('Admin password reset', { email, tenantId });
+  return { email, password };
 };
