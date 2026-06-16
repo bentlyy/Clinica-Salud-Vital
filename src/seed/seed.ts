@@ -97,6 +97,10 @@ export const seed = async (): Promise<void> => {
 
   const HASH = await getHash();
   const exists = await pool.query('SELECT 1 FROM users WHERE email = $1 LIMIT 1', ['admin@clinic.com']);
+  logger.info('Seed: admin exists check', { exists: exists.rows.length > 0, tenantId: DEFAULT_TENANT_ID });
+
+  const beforeCount = await pool.query('SELECT COUNT(*) FROM users WHERE email = $1', ['admin@clinic.com']);
+  logger.info('Seed: admin count BEFORE insert', { count: beforeCount.rows[0].count });
 
   // ==================== USERS ====================
   const adminResult = await pool.query(
@@ -104,6 +108,13 @@ export const seed = async (): Promise<void> => {
     ['admin@clinic.com', HASH, 'Admin', 'admin', generateRut(), '+56987654321', DEFAULT_TENANT_ID]
   );
   const adminId = adminResult.rows[0].id;
+  logger.info('Seed: admin inserted/updated', { adminId, tenantId: DEFAULT_TENANT_ID });
+
+  const afterCount = await pool.query('SELECT COUNT(*) FROM users WHERE email = $1', ['admin@clinic.com']);
+  logger.info('Seed: admin count AFTER insert', { count: afterCount.rows[0].count });
+
+  const adminInTenant = await pool.query('SELECT id, email, tenant_id FROM users WHERE email = $1 AND tenant_id = $2', ['admin@clinic.com', DEFAULT_TENANT_ID]);
+  logger.info('Seed: admin in default tenant', { found: adminInTenant.rows.length > 0, id: adminInTenant.rows[0]?.id });
 
   // Reset passwords on every deploy so REPLACED_PASSWORD always works
   const seedEmails = [
@@ -113,8 +124,9 @@ export const seed = async (): Promise<void> => {
     'mauricio@clinic.com', 'carmen@clinic.com', 'francisco@clinic.com', 'veronica@clinic.com',
     'user1@clinic.com', 'user2@clinic.com', 'user3@clinic.com',
   ];
-  await pool.query('UPDATE users SET password = $1 WHERE tenant_id = $2 AND email = ANY($3::text[])',
+  const updateResult = await pool.query('UPDATE users SET password = $1 WHERE tenant_id = $2 AND email = ANY($3::text[])',
     [HASH, DEFAULT_TENANT_ID, seedEmails]);
+  logger.info('Seed: password update result', { rowsAffected: updateResult.rowCount });
   await pool.query('UPDATE users SET password = $1 WHERE role = $2', [HASH, 'superadmin']);
 
   // Asegurar pacientes simples incluso si el seed ya se ejecutó
