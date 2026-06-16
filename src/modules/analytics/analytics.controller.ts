@@ -60,10 +60,4 @@ export const getVitalsAnomalies = asyncHandler(async (req, res) => {
   res.json({ data });
 });
 
-export const exportAnalytics = asyncHandler(async (req, res) => {
-  const { generateAnalyticsExcel } = await import('./analytics.export.js');
-  const buffer = await generateAnalyticsExcel(req.tenant_id);
-  res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-  res.setHeader('Content-Disposition', `attachment; filename=analytics-powerbi-${new Date().toISOString().split('T')[0]}.xlsx`);
-  res.send(buffer);
-});
+

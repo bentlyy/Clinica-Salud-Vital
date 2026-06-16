@@ -59,6 +59,7 @@ export default function Navbar() {
             <>
               <Link to="/booking" className="nav-link" onClick={() => setMobileOpen(false)}>{t('nav.booking')}</Link>
               <Link to="/my-bookings" className="nav-link" onClick={() => setMobileOpen(false)}>{t('nav.my_bookings')}</Link>
+              <Link to="/admin/analytics" className="nav-link" onClick={() => setMobileOpen(false)}>{t('nav.analytics')}</Link>
             </>
           )}
 
@@ -72,8 +73,6 @@ export default function Navbar() {
 
           {user?.role === 'admin' && (
             <>
-              <Link to="/admin/analytics" className="nav-link" onClick={() => setMobileOpen(false)}>{t('nav.analytics')}</Link>
-              <Link to="/admin/tenant" className="nav-link" onClick={() => setMobileOpen(false)}>{t('nav.my_clinic')}</Link>
               <Link to="/admin/register-doctor" className="nav-link nav-link-accent" onClick={() => setMobileOpen(false)}>{t('nav.register_doctor')}</Link>
             </>
           )}
@@ -89,9 +88,7 @@ export default function Navbar() {
             <>
               <Link to="/specialists" className="nav-link" onClick={() => setMobileOpen(false)}>{t('nav.specialists')}</Link>
               <Link to="/booking" className="nav-link" onClick={() => setMobileOpen(false)}>{t('nav.booking')}</Link>
-              <Link to="/saas/register" className="nav-link nav-link-accent" onClick={() => setMobileOpen(false)}>{t('nav.create_clinic')}</Link>
               <Link to="/login" className="nav-link" onClick={() => setMobileOpen(false)}>{t('nav.login')}</Link>
-
             </>
           )}
 

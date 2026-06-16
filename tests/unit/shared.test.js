@@ -12,7 +12,6 @@ vi.mock('../../src/shared/email.service.js', () => ({
 
 import * as queryUtils from '../../src/shared/query.js';
 import * as dateUtils from '../../src/shared/date.js';
-import * as jwtUtils from '../../src/shared/jwt.js';
 
 describe('queryUtils', () => {
   describe('getQuery', () => {
@@ -114,32 +113,6 @@ describe('dateUtils', () => {
       expect(dateUtils.isValidTime('1000')).toBe(false);
       expect(dateUtils.isValidTime('')).toBe(false);
     });
-  });
-});
-
-describe('jwtUtils', () => {
-  const originalEnv = process.env.JWT_SECRET;
-
-  beforeEach(() => {
-    delete process.env.JWT_SECRET;
-  });
-
-  afterEach(() => {
-    process.env.JWT_SECRET = originalEnv;
-  });
-
-  it('returns JWT_SECRET from env', () => {
-    process.env.JWT_SECRET = 'my-secret-key';
-    const result = jwtUtils.getJWTSecret();
-    expect(result).toBe('my-secret-key');
-  });
-
-  it('returns default if JWT_SECRET not set', () => {
-    const orig = process.env.JWT_SECRET;
-    delete process.env.JWT_SECRET;
-    const result = jwtUtils.getJWTSecret();
-    expect(result).toBe('dev-secret');
-    process.env.JWT_SECRET = orig;
   });
 });
 

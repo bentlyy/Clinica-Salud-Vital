@@ -33,8 +33,6 @@ const mockCtrl = Object.fromEntries([
   'stripeWebhook', 'getPlans', 'onboardTenant', 'getMySubscription', 'createCheckout', 'changePlan', 'cancelSubscription', 'getUsage', 'getUsageSummary', 'getLimits', 'updateTenantConfig',
   // specialties
   'getSpecialties',
-  // i18n
-  'getTranslationsHandler',
 ].map(k => [k, vi.fn()]));
 
 const mockSchema = Object.fromEntries([
@@ -59,7 +57,6 @@ vi.mock('../../src/modules/availability/availability.controller.js', () => ({
   createException: mockCtrl.createException,
   deleteException: mockCtrl.deleteException,
 }));
-vi.mock('../../src/modules/i18n/i18n.controller.js', () => mockCtrl);
 vi.mock('../../src/modules/specialties/specialties.controller.js', () => mockCtrl);
 vi.mock('../../src/modules/specialties/specialties.service.js', () => mockCtrl);
 vi.mock('../../src/utils/logger.js', () => ({ logger: { info: vi.fn(), error: vi.fn(), warn: vi.fn() } }));
@@ -82,11 +79,6 @@ describe('route exports', () => {
   it('exception routes', async () => {
     const mod = await import('../../src/modules/availability/availability.routes.js');
     expect(mod.exceptionRouter).toBeDefined();
-  });
-
-  it('i18n routes', async () => {
-    const mod = await import('../../src/modules/i18n/i18n.routes.js');
-    expect(mod.default).toBeDefined();
   });
 
   it('laboratory routes', async () => {

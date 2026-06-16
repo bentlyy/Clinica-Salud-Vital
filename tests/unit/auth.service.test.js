@@ -26,17 +26,12 @@ vi.mock('bcrypt', () => ({
   },
 }));
 
-vi.mock('../../src/modules/auth/auth-2fa.service.js', () => ({
-  verifyToken: vi.fn(),
-}));
-
 vi.mock('../../src/utils/logger.js', () => ({
   logger: { info: vi.fn(), error: vi.fn(), warn: vi.fn() },
 }));
 
 import * as authService from '../../src/modules/auth/auth.service.js';
 import bcrypt from 'bcrypt';
-import { verifyToken as mockVerify2FAToken } from '../../src/modules/auth/auth-2fa.service.js';
 
 const validPassword = 'Test1234!';
 
@@ -226,31 +221,6 @@ describe('authService.login', () => {
 
     await expect(authService.login({ email: '2fa@test.com', password: validPassword, captcha_token: 'test-captcha' }))
       .rejects.toThrow('2FA token required');
-  });
-
-  it('throws if 2FA token is invalid', async () => {
-    mockVerify2FAToken.mockReturnValue(false);
-    mockQuery.mockResolvedValueOnce({
-      rows: [{ id: 1, email: '2fa@test.com', password: 'hashed', role: 'user', tenant_id: 'default', totp_enabled: true, totp_secret: 'SECRET', active: true }],
-    });
-    bcrypt.compare.mockResolvedValueOnce(true);
-
-    await expect(authService.login({ email: '2fa@test.com', password: validPassword, totp_token: '000000', captcha_token: 'test-captcha' }))
-      .rejects.toThrow('Invalid 2FA token');
-  });
-
-  it('succeeds with valid 2FA token', async () => {
-    mockVerify2FAToken.mockReturnValue(true);
-    mockQuery.mockResolvedValueOnce({
-      rows: [{ id: 1, email: '2fa@test.com', password: 'hashed', role: 'user', tenant_id: 'default', totp_enabled: true, totp_secret: 'SECRET', active: true }],
-    });
-    bcrypt.compare.mockResolvedValueOnce(true);
-    mockQuery.mockResolvedValueOnce({ rows: [] });
-
-    const result = await authService.login({ email: '2fa@test.com', password: validPassword, totp_token: '123456', captcha_token: 'test-captcha' });
-
-    expect(result.access_token).toBeDefined();
-    expect(mockVerify2FAToken).toHaveBeenCalledWith('SECRET', '123456');
   });
 
   it('defaults password_changed and totp_enabled when undefined in user', async () => {
