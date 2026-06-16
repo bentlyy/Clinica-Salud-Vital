@@ -22,7 +22,7 @@ export default function LoginPage() {
 
   const getCaptchaToken = () => {
     if (!hasCaptcha) return undefined;
-    try { return recaptchaRef.current?.getValue(); } catch { return undefined; }
+    return recaptchaRef.current?.getValue();
   };
 
   const handleSubmit = async (e) => {
@@ -39,6 +39,10 @@ export default function LoginPage() {
     }
 
     const captcha_token = getCaptchaToken();
+    if (hasCaptcha && !captcha_token) {
+      setError(t('auth.captcha_required'));
+      return;
+    }
 
     try {
       setSubmitting(true);

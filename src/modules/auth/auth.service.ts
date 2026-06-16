@@ -200,12 +200,8 @@ export const login = async ({ email, password, totp_token, captcha_token }: Logi
 }> => {
   if (!email || !password) throw new BadRequestError('Email and password required');
 
-  const captchaOk = await verifyCaptcha(captcha_token || '');
-  if (!captchaOk) {
-    const secret = process.env.RECAPTCHA_SECRET_KEY;
-    if (secret) {
-      logger.warn('CAPTCHA verification failed but allowing login');
-    }
+  if (!(await verifyCaptcha(captcha_token || ''))) {
+    throw new BadRequestError('CAPTCHA verification failed');
   }
 
   const result = await pool.query<User>('SELECT * FROM users WHERE email = $1 AND tenant_id = $2', [email, tenantId]);
