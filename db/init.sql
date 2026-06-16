@@ -65,6 +65,8 @@ CREATE TABLE doctors (
   tenant_id TEXT NOT NULL DEFAULT 'default'
 );
 
+CREATE UNIQUE INDEX IF NOT EXISTS idx_doctors_tenant_email ON doctors (tenant_id, email);
+
 -- ============================================================
 -- 3. BOOKINGS
 -- ============================================================
