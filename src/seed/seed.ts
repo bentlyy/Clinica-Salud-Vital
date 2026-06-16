@@ -192,8 +192,6 @@ export const seed = async (): Promise<void> => {
   }
 
   const patientNames = [
-
-  const patientNames = [
     'Luis Ramírez', 'Marta Sepúlveda', 'Jorge Castillo', 'Rosa Herrera',
     'Alberto Contreras', 'Silvia Medina', 'Raúl Valenzuela', 'Nancy Campos',
     'Héctor Vega', 'Diana Paredes', 'Oscar Fuentes', 'Paola Figueroa',
