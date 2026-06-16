@@ -45,11 +45,6 @@ export const seedDefaultTenant = async (): Promise<void> => {
 };
 
 export const seedSuperAdmin = async (): Promise<void> => {
-  if (process.env.NODE_ENV === 'production' && !process.env.SUPERADMIN_PASSWORD) {
-    logger.warn('[SEED SKIPPED] SUPERADMIN_PASSWORD no definida en producción. Define SUPERADMIN_PASSWORD en las env vars.');
-    return;
-  }
-
   const exists = await pool.query('SELECT 1 FROM users WHERE role = $1 LIMIT 1', ['superadmin']);
   if (exists.rows.length > 0) {
     logger.info('Superadmin already exists');
@@ -162,11 +157,6 @@ export const seedTestTenants = async (): Promise<void> => {
 
 export const seedAdmin = async (): Promise<void> => {
   const seedPassword = process.env.ADMIN_PASSWORD || process.env.SEED_PASSWORD || 'REPLACED_PASSWORD';
-
-  if (process.env.NODE_ENV === 'production' && !process.env.ADMIN_PASSWORD && !process.env.SEED_PASSWORD) {
-    logger.warn('[SEED SKIPPED] Define ADMIN_PASSWORD o SEED_PASSWORD en production para crear usuario admin');
-    return;
-  }
 
   const exists = await pool.query('SELECT 1 FROM users WHERE role = $1 LIMIT 1', ['admin']);
   if (exists.rows.length > 0) {

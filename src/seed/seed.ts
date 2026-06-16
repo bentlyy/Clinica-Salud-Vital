@@ -45,11 +45,6 @@ const pick = <T>(arr: T[]): T => arr[randomInt(0, arr.length - 1)];
 const today = new Date();
 
 export const seed = async (): Promise<void> => {
-  if (process.env.NODE_ENV === 'production') {
-    logger.info('[SEED SKIPPED] No se ejecuta seed en producción');
-    return;
-  }
-
   const HASH = await getHash();
   const exists = await pool.query('SELECT 1 FROM users WHERE email = $1 LIMIT 1', ['admin@clinic.com']);
   if (exists.rows.length > 0) {
@@ -72,7 +67,7 @@ export const seed = async (): Promise<void> => {
   // ==================== USERS ====================
 
   const adminResult = await pool.query(
-    'INSERT INTO users (email, password, name, role, rut, phone, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id',
+    'INSERT INTO users (email, password, name, role, rut, phone, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (tenant_id, email) DO UPDATE SET name = EXCLUDED.name, password = EXCLUDED.password RETURNING id',
     ['admin@clinic.com', HASH, 'Admin', 'admin', generateRut(), '+56987654321', DEFAULT_TENANT_ID]
   );
   const adminId = adminResult.rows[0].id;
@@ -103,13 +98,13 @@ export const seed = async (): Promise<void> => {
 
   for (const doc of doctorsData) {
     const userResult = await pool.query(
-      'INSERT INTO users (email, password, name, role, rut, phone, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id',
+      'INSERT INTO users (email, password, name, role, rut, phone, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (tenant_id, email) DO UPDATE SET name = EXCLUDED.name RETURNING id',
       [doc.email, HASH, doc.name, 'doctor', generateRut(), '+569' + String(randomInt(10000000, 99999999)), DEFAULT_TENANT_ID]
     );
     const userId = userResult.rows[0].id;
 
     const doctorResult = await pool.query(
-      'INSERT INTO doctors (name, specialty, email, user_id, tenant_id) VALUES ($1, $2, $3, $4, $5) RETURNING id',
+      'INSERT INTO doctors (name, specialty, email, user_id, tenant_id) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (tenant_id, email) DO UPDATE SET name = EXCLUDED.name RETURNING id',
       [doc.name, doc.specialty, doc.email, userId, DEFAULT_TENANT_ID]
     );
     const doctorId = doctorResult.rows[0].id;
@@ -151,7 +146,7 @@ export const seed = async (): Promise<void> => {
   for (const pName of patientNames) {
     const email = pName.toLowerCase().replace(/\s+/g, '.') + '@clinic.com';
     const userResult = await pool.query(
-      'INSERT INTO users (email, password, name, role, rut, phone, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id',
+      'INSERT INTO users (email, password, name, role, rut, phone, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (tenant_id, email) DO UPDATE SET name = EXCLUDED.name RETURNING id',
       [email, HASH, pName, 'user', generateRut(), '+569' + String(randomInt(10000000, 99999999)), DEFAULT_TENANT_ID]
     );
     patients.push({ id: userResult.rows[0].id, name: pName, email });
