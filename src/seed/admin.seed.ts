@@ -161,8 +161,10 @@ export const seedTestTenants = async (): Promise<void> => {
 };
 
 export const seedAdmin = async (): Promise<void> => {
-  if (process.env.NODE_ENV === 'production') {
-    logger.info('[SEED SKIPPED] No se ejecuta seed en producción');
+  const seedPassword = process.env.ADMIN_PASSWORD || process.env.SEED_PASSWORD || 'REPLACED_PASSWORD';
+
+  if (process.env.NODE_ENV === 'production' && !process.env.ADMIN_PASSWORD && !process.env.SEED_PASSWORD) {
+    logger.warn('[SEED SKIPPED] Define ADMIN_PASSWORD o SEED_PASSWORD en production para crear usuario admin');
     return;
   }
 
@@ -172,7 +174,7 @@ export const seedAdmin = async (): Promise<void> => {
     return;
   }
 
-  const hash = await bcrypt.hash(process.env.SEED_PASSWORD || 'REPLACED_PASSWORD', 12);
+  const hash = await bcrypt.hash(seedPassword, 12);
 
   await pool.query(
     'INSERT INTO users (email, password, role, rut, tenant_id) VALUES ($1, $2, $3, $4, $5)',
