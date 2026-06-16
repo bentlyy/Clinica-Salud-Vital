@@ -319,6 +319,7 @@ CREATE TABLE IF NOT EXISTS refresh_tokens (
   token TEXT NOT NULL UNIQUE,
   expires_at TIMESTAMPTZ NOT NULL,
   revoked BOOLEAN DEFAULT false,
+  token_version INTEGER DEFAULT 0,
   created_at TIMESTAMP DEFAULT NOW(),
   tenant_id TEXT NOT NULL DEFAULT 'default'
 );
