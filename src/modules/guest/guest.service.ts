@@ -87,7 +87,7 @@ export const createGuestBooking = async ({ doctor_id, date, time, duration = 30,
         date,
         time,
         confirmToken,
-        frontendUrl: process.env.FRONTEND_URL || 'http://localhost:5173',
+        frontendUrl: process.env.FRONTEND_URL || process.env.RENDER_EXTERNAL_URL || 'http://localhost:5173',
       }),
       tenantId,
     }).then(r => { if (!r.sent) logger.error('Email error:', r.error); });
@@ -111,7 +111,7 @@ export const getGuestBookingsByRut = async (rut: string, tenantId: string): Prom
     SELECT b.id, b.date, b.time, b.duration, b.status, b.confirmed,
            d.name AS doctor_name, d.specialty
     FROM bookings b
-    JOIN doctors d ON b.doctor_id = d.id
+    JOIN doctors d ON b.doctor_id = d.id AND d.tenant_id = b.tenant_id
     LEFT JOIN users u ON b.user_id = u.id AND u.tenant_id = b.tenant_id
     WHERE (
       REPLACE(REPLACE(b.guest_rut, '.', ''), '-', '') = $1

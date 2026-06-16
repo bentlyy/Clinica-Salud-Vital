@@ -21,7 +21,7 @@ export default function RegisterPage() {
 
   useEffect(() => {
     if (inviteToken) {
-      api.post('/auth/invite-info', { token: inviteToken })
+      api.get('/auth/invite-info', { params: { token: inviteToken } })
         .then((res) => {
           setInviteData(res.data);
           setForm((prev) => ({ ...prev, email: res.data.email, name: res.data.name || '' }));
