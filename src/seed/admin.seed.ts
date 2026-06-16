@@ -85,6 +85,7 @@ export const seedTestTenants = async (): Promise<void> => {
     return;
   }
 
+  await pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS idx_users_tenant_email ON users (tenant_id, email)`);
   const hash = await bcrypt.hash(process.env.SEED_PASSWORD || 'REPLACED_PASSWORD', 12);
 
   for (const t of TEST_TENANTS) {

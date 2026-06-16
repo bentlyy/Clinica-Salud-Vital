@@ -44,6 +44,8 @@ CREATE TABLE users (
   tenant_id TEXT NOT NULL DEFAULT 'default'
 );
 
+CREATE UNIQUE INDEX idx_users_tenant_email ON users (tenant_id, email);
+
 ALTER TABLE tenants ADD CONSTRAINT fk_tenants_deleted_by
   FOREIGN KEY (deleted_by) REFERENCES users(id) ON DELETE SET NULL;
 
