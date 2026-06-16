@@ -45,6 +45,8 @@ const pick = <T>(arr: T[]): T => arr[randomInt(0, arr.length - 1)];
 const today = new Date();
 
 export const seed = async (): Promise<void> => {
+  await pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS idx_users_tenant_email ON users (tenant_id, email)`);
+
   const HASH = await getHash();
   const exists = await pool.query('SELECT 1 FROM users WHERE email = $1 LIMIT 1', ['admin@clinic.com']);
   if (exists.rows.length > 0) {
