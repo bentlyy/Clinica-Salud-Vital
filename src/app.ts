@@ -6,7 +6,6 @@ import rateLimit from 'express-rate-limit';
 import 'dotenv/config';
 import { resolve } from 'path';
 import fs from 'fs';
-import crypto from 'crypto';
 
 import { seed, backfillInvoices } from './seed/seed.js';
 import { pool } from './shared/db.js';
@@ -17,7 +16,6 @@ import { verifyAuditChain } from './jobs/audit-integrity.job.js';
 import { securityMiddleware, validateEnvSecurity } from './middlewares/security.middleware.js';
 import { tenantMiddleware } from './middlewares/tenant.middleware.js';
 import { optionalAuth } from './middlewares/auth.middleware.js';
-import { apiVersionRedirect } from './middlewares/apiVersionRedirect.middleware.js';
 import { validateEmailConfig } from './shared/email.service.js';
 import { requestLogger } from './middlewares/requestLogger.middleware.js';
 import { errorHandler, notFoundHandler } from './middlewares/errorHandler.middleware.js';
@@ -45,7 +43,6 @@ import billingRoutes from './modules/billing/billing.routes.js';
 import laboratoryRoutes from './modules/laboratory/laboratory.routes.js';
 import specialtiesRoutes from './modules/specialties/specialties.routes.js';
 import saasRoutes from './modules/saas/saas.routes.js';
-import i18nRoutes from './modules/i18n/i18n.routes.js';
 import superAdminRoutes from './modules/super-admin/super-admin.routes.js';
 
 const app: Express = express();
@@ -98,12 +95,11 @@ const healthHandler = async (_req: Request, res: Response) => {
 };
 
 app.get('/health', healthHandler);
-app.get('/api/v1/health', healthHandler);
+app.get('/api/health', healthHandler);
 
 app.use(securityMiddleware);
 app.use(compression());
 
-/* CORS must be before tenantMiddleware (OPTIONS preflight has no tenant) */
 const allowedOrigins = [
   'http://localhost:5173',
   process.env.FRONTEND_URL,
@@ -113,7 +109,6 @@ const allowedOrigins = [
 app.use(cors({
   origin: (origin, callback) => {
     if (!origin) {
-      // Allow requests without Origin (same-origin POST, curl, server-to-server, health checks)
       return callback(null, true);
     }
     if (allowedOrigins.length === 0 && process.env.NODE_ENV === 'production') {
@@ -129,12 +124,10 @@ app.use(cors({
   maxAge: 86400,
 }));
 
-/* Serve frontend static files + SPA catch-all before tenant middleware */
 if (process.env.NODE_ENV === 'production') {
   const frontendPath = resolve(__dirname, '../frontend/dist');
   const indexPath = resolve(frontendPath, 'index.html');
   app.use(express.static(frontendPath));
-  /* SPA: rutas que no empiezan con /api/ → sirven index.html sin tenant */
   app.get(/^\/(?!api\/)/, (_req, res) => {
     res.sendFile(indexPath, (err) => {
       if (err) {
@@ -144,22 +137,11 @@ if (process.env.NODE_ENV === 'production') {
   });
 }
 
-/* Parse cookies before auth/tenant middleware (access_token cookie) */
 app.use(cookieParser());
-
-/* Extract tenant_id from JWT before tenant middleware (no falla si no hay token) */
 app.use(optionalAuth);
-
-/* Multi-tenancy (usa req.user?.tenant_id si existe) */
 app.use(tenantMiddleware);
-
-/* Session activity tracking (fire-and-forget for authenticated users) */
 app.use(trackActivity);
 
-app.use('/api/saas/webhook/stripe', express.raw({ type: 'application/json' }));
-app.use('/api/v1/saas/webhook/stripe', express.raw({ type: 'application/json' }));
-
-app.use(apiVersionRedirect);
 app.use(express.json({ limit: '100kb' }));
 app.use(requestLogger);
 
@@ -173,103 +155,24 @@ const globalLimiter = rateLimit({
     if (req.tenant_id) return `tenant:${req.tenant_id}:${req.ip || 'unknown'}`;
     return `ip:${req.ip || 'unknown'}`;
   },
-  skip: (req) => req.path === '/health' || req.path === '/api/v1/health',
+  skip: (req) => req.path === '/health' || req.path === '/api/health',
   handler: (req, res) => {
     logger.warn('Rate limit exceeded (global)', { path: req.path, ip: req.ip, tenant_id: req.tenant_id });
     res.status(429).json({ error: 'Too many requests, please try again later' });
   },
 });
-app.use(globalLimiter);
 
-const loginLimiter = rateLimit({
+const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 10,
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Demasiados intentos. Intenta de nuevo en 15 minutos.' },
-  keyGenerator: (req: Request) => {
-    const email = (req.body?.email || '') as string;
-    return `login:${req.ip}:${email}`;
-  },
+  keyGenerator: (req: Request) => `auth:${req.ip}:${(req.body?.email || '') as string}`,
   handler: (req: Request, res: Response) => {
-    logger.warn('Rate limit exceeded (login)', { email: req.body?.email, ip: req.ip });
+    logger.warn('Rate limit exceeded (auth)', { email: req.body?.email, ip: req.ip });
     res.status(429).json({ error: 'Demasiados intentos. Intenta de nuevo en 15 minutos.' });
   },
-});
-
-const registerLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 3,
-  message: { error: 'Demasiados intentos de registro. Intenta de nuevo en 15 minutos.' },
-  standardHeaders: true,
-  legacyHeaders: false,
-  keyGenerator: (req: Request) => req.ip as string,
-  handler: (req: Request, res: Response) => {
-    logger.warn('Rate limit exceeded (register)', { ip: req.ip });
-    res.status(429).json({ error: 'Demasiados intentos de registro. Intenta de nuevo en 15 minutos.' });
-  },
-});
-
-const refreshLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 10,
-  message: { error: 'Demasiadas solicitudes de renovación. Intenta de nuevo en 15 minutos.' },
-  standardHeaders: true,
-  legacyHeaders: false,
-  keyGenerator: (req) => {
-    const token = req.body?.refresh_token || req.cookies?.refresh_token || '';
-    const hash = crypto.createHash('sha256').update(token).digest('hex').slice(0, 16);
-    return `refresh:${hash}`;
-  },
-  handler: (req, res) => {
-    logger.warn('Rate limit exceeded (refresh)', { ip: req.ip });
-    res.status(429).json({ error: 'Demasiadas solicitudes de renovación. Intenta de nuevo en 15 minutos.' });
-  },
-});
-
-const forgotPasswordLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 3,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { error: 'Too many password reset attempts, please try again later' },
-  keyGenerator: (req) => req.ip || 'unknown',
-});
-
-const resetPasswordLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 5,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { error: 'Too many reset attempts, please try again later' },
-  keyGenerator: (req) => req.ip || 'unknown',
-});
-
-const changePasswordLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 5,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { error: 'Too many password change attempts, please try again later' },
-  keyGenerator: (req) => req.ip || 'unknown',
-});
-
-const twoFALimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 3,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { error: 'Too many 2FA attempts, please try again later' },
-  keyGenerator: (req) => req.ip || 'unknown',
-});
-
-const logoutAllLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 2,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { error: 'Too many logout-all attempts, please try again later' },
-  keyGenerator: (req) => req.ip || 'unknown',
 });
 
 const phiWriteLimiter = rateLimit({
@@ -281,16 +184,11 @@ const phiWriteLimiter = rateLimit({
   keyGenerator: (req) => req.tenant_id ? `phi:${req.tenant_id}:${req.user?.id || req.ip}` : `phi:${req.ip}`,
 });
 
-const API_PREFIX = '/api/v1';
+app.use(globalLimiter);
+app.use('/api/auth', authLimiter);
 
-app.use(`${API_PREFIX}/auth/change-password`, changePasswordLimiter);
-app.use(`${API_PREFIX}/auth/2fa`, twoFALimiter);
-app.use(`${API_PREFIX}/auth/logout-all`, logoutAllLimiter);
-app.use(`${API_PREFIX}/auth/forgot-password`, forgotPasswordLimiter);
-app.use(`${API_PREFIX}/auth/reset-password`, resetPasswordLimiter);
-app.use(`${API_PREFIX}/auth/login`, loginLimiter);
-app.use(`${API_PREFIX}/auth/register`, registerLimiter);
-app.use(`${API_PREFIX}/auth/refresh`, refreshLimiter);
+const API_PREFIX = '/api';
+
 app.use(`${API_PREFIX}/auth`, authRoutes);
 app.use(`${API_PREFIX}/doctors`, doctorRoutes);
 app.use(`${API_PREFIX}/bookings`, bookingRoutes);
@@ -306,7 +204,6 @@ app.use(`${API_PREFIX}/billing`, billingRoutes);
 app.use(`${API_PREFIX}/laboratory`, laboratoryRoutes);
 app.use(`${API_PREFIX}/specialties`, specialtiesRoutes);
 app.use(`${API_PREFIX}/saas`, saasRoutes);
-app.use(`${API_PREFIX}/i18n`, i18nRoutes);
 app.use(`${API_PREFIX}/super-admin`, superAdminRoutes);
 
 setupExpressErrorHandler(app);
@@ -328,7 +225,6 @@ const runMigration = async (): Promise<void> => {
       await pool.query(initSql);
       logger.info('Esquema inicial (init.sql) aplicado');
     }
-    /* Aplicar migrations faltantes después de init.sql */
     const migrationsDir = resolve(__dirname, '../db/migrations');
     if (fs.existsSync(migrationsDir)) {
       await pool.query(
@@ -336,18 +232,6 @@ const runMigration = async (): Promise<void> => {
       );
       await pool.query('DELETE FROM _migrations');
       logger.info('Migraciones previas limpiadas para re-ejecución');
-    }
-  }
-
-  const legacyPath = resolve(__dirname, '../db/migrate.sql');
-  if (fs.existsSync(legacyPath)) {
-    const checkResult = await pool.query(
-      `SELECT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'bookings' AND column_name = 'guest_rut')`
-    );
-    if (!checkResult.rows[0].exists) {
-      const sql = fs.readFileSync(legacyPath, 'utf-8');
-      await pool.query(sql);
-      logger.info('Migración legacy aplicada');
     }
   }
 
@@ -385,11 +269,9 @@ const runMigration = async (): Promise<void> => {
     await pool.query('INSERT INTO _migrations (name) VALUES ($1)', [file]);
     logger.info(`Migración ${file} aplicada`);
   }
-
 };
 
 const startServer = async (): Promise<void> => {
-  /* Bind port FIRST — Render debe detectar el puerto inmediatamente, antes de DB, env, etc. */
   const server = app.listen(PORT, () => {
     logger.info(`API running on http://localhost:${PORT}`);
   });
@@ -398,7 +280,6 @@ const startServer = async (): Promise<void> => {
     process.exit(1);
   });
 
-  /* Todo lo demás async: env, DB, migrations, seeds, cron */
   setImmediate(async () => {
     try {
       logger.info(`[STARTUP] begin PORT=${process.env.PORT || 'undefined'}`);
@@ -465,8 +346,6 @@ const startServer = async (): Promise<void> => {
       await seedAdmin();
       step('seedTestTenants');
       await seedTestTenants();
-      step('startRefresh');
-      tenantService.startRefresh();
 
       await seed();
       await backfillInvoices();
@@ -500,14 +379,12 @@ process.on('unhandledRejection', (reason) => {
 process.on('SIGTERM', () => {
   logger.info('SIGTERM received. Shutting down gracefully...');
   pool.end().catch((err: unknown) => logger.warn('Pool close error on SIGTERM', (err as Error).message));
-  tenantService.stopRefresh();
   process.exit(0);
 });
 
 process.on('SIGINT', () => {
   logger.info('SIGINT received. Shutting down gracefully...');
   pool.end().catch((err: unknown) => logger.warn('Pool close error on SIGINT', (err as Error).message));
-  tenantService.stopRefresh();
   process.exit(0);
 });
 

@@ -13,18 +13,20 @@ const createStub = () => ({
   },
 });
 
-const _stubInstance = createStub();
+let stripeInstance: ReturnType<typeof createStub> | null = null;
 
-export const getStripe = async (): Promise<typeof _stubInstance> => {
-  logger.info('Stripe in stub mode');
-  return _stubInstance;
+export const getStripe = async () => {
+  if (!stripeInstance) {
+    logger.info('Stripe in stub mode');
+    stripeInstance = createStub();
+  }
+  return stripeInstance;
 };
 
-export const getWebhookSecret = (): string => '';
+export const isStripeConfigured = (): boolean => {
+  return !!process.env.STRIPE_SECRET_KEY;
+};
 
-export const isStripeConfigured = (): boolean => false;
-
-export const stripe = _stubInstance;
-export const webhookSecret = '';
-
-export const checkIdempotency = (): boolean => true;
+export const getWebhookSecret = (): string => {
+  return process.env.STRIPE_WEBHOOK_SECRET || '';
+};
