@@ -46,7 +46,7 @@ import laboratoryRoutes from './modules/laboratory/laboratory.routes.js';
 import specialtiesRoutes from './modules/specialties/specialties.routes.js';
 import saasRoutes from './modules/saas/saas.routes.js';
 import i18nRoutes from './modules/i18n/i18n.routes.js';
-
+import superAdminRoutes from './modules/super-admin/super-admin.routes.js';
 
 const app: Express = express();
 
@@ -307,7 +307,7 @@ app.use(`${API_PREFIX}/laboratory`, laboratoryRoutes);
 app.use(`${API_PREFIX}/specialties`, specialtiesRoutes);
 app.use(`${API_PREFIX}/saas`, saasRoutes);
 app.use(`${API_PREFIX}/i18n`, i18nRoutes);
-
+app.use(`${API_PREFIX}/super-admin`, superAdminRoutes);
 
 setupExpressErrorHandler(app);
 app.use(notFoundHandler);
