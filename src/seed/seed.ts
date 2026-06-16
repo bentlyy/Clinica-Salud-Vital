@@ -44,48 +44,100 @@ const pick = <T>(arr: T[]): T => arr[randomInt(0, arr.length - 1)];
 
 const today = new Date();
 
+const ensureDoctorsExist = async (HASH: string): Promise<void> => {
+  const doctorsData = [
+    { name: 'Dr. Juan Pérez', specialty: 'Cardiología', email: 'juan@clinic.com' },
+    { name: 'Dra. María López', specialty: 'Dermatología', email: 'maria@clinic.com' },
+    { name: 'Dr. Carlos Soto', specialty: 'Neurología', email: 'carlos@clinic.com' },
+    { name: 'Dra. Ana Torres', specialty: 'Pediatría', email: 'ana@clinic.com' },
+    { name: 'Dr. Pedro González', specialty: 'Medicina General', email: 'pedro@clinic.com' },
+    { name: 'Dra. Claudia Muñoz', specialty: 'Ginecología', email: 'claudia@clinic.com' },
+    { name: 'Dr. Ricardo Díaz', specialty: 'Traumatología', email: 'ricardo@clinic.com' },
+    { name: 'Dra. Patricia Vega', specialty: 'Oftalmología', email: 'patricia@clinic.com' },
+    { name: 'Dr. Mauricio Rojas', specialty: 'Psiquiatría', email: 'mauricio@clinic.com' },
+    { name: 'Dra. Carmen Flores', specialty: 'Endocrinología', email: 'carmen@clinic.com' },
+    { name: 'Dr. Francisco Mora', specialty: 'Urología', email: 'francisco@clinic.com' },
+    { name: 'Dra. Verónica Pizarro', specialty: 'Reumatología', email: 'veronica@clinic.com' },
+  ];
+  for (const doc of doctorsData) {
+    const userResult = await pool.query(
+      'INSERT INTO users (email, password, name, role, rut, phone, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (tenant_id, email) DO UPDATE SET name = EXCLUDED.name, password = EXCLUDED.password RETURNING id',
+      [doc.email, HASH, doc.name, 'doctor', generateRut(), '+56987654321', DEFAULT_TENANT_ID]
+    );
+    const userId = userResult.rows[0].id;
+    await pool.query(
+      'INSERT INTO doctors (name, specialty, email, user_id, tenant_id) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (tenant_id, email) DO UPDATE SET name = EXCLUDED.name RETURNING id',
+      [doc.name, doc.specialty, doc.email, userId, DEFAULT_TENANT_ID]
+    );
+  }
+  const patientNames = [
+    'Luis Ramírez', 'Marta Sepúlveda', 'Jorge Castillo', 'Rosa Herrera',
+    'Alberto Contreras', 'Silvia Medina', 'Raúl Valenzuela', 'Nancy Campos',
+    'Héctor Vega', 'Diana Paredes', 'Oscar Fuentes', 'Paola Figueroa',
+    'Fernando Rivas', 'Gabriela Acosta', 'Cristián Guzmán', 'Teresa Delgado',
+    'Pablo Navarro', 'Angélica Silva', 'Rodrigo Peña', 'Elena Soto',
+    'Manuel Cruz', 'Juana Ortiz', 'Sergio Vargas', 'Lorena Reyes',
+    'Andrés Morales', 'Carolina Espinoza', 'Tomás Castillo', 'Bárbara Molina',
+    'Felipe Campos', 'Verónica Sandoval',
+  ];
+  for (const pName of patientNames) {
+    const email = pName.toLowerCase().replace(/\s+/g, '.') + '@clinic.com';
+    await pool.query(
+      'INSERT INTO users (email, password, name, role, rut, phone, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (tenant_id, email) DO UPDATE SET name = EXCLUDED.name, password = EXCLUDED.password RETURNING id',
+      [email, HASH, pName, 'user', generateRut(), '+56987654321', DEFAULT_TENANT_ID]
+    );
+  }
+  logger.info('Seed data ensured: doctors + patients created');
+};
+
 export const seed = async (): Promise<void> => {
   await pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS idx_users_tenant_email ON users (tenant_id, email)`);
   await pool.query(`ALTER TABLE refresh_tokens ADD COLUMN IF NOT EXISTS token_version INTEGER DEFAULT 0`);
+  await pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS idx_doctors_tenant_email ON doctors (tenant_id, email)`);
 
   const HASH = await getHash();
   const exists = await pool.query('SELECT 1 FROM users WHERE email = $1 LIMIT 1', ['admin@clinic.com']);
-  if (exists.rows.length > 0) {
-    // Reset passwords for all existing seed users so REPLACED_PASSWORD always works
-    const seedEmails = [
-      'admin@clinic.com',
-      'juan@clinic.com', 'maria@clinic.com', 'carlos@clinic.com', 'ana@clinic.com',
-      'pedro@clinic.com', 'claudia@clinic.com', 'ricardo@clinic.com', 'patricia@clinic.com',
-      'mauricio@clinic.com', 'carmen@clinic.com', 'francisco@clinic.com', 'veronica@clinic.com',
-      'user1@clinic.com', 'user2@clinic.com', 'user3@clinic.com',
-    ];
-    await pool.query('UPDATE users SET password = $1 WHERE tenant_id = $2 AND email = ANY($3::text[])',
-      [HASH, DEFAULT_TENANT_ID, seedEmails]);
-    await pool.query('UPDATE users SET password = $1 WHERE role = $2', [HASH, 'superadmin']);
-
-    // Asegurar pacientes simples incluso si el seed ya se ejecutó
-    const simplePatients = [
-      { email: 'user1@clinic.com', rut: '15666777-3', phone: '+56911111111' },
-      { email: 'user2@clinic.com', rut: '16777888-7', phone: '+56922222222' },
-      { email: 'user3@clinic.com', rut: '17888999-0', phone: '+56933333333' },
-    ];
-    for (const p of simplePatients) {
-      await pool.query(
-        'INSERT INTO users (email, password, name, role, rut, phone, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (tenant_id, email) DO UPDATE SET name = EXCLUDED.name, password = EXCLUDED.password',
-        [p.email, HASH, p.email.split('@')[0], 'user', p.rut, p.phone, DEFAULT_TENANT_ID]
-      );
-    }
-    logger.info('Seed passwords refreshed');
-    return;
-  }
 
   // ==================== USERS ====================
-
   const adminResult = await pool.query(
     'INSERT INTO users (email, password, name, role, rut, phone, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (tenant_id, email) DO UPDATE SET name = EXCLUDED.name, password = EXCLUDED.password RETURNING id',
     ['admin@clinic.com', HASH, 'Admin', 'admin', generateRut(), '+56987654321', DEFAULT_TENANT_ID]
   );
   const adminId = adminResult.rows[0].id;
+
+  // Reset passwords on every deploy so REPLACED_PASSWORD always works
+  const seedEmails = [
+    'admin@clinic.com',
+    'juan@clinic.com', 'maria@clinic.com', 'carlos@clinic.com', 'ana@clinic.com',
+    'pedro@clinic.com', 'claudia@clinic.com', 'ricardo@clinic.com', 'patricia@clinic.com',
+    'mauricio@clinic.com', 'carmen@clinic.com', 'francisco@clinic.com', 'veronica@clinic.com',
+    'user1@clinic.com', 'user2@clinic.com', 'user3@clinic.com',
+  ];
+  await pool.query('UPDATE users SET password = $1 WHERE tenant_id = $2 AND email = ANY($3::text[])',
+    [HASH, DEFAULT_TENANT_ID, seedEmails]);
+  await pool.query('UPDATE users SET password = $1 WHERE role = $2', [HASH, 'superadmin']);
+
+  // Asegurar pacientes simples incluso si el seed ya se ejecutó
+  const simplePatients = [
+    { email: 'user1@clinic.com', rut: '15666777-3', phone: '+56911111111' },
+    { email: 'user2@clinic.com', rut: '16777888-7', phone: '+56922222222' },
+    { email: 'user3@clinic.com', rut: '17888999-0', phone: '+56933333333' },
+  ];
+  for (const p of simplePatients) {
+    await pool.query(
+      'INSERT INTO users (email, password, name, role, rut, phone, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (tenant_id, email) DO UPDATE SET name = EXCLUDED.name, password = EXCLUDED.password',
+      [p.email, HASH, p.email.split('@')[0], 'user', p.rut, p.phone, DEFAULT_TENANT_ID]
+    );
+  }
+
+  // Si ya existe admin, solo resetea passwords y asegura doctores (sin duplicar bookings/records)
+  if (exists.rows.length > 0) {
+    logger.info('Seed passwords refreshed');
+    await ensureDoctorsExist(HASH);
+    return;
+  }
+
+  // ==================== DOCTORS + AVAILABILITY (first run) ====================
 
   const doctorsData = [
     { name: 'Dr. Juan Pérez', specialty: 'Cardiología', email: 'juan@clinic.com' },
@@ -138,6 +190,8 @@ export const seed = async (): Promise<void> => {
       );
     }
   }
+
+  const patientNames = [
 
   const patientNames = [
     'Luis Ramírez', 'Marta Sepúlveda', 'Jorge Castillo', 'Rosa Herrera',
