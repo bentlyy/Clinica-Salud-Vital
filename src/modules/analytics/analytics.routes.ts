@@ -11,7 +11,6 @@ import {
   getDemand,
   getSchedules,
   getVitalsAnomalies,
-  exportAnalytics,
 } from './analytics.controller.js';
 
 const router = Router();
@@ -29,7 +28,6 @@ router.get('/diagnoses', authorize('admin', 'superadmin'), getDiagnosesAnalytics
 router.get('/demand', authorize('admin', 'superadmin'), getDemand);
 router.get('/schedules', authorize('admin', 'superadmin'), getSchedules);
 router.get('/vitals', authorize('admin', 'superadmin'), getVitalsAnomalies);
-router.get('/export-excel', authorize('admin', 'superadmin'), exportAnalytics);
 
 export default router;
 

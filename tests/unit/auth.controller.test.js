@@ -13,16 +13,14 @@ vi.mock('../../src/modules/auth/auth.service.js', () => ({
   logout: vi.fn(),
   logoutAll: vi.fn(),
   changePassword: vi.fn(),
-}));
-
-vi.mock('../../src/modules/auth/auth-2fa.service.js', () => ({
   enable2FA: vi.fn(),
   verifyAndEnable2FA: vi.fn(),
   disable2FA: vi.fn(),
+  forgotPassword: vi.fn(),
+  resetPassword: vi.fn(),
 }));
 
 import * as authService from '../../src/modules/auth/auth.service.js';
-import * as auth2faService from '../../src/modules/auth/auth-2fa.service.js';
 import * as authController from '../../src/modules/auth/auth.controller.js';
 
 const flush = () => new Promise(resolve => setTimeout(resolve, 0));
@@ -185,14 +183,14 @@ describe('enable2FA', () => {
 
   it('enables 2FA', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [{ email: 'test@test.com' }] });
-    vi.mocked(auth2faService.enable2FA).mockResolvedValue({ secret: 'JBSWY3DPEHPK3PXP' });
+    vi.mocked(authService.enable2FA).mockResolvedValue({ secret: 'JBSWY3DPEHPK3PXP' });
     const req = { user: { id: 1 }, body: {} };
     const res = mkRes();
 
     authController.enable2FA(req, res, vi.fn());
     await flush();
 
-    expect(auth2faService.enable2FA).toHaveBeenCalledWith(1, 'test@test.com');
+    expect(authService.enable2FA).toHaveBeenCalledWith(1, 'test@test.com');
     expect(res.json).toHaveBeenCalledWith({ secret: 'JBSWY3DPEHPK3PXP' });
   });
 });
@@ -216,7 +214,7 @@ describe('verifyAndEnable2FA', () => {
     authController.verifyAndEnable2FA(req, res, vi.fn());
     await flush();
 
-    expect(auth2faService.verifyAndEnable2FA).toHaveBeenCalledWith(1, '123456');
+    expect(authService.verifyAndEnable2FA).toHaveBeenCalledWith(1, '123456');
     expect(res.json).toHaveBeenCalledWith({ message: '2FA enabled successfully' });
   });
 });
@@ -240,7 +238,7 @@ describe('disable2FA', () => {
     authController.disable2FA(req, res, vi.fn());
     await flush();
 
-    expect(auth2faService.disable2FA).toHaveBeenCalledWith(1, 'StrongPass1!', undefined);
+    expect(authService.disable2FA).toHaveBeenCalledWith(1, 'StrongPass1!', undefined);
     expect(res.json).toHaveBeenCalledWith({ message: '2FA disabled successfully' });
   });
 });

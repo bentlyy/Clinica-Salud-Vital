@@ -17,10 +17,6 @@ vi.mock('../../src/modules/doctor/doctor.service.js', () => ({
   getDoctorByUserId: vi.fn(),
 }));
 
-vi.mock('../../src/modules/analytics/analytics.export.js', () => ({
-  generateAnalyticsExcel: vi.fn(),
-}));
-
 vi.mock('../../src/shared/query.js', () => ({
   getQueryInt: vi.fn((query, key, def) => parseInt(query[key], 10) || def),
 }));
@@ -28,7 +24,6 @@ vi.mock('../../src/shared/query.js', () => ({
 import * as analyticsService from '../../src/modules/analytics/analytics.service.js';
 import * as doctorService from '../../src/modules/doctor/doctor.service.js';
 import * as analyticsController from '../../src/modules/analytics/analytics.controller.js';
-import * as analyticsExport from '../../src/modules/analytics/analytics.export.js';
 
 const flush = () => new Promise(resolve => setTimeout(resolve, 0));
 const mkRes = () => ({ json: vi.fn(), setHeader: vi.fn(), send: vi.fn(), status: vi.fn().mockReturnThis() });
@@ -130,13 +125,4 @@ describe('analyticsController', () => {
     expect(res.json).toHaveBeenCalled();
   });
 
-  it('exportAnalytics generates and sends Excel file', async () => {
-    const mockBuffer = Buffer.from('excel-data');
-    vi.mocked(analyticsExport.generateAnalyticsExcel).mockResolvedValue(mockBuffer);
-    const res = { setHeader: vi.fn(), send: vi.fn() };
-    analyticsController.exportAnalytics({}, res, vi.fn());
-    await flush();
-    expect(res.setHeader).toHaveBeenCalledWith('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    expect(res.send).toHaveBeenCalledWith(mockBuffer);
-  });
 });

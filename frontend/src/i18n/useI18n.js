@@ -1,16 +1,11 @@
 import { createContext, createElement, useMemo, useState, useEffect } from 'react';
-import api from '../api/axios';
 
 export const I18nContext = createContext(null);
 
 const FALLBACK_LOCALE = 'es';
 const KNOWN_LOCALES = ['es', 'en', 'pt', 'fr'];
 const LOCALE_KEY = 'app_locale';
-const CACHE_KEY = 'app_translations_cache';
-const CACHE_TTL = 5 * 60 * 1000;
 
-let cachedTranslations = null;
-let fetchPromise = null;
 let fallbackTranslations = null;
 let fallbackInit = null;
 
@@ -24,39 +19,6 @@ const initFallback = async () => {
   return fallbackInit;
 };
 
-const loadTranslations = async () => {
-  const cached = localStorage.getItem(CACHE_KEY);
-  if (cached) {
-    try {
-      const { data, timestamp } = JSON.parse(cached);
-      if (Date.now() - timestamp < CACHE_TTL) {
-        cachedTranslations = data;
-        return data;
-      }
-    } catch { }
-  }
-
-  if (fetchPromise) return fetchPromise;
-
-  fetchPromise = (async () => {
-    const fb = await initFallback();
-    try {
-      const res = await api.get('/i18n/translations');
-      const data = res.data;
-      cachedTranslations = data;
-      localStorage.setItem(CACHE_KEY, JSON.stringify({ data, timestamp: Date.now() }));
-      return data;
-    } catch {
-      cachedTranslations = fb;
-      return fb;
-    } finally {
-      fetchPromise = null;
-    }
-  })();
-
-  return fetchPromise;
-};
-
 export const getStoredLocale = () => {
   return localStorage.getItem(LOCALE_KEY) || navigator.language?.slice(0, 2) || FALLBACK_LOCALE;
 };
@@ -68,17 +30,15 @@ export const setStoredLocale = (locale) => {
 
 export const useI18n = (locale) => {
   const [translations, setTranslations] = useState(() => {
-    if (cachedTranslations) return cachedTranslations;
-    initFallback().then((fb) => {
-      if (!cachedTranslations) setTranslations(fb);
-    });
+    if (fallbackTranslations) return fallbackTranslations;
+    initFallback().then(setTranslations);
     return {};
   });
   const [localeVersion, setLocaleVersion] = useState(0);
 
   useEffect(() => {
-    if (!cachedTranslations) {
-      loadTranslations().then(setTranslations);
+    if (!fallbackTranslations) {
+      initFallback().then(setTranslations);
     }
   }, []);
 

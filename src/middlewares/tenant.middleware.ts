@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { extractTenantFromHost, tenantService, loadTenantsFromDB } from '../shared/multi-tenant.service.js';
+import { tenantService, loadTenantsFromDB } from '../shared/multi-tenant.service.js';
 import { logger } from '../utils/logger.js';
 import { BadRequestError, NotFoundError } from '../utils/errors.js';
 
@@ -15,23 +15,16 @@ declare global {
 const PUBLIC_PATHS = new Set([
   '/',
   '/health',
-  '/api/v1/auth/login',
-  '/api/v1/auth/register',
-  '/api/v1/auth/forgot-password',
-  '/api/v1/auth/reset-password',
-  '/api/v1/i18n/translations',
-  '/api/v1/booking/slots',
-  '/api/v1/specialties',
-  '/api/v1/doctors/public',
-  '/api/v1/saas/plans',
-  '/api/v1/saas/checkout',
-  '/api/v1/stripe/webhook',
-  '/api/v1/auth/.well-known/jwks.json',
-]);
-
-const PUBLIC_WITH_TENANT = new Set([
-  '/api/v1/booking/slots',
-  '/api/v1/specialties',
+  '/api/auth/login',
+  '/api/auth/register',
+  '/api/auth/forgot-password',
+  '/api/auth/reset-password',
+  '/api/booking/slots',
+  '/api/guest/booking',
+  '/api/doctors/public',
+  '/api/specialties',
+  '/api/saas/plans',
+  '/api/auth/.well-known/jwks.json',
 ]);
 
 const getLocaleFromRequest = (req: Request): string => {
@@ -39,37 +32,15 @@ const getLocaleFromRequest = (req: Request): string => {
 };
 
 export const tenantMiddleware = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-  const host = req.headers.host || '';
   const headerTenantId = req.headers['x-tenant-id'] as string | undefined;
   const userTenantId = (req as any).user?.tenant_id;
   const isPublicPath = PUBLIC_PATHS.has(req.path);
 
-  // Priority: JWT user tenant > X-Tenant-Id header > subdomain
-  // On public paths, validate X-Tenant-Id against known tenants to prevent spoofing
-  let rawTenantId: string | null;
-  if (isPublicPath && headerTenantId && !userTenantId) {
-    if (PUBLIC_WITH_TENANT.has(req.path)) {
-      const knownTenant = tenantService.getById(headerTenantId) || tenantService.getByDomain(headerTenantId);
-      if (!knownTenant) {
-        logger.warn('X-Tenant-Id spoofing attempt on public path', { headerTenantId, path: req.path });
-        next(new BadRequestError('Invalid tenant'));
-        return;
-      }
-      rawTenantId = knownTenant.id;
-    } else {
-      rawTenantId = extractTenantFromHost(host) || process.env.DEFAULT_TENANT_ID || 'default';
-    }
-  } else {
-    rawTenantId = userTenantId || headerTenantId || extractTenantFromHost(host);
-  }
+  const rawTenantId = userTenantId || headerTenantId;
 
   if (!rawTenantId) {
     if (process.env.NODE_ENV === 'production' && !isPublicPath) {
-      logger.warn('Request rejected: missing tenant_id', {
-        path: req.path,
-        host,
-        method: req.method,
-      });
+      logger.warn('Request rejected: missing tenant_id', { path: req.path, method: req.method });
       next(new BadRequestError('X-Tenant-Id header is required'));
       return;
     }
@@ -79,19 +50,18 @@ export const tenantMiddleware = async (req: Request, res: Response, next: NextFu
     return;
   }
 
-  let tenant = tenantService.getByDomain(rawTenantId) || tenantService.getById(rawTenantId);
+  let tenant = tenantService.getById(rawTenantId);
 
   if (!tenant) {
-    // Attempt to reload tenants from DB
     try {
       await loadTenantsFromDB();
-      tenant = tenantService.getByDomain(rawTenantId) || tenantService.getById(rawTenantId);
+      tenant = tenantService.getById(rawTenantId);
     } catch (err) {
       logger.error('Failed to reload tenants from DB', err);
     }
 
     if (!tenant) {
-      logger.warn('Tenant not found', { tenantId: rawTenantId, host });
+      logger.warn('Tenant not found', { tenantId: rawTenantId });
       if (!isPublicPath) {
         next(new NotFoundError('Tenant not found or inactive'));
         return;
@@ -106,6 +76,5 @@ export const tenantMiddleware = async (req: Request, res: Response, next: NextFu
   req.tenant_id = tenant.id;
   req.locale = tenant.locale;
   res.setHeader('X-Tenant-Id', req.tenant_id);
-
   next();
 };

@@ -13,9 +13,6 @@ export interface Tenant {
 
 let tenants = new Map<string, Tenant>();
 let loadingLock: Promise<void> | null = null;
-let refreshInterval: ReturnType<typeof setInterval> | null = null;
-
-const REFRESH_INTERVAL_MS = 30 * 1000;
 
 export const tenantService = {
   register(tenant: Tenant): void {
@@ -42,7 +39,6 @@ export const tenantService = {
   },
 
   async loadFromDB(): Promise<void> {
-    // Deduplicate concurrent calls: only one load at a time
     if (loadingLock) return loadingLock;
     loadingLock = (async () => {
       try {
@@ -56,7 +52,6 @@ export const tenantService = {
           newMap.set(tenant.id, tenant);
           newMap.set(tenant.domain, tenant);
         }
-        // Atomic reference swap — no race window
         tenants = newMap;
         logger.info(`Tenants loaded from DB: ${loaded.length} (was ${oldCount})`);
       } catch (error) {
@@ -67,52 +62,6 @@ export const tenantService = {
     })();
     return loadingLock;
   },
-
-  startRefresh(): void {
-    if (refreshInterval) clearInterval(refreshInterval);
-    refreshInterval = setInterval(() => this.loadFromDB(), REFRESH_INTERVAL_MS);
-  },
-
-  stopRefresh(): void {
-    if (refreshInterval) {
-      clearInterval(refreshInterval);
-      refreshInterval = null;
-    }
-  },
-};
-
-const ALLOWED_PARENT_DOMAINS = (process.env.ALLOWED_DOMAINS || '').split(',').filter(Boolean);
-
-const RENDER_PUBLIC_SUFFIX = 'onrender.com';
-const LOCALHOST_ALIASES = new Set(['localhost', '127.0.0.1', '::1']);
-
-export const extractTenantFromHost = (host: string): string | null => {
-  if (!host) return null;
-
-  // Strip port if present
-  const hostname = host.split(':')[0];
-
-  if (LOCALHOST_ALIASES.has(hostname)) return null;
-
-  // Render public URLs (e.g. clinica-salud-vital.onrender.com) are NOT tenant subdomains
-  if (hostname.endsWith(RENDER_PUBLIC_SUFFIX)) return null;
-
-  const parts = hostname.split('.');
-
-  if (parts.length >= 3) {
-    const subdomain = parts[0];
-    const parentDomain = parts.slice(1).join('.');
-
-    if (ALLOWED_PARENT_DOMAINS.length > 0) {
-      const isAllowed = ALLOWED_PARENT_DOMAINS.some(allowed =>
-        parentDomain === allowed || parentDomain.endsWith('.' + allowed)
-      );
-      if (!isAllowed) return null;
-    }
-
-    return subdomain;
-  }
-  return null;
 };
 
 export const getTenantId = (req: { headers: Record<string, string | string[] | undefined>; tenant_id?: string }): string => {
