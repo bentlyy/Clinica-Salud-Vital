@@ -70,11 +70,18 @@ export default function Navbar() {
             </>
           )}
 
-          {(user?.role === 'admin' || user?.role === 'superadmin') && (
+          {user?.role === 'admin' && (
             <>
               <Link to="/admin/analytics" className="nav-link" onClick={() => setMobileOpen(false)}>{t('nav.analytics')}</Link>
               <Link to="/admin/tenant" className="nav-link" onClick={() => setMobileOpen(false)}>{t('nav.my_clinic')}</Link>
               <Link to="/admin/register-doctor" className="nav-link nav-link-accent" onClick={() => setMobileOpen(false)}>{t('nav.register_doctor')}</Link>
+            </>
+          )}
+
+          {user?.role === 'superadmin' && (
+            <>
+              <Link to="/super-admin" className="nav-link" onClick={() => setMobileOpen(false)}>{t('nav.dashboard')}</Link>
+              <Link to="/super-admin/tenants" className="nav-link" onClick={() => setMobileOpen(false)}>{t('nav.tenants')}</Link>
             </>
           )}
 

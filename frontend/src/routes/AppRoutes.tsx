@@ -16,6 +16,9 @@ const DoctorCalendarPage = lazy(() => import('../pages/DoctorCalendarPage'));
 const DoctorClinicalRecordsPage = lazy(() => import('../pages/DoctorClinicalRecordsPage'));
 const RegisterDoctorPage = lazy(() => import('../pages/RegisterDoctorPage'));
 const AnalyticsPage = lazy(() => import('../pages/AnalyticsPage'));
+const SuperAdminDashboardPage = lazy(() => import('../pages/SuperAdminDashboardPage'));
+const SuperAdminTenantsPage = lazy(() => import('../pages/SuperAdminTenantsPage'));
+const SuperAdminTenantDetailPage = lazy(() => import('../pages/SuperAdminTenantDetailPage'));
 
 function AppLayout({ children }: { children: ReactNode }) {
   return (
@@ -49,6 +52,10 @@ export default function AppRoutes() {
 
       <Route path="/admin/register-doctor" element={<ProtectedRoute role="admin"><AppLayout><RegisterDoctorPage /></AppLayout></ProtectedRoute>} />
       <Route path="/admin/analytics" element={<ProtectedRoute role="admin"><AppLayout><AnalyticsPage /></AppLayout></ProtectedRoute>} />
+
+      <Route path="/super-admin" element={<ProtectedRoute role="superadmin"><AppLayout><SuperAdminDashboardPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/super-admin/tenants" element={<ProtectedRoute role="superadmin"><AppLayout><SuperAdminTenantsPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/super-admin/tenants/:id" element={<ProtectedRoute role="superadmin"><AppLayout><SuperAdminTenantDetailPage /></AppLayout></ProtectedRoute>} />
 
     </Routes>
   );
