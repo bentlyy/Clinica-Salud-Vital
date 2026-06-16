@@ -8,6 +8,7 @@ import { resolve } from 'path';
 import fs from 'fs';
 
 import { seed, backfillInvoices } from './seed/seed.js';
+import { markSeedComplete, markSeedFailed } from './shared/seed-status.js';
 import { pool } from './shared/db.js';
 import { tenantService } from './shared/multi-tenant.service.js';
 import { seedDefaultTenant, seedSuperAdmin, seedTestTenants } from './seed/admin.seed.js';
@@ -100,9 +101,10 @@ app.get('/api/health', healthHandler);
 app.use(securityMiddleware);
 app.use(compression());
 
+const frontendUrl = process.env.FRONTEND_URL || process.env.RENDER_EXTERNAL_URL || 'http://localhost:5173';
 const allowedOrigins = [
   'http://localhost:5173',
-  process.env.FRONTEND_URL,
+  frontendUrl,
   process.env.RENDER_EXTERNAL_URL,
 ].filter((origin): origin is string => Boolean(origin));
 
@@ -138,11 +140,11 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 app.use(cookieParser());
+app.use(express.json({ limit: '100kb' }));
 app.use(optionalAuth);
 app.use(tenantMiddleware);
 app.use(trackActivity);
 
-app.use(express.json({ limit: '100kb' }));
 app.use(requestLogger);
 
 const globalLimiter = rateLimit({
@@ -347,6 +349,7 @@ const startServer = async (): Promise<void> => {
       step('seed');
       await seed();
       await backfillInvoices();
+      markSeedComplete();
 
       startReminderJob();
 
@@ -365,6 +368,7 @@ const startServer = async (): Promise<void> => {
       logger.info('Audit chain integrity cron scheduled (every 6 hours)');
     } catch (error) {
       logger.error('Post-boot initialization failed', { error: (error as Error).message, stack: (error as Error).stack });
+      markSeedFailed(error as Error);
     }
   });
 };

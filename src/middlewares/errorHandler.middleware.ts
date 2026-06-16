@@ -3,6 +3,7 @@ import { logger } from '../utils/logger.js';
 
 export interface AppErrorWithStatus extends Error {
   statusCode?: number;
+  code?: string;
 }
 
 const isInternalError = (statusCode: number): boolean => statusCode >= 500;
@@ -42,10 +43,11 @@ export const errorHandler = (
 
   const message = isDev ? err.message : sanitizeErrorMessage(err.message);
 
-  res.status(statusCode).json({
-    error: message,
-    ...(isDev && { stack: err.stack }),
-  });
+  const body: Record<string, unknown> = { error: message };
+  if (err.code) body.code = err.code;
+  if (isDev && err.stack) body.stack = err.stack;
+
+  res.status(statusCode).json(body);
 };
 
 export const notFoundHandler = (req: Request, res: Response, next: NextFunction): void => {

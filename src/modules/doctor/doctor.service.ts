@@ -120,7 +120,7 @@ export const registerDoctor = async ({ name, specialty, email, rut, phone }: Doc
         name,
         email,
         setupToken,
-        loginUrl: process.env.FRONTEND_URL + '/login',
+        loginUrl: (process.env.FRONTEND_URL || process.env.RENDER_EXTERNAL_URL || 'http://localhost:5173') + '/login',
       }),
       tenantId,
     }).then(r => { if (!r.sent) logger.error('Doctor welcome email error:', r.error); });
@@ -236,7 +236,7 @@ export const invitePerson = async (input: InvitePersonInput, tenantId: string): 
     '7d'
   );
 
-  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+  const frontendUrl = process.env.FRONTEND_URL || process.env.RENDER_EXTERNAL_URL || 'http://localhost:5173';
 
   sendEmail({
     to: email,
