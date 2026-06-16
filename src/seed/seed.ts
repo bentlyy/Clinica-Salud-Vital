@@ -221,19 +221,6 @@ export const seed = async (): Promise<void> => {
 
   logger.info(`Usuarios creados: 1 admin, ${doctors.length} doctores, ${patients.length} pacientes`);
 
-  // ==================== SIMPLE PATIENTS (user1/2/3) ====================
-  const simplePatients = [
-    { email: 'user1@clinic.com', rut: '15666777-3', phone: '+56911111111' },
-    { email: 'user2@clinic.com', rut: '16777888-7', phone: '+56922222222' },
-    { email: 'user3@clinic.com', rut: '17888999-0', phone: '+56933333333' },
-  ];
-  for (const p of simplePatients) {
-    await pool.query(
-      'INSERT INTO users (email, password, name, role, rut, phone, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (tenant_id, email) DO NOTHING',
-      [p.email, HASH, p.email.split('@')[0], 'user', p.rut, p.phone, DEFAULT_TENANT_ID]
-    );
-  }
-
   // ==================== DOCTOR EXCEPTIONS ====================
   const exceptionData = [
     { doctorIdx: 0, daysAgo: 30, fullDay: true },
