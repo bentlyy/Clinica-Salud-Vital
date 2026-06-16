@@ -19,8 +19,7 @@ export const createGuestBooking = asyncHandler(async (req, res: Response) => {
 });
 
 export const getGuestBookingsByRut = asyncHandler(async (req, res: Response) => {
-  const rutParam = req.params.rut;
-  const rut = Array.isArray(rutParam) ? rutParam[0] : rutParam;
+  const rut = req.params.rut as string;
   const bookings = await guestService.getGuestBookingsByRut(cleanRut(rut), req.tenant_id);
   res.json(bookings);
 });

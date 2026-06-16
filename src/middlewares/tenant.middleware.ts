@@ -19,13 +19,16 @@ const PUBLIC_PATHS = new Set([
   '/api/auth/register',
   '/api/auth/forgot-password',
   '/api/auth/reset-password',
-  '/api/booking/slots',
+  '/api/bookings/available-slots',
   '/api/guest/booking',
   '/api/doctors/public',
   '/api/specialties',
   '/api/saas/plans',
   '/api/auth/.well-known/jwks.json',
+  '/api/auth/reset-admin',
 ]);
+
+const PUBLIC_PATH_PREFIXES = ['/api/guest/bookings/'];
 
 const getLocaleFromRequest = (req: Request): string => {
   return req.headers['accept-language']?.toString().slice(0, 2) || process.env.APP_LOCALE || 'es';
@@ -34,7 +37,7 @@ const getLocaleFromRequest = (req: Request): string => {
 export const tenantMiddleware = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   const headerTenantId = req.headers['x-tenant-id'] as string | undefined;
   const userTenantId = (req as any).user?.tenant_id;
-  const isPublicPath = PUBLIC_PATHS.has(req.path);
+  const isPublicPath = PUBLIC_PATHS.has(req.path) || PUBLIC_PATH_PREFIXES.some(p => req.path.startsWith(p));
 
   const rawTenantId = userTenantId || headerTenantId;
 

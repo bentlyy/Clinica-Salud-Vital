@@ -133,7 +133,7 @@ export const createBooking = async ({ doctor_id, user_id, date, time, duration =
         date,
         time,
         confirmToken,
-        frontendUrl: process.env.FRONTEND_URL,
+        frontendUrl: process.env.FRONTEND_URL || process.env.RENDER_EXTERNAL_URL || 'http://localhost:5173',
       }),
       tenantId,
     }).catch((err) => {
@@ -161,7 +161,7 @@ export const getBookingsByUser = async (user_id: number, { page = 1, limit = 20 
     SELECT b.id, b.date, b.time, b.duration, b.status, b.confirmed,
            d.name AS doctor_name, d.specialty
     FROM bookings b
-    JOIN doctors d ON b.doctor_id = d.id
+    JOIN doctors d ON b.doctor_id = d.id AND d.tenant_id = b.tenant_id
     WHERE b.user_id = $1 AND b.status != 'cancelled' AND b.tenant_id = $4
     ORDER BY b.date, b.time
     LIMIT $2 OFFSET $3
