@@ -49,7 +49,9 @@ export default function LoginPage() {
       const user = await login(form.email, form.password, needs2FA ? form.totp_token : undefined, captcha_token, tenantId);
       const redirect = searchParams.get('redirect');
       if (redirect) { navigate(redirect); return; }
-      if (user.role === 'superadmin' || user.role === 'admin') {
+      if (user.role === 'superadmin') {
+        navigate('/super-admin');
+      } else if (user.role === 'admin') {
         navigate('/admin/analytics');
       } else if (user.role === 'doctor') {
         navigate('/doctor');
