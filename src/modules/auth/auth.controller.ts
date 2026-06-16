@@ -1,7 +1,5 @@
 import { Request, Response } from 'express';
 import * as authService from './auth.service.js';
-import * as auth2faService from './auth-2fa.service.js';
-import * as authPasswordService from './auth-password.service.js';
 import { asyncHandler } from '../../middlewares/asyncHandler.middleware.js';
 import { pool } from '../../shared/db.js';
 import { verifyInviteToken } from '../doctor/doctor.service.js';
@@ -97,7 +95,7 @@ export const enable2FA = asyncHandler(async (req: Request, res: Response) => {
   }
   const { rows } = await pool.query('SELECT email FROM users WHERE id = $1', [req.user.id]);
   const email = rows[0]?.email || 'user';
-  const result = await auth2faService.enable2FA(req.user.id, email);
+  const result = await authService.enable2FA(req.user.id, email);
   res.json(result);
 });
 
@@ -105,7 +103,7 @@ export const verifyAndEnable2FA = asyncHandler(async (req: Request, res: Respons
   if (!req.user) {
     throw new UnauthorizedError('Authentication required');
   }
-  await auth2faService.verifyAndEnable2FA(req.user.id, req.body.token);
+  await authService.verifyAndEnable2FA(req.user.id, req.body.token);
   res.json({ message: '2FA enabled successfully' });
 });
 
@@ -116,17 +114,17 @@ export const disable2FA = asyncHandler(async (req: Request, res: Response) => {
   if (!req.body.password) {
     throw new BadRequestError('Password is required to disable 2FA');
   }
-  await auth2faService.disable2FA(req.user.id, req.body.password, req.body.totp_token);
+  await authService.disable2FA(req.user.id, req.body.password, req.body.totp_token);
   res.json({ message: '2FA disabled successfully' });
 });
 
 export const forgotPassword = asyncHandler(async (req: Request, res: Response) => {
-  await authPasswordService.forgotPassword(req.body.email, req.tenant_id);
+  await authService.forgotPassword(req.body.email, req.tenant_id);
   res.json({ message: 'If the email exists, a reset link has been sent' });
 });
 
 export const resetPassword = asyncHandler(async (req: Request, res: Response) => {
-  await authPasswordService.resetPassword(req.body.token, req.body.email, req.body.password, req.tenant_id);
+  await authService.resetPassword(req.body.token, req.body.email, req.body.password, req.tenant_id);
   res.json({ message: 'Password reset successfully' });
 });
 

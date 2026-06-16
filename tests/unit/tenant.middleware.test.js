@@ -16,72 +16,86 @@ import { tenantService } from '../../src/shared/multi-tenant.service.js';
 
 beforeEach(() => {
   tenantService.clear();
+  delete process.env.NODE_ENV;
+  process.env.APP_LOCALE = 'es';
 });
 
 describe('tenant.middleware', () => {
-  it('extracts tenant from subdomain', async () => {
-    tenantService.register({ id: 'custom', name: 'Custom', domain: 'custom.example.com', locale: 'en', timezone: 'UTC', config: {}, active: true });
+  it('uses X-Tenant-Id header', async () => {
+    tenantService.register({ id: 'clinic-1', name: 'Clinic 1', locale: 'en', timezone: 'UTC', config: {}, active: true });
     const { tenantMiddleware } = await import('../../src/middlewares/tenant.middleware.js');
-    const req = { headers: { host: 'custom.example.com' } };
-    const res = { setHeader: vi.fn() };
-    const next = vi.fn();
-
-    await tenantMiddleware(req, res, next);
-
-    expect(req.tenant_id).toBe('custom');
-    expect(res.setHeader).toHaveBeenCalledWith('X-Tenant-Id', 'custom');
-    expect(next).toHaveBeenCalled();
-  });
-
-  it('extracts tenant from subdomain when no header', async () => {
-    tenantService.register({ id: 'tenant1', name: 'Tenant 1', domain: 'tenant1.mysystem.com', locale: 'en', timezone: 'UTC', config: {}, active: true });
-    const { tenantMiddleware } = await import('../../src/middlewares/tenant.middleware.js');
-    const req = { headers: { host: 'tenant1.mysystem.com' } };
-    const res = { setHeader: vi.fn() };
-    const next = vi.fn();
-
-    await tenantMiddleware(req, res, next);
-
-    expect(req.tenant_id).toBe('tenant1');
-    expect(next).toHaveBeenCalled();
-  });
-
-  it('uses tenant from registry if found', async () => {
-    tenantService.register({ id: 'clinic-1', name: 'Clinic 1', domain: 'clinic-1.example.com', locale: 'en', timezone: 'America/New_York', config: {}, active: true });
-
-    const { tenantMiddleware } = await import('../../src/middlewares/tenant.middleware.js');
-    const req = { headers: { host: 'clinic-1.example.com' } };
+    const req = { headers: { 'x-tenant-id': 'clinic-1' }, path: '/api/bookings' };
     const res = { setHeader: vi.fn() };
     const next = vi.fn();
 
     await tenantMiddleware(req, res, next);
 
     expect(req.tenant_id).toBe('clinic-1');
-    expect(req.locale).toBe('en');
+    expect(res.setHeader).toHaveBeenCalledWith('X-Tenant-Id', 'clinic-1');
+    expect(next).toHaveBeenCalled();
   });
 
-  it('falls back to default tenant when host does not match registry', async () => {
+  it('uses tenant from user JWT if available', async () => {
+    tenantService.register({ id: 'jwt-tenant', name: 'JWT Tenant', locale: 'fr', timezone: 'UTC', config: {}, active: true });
     const { tenantMiddleware } = await import('../../src/middlewares/tenant.middleware.js');
-    const req = { headers: { 'accept-language': 'fr-FR,fr;q=0.9', host: 'unknown.com' } };
+    const req = { headers: {}, user: { tenant_id: 'jwt-tenant' }, path: '/api/bookings' };
     const res = { setHeader: vi.fn() };
     const next = vi.fn();
 
     await tenantMiddleware(req, res, next);
 
-    expect(req.tenant_id).toBe(process.env.DEFAULT_TENANT_ID || 'default');
+    expect(req.tenant_id).toBe('jwt-tenant');
     expect(req.locale).toBe('fr');
+    expect(next).toHaveBeenCalled();
   });
 
-  it('defaults to default tenant when no subdomain match', async () => {
-    process.env.DEFAULT_TENANT_ID = 'default';
+  it('JWT tenant_id takes precedence over X-Tenant-Id header', async () => {
+    tenantService.register({ id: 'from-jwt', name: 'From JWT', locale: 'en', timezone: 'UTC', config: {}, active: true });
+    tenantService.register({ id: 'from-header', name: 'From Header', locale: 'fr', timezone: 'UTC', config: {}, active: true });
     const { tenantMiddleware } = await import('../../src/middlewares/tenant.middleware.js');
-    const req = { headers: { host: 'example.com' } };
+    const req = { headers: { 'x-tenant-id': 'from-header' }, user: { tenant_id: 'from-jwt' }, path: '/api/bookings' };
+    const res = { setHeader: vi.fn() };
+    const next = vi.fn();
+
+    await tenantMiddleware(req, res, next);
+
+    expect(req.tenant_id).toBe('from-jwt');
+    expect(next).toHaveBeenCalled();
+  });
+
+  it('falls back to default tenant when no tenant_id found on public path', async () => {
+    const { tenantMiddleware } = await import('../../src/middlewares/tenant.middleware.js');
+    const req = { headers: { 'accept-language': 'fr-FR,fr;q=0.9' }, path: '/health' };
     const res = { setHeader: vi.fn() };
     const next = vi.fn();
 
     await tenantMiddleware(req, res, next);
 
     expect(req.tenant_id).toBe('default');
-    expect(req.locale).toBe('es');
+    expect(req.locale).toBe('fr');
+    expect(next).toHaveBeenCalled();
+  });
+
+  it('rejects with BadRequestError on non-public path in production when no tenant', async () => {
+    process.env.NODE_ENV = 'production';
+    const { tenantMiddleware } = await import('../../src/middlewares/tenant.middleware.js');
+    const req = { headers: {}, path: '/api/bookings' };
+    const res = { setHeader: vi.fn() };
+    const next = vi.fn();
+
+    await tenantMiddleware(req, res, next);
+
+    expect(next).toHaveBeenCalledWith(expect.objectContaining({ message: 'X-Tenant-Id header is required' }));
+  });
+
+  it('rejects tenant not found on non-public path', async () => {
+    const { tenantMiddleware } = await import('../../src/middlewares/tenant.middleware.js');
+    const req = { headers: { 'x-tenant-id': 'nonexistent' }, path: '/api/bookings' };
+    const res = { setHeader: vi.fn() };
+    const next = vi.fn();
+
+    await tenantMiddleware(req, res, next);
+
+    expect(next).toHaveBeenCalledWith(expect.objectContaining({ message: 'Tenant not found or inactive' }));
   });
 });

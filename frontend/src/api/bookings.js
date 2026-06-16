@@ -12,18 +12,8 @@ export const createBooking = async (data, options = {}) => {
   return res.data;
 };
 
-export const createGuestBooking = async (data, options = {}) => {
-  const res = await api.post('/guest/booking', data, options);
-  return res.data;
-};
-
 export const getMyBookings = async (options = {}) => {
   const res = await api.get('/bookings/me', options);
-  return res.data;
-};
-
-export const getGuestBookings = async (rut, options = {}) => {
-  const res = await api.get(`/guest/bookings/${rut}`, options);
   return res.data;
 };
 
