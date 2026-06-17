@@ -1033,6 +1033,34 @@
   border: 1px solid var(--border-light);
 }
 
+.features-section .card-subtle {
+  background: #f3e5f5;
+  border-color: transparent;
+}
+
+.features-section .card-subtle:hover {
+  background: var(--bg-secondary);
+  border-color: #ce93d8;
+}
+
+.features-section .feature-icon {
+  filter: drop-shadow(0 2px 4px rgba(156, 39, 176, 0.15));
+}
+
+[data-theme="dark"] .features-section .card-subtle {
+  background: #1a0a2e;
+  border-color: transparent;
+}
+
+[data-theme="dark"] .features-section .card-subtle:hover {
+  background: var(--bg-secondary);
+  border-color: #7b1fa2;
+}
+
+[data-theme="dark"] .features-section .feature-icon {
+  filter: drop-shadow(0 2px 4px rgba(156, 39, 176, 0.3));
+}
+
 .features-decoration {
   position: absolute;
   z-index: 0;
