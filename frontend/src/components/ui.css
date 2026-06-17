@@ -11,9 +11,28 @@
 }
 
 [data-theme="dark"] .clinic-navbar {
-  background: rgba(15, 23, 42, 0.85);
+  background: rgba(15, 23, 42, 0.92);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
+  border-bottom-color: rgba(51, 65, 85, 0.5);
+}
+
+[data-theme="dark"] .nav-link:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+[data-theme="dark"] .nav-link-accent {
+  background: rgba(25, 118, 210, 0.15);
+  color: #64b5f6;
+}
+
+[data-theme="dark"] .nav-link-accent:hover {
+  background: rgba(25, 118, 210, 0.25);
+  color: #90caf9;
+}
+
+[data-theme="dark"] .navbar-user {
+  border-left-color: rgba(51, 65, 85, 0.5);
 }
 
 .navbar-container {
