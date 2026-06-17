@@ -1,103 +1,36 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/useAuth';
-import { useTheme } from '../context/useTheme';
 import { useI18n } from '../i18n/useI18n';
+import api from '../api/axios';
+import { getDoctors } from '../api/doctors';
 
 export default function HomePage() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { theme } = useTheme();
   const { t } = useI18n();
   const [expandedSpecialty, setExpandedSpecialty] = useState(null);
   const [showReminderInfo, setShowReminderInfo] = useState(false);
+  const [specialties, setSpecialties] = useState([]);
+  const [doctorsBySpecialty, setDoctorsBySpecialty] = useState({});
+  const [loading, setLoading] = useState(true);
 
-  const specialtiesData = [
-    {
-      id: 'cardiologia',
-      icon: '❤️',
-      name: 'home.spec_cardio',
-      desc: 'home.spec_cardio_desc',
-      department: 'home.spec_cardio_dept',
-      color: theme === 'dark' ? '#ef4444' : '#dc2626',
-      bgLight: theme === 'dark' ? 'rgba(239, 68, 68, 0.15)' : '#fef2f2',
-      procedures: [
-        'home.proc_ecg',
-        'home.proc_echo',
-        'home.proc_stress',
-        'home.proc_holter',
-        'home.proc_catheter',
-        'home.proc_hypertension',
-      ],
-      doctors: [
-        { name: 'home.doctor_1_name', sub: 'home.doctor_1_title' },
-        { name: 'home.doctor_2_name', sub: 'home.doctor_2_title' },
-      ],
-    },
-    {
-      id: 'dermatologia',
-      icon: '🔬',
-      name: 'home.spec_derma',
-      desc: 'home.spec_derma_desc',
-      department: 'home.spec_derma_dept',
-      color: theme === 'dark' ? '#a855f7' : '#9333ea',
-      bgLight: theme === 'dark' ? 'rgba(168, 85, 247, 0.15)' : '#faf5ff',
-      procedures: [
-        'home.proc_dermatoscopy',
-        'home.proc_biopsy',
-        'home.proc_acne',
-        'home.proc_mole_surgery',
-        'home.proc_cryo',
-        'home.proc_laser',
-      ],
-      doctors: [
-        { name: 'home.doctor_3_name', sub: 'home.doctor_3_title' },
-        { name: 'home.doctor_4_name', sub: 'home.doctor_4_title' },
-      ],
-    },
-    {
-      id: 'neurologia',
-      icon: '🧠',
-      name: 'home.spec_neuro',
-      desc: 'home.spec_neuro_desc',
-      department: 'home.spec_neuro_dept',
-      color: theme === 'dark' ? '#3b82f6' : '#2563eb',
-      bgLight: theme === 'dark' ? 'rgba(59, 130, 246, 0.15)' : '#eff6ff',
-      procedures: [
-        'home.proc_eeg',
-        'home.proc_mri',
-        'home.proc_evoked',
-        'home.proc_migraine',
-        'home.proc_epilepsy',
-        'home.proc_neurorehab',
-      ],
-      doctors: [
-        { name: 'home.doctor_5_name', sub: 'home.doctor_5_title' },
-        { name: 'home.doctor_6_name', sub: 'home.doctor_6_title' },
-      ],
-    },
-    {
-      id: 'pediatria',
-      icon: '👶',
-      name: 'home.spec_pedia',
-      desc: 'home.spec_pedia_desc',
-      department: 'home.spec_pedia_dept',
-      color: theme === 'dark' ? '#fbbf24' : '#f59e0b',
-      bgLight: theme === 'dark' ? 'rgba(251, 191, 36, 0.15)' : '#fffbeb',
-      procedures: [
-        'home.proc_wellness',
-        'home.proc_vaccination',
-        'home.proc_growth',
-        'home.proc_infections',
-        'home.proc_allergies',
-        'home.proc_nutrition',
-      ],
-      doctors: [
-        { name: 'home.doctor_7_name', sub: 'home.doctor_7_title' },
-        { name: 'home.doctor_8_name', sub: 'home.doctor_8_title' },
-      ],
-    },
-  ];
+  useEffect(() => {
+    Promise.all([
+      api.get('/specialties').then(res => Array.isArray(res) ? res : (res.data || [])),
+      getDoctors().catch(() => []),
+    ]).then(([specs, docs]) => {
+      setSpecialties(specs);
+      const grouped = {};
+      const docArray = Array.isArray(docs) ? docs : (docs.data || []);
+      for (const doc of docArray) {
+        const key = doc.specialty;
+        if (!grouped[key]) grouped[key] = [];
+        grouped[key].push(doc);
+      }
+      setDoctorsBySpecialty(grouped);
+    }).finally(() => setLoading(false));
+  }, []);
 
   const toggleSpecialty = (id) => {
     setExpandedSpecialty(expandedSpecialty === id ? null : id);
@@ -208,80 +141,110 @@ export default function HomePage() {
       <section className="section">
         <h2 className="section-title">{t('home.specialties_title')}</h2>
         <p className="section-subtitle">{t('home.specialties_subtitle')}</p>
-        <div className="grid grid-4">
-          {specialtiesData.map((spec) => (
-            <div
-              key={spec.id}
-              className={`card specialty-card specialty-card-expanded ${expandedSpecialty === spec.id ? 'specialty-expanded' : ''}`}
-              onClick={() => toggleSpecialty(spec.id)}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => e.key === 'Enter' && toggleSpecialty(spec.id)}
-              style={{ '--spec-color': spec.color, '--spec-bg': spec.bgLight }}
-            >
-              <div className="specialty-icon">{spec.icon}</div>
-              <h4>{t(spec.name)}</h4>
-              <p>{t(spec.desc)}</p>
-              <span className="specialty-expand-icon">{expandedSpecialty === spec.id ? '▲' : '▼'}</span>
-            </div>
-          ))}
-        </div>
-
-        {expandedSpecialty && (
-          <div className="specialty-detail-panel">
-            {(() => {
-              const spec = specialtiesData.find((s) => s.id === expandedSpecialty);
-              if (!spec) return null;
-              return (
-                <div className="specialty-detail-content">
-                  <div className="specialty-detail-header" style={{ background: spec.color }}>
-                    <span className="specialty-detail-icon">{spec.icon}</span>
-                    <div>
-                      <h3>{t(spec.name)}</h3>
-                      <p>{t(spec.department)}</p>
-                    </div>
-                  </div>
-
-                  <div className="specialty-detail-body">
-                    <div className="specialty-detail-section">
-                      <h4>{t('home.procedures_title')}</h4>
-                      <div className="procedure-list">
-                        {spec.procedures.map((proc) => (
-                          <div key={proc} className="procedure-item">
-                            <span className="procedure-check">✓</span>
-                            <span>{t(proc)}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="specialty-detail-section">
-                      <h4>{t('home.specialists_title')}</h4>
-                      <div className="doctor-mini-grid">
-                        {spec.doctors.map((doc) => (
-                          <div key={doc.name} className="doctor-mini-card">
-                            <div className="doctor-mini-avatar">👨‍⚕️</div>
-                            <div>
-                              <strong>{t(doc.name)}</strong>
-                              <span>{t(doc.sub)}</span>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    <button
-                      onClick={() => navigate('/booking')}
-                      className="btn btn-primary btn-lg btn-block"
-                      style={{ backgroundColor: spec.color, marginTop: 8 }}
-                    >
-                      {t('home.book_with_specialist', { name: t(spec.name) })}
-                    </button>
-                  </div>
-                </div>
-              );
-            })()}
+        {loading ? (
+          <div className="grid grid-4">
+            {[1, 2, 3, 4].map(i => (
+              <div key={i} className="card specialty-card" style={{ opacity: 0.5, textAlign: 'center', padding: 28 }}>
+                <div style={{ fontSize: '2rem', marginBottom: 12 }}>🔬</div>
+                <div style={{ height: 16, background: 'var(--gray-200)', borderRadius: 4, marginBottom: 8, width: '60%', margin: '0 auto 8px' }} />
+                <div style={{ height: 12, background: 'var(--gray-200)', borderRadius: 4, width: '80%', margin: '0 auto' }} />
+              </div>
+            ))}
           </div>
+        ) : specialties.length === 0 ? (
+          <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 40 }}>
+            No hay especialidades disponibles
+          </p>
+        ) : (
+          <>
+            <div className="grid grid-4">
+              {specialties.map((spec) => {
+                const specDoctors = doctorsBySpecialty[spec.name] || [];
+                const isExpanded = expandedSpecialty === spec.id;
+                const bgLight = spec.color + '1F';
+                return (
+                  <div
+                    key={spec.id}
+                    className={`card specialty-card specialty-card-expanded ${isExpanded ? 'specialty-expanded' : ''}`}
+                    onClick={() => toggleSpecialty(spec.id)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => e.key === 'Enter' && toggleSpecialty(spec.id)}
+                    style={{ '--spec-color': spec.color, '--spec-bg': bgLight }}
+                  >
+                    <div className="specialty-icon">{spec.icon}</div>
+                    <h4>{spec.name}</h4>
+                    <p>{spec.description}</p>
+                    <span className="specialty-expand-icon">{isExpanded ? '▲' : '▼'}</span>
+                  </div>
+                );
+              })}
+            </div>
+
+            {expandedSpecialty && (
+              <div className="specialty-detail-panel">
+                {(() => {
+                  const spec = specialties.find((s) => s.id === expandedSpecialty);
+                  if (!spec) return null;
+                  const specDoctors = doctorsBySpecialty[spec.name] || [];
+                  return (
+                    <div className="specialty-detail-content">
+                      <div className="specialty-detail-header" style={{ background: spec.color }}>
+                        <span className="specialty-detail-icon">{spec.icon}</span>
+                        <div>
+                          <h3>{spec.name}</h3>
+                          <p>{spec.department}</p>
+                        </div>
+                      </div>
+
+                      <div className="specialty-detail-body">
+                        <div className="specialty-detail-section">
+                          <h4>{t('home.procedures_title')}</h4>
+                          <div className="procedure-list">
+                            {(spec.procedures || []).map((proc) => (
+                              <div key={proc} className="procedure-item">
+                                <span className="procedure-check">✓</span>
+                                <span>{proc}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="specialty-detail-section">
+                          <h4>{t('home.specialists_title')}</h4>
+                          {specDoctors.length === 0 ? (
+                            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+                              No hay doctores disponibles para esta especialidad
+                            </p>
+                          ) : (
+                            <div className="doctor-mini-grid">
+                              {specDoctors.map((doc) => (
+                                <div key={doc.id} className="doctor-mini-card">
+                                  <div className="doctor-mini-avatar">👨‍⚕️</div>
+                                  <div>
+                                    <strong>{doc.name}</strong>
+                                    <span>{spec.name}</span>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+
+                        <button
+                          onClick={() => navigate('/booking')}
+                          className="btn btn-primary btn-lg btn-block"
+                          style={{ backgroundColor: spec.color, marginTop: 8 }}
+                        >
+                          {t('home.book_with_specialist', { name: spec.name })}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
+          </>
         )}
       </section>
 
