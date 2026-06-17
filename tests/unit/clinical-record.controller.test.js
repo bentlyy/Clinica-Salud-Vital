@@ -15,6 +15,7 @@ vi.mock('../../src/modules/clinical-record/clinical-record.service.js', () => ({
   updateClinicalRecord: vi.fn(),
   deleteClinicalRecord: vi.fn(),
   doesDoctorHaveBookingWithPatient: vi.fn(),
+  getLabResultsByClinicalRecord: vi.fn(),
 }));
 
 vi.mock('../../src/modules/clinical-record/prescription.service.js', () => ({
@@ -23,6 +24,10 @@ vi.mock('../../src/modules/clinical-record/prescription.service.js', () => ({
   updatePrescription: vi.fn(),
   deletePrescription: vi.fn(),
   getPrescriptionById: vi.fn(),
+}));
+
+vi.mock('../../src/modules/laboratory/laboratory.service.js', () => ({
+  getLabResultsByClinicalRecord: vi.fn(),
 }));
 
 vi.mock('../../src/modules/clinical-record/cie10.service.js', () => ({
@@ -41,6 +46,7 @@ vi.mock('../../src/modules/clinical-record/prescription-pdf.service.js', () => (
 
 import * as clinicalRecordService from '../../src/modules/clinical-record/clinical-record.service.js';
 import * as prescriptionService from '../../src/modules/clinical-record/prescription.service.js';
+import * as laboratoryService from '../../src/modules/laboratory/laboratory.service.js';
 import * as cie10Service from '../../src/modules/clinical-record/cie10.service.js';
 import * as doctorService from '../../src/modules/doctor/doctor.service.js';
 import * as crController from '../../src/modules/clinical-record/clinical-record.controller.js';
@@ -114,14 +120,16 @@ describe('getClinicalRecords', () => {
     expect(res.json).toHaveBeenCalledWith([{ id: 2 }]);
   });
 
-  it('calls next with error for user role', async () => {
-    const req = { user: { role: 'user', id: 1 }, query: {} };
+  it('returns records for user role', async () => {
+    vi.mocked(clinicalRecordService.getAllClinicalRecords).mockResolvedValue([{ id: 1 }]);
+    const req = { user: { role: 'user', id: 1 }, tenant_id: 'test', query: {} };
     const res = { json: vi.fn() };
     const next = vi.fn();
 
     crController.getClinicalRecords(req, res, next);
     await flush();
-    expect(next).toHaveBeenCalledWith(expect.any(Error));
+    expect(clinicalRecordService.getAllClinicalRecords).toHaveBeenCalledWith({ patient_id: 1, limit: 100, offset: 0 }, 'test');
+    expect(res.json).toHaveBeenCalledWith([{ id: 1 }]);
   });
 });
 
@@ -129,13 +137,14 @@ describe('getClinicalRecordById', () => {
   it('returns record with prescriptions', async () => {
     vi.mocked(clinicalRecordService.getClinicalRecordById).mockResolvedValue({ id: 1, doctor_id: 1, patient_id: 5 });
     vi.mocked(prescriptionService.getPrescriptionsByClinicalRecord).mockResolvedValue([{ id: 1, medication: 'Test' }]);
+    vi.mocked(clinicalRecordService.getLabResultsByClinicalRecord).mockResolvedValue([]);
     const req = { params: { id: '1' }, user: { role: 'admin' }, tenant_id: 'test' };
     const res = { json: vi.fn() };
     const next = vi.fn();
 
     crController.getClinicalRecordById(req, res, next);
     await flush();
-    expect(res.json).toHaveBeenCalledWith({ id: 1, doctor_id: 1, patient_id: 5, prescriptions: [{ id: 1, medication: 'Test' }] });
+    expect(res.json).toHaveBeenCalledWith({ id: 1, doctor_id: 1, patient_id: 5, prescriptions: [{ id: 1, medication: 'Test' }], lab_results: [] });
   });
 
   it('calls next with error for wrong doctor', async () => {
@@ -153,6 +162,7 @@ describe('getClinicalRecordById', () => {
   it('returns record for user viewing own record', async () => {
     vi.mocked(clinicalRecordService.getClinicalRecordById).mockResolvedValue({ id: 1, doctor_id: 1, patient_id: 5 });
     vi.mocked(prescriptionService.getPrescriptionsByClinicalRecord).mockResolvedValue([]);
+    vi.mocked(clinicalRecordService.getLabResultsByClinicalRecord).mockResolvedValue([]);
     const req = { params: { id: '1' }, user: { role: 'user', id: 5 }, tenant_id: 'test' };
     const res = { json: vi.fn() };
     const next = vi.fn();
@@ -177,6 +187,7 @@ describe('getClinicalRecordById', () => {
     vi.mocked(clinicalRecordService.getClinicalRecordById).mockResolvedValue({ id: 1, doctor_id: 1, patient_id: 5 });
     vi.mocked(doctorService.getDoctorByUserId).mockResolvedValue({ id: 1 });
     vi.mocked(prescriptionService.getPrescriptionsByClinicalRecord).mockResolvedValue([]);
+    vi.mocked(clinicalRecordService.getLabResultsByClinicalRecord).mockResolvedValue([]);
     const req = { params: { id: '1' }, user: { role: 'doctor', id: 1 }, tenant_id: 'test' };
     const res = { json: vi.fn() };
     const next = vi.fn();

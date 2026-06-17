@@ -59,6 +59,8 @@ export default function Navbar() {
             <>
               <Link to="/booking" className="nav-link" onClick={() => setMobileOpen(false)}>{t('nav.booking')}</Link>
               <Link to="/my-bookings" className="nav-link" onClick={() => setMobileOpen(false)}>{t('nav.my_bookings')}</Link>
+              <Link to="/my-medical-history" className="nav-link" onClick={() => setMobileOpen(false)}>{t('nav.medical_history')}</Link>
+              <Link to="/my-lab-results" className="nav-link" onClick={() => setMobileOpen(false)}>{t('nav.lab_results')}</Link>
               <Link to="/admin/analytics" className="nav-link" onClick={() => setMobileOpen(false)}>{t('nav.analytics')}</Link>
             </>
           )}
@@ -68,6 +70,7 @@ export default function Navbar() {
               <Link to="/doctor" className="nav-link" onClick={() => setMobileOpen(false)}>{t('nav.doctor_panel')}</Link>
               <Link to="/doctor/calendar" className="nav-link" onClick={() => setMobileOpen(false)}>{t('nav.calendar')}</Link>
               <Link to="/doctor/clinical-records" className="nav-link" onClick={() => setMobileOpen(false)}>{t('nav.clinical_records')}</Link>
+              <Link to="/doctor/lab-results" className="nav-link" onClick={() => setMobileOpen(false)}>{t('nav.doctor_lab_results')}</Link>
             </>
           )}
 
