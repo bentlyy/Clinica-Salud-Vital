@@ -13,7 +13,7 @@ export const getClinicalRecords = asyncHandler(async (req: Request, res: Respons
   const limit = parseInt(String(req.query.limit)) || 100;
   const offset = parseInt(String(req.query.offset)) || 0;
 
-  if (req.user!.role === 'user') {
+  if (req.user!.role === 'user' || req.user!.role === 'patient') {
     const records = await clinicalRecordService.getAllClinicalRecords({
       patient_id: req.user!.id,
       status: status ? String(status) : undefined,
@@ -60,7 +60,7 @@ export const getClinicalRecordById = asyncHandler(async (req: Request, res: Resp
     if (!doctor || record.doctor_id !== doctor.id) throw new BadRequestError('Access denied');
   }
 
-  if (req.user!.role === 'user' && record.patient_id !== req.user!.id) {
+  if ((req.user!.role === 'user' || req.user!.role === 'patient') && record.patient_id !== req.user!.id) {
     throw new BadRequestError('Access denied');
   }
 
@@ -78,7 +78,7 @@ export const getClinicalRecordLabResults = asyncHandler(async (req: Request, res
     if (!doctor || record.doctor_id !== doctor.id) throw new BadRequestError('Access denied');
   }
 
-  if (req.user!.role === 'user' && record.patient_id !== req.user!.id) {
+  if ((req.user!.role === 'user' || req.user!.role === 'patient') && record.patient_id !== req.user!.id) {
     throw new BadRequestError('Access denied');
   }
 
@@ -89,7 +89,7 @@ export const getClinicalRecordLabResults = asyncHandler(async (req: Request, res
 export const getClinicalRecordsByPatient = asyncHandler(async (req: Request, res: Response) => {
   const patientId = parseInt(String(req.params.patient_id));
 
-  if (req.user!.role === 'user' && req.user!.id !== patientId) {
+  if ((req.user!.role === 'user' || req.user!.role === 'patient') && req.user!.id !== patientId) {
     throw new BadRequestError('Access denied');
   }
 

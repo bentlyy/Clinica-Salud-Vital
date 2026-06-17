@@ -61,7 +61,6 @@ export default function Navbar() {
               <Link to="/my-bookings" className="nav-link" onClick={() => setMobileOpen(false)}>{t('nav.my_bookings')}</Link>
               <Link to="/my-medical-history" className="nav-link" onClick={() => setMobileOpen(false)}>{t('nav.medical_history')}</Link>
               <Link to="/my-lab-results" className="nav-link" onClick={() => setMobileOpen(false)}>{t('nav.lab_results')}</Link>
-              <Link to="/admin/analytics" className="nav-link" onClick={() => setMobileOpen(false)}>{t('nav.analytics')}</Link>
             </>
           )}
 
