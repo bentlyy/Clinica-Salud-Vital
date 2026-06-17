@@ -11,6 +11,8 @@ export default function HomePage() {
   const { t } = useI18n();
   const [expandedSpecialty, setExpandedSpecialty] = useState(null);
   const [showReminderInfo, setShowReminderInfo] = useState(false);
+  const [showSurgeryInfo, setShowSurgeryInfo] = useState(false);
+  const [showLabInfo, setShowLabInfo] = useState(false);
   const [specialties, setSpecialties] = useState([]);
   const [doctorsBySpecialty, setDoctorsBySpecialty] = useState({});
   const [loading, setLoading] = useState(true);
@@ -99,6 +101,32 @@ export default function HomePage() {
             <p>{t('home.feature_reminders_desc')}</p>
             <span className="feature-link">{showReminderInfo ? t('home.feature_reminders_hide') : t('home.feature_reminders_link')}</span>
           </div>
+
+          <div
+            className="card card-subtle feature-card feature-card-clickable"
+            onClick={() => setShowSurgeryInfo(!showSurgeryInfo)}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => e.key === 'Enter' && setShowSurgeryInfo(!showSurgeryInfo)}
+          >
+            <div className="feature-icon">🏥</div>
+            <h3>{t('home.feature_surgeries_title')}</h3>
+            <p>{t('home.feature_surgeries_desc')}</p>
+            <span className="feature-link">{showSurgeryInfo ? t('home.feature_surgeries_hide') : t('home.feature_surgeries_link')}</span>
+          </div>
+
+          <div
+            className="card card-subtle feature-card feature-card-clickable"
+            onClick={() => setShowLabInfo(!showLabInfo)}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => e.key === 'Enter' && setShowLabInfo(!showLabInfo)}
+          >
+            <div className="feature-icon">🔬</div>
+            <h3>{t('home.feature_exams_title')}</h3>
+            <p>{t('home.feature_exams_desc')}</p>
+            <span className="feature-link">{showLabInfo ? t('home.feature_exams_hide') : t('home.feature_exams_link')}</span>
+          </div>
         </div>
 
         {showReminderInfo && (
@@ -130,6 +158,76 @@ export default function HomePage() {
                 <div>
                   <strong>{t('home.reminder_step4_title')}</strong>
                   <p>{t('home.reminder_step4_desc')}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showSurgeryInfo && (
+          <div className="card reminder-detail-card" style={{ marginTop: 20 }}>
+            <div className="reminder-steps">
+              <div className="reminder-step">
+                <div className="reminder-step-number">1</div>
+                <div>
+                  <strong>{t('home.surgery_step1_title')}</strong>
+                  <p>{t('home.surgery_step1_desc')}</p>
+                </div>
+              </div>
+              <div className="reminder-step">
+                <div className="reminder-step-number">2</div>
+                <div>
+                  <strong>{t('home.surgery_step2_title')}</strong>
+                  <p>{t('home.surgery_step2_desc')}</p>
+                </div>
+              </div>
+              <div className="reminder-step">
+                <div className="reminder-step-number">3</div>
+                <div>
+                  <strong>{t('home.surgery_step3_title')}</strong>
+                  <p>{t('home.surgery_step3_desc')}</p>
+                </div>
+              </div>
+              <div className="reminder-step">
+                <div className="reminder-step-number">4</div>
+                <div>
+                  <strong>{t('home.surgery_step4_title')}</strong>
+                  <p>{t('home.surgery_step4_desc')}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showLabInfo && (
+          <div className="card reminder-detail-card" style={{ marginTop: 20 }}>
+            <div className="reminder-steps">
+              <div className="reminder-step">
+                <div className="reminder-step-number">1</div>
+                <div>
+                  <strong>{t('home.exam_step1_title')}</strong>
+                  <p>{t('home.exam_step1_desc')}</p>
+                </div>
+              </div>
+              <div className="reminder-step">
+                <div className="reminder-step-number">2</div>
+                <div>
+                  <strong>{t('home.exam_step2_title')}</strong>
+                  <p>{t('home.exam_step2_desc')}</p>
+                </div>
+              </div>
+              <div className="reminder-step">
+                <div className="reminder-step-number">3</div>
+                <div>
+                  <strong>{t('home.exam_step3_title')}</strong>
+                  <p>{t('home.exam_step3_desc')}</p>
+                </div>
+              </div>
+              <div className="reminder-step">
+                <div className="reminder-step-number">4</div>
+                <div>
+                  <strong>{t('home.exam_step4_title')}</strong>
+                  <p>{t('home.exam_step4_desc')}</p>
                 </div>
               </div>
             </div>

@@ -52,6 +52,58 @@ export const createSpecialty = async (name: string): Promise<Specialty> => {
   };
 };
 
+export const getSpecialtyById = async (id: number): Promise<Specialty> => {
+  const result = await pool.query(
+    `SELECT id, name, icon, description, department, procedures, color
+     FROM specialties WHERE id = $1 AND tenant_id = 'default'`,
+    [id]
+  );
+  if (result.rows.length === 0) throw new BadRequestError('Specialty not found');
+  return {
+    ...result.rows[0],
+    procedures: typeof result.rows[0].procedures === 'string' ? JSON.parse(result.rows[0].procedures) : result.rows[0].procedures || [],
+  };
+};
+
+export const updateSpecialty = async (id: number, data: Partial<Specialty>): Promise<Specialty> => {
+  const fields: string[] = [];
+  const values: any[] = [];
+  let paramCount = 1;
+
+  for (const key of ['name', 'icon', 'description', 'department', 'color']) {
+    if (data[key as keyof Specialty] !== undefined) {
+      fields.push(`${key} = $${paramCount++}`);
+      values.push(data[key as keyof Specialty]);
+    }
+  }
+
+  if (data.procedures !== undefined) {
+    fields.push(`procedures = $${paramCount++}`);
+    values.push(JSON.stringify(data.procedures));
+  }
+
+  if (fields.length === 0) throw new BadRequestError('No fields to update');
+
+  values.push(id);
+  const result = await pool.query(
+    `UPDATE specialties SET ${fields.join(', ')} WHERE id = $${paramCount} AND tenant_id = 'default' RETURNING id, name, icon, description, department, procedures, color`,
+    values
+  );
+  if (result.rows.length === 0) throw new BadRequestError('Specialty not found');
+  return {
+    ...result.rows[0],
+    procedures: typeof result.rows[0].procedures === 'string' ? JSON.parse(result.rows[0].procedures) : result.rows[0].procedures || [],
+  };
+};
+
+export const deleteSpecialty = async (id: number): Promise<void> => {
+  const result = await pool.query(
+    `DELETE FROM specialties WHERE id = $1 AND tenant_id = 'default'`,
+    [id]
+  );
+  if (result.rowCount === 0) throw new BadRequestError('Specialty not found');
+};
+
 export const ensureSpecialty = async (name: string): Promise<Specialty> => {
   const trimmed = name.trim();
   if (!trimmed) throw new BadRequestError('Name is required');

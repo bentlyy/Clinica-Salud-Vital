@@ -18,6 +18,21 @@ export const getLabTests = asyncHandler(async (req, res) => {
   res.json(tests);
 });
 
+export const createLabTest = asyncHandler(async (req, res) => {
+  const test = await laboratoryService.createLabTest(req.body, req.tenant_id);
+  res.status(201).json(test);
+});
+
+export const updateLabTest = asyncHandler(async (req, res) => {
+  const test = await laboratoryService.updateLabTest(Number(req.params.id), req.body, req.tenant_id);
+  res.json(test);
+});
+
+export const deleteLabTest = asyncHandler(async (req, res) => {
+  await laboratoryService.deleteLabTest(Number(req.params.id), req.tenant_id);
+  res.json({ message: 'Lab test deleted' });
+});
+
 export const getLabRequests = asyncHandler(async (req, res) => {
   const status = getQuery(req.query, 'status');
   const start_date = getQuery(req.query, 'start_date');
