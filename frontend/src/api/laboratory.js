@@ -40,6 +40,11 @@ export const updateLabResultItem = async (id, itemId, data) => {
   return res.data;
 };
 
+export const downloadLabOrderPdf = async (id) => {
+  const res = await api.get(`/laboratory/${id}/pdf`, { responseType: 'blob' });
+  return res.data;
+};
+
 export const getLabResultsByClinicalRecord = async (clinicalRecordId) => {
   const res = await api.get(`/clinical-records/${clinicalRecordId}/lab-results`);
   return res.data;

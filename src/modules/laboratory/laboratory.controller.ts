@@ -110,6 +110,47 @@ export const updateLabRequestItemResult = asyncHandler(async (req, res) => {
   res.json(item);
 });
 
+export const downloadLabOrderPDF = asyncHandler(async (req, res) => {
+  const request = await laboratoryService.getLabRequestById(Number(req.params.id), req.tenant_id);
+
+  if (req.user!.role === 'user' && request.patient_id !== req.user!.id) {
+    throw new BadRequestError('Access denied');
+  }
+  if (req.user!.role === 'doctor') {
+    const doctor = await doctorService.getDoctorByUserId(req.user!.id, req.tenant_id);
+    if (!doctor || request.doctor_id !== doctor.id) {
+      throw new BadRequestError('Access denied');
+    }
+  }
+
+  const { generateLabOrderPDF } = await import('./lab-order-pdf.service.js');
+  const pdfBuffer = await generateLabOrderPDF(request.id, req.tenant_id);
+
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', `attachment; filename=orden-examenes-${request.request_number || request.id}.pdf`);
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('Cache-Control', 'private, no-store, no-cache, must-revalidate');
+  res.send(pdfBuffer);
+});
+
+export const getLabRequestsForLab = asyncHandler(async (req, res) => {
+  const status = req.query.status ? String(req.query.status) : undefined;
+  const requests = await laboratoryService.getAllLabRequestsForLab(status, req.tenant_id);
+  res.json(requests);
+});
+
+export const updateLabRequestItemStatusCtrl = asyncHandler(async (req, res) => {
+  const { status } = req.body;
+  const item = await laboratoryService.updateLabRequestItemStatus(Number(req.params.item_id), status, req.tenant_id);
+  res.json(item);
+});
+
+export const setLabTypeCtrl = asyncHandler(async (req, res) => {
+  const { lab_type } = req.body;
+  const request = await laboratoryService.setLabType(Number(req.params.id), lab_type, req.tenant_id);
+  res.json(request);
+});
+
 export const cancelLabRequest = asyncHandler(async (req, res) => {
   const result = await laboratoryService.cancelLabRequest(Number(req.params.id), req.user!.id, req.user!.role, req.tenant_id);
   res.json(result);

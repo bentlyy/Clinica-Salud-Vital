@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../context/useAuth';
 import { useTheme } from '../context/useTheme';
 import { useI18n, setStoredLocale } from '../i18n/useI18n';
+import { useFeature } from '../context/useFeature';
 
 const locales = [
   { code: 'es', label: 'ES' },
@@ -15,6 +16,7 @@ export default function Navbar() {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const { locale, t } = useI18n();
+  const { hasFeature, loading: featureLoading } = useFeature();
   const [localeOpen, setLocaleOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const menuRef = useRef(null);
@@ -32,6 +34,20 @@ export default function Navbar() {
   useEffect(() => {
     setMobileOpen(false);
   }, [user]);
+
+  const labEnabled = featureLoading || hasFeature('laboratory');
+
+  const NavLabLink = ({ to, label }: { to: string; label: string }) => (
+    <Link
+      to={labEnabled ? to : '#'}
+      className={`nav-link${!labEnabled ? ' nav-link-disabled' : ''}`}
+      onClick={(e) => { if (!labEnabled) e.preventDefault(); setMobileOpen(false); }}
+      style={!labEnabled ? { opacity: 0.5, cursor: 'not-allowed' } : undefined}
+    >
+      {label}
+      {!labEnabled && <span style={{ marginLeft: 6, fontSize: 12 }}>🔒</span>}
+    </Link>
+  );
 
   return (
     <header className="clinic-navbar">
@@ -60,7 +76,7 @@ export default function Navbar() {
               <Link to="/booking" className="nav-link" onClick={() => setMobileOpen(false)}>{t('nav.booking')}</Link>
               <Link to="/my-bookings" className="nav-link" onClick={() => setMobileOpen(false)}>{t('nav.my_bookings')}</Link>
               <Link to="/my-medical-history" className="nav-link" onClick={() => setMobileOpen(false)}>{t('nav.medical_history')}</Link>
-              <Link to="/my-lab-results" className="nav-link" onClick={() => setMobileOpen(false)}>{t('nav.lab_results')}</Link>
+              <NavLabLink to="/my-lab-results" label={t('nav.lab_results')} />
             </>
           )}
 
@@ -69,7 +85,14 @@ export default function Navbar() {
               <Link to="/doctor" className="nav-link" onClick={() => setMobileOpen(false)}>{t('nav.doctor_panel')}</Link>
               <Link to="/doctor/calendar" className="nav-link" onClick={() => setMobileOpen(false)}>{t('nav.calendar')}</Link>
               <Link to="/doctor/clinical-records" className="nav-link" onClick={() => setMobileOpen(false)}>{t('nav.clinical_records')}</Link>
-              <Link to="/doctor/lab-results" className="nav-link" onClick={() => setMobileOpen(false)}>{t('nav.doctor_lab_results')}</Link>
+              <NavLabLink to="/doctor/lab-results" label={t('nav.doctor_lab_results')} />
+            </>
+          )}
+
+          {user?.role === 'lab_technician' && (
+            <>
+              <Link to="/lab" className="nav-link" onClick={() => setMobileOpen(false)}>🔬 Laboratorio</Link>
+              <NavLabLink to="/my-lab-results" label="Mis Resultados" />
             </>
           )}
 
@@ -77,9 +100,9 @@ export default function Navbar() {
             <>
               <Link to="/admin/demo-data" className="nav-link" onClick={() => setMobileOpen(false)}>Demo Data</Link>
               <Link to="/admin/medical-history" className="nav-link" onClick={() => setMobileOpen(false)}>{t('nav.medical_history_admin')}</Link>
-              <Link to="/admin/lab-requests" className="nav-link" onClick={() => setMobileOpen(false)}>{t('nav.lab_requests')}</Link>
+              <NavLabLink to="/admin/lab-requests" label={t('nav.lab_requests')} />
               <Link to="/admin/specialties" className="nav-link" onClick={() => setMobileOpen(false)}>{t('nav.specialties')}</Link>
-              <Link to="/admin/lab-tests" className="nav-link" onClick={() => setMobileOpen(false)}>{t('nav.lab_tests')}</Link>
+              <NavLabLink to="/admin/lab-tests" label={t('nav.lab_tests')} />
               <Link to="/admin/register-doctor" className="nav-link nav-link-accent" onClick={() => setMobileOpen(false)}>{t('nav.register_doctor')}</Link>
             </>
           )}

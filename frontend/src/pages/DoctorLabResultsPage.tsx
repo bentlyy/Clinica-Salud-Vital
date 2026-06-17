@@ -6,6 +6,7 @@ import {
   createLabRequest,
   updateLabResultItem,
   getLabTests,
+  downloadLabOrderPdf,
 } from '../api/laboratory';
 import {
   getClinicalRecords,
@@ -318,12 +319,22 @@ export default function DoctorLabResultsPage() {
                       <td style={{ padding: 10 }}>
                         <span className={`badge ${r.status === 'completed' ? 'badge-success' : 'badge-warning'}`}>{r.status}</span>
                       </td>
-                      <td style={{ padding: 10, textAlign: 'right' }}>
+                      <td style={{ padding: 10, textAlign: 'right', whiteSpace: 'nowrap' }}>
                         <button onClick={() => viewDetail(r.id)} className="btn btn-outline btn-sm">{t('lab_results.view')}</button>
+                        <button
+                          onClick={() => downloadLabOrderPdf(r.id).then(blob => {
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url; a.download = `orden-${r.id}.pdf`; a.click();
+                            URL.revokeObjectURL(url);
+                          })}
+                          className="btn btn-ghost btn-sm"
+                          style={{ marginLeft: 4 }}
+                        >PDF</button>
                         <button
                           onClick={() => navigate(`/doctor/patient-history?patientId=${r.patient_id}`)}
                           className="btn btn-ghost btn-sm"
-                          style={{ marginLeft: 8 }}
+                          style={{ marginLeft: 4 }}
                         >{t('lab_results.view_history')}</button>
                       </td>
                     </tr>

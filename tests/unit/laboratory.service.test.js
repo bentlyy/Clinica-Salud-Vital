@@ -249,3 +249,101 @@ describe('labService.cancelLabRequest', () => {
     await expect(labService.cancelLabRequest(1, 2, 'user', 'test-tenant')).rejects.toThrow('Access denied');
   });
 });
+
+describe('labService.getAllLabRequestsForLab', () => {
+  it('returns all requests with items when no status filter', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [{ id: 1, patient_name: 'John', items: [{ id: 1, test_name: 'Glucosa' }] }] });
+
+    const result = await labService.getAllLabRequestsForLab(undefined, 'test-tenant');
+
+    expect(result).toHaveLength(1);
+    expect(result[0].items[0].test_name).toBe('Glucosa');
+  });
+
+  it('filters by status', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [{ id: 2, status: 'pending' }] });
+
+    const result = await labService.getAllLabRequestsForLab('pending', 'test-tenant');
+
+    expect(result).toHaveLength(1);
+    expect(mockQuery).toHaveBeenCalledWith(expect.stringContaining('AND lr.status ='), expect.arrayContaining(['pending']));
+  });
+
+  it('returns empty array when no requests', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] });
+
+    const result = await labService.getAllLabRequestsForLab('completed', 'test-tenant');
+
+    expect(result).toEqual([]);
+  });
+});
+
+describe('labService.updateLabRequestItemStatus', () => {
+  it('updates item status successfully', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [{ id: 1, status: 'in_progress' }] });
+
+    const result = await labService.updateLabRequestItemStatus(1, 'in_progress', 'test-tenant');
+
+    expect(result.status).toBe('in_progress');
+  });
+
+  it('throws if item not found', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] });
+
+    await expect(labService.updateLabRequestItemStatus(999, 'completed', 'test-tenant')).rejects.toThrow('Lab request item not found');
+  });
+});
+
+describe('labService.setLabType', () => {
+  it('sets lab_type to internal', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [{ id: 1, lab_type: 'internal' }] });
+
+    const result = await labService.setLabType(1, 'internal', 'test-tenant');
+
+    expect(result.lab_type).toBe('internal');
+  });
+
+  it('sets lab_type to external', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [{ id: 1, lab_type: 'external' }] });
+
+    const result = await labService.setLabType(1, 'external', 'test-tenant');
+
+    expect(result.lab_type).toBe('external');
+  });
+
+  it('throws for invalid lab_type', async () => {
+    await expect(labService.setLabType(1, 'invalid', 'test-tenant')).rejects.toThrow('lab_type debe ser');
+  });
+
+  it('throws if request not found', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] });
+
+    await expect(labService.setLabType(999, 'internal', 'test-tenant')).rejects.toThrow('Lab request not found');
+  });
+});
+
+describe('labService.checkFeatureAccess integration tests', () => {
+  it('getAllLabRequestsForLab includes tenant_id in query', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] });
+
+    await labService.getAllLabRequestsForLab(undefined, 'custom-tenant');
+
+    expect(mockQuery).toHaveBeenCalledWith(expect.stringContaining('tenant_id'), expect.arrayContaining(['custom-tenant']));
+  });
+
+  it('updateLabRequestItemStatus includes tenant_id in query', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [{ id: 1, status: 'completed' }] });
+
+    await labService.updateLabRequestItemStatus(1, 'completed', 'custom-tenant');
+
+    expect(mockQuery).toHaveBeenCalledWith(expect.stringContaining('tenant_id ='), expect.arrayContaining(['custom-tenant']));
+  });
+
+  it('setLabType includes tenant_id in query', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [{ id: 1, lab_type: 'internal' }] });
+
+    await labService.setLabType(1, 'internal', 'custom-tenant');
+
+    expect(mockQuery).toHaveBeenCalledWith(expect.stringContaining('tenant_id ='), expect.arrayContaining(['custom-tenant']));
+  });
+});

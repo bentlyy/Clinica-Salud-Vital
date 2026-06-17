@@ -250,6 +250,59 @@ export const updateLabRequestItemResult = async (itemId: number | string, result
   return result.rows[0];
 };
 
+export const getAllLabRequestsForLab = async (statusFilter: string | undefined, tenantId: string) => {
+  let query = `
+    SELECT lr.*,
+           d.name AS doctor_name, d.specialty AS doctor_specialty,
+           u.name AS patient_name, u.rut AS patient_rut,
+           COALESCE(
+             json_agg(
+               json_build_object('id', lri.id, 'test_name', lt.name, 'status', lri.status, 'result_value', lri.result_value, 'result_notes', lri.result_notes)
+               ORDER BY lt.name
+             ) FILTER (WHERE lri.id IS NOT NULL),
+             '[]'::json
+           ) AS items
+    FROM lab_requests lr
+    LEFT JOIN doctors d ON lr.doctor_id = d.id
+    LEFT JOIN users u ON lr.patient_id = u.id
+    LEFT JOIN lab_request_items lri ON lri.lab_request_id = lr.id
+    LEFT JOIN lab_tests lt ON lt.id = lri.lab_test_id
+    WHERE lr.tenant_id = $1
+  `;
+  const params: any[] = [tenantId];
+
+  if (statusFilter) {
+    params.push(statusFilter);
+    query += ' AND lr.status = $' + params.length;
+  }
+
+  query += ' GROUP BY lr.id, d.id, u.id ORDER BY lr.created_at DESC';
+
+  const result = await pool.query(query, params);
+  return result.rows;
+};
+
+export const updateLabRequestItemStatus = async (itemId: number | string, status: string, tenantId: string) => {
+  const result = await pool.query(
+    `UPDATE lab_request_items SET status = $1, updated_at = NOW() WHERE id = $2 AND tenant_id = $3 RETURNING *`,
+    [status, itemId, tenantId]
+  );
+  if (result.rows.length === 0) throw new NotFoundError('Lab request item not found');
+  return result.rows[0];
+};
+
+export const setLabType = async (requestId: number | string, labType: string, tenantId: string) => {
+  if (!['internal', 'external'].includes(labType)) {
+    throw new BadRequestError('lab_type debe ser "internal" o "external"');
+  }
+  const result = await pool.query(
+    `UPDATE lab_requests SET lab_type = $1, updated_at = NOW() WHERE id = $2 AND tenant_id = $3 RETURNING *`,
+    [labType, requestId, tenantId]
+  );
+  if (result.rows.length === 0) throw new NotFoundError('Lab request not found');
+  return result.rows[0];
+};
+
 export const cancelLabRequest = async (requestId: number | string, userId: number, userRole: string, tenantId: string) => {
   const request = await getLabRequestById(requestId, tenantId);
   
