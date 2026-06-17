@@ -44,3 +44,18 @@ export const getLabResultsByClinicalRecord = async (clinicalRecordId) => {
   const res = await api.get(`/clinical-records/${clinicalRecordId}/lab-results`);
   return res.data;
 };
+
+export const createLabTest = async (data) => {
+  const res = await api.post('/laboratory/tests', data);
+  return res.data;
+};
+
+export const updateLabTest = async (id, data) => {
+  const res = await api.put(`/laboratory/tests/${id}`, data);
+  return res.data;
+};
+
+export const deleteLabTest = async (id) => {
+  const res = await api.delete(`/laboratory/tests/${id}`);
+  return res.data;
+};
