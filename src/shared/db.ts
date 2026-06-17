@@ -34,8 +34,12 @@ export const pool = new Pool({
   idle_in_transaction_session_timeout: 60000,
 });
 
-pool.on('connect', () => {
+pool.on('connect', (client: pg.PoolClient) => {
   logger.info('DB connected');
+  const tenantId = process.env.DEFAULT_TENANT_ID || 'default';
+  client.query(`SET SESSION app.tenant_id = '${tenantId}'`).catch((err: Error) => {
+    logger.warn('Could not set app.tenant_id on new connection', { error: err.message });
+  });
 });
 
 pool.on('error', (err: Error) => {
