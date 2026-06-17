@@ -40,7 +40,7 @@ export default function LabResultDetailPage() {
         <div>
           <h1 style={{ marginBottom: 4 }}>{r.test_name || `${t('lab_results.request')} #${r.id}`}</h1>
           <p style={{ color: 'var(--text-secondary)' }}>
-            {r.created_at?.split('T')[0]} — {r.doctor_name || t('lab_results.doctor_unknown')}
+            {r.created_at?.split('T')[0]} — {t('lab_results.doctor')}: {r.doctor_name || t('lab_results.doctor_unknown')} — {t('lab_results.patient')}: {r.patient_name || `#${r.patient_id}`}
           </p>
         </div>
         <button onClick={goBack} className="btn btn-ghost">← {t('lab_results.back')}</button>

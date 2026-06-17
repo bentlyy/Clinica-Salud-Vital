@@ -302,6 +302,7 @@ export default function DoctorLabResultsPage() {
                   <tr style={{ background: 'var(--bg-primary)' }}>
                     <th style={{ padding: 10, textAlign: 'left' }}>{t('lab_results.request')}</th>
                     <th style={{ padding: 10, textAlign: 'left' }}>{t('lab_results.patient')}</th>
+                    <th style={{ padding: 10, textAlign: 'left' }}>Doctor</th>
                     <th style={{ padding: 10, textAlign: 'left' }}>{t('lab_results.date')}</th>
                     <th style={{ padding: 10, textAlign: 'left' }}>{t('lab_results.status')}</th>
                     <th style={{ padding: 10, textAlign: 'right' }}>{t('clinical_records.actions')}</th>
@@ -311,7 +312,8 @@ export default function DoctorLabResultsPage() {
                   {requests.map((r) => (
                     <tr key={r.id} style={{ borderBottom: '1px solid var(--border-light)' }}>
                       <td style={{ padding: 10 }}>{r.test_name || `#${r.id}`}</td>
-                      <td style={{ padding: 10 }}>{getPatientName(r)}</td>
+                      <td style={{ padding: 10 }}>{r.patient_name || getPatientName(r)}</td>
+                      <td style={{ padding: 10 }}>{r.doctor_name || '—'}</td>
                       <td style={{ padding: 10 }}>{r.created_at?.split('T')[0] || '-'}</td>
                       <td style={{ padding: 10 }}>
                         <span className={`badge ${r.status === 'completed' ? 'badge-success' : 'badge-warning'}`}>{r.status}</span>
