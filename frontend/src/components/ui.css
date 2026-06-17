@@ -133,8 +133,25 @@
   border-left: 1px solid var(--border-light);
 }
 
+.user-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  line-height: 1.3;
+}
+
+.user-name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .user-email {
-  font-size: 0.85rem;
+  font-size: 0.75rem;
   color: var(--text-secondary);
   max-width: 150px;
   overflow: hidden;
@@ -1493,7 +1510,7 @@
     font-size: 0.8rem;
   }
 
-  .user-email {
+  .user-info {
     display: none;
   }
 
@@ -1948,6 +1965,12 @@
     width: 100%;
   }
 
+  .user-info {
+    align-items: flex-start;
+    width: 100%;
+  }
+
+  .user-name,
   .user-email {
     max-width: none;
   }
