@@ -38,7 +38,30 @@ export const cancelSubscription = async (): Promise<void> => {
   // No-op: no real cancellation needed
 };
 
-export const checkFeatureAccess = async (): Promise<boolean> => true;
+export const checkFeatureAccess = async (featureKey: string, tenantId: string): Promise<boolean> => {
+  const result = await pool.query(`
+    SELECT COALESCE(
+      (SELECT enabled::text FROM tenant_features WHERE tenant_id = $1 AND feature_key = $2),
+      (SELECT (features->>$2)::text FROM plans p
+       JOIN subscriptions s ON s.plan_id = p.id
+       WHERE s.tenant_id = $1 AND s.status IN ('active', 'trialing')
+       ORDER BY s.created_at DESC LIMIT 1),
+      'false'
+    )::boolean as enabled
+  `, [tenantId, featureKey]);
+  return result.rows[0]?.enabled ?? false;
+};
+
+export const getTenantFeatures = async (tenantId: string): Promise<Record<string, boolean>> => {
+  const featureKeys = [
+    'bookings', 'clinical_records', 'laboratory', 'analytics',
+    'api_access', 'white_label', 'custom_domain', 'sms', 'advanced_reports',
+  ];
+  const entries = await Promise.all(
+    featureKeys.map(async (key) => [key, await checkFeatureAccess(key, tenantId)] as const)
+  );
+  return Object.fromEntries(entries);
+};
 
 export const checkLimits = async (): Promise<{ allowed: boolean; current: number; limit: number }> => {
   return { allowed: true, current: 0, limit: -1 };

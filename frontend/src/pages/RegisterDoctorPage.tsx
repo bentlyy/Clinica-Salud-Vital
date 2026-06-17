@@ -7,6 +7,7 @@ import { useI18n } from '../i18n/useI18n';
 const ROLE_CONFIG = {
   admin: { icon: '🛡️', label: 'Administradores', color: '#6c5ce7' },
   doctor: { icon: '🩺', label: 'Doctores', color: '#0984e3' },
+  lab_technician: { icon: '🔬', label: 'Técnicos de Laboratorio', color: '#e17055' },
   patient: { icon: '🧑‍⚕️', label: 'Pacientes', color: '#00b894' },
 };
 
@@ -64,6 +65,13 @@ function InviteTab({ t, onSent }) {
             fontWeight: role === 'doctor' ? 600 : 400, cursor: 'pointer', fontSize: '0.9rem',
             transition: 'var(--transition)', boxShadow: role === 'doctor' ? 'var(--shadow-sm)' : 'none',
           }}>🩺 Doctor</button>
+          <button type="button" onClick={() => setRole('lab_technician')} style={{
+            flex: 1, padding: '10px 16px', border: 'none', borderRadius: 6,
+            background: role === 'lab_technician' ? 'var(--bg-secondary)' : 'transparent',
+            color: role === 'lab_technician' ? 'var(--accent-500)' : 'var(--text-secondary)',
+            fontWeight: role === 'lab_technician' ? 600 : 400, cursor: 'pointer', fontSize: '0.9rem',
+            transition: 'var(--transition)', boxShadow: role === 'lab_technician' ? 'var(--shadow-sm)' : 'none',
+          }}>🔬 Técnico Lab</button>
         </div>
       </div>
 
@@ -85,7 +93,12 @@ function InviteTab({ t, onSent }) {
         </div>
       )}
 
-      <button type="submit" disabled={submitting} className="btn btn-primary btn-block btn-lg" style={{ marginTop: role === 'doctor' ? 0 : 8 }}>
+      {role === 'lab_technician' && (
+        <p className="form-hint" style={{ marginTop: 4, marginBottom: 12 }}>
+          El técnico de laboratorio podrá gestionar órdenes, procesar muestras y cargar resultados.
+        </p>
+      )}
+      <button type="submit" disabled={submitting} className="btn btn-primary btn-block btn-lg" style={{ marginTop: role === 'doctor' || role === 'lab_technician' ? 0 : 8 }}>
         {submitting ? 'Enviando...' : 'Enviar invitación'}
       </button>
     </form>
@@ -215,7 +228,7 @@ function UsersTab({ t }) {
   useEffect(() => { fetchUsers(); }, [fetchUsers]);
 
   const grouped = useMemo(() => {
-    const groups = { admin: [], doctor: [], patient: [] };
+    const groups = { admin: [], doctor: [], lab_technician: [], patient: [] };
     for (const u of users) {
       const key = u.role === 'user' ? 'patient' : u.role;
       if (groups[key]) groups[key].push(u);
@@ -262,6 +275,11 @@ function UsersTab({ t }) {
           {grouped.admin.length > 0 && (
             <div style={{ flexShrink: 0 }}>
               <RoleCard role="admin" users={grouped.admin} onToggle={handleToggle} toggling={toggling} />
+            </div>
+          )}
+          {grouped.lab_technician.length > 0 && (
+            <div style={{ flexShrink: 0 }}>
+              <RoleCard role="lab_technician" users={grouped.lab_technician} onToggle={handleToggle} toggling={toggling} />
             </div>
           )}
           <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, minHeight: 0 }}>

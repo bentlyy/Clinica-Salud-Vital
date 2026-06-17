@@ -215,18 +215,19 @@ export const getDoctorByUserId = async (user_id: number, tenantId: string): Prom
 interface InvitePersonInput {
   email: string;
   name?: string;
-  role: 'patient' | 'doctor';
+  role: 'patient' | 'doctor' | 'lab_technician';
   specialty?: string;
 }
 
 export const invitePerson = async (input: InvitePersonInput, tenantId: string): Promise<void> => {
-  const { email, name, role, specialty } = input;
+  let { email, name, role, specialty } = input;
 
   if (!email) throw new BadRequestError('Email es obligatorio');
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(email)) throw new BadRequestError('Email inválido');
 
   if (role === 'doctor' && !specialty) throw new BadRequestError('Especialidad es obligatoria para doctores');
+  if (role === 'lab_technician') specialty = undefined;
 
   const existing = await pool.query('SELECT 1 FROM users WHERE email = $1 AND tenant_id = $2', [email, tenantId]);
   if (existing.rows.length > 0) throw new BadRequestError('Email ya registrado en este tenant');
@@ -240,7 +241,7 @@ export const invitePerson = async (input: InvitePersonInput, tenantId: string): 
 
   sendEmail({
     to: email,
-    subject: `Invitación a registrarse como ${role === 'doctor' ? 'médico' : 'paciente'}`,
+    subject: `Invitación a registrarse como ${role === 'doctor' ? 'médico' : role === 'lab_technician' ? 'técnico de laboratorio' : 'paciente'}`,
     html: invitationEmail({
       name: name || email,
       email,
