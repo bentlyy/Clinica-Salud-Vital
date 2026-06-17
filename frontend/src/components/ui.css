@@ -1023,6 +1023,45 @@
 }
 
 /* ===== SECTIONS ===== */
+.features-section {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  padding: 48px 40px;
+  border-radius: var(--radius-xl);
+  background: var(--bg-primary);
+  border: 1px solid var(--border-light);
+}
+
+.features-decoration {
+  position: absolute;
+  z-index: 0;
+  pointer-events: none;
+  font-family: var(--font-sans);
+  font-weight: 300;
+  line-height: 1;
+  color: var(--accent-200);
+}
+
+.features-decoration-1 {
+  top: -40px;
+  right: 5%;
+  font-size: 6rem;
+  opacity: 0.4;
+}
+
+.features-decoration-2 {
+  bottom: -20px;
+  left: 3%;
+  font-size: 4rem;
+  opacity: 0.3;
+}
+
+.features-section .grid {
+  position: relative;
+  z-index: 1;
+}
+
 .section {
   margin-bottom: 48px;
   animation: sectionFadeIn 0.6s ease both;
