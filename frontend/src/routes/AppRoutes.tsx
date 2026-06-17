@@ -24,6 +24,7 @@ const RegisterDoctorPage = lazy(() => import('../pages/RegisterDoctorPage'));
 const AnalyticsPage = lazy(() => import('../pages/AnalyticsPage'));
 const AdminSpecialtiesPage = lazy(() => import('../pages/AdminSpecialtiesPage'));
 const AdminLabTestsPage = lazy(() => import('../pages/AdminLabTestsPage'));
+const AdminMedicalHistoryPage = lazy(() => import('../pages/AdminMedicalHistoryPage'));
 const SuperAdminDashboardPage = lazy(() => import('../pages/SuperAdminDashboardPage'));
 const SuperAdminTenantsPage = lazy(() => import('../pages/SuperAdminTenantsPage'));
 const SuperAdminTenantDetailPage = lazy(() => import('../pages/SuperAdminTenantDetailPage'));
@@ -69,6 +70,7 @@ export default function AppRoutes() {
       <Route path="/admin/analytics" element={<ProtectedRoute role="admin"><AppLayout><AnalyticsPage /></AppLayout></ProtectedRoute>} />
       <Route path="/admin/specialties" element={<ProtectedRoute role="admin"><AppLayout><AdminSpecialtiesPage /></AppLayout></ProtectedRoute>} />
       <Route path="/admin/lab-tests" element={<ProtectedRoute role="admin"><AppLayout><AdminLabTestsPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/admin/medical-history" element={<ProtectedRoute role="admin"><AppLayout><AdminMedicalHistoryPage /></AppLayout></ProtectedRoute>} />
 
       <Route path="/super-admin" element={<ProtectedRoute role="superadmin"><AppLayout><SuperAdminDashboardPage /></AppLayout></ProtectedRoute>} />
       <Route path="/super-admin/tenants" element={<ProtectedRoute role="superadmin"><AppLayout><SuperAdminTenantsPage /></AppLayout></ProtectedRoute>} />
