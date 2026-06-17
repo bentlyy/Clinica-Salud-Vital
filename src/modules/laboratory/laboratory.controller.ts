@@ -25,7 +25,7 @@ export const getLabRequests = asyncHandler(async (req, res) => {
   const limit = getQueryInt(req.query, 'limit', 50);
   const offset = getQueryInt(req.query, 'offset', 0);
 
-  if (req.user!.role === 'user') {
+  if (req.user!.role === 'user' || req.user!.role === 'patient') {
     const requests = await laboratoryService.getLabRequests({
       patient_id: req.user!.id,
       status,

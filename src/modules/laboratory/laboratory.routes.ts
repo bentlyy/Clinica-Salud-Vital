@@ -9,8 +9,8 @@ const router = Router();
 router.use(authMiddleware);
 
 router.get('/tests', getLabTests);
-router.get('/', authorize('admin', 'doctor', 'user'), getLabRequests);
-router.get('/:id', authorize('admin', 'doctor', 'user'), validateZod(labRequestIdSchema, 'params'), getLabRequestById);
+router.get('/', authorize('admin', 'doctor', 'user', 'patient'), getLabRequests);
+router.get('/:id', authorize('admin', 'doctor', 'user', 'patient'), validateZod(labRequestIdSchema, 'params'), getLabRequestById);
 router.post('/', authorize('admin', 'doctor'), validateZod(createLabRequestSchema), createLabRequest);
 router.patch('/:id/status', authorize('admin', 'doctor'), validateZod(labRequestIdSchema, 'params'), updateLabRequestStatus);
 router.patch('/items/:item_id/result', authorize('admin', 'doctor'), updateLabRequestItemResult);
