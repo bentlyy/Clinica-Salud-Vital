@@ -342,6 +342,11 @@ CREATE TABLE IF NOT EXISTS password_reset_tokens (
 CREATE TABLE IF NOT EXISTS specialties (
   id SERIAL PRIMARY KEY,
   name VARCHAR(255) NOT NULL,
+  icon VARCHAR(10) DEFAULT '🔬',
+  description TEXT DEFAULT '',
+  department VARCHAR(255) DEFAULT '',
+  procedures JSONB DEFAULT '[]'::jsonb,
+  color VARCHAR(7) DEFAULT '#1976D2',
   created_at TIMESTAMP DEFAULT NOW(),
   tenant_id TEXT NOT NULL DEFAULT 'default'
 );
@@ -592,19 +597,19 @@ INSERT INTO lab_tests (name, description, code, price, reference_ranges) VALUES
 ON CONFLICT (code) DO NOTHING;
 
 -- Specialties
-INSERT INTO specialties (name) VALUES
-  ('Cardiología'),
-  ('Dermatología'),
-  ('Neurología'),
-  ('Pediatría'),
-  ('Medicina General'),
-  ('Ginecología'),
-  ('Traumatología'),
-  ('Oftalmología'),
-  ('Psiquiatría'),
-  ('Endocrinología'),
-  ('Urología'),
-  ('Reumatología')
+INSERT INTO specialties (name, icon, description, department, procedures, color) VALUES
+  ('Cardiología', '❤️', 'Diagnóstico y tratamiento de enfermedades del corazón y sistema circulatorio', 'Departamento de Cardiología', '["Electrocardiograma", "Ecocardiograma", "Prueba de Esfuerzo", "Holter 24h", "Cateterismo", "Control de Hipertensión"]'::jsonb, '#ef4444'),
+  ('Dermatología', '🧴', 'Cuidado de la piel, diagnóstico de enfermedades cutáneas y tratamientos estéticos', 'Departamento de Dermatología', '["Dermatoscopia", "Biopsia de Piel", "Tratamiento de Acné", "Cirugía de Lunares", "Crioterapia", "Terapia Láser"]'::jsonb, '#f59e0b'),
+  ('Neurología', '🧠', 'Estudio y tratamiento de trastornos del sistema nervioso central y periférico', 'Departamento de Neurología', '["Electroencefalograma", "Resonancia Magnética", "Potenciales Evocados", "Tratamiento de Migraña", "Manejo de Epilepsia", "Neurorehabilitación"]'::jsonb, '#8b5cf6'),
+  ('Pediatría', '👶', 'Atención médica integral para niños, adolescentes y control de su desarrollo', 'Departamento de Pediatría', '["Control de Salud Infantil", "Vacunación", "Control de Crecimiento", "Enfermedades Infecciosas", "Alergias Pediátricas", "Nutrición Infantil"]'::jsonb, '#06b6d4'),
+  ('Medicina General', '🩺', 'Atención primaria, prevención y diagnóstico de enfermedades comunes', 'Departamento de Medicina General', '["Chequeo General", "Análisis Clínicos", "Control de Presión Arterial", "Vacunación", "Certificados Médicos", "Consejería Preventiva"]'::jsonb, '#10b981'),
+  ('Ginecología', '🌸', 'Salud femenina, estudios ginecológicos y acompañamiento en el embarazo', 'Departamento de Ginecología', '["Papanicolaou", "Ecografía Ginecológica", "Colposcopía", "Control de Embarazo", "Evaluación de Fertilidad", "Cirugía Ginecológica"]'::jsonb, '#ec4899'),
+  ('Traumatología', '🦴', 'Lesiones del sistema musculoesquelético, fracturas y cirugía ortopédica', 'Departamento de Traumatología', '["Radiografías", "Resonancia Musculoesquelética", "Reducción de Fracturas", "Artroscopia", "Prótesis Articular", "Rehabilitación"]'::jsonb, '#f97316'),
+  ('Oftalmología', '👁️', 'Diagnóstico y tratamiento de enfermedades visuales y cirugía ocular', 'Departamento de Oftalmología', '["Examen de Agudeza Visual", "Fondo de Ojo", "Cirugía de Cataratas", "Tratamiento de Glaucoma", "Cirugía Láser", "Estrabismo"]'::jsonb, '#3b82f6'),
+  ('Psiquiatría', '💭', 'Diagnóstico y tratamiento de trastornos de salud mental y emocional', 'Departamento de Psiquiatría', '["Evaluación Psiquiátrica", "Terapia Cognitivo-Conductual", "Manejo de Ansiedad", "Tratamiento de Depresión", "Trastorno Bipolar", "Terapia de Pareja"]'::jsonb, '#a855f7'),
+  ('Endocrinología', '⚖️', 'Trastornos hormonales, metabolismo y enfermedades de las glándulas', 'Departamento de Endocrinología', '["Perfil Hormonal", "Control de Diabetes", "Prueba de Tiroides", "Estudio de Metabolismo", "Osteoporosis", "Trastornos Suprarrenales"]'::jsonb, '#14b8a6'),
+  ('Urología', '🫀', 'Enfermedades del sistema urinario y salud reproductiva masculina', 'Departamento de Urología', '["Uroflujometría", "Ecografía Renal", "Cistoscopia", "Cirugía Prostática", "Infertilidad Masculina", "Infecciones Urinarias"]'::jsonb, '#0ea5e9'),
+  ('Reumatología', '🦋', 'Enfermedades autoinmunes e inflamatorias del sistema musculoesquelético', 'Departamento de Reumatología', '["Perfil Reumatológico", "Artritis Reumatoide", "Lupus Eritematoso", "Osteoporosis", "Gota", "Espondilitis Anquilosante"]'::jsonb, '#e11d48')
 ON CONFLICT (tenant_id, name) DO NOTHING;
 
 -- SaaS plans
