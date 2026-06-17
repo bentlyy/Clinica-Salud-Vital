@@ -274,3 +274,51 @@ export const doesDoctorHaveBookingWithPatient = async (doctorId: number, patient
   );
   return result.rows.length > 0;
 };
+
+export const getLabResultsByClinicalRecord = async (recordId: number, tenantId: string) => {
+  const result = await pool.query(`
+    SELECT lr.id AS request_id, lr.request_number, lr.priority, lr.status AS request_status,
+           lr.notes AS request_notes, lr.created_at AS request_created_at,
+           lri.id AS item_id, lri.lab_test_id, lri.status AS item_status,
+           lri.result_value, lri.result_notes, lri.completed_at AS item_completed_at,
+           lt.name AS test_name, lt.code AS test_code, lt.reference_ranges, lt.unit,
+           lt.reference_min, lt.reference_max
+    FROM lab_requests lr
+    JOIN lab_request_items lri ON lri.lab_request_id = lr.id
+    JOIN lab_tests lt ON lt.id = lri.lab_test_id
+    WHERE lr.clinical_record_id = $1 AND lr.tenant_id = $2
+    ORDER BY lr.created_at DESC, lri.id
+  `, [recordId, tenantId]);
+
+  const requestsMap = new Map<number, Record<string, unknown>>();
+  for (const row of result.rows) {
+    if (!requestsMap.has(row.request_id)) {
+      requestsMap.set(row.request_id, {
+        id: row.request_id,
+        request_number: row.request_number,
+        priority: row.priority,
+        status: row.request_status,
+        notes: row.request_notes,
+        created_at: row.request_created_at,
+        items: [],
+      });
+    }
+    const reqMap = requestsMap.get(row.request_id)!;
+    (reqMap.items as unknown[]).push({
+      id: row.item_id,
+      lab_test_id: row.lab_test_id,
+      test_name: row.test_name,
+      test_code: row.test_code,
+      result_value: row.result_value,
+      result_notes: row.result_notes,
+      status: row.item_status,
+      reference_ranges: row.reference_ranges,
+      unit: row.unit,
+      reference_min: row.reference_min,
+      reference_max: row.reference_max,
+      completed_at: row.item_completed_at,
+    });
+  }
+
+  return Array.from(requestsMap.values());
+};

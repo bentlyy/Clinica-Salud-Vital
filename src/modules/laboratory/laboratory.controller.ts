@@ -75,7 +75,11 @@ export const getLabRequestById = asyncHandler(async (req, res) => {
 });
 
 export const createLabRequest = asyncHandler(async (req, res) => {
-  const request = await laboratoryService.createLabRequest(req.body, req.tenant_id);
+  const doctor = await doctorService.getDoctorByUserId(req.user!.id, req.tenant_id);
+  if (!doctor) throw new NotFoundError('Doctor profile not found');
+
+  const data = { ...req.body, doctor_id: doctor.id };
+  const request = await laboratoryService.createLabRequest(data, req.tenant_id);
   res.status(201).json(request);
 });
 
