@@ -2,6 +2,12 @@ import { useEffect, useState } from 'react';
 import { useI18n } from '../i18n/useI18n';
 import { getSpecialties, createSpecialty, updateSpecialty, deleteSpecialty } from '../api/specialties';
 
+interface DoctorInfo {
+  id: number;
+  name: string;
+  email: string;
+}
+
 interface Specialty {
   id: number;
   name: string;
@@ -10,6 +16,7 @@ interface Specialty {
   department: string;
   procedures: string[];
   color: string;
+  doctors: DoctorInfo[];
 }
 
 export default function AdminSpecialtiesPage() {
@@ -152,6 +159,14 @@ export default function AdminSpecialtiesPage() {
                   <span style={{ width: 12, height: 12, borderRadius: '50%', backgroundColor: s.color, display: 'inline-block' }} />
                 </div>
                 {s.description && <p style={{ margin: 0, fontSize: 13, color: '#666' }}>{s.description}</p>}
+                {s.doctors.length > 0 && (
+                  <div style={{ marginTop: 8 }}>
+                    <strong style={{ fontSize: 12 }}>Doctores:</strong>
+                    <ul style={{ margin: '2px 0 0', paddingLeft: 20 }}>
+                      {s.doctors.map((d) => <li key={d.id} style={{ fontSize: 13 }}>{d.name} {d.email ? `<${d.email}>` : ''}</li>)}
+                    </ul>
+                  </div>
+                )}
                 {s.procedures.length > 0 && (
                   <div style={{ marginTop: 8 }}>
                     <strong style={{ fontSize: 12 }}>{t('admin.procedures')}:</strong>
