@@ -55,7 +55,7 @@ export const getAllClinicalRecords = async ({ patient_id, doctor_id, status, lim
   let query = `
     SELECT cr.*, 
            d.name AS doctor_name, d.specialty,
-           u.email AS patient_email, u.rut AS patient_rut
+           u.name AS patient_name, u.email AS patient_email, u.rut AS patient_rut
     FROM clinical_records cr
     JOIN doctors d ON cr.doctor_id = d.id
     JOIN users u ON cr.patient_id = u.id
