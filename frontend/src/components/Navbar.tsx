@@ -119,12 +119,10 @@ export default function Navbar() {
 
             {user && (
               <div className="navbar-user">
-                <span className="user-email">
-                  {user.email}
-                  {user.tenant_id && user.tenant_id !== 'default' && (
-                    <span style={{ fontSize: 11, opacity: 0.6, marginLeft: 4 }}>· {user.tenant_id}</span>
-                  )}
-                </span>
+                <div className="user-info">
+                  <span className="user-name">{user.name || user.email}</span>
+                  {user.name && <span className="user-email">{user.email}</span>}
+                </div>
                 <button onClick={async () => { await logout(); window.location.href = '/'; }} className="btn btn-ghost btn-sm">
                   {t('nav.logout')}
                 </button>
