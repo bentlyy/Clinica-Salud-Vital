@@ -35,26 +35,24 @@ interface BookingData {
   };
 }
 
-export const getAllBookings = async ({ page = 1, limit = 50 }: PaginationOptions = {}, tenantId: string): Promise<BookingData> => {
+export const getAllBookings = async ({ page = 1, limit = 100 }: PaginationOptions = {}, tenantId: string): Promise<BookingData> => {
   const offset = (page - 1) * limit;
   const params: (string | number)[] = [limit, offset, tenantId];
 
   const result = await pool.query(`
-    SELECT
-      b.id, b.date, b.time, b.duration, b.status, b.confirmed,
-      d.id AS doctor_id, d.name AS doctor_name, d.specialty,
-      u.id AS user_id, u.email AS user_email,
-      b.guest_rut, b.guest_name, b.guest_email
+    SELECT b.id, b.date, b.time, b.duration, b.status, b.confirmed,
+           d.name AS doctor_name, d.specialty,
+           u.name AS patient_name, u.rut AS patient_rut, u.email AS patient_email
     FROM bookings b
     JOIN doctors d ON b.doctor_id = d.id AND d.tenant_id = b.tenant_id
     LEFT JOIN users u ON b.user_id = u.id AND u.tenant_id = b.tenant_id
-    WHERE b.status != 'cancelled' AND b.tenant_id = $3
-    ORDER BY b.date, b.time
+    WHERE b.tenant_id = $3
+    ORDER BY b.date DESC, b.time
     LIMIT $1 OFFSET $2
   `, params);
 
   const countResult = await pool.query(
-    'SELECT COUNT(*) FROM bookings WHERE status != $1 AND tenant_id = $2', ['cancelled', tenantId]
+    'SELECT COUNT(*) FROM bookings WHERE tenant_id = $1', [tenantId]
   );
 
   return {
