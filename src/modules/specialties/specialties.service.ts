@@ -1,6 +1,12 @@
 import { pool } from '../../shared/db.js';
 import { BadRequestError } from '../../utils/errors.js';
 
+export interface SpecialtyDoctor {
+  id: number;
+  name: string;
+  email: string;
+}
+
 export interface Specialty {
   id: number;
   name: string;
@@ -9,18 +15,33 @@ export interface Specialty {
   department: string;
   procedures: string[];
   color: string;
+  doctors: SpecialtyDoctor[];
 }
 
 export const getAllSpecialties = async (): Promise<Specialty[]> => {
-  const result = await pool.query(
-    `SELECT id, name, icon, description, department, procedures, color
-     FROM specialties
-     WHERE tenant_id = 'default'
-     ORDER BY id`
-  );
-  return result.rows.map(r => ({
+  const [specResult, docResult] = await Promise.all([
+    pool.query(
+      `SELECT id, name, icon, description, department, procedures, color
+       FROM specialties
+       WHERE tenant_id = 'default'
+       ORDER BY id`
+    ),
+    pool.query(
+      `SELECT id, name, email, specialty FROM doctors WHERE tenant_id = 'default'`
+    ),
+  ]);
+
+  const doctorsBySpecialty: Record<string, SpecialtyDoctor[]> = {};
+  for (const d of docResult.rows) {
+    const key = d.specialty;
+    if (!doctorsBySpecialty[key]) doctorsBySpecialty[key] = [];
+    doctorsBySpecialty[key].push({ id: d.id, name: d.name, email: d.email });
+  }
+
+  return specResult.rows.map(r => ({
     ...r,
     procedures: typeof r.procedures === 'string' ? JSON.parse(r.procedures) : r.procedures || [],
+    doctors: doctorsBySpecialty[r.name] || [],
   }));
 };
 
