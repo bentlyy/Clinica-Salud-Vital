@@ -124,7 +124,9 @@ export default function HomePage() {
       </section>
 
       {/* Features */}
-      <section className="section">
+      <section className="section features-section">
+        <div className="features-decoration features-decoration-1">+</div>
+        <div className="features-decoration features-decoration-2">+</div>
         <div className="grid grid-3">
           <div
             className="card card-subtle feature-card feature-card-clickable"
