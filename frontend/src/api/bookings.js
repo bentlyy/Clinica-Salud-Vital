@@ -12,6 +12,11 @@ export const createBooking = async (data, options = {}) => {
   return res.data;
 };
 
+export const getAllBookings = async (params = {}, options = {}) => {
+  const res = await api.get('/bookings/all', { ...options, params });
+  return res.data;
+};
+
 export const getMyBookings = async (options = {}) => {
   const res = await api.get('/bookings/me', options);
   return res.data;
