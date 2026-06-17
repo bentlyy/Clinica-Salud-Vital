@@ -49,6 +49,13 @@ export const getDailyDensity = asyncHandler(async (req, res) => {
   res.json({ data });
 });
 
+export const getAllBookingsAdmin = asyncHandler(async (req, res) => {
+  const page = getQueryInt(req.query, 'page', 1);
+  const limit = getQueryInt(req.query, 'limit', 100);
+  const bookings = await bookingService.getAllBookings({ page, limit }, req.tenant_id);
+  res.json(bookings);
+});
+
 export const getDoctorBookings = asyncHandler(async (req, res) => {
   const doctor = await doctorService.getDoctorByUserId(req.user!.id, req.tenant_id);
 
