@@ -75,6 +75,8 @@ export default function Navbar() {
 
           {user?.role === 'admin' && (
             <>
+              <Link to="/admin/specialties" className="nav-link" onClick={() => setMobileOpen(false)}>{t('nav.specialties')}</Link>
+              <Link to="/admin/lab-tests" className="nav-link" onClick={() => setMobileOpen(false)}>{t('nav.lab_tests')}</Link>
               <Link to="/admin/register-doctor" className="nav-link nav-link-accent" onClick={() => setMobileOpen(false)}>{t('nav.register_doctor')}</Link>
             </>
           )}

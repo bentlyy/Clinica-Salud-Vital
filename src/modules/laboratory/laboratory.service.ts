@@ -47,6 +47,55 @@ export const getLabTests = async ({ category, active = true, limit = 50, offset 
   return result.rows;
 };
 
+export const createLabTest = async (data: { name: string; description?: string; code?: string; category?: string; unit?: string; reference_min?: number; reference_max?: number; price?: number; reference_ranges?: any }, tenantId: string) => {
+  const { name, description, code, category, unit, reference_min, reference_max, price, reference_ranges } = data;
+  if (!name) throw new BadRequestError('Test name is required');
+
+  const result = await pool.query(
+    `INSERT INTO lab_tests (name, description, code, category, unit, reference_min, reference_max, price, reference_ranges, tenant_id)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+     RETURNING *`,
+    [name, description || null, code || null, category || null, unit || null, reference_min || null, reference_max || null, price || 0, reference_ranges ? JSON.stringify(reference_ranges) : null, tenantId]
+  );
+  return result.rows[0];
+};
+
+export const updateLabTest = async (id: number, data: Partial<{ name: string; description: string; code: string; category: string; unit: string; reference_min: number; reference_max: number; price: number; reference_ranges: any; active: boolean }>, tenantId: string) => {
+  const fields: string[] = [];
+  const values: any[] = [];
+  let paramCount = 1;
+
+  for (const key of ['name', 'description', 'code', 'category', 'unit', 'reference_min', 'reference_max', 'price', 'active']) {
+    if ((data as any)[key] !== undefined) {
+      fields.push(`${key} = $${paramCount++}`);
+      values.push((data as any)[key]);
+    }
+  }
+
+  if (data.reference_ranges !== undefined) {
+    fields.push(`reference_ranges = $${paramCount++}`);
+    values.push(JSON.stringify(data.reference_ranges));
+  }
+
+  if (fields.length === 0) throw new BadRequestError('No fields to update');
+
+  values.push(id, tenantId);
+  const result = await pool.query(
+    `UPDATE lab_tests SET ${fields.join(', ')}, updated_at = NOW() WHERE id = $${paramCount++} AND tenant_id = $${paramCount} RETURNING *`,
+    values
+  );
+  if (result.rows.length === 0) throw new NotFoundError('Lab test not found');
+  return result.rows[0];
+};
+
+export const deleteLabTest = async (id: number, tenantId: string) => {
+  const result = await pool.query(
+    `DELETE FROM lab_tests WHERE id = $1 AND tenant_id = $2`,
+    [id, tenantId]
+  );
+  if (result.rowCount === 0) throw new NotFoundError('Lab test not found');
+};
+
 export const createLabRequest = async (data: { patient_id: number; doctor_id?: number; clinical_record_id?: number; priority?: string; notes?: string; test_ids?: number[] }, tenantId: string) => {
   const client = await pool.connect();
 
