@@ -8,9 +8,9 @@ const router = Router();
 
 router.use(authMiddleware);
 
-router.get('/', authorize('admin', 'doctor', 'user'), getInvoices);
+router.get('/', authorize('admin', 'doctor', 'user', 'patient'), getInvoices);
 router.get('/stats', authorize('admin', 'doctor'), getBillingStats);
-router.get('/:id', authorize('admin', 'doctor', 'user'), validateZod(invoiceIdSchema, 'params'), getInvoiceById);
+router.get('/:id', authorize('admin', 'doctor', 'user', 'patient'), validateZod(invoiceIdSchema, 'params'), getInvoiceById);
 router.post('/', authorize('admin', 'doctor'), validateZod(createInvoiceSchema), createInvoice);
 router.patch('/:id/status', authorize('admin'), validateZod(invoiceIdSchema, 'params'), validateZod(updateInvoiceStatusSchema), updateInvoiceStatus);
 router.delete('/:id', authorize('admin', 'doctor'), validateZod(invoiceIdSchema, 'params'), deleteInvoice);
