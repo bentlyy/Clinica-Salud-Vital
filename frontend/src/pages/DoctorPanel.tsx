@@ -39,6 +39,11 @@ export default function DoctorPanel() {
           <h3>{t('doctor_panel.clinical_records')}</h3>
           <p>{t('doctor_panel.clinical_records_desc')}</p>
         </div>
+        <div className="card card-subtle" onClick={() => navigate('/doctor/lab-results')} style={{ cursor: 'pointer', padding: 32 }}>
+          <div style={{ fontSize: 32, marginBottom: 12 }}>🔬</div>
+          <h3>{t('doctor_panel.lab_results')}</h3>
+          <p>{t('doctor_panel.lab_results_desc')}</p>
+        </div>
       </div>
 
       <h2 style={{ marginBottom: 16 }}>{t('doctor_panel.my_agenda')}</h2>
