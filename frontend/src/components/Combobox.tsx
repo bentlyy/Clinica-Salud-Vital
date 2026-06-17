@@ -9,7 +9,8 @@ export default function Combobox({ value, onChange, placeholder, required, class
 
   useEffect(() => {
     api.get('/specialties').then(res => {
-      setOptions(Array.isArray(res) ? res.map(s => s.name) : (res.data || []).map(s => s.name));
+      const data = Array.isArray(res) ? res : (res.data || []);
+      setOptions(data.map(s => s.name));
     }).catch(() => {});
   }, []);
 
@@ -106,7 +107,7 @@ export default function Combobox({ value, onChange, placeholder, required, class
               onMouseDown={() => select(value)}
               onMouseEnter={() => setHighlighted(visibleOptions.length)}
             >
-              Agregar "{value}"
+              Agregar &quot;{value}&quot;
             </div>
           )}
         </div>
