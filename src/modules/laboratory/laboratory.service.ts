@@ -171,39 +171,47 @@ export const createLabRequest = async (data: { patient_id: number; doctor_id?: n
 };
 
 export const getLabRequests = async ({ patient_id, doctor_id, status, start_date, end_date, limit = 20, offset = 0 }: LabRequestFilters = {}, tenantId: string) => {
-  let query = 'SELECT * FROM lab_requests WHERE 1=1';
+  let query = `
+    SELECT lr.*,
+           d.name AS doctor_name, d.specialty AS doctor_specialty,
+           u.name AS patient_name
+    FROM lab_requests lr
+    LEFT JOIN doctors d ON lr.doctor_id = d.id
+    LEFT JOIN users u ON lr.patient_id = u.id
+    WHERE 1=1
+  `;
   const params: any[] = [];
   let paramCount = 1;
 
   if (patient_id) {
-    query += ' AND patient_id = $' + paramCount++;
+    query += ' AND lr.patient_id = $' + paramCount++;
     params.push(patient_id);
   }
 
   if (doctor_id) {
-    query += ' AND doctor_id = $' + paramCount++;
+    query += ' AND lr.doctor_id = $' + paramCount++;
     params.push(doctor_id);
   }
 
   if (status) {
-    query += ' AND status = $' + paramCount++;
+    query += ' AND lr.status = $' + paramCount++;
     params.push(status);
   }
 
   if (start_date) {
-    query += ' AND created_at >= $' + paramCount++;
+    query += ' AND lr.created_at >= $' + paramCount++;
     params.push(start_date);
   }
 
   if (end_date) {
-    query += ' AND created_at <= $' + paramCount++;
+    query += ' AND lr.created_at <= $' + paramCount++;
     params.push(end_date);
   }
 
-  query += ' AND tenant_id = $' + paramCount++;
+  query += ' AND lr.tenant_id = $' + paramCount++;
   params.push(tenantId);
 
-  query += ' ORDER BY created_at DESC LIMIT $' + paramCount++ + ' OFFSET $' + paramCount++;
+  query += ' ORDER BY lr.created_at DESC LIMIT $' + paramCount++ + ' OFFSET $' + paramCount++;
   params.push(limit, offset);
 
   const result = await pool.query(query, params);
@@ -220,7 +228,15 @@ export const updateLabRequestStatus = async (requestId: number | string, status:
 };
 
 export const getLabRequestById = async (requestId: number | string, tenantId: string) => {
-  const result = await pool.query(`SELECT * FROM lab_requests WHERE id = $1 AND tenant_id = $2`, [requestId, tenantId]);
+  const result = await pool.query(`
+    SELECT lr.*,
+           d.name AS doctor_name, d.specialty AS doctor_specialty,
+           u.name AS patient_name
+    FROM lab_requests lr
+    LEFT JOIN doctors d ON lr.doctor_id = d.id
+    LEFT JOIN users u ON lr.patient_id = u.id
+    WHERE lr.id = $1 AND lr.tenant_id = $2
+  `, [requestId, tenantId]);
   if (result.rows.length === 0) throw new NotFoundError('Lab request not found');
   return result.rows[0];
 };
