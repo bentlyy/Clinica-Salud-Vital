@@ -121,8 +121,9 @@ describe('laboratoryController.getLabRequestById', () => {
 
 describe('laboratoryController.createLabRequest', () => {
   it('creates and returns 201', async () => {
+    vi.mocked(doctorService.getDoctorByUserId).mockResolvedValue({ id: 1 });
     vi.mocked(laboratoryService.createLabRequest).mockResolvedValue({ id: 1 });
-    const req = { tenant_id: 'test', body: { patient_id: 1, test_ids: [1, 2] } };
+    const req = { user: { id: 1 }, tenant_id: 'test', body: { patient_id: 1, test_ids: [1, 2] } };
     const res = { status: vi.fn().mockReturnThis(), json: vi.fn() };
     const next = vi.fn();
 

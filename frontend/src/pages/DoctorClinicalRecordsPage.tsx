@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useI18n } from '../i18n/useI18n';
+import { useNavigate } from 'react-router-dom';
 import {
   getClinicalRecords,
   getClinicalRecordById,
@@ -11,6 +12,7 @@ import {
   createPrescription,
   deletePrescription,
 } from '../api/clinicalRecords';
+import { getLabResultsByClinicalRecord } from '../api/laboratory';
 
 const ROUTES_MAP = {
   oral: 'Oral',
@@ -63,6 +65,9 @@ export default function DoctorClinicalRecordsPage() {
   const [cie10Query, setCie10Query] = useState('');
   const [cie10Results, setCie10Results] = useState([]);
   const [cie10Open, setCie10Open] = useState(false);
+  const [labResults, setLabResults] = useState([]);
+  const [showLab, setShowLab] = useState(false);
+  const navigate = useNavigate();
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -142,6 +147,11 @@ export default function DoctorClinicalRecordsPage() {
         status: record.status || 'draft',
       });
       setPrescriptions(record.prescriptions || []);
+      setLabResults([]);
+      setShowLab(false);
+      getLabResultsByClinicalRecord(id).then((labs) => {
+        setLabResults(Array.isArray(labs) ? labs : (labs.data || []));
+      }).catch(() => {});
       setView('form');
     } catch (err) {
       setError(t('clinical_records.error_load'));
@@ -559,6 +569,29 @@ export default function DoctorClinicalRecordsPage() {
           </div>
         </div>
 
+        {selectedRecordId && labResults.length > 0 && (
+          <div className="analytics-card">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <h3 style={{ margin: 0 }}>{t('clinical_records.lab_results')}</h3>
+              <button onClick={() => setShowLab(!showLab)} className="btn btn-outline btn-sm">
+                {showLab ? t('clinical_records.hide') : t('clinical_records.show')}
+              </button>
+            </div>
+            {showLab && labResults.map((req) => (
+              <div key={req.id} style={{ marginBottom: 12, padding: 12, border: '1px solid var(--border-light)', borderRadius: 8 }}>
+                <strong>{req.test_name || `${t('lab_results.request')} #${req.id}`}</strong>
+                <span className={`badge ${req.status === 'completed' ? 'badge-success' : 'badge-warning'}`} style={{ marginLeft: 8 }}>{req.status}</span>
+                {(req.items || []).map((item) => (
+                  <div key={item.id} style={{ padding: '4px 0 0 16px', fontSize: 14 }}>
+                    <strong>{item.test_name}</strong>: {item.result_value || <span style={{ color: 'var(--text-muted)' }}>{t('lab_results.pending')}</span>}
+                    {item.reference_range && <span style={{ color: 'var(--text-secondary)', marginLeft: 8 }}>({item.reference_range})</span>}
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+        )}
+
         <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', padding: '16px 0' }}>
           <button onClick={handleCancel} className="btn btn-ghost" disabled={saving}>{t('clinical_records.cancel')}</button>
           <button onClick={() => handleSave('draft')} className="btn btn-outline" disabled={saving || !formData.chief_complaint}>
@@ -602,6 +635,9 @@ export default function DoctorClinicalRecordsPage() {
                         {b.date} — {b.time} ({b.duration} min)
                       </div>
                     </div>
+                    <button onClick={() => navigate(`/doctor/patient-history?patientId=${b.user_id}`)} className="btn btn-ghost btn-sm" style={{ marginRight: 8 }}>
+                      {t('clinical_records.view_history')}
+                    </button>
                     <button onClick={() => handleNewRecord(b)} className="btn btn-primary btn-sm">
                       {t('clinical_records.new_record')}
                     </button>
@@ -644,6 +680,9 @@ export default function DoctorClinicalRecordsPage() {
                         </td>
                         <td style={{ padding: 10, textAlign: 'right' }}>
                           <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                            <button onClick={() => navigate(`/doctor/patient-history?patientId=${r.patient_id}`)} className="btn btn-ghost btn-sm">
+                              {t('clinical_records.view_history')}
+                            </button>
                             <button onClick={() => handleEditRecord(r.id)} className="btn btn-outline btn-sm">
                               {r.status === 'draft' ? t('clinical_records.edit') : t('clinical_records.view')}
                             </button>

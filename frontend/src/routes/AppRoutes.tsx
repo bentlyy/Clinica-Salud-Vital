@@ -14,6 +14,12 @@ const DoctorPanel = lazy(() => import('../pages/DoctorPanel'));
 const DoctorAvailabilityPage = lazy(() => import('../pages/DoctorAvailabilityPage'));
 const DoctorCalendarPage = lazy(() => import('../pages/DoctorCalendarPage'));
 const DoctorClinicalRecordsPage = lazy(() => import('../pages/DoctorClinicalRecordsPage'));
+const DoctorPatientHistoryPage = lazy(() => import('../pages/DoctorPatientHistoryPage'));
+const DoctorLabResultsPage = lazy(() => import('../pages/DoctorLabResultsPage'));
+const MyMedicalHistoryPage = lazy(() => import('../pages/MyMedicalHistoryPage'));
+const MyMedicalHistoryDetailPage = lazy(() => import('../pages/MyMedicalHistoryDetailPage'));
+const MyLabResultsPage = lazy(() => import('../pages/MyLabResultsPage'));
+const LabResultDetailPage = lazy(() => import('../pages/LabResultDetailPage'));
 const RegisterDoctorPage = lazy(() => import('../pages/RegisterDoctorPage'));
 const AnalyticsPage = lazy(() => import('../pages/AnalyticsPage'));
 const SuperAdminDashboardPage = lazy(() => import('../pages/SuperAdminDashboardPage'));
@@ -44,11 +50,18 @@ export default function AppRoutes() {
 
       <Route path="/confirm/:token" element={<AppLayout><ConfirmPage /></AppLayout>} />
       <Route path="/my-bookings" element={<ProtectedRoute><AppLayout><MyBookingsPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/my-medical-history" element={<ProtectedRoute><AppLayout><MyMedicalHistoryPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/my-medical-history/:id" element={<ProtectedRoute><AppLayout><MyMedicalHistoryDetailPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/my-lab-results" element={<ProtectedRoute><AppLayout><MyLabResultsPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/my-lab-results/:id" element={<ProtectedRoute><AppLayout><LabResultDetailPage /></AppLayout></ProtectedRoute>} />
 
       <Route path="/doctor" element={<ProtectedRoute role="doctor"><AppLayout><DoctorPanel /></AppLayout></ProtectedRoute>} />
       <Route path="/doctor/availability" element={<ProtectedRoute role="doctor"><AppLayout><DoctorAvailabilityPage /></AppLayout></ProtectedRoute>} />
       <Route path="/doctor/calendar" element={<ProtectedRoute role="doctor"><AppLayout><DoctorCalendarPage /></AppLayout></ProtectedRoute>} />
       <Route path="/doctor/clinical-records" element={<ProtectedRoute role="doctor"><AppLayout><DoctorClinicalRecordsPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/doctor/patient-history" element={<ProtectedRoute role="doctor"><AppLayout><DoctorPatientHistoryPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/doctor/lab-results" element={<ProtectedRoute role="doctor"><AppLayout><DoctorLabResultsPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/doctor/lab-results/:id" element={<ProtectedRoute role="doctor"><AppLayout><LabResultDetailPage /></AppLayout></ProtectedRoute>} />
 
       <Route path="/admin/register-doctor" element={<ProtectedRoute role="admin"><AppLayout><RegisterDoctorPage /></AppLayout></ProtectedRoute>} />
       <Route path="/admin/analytics" element={<ProtectedRoute role="admin"><AppLayout><AnalyticsPage /></AppLayout></ProtectedRoute>} />

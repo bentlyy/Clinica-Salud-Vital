@@ -1,5 +1,6 @@
 import type { Request, Response } from 'express';
 import * as clinicalRecordService from './clinical-record.service.js';
+import * as labService from '../laboratory/laboratory.service.js';
 import * as prescriptionService from './prescription.service.js';
 import * as cie10Service from './cie10.service.js';
 import * as doctorService from '../doctor/doctor.service.js';
@@ -11,6 +12,16 @@ export const getClinicalRecords = asyncHandler(async (req: Request, res: Respons
   const { patient_id, status } = req.query;
   const limit = parseInt(String(req.query.limit)) || 100;
   const offset = parseInt(String(req.query.offset)) || 0;
+
+  if (req.user!.role === 'user') {
+    const records = await clinicalRecordService.getAllClinicalRecords({
+      patient_id: req.user!.id,
+      status: status ? String(status) : undefined,
+      limit,
+      offset,
+    }, req.tenant_id);
+    return res.json(records);
+  }
 
   if (req.user!.role === 'doctor') {
     const doctor = await doctorService.getDoctorByUserId(req.user!.id, req.tenant_id);
@@ -54,8 +65,25 @@ export const getClinicalRecordById = asyncHandler(async (req: Request, res: Resp
   }
 
   const prescriptions = await prescriptionService.getPrescriptionsByClinicalRecord(Number(record.id), req.tenant_id);
+  const labResults = await clinicalRecordService.getLabResultsByClinicalRecord(Number(record.id), req.tenant_id);
 
-  res.json({ ...record, prescriptions });
+  res.json({ ...record, prescriptions, lab_results: labResults });
+});
+
+export const getClinicalRecordLabResults = asyncHandler(async (req: Request, res: Response) => {
+  const record = await clinicalRecordService.getClinicalRecordById(Number(req.params.id), req.tenant_id);
+
+  if (req.user!.role === 'doctor') {
+    const doctor = await doctorService.getDoctorByUserId(req.user!.id, req.tenant_id);
+    if (!doctor || record.doctor_id !== doctor.id) throw new BadRequestError('Access denied');
+  }
+
+  if (req.user!.role === 'user' && record.patient_id !== req.user!.id) {
+    throw new BadRequestError('Access denied');
+  }
+
+  const labResults = await clinicalRecordService.getLabResultsByClinicalRecord(Number(record.id), req.tenant_id);
+  res.json(labResults);
 });
 
 export const getClinicalRecordsByPatient = asyncHandler(async (req: Request, res: Response) => {
