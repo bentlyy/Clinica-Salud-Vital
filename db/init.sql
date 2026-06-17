@@ -25,7 +25,7 @@ CREATE TABLE users (
   email TEXT NOT NULL,
   password TEXT NOT NULL,
   name TEXT,
-  role TEXT DEFAULT 'user' CHECK (role IN ('superadmin', 'admin', 'doctor', 'patient', 'guest', 'user')),
+  role TEXT DEFAULT 'user' CHECK (role IN ('superadmin', 'admin', 'doctor', 'lab_technician', 'patient', 'guest', 'user')),
   rut TEXT,
   phone TEXT,
   active BOOLEAN DEFAULT true,
