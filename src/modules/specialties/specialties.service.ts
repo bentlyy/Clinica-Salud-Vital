@@ -1,67 +1,81 @@
+import { pool } from '../../shared/db.js';
 import { BadRequestError } from '../../utils/errors.js';
 
-export const SPECIALTIES = [
-  'Medicina General',
-  'Pediatría',
-  'Cardiología',
-  'Dermatología',
-  'Ginecología',
-  'Obstetricia',
-  'Traumatología',
-  'Oftalmología',
-  'Otorrinolaringología',
-  'Neurología',
-  'Psiquiatría',
-  'Psicología',
-  'Nutrición',
-  'Fonoaudiología',
-  'Kinesiología',
-  'Medicina Interna',
-  'Cirugía General',
-  'Urología',
-  'Endocrinología',
-  'Reumatología',
-  'Gastroenterología',
-  'Neumología',
-  'Nefrología',
-  'Oncología',
-  'Hematología',
-  'Medicina Deportiva',
-  'Medicina Familiar',
-  'Geriatría',
-  'Alergología',
-  'Infectología',
-  'Medicina del Trabajo',
-  'Medicina Estética',
-  'Dolor y Cuidados Paliativos',
-  'Radiología',
-  'Anestesiología',
-  'Medicina de Urgencia',
-  'Dentista',
-  'Cirugía Plástica',
-  'Medicina Nuclear',
-  'Patología',
-  'Otra',
-];
+export interface Specialty {
+  id: number;
+  name: string;
+  icon: string;
+  description: string;
+  department: string;
+  procedures: string[];
+  color: string;
+}
 
-const SPECIALTIES_MAP = SPECIALTIES.map((name, i) => ({ id: i + 1, name }));
-
-export const getAllSpecialties = async (): Promise<{ id: number; name: string }[]> => {
-  return SPECIALTIES_MAP;
+export const getAllSpecialties = async (): Promise<Specialty[]> => {
+  const result = await pool.query(
+    `SELECT id, name, icon, description, department, procedures, color
+     FROM specialties
+     WHERE tenant_id = 'default'
+     ORDER BY id`
+  );
+  return result.rows.map(r => ({
+    ...r,
+    procedures: typeof r.procedures === 'string' ? JSON.parse(r.procedures) : r.procedures || [],
+  }));
 };
 
-export const createSpecialty = async (name: string): Promise<{ id: number; name: string }> => {
+export const createSpecialty = async (name: string): Promise<Specialty> => {
   if (!name || name.trim().length === 0) throw new BadRequestError('Name is required');
   const trimmed = name.trim();
-  const idx = SPECIALTIES.indexOf(trimmed);
-  if (idx === -1) throw new BadRequestError('La especialidad no es válida');
-  return { id: idx + 1, name: trimmed };
+
+  const exists = await pool.query(
+    `SELECT id, name, icon, description, department, procedures, color
+     FROM specialties WHERE name = $1 AND tenant_id = 'default'`,
+    [trimmed]
+  );
+  if (exists.rows.length > 0) {
+    return {
+      ...exists.rows[0],
+      procedures: typeof exists.rows[0].procedures === 'string' ? JSON.parse(exists.rows[0].procedures) : exists.rows[0].procedures || [],
+    };
+  }
+
+  const result = await pool.query(
+    `INSERT INTO specialties (name, tenant_id)
+     VALUES ($1, 'default')
+     RETURNING id, name, icon, description, department, procedures, color`,
+    [trimmed]
+  );
+  return {
+    ...result.rows[0],
+    procedures: typeof result.rows[0].procedures === 'string' ? JSON.parse(result.rows[0].procedures) : result.rows[0].procedures || [],
+  };
 };
 
-export const ensureSpecialty = async (name: string): Promise<{ id: number; name: string }> => {
+export const ensureSpecialty = async (name: string): Promise<Specialty> => {
   const trimmed = name.trim();
   if (!trimmed) throw new BadRequestError('Name is required');
-  const idx = SPECIALTIES.indexOf(trimmed);
-  if (idx === -1) throw new BadRequestError(`Invalid specialty: ${trimmed}`);
-  return { id: idx + 1, name: trimmed };
+
+  const exists = await pool.query(
+    `SELECT id, name, icon, description, department, procedures, color
+     FROM specialties WHERE name = $1 AND tenant_id = 'default'`,
+    [trimmed]
+  );
+  if (exists.rows.length > 0) {
+    return {
+      ...exists.rows[0],
+      procedures: typeof exists.rows[0].procedures === 'string' ? JSON.parse(exists.rows[0].procedures) : exists.rows[0].procedures || [],
+    };
+  }
+
+  const result = await pool.query(
+    `INSERT INTO specialties (name, tenant_id)
+     VALUES ($1, 'default')
+     RETURNING id, name, icon, description, department, procedures, color`,
+    [trimmed]
+  );
+  return {
+    ...result.rows[0],
+    procedures: typeof result.rows[0].procedures === 'string' ? JSON.parse(result.rows[0].procedures) : result.rows[0].procedures || [],
+  };
 };
