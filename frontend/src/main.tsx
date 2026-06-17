@@ -4,6 +4,7 @@ import App from './App';
 import { BrowserRouter } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
+import { FeatureProvider } from './context/FeatureContext';
 import { I18nProvider } from './i18n/useI18n';
 import './index.css';
 import './components/ui.css';
@@ -13,9 +14,11 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <BrowserRouter>
       <AuthProvider>
         <ThemeProvider>
+          <FeatureProvider>
           <I18nProvider>
             <App />
           </I18nProvider>
+          </FeatureProvider>
         </ThemeProvider>
       </AuthProvider>
     </BrowserRouter>

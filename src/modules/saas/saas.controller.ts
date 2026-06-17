@@ -80,6 +80,11 @@ export const getLimits = asyncHandler(async (_req: Request, res: Response) => {
   res.json({ doctors: { allowed: true, current: 0, limit: -1 }, patients: { allowed: true, current: 0, limit: -1 }, storage: { allowed: true, current: 0, limit: -1 } });
 });
 
+export const getFeatures = asyncHandler(async (req: Request, res: Response) => {
+  const features = await saasService.getTenantFeatures(req.tenant_id);
+  res.json({ features });
+});
+
 export const updateTenantConfig = asyncHandler(async (req: Request, res: Response) => {
   const allowed = ['name', 'locale', 'timezone', 'config'];
   const updates: Record<string, unknown> = {};

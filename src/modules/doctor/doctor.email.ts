@@ -43,7 +43,7 @@ interface InvitationEmailParams {
 
 export const invitationEmail = ({ name, email, inviteToken, frontendUrl, role, tenantName }: InvitationEmailParams): string => {
   const inviteUrl = `${escapeHtml(frontendUrl)}/register?invite=${encodeURIComponent(inviteToken)}`;
-  const roleLabel = role === 'doctor' ? 'médico' : 'paciente';
+  const roleLabel = role === 'doctor' ? 'médico' : role === 'lab_technician' ? 'técnico de laboratorio' : 'paciente';
   const clinicName = tenantName || 'la clínica';
 
   return `
