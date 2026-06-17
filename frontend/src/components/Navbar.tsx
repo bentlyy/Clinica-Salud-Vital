@@ -55,7 +55,7 @@ export default function Navbar() {
         </button>
 
         <nav ref={menuRef} className={`navbar-nav${mobileOpen ? ' navbar-nav-open' : ''}`}>
-          {user && (
+          {user && user.role !== 'admin' && (
             <>
               <Link to="/booking" className="nav-link" onClick={() => setMobileOpen(false)}>{t('nav.booking')}</Link>
               <Link to="/my-bookings" className="nav-link" onClick={() => setMobileOpen(false)}>{t('nav.my_bookings')}</Link>
@@ -75,6 +75,7 @@ export default function Navbar() {
 
           {user?.role === 'admin' && (
             <>
+              <Link to="/admin/demo-data" className="nav-link" onClick={() => setMobileOpen(false)}>Demo Data</Link>
               <Link to="/admin/medical-history" className="nav-link" onClick={() => setMobileOpen(false)}>{t('nav.medical_history_admin')}</Link>
               <Link to="/admin/lab-requests" className="nav-link" onClick={() => setMobileOpen(false)}>{t('nav.lab_requests')}</Link>
               <Link to="/admin/specialties" className="nav-link" onClick={() => setMobileOpen(false)}>{t('nav.specialties')}</Link>
