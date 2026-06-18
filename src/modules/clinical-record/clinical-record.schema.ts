@@ -22,6 +22,7 @@ export const createClinicalRecordSchema = z.object({
   cie10_codes: z.array(z.string()).optional(),
   treatment_plan: z.string().optional(),
   notes: z.string().optional(),
+  lab_test_ids: z.array(z.coerce.number().int().positive()).optional(),
 }).strict();
 
 export const updateClinicalRecordSchema = createClinicalRecordSchema.partial().extend({
