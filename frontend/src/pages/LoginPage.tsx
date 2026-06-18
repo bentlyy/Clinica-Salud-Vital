@@ -55,6 +55,8 @@ export default function LoginPage() {
         navigate('/admin/analytics');
       } else if (user.role === 'doctor') {
         navigate('/doctor');
+      } else if (user.role === 'lab_technician') {
+        navigate('/lab');
       } else {
         navigate('/booking');
       }
