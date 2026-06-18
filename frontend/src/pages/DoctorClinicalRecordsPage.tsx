@@ -12,7 +12,7 @@ import {
   createPrescription,
   deletePrescription,
 } from '../api/clinicalRecords';
-import { getLabResultsByClinicalRecord } from '../api/laboratory';
+import { getLabResultsByClinicalRecord, getLabTests } from '../api/laboratory';
 
 const ROUTES_MAP = {
   oral: 'Oral',
@@ -48,6 +48,7 @@ const initialForm = {
   treatment_plan: '',
   notes: '',
   status: 'draft',
+  lab_test_ids: [],
 };
 
 export default function DoctorClinicalRecordsPage() {
@@ -67,6 +68,7 @@ export default function DoctorClinicalRecordsPage() {
   const [cie10Open, setCie10Open] = useState(false);
   const [labResults, setLabResults] = useState([]);
   const [showLab, setShowLab] = useState(false);
+  const [labTests, setLabTests] = useState([]);
   const navigate = useNavigate();
 
   const fetchData = useCallback(async () => {
@@ -87,6 +89,14 @@ export default function DoctorClinicalRecordsPage() {
   }, [t]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
+
+  useEffect(() => {
+    if (view === 'form') {
+      getLabTests({ active: true, limit: 100 }).then((tests) => {
+        setLabTests(Array.isArray(tests) ? tests : (tests.data || []));
+      }).catch(() => {});
+    }
+  }, [view]);
 
   useEffect(() => {
     if (!cie10Query || cie10Query.length < 2) {
@@ -190,6 +200,15 @@ export default function DoctorClinicalRecordsPage() {
     }));
   };
 
+  const toggleLabTest = (testId) => {
+    setFormData(prev => ({
+      ...prev,
+      lab_test_ids: prev.lab_test_ids.includes(testId)
+        ? prev.lab_test_ids.filter(id => id !== testId)
+        : [...prev.lab_test_ids, testId],
+    }));
+  };
+
   const addPrescription = () => {
     setPrescriptions(prev => [...prev, {
       _temp: true,
@@ -240,6 +259,7 @@ export default function DoctorClinicalRecordsPage() {
       };
 
       if (Object.keys(payload.vital_signs).length === 0) delete payload.vital_signs;
+      if (formData.lab_test_ids.length > 0) payload.lab_test_ids = formData.lab_test_ids;
 
       let savedRecord;
       if (selectedRecordId) {
@@ -503,6 +523,37 @@ export default function DoctorClinicalRecordsPage() {
             />
           </div>
         </div>
+
+        {labTests.length > 0 && (
+          <div className="analytics-card">
+            <h3>Exámenes de Laboratorio</h3>
+            <p style={{ fontSize: 14, color: 'var(--text-secondary)', marginBottom: 12 }}>
+              Selecciona los exámenes que deseas solicitar para este paciente. Se creará una orden de laboratorio automáticamente.
+            </p>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              {labTests.map((test) => (
+                <label
+                  key={test.id}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 6,
+                    padding: '6px 12px', borderRadius: 6, cursor: 'pointer',
+                    border: '1px solid var(--border-light)',
+                    background: formData.lab_test_ids.includes(test.id) ? 'var(--primary-50)' : 'transparent',
+                    fontSize: 14,
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={formData.lab_test_ids.includes(test.id)}
+                    onChange={() => toggleLabTest(test.id)}
+                  />
+                  {test.name}
+                  {test.category && <span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>({test.category})</span>}
+                </label>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="analytics-card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
