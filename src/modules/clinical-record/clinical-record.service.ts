@@ -1,6 +1,7 @@
 import { pool } from '../../shared/db.js';
 import { NotFoundError, BadRequestError } from '../../utils/errors.js';
 import { sanitizeTextStrict } from '../../shared/sanitize.js';
+import crypto from 'crypto';
 
 const PHI_FIELDS = ['chief_complaint', 'anamnesis', 'physical_exam', 'diagnosis', 'treatment_plan', 'notes'] as const;
 
@@ -37,7 +38,14 @@ interface ClinicalRecordData {
   cie10_codes?: string[];
   treatment_plan?: string;
   notes?: string;
+  lab_test_ids?: number[];
 }
+
+const generateLabRequestNumber = (): string => {
+  const year = new Date().getFullYear();
+  const random = crypto.randomInt(100000, 999999).toString();
+  return 'LAB-' + year + '-' + random;
+};
 
 interface ClinicalRecordUpdate {
   chief_complaint?: string;
@@ -49,6 +57,7 @@ interface ClinicalRecordUpdate {
   treatment_plan?: string;
   notes?: string;
   status?: string;
+  lab_test_ids?: number[];
 }
 
 export const getAllClinicalRecords = async ({ patient_id, doctor_id, status, limit = 100, offset = 0 }: ClinicalRecordQuery = {}, tenantId: string) => {
@@ -169,7 +178,7 @@ export const createClinicalRecord = async (data: ClinicalRecordData, tenantId: s
       tenantId,
     ];
 
-    const result = await client.query(`
+    const recordResult = await client.query(`
       INSERT INTO clinical_records 
         (${columns.join(', ')})
       VALUES 
@@ -177,8 +186,38 @@ export const createClinicalRecord = async (data: ClinicalRecordData, tenantId: s
       RETURNING *
     `, insertValues);
 
+    if (data.lab_test_ids && data.lab_test_ids.length > 0) {
+      const testResult = await client.query(
+        'SELECT id FROM lab_tests WHERE id = ANY($1) AND active = true',
+        [data.lab_test_ids]
+      );
+      if (testResult.rows.length !== data.lab_test_ids.length) {
+        const found = new Set(testResult.rows.map(r => r.id));
+        const missing = data.lab_test_ids.filter(id => !found.has(id));
+        throw new BadRequestError('Exámenes no encontrados o inactivos: ' + missing.join(', '));
+      }
+
+      const recordId = recordResult.rows[0].id;
+      const requestNumber = generateLabRequestNumber();
+      const labRequestResult = await client.query(
+        `INSERT INTO lab_requests (request_number, patient_id, doctor_id, clinical_record_id, priority, status, tenant_id)
+         VALUES ($1, $2, $3, $4, 'routine', 'pending', $5) RETURNING *`,
+        [requestNumber, data.patient_id, data.doctor_id, recordId, tenantId]
+      );
+
+      const itemsValues = data.lab_test_ids.map((_, idx) => {
+        const offset = idx * 3;
+        return `($${offset + 1}, $${offset + 2}, $${offset + 3})`;
+      });
+      const itemsFlat = data.lab_test_ids.flatMap(test_id => [labRequestResult.rows[0].id, test_id, tenantId]);
+      await client.query(
+        `INSERT INTO lab_request_items (lab_request_id, lab_test_id, tenant_id) VALUES ${itemsValues.join(', ')}`,
+        itemsFlat
+      );
+    }
+
     await client.query('COMMIT');
-    return sanitizeFields(result.rows[0]);
+    return sanitizeFields(recordResult.rows[0]);
   } catch (error) {
     await client.query('ROLLBACK');
     throw error;
@@ -245,6 +284,37 @@ export const updateClinicalRecord = async (id: string | number, data: ClinicalRe
 
     if (result.rows.length === 0) {
       throw new BadRequestError('El registro fue modificado por otro usuario. Recarga y reintenta.');
+    }
+
+    const record = result.rows[0];
+
+    if (data.lab_test_ids && data.lab_test_ids.length > 0) {
+      const testResult = await client.query(
+        'SELECT id FROM lab_tests WHERE id = ANY($1) AND active = true',
+        [data.lab_test_ids]
+      );
+      if (testResult.rows.length !== data.lab_test_ids.length) {
+        const found = new Set(testResult.rows.map(r => r.id));
+        const missing = data.lab_test_ids.filter(id => !found.has(id));
+        throw new BadRequestError('Exámenes no encontrados o inactivos: ' + missing.join(', '));
+      }
+
+      const requestNumber = generateLabRequestNumber();
+      const labRequestResult = await client.query(
+        `INSERT INTO lab_requests (request_number, patient_id, doctor_id, clinical_record_id, priority, status, tenant_id)
+         VALUES ($1, $2, $3, $4, 'routine', 'pending', $5) RETURNING *`,
+        [requestNumber, record.patient_id, doctor_id, id, tenantId]
+      );
+
+      const itemsValues = data.lab_test_ids.map((_, idx) => {
+        const offset = idx * 3;
+        return `($${offset + 1}, $${offset + 2}, $${offset + 3})`;
+      });
+      const itemsFlat = data.lab_test_ids.flatMap(test_id => [labRequestResult.rows[0].id, test_id, tenantId]);
+      await client.query(
+        `INSERT INTO lab_request_items (lab_request_id, lab_test_id, tenant_id) VALUES ${itemsValues.join(', ')}`,
+        itemsFlat
+      );
     }
 
     await client.query('COMMIT');
