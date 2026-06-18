@@ -74,9 +74,6 @@ export default function Navbar() {
           {user && user.role !== 'admin' && (
             <>
               <Link to="/booking" className="nav-link" onClick={() => setMobileOpen(false)}>{t('nav.booking')}</Link>
-              <Link to="/my-bookings" className="nav-link" onClick={() => setMobileOpen(false)}>{t('nav.my_bookings')}</Link>
-              <Link to="/my-medical-history" className="nav-link" onClick={() => setMobileOpen(false)}>{t('nav.medical_history')}</Link>
-              <NavLabLink to="/my-lab-results" label={t('nav.lab_results')} />
             </>
           )}
 
@@ -99,8 +96,6 @@ export default function Navbar() {
           {user?.role === 'admin' && (
             <>
               <Link to="/admin/demo-data" className="nav-link" onClick={() => setMobileOpen(false)}>Demo Data</Link>
-              <Link to="/admin/medical-history" className="nav-link" onClick={() => setMobileOpen(false)}>{t('nav.medical_history_admin')}</Link>
-              <NavLabLink to="/admin/lab-requests" label={t('nav.lab_requests')} />
               <Link to="/admin/specialties" className="nav-link" onClick={() => setMobileOpen(false)}>{t('nav.specialties')}</Link>
               <NavLabLink to="/admin/lab-tests" label={t('nav.lab_tests')} />
               <Link to="/admin/register-doctor" className="nav-link nav-link-accent" onClick={() => setMobileOpen(false)}>{t('nav.register_doctor')}</Link>
@@ -109,7 +104,6 @@ export default function Navbar() {
 
           {user?.role === 'superadmin' && (
             <>
-              <Link to="/super-admin" className="nav-link" onClick={() => setMobileOpen(false)}>{t('nav.dashboard')}</Link>
               <Link to="/super-admin/tenants" className="nav-link" onClick={() => setMobileOpen(false)}>{t('nav.tenants')}</Link>
               <Link to="/super-admin/demo-data" className="nav-link" onClick={() => setMobileOpen(false)}>Demo Data</Link>
             </>
