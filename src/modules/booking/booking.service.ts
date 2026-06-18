@@ -35,9 +35,15 @@ interface BookingData {
   };
 }
 
-export const getAllBookings = async ({ page = 1, limit = 100 }: PaginationOptions = {}, tenantId: string): Promise<BookingData> => {
+export const getAllBookings = async ({ page = 1, limit = 100 }: PaginationOptions = {}, tenantId?: string): Promise<BookingData> => {
   const offset = (page - 1) * limit;
-  const params: (string | number)[] = [limit, offset, tenantId];
+  const params: (string | number)[] = [limit, offset];
+
+  let whereClause = '';
+  if (tenantId !== undefined) {
+    whereClause = 'WHERE b.tenant_id = $3';
+    params.push(tenantId);
+  }
 
   const result = await pool.query(`
     SELECT b.id, b.date, b.time, b.duration, b.status, b.confirmed,
@@ -46,14 +52,16 @@ export const getAllBookings = async ({ page = 1, limit = 100 }: PaginationOption
     FROM bookings b
     JOIN doctors d ON b.doctor_id = d.id AND d.tenant_id = b.tenant_id
     LEFT JOIN users u ON b.user_id = u.id AND u.tenant_id = b.tenant_id
-    WHERE b.tenant_id = $3
+    ${whereClause}
     ORDER BY b.date DESC, b.time
     LIMIT $1 OFFSET $2
   `, params);
 
-  const countResult = await pool.query(
-    'SELECT COUNT(*) FROM bookings WHERE tenant_id = $1', [tenantId]
-  );
+  const countQuery = tenantId !== undefined
+    ? 'SELECT COUNT(*) FROM bookings WHERE tenant_id = $1'
+    : 'SELECT COUNT(*) FROM bookings';
+  const countParams = tenantId !== undefined ? [tenantId] : [];
+  const countResult = await pool.query(countQuery, countParams);
 
   return {
     data: result.rows,

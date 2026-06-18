@@ -111,6 +111,7 @@ export default function Navbar() {
             <>
               <Link to="/super-admin" className="nav-link" onClick={() => setMobileOpen(false)}>{t('nav.dashboard')}</Link>
               <Link to="/super-admin/tenants" className="nav-link" onClick={() => setMobileOpen(false)}>{t('nav.tenants')}</Link>
+              <Link to="/super-admin/demo-data" className="nav-link" onClick={() => setMobileOpen(false)}>Demo Data</Link>
             </>
           )}
 

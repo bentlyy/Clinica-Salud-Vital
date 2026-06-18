@@ -62,13 +62,14 @@ export const getLabRequests = asyncHandler(async (req, res) => {
     return res.json(requests);
   }
 
+  const tenantId = req.user!.role === 'superadmin' ? undefined : req.tenant_id;
   const requests = await laboratoryService.getLabRequests({
     status,
     start_date,
     end_date,
     limit,
     offset,
-  }, req.tenant_id);
+  }, tenantId);
   return res.json(requests);
 });
 

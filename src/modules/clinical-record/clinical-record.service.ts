@@ -60,7 +60,7 @@ interface ClinicalRecordUpdate {
   lab_test_ids?: number[];
 }
 
-export const getAllClinicalRecords = async ({ patient_id, doctor_id, status, limit = 100, offset = 0 }: ClinicalRecordQuery = {}, tenantId: string) => {
+export const getAllClinicalRecords = async ({ patient_id, doctor_id, status, limit = 100, offset = 0 }: ClinicalRecordQuery = {}, tenantId?: string) => {
   let query = `
     SELECT cr.*, 
            d.name AS doctor_name, d.specialty,
@@ -68,24 +68,33 @@ export const getAllClinicalRecords = async ({ patient_id, doctor_id, status, lim
     FROM clinical_records cr
     JOIN doctors d ON cr.doctor_id = d.id
     JOIN users u ON cr.patient_id = u.id
-    WHERE cr.tenant_id = $1
   `;
-  const params: (number | string)[] = [tenantId];
-  let paramCount = 2;
+  const params: (number | string)[] = [];
+  let paramCount = 1;
+  const conditions: string[] = [];
+
+  if (tenantId !== undefined) {
+    conditions.push(`cr.tenant_id = $${paramCount++}`);
+    params.push(tenantId);
+  }
 
   if (patient_id) {
-    query += ` AND cr.patient_id = $${paramCount++}`;
+    conditions.push(`cr.patient_id = $${paramCount++}`);
     params.push(patient_id);
   }
 
   if (doctor_id) {
-    query += ` AND cr.doctor_id = $${paramCount++}`;
+    conditions.push(`cr.doctor_id = $${paramCount++}`);
     params.push(doctor_id);
   }
 
   if (status) {
-    query += ` AND cr.status = $${paramCount++}`;
+    conditions.push(`cr.status = $${paramCount++}`);
     params.push(status);
+  }
+
+  if (conditions.length > 0) {
+    query += ' WHERE ' + conditions.join(' AND ');
   }
 
   query += ` ORDER BY cr.created_at DESC LIMIT $${paramCount++} OFFSET $${paramCount++}`;
