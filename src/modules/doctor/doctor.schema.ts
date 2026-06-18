@@ -18,7 +18,7 @@ export const createDoctorSchema = z.object({
 export const invitePersonSchema = z.object({
   email: z.string().email('Email inválido'),
   name: z.string().optional(),
-  role: z.enum(['patient', 'doctor']),
+  role: z.enum(['patient', 'doctor', 'lab_technician']),
   specialty: z.string().optional(),
 }).strict();
 
