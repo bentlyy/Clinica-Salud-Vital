@@ -52,7 +52,7 @@ export default function LoginPage() {
       if (user.role === 'superadmin') {
         navigate('/super-admin');
       } else if (user.role === 'admin') {
-        navigate('/admin/analytics');
+        navigate('/');
       } else if (user.role === 'doctor') {
         navigate('/doctor');
       } else if (user.role === 'lab_technician') {
