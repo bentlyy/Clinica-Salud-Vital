@@ -56,6 +56,7 @@ export default function SuperAdminDashboardPage() {
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
           <Link to="/super-admin/tenants" className="btn btn--primary">{t('superadmin.view_all')}</Link>
           <Link to="/super-admin/tenants/new" className="btn btn--outline">{t('superadmin.create_tenant')}</Link>
+          <Link to="/super-admin/demo-data" className="btn btn--outline">Demo Data</Link>
           <Link to="/saas/plans" className="btn btn--outline">{t('superadmin.view_plans')}</Link>
         </div>
       </div>
