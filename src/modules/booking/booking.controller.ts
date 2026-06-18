@@ -52,7 +52,8 @@ export const getDailyDensity = asyncHandler(async (req, res) => {
 export const getAllBookingsAdmin = asyncHandler(async (req, res) => {
   const page = getQueryInt(req.query, 'page', 1);
   const limit = getQueryInt(req.query, 'limit', 100);
-  const bookings = await bookingService.getAllBookings({ page, limit }, req.tenant_id);
+  const tenantId = req.user!.role === 'superadmin' ? undefined : req.tenant_id;
+  const bookings = await bookingService.getAllBookings({ page, limit }, tenantId);
   res.json(bookings);
 });
 

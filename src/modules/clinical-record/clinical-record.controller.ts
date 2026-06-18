@@ -38,13 +38,14 @@ export const getClinicalRecords = asyncHandler(async (req: Request, res: Respons
     return res.json(records);
   }
 
-  if (req.user!.role === 'admin') {
+  if (req.user!.role === 'admin' || req.user!.role === 'superadmin') {
+    const tenantId = req.user!.role === 'superadmin' ? undefined : req.tenant_id;
     const records = await clinicalRecordService.getAllClinicalRecords({
       patient_id: patient_id ? parseInt(patient_id as string) : undefined,
       status: status ? String(status) : undefined,
       limit,
       offset,
-    }, req.tenant_id);
+    }, tenantId);
 
     return res.json(records);
   }

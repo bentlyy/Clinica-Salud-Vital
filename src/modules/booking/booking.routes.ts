@@ -20,7 +20,7 @@ router.delete('/:id', authMiddleware, validateZod(bookingIdSchema, 'params'), ca
 router.get('/available-slots', validateZod(availableSlotsSchema, 'query'), getAvailableSlots);
 router.get('/doctor/daily-density', authMiddleware, authorize('doctor'), getDailyDensity);
 router.get('/doctor', authMiddleware, authorize('doctor'), getDoctorBookings);
-router.get('/all', authMiddleware, authorize('admin'), getAllBookingsAdmin);
+router.get('/all', authMiddleware, authorize('admin', 'superadmin'), getAllBookingsAdmin);
 
 export default router;
 

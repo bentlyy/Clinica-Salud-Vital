@@ -32,6 +32,7 @@ const LabTechnicianDashboardPage = lazy(() => import('../pages/LabTechnicianDash
 const SuperAdminDashboardPage = lazy(() => import('../pages/SuperAdminDashboardPage'));
 const SuperAdminTenantsPage = lazy(() => import('../pages/SuperAdminTenantsPage'));
 const SuperAdminTenantDetailPage = lazy(() => import('../pages/SuperAdminTenantDetailPage'));
+const SuperAdminDemoDataPage = lazy(() => import('../pages/SuperAdminDemoDataPage'));
 
 function AppLayout({ children }: { children: ReactNode }) {
   return (
@@ -83,6 +84,7 @@ export default function AppRoutes() {
       <Route path="/super-admin" element={<ProtectedRoute role="superadmin"><AppLayout><SuperAdminDashboardPage /></AppLayout></ProtectedRoute>} />
       <Route path="/super-admin/tenants" element={<ProtectedRoute role="superadmin"><AppLayout><SuperAdminTenantsPage /></AppLayout></ProtectedRoute>} />
       <Route path="/super-admin/tenants/:id" element={<ProtectedRoute role="superadmin"><AppLayout><SuperAdminTenantDetailPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/super-admin/demo-data" element={<ProtectedRoute role="superadmin"><AppLayout><SuperAdminDemoDataPage /></AppLayout></ProtectedRoute>} />
 
     </Routes>
   );
