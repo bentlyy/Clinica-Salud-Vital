@@ -170,7 +170,7 @@ export const createLabRequest = async (data: { patient_id: number; doctor_id?: n
   }
 };
 
-export const getLabRequests = async ({ patient_id, doctor_id, status, start_date, end_date, limit = 20, offset = 0 }: LabRequestFilters = {}, tenantId: string) => {
+export const getLabRequests = async ({ patient_id, doctor_id, status, start_date, end_date, limit = 20, offset = 0 }: LabRequestFilters = {}, tenantId?: string) => {
   let query = `
     SELECT lr.*,
            d.name AS doctor_name, d.specialty AS doctor_specialty,
@@ -208,8 +208,10 @@ export const getLabRequests = async ({ patient_id, doctor_id, status, start_date
     params.push(end_date);
   }
 
-  query += ' AND lr.tenant_id = $' + paramCount++;
-  params.push(tenantId);
+  if (tenantId !== undefined) {
+    query += ' AND lr.tenant_id = $' + paramCount++;
+    params.push(tenantId);
+  }
 
   query += ' ORDER BY lr.created_at DESC LIMIT $' + paramCount++ + ' OFFSET $' + paramCount++;
   params.push(limit, offset);
