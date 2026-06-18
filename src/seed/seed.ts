@@ -123,6 +123,7 @@ export const seed = async (): Promise<void> => {
     'pedro@clinic.com', 'claudia@clinic.com', 'ricardo@clinic.com', 'patricia@clinic.com',
     'mauricio@clinic.com', 'carmen@clinic.com', 'francisco@clinic.com', 'veronica@clinic.com',
     'user1@clinic.com', 'user2@clinic.com', 'user3@clinic.com',
+    'lab@clinic.com',
   ];
   const updateResult = await pool.query('UPDATE users SET password = $1 WHERE tenant_id = $2 AND email = ANY($3::text[])',
     [HASH, DEFAULT_TENANT_ID, seedEmails]);
@@ -141,6 +142,12 @@ export const seed = async (): Promise<void> => {
       [p.email, HASH, p.email.split('@')[0], 'user', p.rut, p.phone, DEFAULT_TENANT_ID]
     );
   }
+
+  // ==================== LAB TECHNICIAN ====================
+  await pool.query(
+    'INSERT INTO users (email, password, name, role, rut, phone, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (tenant_id, email) DO UPDATE SET name = EXCLUDED.name, password = EXCLUDED.password',
+    ['lab@clinic.com', HASH, 'Técnico de Laboratorio', 'lab_technician', generateRut(), '+56944444444', DEFAULT_TENANT_ID]
+  );
 
   // Si ya existe admin, solo resetea passwords y asegura doctores (sin duplicar bookings/records)
   if (exists.rows.length > 0) {
