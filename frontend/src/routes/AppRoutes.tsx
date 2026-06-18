@@ -25,8 +25,7 @@ const RegisterDoctorPage = lazy(() => import('../pages/RegisterDoctorPage'));
 const AnalyticsPage = lazy(() => import('../pages/AnalyticsPage'));
 const AdminSpecialtiesPage = lazy(() => import('../pages/AdminSpecialtiesPage'));
 const AdminLabTestsPage = lazy(() => import('../pages/AdminLabTestsPage'));
-const AdminMedicalHistoryPage = lazy(() => import('../pages/AdminMedicalHistoryPage'));
-const AdminLabRequestsPage = lazy(() => import('../pages/AdminLabRequestsPage'));
+
 const AdminDemoDataPage = lazy(() => import('../pages/AdminDemoDataPage'));
 const LabTechnicianDashboardPage = lazy(() => import('../pages/LabTechnicianDashboardPage'));
 const SuperAdminDashboardPage = lazy(() => import('../pages/SuperAdminDashboardPage'));
@@ -76,8 +75,6 @@ export default function AppRoutes() {
       <Route path="/admin/specialties" element={<ProtectedRoute role="admin"><AppLayout><AdminSpecialtiesPage /></AppLayout></ProtectedRoute>} />
       <Route path="/admin/lab-tests" element={<ProtectedRoute role="admin"><AppLayout><WithFeature featureKey="laboratory"><AdminLabTestsPage /></WithFeature></AppLayout></ProtectedRoute>} />
       <Route path="/admin/demo-data" element={<ProtectedRoute role="admin"><AppLayout><AdminDemoDataPage /></AppLayout></ProtectedRoute>} />
-      <Route path="/admin/lab-requests" element={<ProtectedRoute role="admin"><AppLayout><WithFeature featureKey="laboratory"><AdminLabRequestsPage /></WithFeature></AppLayout></ProtectedRoute>} />
-      <Route path="/admin/medical-history" element={<ProtectedRoute role="admin"><AppLayout><AdminMedicalHistoryPage /></AppLayout></ProtectedRoute>} />
 
       <Route path="/lab" element={<ProtectedRoute role="lab_technician"><AppLayout><WithFeature featureKey="laboratory"><LabTechnicianDashboardPage /></WithFeature></AppLayout></ProtectedRoute>} />
       <Route path="/lab/requests/:id" element={<ProtectedRoute role="lab_technician"><AppLayout><WithFeature featureKey="laboratory"><LabResultDetailPage /></WithFeature></AppLayout></ProtectedRoute>} />

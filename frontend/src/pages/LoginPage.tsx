@@ -50,7 +50,7 @@ export default function LoginPage() {
       const redirect = searchParams.get('redirect');
       if (redirect) { navigate(redirect); return; }
       if (user.role === 'superadmin') {
-        navigate('/super-admin');
+        navigate('/super-admin/demo-data');
       } else if (user.role === 'admin') {
         navigate('/');
       } else if (user.role === 'doctor') {
