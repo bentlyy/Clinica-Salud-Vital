@@ -31,3 +31,17 @@ export const updateTenant = async (id, data, options = {}) => {
 export const deleteTenant = async (id, options = {}) => {
   await api.delete(`/super-admin/tenants/${id}`, { ...options, data: { confirm: true } });
 };
+
+export const listUsers = async (page = 1, limit = 50, filters = {}, options = {}) => {
+  const params = new URLSearchParams({ page, limit });
+  if (filters.tenantId) params.set('tenant_id', filters.tenantId);
+  if (filters.role) params.set('role', filters.role);
+  if (filters.search) params.set('search', filters.search);
+  const res = await api.get(`/super-admin/users?${params}`, options);
+  return { data: res.data, pagination: res.pagination };
+};
+
+export const toggleUserActive = async (userId, active, options = {}) => {
+  const res = await api.patch(`/super-admin/users/${userId}/active`, { active }, options);
+  return res.data;
+};
