@@ -45,8 +45,12 @@ export const listTenants = async (
   const offset = (page - 1) * limit;
   params.push(limit, offset);
 
-  const result = await pool.query<TenantRow>(
-    `SELECT t.* FROM tenants t WHERE ${whereClause}
+  const result = await pool.query(
+    `SELECT t.*,
+        (SELECT COUNT(*) FROM bookings b WHERE b.tenant_id = t.id)::int AS total_bookings,
+        (SELECT COUNT(*) FROM users u WHERE u.tenant_id = t.id)::int AS total_users,
+        (SELECT COUNT(*) FROM doctors d WHERE d.tenant_id = t.id)::int AS total_doctors
+     FROM tenants t WHERE ${whereClause}
      ORDER BY t.created_at DESC LIMIT $${paramIdx} OFFSET $${paramIdx + 1}`,
     params
   );
