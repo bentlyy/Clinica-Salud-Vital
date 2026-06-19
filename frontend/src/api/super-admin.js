@@ -45,3 +45,23 @@ export const toggleUserActive = async (userId, active, options = {}) => {
   const res = await api.patch(`/super-admin/users/${userId}/active`, { active }, options);
   return res.data;
 };
+
+export const getDashboardAnalytics = async (options = {}) => {
+  const res = await api.get('/super-admin/analytics/dashboard', options);
+  return res.data;
+};
+
+export const getTopTenants = async (limit = 10, metric = 'bookings', options = {}) => {
+  const res = await api.get(`/super-admin/analytics/top-tenants?limit=${limit}&metric=${metric}`, options);
+  return res.data;
+};
+
+export const getRevenueAnalytics = async (months = 12, options = {}) => {
+  const res = await api.get(`/super-admin/analytics/revenue?months=${months}`, options);
+  return res.data;
+};
+
+export const getGrowthAnalytics = async (months = 12, options = {}) => {
+  const res = await api.get(`/super-admin/analytics/growth?months=${months}`, options);
+  return res.data;
+};
