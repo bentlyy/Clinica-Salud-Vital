@@ -41,26 +41,36 @@ export default function SuperAdminDashboardPage() {
 
   useEffect(() => {
     const load = async () => {
-      try {
-        const [statsData, dashData, topB, topU, revData, growData] = await Promise.all([
-          getGlobalStats(),
-          getDashboardAnalytics(),
-          getTopTenants(8, 'bookings'),
-          getTopTenants(8, 'users'),
-          getRevenueAnalytics(12),
-          getGrowthAnalytics(12),
-        ]);
-        setStats(statsData);
-        setDashboard(dashData.data || dashData);
-        setTopBookings(topB.data || []);
-        setTopUsers(topU.data || []);
-        setRevenue(revData.data || []);
-        setGrowth(growData.data || []);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
+      const results = await Promise.allSettled([
+        getGlobalStats(),
+        getDashboardAnalytics(),
+        getTopTenants(8, 'bookings'),
+        getTopTenants(8, 'users'),
+        getRevenueAnalytics(12),
+        getGrowthAnalytics(12),
+      ]);
+
+      const [statsResult, dashResult, topBResult, topUResult, revResult, growResult] = results;
+
+      if (statsResult.status === 'fulfilled') setStats(statsResult.value);
+      else console.error('getGlobalStats failed:', statsResult.reason);
+
+      if (dashResult.status === 'fulfilled') setDashboard(dashResult.value.data || dashResult.value);
+      else console.error('getDashboardAnalytics failed:', dashResult.reason);
+
+      if (topBResult.status === 'fulfilled') setTopBookings(topBResult.value.data || []);
+      else console.error('getTopTenants(bookings) failed:', topBResult.reason);
+
+      if (topUResult.status === 'fulfilled') setTopUsers(topUResult.value.data || []);
+      else console.error('getTopTenants(users) failed:', topUResult.reason);
+
+      if (revResult.status === 'fulfilled') setRevenue(revResult.value.data || []);
+      else console.error('getRevenueAnalytics failed:', revResult.reason);
+
+      if (growResult.status === 'fulfilled') setGrowth(growResult.value.data || []);
+      else console.error('getGrowthAnalytics failed:', growResult.reason);
+
+      setLoading(false);
     };
     load();
   }, []);
