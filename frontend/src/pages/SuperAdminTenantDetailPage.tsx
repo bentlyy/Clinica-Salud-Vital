@@ -298,48 +298,52 @@ export default function SuperAdminTenantDetailPage() {
         </button>
       </div>
 
-      <div className="card" style={{ padding: 24 }}>
-        <h3 style={{ marginBottom: 4 }}>{t('superadmin.users')}</h3>
-        <p style={{ color: 'var(--text-secondary)', fontSize: 14, marginBottom: 16 }}>
-          {users.length} Usuarios - {t('manage_staff.title')}
-        </p>
+      <div className="card" style={{ padding: 24, height: 560, display: 'flex', flexDirection: 'column' }}>
+        <div style={{ flexShrink: 0 }}>
+          <h3 style={{ marginBottom: 4 }}>{t('superadmin.users')}</h3>
+          <p style={{ color: 'var(--text-secondary)', fontSize: 14, marginBottom: 16 }}>
+            {users.length} Usuarios - {t('manage_staff.title')}
+          </p>
 
-        <div style={{ position: 'relative', marginBottom: 12 }}>
-          <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', fontSize: '0.85rem' }}>🔍</span>
-          <input
-            type="text" value={usersSearch}
-            onChange={(e) => setUsersSearch(e.target.value)}
-            placeholder="Buscar por nombre, email o RUT..."
-            className="form-input"
-            style={{ paddingLeft: 34, fontSize: '0.9rem' }}
-          />
+          <div style={{ position: 'relative', marginBottom: 12 }}>
+            <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', fontSize: '0.85rem' }}>🔍</span>
+            <input
+              type="text" value={usersSearch}
+              onChange={(e) => setUsersSearch(e.target.value)}
+              placeholder="Buscar por nombre, email o RUT..."
+              className="form-input"
+              style={{ paddingLeft: 34, fontSize: '0.9rem' }}
+            />
+          </div>
         </div>
 
-        {usersLoading ? (
-          <div style={{ minHeight: 200, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <div style={{ textAlign: 'center', color: 'var(--text-muted)' }}>
-              <div style={{ fontSize: '2rem', marginBottom: 8 }}>⏳</div>
-              <div>{t('manage_staff.loading')}</div>
-            </div>
-          </div>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {grouped.admin.length > 0 && (
-              <div style={{ flexShrink: 0 }}>
-                <RoleCard role="admin" users={grouped.admin} onToggle={handleToggleUser} toggling={togglingUserId} />
+        <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
+          {usersLoading ? (
+            <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ textAlign: 'center', color: 'var(--text-muted)' }}>
+                <div style={{ fontSize: '2rem', marginBottom: 8 }}>⏳</div>
+                <div>{t('manage_staff.loading')}</div>
               </div>
-            )}
-            {grouped.lab_technician.length > 0 && (
-              <div style={{ flexShrink: 0 }}>
-                <RoleCard role="lab_technician" users={grouped.lab_technician} onToggle={handleToggleUser} toggling={togglingUserId} />
-              </div>
-            )}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-              <RoleCard role="doctor" users={grouped.doctor} onToggle={handleToggleUser} toggling={togglingUserId} />
-              <RoleCard role="patient" users={grouped.patient} onToggle={handleToggleUser} toggling={togglingUserId} />
             </div>
-          </div>
-        )}
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, height: '100%' }}>
+              {grouped.admin.length > 0 && (
+                <div style={{ flexShrink: 0 }}>
+                  <RoleCard role="admin" users={grouped.admin} onToggle={handleToggleUser} toggling={togglingUserId} />
+                </div>
+              )}
+              {grouped.lab_technician.length > 0 && (
+                <div style={{ flexShrink: 0 }}>
+                  <RoleCard role="lab_technician" users={grouped.lab_technician} onToggle={handleToggleUser} toggling={togglingUserId} />
+                </div>
+              )}
+              <div style={{ flex: 1, minHeight: 0, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <RoleCard role="doctor" users={grouped.doctor} onToggle={handleToggleUser} toggling={togglingUserId} />
+                <RoleCard role="patient" users={grouped.patient} onToggle={handleToggleUser} toggling={togglingUserId} />
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
