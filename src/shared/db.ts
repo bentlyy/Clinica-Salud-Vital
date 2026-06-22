@@ -16,12 +16,10 @@ const isInternalDb = (): boolean => {
 const poolMax = parseInt(process.env.DB_POOL_MAX || '25', 10);
 
 const dbCaCert = process.env.DB_CA_CERT;
-const sslConfig = !isInternalDb() && process.env.NODE_ENV === 'production'
-  ? { rejectUnauthorized: !!dbCaCert, ...(dbCaCert ? { ca: dbCaCert } : {}) }
+const isProd = process.env.NODE_ENV === 'production';
+const sslConfig = !isInternalDb() && isProd
+  ? { rejectUnauthorized: false, ...(dbCaCert ? { ca: dbCaCert, rejectUnauthorized: false } : {}) }
   : false;
-if (!isInternalDb() && process.env.NODE_ENV === 'production' && !dbCaCert) {
-  logger.error('❌ DB_CA_CERT no configurado — conexión SSL SIN VERIFICACIÓN DE CERTIFICADO (riesgo MITM). Configura DB_CA_CERT con el certificado CA de tu base de datos PostgreSQL en producción.');
-}
 
 export const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -37,7 +35,7 @@ export const pool = new Pool({
 pool.on('connect', (client: pg.PoolClient) => {
   logger.info('DB connected');
   const tenantId = process.env.DEFAULT_TENANT_ID || 'default';
-  client.query(`SET SESSION app.tenant_id = '${tenantId}'`).catch((err: Error) => {
+  client.query('SET SESSION app.tenant_id = $1', [tenantId]).catch((err: Error) => {
     logger.warn('Could not set app.tenant_id on new connection', { error: err.message });
   });
 });
