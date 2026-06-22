@@ -35,7 +35,7 @@ export const pool = new Pool({
 pool.on('connect', (client: pg.PoolClient) => {
   logger.info('DB connected');
   const tenantId = process.env.DEFAULT_TENANT_ID || 'default';
-  client.query('SET SESSION app.tenant_id = $1', [tenantId]).catch((err: Error) => {
+  client.query(`SET SESSION app.tenant_id = '${tenantId}'`).catch((err: Error) => {
     logger.warn('Could not set app.tenant_id on new connection', { error: err.message });
   });
 });
