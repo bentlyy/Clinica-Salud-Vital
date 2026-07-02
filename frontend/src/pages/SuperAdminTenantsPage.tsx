@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { listTenants, updateTenant } from '../api/super-admin';
+import { listTenants, updateTenant, getHealthScores } from '../api/super-admin';
 import { useI18n } from '../i18n/useI18n';
 import CreateTenantModal from '../components/CreateTenantModal';
 
@@ -20,6 +20,7 @@ export default function SuperAdminTenantsPage() {
   const [error, setError] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [togglingId, setTogglingId] = useState(null);
+  const [healthScores, setHealthScores] = useState({});
 
   const limit = 20;
 
@@ -49,6 +50,15 @@ export default function SuperAdminTenantsPage() {
     load(page, search, filter, { signal: controller.signal });
     return () => controller.abort();
   }, [page, filter, load]);
+
+  useEffect(() => {
+    getHealthScores().then((res) => {
+      const data = Array.isArray(res) ? res : (res.data ?? []);
+      const map = {};
+      data.forEach((h) => { map[h.id] = h.health_score; });
+      setHealthScores(map);
+    }).catch(() => {});
+  }, []);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -136,7 +146,7 @@ export default function SuperAdminTenantsPage() {
                     <h3>{tenant.name}</h3>
                     <code className="tenant-id">{tenant.id}</code>
                   </div>
-                  <span className={`badge badge--${tenant.active ? 'success' : 'error'}`}>
+                  <span className={`badge ${tenant.active ? 'badge-success' : 'badge-danger'}`}>
                     {tenant.active ? t('superadmin.active_label') : t('superadmin.inactive')}
                   </span>
                 </div>
@@ -162,6 +172,15 @@ export default function SuperAdminTenantsPage() {
                   <div className="stat-item">
                     <span className="stat-value">{tenant.total_doctors ?? 0}</span>
                     <span className="stat-label">{t('superadmin.doctors')}</span>
+                  </div>
+                  <div className="stat-item">
+                    <span className="stat-value" style={{ color: (() => {
+                      const s = healthScores[tenant.id] ?? 0;
+                      return s >= 80 ? 'var(--chart-green)' : s >= 50 ? '#fbbf24' : s >= 20 ? '#fb923c' : '#ef4444';
+                    })() }}>
+                      {healthScores[tenant.id] ?? '—'}
+                    </span>
+                    <span className="stat-label">Salud</span>
                   </div>
                 </div>
 

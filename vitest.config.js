@@ -4,6 +4,7 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'node',
+    exclude: ['frontend/**', 'node_modules/**'],
     pool: 'forks',
     setupFiles: ['./tests/setup.js'],
     coverage: {

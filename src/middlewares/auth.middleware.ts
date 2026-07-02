@@ -31,7 +31,7 @@ const extractAndVerifyUser = (token: string, req: Request): JwtUser | null => {
     id: decoded.id,
     email: decoded.email || '',
     role: decoded.role as UserRole,
-    tenant_id: decoded.tenant_id || process.env.DEFAULT_TENANT_ID || 'default',
+    tenant_id: decoded.tenant_id ?? process.env.DEFAULT_TENANT_ID ?? 'default',
     token_version: decoded.token_version || 0,
   };
 };
@@ -66,7 +66,8 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
     return;
   }
 
-  if (req.tenant_id && user.tenant_id !== req.tenant_id && user.role !== 'superadmin') {
+  const reqTenantId = req.tenant_id || process.env.DEFAULT_TENANT_ID || 'default';
+  if (reqTenantId && user.tenant_id !== reqTenantId && user.role !== 'superadmin') {
     next(new UnauthorizedError('Tenant mismatch'));
     return;
   }
@@ -78,7 +79,8 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
       return;
     }
   } catch {
-    // Degraded: allow request if DB is temporarily unavailable
+    next(new UnauthorizedError('Auth service unavailable'));
+    return;
   }
 
   req.user = user;
@@ -105,11 +107,11 @@ export const authMiddlewareNoCache = (req: Request, res: Response, next: NextFun
 export const authorize = (...allowedRoles: UserRole[]) => {
   return (req: Request, res: Response, next: NextFunction): void => {
     if (!req.user) {
-      throw new UnauthorizedError('Authentication required');
+      return next(new UnauthorizedError('Authentication required'));
     }
 
     if (!allowedRoles.includes(req.user.role)) {
-      throw new ForbiddenError('Access denied');
+      return next(new ForbiddenError('Access denied'));
     }
 
     next();

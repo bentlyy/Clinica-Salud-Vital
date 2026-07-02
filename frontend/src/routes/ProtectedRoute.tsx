@@ -1,6 +1,7 @@
 import { ReactNode } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../context/useAuth';
+import { useI18n } from '../i18n/useI18n';
 import LoadingState from '../components/LoadingState';
 
 interface ProtectedRouteProps {
@@ -8,10 +9,26 @@ interface ProtectedRouteProps {
   role?: string;
 }
 
+const ROLE_HIERARCHY: Record<string, string[]> = {
+  superadmin: ['superadmin', 'admin', 'doctor', 'lab_technician', 'patient'],
+  admin: ['admin', 'doctor', 'lab_technician', 'patient'],
+  doctor: ['doctor'],
+  lab_technician: ['lab_technician'],
+  patient: ['patient'],
+};
+
+function hasPermission(userRole: string, requiredRole: string): boolean {
+  if (userRole === requiredRole) return true;
+  if (userRole === 'superadmin' && requiredRole === 'admin') return true;
+  const allowed = ROLE_HIERARCHY[userRole];
+  return allowed ? allowed.includes(requiredRole) : false;
+}
+
 export default function ProtectedRoute({ children, role }: ProtectedRouteProps) {
   const { user, loading } = useAuth();
-  if (loading) return <LoadingState message="Cargando sesión..." />;
-  if (!user) return <Navigate to="/" replace />;
-  if (role && user.role !== role && !(role === 'admin' && user.role === 'superadmin')) return <Navigate to="/" replace />;
+  const { t } = useI18n();
+  if (loading) return <LoadingState message={t?.('protected.loading_session') || 'Cargando sesión...'} />;
+  if (!user) return <Navigate to="/login" replace />;
+  if (role && !hasPermission(user.role, role)) return <Navigate to="/" replace />;
   return children;
 }

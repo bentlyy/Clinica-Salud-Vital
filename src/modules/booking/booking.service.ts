@@ -212,71 +212,78 @@ export const getAvailableSlots = async (doctor_id: number, date: string, tenantI
 
   const day = getDayOfWeek(date);
 
-  const availabilityResult = await pool.query(
-    `SELECT start_time, end_time FROM doctor_availability
-     WHERE doctor_id = $1 AND day_of_week = $2 AND tenant_id = $3 ORDER BY start_time`,
-    [doctor_id, day, tenantId]
-  );
+  const client = await pool.connect();
+  try {
+    await client.query('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ');
 
-  if (availabilityResult.rows.length === 0) return [];
+    const availabilityResult = await client.query(
+      `SELECT start_time, end_time FROM doctor_availability
+       WHERE doctor_id = $1 AND day_of_week = $2 AND tenant_id = $3 ORDER BY start_time`,
+      [doctor_id, day, tenantId]
+    );
 
-  const doctorResult = await pool.query(
-    'SELECT slot_duration FROM doctors WHERE id = $1 AND tenant_id = $2',
-    [doctor_id, tenantId]
-  );
-  const duration = doctorResult.rows[0]?.slot_duration || 30;
+    if (availabilityResult.rows.length === 0) return [];
 
-  const addMinutes = (time: string, mins: number): string => {
-    const d = new Date(`1970-01-01T${time}`);
-    d.setMinutes(d.getMinutes() + mins);
-    return d.toTimeString().slice(0, 5);
-  };
+    const doctorResult = await client.query(
+      'SELECT slot_duration FROM doctors WHERE id = $1 AND tenant_id = $2',
+      [doctor_id, tenantId]
+    );
+    const duration = doctorResult.rows[0]?.slot_duration || 30;
 
-  const slots: string[] = [];
+    const addMinutes = (time: string, mins: number): string => {
+      const d = new Date(`1970-01-01T${time}`);
+      d.setMinutes(d.getMinutes() + mins);
+      return d.toTimeString().slice(0, 5);
+    };
 
-  for (const block of availabilityResult.rows) {
-    let current = block.start_time.slice(0, 5);
-    while (true) {
-      const next = addMinutes(current, duration);
-      if (next > block.end_time.slice(0, 5)) break;
-      slots.push(current);
-      current = next;
-    }
-  }
+    const slots: string[] = [];
 
-  const booked = await pool.query(
-    `SELECT time, duration FROM bookings WHERE doctor_id = $1 AND date = $2 AND status != 'cancelled' AND tenant_id = $3`,
-    [doctor_id, date, tenantId]
-  );
-
-  const exceptions = await pool.query(
-    'SELECT * FROM doctor_exceptions WHERE doctor_id = $1 AND date = $2 AND tenant_id = $3',
-    [doctor_id, date, tenantId]
-  );
-
-  return slots.filter(slot => {
-    const slotStart = new Date(`1970-01-01T${slot}`);
-    const slotEnd = new Date(slotStart);
-    slotEnd.setMinutes(slotEnd.getMinutes() + duration);
-
-    for (const ex of exceptions.rows) {
-      if (ex.is_full_day) return false;
-      if (ex.start_time && ex.end_time) {
-        const exStart = new Date(`1970-01-01T${ex.start_time}`);
-        const exEnd = new Date(`1970-01-01T${ex.end_time}`);
-        if (slotStart < exEnd && slotEnd > exStart) return false;
+    for (const block of availabilityResult.rows) {
+      let current = block.start_time.slice(0, 5);
+      while (true) {
+        const next = addMinutes(current, duration);
+        if (next > block.end_time.slice(0, 5)) break;
+        slots.push(current);
+        current = next;
       }
     }
 
-    for (const b of booked.rows) {
-      const bStart = new Date(`1970-01-01T${b.time}`);
-      const bEnd = new Date(bStart);
-      bEnd.setMinutes(bEnd.getMinutes() + b.duration);
-      if (slotStart < bEnd && slotEnd > bStart) return false;
-    }
+    const booked = await client.query(
+      `SELECT time, duration FROM bookings WHERE doctor_id = $1 AND date = $2 AND status != 'cancelled' AND tenant_id = $3`,
+      [doctor_id, date, tenantId]
+    );
 
-    return true;
-  });
+    const exceptions = await client.query(
+      'SELECT * FROM doctor_exceptions WHERE doctor_id = $1 AND date = $2 AND tenant_id = $3',
+      [doctor_id, date, tenantId]
+    );
+
+    return slots.filter(slot => {
+      const slotStart = new Date(`1970-01-01T${slot}`);
+      const slotEnd = new Date(slotStart);
+      slotEnd.setMinutes(slotEnd.getMinutes() + duration);
+
+      for (const ex of exceptions.rows) {
+        if (ex.is_full_day) return false;
+        if (ex.start_time && ex.end_time) {
+          const exStart = new Date(`1970-01-01T${ex.start_time}`);
+          const exEnd = new Date(`1970-01-01T${ex.end_time}`);
+          if (slotStart < exEnd && slotEnd > exStart) return false;
+        }
+      }
+
+      for (const b of booked.rows) {
+        const bStart = new Date(`1970-01-01T${b.time}`);
+        const bEnd = new Date(bStart);
+        bEnd.setMinutes(bEnd.getMinutes() + b.duration);
+        if (slotStart < bEnd && slotEnd > bStart) return false;
+      }
+
+      return true;
+    });
+  } finally {
+    client.release();
+  }
 };
 
 export const getDailyBookingDensity = async (

@@ -10,7 +10,8 @@ export const listTenants = async (page = 1, limit = 20, filters = {}, options = 
   if (filters.active !== undefined) params.set('active', filters.active);
   if (filters.search) params.set('search', filters.search);
   const res = await api.get(`/super-admin/tenants?${params}`, options);
-  return { data: res.data, pagination: res.pagination };
+  const body = res.data;
+  return { data: body.data ?? [], pagination: body.pagination ?? { page, limit, total: 0, totalPages: 0 } };
 };
 
 export const getTenantDetail = async (id, options = {}) => {
@@ -38,7 +39,8 @@ export const listUsers = async (page = 1, limit = 50, filters = {}, options = {}
   if (filters.role) params.set('role', filters.role);
   if (filters.search) params.set('search', filters.search);
   const res = await api.get(`/super-admin/users?${params}`, options);
-  return { data: res.data, pagination: res.pagination };
+  const body = res.data;
+  return { data: body.data ?? [], pagination: body.pagination ?? { page, limit, total: 0, totalPages: 0 } };
 };
 
 export const toggleUserActive = async (userId, active, options = {}) => {
@@ -63,5 +65,50 @@ export const getRevenueAnalytics = async (months = 12, options = {}) => {
 
 export const getGrowthAnalytics = async (months = 12, options = {}) => {
   const res = await api.get(`/super-admin/analytics/growth?months=${months}`, options);
+  return res.data;
+};
+
+export const getTenantGrowthAnalytics = async (tenantId, months = 12, options = {}) => {
+  const res = await api.get(`/super-admin/analytics/tenant-growth/${encodeURIComponent(tenantId)}?months=${months}`, options);
+  return res.data;
+};
+
+export const getHealthScores = async (options = {}) => {
+  const res = await api.get('/super-admin/analytics/health', options);
+  return res.data;
+};
+
+export const getHealthScoreDetail = async (tenantId, options = {}) => {
+  const res = await api.get(`/super-admin/analytics/health/${encodeURIComponent(tenantId)}`, options);
+  return res.data;
+};
+
+export const getOperations = async (months = 6, options = {}) => {
+  const res = await api.get(`/super-admin/analytics/operations?months=${months}`, options);
+  return res.data;
+};
+
+export const getChurn = async (months = 12, options = {}) => {
+  const res = await api.get(`/super-admin/analytics/churn?months=${months}`, options);
+  return res.data;
+};
+
+export const getComparison = async (options = {}) => {
+  const res = await api.get('/super-admin/analytics/comparison', options);
+  return res.data;
+};
+
+export const getOccupancy = async (options = {}) => {
+  const res = await api.get('/super-admin/analytics/occupancy', options);
+  return res.data;
+};
+
+export const getActivity = async (options = {}) => {
+  const res = await api.get('/super-admin/analytics/activity', options);
+  return res.data;
+};
+
+export const getAlerts = async (options = {}) => {
+  const res = await api.get('/super-admin/analytics/alerts', options);
   return res.data;
 };

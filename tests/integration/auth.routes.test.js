@@ -43,6 +43,10 @@ vi.mock('../../src/shared/jwt.service.js', () => ({
   },
 }));
 
+vi.mock('../../src/shared/seed-status.js', () => ({
+  waitForSeed: vi.fn().mockResolvedValue(true),
+}));
+
 process.env.JWT_SECRET = 'test-secret-32chars-minimum-length!!';
 process.env.FRONTEND_URL = 'http://localhost:5173';
 process.env.NODE_ENV = 'test';
@@ -60,6 +64,11 @@ beforeEach(() => {
   mockQuery.mockReset();
   mockConnect.mockReturnValue(mockClient);
   mockClient.query.mockReset();
+  mockQuery.mockImplementation((query) => {
+    if (query.includes('token_version')) return { rows: [{ token_version: 0 }] };
+    if (query.includes('COUNT')) return { rows: [{ count: '0' }] };
+    return { rows: [] };
+  });
 });
 
 describe('POST /api/auth/register', () => {
@@ -108,7 +117,6 @@ describe('POST /api/auth/register', () => {
 describe('POST /api/auth/login', () => {
   it('returns 200 with valid credentials', async () => {
     bcrypt.compare.mockResolvedValueOnce(true);
-
     mockQuery.mockResolvedValueOnce({
       rows: [{ id: 1, email: 'test@test.com', password: 'hashed', role: 'user', tenant_id: 'default', active: true }],
     });
@@ -138,7 +146,6 @@ describe('POST /api/auth/login', () => {
 
   it('returns 401 if user is deactivated', async () => {
     bcrypt.compare.mockResolvedValueOnce(true);
-
     mockQuery.mockResolvedValueOnce({
       rows: [{ id: 1, email: 'disabled@test.com', password: 'hashed', role: 'user', tenant_id: 'default', active: false }],
     });

@@ -27,7 +27,7 @@ vi.mock('bcrypt', () => ({
 }));
 
 vi.mock('../../src/utils/logger.js', () => ({
-  logger: { info: vi.fn(), error: vi.fn(), warn: vi.fn() },
+  logger: { info: vi.fn(), error: vi.fn(), warn: vi.fn(), debug: vi.fn() },
 }));
 
 import * as authService from '../../src/modules/auth/auth.service.js';
@@ -228,7 +228,6 @@ describe('authService.login', () => {
       rows: [{ id: 1, email: 'partial@test.com', password: 'hashed', role: 'user', tenant_id: 'default', active: true }],
     });
     bcrypt.compare.mockResolvedValueOnce(true);
-    mockQuery.mockResolvedValueOnce({ rows: [] });
 
     const result = await authService.login({ email: 'partial@test.com', password: validPassword, captcha_token: 'test-captcha' });
 
@@ -241,7 +240,6 @@ describe('authService.login', () => {
       rows: [{ id: 1, email: 'notenant@test.com', password: 'hashed', role: 'user', tenant_id: null, active: true }],
     });
     bcrypt.compare.mockResolvedValueOnce(true);
-    mockQuery.mockResolvedValueOnce({ rows: [] });
 
     const result = await authService.login({ email: 'notenant@test.com', password: validPassword, captcha_token: 'test-captcha' });
 

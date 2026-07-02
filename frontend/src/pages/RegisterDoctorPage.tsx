@@ -5,10 +5,10 @@ import Combobox from '../components/Combobox';
 import { useI18n } from '../i18n/useI18n';
 
 const ROLE_CONFIG = {
-  admin: { icon: '🛡️', label: 'Administradores', color: '#6c5ce7' },
-  doctor: { icon: '🩺', label: 'Doctores', color: '#0984e3' },
-  lab_technician: { icon: '🔬', label: 'Técnicos de Laboratorio', color: '#e17055' },
-  patient: { icon: '🧑‍⚕️', label: 'Pacientes', color: '#00b894' },
+  admin: { icon: '🛡️', color: '#6c5ce7' },
+  doctor: { icon: '🩺', color: '#0984e3' },
+  lab_technician: { icon: '🔬', color: '#e17055' },
+  patient: { icon: '🧑‍⚕️', color: '#00b894' },
 };
 
 function InviteTab({ t, onSent }) {
@@ -22,11 +22,11 @@ function InviteTab({ t, onSent }) {
     setError(null);
 
     if (!form.email.trim()) {
-      setError('El correo electrónico es requerido');
+      setError(t('manage_staff.email_required'));
       return;
     }
     if (role === 'doctor' && !form.specialty.trim()) {
-      setError('La especialidad es requerida para doctores');
+      setError(t('manage_staff.specialty_required'));
       return;
     }
 
@@ -38,7 +38,7 @@ function InviteTab({ t, onSent }) {
       await api.post('/doctors/invite', payload);
       onSent(form.email);
     } catch (err) {
-      setError(err.response?.data?.error || 'Error al enviar invitación');
+      setError(err.response?.data?.error || t('manage_staff.invite_error'));
     } finally {
       setSubmitting(false);
     }
@@ -49,7 +49,7 @@ function InviteTab({ t, onSent }) {
       {error && <div className="alert alert-error">{error}</div>}
 
       <div className="form-group">
-        <label className="form-label">Tipo de usuario</label>
+        <label className="form-label">{t('manage_staff.user_type')}</label>
         <div style={{ display: 'flex', gap: 0, marginBottom: 8, background: 'var(--gray-100)', borderRadius: 'var(--radius-sm)', padding: 4 }}>
           <button type="button" onClick={() => setRole('patient')} style={{
             flex: 1, padding: '10px 16px', border: 'none', borderRadius: 6,
@@ -57,60 +57,60 @@ function InviteTab({ t, onSent }) {
             color: role === 'patient' ? 'var(--accent-500)' : 'var(--text-secondary)',
             fontWeight: role === 'patient' ? 600 : 400, cursor: 'pointer', fontSize: '0.9rem',
             transition: 'var(--transition)', boxShadow: role === 'patient' ? 'var(--shadow-sm)' : 'none',
-          }}>🧑‍⚕️ Paciente</button>
+          }}>🧑‍⚕️ {t('manage_staff.patient_option')}</button>
           <button type="button" onClick={() => setRole('doctor')} style={{
             flex: 1, padding: '10px 16px', border: 'none', borderRadius: 6,
             background: role === 'doctor' ? 'var(--bg-secondary)' : 'transparent',
             color: role === 'doctor' ? 'var(--accent-500)' : 'var(--text-secondary)',
             fontWeight: role === 'doctor' ? 600 : 400, cursor: 'pointer', fontSize: '0.9rem',
             transition: 'var(--transition)', boxShadow: role === 'doctor' ? 'var(--shadow-sm)' : 'none',
-          }}>🩺 Doctor</button>
+          }}>🩺 {t('manage_staff.doctor_option')}</button>
           <button type="button" onClick={() => setRole('lab_technician')} style={{
             flex: 1, padding: '10px 16px', border: 'none', borderRadius: 6,
             background: role === 'lab_technician' ? 'var(--bg-secondary)' : 'transparent',
             color: role === 'lab_technician' ? 'var(--accent-500)' : 'var(--text-secondary)',
             fontWeight: role === 'lab_technician' ? 600 : 400, cursor: 'pointer', fontSize: '0.9rem',
             transition: 'var(--transition)', boxShadow: role === 'lab_technician' ? 'var(--shadow-sm)' : 'none',
-          }}>🔬 Técnico Lab</button>
+          }}>🔬 {t('manage_staff.lab_technician_option')}</button>
         </div>
       </div>
 
       <div className="form-group">
-        <label className="form-label">Correo electrónico <span className="required">*</span></label>
-        <input type="email" required value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="correo@ejemplo.com" className="form-input" />
+        <label className="form-label">{t('manage_staff.email_label')} <span className="required">*</span></label>
+        <input type="email" required value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder={t('manage_staff.email_placeholder')} className="form-input" />
       </div>
 
       <div className="form-group">
-        <label className="form-label">Nombre completo</label>
-        <input type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder={role === 'doctor' ? 'Dr. Nombre' : 'Nombre del paciente'} className="form-input" />
-        <p className="form-hint">Opcional. Se usará para personalizar el correo.</p>
+        <label className="form-label">{t('manage_staff.full_name')}</label>
+        <input type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder={role === 'doctor' ? t('manage_staff.doctor_name_placeholder') : t('manage_staff.patient_name_placeholder')} className="form-input" />
+        <p className="form-hint">{t('manage_staff.name_hint')}</p>
       </div>
 
       {role === 'doctor' && (
         <div className="form-group">
-          <label className="form-label">Especialidad <span className="required">*</span></label>
-          <Combobox value={form.specialty} onChange={(val) => setForm({ ...form, specialty: val })} placeholder="Seleccionar especialidad" required />
+          <label className="form-label">{t('manage_staff.specialty_label')} <span className="required">*</span></label>
+          <Combobox value={form.specialty} onChange={(val) => setForm({ ...form, specialty: val })} placeholder={t('manage_staff.specialty_placeholder')} required />
         </div>
       )}
 
       {role === 'lab_technician' && (
         <p className="form-hint" style={{ marginTop: 4, marginBottom: 12 }}>
-          El técnico de laboratorio podrá gestionar órdenes, procesar muestras y cargar resultados.
+          {t('manage_staff.lab_technician_description')}
         </p>
       )}
       <button type="submit" disabled={submitting} className="btn btn-primary btn-block btn-lg" style={{ marginTop: role === 'doctor' || role === 'lab_technician' ? 0 : 8 }}>
-        {submitting ? 'Enviando...' : 'Enviar invitación'}
+        {submitting ? t('manage_staff.sending') : t('manage_staff.send_invite')}
       </button>
     </form>
   );
 }
 
-function ToggleSwitch({ active, onToggle, disabled }) {
+function ToggleSwitch({ active, onToggle, disabled, t }) {
   return (
     <button
       onClick={onToggle}
       disabled={disabled}
-      title={active ? 'Desactivar' : 'Activar'}
+      title={active ? t('manage_staff.deactivate') : t('manage_staff.activate')}
       style={{
         width: 44, height: 24, borderRadius: 12, border: 'none',
         cursor: 'pointer', position: 'relative', flexShrink: 0,
@@ -129,7 +129,7 @@ function ToggleSwitch({ active, onToggle, disabled }) {
   );
 }
 
-function UserRow({ user, onToggle, toggling }) {
+function UserRow({ user, onToggle, toggling, t }) {
   const displayName = user.name || user.email || '—';
   const secondary = [user.rut, user.email].filter(Boolean).join(' · ');
   return (
@@ -157,13 +157,14 @@ function UserRow({ user, onToggle, toggling }) {
           {secondary}
         </div>
       </div>
-      <ToggleSwitch active={user.active} onToggle={() => onToggle(user.id, user.active)} disabled={toggling === user.id} />
+      <ToggleSwitch active={user.active} onToggle={() => onToggle(user.id, user.active)} disabled={toggling === user.id} t={t} />
     </div>
   );
 }
 
-function RoleCard({ role, users, onToggle, toggling }) {
-  const cfg = ROLE_CONFIG[role] || { icon: '👤', label: role, color: '#636e72' };
+function RoleCard({ role, users, onToggle, toggling, t }) {
+  const cfg = ROLE_CONFIG[role] || { icon: '👤', color: '#636e72' };
+  const roleLabel = t(`manage_staff.role_${role}`);
   return (
     <div style={{
       display: 'flex', flexDirection: 'column', minHeight: 0,
@@ -179,7 +180,7 @@ function RoleCard({ role, users, onToggle, toggling }) {
         background: cfg.color + '08',
       }}>
         <span style={{ fontSize: '1.2rem' }}>{cfg.icon}</span>
-        <span style={{ fontWeight: 600, fontSize: '0.95rem', color: cfg.color }}>{cfg.label}</span>
+        <span style={{ fontWeight: 600, fontSize: '0.95rem', color: cfg.color }}>{roleLabel}</span>
         <span style={{
           marginLeft: 'auto', background: cfg.color + '20',
           color: cfg.color, padding: '2px 10px', borderRadius: 12,
@@ -189,12 +190,12 @@ function RoleCard({ role, users, onToggle, toggling }) {
       <div style={{ flex: 1, overflowY: 'auto', padding: '8px', minHeight: 0 }}>
         {users.length === 0 ? (
           <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textAlign: 'center', padding: '24px 8px' }}>
-            No hay {cfg.label.toLowerCase()} registrados
+            {t('manage_staff.no_users_registered', { role: roleLabel.toLowerCase() })}
           </p>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             {users.map(user => (
-              <UserRow key={user.id} user={user} onToggle={onToggle} toggling={toggling} />
+              <UserRow key={user.id} user={user} onToggle={onToggle} toggling={toggling} t={t} />
             ))}
           </div>
         )}
@@ -219,11 +220,11 @@ function UsersTab({ t }) {
       const res = await api.get('/doctors/users', { params });
       setUsers(res.data);
     } catch (err) {
-      setError(err.response?.data?.error || 'Error al cargar usuarios');
+      setError(err.response?.data?.error || t('manage_staff.load_users_error'));
     } finally {
       setLoading(false);
     }
-  }, [search]);
+  }, [search, t]);
 
   useEffect(() => { fetchUsers(); }, [fetchUsers]);
 
@@ -242,7 +243,7 @@ function UsersTab({ t }) {
       await api.patch(`/doctors/users/${userId}/active`);
       setUsers(prev => prev.map(u => u.id === userId ? { ...u, active: !currentActive } : u));
     } catch (err) {
-      setError(err.response?.data?.error || 'Error al cambiar estado');
+      setError(err.response?.data?.error || t('manage_staff.toggle_error'));
     } finally {
       setToggling(null);
     }
@@ -257,7 +258,7 @@ function UsersTab({ t }) {
         <input
           type="text" value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Buscar por nombre, email o RUT..."
+          placeholder={t('manage_staff.search')}
           className="form-input"
           style={{ paddingLeft: 34, fontSize: '0.9rem' }}
         />
@@ -267,24 +268,24 @@ function UsersTab({ t }) {
         <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{ textAlign: 'center', color: 'var(--text-muted)' }}>
             <div style={{ fontSize: '2rem', marginBottom: 8 }}>⏳</div>
-            <div>Cargando usuarios...</div>
+            <div>{t('manage_staff.loading')}</div>
           </div>
         </div>
       ) : (
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 10, minHeight: 0 }}>
           {grouped.admin.length > 0 && (
             <div style={{ flexShrink: 0 }}>
-              <RoleCard role="admin" users={grouped.admin} onToggle={handleToggle} toggling={toggling} />
+              <RoleCard role="admin" users={grouped.admin} onToggle={handleToggle} toggling={toggling} t={t} />
             </div>
           )}
           {grouped.lab_technician.length > 0 && (
             <div style={{ flexShrink: 0 }}>
-              <RoleCard role="lab_technician" users={grouped.lab_technician} onToggle={handleToggle} toggling={toggling} />
+              <RoleCard role="lab_technician" users={grouped.lab_technician} onToggle={handleToggle} toggling={toggling} t={t} />
             </div>
           )}
           <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, minHeight: 0 }}>
-            <RoleCard role="doctor" users={grouped.doctor} onToggle={handleToggle} toggling={toggling} />
-            <RoleCard role="patient" users={grouped.patient} onToggle={handleToggle} toggling={toggling} />
+            <RoleCard role="doctor" users={grouped.doctor} onToggle={handleToggle} toggling={toggling} t={t} />
+            <RoleCard role="patient" users={grouped.patient} onToggle={handleToggle} toggling={toggling} t={t} />
           </div>
         </div>
       )}
@@ -303,15 +304,15 @@ export default function RegisterDoctorPage() {
       <div className="page-container" style={{ maxWidth: 520 }}>
         <div className="card card-accent" style={{ padding: 40, textAlign: 'center' }}>
           <div style={{ fontSize: 48, marginBottom: 16 }}>📧</div>
-          <h2 style={{ marginBottom: 8, color: 'var(--primary-700)' }}>Invitación enviada</h2>
+          <h2 style={{ marginBottom: 8, color: 'var(--primary-700)' }}>{t('manage_staff.invitation_sent')}</h2>
           <p style={{ color: 'var(--text-secondary)', marginBottom: 24 }}>
-            Se ha enviado un correo a <strong>{sent}</strong> con el enlace para registrarse.
+            {t('manage_staff.invitation_sent_before')} <strong>{sent}</strong> {t('manage_staff.invitation_sent_after')}
           </p>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
             <button onClick={() => setSent(null)} className="btn btn-primary">
-              Invitar a otra persona
+              {t('manage_staff.invite_another')}
             </button>
-            <button onClick={() => navigate('/admin/tenant')} className="btn btn-ghost">Volver al panel</button>
+            <button onClick={() => navigate('/admin/tenant')} className="btn btn-ghost">{t('manage_staff.back_to_panel')}</button>
           </div>
         </div>
       </div>
@@ -321,8 +322,8 @@ export default function RegisterDoctorPage() {
   return (
     <div className="page-container" style={{ maxWidth: 960 }}>
       <div style={{ marginBottom: 24, textAlign: 'center' }}>
-        <h1 style={{ marginBottom: 8 }}>Gestionar Personal</h1>
-        <p style={{ color: 'var(--text-secondary)' }}>Invita nuevos miembros o administra los existentes</p>
+        <h1 style={{ marginBottom: 8 }}>{t('manage_staff.title')}</h1>
+        <p style={{ color: 'var(--text-secondary)' }}>{t('manage_staff.subtitle')}</p>
       </div>
 
       <div style={{ display: 'flex', gap: 0, marginBottom: 24, background: 'var(--gray-100)', borderRadius: 'var(--radius-sm)', padding: 4 }}>
@@ -335,7 +336,7 @@ export default function RegisterDoctorPage() {
             fontWeight: tab === 'users' ? 600 : 400, cursor: 'pointer', fontSize: '0.9rem',
             transition: 'var(--transition)', boxShadow: tab === 'users' ? 'var(--shadow-sm)' : 'none',
           }}
-        >👥 Usuarios</button>
+        >👥 {t('manage_staff.users_tab')}</button>
         <button
           onClick={() => setTab('invite')}
           style={{
@@ -345,7 +346,7 @@ export default function RegisterDoctorPage() {
             fontWeight: tab === 'invite' ? 600 : 400, cursor: 'pointer', fontSize: '0.9rem',
             transition: 'var(--transition)', boxShadow: tab === 'invite' ? 'var(--shadow-sm)' : 'none',
           }}
-        >📨 Invitar</button>
+        >📨 {t('manage_staff.invite_tab')}</button>
       </div>
 
       <div className="card" style={{ padding: 24 }}>
@@ -354,8 +355,7 @@ export default function RegisterDoctorPage() {
 
       <div className="card card-subtle" style={{ marginTop: 20, padding: 20 }}>
         <p style={{ fontSize: 14, color: 'var(--text-muted)', margin: 0 }}>
-          Al desactivar un usuario, este no podrá iniciar sesión ni realizar acciones en el sistema.
-          Los datos del usuario se conservan.
+          {t('manage_staff.deactivate_warning')}
         </p>
       </div>
     </div>

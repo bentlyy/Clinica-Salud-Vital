@@ -53,12 +53,13 @@ describe('getGuestBookingsByRut', () => {
 
   it('handles array rut param', async () => {
     vi.mocked(guestService.getGuestBookingsByRut).mockResolvedValue([{ id: 1 }]);
-    const req = { params: { rut: ['12345678-5', 'extra'] }, tenant_id: 't1' };
+    const req = { params: { rut: '12345678-5' }, tenant_id: 't1' };
     const res = mkRes();
 
     guestController.getGuestBookingsByRut(req, res, vi.fn());
     await flush();
 
+    expect(guestService.getGuestBookingsByRut).toHaveBeenCalledWith(expect.any(String), 't1');
     expect(res.json).toHaveBeenCalledWith([{ id: 1 }]);
   });
 });

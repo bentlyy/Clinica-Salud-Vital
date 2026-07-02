@@ -124,8 +124,8 @@ describe('authorize', () => {
     const res = mockRes();
     const next = vi.fn();
 
-    expect(() => authorize('admin')(req, res, next)).toThrow(UnauthorizedError);
-    expect(next).not.toHaveBeenCalled();
+    authorize('admin')(req, res, next);
+    expect(next).toHaveBeenCalledWith(expect.any(UnauthorizedError));
   });
 
   it('throws 403 if role not allowed', () => {
@@ -134,8 +134,8 @@ describe('authorize', () => {
     const res = mockRes();
     const next = vi.fn();
 
-    expect(() => authorize('admin')(req, res, next)).toThrow(ForbiddenError);
-    expect(next).not.toHaveBeenCalled();
+    authorize('admin')(req, res, next);
+    expect(next).toHaveBeenCalledWith(expect.any(ForbiddenError));
   });
 
   it('calls next if role is allowed', () => {

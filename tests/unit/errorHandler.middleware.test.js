@@ -34,7 +34,7 @@ describe('errorHandler', () => {
     errorHandler(err, req, res, next);
 
     expect(res.status).toHaveBeenCalledWith(500);
-    expect(res.json).toHaveBeenCalledWith({ error: 'Something broke' });
+    expect(res.json).toHaveBeenCalledWith({ error: 'Internal server error' });
   });
 
   it('uses statusCode from error if present', () => {

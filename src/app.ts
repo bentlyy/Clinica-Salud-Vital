@@ -11,7 +11,7 @@ import { seed, backfillInvoices } from './seed/seed.js';
 import { markSeedComplete, markSeedFailed } from './shared/seed-status.js';
 import { pool } from './shared/db.js';
 import { tenantService } from './shared/multi-tenant.service.js';
-import { seedDefaultTenant, seedSuperAdmin, seedTestTenants } from './seed/admin.seed.js';
+import { seedDefaultTenant, seedSuperAdmin, seedTestTenants, spreadSeedDates } from './seed/admin.seed.js';
 import { startReminderJob } from './jobs/reminder.job.js';
 import { verifyAuditChain } from './jobs/audit-integrity.job.js';
 import { securityMiddleware, validateEnvSecurity } from './middlewares/security.middleware.js';
@@ -111,6 +111,9 @@ const allowedOrigins = [
 app.use(cors({
   origin: (origin, callback) => {
     if (!origin) {
+      if (process.env.NODE_ENV === 'production') {
+        return callback(new Error('Not allowed by CORS'));
+      }
       return callback(null, true);
     }
     if (allowedOrigins.length === 0 && process.env.NODE_ENV === 'production') {
@@ -349,6 +352,7 @@ const startServer = async (): Promise<void> => {
       step('seed');
       await seed();
       await backfillInvoices();
+      await spreadSeedDates();
       markSeedComplete();
 
       startReminderJob();

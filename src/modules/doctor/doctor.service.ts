@@ -123,7 +123,7 @@ export const registerDoctor = async ({ name, specialty, email, rut, phone }: Doc
         loginUrl: (process.env.FRONTEND_URL || process.env.RENDER_EXTERNAL_URL || 'http://localhost:5173') + '/login',
       }),
       tenantId,
-    }).then(r => { if (!r.sent) logger.error('Doctor welcome email error:', r.error); });
+    }).then(r => { if (!r.sent) logger.error('Doctor welcome email error:', r.error); }).catch(err => logger.error('Doctor welcome email send failed:', err));
 
     return { doctor, credentials: { email } };
 
@@ -250,7 +250,7 @@ export const invitePerson = async (input: InvitePersonInput, tenantId: string): 
       role,
     }),
     tenantId,
-  }).then(r => { if (!r.sent) logger.error('Invitation email error:', r.error); });
+  }).then(r => { if (!r.sent) logger.error('Invitation email error:', r.error); }).catch(err => logger.error('Invitation email send failed:', err));
 };
 
 export const verifyInviteToken = (token: string): { email: string; name: string; role: string; specialty: string | null; tenant_id: string | null } => {

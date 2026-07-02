@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/useAuth';
 import { useTheme } from '../context/useTheme';
 import { useI18n, setStoredLocale } from '../i18n/useI18n';
@@ -12,11 +12,25 @@ const locales = [
   { code: 'fr', label: 'FR' },
 ];
 
+function NavLabLink({ to, label, enabled }: { to: string; label: string; enabled: boolean }) {
+  return (
+    <Link
+      to={enabled ? to : '#'}
+      className={`nav-link${!enabled ? ' nav-link-disabled' : ''}`}
+      onClick={(e) => { if (!enabled) e.preventDefault(); }}
+    >
+      {label}
+      {!enabled && <span className="lock-badge">🔒</span>}
+    </Link>
+  );
+}
+
 export default function Navbar() {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const { locale, t } = useI18n();
   const { hasFeature, loading: featureLoading } = useFeature();
+  const navigate = useNavigate();
   const [localeOpen, setLocaleOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const menuRef = useRef(null);
@@ -36,18 +50,6 @@ export default function Navbar() {
   }, [user]);
 
   const labEnabled = featureLoading || hasFeature('laboratory');
-
-  const NavLabLink = ({ to, label }: { to: string; label: string }) => (
-    <Link
-      to={labEnabled ? to : '#'}
-      className={`nav-link${!labEnabled ? ' nav-link-disabled' : ''}`}
-      onClick={(e) => { if (!labEnabled) e.preventDefault(); setMobileOpen(false); }}
-      style={!labEnabled ? { opacity: 0.5, cursor: 'not-allowed' } : undefined}
-    >
-      {label}
-      {!labEnabled && <span style={{ marginLeft: 6, fontSize: 12 }}>🔒</span>}
-    </Link>
-  );
 
   return (
     <header className="clinic-navbar">
@@ -82,14 +84,14 @@ export default function Navbar() {
               <Link to="/doctor" className="nav-link" onClick={() => setMobileOpen(false)}>{t('nav.doctor_panel')}</Link>
               <Link to="/doctor/calendar" className="nav-link" onClick={() => setMobileOpen(false)}>{t('nav.calendar')}</Link>
               <Link to="/doctor/clinical-records" className="nav-link" onClick={() => setMobileOpen(false)}>{t('nav.clinical_records')}</Link>
-              <NavLabLink to="/doctor/lab-results" label={t('nav.doctor_lab_results')} />
+              <NavLabLink to="/doctor/lab-results" label={t('nav.doctor_lab_results')} enabled={labEnabled} />
             </>
           )}
 
           {user?.role === 'lab_technician' && (
             <>
               <Link to="/lab" className="nav-link" onClick={() => setMobileOpen(false)}>🔬 Laboratorio</Link>
-              <NavLabLink to="/my-lab-results" label="Mis Resultados" />
+              <NavLabLink to="/my-lab-results" label="Mis Resultados" enabled={labEnabled} />
             </>
           )}
 
@@ -97,13 +99,14 @@ export default function Navbar() {
             <>
               <Link to="/admin/demo-data" className="nav-link" onClick={() => setMobileOpen(false)}>Demo Data</Link>
               <Link to="/admin/specialties" className="nav-link" onClick={() => setMobileOpen(false)}>{t('nav.specialties')}</Link>
-              <NavLabLink to="/admin/lab-tests" label={t('nav.lab_tests')} />
+              <NavLabLink to="/admin/lab-tests" label={t('nav.lab_tests')} enabled={labEnabled} />
               <Link to="/admin/register-doctor" className="nav-link nav-link-accent" onClick={() => setMobileOpen(false)}>{t('nav.register_doctor')}</Link>
             </>
           )}
 
           {user?.role === 'superadmin' && (
             <>
+              <Link to="/super-admin" className="nav-link" onClick={() => setMobileOpen(false)}>{t('nav.dashboard')}</Link>
               <Link to="/super-admin/tenants" className="nav-link" onClick={() => setMobileOpen(false)}>{t('nav.tenants')}</Link>
               <Link to="/super-admin/demo-data" className="nav-link" onClick={() => setMobileOpen(false)}>Demo Data</Link>
             </>
@@ -118,14 +121,14 @@ export default function Navbar() {
           )}
 
           <div className="navbar-actions">
-            <div style={{ position: 'relative', display: 'inline-block' }}>
-              <button onClick={() => setLocaleOpen(!localeOpen)} className="btn btn-ghost btn-sm" style={{ minWidth: 40 }}>
+            <div className="navbar-locale-wrapper">
+              <button onClick={() => setLocaleOpen(!localeOpen)} className="btn btn-ghost btn-sm navbar-locale-btn">
                 {locale.toUpperCase()}
               </button>
               {localeOpen && (
                 <div className="navbar-locale-menu">
                   {locales.map((l) => (
-                    <button key={l.code} className="btn btn-ghost btn-sm" style={{ width: '100%', borderRadius: 0 }}
+                    <button key={l.code} className="btn btn-ghost btn-sm btn-block"
                       onClick={() => { setStoredLocale(l.code); setLocaleOpen(false); setMobileOpen(false); }}>
                       {l.label}
                     </button>
@@ -134,7 +137,7 @@ export default function Navbar() {
               )}
             </div>
 
-            {localeOpen && <div style={{ position: 'fixed', inset: 0, zIndex: 99 }} onClick={() => setLocaleOpen(false)} />}
+            {localeOpen && <div className="navbar-locale-backdrop" onClick={() => setLocaleOpen(false)} />}
 
             <button onClick={toggleTheme} className="btn btn-ghost btn-sm theme-toggle" aria-label="Toggle theme">
               {theme === 'light' ? '🌙' : '☀️'}
@@ -146,7 +149,7 @@ export default function Navbar() {
                   <span className="user-name">{user.name || user.email}</span>
                   {user.name && <span className="user-email">{user.email}</span>}
                 </div>
-                <button onClick={async () => { await logout(); window.location.href = '/'; }} className="btn btn-ghost btn-sm">
+                <button onClick={async () => { await logout(); navigate('/'); }} className="btn btn-ghost btn-sm">
                   {t('nav.logout')}
                 </button>
               </div>

@@ -102,33 +102,35 @@ export default function SuperAdminDemoDataPage() {
       {!loading && tab === 'bookings' && (
         <div className="card">
           <div className="table-responsive">
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>Paciente</th>
-                  <th>RUT</th>
-                  <th>Doctor</th>
-                  <th>Especialidad</th>
-                  <th>Fecha</th>
-                  <th>Hora</th>
-                  <th>Estado</th>
-                </tr>
-              </thead>
-              <tbody>
-                {bookings.length === 0 && <tr><td colSpan={7} className="text-muted" style={{ textAlign: 'center' }}>No hay reservas.</td></tr>}
-                {bookings.map(b => (
-                  <tr key={b.id}>
-                    <td>{b.patient_name}</td>
-                    <td>{b.patient_rut || '—'}</td>
-                    <td>{b.doctor_name}</td>
-                    <td>{b.specialty}</td>
-                    <td>{b.date}</td>
-                    <td>{b.time}</td>
-                    <td>{statusBadge(b.status)}</td>
+            <div style={{ maxHeight: 480, overflowY: 'auto' }}>
+              <table className="table" style={{ tableLayout: 'fixed' }}>
+                <thead>
+                  <tr>
+                    <th style={{ minWidth: 140 }}>Paciente</th>
+                    <th style={{ minWidth: 110 }}>RUT</th>
+                    <th style={{ minWidth: 140 }}>Doctor</th>
+                    <th style={{ minWidth: 120 }}>Especialidad</th>
+                    <th style={{ minWidth: 100 }}>Fecha</th>
+                    <th style={{ minWidth: 70 }}>Hora</th>
+                    <th style={{ minWidth: 90 }}>Estado</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {bookings.length === 0 && <tr><td colSpan={7} className="text-muted" style={{ textAlign: 'center', padding: 24 }}>No hay reservas.</td></tr>}
+                  {bookings.map(b => (
+                    <tr key={b.id}>
+                      <td>{b.patient_name}</td>
+                      <td>{b.patient_rut || '—'}</td>
+                      <td>{b.doctor_name}</td>
+                      <td>{b.specialty}</td>
+                      <td>{b.date}</td>
+                      <td>{b.time}</td>
+                      <td>{statusBadge(b.status)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       )}
@@ -136,31 +138,33 @@ export default function SuperAdminDemoDataPage() {
       {!loading && tab === 'clinical' && (
         <div className="card">
           <div className="table-responsive">
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>Paciente</th>
-                  <th>RUT</th>
-                  <th>Doctor</th>
-                  <th>Diagnóstico</th>
-                  <th>Fecha</th>
-                  <th>Estado</th>
-                </tr>
-              </thead>
-              <tbody>
-                {records.length === 0 && <tr><td colSpan={6} className="text-muted" style={{ textAlign: 'center' }}>No hay historial clínico.</td></tr>}
-                {records.map(r => (
-                  <tr key={r.id}>
-                    <td>{r.patient_name}</td>
-                    <td>{r.patient_rut || '—'}</td>
-                    <td>{r.doctor_name}</td>
-                    <td>{r.diagnosis || '—'}</td>
-                    <td>{r.created_at?.split('T')[0]}</td>
-                    <td>{statusBadge(r.status)}</td>
+            <div style={{ maxHeight: 480, overflowY: 'auto' }}>
+              <table className="table" style={{ tableLayout: 'fixed' }}>
+                <thead>
+                  <tr>
+                    <th style={{ minWidth: 140 }}>Paciente</th>
+                    <th style={{ minWidth: 110 }}>RUT</th>
+                    <th style={{ minWidth: 140 }}>Doctor</th>
+                    <th style={{ minWidth: 160 }}>Diagnóstico</th>
+                    <th style={{ minWidth: 100 }}>Fecha</th>
+                    <th style={{ minWidth: 90 }}>Estado</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {records.length === 0 && <tr><td colSpan={6} className="text-muted" style={{ textAlign: 'center', padding: 24 }}>No hay historial clínico.</td></tr>}
+                  {records.map(r => (
+                    <tr key={r.id}>
+                      <td>{r.patient_name}</td>
+                      <td>{r.patient_rut || '—'}</td>
+                      <td>{r.doctor_name}</td>
+                      <td>{r.diagnosis || '—'}</td>
+                      <td>{r.created_at?.split('T')[0]}</td>
+                      <td>{statusBadge(r.status)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       )}
@@ -168,31 +172,33 @@ export default function SuperAdminDemoDataPage() {
       {!loading && tab === 'lab' && (
         <div className="card">
           <div className="table-responsive">
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>N° Solicitud</th>
-                  <th>Paciente</th>
-                  <th>Doctor</th>
-                  <th>Prioridad</th>
-                  <th>Fecha</th>
-                  <th>Estado</th>
-                </tr>
-              </thead>
-              <tbody>
-                {labReqs.length === 0 && <tr><td colSpan={6} className="text-muted" style={{ textAlign: 'center' }}>No hay exámenes.</td></tr>}
-                {labReqs.map(r => (
-                  <tr key={r.id}>
-                    <td>{r.request_number || `#${r.id}`}</td>
-                    <td>{r.patient_name || `ID ${r.patient_id}`}</td>
-                    <td>{r.doctor_name || '—'}</td>
-                    <td>{r.priority}</td>
-                    <td>{r.created_at?.split('T')[0]}</td>
-                    <td>{statusBadge(r.status)}</td>
+            <div style={{ maxHeight: 480, overflowY: 'auto' }}>
+              <table className="table" style={{ tableLayout: 'fixed' }}>
+                <thead>
+                  <tr>
+                    <th style={{ minWidth: 110 }}>N° Solicitud</th>
+                    <th style={{ minWidth: 140 }}>Paciente</th>
+                    <th style={{ minWidth: 140 }}>Doctor</th>
+                    <th style={{ minWidth: 90 }}>Prioridad</th>
+                    <th style={{ minWidth: 100 }}>Fecha</th>
+                    <th style={{ minWidth: 90 }}>Estado</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {labReqs.length === 0 && <tr><td colSpan={6} className="text-muted" style={{ textAlign: 'center', padding: 24 }}>No hay exámenes.</td></tr>}
+                  {labReqs.map(r => (
+                    <tr key={r.id}>
+                      <td>{r.request_number || `#${r.id}`}</td>
+                      <td>{r.patient_name || `ID ${r.patient_id}`}</td>
+                      <td>{r.doctor_name || '—'}</td>
+                      <td>{r.priority}</td>
+                      <td>{r.created_at?.split('T')[0]}</td>
+                      <td>{statusBadge(r.status)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       )}
