@@ -7,6 +7,10 @@ on:
     - cron: '0 6 * * 1'
   workflow_dispatch:
 
+env:
+  STRIX_LLM: ${{ secrets.STRIX_LLM || '' }}
+  LLM_API_KEY: ${{ secrets.LLM_API_KEY || '' }}
+
 jobs:
   strix-pentest:
     name: AI Penetration Test
@@ -20,15 +24,13 @@ jobs:
         run: curl -sSL https://strix.ai/install | bash
 
       - name: Run Strix (PR scan)
-        if: github.event_name == 'pull_request'
-        env:
-          STRIX_LLM: ${{ secrets.STRIX_LLM }}
-          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+        if: github.event_name == 'pull_request' && env.STRIX_LLM != '' && env.LLM_API_KEY != ''
         run: strix -n -t ./ --scan-mode quick
 
       - name: Run Strix (full scan)
-        if: github.event_name != 'pull_request'
-        env:
-          STRIX_LLM: ${{ secrets.STRIX_LLM }}
-          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+        if: github.event_name != 'pull_request' && env.STRIX_LLM != '' && env.LLM_API_KEY != ''
         run: strix -n -t ./
+
+      - name: Skip — no LLM API key configured
+        if: env.STRIX_LLM == '' || env.LLM_API_KEY == ''
+        run: echo "Skipping Strix scan — set STRIX_LLM and LLM_API_KEY secrets in repo settings"
