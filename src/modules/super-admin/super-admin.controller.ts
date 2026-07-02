@@ -79,6 +79,13 @@ export const getGrowthData = asyncHandler(async (req: Request, res: Response) =>
   res.json({ data });
 });
 
+export const getTenantGrowthData = asyncHandler(async (req: Request, res: Response) => {
+  const tenantId = String(req.params.tenantId);
+  const months = parseInt(String(req.query.months || '12'), 10);
+  const data = await superAdminService.getTenantGrowthMetrics(tenantId, months);
+  res.json({ data });
+});
+
 export const listUsers = asyncHandler(async (req: Request, res: Response) => {
   const page = parseInt(String(req.query.page || '1'), 10);
   const limit = parseInt(String(req.query.limit || '50'), 10);
@@ -98,4 +105,46 @@ export const toggleUserActive = asyncHandler(async (req: Request, res: Response)
 
   const user = await superAdminService.setUserActive(userId, active, req.tenant_id);
   res.json(user);
+});
+
+export const getHealthScores = asyncHandler(async (_req: Request, res: Response) => {
+  const data = await superAdminService.getTenantHealthScores();
+  res.json({ data });
+});
+
+export const getHealthScoreDetail = asyncHandler(async (req: Request, res: Response) => {
+  const data = await superAdminService.getTenantHealthDetail(String(req.params.tenantId));
+  res.json({ data });
+});
+
+export const getOperations = asyncHandler(async (req: Request, res: Response) => {
+  const months = parseInt(String(req.query.months || '6'), 10);
+  const data = await superAdminService.getOperationMetrics(months);
+  res.json({ data });
+});
+
+export const getChurn = asyncHandler(async (req: Request, res: Response) => {
+  const months = parseInt(String(req.query.months || '12'), 10);
+  const data = await superAdminService.getChurnMetrics(months);
+  res.json({ data });
+});
+
+export const getComparison = asyncHandler(async (_req: Request, res: Response) => {
+  const data = await superAdminService.getComparisonTable();
+  res.json({ data });
+});
+
+export const getOccupancy = asyncHandler(async (_req: Request, res: Response) => {
+  const data = await superAdminService.getOccupancyMetrics();
+  res.json({ data });
+});
+
+export const getActivity = asyncHandler(async (_req: Request, res: Response) => {
+  const data = await superAdminService.getActivityMetrics();
+  res.json({ data });
+});
+
+export const getAlerts = asyncHandler(async (_req: Request, res: Response) => {
+  const data = await superAdminService.getAlerts();
+  res.json({ data });
 });

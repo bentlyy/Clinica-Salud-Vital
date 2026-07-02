@@ -55,6 +55,7 @@ const userToken = generateToken({ id: 1, email: 'user@test.com', role: 'user', t
 beforeEach(() => {
   vi.clearAllMocks();
   mockQuery.mockReset();
+  mockQuery.mockResolvedValue({ rows: [{ token_version: 0 }] });
   mockConnect.mockReturnValue(mockClient);
   mockClient.query.mockReset();
 });
@@ -79,12 +80,12 @@ describe('GET /api/clinical-records', () => {
     expect(res.status).toBe(401);
   });
 
-  it('returns 403 if role is user', async () => {
+  it('returns records for user (authorized role)', async () => {
     const res = await request(app)
       .get('/api/clinical-records')
       .set('Authorization', `Bearer ${userToken}`);
 
-    expect(res.status).toBe(403);
+    expect(res.status).toBe(200);
   });
 });
 

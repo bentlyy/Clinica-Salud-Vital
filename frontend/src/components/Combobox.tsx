@@ -1,17 +1,30 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import api from '../api/axios';
 
-export default function Combobox({ value, onChange, placeholder, required, className }) {
+interface ComboboxProps {
+  value: string;
+  onChange: (val: string) => void;
+  placeholder?: string;
+  required?: boolean;
+  className?: string;
+}
+
+export default function Combobox({ value, onChange, placeholder, required, className }: ComboboxProps) {
   const [options, setOptions] = useState([]);
   const [open, setOpen] = useState(false);
   const [highlighted, setHighlighted] = useState(-1);
   const ref = useRef(null);
 
   useEffect(() => {
+    let cancelled = false;
     api.get('/specialties').then(res => {
+      if (cancelled) return;
       const data = Array.isArray(res) ? res : (res.data || []);
       setOptions(data.map(s => s.name));
-    }).catch(() => {});
+    }).catch(() => {
+      if (!cancelled) setOptions([]);
+    });
+    return () => { cancelled = true; };
   }, []);
 
   useEffect(() => {

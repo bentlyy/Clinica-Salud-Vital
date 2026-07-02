@@ -25,7 +25,6 @@ const PUBLIC_PATHS = new Set([
   '/api/specialties',
   '/api/saas/plans',
   '/api/auth/.well-known/jwks.json',
-  '/api/auth/reset-admin',
 ]);
 
 const PUBLIC_PATH_PREFIXES = ['/api/guest/bookings/'];

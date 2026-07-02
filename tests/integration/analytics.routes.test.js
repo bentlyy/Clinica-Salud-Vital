@@ -52,6 +52,7 @@ const userToken = generateToken({ id: 1, email: 'user@test.com', role: 'user', t
 beforeEach(() => {
   vi.clearAllMocks();
   mockQuery.mockReset();
+  mockQuery.mockResolvedValue({ rows: [{ token_version: 0 }] });
 });
 
 describe('GET /api/analytics/dashboard', () => {

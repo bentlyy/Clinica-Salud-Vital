@@ -2,15 +2,19 @@ import jwt, { SignOptions } from 'jsonwebtoken';
 import crypto from 'crypto';
 
 const getSecret = (): string => {
-  return process.env.JWT_SECRET || `dev-hs256-${crypto.randomBytes(16).toString('hex')}`;
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    throw new Error('JWT_SECRET environment variable is required');
+  }
+  return secret;
 };
 
 class JWTManager {
   sign(payload: Record<string, unknown>, options?: SignOptions): string {
     return jwt.sign(payload, getSecret(), {
-      algorithm: 'HS256',
       expiresIn: options?.expiresIn || '15m',
       ...options,
+      algorithm: 'HS256',
     });
   }
 

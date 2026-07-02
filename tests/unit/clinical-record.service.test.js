@@ -35,13 +35,13 @@ describe('clinicalRecordService.getAllClinicalRecords', () => {
   it('filters by patient_id', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [] });
     await clinicalRecordService.getAllClinicalRecords({ patient_id: 1 });
-    expect(mockQuery).toHaveBeenCalledWith(expect.stringContaining('cr.patient_id = $2'), expect.any(Array));
+    expect(mockQuery).toHaveBeenCalledWith(expect.stringContaining('cr.patient_id = $1'), expect.any(Array));
   });
 
   it('filters by doctor_id', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [] });
     await clinicalRecordService.getAllClinicalRecords({ doctor_id: 2 });
-    expect(mockQuery).toHaveBeenCalledWith(expect.stringContaining('cr.doctor_id = $2'), expect.any(Array));
+    expect(mockQuery).toHaveBeenCalledWith(expect.stringContaining('cr.doctor_id = $1'), expect.any(Array));
   });
 
   it('filters by status', async () => {

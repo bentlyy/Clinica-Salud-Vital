@@ -90,7 +90,7 @@ export const createGuestBooking = async ({ doctor_id, date, time, duration = 30,
         frontendUrl: process.env.FRONTEND_URL || process.env.RENDER_EXTERNAL_URL || 'http://localhost:5173',
       }),
       tenantId,
-    }).then(r => { if (!r.sent) logger.error('Email error:', r.error); });
+    }).then(r => { if (!r.sent) logger.error('Email error:', r.error); }).catch(err => logger.error('Guest email send failed:', err));
 
     return booking;
 

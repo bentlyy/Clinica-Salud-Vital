@@ -20,6 +20,10 @@ vi.mock('../../src/modules/auth/auth.service.js', () => ({
   resetPassword: vi.fn(),
 }));
 
+vi.mock('../../src/shared/seed-status.js', () => ({
+  waitForSeed: vi.fn().mockResolvedValue(true),
+}));
+
 import * as authService from '../../src/modules/auth/auth.service.js';
 import * as authController from '../../src/modules/auth/auth.controller.js';
 

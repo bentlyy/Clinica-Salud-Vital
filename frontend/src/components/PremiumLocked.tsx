@@ -1,51 +1,22 @@
 import { useNavigate } from 'react-router-dom';
+import { useI18n } from '../i18n/useI18n';
 
-export default function PremiumLocked({ featureName = 'Laboratorio' }) {
+export default function PremiumLocked({ featureName }) {
   const navigate = useNavigate();
+  const { t } = useI18n();
 
   return (
-    <div style={{
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      minHeight: 400,
-      textAlign: 'center',
-      padding: 40,
-    }}>
-      <div style={{
-        width: 80,
-        height: 80,
-        borderRadius: '50%',
-        background: 'var(--bg-tertiary, #f0f0f0)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        fontSize: 36,
-        marginBottom: 24,
-        opacity: 0.6,
-      }}>
+    <div className="premium-locked">
+      <div className="premium-locked-icon" aria-hidden="true">
         🔒
       </div>
-      <h2 style={{ margin: '0 0 8px', color: 'var(--text-primary)' }}>
-        {featureName} — Función Premium
-      </h2>
-      <p style={{
-        color: 'var(--text-secondary)',
-        maxWidth: 440,
-        margin: '0 0 24px',
-        lineHeight: 1.6,
-      }}>
-        Esta funcionalidad no está disponible en tu plan actual.
-        Actualiza a un plan superior para acceder a órdenes de laboratorio,
-        resultados de exámenes y más.
-      </p>
+      <h2 className="premium-locked-title">{featureName || t('saas.upgrade_required')}</h2>
+      <p className="premium-locked-desc">{t('saas.feature_locked_desc')}</p>
       <button
         onClick={() => navigate('/saas/plans')}
-        className="btn btn-primary"
-        style={{ padding: '12px 32px', fontSize: 16 }}
+        className="btn btn-primary premium-locked-btn"
       >
-        Ver Planes Disponibles
+        {t('saas.view_plans')}
       </button>
     </div>
   );

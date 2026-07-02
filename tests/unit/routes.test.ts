@@ -24,15 +24,15 @@ const mockCtrl = Object.fromEntries([
   // billing
   'getInvoices', 'getInvoiceById', 'createInvoice', 'updateInvoiceStatus', 'deleteInvoice', 'getBillingStats',
   // laboratory
-  'getLabTests', 'getLabRequests', 'getLabRequestById', 'createLabRequest', 'updateLabRequestStatus', 'updateLabRequestItemResult', 'cancelLabRequest',
+  'getLabTests', 'createLabTest', 'updateLabTest', 'deleteLabTest', 'getLabRequests', 'getLabRequestById', 'createLabRequest', 'updateLabRequestStatus', 'updateLabRequestItemResult', 'cancelLabRequest', 'downloadLabOrderPDF', 'getLabRequestsForLab', 'updateLabRequestItemStatusCtrl', 'setLabTypeCtrl',
   // availability
   'createAvailability', 'getAvailabilityByDoctor', 'getMyAvailability', 'deleteAvailability',
   // exception
   'getMyExceptions', 'createException', 'deleteException',
   // saas
-  'stripeWebhook', 'getPlans', 'onboardTenant', 'getMySubscription', 'createCheckout', 'changePlan', 'cancelSubscription', 'getUsage', 'getUsageSummary', 'getLimits', 'updateTenantConfig',
+  'stripeWebhook', 'getPlans', 'onboardTenant', 'getMySubscription', 'createCheckout', 'changePlan', 'cancelSubscription', 'getUsage', 'getUsageSummary', 'getLimits', 'getFeatures', 'updateTenantConfig',
   // specialties
-  'getSpecialties',
+  'getSpecialties', 'getSpecialtyById', 'createSpecialty', 'updateSpecialty', 'deleteSpecialty',
 ].map(k => [k, vi.fn()]));
 
 const mockSchema = Object.fromEntries([

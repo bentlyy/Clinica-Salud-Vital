@@ -5,6 +5,13 @@ import { getAvailableSlots, createBooking } from '../api/bookings';
 import { useAuth } from '../context/useAuth';
 import { useI18n } from '../i18n/useI18n';
 
+interface Doctor {
+  id: number;
+  name: string;
+  specialty: string;
+  [key: string]: unknown;
+}
+
 export default function BookingPage() {
   const { t } = useI18n();
   const { user } = useAuth();
@@ -12,11 +19,11 @@ export default function BookingPage() {
   const [searchParams] = useSearchParams();
 
   const [step, setStep] = useState(1);
-  const [doctors, setDoctors] = useState([]);
-  const [selectedDoctor, setSelectedDoctor] = useState(null);
+  const [doctors, setDoctors] = useState<Doctor[]>([]);
+  const [selectedDoctor, setSelectedDoctor] = useState<number | null>(null);
   const [date, setDate] = useState('');
-  const [slots, setSlots] = useState([]);
-  const [selectedTime, setSelectedTime] = useState(null);
+  const [slots, setSlots] = useState<string[]>([]);
+  const [selectedTime, setSelectedTime] = useState<string | null>(null);
 
   const [form, setForm] = useState({
     rut: '',
@@ -43,8 +50,8 @@ export default function BookingPage() {
 
   const [loadingDoctors, setLoadingDoctors] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(null);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<boolean | null>(null);
 
   const today = new Date().toISOString().split('T')[0];
 
@@ -115,13 +122,13 @@ export default function BookingPage() {
   if (success) {
     return (
       <div className="page-container">
-        <div className="card" style={{ textAlign: 'center', padding: 48 }}>
-          <div style={{ fontSize: 56, marginBottom: 16 }}>✅</div>
-          <h2 style={{ color: 'var(--primary-700)', marginBottom: 8 }}>{t('booking.success_title')}</h2>
-          <p style={{ fontSize: 16, marginBottom: 16 }}>
+        <div className="card bk-success-card">
+          <div className="bk-success-icon">✅</div>
+          <h2 className="bk-success-title">{t('booking.success_title')}</h2>
+          <p className="bk-success-desc">
             {t('booking.success_desc', { email: form.email })}
           </p>
-          <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
+          <div className="bk-success-actions">
             <button onClick={() => navigate('/my-bookings')} className="btn btn-success">
               {t('booking.view_bookings')}
             </button>
@@ -136,7 +143,7 @@ export default function BookingPage() {
 
   return (
     <div className="page-container bk-page">
-      <h1 style={{ marginBottom: 24 }}>{t('booking.title')}</h1>
+      <h1 className="bk-page-title">{t('booking.title')}</h1>
 
       {error && <div className="alert alert-error">{error}</div>}
 
@@ -154,7 +161,7 @@ export default function BookingPage() {
 
       {step === 1 && (
         <div>
-          <div className="form-group" style={{ maxWidth: 280 }}>
+          <div className="form-group bk-form-group-narrow">
             <label className="form-label">{t('booking.date_label')}</label>
             <input
               type="date"
@@ -168,7 +175,7 @@ export default function BookingPage() {
           <div className="bk-two-col">
             <div className="bk-doctors-col">
               <h3 className="bk-col-title">{t('booking.select_doctor')}</h3>
-              {loadingDoctors && <p style={{ color: 'var(--text-muted)' }}>{t('booking.loading_doctors')}</p>}
+              {loadingDoctors && <p className="bk-loading-doctors">{t('booking.loading_doctors')}</p>}
               <div className="bk-doctor-list">
                 {doctors.map((doc) => (
                   <div
@@ -223,7 +230,7 @@ export default function BookingPage() {
             </div>
           </div>
 
-          <div style={{ marginTop: 32, display: 'flex', justifyContent: 'flex-end' }}>
+          <div className="bk-nav-row">
             {canGoToStep2 ? (
               <button onClick={() => setStep(2)} className="btn btn-primary btn-lg">
                 {t('booking.continue')} →
@@ -251,7 +258,7 @@ export default function BookingPage() {
           <div className="user-badge user-badge-logged">🔒 {t('booking.logged_in_as', { email: user.email })}</div>
 
           <div className="card">
-            <h3 style={{ marginBottom: 20 }}>{t('booking.personal_data_title')}</h3>
+            <h3 className="bk-section-title">{t('booking.personal_data_title')}</h3>
             <div className="grid grid-2">
               <div className="form-group">
                 <label className="form-label">{t('booking.rut_label')}</label>
@@ -271,12 +278,12 @@ export default function BookingPage() {
               </div>
             </div>
 
-            <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 8, fontStyle: 'italic' }}>
+            <p className="bk-profile-hint">
               {t('booking.profile_data_hint')}
             </p>
           </div>
 
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 28 }}>
+          <div className="bk-action-row">
             <button onClick={() => setStep(1)} className="btn btn-ghost btn-lg">
               ← {t('booking.back')}
             </button>

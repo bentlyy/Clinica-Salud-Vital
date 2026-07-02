@@ -204,7 +204,9 @@ describe('bookingService.getAvailableSlots', () => {
   });
 
   it('returns empty if no availability', async () => {
-    mockQuery.mockResolvedValueOnce({ rows: [] });
+    mockClient.query
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [] });
 
     const result = await bookingService.getAvailableSlots(1, futureDate);
 
@@ -212,7 +214,8 @@ describe('bookingService.getAvailableSlots', () => {
   });
 
   it('returns available slots', async () => {
-    mockQuery
+    mockClient.query
+      .mockResolvedValueOnce({ rows: [] })
       .mockResolvedValueOnce({ rows: [{ start_time: '09:00:00', end_time: '12:00:00' }] })
       .mockResolvedValueOnce({ rows: [{ slot_duration: 30 }] })
       .mockResolvedValueOnce({ rows: [] })
@@ -225,7 +228,8 @@ describe('bookingService.getAvailableSlots', () => {
   });
 
   it('uses default slot_duration 30 when doctor has null duration', async () => {
-    mockQuery
+    mockClient.query
+      .mockResolvedValueOnce({ rows: [] })
       .mockResolvedValueOnce({ rows: [{ start_time: '09:00:00', end_time: '10:00:00' }] })
       .mockResolvedValueOnce({ rows: [{ slot_duration: null }] })
       .mockResolvedValueOnce({ rows: [] })
@@ -238,7 +242,8 @@ describe('bookingService.getAvailableSlots', () => {
   });
 
   it('filters out booked and exception slots', async () => {
-    mockQuery
+    mockClient.query
+      .mockResolvedValueOnce({ rows: [] })
       .mockResolvedValueOnce({ rows: [{ start_time: '09:00:00', end_time: '12:00:00' }] })
       .mockResolvedValueOnce({ rows: [{ slot_duration: 60 }] })
       .mockResolvedValueOnce({ rows: [{ time: '10:00', duration: 60 }] })
@@ -252,7 +257,8 @@ describe('bookingService.getAvailableSlots', () => {
   });
 
   it('blocks full day exception in getAvailableSlots', async () => {
-    mockQuery
+    mockClient.query
+      .mockResolvedValueOnce({ rows: [] })
       .mockResolvedValueOnce({ rows: [{ start_time: '09:00:00', end_time: '12:00:00' }] })
       .mockResolvedValueOnce({ rows: [{ slot_duration: 30 }] })
       .mockResolvedValueOnce({ rows: [] })
@@ -264,7 +270,8 @@ describe('bookingService.getAvailableSlots', () => {
   });
 
   it('returns slots with tenant_id', async () => {
-    mockQuery
+    mockClient.query
+      .mockResolvedValueOnce({ rows: [] })
       .mockResolvedValueOnce({ rows: [{ start_time: '09:00:00', end_time: '12:00:00' }] })
       .mockResolvedValueOnce({ rows: [{ slot_duration: 30 }] })
       .mockResolvedValueOnce({ rows: [] })
@@ -273,7 +280,7 @@ describe('bookingService.getAvailableSlots', () => {
     const result = await bookingService.getAvailableSlots(1, futureDate, 'tenant-1');
 
     expect(result.length).toBeGreaterThan(0);
-    expect(mockQuery).toHaveBeenCalledWith(
+    expect(mockClient.query).toHaveBeenCalledWith(
       expect.stringContaining('tenant_id'),
       [1, expect.any(Number), 'tenant-1']
     );
