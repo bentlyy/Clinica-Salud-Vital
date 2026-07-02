@@ -2,44 +2,58 @@ import { Component } from 'react';
 import { I18nContext } from '../i18n/useI18n';
 import { logger } from '../utils/logger.js';
 
-export default class ErrorBoundary extends Component {
+interface ErrorBoundaryProps {
+  children: React.ReactNode;
+}
+
+interface ErrorBoundaryState {
+  hasError: boolean;
+  error: Error | null;
+}
+
+export default class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   static contextType = I18nContext;
 
-  constructor(props) {
+  constructor(props: ErrorBoundaryProps) {
     super(props);
     this.state = { hasError: false, error: null };
   }
 
-  static getDerivedStateFromError(error) {
+  static getDerivedStateFromError(error: Error) {
     return { hasError: true, error };
   }
 
-  componentDidCatch(error, info) {
+  componentDidCatch(error: Error, info: React.ErrorInfo) {
     logger.error('ErrorBoundary caught:', error, info);
   }
 
   render() {
     if (this.state.hasError) {
-      const title = this.context?.t ? this.context.t('error_boundary.title') : 'Error inesperado';
+      const t = this.context?.t || ((key) => key);
+      const title = t('error_boundary.title');
+      const message = t('error_boundary.message');
+      const retry = t('error_boundary.retry');
+      const goHome = t('error_boundary.go_home');
       return (
-        <div style={{
-          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-          minHeight: '60vh', padding: 40, textAlign: 'center'
-        }}>
-          <h2 style={{ color: 'var(--danger-600, #dc3545)', marginBottom: 12 }}>{title}</h2>
-          <p style={{ color: 'var(--text-secondary, #666)', marginBottom: 24, maxWidth: 400 }}>
-            Ocurrió un error inesperado. Por favor, intenta recargar la página.
+        <div className="error-boundary">
+          <h2 className="error-boundary__title">{title}</h2>
+          <p className="error-boundary__message">
+            {message}
           </p>
-          <button
-            onClick={() => { this.setState({ hasError: false, error: null }); window.location.href = '/'; }}
-            style={{
-              padding: '10px 24px', border: 'none', borderRadius: 6,
-              background: 'var(--primary-500, #2563eb)', color: '#fff',
-              fontSize: 15, cursor: 'pointer'
-            }}
-          >
-            Volver al inicio
-          </button>
+          <div className="error-boundary__actions">
+            <button
+              onClick={() => { this.setState({ hasError: false, error: null }); }}
+              className="error-boundary__btn error-boundary__btn--retry"
+            >
+              {retry}
+            </button>
+            <button
+              onClick={() => { window.location.href = '/'; }}
+              className="error-boundary__btn"
+            >
+              {goHome}
+            </button>
+          </div>
         </div>
       );
     }

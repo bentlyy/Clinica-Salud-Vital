@@ -14,6 +14,7 @@ router.get('/analytics/dashboard', authorize('superadmin'), superAdminController
 router.get('/analytics/top-tenants', authorize('superadmin'), superAdminController.getTopTenantsData);
 router.get('/analytics/revenue', authorize('superadmin'), superAdminController.getRevenueData);
 router.get('/analytics/growth', authorize('superadmin'), superAdminController.getGrowthData);
+router.get('/analytics/tenant-growth/:tenantId', authorize('superadmin'), superAdminController.getTenantGrowthData);
 
 router.get('/tenants', authorize('superadmin'), superAdminController.listTenants);
 router.get('/tenants/:id', authorize('superadmin'), superAdminController.getTenantDetail);
@@ -23,5 +24,14 @@ router.delete('/tenants/:id', authorize('superadmin'), superAdminController.dele
 
 router.get('/users', authorize('superadmin'), superAdminController.listUsers);
 router.patch('/users/:userId/active', authorize('superadmin'), superAdminController.toggleUserActive);
+
+router.get('/analytics/health', authorize('superadmin'), superAdminController.getHealthScores);
+router.get('/analytics/health/:tenantId', authorize('superadmin'), superAdminController.getHealthScoreDetail);
+router.get('/analytics/operations', authorize('superadmin'), superAdminController.getOperations);
+router.get('/analytics/churn', authorize('superadmin'), superAdminController.getChurn);
+router.get('/analytics/comparison', authorize('superadmin'), superAdminController.getComparison);
+router.get('/analytics/occupancy', authorize('superadmin'), superAdminController.getOccupancy);
+router.get('/analytics/activity', authorize('superadmin'), superAdminController.getActivity);
+router.get('/analytics/alerts', authorize('superadmin'), superAdminController.getAlerts);
 
 export default router;

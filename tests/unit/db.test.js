@@ -16,6 +16,7 @@ describe('db pool', () => {
   it('creates pool with production ssl', async () => {
     process.env.DATABASE_URL = 'postgresql://user:pass@remote.com:5432/db';
     process.env.NODE_ENV = 'production';
+    process.env.DB_CA_CERT = 'test-cert';
     const { pool } = await import('../../src/shared/db.js');
     expect(pool).toBeDefined();
   });

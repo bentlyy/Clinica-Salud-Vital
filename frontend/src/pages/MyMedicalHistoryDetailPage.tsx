@@ -90,8 +90,8 @@ export default function MyMedicalHistoryDetailPage() {
         <div className="analytics-card">
           <h3>{t('clinical_records.cie10_codes')}</h3>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            {record.cie10_codes.map((c, i) => (
-              <span key={i} className="badge badge-info">{c}</span>
+            {record.cie10_codes.map((c) => (
+              <span key={c} className="badge badge-info">{c}</span>
             ))}
           </div>
         </div>

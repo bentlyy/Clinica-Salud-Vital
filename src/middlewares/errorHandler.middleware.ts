@@ -8,24 +8,6 @@ export interface AppErrorWithStatus extends Error {
 
 const isInternalError = (statusCode: number): boolean => statusCode >= 500;
 
-const sanitizeErrorMessage = (message: string): string => {
-  const sqlPatterns = [
-    /violates foreign key constraint/gi,
-    /violates unique constraint/gi,
-    /duplicate key/gi,
-    /relation "[^"]+" does not exist/gi,
-    /column "[^"]+" does not exist/gi,
-    /syntax error at or near/gi,
-  ];
-  let sanitized = message;
-  for (const pattern of sqlPatterns) {
-    if (pattern.test(sanitized)) {
-      return 'Internal server error';
-    }
-  }
-  return sanitized;
-};
-
 export const errorHandler = (
   err: AppErrorWithStatus,
   req: Request,
@@ -41,7 +23,7 @@ export const errorHandler = (
     logger.warn('Client error', { error: err.message, statusCode, url: req.originalUrl, method: req.method });
   }
 
-  const message = isDev ? err.message : sanitizeErrorMessage(err.message);
+  const message = isDev || !isInternalError(statusCode) ? err.message : 'Internal server error';
 
   const body: Record<string, unknown> = { error: message };
   if (err.code) body.code = err.code;

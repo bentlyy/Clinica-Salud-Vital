@@ -206,19 +206,13 @@ export const login = async ({ email, password, totp_token, captcha_token }: Logi
 
   logger.debug('Login attempt', { email, tenantId });
 
-  const countAll = await pool.query('SELECT COUNT(*) FROM users WHERE email = $1', [email]);
-  logger.debug('Users with that email (all tenants):', { count: countAll.rows[0].count });
-
-  const countInTenant = await pool.query('SELECT COUNT(*) FROM users WHERE email = $1 AND tenant_id = $2', [email, tenantId]);
-  logger.debug('Users with that email in tenant:', { tenantId, count: countInTenant.rows[0].count });
-
   const result = await pool.query<User>('SELECT * FROM users WHERE email = $1 AND tenant_id = $2', [email, tenantId]);
   const user = result.rows[0];
 
   if (!user) {
     const dummyHash = '$2b$12$LJ3m4ys3Lg3YOCwFfj5NOWJX0GqBiN3H0w5Cqx3z5Gq5X5z5P5Q5S';
     await bcrypt.compare(password, dummyHash);
-    logger.warn('Login failed: user not found', { email, tenantId, totalInAllTenants: countAll.rows[0].count });
+    logger.warn('Login failed: user not found', { email, tenantId });
     throw new BadRequestError('Invalid credentials');
   }
 
@@ -617,7 +611,8 @@ export const resetPassword = async (token: string, email: string, newPassword: s
 
 export const resetAdminPassword = async (tenantId: string): Promise<{ email: string; password: string }> => {
   const email = process.env.ADMIN_EMAIL || 'admin@clinic.com';
-  const password = process.env.SEED_PASSWORD || process.env.ADMIN_PASSWORD || 'REPLACED_PASSWORD';
+  const password = process.env.SEED_PASSWORD || process.env.ADMIN_PASSWORD;
+  if (!password) throw new Error('SEED_PASSWORD or ADMIN_PASSWORD environment variable is required');
   const hash = await bcrypt.hash(password, 12);
 
   const result = await pool.query(

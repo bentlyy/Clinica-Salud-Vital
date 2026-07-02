@@ -57,13 +57,14 @@ app.use(errorHandler);
 beforeEach(() => {
   vi.clearAllMocks();
   mockQuery.mockReset();
+  mockQuery.mockResolvedValue({ rows: [{ token_version: 0 }] });
   mockConnect.mockReturnValue(mockClient);
-  mockClient.query.mockReset();
 });
 
 describe('GET /api/bookings/available-slots', () => {
   it('returns available slots', async () => {
-    mockQuery
+    mockClient.query
+      .mockResolvedValueOnce({ rows: [] })
       .mockResolvedValueOnce({ rows: [{ start_time: '09:00:00', end_time: '12:00:00' }] })
       .mockResolvedValueOnce({ rows: [{ slot_duration: 30 }] })
       .mockResolvedValueOnce({ rows: [] })

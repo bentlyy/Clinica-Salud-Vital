@@ -298,7 +298,7 @@ export default function SuperAdminTenantDetailPage() {
         </button>
       </div>
 
-      <div className="card" style={{ padding: 24, height: 560, display: 'flex', flexDirection: 'column' }}>
+      <div className="card" style={{ padding: 24, minHeight: 750, display: 'flex', flexDirection: 'column' }}>
         <div style={{ flexShrink: 0 }}>
           <h3 style={{ marginBottom: 4 }}>{t('superadmin.users')}</h3>
           <p style={{ color: 'var(--text-secondary)', fontSize: 14, marginBottom: 16 }}>
@@ -317,7 +317,7 @@ export default function SuperAdminTenantDetailPage() {
           </div>
         </div>
 
-        <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
+        <div style={{ flex: 1, minHeight: 0 }}>
           {usersLoading ? (
             <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <div style={{ textAlign: 'center', color: 'var(--text-muted)' }}>

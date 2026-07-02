@@ -14,9 +14,9 @@ export default function LoginPage() {
   const [searchParams] = useSearchParams();
   const tenantId = searchParams.get('tenant');
   const { t } = useI18n();
-  const recaptchaRef = useRef(null);
+  const recaptchaRef = useRef<ReCAPTCHA | null>(null);
   const [form, setForm] = useState({ email: '', password: '', totp_token: '' });
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [needs2FA, setNeeds2FA] = useState(false);
 
@@ -25,7 +25,7 @@ export default function LoginPage() {
     return recaptchaRef.current?.getValue();
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
 
@@ -73,11 +73,11 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="page-container" style={{ maxWidth: 440 }}>
-      <div className="card" style={{ padding: 40 }}>
-        <div style={{ textAlign: 'center', marginBottom: 28 }}>
-          <h2>{t('auth.login_title')}</h2>
-          <p style={{ color: 'var(--text-secondary)' }}>{t('auth.login_subtitle')}</p>
+    <div className="page-container login-page-container">
+      <div className="card login-card">
+        <div className="login-header">
+          <h2 className="login-title">{t('auth.login_title')}</h2>
+          <p className="login-subtitle">{t('auth.login_subtitle')}</p>
         </div>
 
         {error && <div className="alert alert-error">{error}</div>}
@@ -127,7 +127,7 @@ export default function LoginPage() {
           )}
 
           {hasCaptcha && ReCAPTCHA && (
-            <div className="form-group" style={{ display: 'flex', justifyContent: 'center', marginTop: 16 }}>
+            <div className="form-group login-captcha-group">
               <ReCAPTCHA
                 ref={recaptchaRef}
                 sitekey={RECAPTCHA_SITE_KEY}
@@ -135,14 +135,14 @@ export default function LoginPage() {
             </div>
           )}
 
-          <button type="submit" disabled={submitting} className="btn btn-primary btn-block btn-lg" style={{ marginTop: 8 }}>
+          <button type="submit" disabled={submitting} className="btn btn-primary btn-block btn-lg login-submit-btn">
             {submitting ? t('auth.logging_in') : needs2FA ? t('auth.verify_2fa') : t('auth.login_button')}
           </button>
         </form>
 
-        <div style={{ textAlign: 'center', marginTop: 24, paddingTop: 20, borderTop: '1px solid var(--border-light)' }}>
+        <div className="login-footer">
           {tenantId && (
-            <p style={{ marginBottom: 8 }}>
+            <p className="login-footer-text">
               {t('auth.no_account')} <Link to={`/register?tenant=${tenantId}`}>{t('auth.register_link')}</Link>
             </p>
           )}

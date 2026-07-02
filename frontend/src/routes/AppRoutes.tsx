@@ -1,8 +1,8 @@
-import { lazy, Suspense, ReactNode } from 'react';
+import { lazy } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import ProtectedRoute from './ProtectedRoute';
 import WithFeature from '../components/WithFeature';
-import Navbar from '../components/Navbar';
+import AppLayout from './AppLayout';
 
 const HomePage = lazy(() => import('../pages/HomePage'));
 const LoginPage = lazy(() => import('../pages/LoginPage'));
@@ -32,17 +32,7 @@ const SuperAdminDashboardPage = lazy(() => import('../pages/SuperAdminDashboardP
 const SuperAdminTenantsPage = lazy(() => import('../pages/SuperAdminTenantsPage'));
 const SuperAdminTenantDetailPage = lazy(() => import('../pages/SuperAdminTenantDetailPage'));
 const SuperAdminDemoDataPage = lazy(() => import('../pages/SuperAdminDemoDataPage'));
-
-function AppLayout({ children }: { children: ReactNode }) {
-  return (
-    <>
-      <Navbar />
-      <Suspense fallback={<div style={{ padding: '2rem', textAlign: 'center' }}>Cargando...</div>}>
-        {children}
-      </Suspense>
-    </>
-  );
-}
+const NotFoundPage = lazy(() => import('../pages/NotFoundPage'));
 
 export default function AppRoutes() {
   return (
@@ -83,6 +73,7 @@ export default function AppRoutes() {
       <Route path="/super-admin/tenants/:id" element={<ProtectedRoute role="superadmin"><AppLayout><SuperAdminTenantDetailPage /></AppLayout></ProtectedRoute>} />
       <Route path="/super-admin/demo-data" element={<ProtectedRoute role="superadmin"><AppLayout><SuperAdminDemoDataPage /></AppLayout></ProtectedRoute>} />
 
+      <Route path="*" element={<AppLayout><NotFoundPage /></AppLayout>} />
     </Routes>
   );
 }

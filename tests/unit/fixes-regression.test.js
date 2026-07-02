@@ -49,7 +49,7 @@ describe('Critical Fixes - No Regression', () => {
       const fs = await import('fs');
       const content = fs.readFileSync('src/middlewares/auth.middleware.ts', 'utf-8');
 
-      expect(content).toContain('Degraded');
+      expect(content).toContain('Auth service unavailable');
     });
   });
 });
