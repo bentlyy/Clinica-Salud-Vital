@@ -1,12 +1,19 @@
-import { createContext, useState, useEffect, useCallback } from 'react';
+import { createContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { getFeatures } from '../api/saas';
 import { useAuth } from './useAuth';
 
-export const FeatureContext = createContext();
+interface FeatureContextValue {
+  features: Record<string, boolean>;
+  hasFeature: (key: string) => boolean;
+  loading: boolean;
+  reload: () => Promise<void>;
+}
 
-export const FeatureProvider = ({ children }) => {
+export const FeatureContext = createContext<FeatureContextValue | null>(null);
+
+export const FeatureProvider = ({ children }: { children: React.ReactNode }) => {
   const { user } = useAuth();
-  const [features, setFeatures] = useState({});
+  const [features, setFeatures] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
@@ -30,12 +37,14 @@ export const FeatureProvider = ({ children }) => {
     }
   }, [user, load]);
 
-  const hasFeature = useCallback((key) => {
+  const hasFeature = useCallback((key: string) => {
     return features[key] === true;
   }, [features]);
 
+  const value = useMemo(() => ({ features, hasFeature, loading, reload: load }), [features, hasFeature, loading, load]);
+
   return (
-    <FeatureContext.Provider value={{ features, hasFeature, loading, reload: load }}>
+    <FeatureContext.Provider value={value}>
       {children}
     </FeatureContext.Provider>
   );

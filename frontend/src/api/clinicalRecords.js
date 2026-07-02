@@ -40,11 +40,6 @@ export const getCie10Categories = async (options = {}) => {
   return res.data;
 };
 
-export const getDoctorBookings = async (options = {}) => {
-  const res = await api.get('/bookings/doctor', options);
-  return res.data;
-};
-
 export const createPrescription = async (data, options = {}) => {
   const res = await api.post('/clinical-records/prescriptions', data, options);
   return res.data;

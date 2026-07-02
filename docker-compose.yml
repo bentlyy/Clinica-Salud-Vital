@@ -3,12 +3,12 @@ services:
     image: postgres:15-alpine
     container_name: clinic-db
     restart: unless-stopped
-    ports:
-      - "127.0.0.1:5432:5432"
+    # ports:
+    #   - "127.0.0.1:5432:5432"  # DB en red interna; no expuesta al host
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
-      POSTGRES_DB: ${POSTGRES_DB:-clinic}
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: clinic
     volumes:
       - db_data:/var/lib/postgresql/data
       - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
@@ -17,6 +17,74 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+    networks:
+      - db-net
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: clinic-backend
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3000:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/clinic
+      NODE_ENV: development
+      PORT: 3000
+      JWT_SECRET: ${JWT_SECRET}
+      APP_LOCALE: es
+      DEFAULT_TENANT_ID: default
+      SMS_PROVIDER: log
+      TOTP_ISSUER: ClinicApp
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
+      PHI_MASTER_KEY: ${PHI_MASTER_KEY}
+      AUDIT_HMAC_SECRET: ${AUDIT_HMAC_SECRET}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+      INVITE_JWT_SECRET: ${INVITE_JWT_SECRET}
+      LOG_LEVEL: info
+      LOG_DIR: logs
+      FRONTEND_URL: http://localhost:5173
+    volumes:
+      - .:/app
+      - /app/node_modules
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - backend-net
+      - db-net
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: clinic-frontend
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:5173:5173"
+    depends_on:
+      - backend
+    environment:
+      VITE_API_URL: http://localhost:3000/api
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    networks:
+      - backend-net
 
 volumes:
   db_data:
+
+networks:
+  backend-net:
+    driver: bridge
+    internal: false
+  db-net:
+    driver: bridge
+    internal: true

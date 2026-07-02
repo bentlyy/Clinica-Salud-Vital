@@ -1,7 +1,11 @@
 import axios from 'axios';
 
+if (!import.meta.env.VITE_API_URL) {
+  throw new Error('VITE_API_URL environment variable is required');
+}
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000/api',
+  baseURL: import.meta.env.VITE_API_URL,
   withCredentials: true,
 });
 
@@ -29,14 +33,6 @@ api.interceptors.response.use(
     if (csrfHeader) {
       localStorage.setItem('csrf_token', csrfHeader);
     }
-    const body = response.data;
-    if (body && typeof body === 'object' && Array.isArray(body.data)) {
-      const { data, pagination, ...rest } = body;
-      response.data = data;
-      response.body = body;
-      if (pagination) response.pagination = pagination;
-      if (Object.keys(rest).length > 0) response.meta = rest;
-    }
     return response;
   },
   async (error) => {
@@ -53,12 +49,13 @@ api.interceptors.response.use(
           { withCredentials: true }
         );
 
-        error.config.headers['Authorization'] = 'Bearer ' + data.access_token;
+        error.config.headers = { ...error.config.headers, Authorization: 'Bearer ' + data.access_token };
         return api(error.config);
-      } catch {
+      } catch (refreshError) {
         localStorage.removeItem('user');
-        window.dispatchEvent(new CustomEvent('auth:expired'));
-        return Promise.reject(new Error('Session expired, please log in again'));
+        localStorage.removeItem('tenant_id');
+        window.dispatchEvent(new CustomEvent('auth:expired', { detail: { reason: 'refresh_failed' } }));
+        return Promise.reject(refreshError || new Error('Session expired, please log in again'));
       }
     }
 

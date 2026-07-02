@@ -8,10 +8,10 @@ import {
   updateClinicalRecord,
   deleteClinicalRecord,
   searchCie10,
-  getDoctorBookings,
   createPrescription,
   deletePrescription,
 } from '../api/clinicalRecords';
+import { getDoctorBookings } from '../api/doctors';
 import { getLabResultsByClinicalRecord, getLabTests } from '../api/laboratory';
 
 const ROUTES_MAP = {
@@ -236,7 +236,7 @@ export default function DoctorClinicalRecordsPage() {
     const pendingPrescriptions = prescriptions.filter(p => p._temp);
     for (const p of pendingPrescriptions) {
       if (!p.medication.trim() || !p.dosage.trim() || !p.frequency.trim()) {
-        setError('Cada receta debe tener medicamento, dosis y frecuencia');
+        setError(t('clinical_records.prescription_error'));
         setSaving(false);
         return;
       }
@@ -299,12 +299,12 @@ export default function DoctorClinicalRecordsPage() {
       await deleteClinicalRecord(id);
       await fetchData();
     } catch (err) {
-      setError('Error al eliminar ficha clínica');
+      setError(t('clinical_records.error_delete'));
     }
   };
 
   const getPatientName = (record) => {
-    return record.patient_email || `Paciente #${record.patient_id}`;
+    return record.patient_email || `${t('clinical_records.patient')} #${record.patient_id}`;
   };
 
   const getBookingPatientName = (b) => {
@@ -322,10 +322,10 @@ export default function DoctorClinicalRecordsPage() {
           <div>
             <h1 style={{ marginBottom: 4 }}>{selectedRecordId ? t('clinical_records.edit_record') : t('clinical_records.new_record')}</h1>
             <p style={{ color: 'var(--text-secondary)' }}>
-              {formData.patient_id ? `Paciente ID: ${formData.patient_id}` : 'Complete los datos del paciente'}
+              {formData.patient_id ? `${t('clinical_records.patient_id_label')}: ${formData.patient_id}` : t('clinical_records.complete_patient_data')}
             </p>
           </div>
-          <button onClick={handleCancel} className="btn btn-ghost">← Volver</button>
+          <button onClick={handleCancel} className="btn btn-ghost">← {t('clinical_records.back')}</button>
         </div>
 
         {error && <div className="alert alert-error">{error}</div>}
@@ -477,7 +477,7 @@ export default function DoctorClinicalRecordsPage() {
             <label className="form-label">{t('clinical_records.cie10_codes')}</label>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
               {formData.cie10_codes.map((code, i) => (
-                <span key={i} className="badge badge-info" style={{ cursor: 'pointer' }} onClick={() => removeCie10Code(i)}>
+                <span key={code} className="badge badge-info" style={{ cursor: 'pointer' }} onClick={() => removeCie10Code(i)}>
                   {code} ✕
                 </span>
               ))}
@@ -494,9 +494,9 @@ export default function DoctorClinicalRecordsPage() {
                 background: 'var(--bg-primary)', border: '1px solid var(--border-light)',
                 borderRadius: 8, maxHeight: 200, overflowY: 'auto', boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
               }}>
-                {cie10Results.slice(0, 10).map((r, i) => (
+                {cie10Results.slice(0, 10).map((r) => (
                   <div
-                    key={i}
+                    key={r.code || r.codigo}
                     onClick={() => addCie10Code(r.code || r.codigo, r.description || r.descripcion)}
                     style={{ padding: '8px 12px', cursor: 'pointer', borderBottom: '1px solid var(--border-light)', fontSize: 13 }}
                     onMouseOver={e => e.currentTarget.style.background = 'var(--bg-secondary)'}
@@ -649,7 +649,7 @@ export default function DoctorClinicalRecordsPage() {
             {saving ? t('clinical_records.saving') : t('clinical_records.save')}
           </button>
           <button onClick={() => handleSave('completed')} className="btn btn-primary" disabled={saving || !formData.chief_complaint}>
-            {saving ? t('clinical_records.saving') : 'Guardar y Completar'}
+            {saving ? t('clinical_records.saving') : t('clinical_records.save_complete')}
           </button>
         </div>
       </div>
@@ -726,7 +726,7 @@ export default function DoctorClinicalRecordsPage() {
                         <td style={{ padding: 10 }}>{r.created_at?.split('T')[0] || '-'}</td>
                         <td style={{ padding: 10 }}>
                           <span className={`badge ${r.status === 'completed' ? 'badge-success' : r.status === 'cancelled' ? 'badge-danger' : 'badge-warning'}`}>
-                            {r.status === 'completed' ? 'Completada' : r.status === 'cancelled' ? 'Anulada' : 'Borrador'}
+                            {r.status === 'completed' ? t('clinical_records.status_completed') : r.status === 'cancelled' ? t('clinical_records.status_cancelled') : t('clinical_records.status_draft')}
                           </span>
                         </td>
                         <td style={{ padding: 10, textAlign: 'right' }}>
@@ -739,7 +739,7 @@ export default function DoctorClinicalRecordsPage() {
                             </button>
                             {r.status === 'draft' && (
                               <button onClick={() => handleDelete(r.id)} className="btn btn-ghost btn-sm" style={{ color: 'var(--danger-500)' }}>
-                                Eliminar
+                                {t('clinical_records.delete')}
                               </button>
                             )}
                           </div>

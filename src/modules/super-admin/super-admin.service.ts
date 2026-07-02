@@ -255,6 +255,8 @@ export const getGlobalDashboard = async (): Promise<Record<string, unknown>> => 
       (SELECT COUNT(*) FROM tenants)::int AS total_tenants,
       (SELECT COUNT(*) FROM tenants WHERE active = true)::int AS active_tenants,
       (SELECT COUNT(*) FROM tenants WHERE active = false)::int AS inactive_tenants,
+      (SELECT COUNT(*) FROM tenants WHERE created_at >= DATE_TRUNC('month', NOW()))::int AS new_tenants_this_month,
+      (SELECT COUNT(*) FROM tenants WHERE created_at >= NOW() - INTERVAL '30 days')::int AS new_tenants_30d,
       (SELECT COUNT(*) FROM users)::int AS total_users,
       (SELECT COUNT(*) FILTER (WHERE role = 'admin') FROM users)::int AS admin_users,
       (SELECT COUNT(*) FILTER (WHERE role IN ('user', 'patient')) FROM users)::int AS patient_users,
@@ -264,9 +266,18 @@ export const getGlobalDashboard = async (): Promise<Record<string, unknown>> => 
       (SELECT COUNT(*) FILTER (WHERE status = 'cancelled') FROM bookings)::int AS cancelled_bookings,
       (SELECT COALESCE(SUM(amount), 0) FROM subscription_invoices WHERE status = 'paid')::numeric AS total_revenue,
       (SELECT COALESCE(SUM(amount), 0) FROM subscription_invoices WHERE status = 'paid' AND paid_at >= NOW() - INTERVAL '30 days')::numeric AS mrr,
+      (SELECT COUNT(DISTINCT COALESCE(user_id::text, guest_rut)) FROM bookings WHERE date >= NOW() - INTERVAL '90 days')::int AS active_patients,
       (SELECT COUNT(*) FILTER (WHERE status IN ('active', 'trialing')) FROM subscriptions)::int AS active_subscriptions,
       (SELECT COUNT(*) FILTER (WHERE status = 'canceled') FROM subscriptions)::int AS canceled_subscriptions,
-      (SELECT COUNT(*) FILTER (WHERE status = 'trialing') FROM subscriptions)::int AS trialing_subscriptions
+      (SELECT COUNT(*) FILTER (WHERE status = 'trialing') FROM subscriptions)::int AS trialing_subscriptions,
+      ROUND(
+        (SELECT COUNT(*) FILTER (WHERE status = 'cancelled') FROM bookings WHERE created_at >= NOW() - INTERVAL '30 days')::numeric /
+        NULLIF((SELECT COUNT(*) FROM bookings WHERE created_at >= NOW() - INTERVAL '30 days'), 0) * 100, 1
+      ) AS cancellation_rate_30d,
+      ROUND(
+        (SELECT COUNT(*) FILTER (WHERE status = 'canceled') FROM subscriptions WHERE canceled_at >= NOW() - INTERVAL '30 days')::numeric /
+        NULLIF((SELECT COUNT(*) FILTER (WHERE status IN ('active', 'trialing')) FROM subscriptions), 0) * 100, 1
+      ) AS churn_rate_30d
   `);
   return result.rows[0];
 };
@@ -323,6 +334,38 @@ export const getRevenueAnalytics = async (months: number = 12): Promise<Record<s
   return result.rows;
 };
 
+export const getTenantGrowthMetrics = async (tenantId: string, months: number = 12): Promise<Record<string, unknown>[]> => {
+  const result = await pool.query(`
+    SELECT
+      m.month,
+      COALESCE(u.new_users, 0)::int AS new_users,
+      COALESCE(b.new_bookings, 0)::int AS new_bookings,
+      COALESCE(cr.new_records, 0)::int AS new_clinical_records,
+      COALESCE(lr.new_requests, 0)::int AS new_lab_requests
+    FROM (
+      SELECT TO_CHAR(generate_series(NOW() - INTERVAL '1 month' * $1, NOW(), '1 month'), 'YYYY-MM') AS month
+    ) m
+    LEFT JOIN (
+      SELECT TO_CHAR(created_at, 'YYYY-MM') AS month, COUNT(*) AS new_users
+      FROM users WHERE tenant_id = $2 AND created_at >= NOW() - INTERVAL '1 month' * $1 GROUP BY 1
+    ) u ON u.month = m.month
+    LEFT JOIN (
+      SELECT TO_CHAR(created_at, 'YYYY-MM') AS month, COUNT(*) AS new_bookings
+      FROM bookings WHERE tenant_id = $2 AND created_at >= NOW() - INTERVAL '1 month' * $1 GROUP BY 1
+    ) b ON b.month = m.month
+    LEFT JOIN (
+      SELECT TO_CHAR(created_at, 'YYYY-MM') AS month, COUNT(*) AS new_records
+      FROM clinical_records WHERE tenant_id = $2 AND created_at >= NOW() - INTERVAL '1 month' * $1 GROUP BY 1
+    ) cr ON cr.month = m.month
+    LEFT JOIN (
+      SELECT TO_CHAR(created_at, 'YYYY-MM') AS month, COUNT(*) AS new_requests
+      FROM lab_requests WHERE tenant_id = $2 AND created_at >= NOW() - INTERVAL '1 month' * $1 GROUP BY 1
+    ) lr ON lr.month = m.month
+    ORDER BY m.month
+  `, [months, tenantId]);
+  return result.rows;
+};
+
 export const getGrowthMetrics = async (months: number = 12): Promise<Record<string, unknown>[]> => {
   const result = await pool.query(`
     SELECT
@@ -348,6 +391,338 @@ export const getGrowthMetrics = async (months: number = 12): Promise<Record<stri
     ORDER BY m.month
   `, [months]);
   return result.rows;
+};
+
+export const getTenantHealthScores = async (): Promise<Record<string, unknown>[]> => {
+  const result = await pool.query(`
+    WITH tenant_activity AS (
+      SELECT
+        t.id, t.name, t.active, t.created_at,
+        MAX(b.created_at) AS last_booking,
+        COUNT(b.id) FILTER (WHERE b.created_at >= NOW() - INTERVAL '30 days') AS bookings_30d,
+        COUNT(b.id) FILTER (WHERE b.created_at BETWEEN NOW() - INTERVAL '60 days' AND NOW() - INTERVAL '30 days') AS bookings_prev_30d,
+        COUNT(DISTINCT b.user_id) FILTER (WHERE b.created_at >= NOW() - INTERVAL '30 days') AS unique_patients_30d,
+        COUNT(b.id) FILTER (WHERE b.status = 'cancelled' AND b.created_at >= NOW() - INTERVAL '30 days') AS cancellations_30d,
+        COALESCE(
+          (SELECT COUNT(*) FROM clinical_records cr WHERE cr.tenant_id = t.id LIMIT 1), 0
+        ) + COALESCE(
+          (SELECT COUNT(*) FROM lab_requests lr WHERE lr.tenant_id = t.id LIMIT 1), 0
+        ) + COALESCE(
+          (SELECT COUNT(*) FROM bookings bk WHERE bk.tenant_id = t.id LIMIT 1), 0
+        ) + COALESCE(
+          (SELECT COUNT(*) FROM invoices i WHERE i.tenant_id = t.id LIMIT 1), 0
+        ) AS modules_used
+      FROM tenants t
+      LEFT JOIN bookings b ON b.tenant_id = t.id
+      GROUP BY t.id, t.name, t.active, t.created_at
+    ),
+    extended AS (
+      SELECT *,
+        GREATEST(0, 20 - COALESCE(EXTRACT(DAY FROM NOW() - last_booking)::int, 999)) AS score_activity,
+        CASE
+          WHEN COALESCE(bookings_prev_30d, 0) = 0 THEN GREATEST(0, 20 - COALESCE(EXTRACT(DAY FROM NOW() - last_booking)::int, 999) / 2)
+          ELSE GREATEST(0, ROUND((20 * LEAST(1.0, bookings_30d::numeric / NULLIF(bookings_prev_30d, 0)))::numeric, 1))
+        END AS score_trend,
+        LEAST(20, COALESCE(unique_patients_30d, 0) * 4) AS score_patients,
+        CASE
+          WHEN COALESCE(bookings_30d, 0) = 0 THEN 20
+          ELSE ROUND((20 * GREATEST(0, 1 - (COALESCE(cancellations_30d, 0)::numeric / NULLIF(bookings_30d, 0) / 0.3)))::numeric, 1)
+        END AS score_cancellation,
+        LEAST(20, modules_used * 5) AS score_modules
+      FROM tenant_activity
+    )
+    SELECT *,
+      score_activity + score_trend + score_patients + score_cancellation + score_modules AS health_total
+    FROM extended
+    ORDER BY health_total ASC
+  `);
+  const rows = result.rows.map((r: Record<string, unknown>) => {
+    const healthScore = Math.round(
+      Number(r.score_activity || 0) +
+      Number(r.score_trend || 0) +
+      Number(r.score_patients || 0) +
+      Number(r.score_cancellation || 0) +
+      Number(r.score_modules || 0)
+    );
+    return { ...r, health_score: healthScore };
+  });
+  return rows;
+};
+
+export const getTenantHealthDetail = async (tenantId: string): Promise<Record<string, unknown>> => {
+  const all = await getTenantHealthScores();
+  const tenant = all.find((r: Record<string, unknown>) => r.id === tenantId);
+  if (!tenant) throw new NotFoundError('Tenant not found');
+  return tenant;
+};
+
+export const getOperationMetrics = async (months: number = 6): Promise<Record<string, unknown>> => {
+  const specialtiesResult = await pool.query(`
+    SELECT s.name, COUNT(b.id)::int AS total
+    FROM specialties s
+    JOIN doctors d ON d.specialty = s.name
+    JOIN bookings b ON b.doctor_id = d.id AND b.date >= NOW() - INTERVAL '1 month' * $1 AND b.status != 'cancelled'
+    GROUP BY s.name
+    ORDER BY total DESC
+  `, [months]);
+
+  const cancellationRate = await pool.query(`
+    SELECT
+      ROUND(
+        (COUNT(*) FILTER (WHERE status = 'cancelled')::numeric /
+        NULLIF(COUNT(*), 0)) * 100, 1
+      ) AS cancellation_rate,
+      COUNT(*) FILTER (WHERE status = 'cancelled')::int AS total_cancelled,
+      COUNT(*)::int AS total_bookings_period
+    FROM bookings
+    WHERE date >= NOW() - INTERVAL '1 month' * $1
+  `, [months]);
+
+  const noShowResult = await pool.query(`
+    SELECT
+      ROUND(
+        (COUNT(*) FILTER (WHERE b.status = 'confirmed' AND cr.id IS NULL)::numeric /
+        NULLIF(COUNT(*) FILTER (WHERE b.status = 'confirmed'), 0)) * 100, 1
+      ) AS no_show_rate
+    FROM bookings b
+    LEFT JOIN clinical_records cr ON cr.booking_id = b.id
+    WHERE b.date >= NOW() - INTERVAL '1 month' * $1 AND b.date <= CURRENT_DATE
+  `, [months]);
+
+  const avgLeadTime = await pool.query(`
+    SELECT
+      ROUND(AVG(EXTRACT(DAY FROM (b.date + b.time) - b.created_at))::numeric, 1) AS avg_lead_days
+    FROM bookings b
+    WHERE b.created_at >= NOW() - INTERVAL '1 month' * $1
+  `, [months]);
+
+  const topDoctors = await pool.query(`
+    SELECT d.name, COUNT(b.id)::int AS total_bookings,
+      ROW_NUMBER() OVER (ORDER BY COUNT(b.id) DESC) AS rank
+    FROM doctors d
+    JOIN bookings b ON b.doctor_id = d.id AND b.date >= NOW() - INTERVAL '1 month' * $1 AND b.status != 'cancelled'
+    GROUP BY d.id, d.name
+    ORDER BY total_bookings DESC
+    LIMIT 10
+  `, [months]);
+
+  const hourlyDemand = await pool.query(`
+    SELECT EXTRACT(DOW FROM date)::int AS day_of_week, EXTRACT(HOUR FROM time)::int AS hour, COUNT(*)::int AS bookings
+    FROM bookings
+    WHERE date >= NOW() - INTERVAL '1 month' * $1 AND status != 'cancelled'
+    GROUP BY day_of_week, hour
+    ORDER BY day_of_week, hour
+  `, [months]);
+
+  return {
+    specialties: specialtiesResult.rows,
+    cancellation_rate: cancellationRate.rows[0]?.cancellation_rate || 0,
+    total_cancelled: cancellationRate.rows[0]?.total_cancelled || 0,
+    total_bookings_period: cancellationRate.rows[0]?.total_bookings_period || 0,
+    no_show_rate: noShowResult.rows[0]?.no_show_rate || 0,
+    avg_lead_days: avgLeadTime.rows[0]?.avg_lead_days || 0,
+    top_doctors: topDoctors.rows,
+    hourly_demand: hourlyDemand.rows,
+  };
+};
+
+export const getChurnMetrics = async (months: number = 12): Promise<Record<string, unknown>> => {
+  const result = await pool.query(`
+    WITH months AS (
+      SELECT TO_CHAR(generate_series(NOW() - INTERVAL '1 month' * $1, NOW(), '1 month'), 'YYYY-MM') AS month
+    ),
+      cancellations AS (
+        SELECT TO_CHAR(canceled_at, 'YYYY-MM') AS month, COUNT(*)::int AS canceled_count
+        FROM subscriptions
+        WHERE canceled_at >= NOW() - INTERVAL '1 month' * $1 AND status = 'canceled'
+        GROUP BY 1
+      ),
+      active_starts AS (
+        SELECT TO_CHAR(current_period_start, 'YYYY-MM') AS month, COUNT(*)::int AS active_count
+        FROM subscriptions
+        WHERE current_period_start >= NOW() - INTERVAL '1 month' * $1 AND status IN ('active', 'trialing')
+        GROUP BY 1
+      )
+    SELECT
+      m.month,
+      COALESCE(c.canceled_count, 0)::int AS canceled,
+      COALESCE(a.active_count, 0)::int AS new_active,
+      (SELECT COUNT(*) FROM subscriptions WHERE status IN ('active', 'trialing') AND current_period_start <= (m.month || '-01')::timestamp without time zone)::int AS total_active
+    FROM months m
+    LEFT JOIN cancellations c ON c.month = m.month
+    LEFT JOIN active_starts a ON a.month = m.month
+    ORDER BY m.month
+  `, [months]);
+
+  const rows = result.rows;
+  const lastMonth = rows[rows.length - 1];
+  const prevMonth = rows[rows.length - 2];
+
+  const churnRate = lastMonth && lastMonth.total_active > 0
+    ? Math.round((lastMonth.canceled / lastMonth.total_active) * 100 * 10) / 10
+    : 0;
+  const retentionRate = Math.round((1 - (churnRate / 100)) * 100 * 10) / 10;
+  const annualRetention = Math.round(Math.pow(retentionRate / 100, 12) * 100 * 10) / 10;
+
+  const mrrResult = await pool.query(`
+    SELECT COALESCE(SUM(amount), 0) AS mrr
+    FROM subscription_invoices
+    WHERE status = 'paid' AND paid_at >= NOW() - INTERVAL '30 days'
+  `);
+  const mrr = Number(mrrResult.rows[0]?.mrr || 0);
+
+  return {
+    churn_rate: churnRate,
+    retention_rate: retentionRate,
+    annual_retention: annualRetention,
+    arr: Math.round(mrr * 12),
+    mrr,
+    monthly_breakdown: rows,
+  };
+};
+
+export const getComparisonTable = async (): Promise<Record<string, unknown>[]> => {
+  const result = await pool.query(`
+    SELECT
+      t.id, t.name, t.active, t.created_at,
+      p.name AS plan_name, p.code AS plan_code,
+      (SELECT COUNT(*) FROM doctors d WHERE d.tenant_id = t.id)::int AS total_doctors,
+      (SELECT COUNT(*) FROM users u WHERE u.tenant_id = t.id AND u.role IN ('user', 'patient'))::int AS total_patients,
+      (SELECT COUNT(*) FROM bookings b WHERE b.tenant_id = t.id)::int AS total_bookings,
+      (SELECT COUNT(*) FROM bookings b WHERE b.tenant_id = t.id AND b.date >= NOW() - INTERVAL '30 days')::int AS bookings_30d,
+      (SELECT COUNT(*) FROM bookings b WHERE b.tenant_id = t.id AND b.status = 'cancelled')::int AS total_cancelled,
+      (SELECT COALESCE(SUM(amount), 0) FROM subscription_invoices si WHERE si.tenant_id = t.id AND si.status = 'paid')::numeric AS total_revenue,
+      (SELECT MAX(b.created_at) FROM bookings b WHERE b.tenant_id = t.id) AS last_booking_date
+    FROM tenants t
+    LEFT JOIN LATERAL (
+      SELECT s.plan_id FROM subscriptions s
+      WHERE s.tenant_id = t.id AND s.status IN ('active', 'trialing')
+      ORDER BY s.current_period_start DESC LIMIT 1
+    ) sub ON true
+    LEFT JOIN plans p ON p.id = sub.plan_id
+    ORDER BY t.created_at DESC
+  `);
+
+  const healthScores = await getTenantHealthScores();
+  const healthMap = new Map(healthScores.map((h: Record<string, unknown>) => [h.id, h]));
+
+  return result.rows.map((r: Record<string, unknown>) => {
+    const health = healthMap.get(r.id as string) || {};
+    return { ...r, health_score: health.health_score || 0 };
+  });
+};
+
+export const getOccupancyMetrics = async (): Promise<Record<string, unknown>[]> => {
+  const result = await pool.query(`
+    SELECT
+      t.id, t.name,
+      COUNT(DISTINCT da.id)::int AS total_slots,
+      COUNT(DISTINCT b.id) FILTER (WHERE b.date >= NOW() - INTERVAL '30 days' AND b.status != 'cancelled')::int AS recent_bookings,
+      CASE
+        WHEN COUNT(DISTINCT da.id) > 0
+        THEN ROUND((COUNT(DISTINCT b.id)::numeric / NULLIF(COUNT(DISTINCT da.id), 0)) * 100, 1)
+        ELSE 0
+      END AS occupancy_pct
+    FROM tenants t
+    LEFT JOIN doctors d ON d.tenant_id = t.id
+    LEFT JOIN doctor_availability da ON da.doctor_id = d.id
+    LEFT JOIN bookings b ON b.doctor_id = d.id AND b.date >= NOW() - INTERVAL '30 days' AND b.date <= CURRENT_DATE AND b.status != 'cancelled'
+    GROUP BY t.id, t.name
+    ORDER BY occupancy_pct DESC
+  `);
+  return result.rows;
+};
+
+export const getActivityMetrics = async (): Promise<Record<string, unknown>[]> => {
+  const result = await pool.query(`
+    SELECT
+      t.id, t.name, t.active,
+      MAX(b.created_at) AS last_booking,
+      (SELECT MAX(last_activity_at) FROM users WHERE tenant_id = t.id AND role = 'admin') AS last_admin_activity,
+      (SELECT COUNT(*) FROM bookings WHERE tenant_id = t.id AND created_at >= NOW() - INTERVAL '7 days')::int AS bookings_7d,
+      (SELECT COUNT(*) FILTER (WHERE role = 'admin' AND last_activity_at >= NOW() - INTERVAL '30 days') FROM users WHERE tenant_id = t.id)::int AS admin_active_30d
+    FROM tenants t
+    LEFT JOIN bookings b ON b.tenant_id = t.id
+    GROUP BY t.id, t.name, t.active
+    ORDER BY GREATEST(
+      COALESCE(MAX(b.created_at), '1970-01-01'::timestamp),
+      COALESCE((SELECT MAX(last_activity_at) FROM users WHERE tenant_id = t.id AND role = 'admin'), '1970-01-01'::timestamp)
+    ) ASC
+  `);
+  return result.rows;
+};
+
+export const getAlerts = async (): Promise<Record<string, unknown>[]> => {
+  const healthScores = await getTenantHealthScores();
+  const activity = await getActivityMetrics();
+  const activityMap = new Map(activity.map((a: Record<string, unknown>) => [a.id, a]));
+
+  const alerts: Record<string, unknown>[] = [];
+
+  for (const tenant of healthScores) {
+    const act = activityMap.get(tenant.id as string) as Record<string, unknown> | undefined;
+    const score = Number(tenant.health_score || 0);
+    const daysSinceBooking = act?.last_booking
+      ? Math.floor((Date.now() - new Date(act.last_booking as string).getTime()) / (1000 * 60 * 60 * 24))
+      : 999;
+    const bookings7d = Number(act?.bookings_7d || 0);
+    const bookings30d = Number(tenant.bookings_30d || 0);
+    const bookingsPrev30d = Number(tenant.bookings_prev_30d || 0);
+    const uniquePatients30d = Number(tenant.unique_patients_30d || 0);
+    const cancellations30d = Number(tenant.cancellations_30d || 0);
+
+    // Crítica: Tenant sin actividad 7+ días
+    if (daysSinceBooking >= 7 && tenant.active) {
+      alerts.push({
+        tenant_id: tenant.id, tenant_name: tenant.name,
+        type: 'inactivity', severity: daysSinceBooking >= 14 ? 'critical' : 'high',
+        message: `${daysSinceBooking} días sin actividad`,
+      });
+    }
+
+    // Alta: Caída > 30% en bookings
+    if (bookingsPrev30d > 0 && bookings30d < bookingsPrev30d * 0.7) {
+      const drop = Math.round((1 - bookings30d / bookingsPrev30d) * 100);
+      alerts.push({
+        tenant_id: tenant.id, tenant_name: tenant.name,
+        type: 'drop_activity', severity: 'high',
+        message: `Caída del ${drop}% en citas vs mes anterior`,
+      });
+    }
+
+    // Media: Sin nuevos pacientes 21+ días
+    if (uniquePatients30d === 0 && bookingsPrev30d > 0) {
+      alerts.push({
+        tenant_id: tenant.id, tenant_name: tenant.name,
+        type: 'no_new_patients', severity: 'medium',
+        message: 'Sin nuevos pacientes en 30 días',
+      });
+    }
+
+    // Media: Cancelaciones anómalas
+    if (bookings30d > 5 && cancellations30d > 0 && (cancellations30d / bookings30d) > 0.25) {
+      const rate = Math.round((cancellations30d / bookings30d) * 100);
+      alerts.push({
+        tenant_id: tenant.id, tenant_name: tenant.name,
+        type: 'high_cancellations', severity: 'medium',
+        message: `Tasa de cancelación del ${rate}%`,
+      });
+    }
+
+    // Alta: Posible abandono (30+ días sin booking)
+    if (daysSinceBooking >= 30 && tenant.active) {
+      alerts.push({
+        tenant_id: tenant.id, tenant_name: tenant.name,
+        type: 'possible_churn', severity: 'high',
+        message: 'Posible abandono — 30+ días sin actividad',
+      });
+    }
+  }
+
+  const severityOrder: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 };
+  alerts.sort((a, b) => (severityOrder[a.severity as string] || 99) - (severityOrder[b.severity as string] || 99));
+
+  return alerts;
 };
 
 export const adminCreateTenant = async (data: {
