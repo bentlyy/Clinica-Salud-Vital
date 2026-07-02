@@ -30,10 +30,27 @@ desktop.ini
 *.swo
 *~
 
+# Opencode (local tooling)
+.opencode/
+
+# Frontend env
+frontend/.env
+
+# Frontend build output
+frontend/dist/
+
+# Binary files
+*.pdf
+*.jpg
+*.jpeg
+*.png
+
 # Obsidian (user-specific layout)
-wiki/.obsidian/workspace.json
-wiki/.obsidian/workspace/
-wiki/.obsidian/appearance.json
+wiki/.obsidian/
+
+# Working documents
+prompts-secuenciales.md
+prompts-secuenciales-v2.md
 
 # Testing
 coverage/
