@@ -111,9 +111,6 @@ const allowedOrigins = [
 app.use(cors({
   origin: (origin, callback) => {
     if (!origin) {
-      if (process.env.NODE_ENV === 'production') {
-        return callback(new Error('Not allowed by CORS'));
-      }
       return callback(null, true);
     }
     if (allowedOrigins.length === 0 && process.env.NODE_ENV === 'production') {
