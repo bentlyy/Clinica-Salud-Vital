@@ -94,6 +94,8 @@ jobs:
     steps:
       - name: Trigger Render deploy
         run: curl -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
+      - name: Wait for Render build to start
+        run: sleep 120
       - name: Wait for deployment and health check
         run: |
           echo "Waiting for deploy to complete..."
