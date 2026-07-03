@@ -21,10 +21,12 @@ class MemoryQueue {
       logger.warn(`MemoryQueue: No handler registered for type "${type}"`);
       return;
     }
-    setImmediate(() => {
-      handler({ type, data }).catch((err) => {
+    setImmediate(async () => {
+      try {
+        await handler({ type, data });
+      } catch (err) {
         logger.error(`MemoryQueue: Job "${type}" failed:`, err);
-      });
+      }
     });
   }
 }
