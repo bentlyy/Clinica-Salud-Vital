@@ -63,7 +63,6 @@ describe('Health endpoint logic', () => {
 
     let status = 'ok';
     let errorCaught = false;
-
     try {
       await mockQuery('SELECT 1');
     } catch {

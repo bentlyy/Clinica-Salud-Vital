@@ -162,8 +162,9 @@ export default function BookingPage() {
       {step === 1 && (
         <div>
           <div className="form-group bk-form-group-narrow">
-            <label className="form-label">{t('booking.date_label')}</label>
+            <label className="form-label" htmlFor="booking-date">{t('booking.date_label')}</label>
             <input
+              id="booking-date"
               type="date"
               value={date}
               min={today}

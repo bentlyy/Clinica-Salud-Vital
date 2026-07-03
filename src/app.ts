@@ -391,7 +391,12 @@ process.on('SIGINT', () => {
   process.exit(0);
 });
 
-startServer().catch((err) => {
-  logger.error('Fatal startup error', { error: (err as Error).message, stack: (err as Error).stack });
-  process.exit(1);
-});
+export { app };
+export { startServer };
+
+if (process.env.NODE_ENV !== 'test') {
+  startServer().catch((err) => {
+    logger.error('Fatal startup error', { error: (err as Error).message, stack: (err as Error).stack });
+    process.exit(1);
+  });
+}

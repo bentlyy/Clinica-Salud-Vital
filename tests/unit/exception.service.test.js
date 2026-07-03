@@ -30,6 +30,16 @@ describe('exceptionService.getExceptionsByDoctor', () => {
     expect(result).toHaveLength(1);
     expect(result[0].is_full_day).toBe(true);
   });
+
+  it('returns exceptions with tenantId filter', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [{ id: 1, doctor_id: 1, date: '2025-01-20', is_full_day: true }] });
+
+    const result = await exceptionService.getExceptionsByDoctor(1, 'tenant-1');
+
+    expect(result).toHaveLength(1);
+    expect(mockQuery.mock.calls[0][0]).toContain('tenant_id');
+    expect(mockQuery.mock.calls[0][1]).toContain('tenant-1');
+  });
 });
 
 describe('exceptionService.createException', () => {
@@ -136,38 +146,5 @@ describe('exceptionService.deleteException', () => {
     expect(result.message).toBe('Exception deleted');
     expect(mockQuery.mock.calls[0][0]).toContain('tenant_id');
     expect(mockQuery.mock.calls[0][1]).toContain('tenant-1');
-  });
-});
-
-describe('exceptionService.getExceptionsByDoctor', () => {
-  it('returns exceptions with tenantId', async () => {
-    mockQuery.mockResolvedValueOnce({ rows: [{ id: 1, doctor_id: 1, date: '2025-01-20', is_full_day: true }] });
-
-    const result = await exceptionService.getExceptionsByDoctor(1, 'tenant-1');
-
-    expect(result).toHaveLength(1);
-    expect(mockQuery.mock.calls[0][0]).toContain('tenant_id');
-    expect(mockQuery.mock.calls[0][1]).toContain('tenant-1');
-  });
-});
-
-describe('exceptionService.deleteException', () => {
-  it('throws if ids not integers', async () => {
-    await expect(exceptionService.deleteException('abc', 1, 'test-tenant')).rejects.toThrow('Invalid id');
-    await expect(exceptionService.deleteException(1, 'abc', 'test-tenant')).rejects.toThrow('Invalid id');
-  });
-
-  it('deletes exception successfully', async () => {
-    mockQuery.mockResolvedValueOnce({ rows: [{ id: 1 }] });
-
-    const result = await exceptionService.deleteException(1, 1, 'test-tenant');
-
-    expect(result.message).toBe('Exception deleted');
-  });
-
-  it('throws if exception not found', async () => {
-    mockQuery.mockResolvedValueOnce({ rows: [] });
-
-    await expect(exceptionService.deleteException(999, 1, 'test-tenant')).rejects.toThrow('Exception not found or unauthorized');
   });
 });
