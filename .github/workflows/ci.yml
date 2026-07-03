@@ -97,7 +97,7 @@ jobs:
       - name: Wait for deployment and health check
         run: |
           echo "Waiting for deploy to complete..."
-          for i in $(seq 1 30); do
+          for i in $(seq 1 60); do
             HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "${{ secrets.RENDER_APP_URL }}/health" || echo "000")
             if [ "$HTTP_CODE" = "200" ]; then
               BODY=$(curl -s "${{ secrets.RENDER_APP_URL }}/health")
