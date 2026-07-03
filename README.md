@@ -82,10 +82,10 @@ Base de datos compartida con columna `tenant_id` en todas las tablas. Resolució
 
 | Idioma | Estado | Claves |
 |--------|--------|-------|
-| 🇪🇸 Español | Completo | ~478 |
-| 🇺🇸 Inglés | Completo | ~478 |
-| 🇧🇷 Portugués | Parcial | ~300 |
-| 🇫🇷 Francés | Parcial | ~300 |
+| 🇪🇸 Español | Completo | ~811 |
+| 🇺🇸 Inglés | Completo | ~811 |
+| 🇧🇷 Portugués | Completo | ~811 |
+| 🇫🇷 Francés | Completo | ~811 |
 
 </details>
 
@@ -354,7 +354,7 @@ Los datos de prueba se generan automáticamente al iniciar la app en desarrollo.
 | **CI/CD** | GitHub Actions + Render |
 | **Seguridad** | Helmet, CORS, rate limiting, Zod, 2FA, auditoría HMAC |
 | **Multi-tenancy** | Implementado con planes SaaS auto-gestionables |
-| **i18n** | 🇪🇸 🇺🇸 completos — 🇧🇷 🇫🇷 parciales |
+| **i18n** | 🇪🇸 🇺🇸 🇧🇷 🇫🇷 completos — 811 claves c/u |
 | **Documentación** | API docs, ADR (monolito modular) |
 
 </div>
