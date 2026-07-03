@@ -1,253 +1,308 @@
-# Clínica Salud Vital
+<div align="center">
 
-Sistema SaaS de gestión clínica multi-tenant para administrar clínicas, pacientes, médicos, citas, historiales clínicos, facturación, laboratorio y análisis.
+# 🏥 Clínica Salud Vital
 
----
+**SaaS de Gestión Clínica Multi-Tenant**  
+Plataforma integral para administrar clínicas, pacientes, médicos, citas, historiales clínicos, facturación, laboratorio y análisis.
 
-## Características
+<br>
 
-- **Autenticación**: JWT (15 min) + refresh tokens (30 días) con rotación, bcrypt (12 rounds), 2FA TOTP
-- **RBAC**: Roles `superadmin`, `admin`, `doctor`, `patient` con autorización por middleware
-- **Agenda médica**: Creación, cancelación, slots disponibles, disponibilidad semanal del doctor, excepciones (días completos/parciales)
-- **Reserva como invitado**: Booking sin login mediante RUT chileno
-- **Historia Clínica Electrónica (EHR)**: Registros clínicos SOAP, recetas/prescripciones, búsqueda CIE-10, descarga PDF
-- **Facturación**: Facturas, pagos, seguros, integración Stripe (con stub en desarrollo)
-- **Laboratorio**: Catálogo de exámenes, solicitudes, resultados
-- **Dashboard analítico**: KPIs, gráficos (Recharts), pronóstico de demanda, tendencias, distribución geográfica
-- **Auditoría**: Logs encadenados con HMAC-SHA256, verificación periódica de integridad
-- **Webhooks**: Endpoint Stripe para eventos de suscripción
-- **Notificaciones**: Email (SendGrid + SMTP fallback Gmail), SMS/WhatsApp (Twilio), recordatorios automáticos cada 5 min
-- **Multi-tenancy**: Base de datos compartida, resolución por header `X-Tenant-Id` o JWT, planes SaaS con límites
-- **Internacionalización**: 4 idiomas (es/en completos, pt/fr parciales), ~478 claves de traducción
-- **Seguridad**: Helmet (CSP, HSTS, frameguard), HPP, CORS, rate limiting (3 niveles), validación Zod, sanitize-html, Sentry, advisory locks PostgreSQL
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.8-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white)](https://react.dev/)
+[![Express](https://img.shields.io/badge/Express-4-000000?logo=express&logoColor=white)](https://expressjs.com/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![Vite](https://img.shields.io/badge/Vite-8-646CFF?logo=vite&logoColor=white)](https://vite.dev/)
+[![Vitest](https://img.shields.io/badge/Vitest-4-6E9F18?logo=vitest&logoColor=white)](https://vitest.dev/)
+[![Zod](https://img.shields.io/badge/Zod-4-3E67B1?logo=zod&logoColor=white)](https://zod.dev/)
+[![Render](https://img.shields.io/badge/Render-46E3B7?logo=render&logoColor=white)](https://render.com/)
+[![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
+[![CI](https://img.shields.io/github/actions/workflow/status/bentlyy/Clinica-Salud-Vital/ci.yml?branch=master&label=CI&logo=githubactions)](https://github.com/bentlyy/Clinica-Salud-Vital/actions)
+[![Tests](https://img.shields.io/badge/tests-1357%20passed-2ea043)](#-testing)
+[![Coverage](https://img.shields.io/badge/coverage-~89%25-2ea043)](#-testing)
 
----
-
-## Stack
-
-| Capa | Tecnología |
-|------|-----------|
-| Frontend | React 19, Vite 8, TypeScript, React Router 7, FullCalendar 6, Recharts 3, Axios |
-| Backend | Express 4, TypeScript 5.8, Zod 4, node-cron, Winston |
-| Base de datos | PostgreSQL 15, pg (raw SQL), pool con replicación lectura |
-| Infraestructura | Docker Compose, Render, Ubuntu |
-| CI/CD | GitHub Actions (typecheck, test, build, deploy) |
-| Monitoreo | Sentry, logs estructurados Winston |
-| Email | SendGrid, nodemailer (Gmail SMTP) |
-| SMS | Twilio (SMS + WhatsApp) |
-| Pagos | Stripe (con stub simulado en desarrollo) |
+</div>
 
 ---
 
-## Arquitectura
+## ✨ Funcionalidades
+
+<details open>
+<summary><b>🔐 Autenticación y Seguridad</b></summary>
+
+- JWT (15 min) + Refresh Tokens (30 días) con rotación
+- 2FA TOTP con secreto cifrado AES-256-GCM
+- bcrypt (12 rounds) para passwords
+- Rate limiting en 4 niveles: global, auth, PHI, guest, SaaS
+- Helmet (CSP, HSTS preload, frameguard), HPP, CORS
+- Validación Zod 4 en todas las entradas
+- Sanitización de campos clínicos con `sanitize-html`
+- Auditoría encadenada con HMAC-SHA256 + verificación cada 6h
+- Advisory locks PostgreSQL para carrera crítica en reservas
+- Captura de errores con Sentry
+
+</details>
+
+<details open>
+<summary><b>👥 Roles y Multi-tenancy</b></summary>
+
+| Rol | Acceso |
+|-----|--------|
+| `superadmin` | Panel global: todos los tenants, usuarios, estadísticas |
+| `admin` | Gestión completa de su clínica |
+| `doctor` | Agenda, pacientes, historiales clínicos |
+| `patient` | Sus propias citas y registros |
+
+Base de datos compartida con columna `tenant_id` en todas las tablas. Resolución automática via header `X-Tenant-Id` o JWT. Planes SaaS (`free`, `basic`, `pro`, `enterprise`) con límites configurables y self-service (onboarding, Stripe checkout, cambio de plan, cancelación).
+
+</details>
+
+<details open>
+<summary><b>📋 Módulos del Sistema</b></summary>
+
+| Módulo | Descripción |
+|--------|------------|
+| **Auth** | Registro, login, refresh, logout, 2FA, cambio/recuperación de password |
+| **Doctors** | CRUD, listado público, invitación por email, toggle activo |
+| **Booking** | Creación/cancelación de citas, slots disponibles, densidad diaria, agenda del doctor |
+| **Availability** | Disponibilidad semanal + excepciones (días completos o parciales) |
+| **Guest** | Reserva sin login mediante RUT chileno |
+| **Clinical Records** | Historia clínica electrónica (SOAP), recetas/prescripciones, búsqueda CIE-10, descarga PDF |
+| **Billing** | Facturas, pagos, seguros, integración Stripe |
+| **Laboratory** | Catálogo de exámenes, solicitudes, resultados |
+| **Analytics** | Dashboard con KPIs, gráficos Recharts, pronóstico de demanda, tendencias, mapa geográfico |
+| **Audit** | Logs de auditoría encadenados con verificación de integridad |
+| **Specialties** | Catálogo público de especialidades |
+| **SaaS** | Planes, onboarding multi-tenant, webhook Stripe, suscripción, uso, límites |
+| **Super Admin** | Panel global: gestión de tenants, usuarios, estadísticas del sistema |
+
+</details>
+
+<details open>
+<summary><b>🌐 Internacionalización</b></summary>
+
+| Idioma | Estado | Claves |
+|--------|--------|-------|
+| 🇪🇸 Español | Completo | ~478 |
+| 🇺🇸 Inglés | Completo | ~478 |
+| 🇧🇷 Portugués | Parcial | ~300 |
+| 🇫🇷 Francés | Parcial | ~300 |
+
+</details>
+
+<details open>
+<summary><b>📬 Notificaciones</b></summary>
+
+- Email transaccional (SendGrid + fallback Gmail SMTP)
+- SMS / WhatsApp (Twilio)
+- Recordatorios automáticos de citas cada 5 minutos via job interno
+
+</details>
+
+---
+
+## 🧱 Stack Tecnológico
+
+<div align="center">
+
+| Capa | Tecnologías |
+|------|-------------|
+| <b>Frontend</b> | React 19, Vite 8, TypeScript 5.8, React Router 7, FullCalendar 6, Recharts 3, Axios |
+| <b>Backend</b> | Express 4, TypeScript 5.8, Zod 4, node-cron, Winston |
+| <b>Base de datos</b> | PostgreSQL 15, pg (raw SQL) con pool y replicación de lectura |
+| <b>Infraestructura</b> | Docker Compose, Render (cloud), Ubuntu |
+| <b>CI/CD</b> | GitHub Actions — typecheck, test, build, deploy automático a Render |
+| <b>Monitoreo</b> | Sentry, logs estructurados Winston |
+| <b>Email</b> | SendGrid + Nodemailer (Gmail SMTP) |
+| <b>SMS</b> | Twilio (SMS + WhatsApp) |
+| <b>Pagos</b> | Stripe (con stub simulado en desarrollo) |
+
+</div>
+
+---
+
+## 🏗️ Arquitectura
+
+El proyecto sigue un patrón **monolito modular**: un solo deploy con módulos débilmente acoplados dentro de `src/modules/`. Cada módulo contiene rutas, controladores, servicios y esquemas de validación propios.
 
 ```
-                     ┌──────────────┐
-                     │   React 19   │
-                     │   Frontend   │
-                     │  :5173 (dev) │
-                     └──────┬───────┘
-                            │ /api
-                     ┌──────▼───────┐
-                     │  Express 4   │
-                     │   Backend    │
-                     │   :3000      │
-                     └──────┬───────┘
-                            │ SQL
-                     ┌──────▼───────┐
-                     │ PostgreSQL   │
-                     │     15       │
-                     └──────────────┘
+                    ┌─────────────────────────┐
+                    │      React 19 SPA        │
+                    │      Frontend :5173       │
+                    └──────────┬──────────────┘
+                               │  /api
+                    ┌──────────▼──────────────┐
+                    │    Express 4 API         │
+                    │    Backend :3000          │
+                    │                          │
+                    │  ┌─ auth ─ booking ─┐   │
+                    │  │ doctor clinical  │   │
+                    │  │ billing  lab     │   │
+                    │  │ analytics  saas  │   │
+                    │  │ super-admin      │   │
+                    │  └──────────────────┘   │
+                    └──────────┬──────────────┘
+                               │  SQL
+                    ┌──────────▼──────────────┐
+                    │    PostgreSQL 15         │
+                    │    (shared-db multi-     │
+                    │     tenant con tenant_id)│
+                    └─────────────────────────┘
 ```
-
-El proyecto sigue un patrón **monolito modular**: un solo deploy con módulos débilmente acoplados dentro de `src/modules/`. Cada módulo contiene sus propias rutas, controladores, servicios y esquemas de validación.
 
 ---
 
-## Estructura del proyecto
+## 📁 Estructura del Proyecto
 
 ```
-├── src/
-│   ├── app.ts                    # Entry point, middlewares, rutas
+├── src/                           # Backend
+│   ├── app.ts                     # Entry point, middlewares globales, rutas
 │   ├── modules/
-│   │   ├── auth/                 # Registro, login, refresh, 2FA, cambio password
-│   │   ├── doctor/               # CRUD doctores, invitación, toggle activo
-│   │   ├── booking/              # Reservas, slots disponibles, agenda doctor
-│   │   ├── availability/         # Disponibilidad semanal + excepciones
-│   │   ├── guest/                # Booking sin login por RUT
-│   │   ├── clinical-record/      # EHR, recetas, CIE-10, PDF
-│   │   ├── billing/              # Facturas, pagos, seguros
-│   │   ├── laboratory/           # Tests, solicitudes, resultados
-│   │   ├── analytics/            # Dashboard, KPIs, pronóstico
-│   │   ├── audit/                # Logs de auditoría
-│   │   ├── specialties/          # Catálogo de especialidades
-│   │   ├── saas/                 # Planes, suscripciones, onboarding, Stripe webhook
-│   │   ├── super-admin/          # Panel global: tenants, usuarios, estadísticas
-│   │   └── patient/              # (vacío)
-│   ├── middlewares/
-│   │   ├── auth.middleware.ts    # JWT verification + role authorization
-│   │   ├── tenant.middleware.ts  # Resolución multi-tenant
-│   │   ├── security.middleware.ts# Helmet, HPP, CSP
-│   │   ├── validate.middleware.ts# Validación Zod
-│   │   ├── errorHandler.middleware.ts
-│   │   ├── requestLogger.middleware.ts
-│   │   ├── sessionActivity.middleware.ts
-│   │   └── asyncHandler.middleware.ts
-│   ├── shared/                   # DB pool, JWT, crypto, email, queue, i18n, RUT, etc.
-│   ├── jobs/
-│   │   ├── reminder.job.ts      # Recordatorios cada 5 min
-│   │   └── audit-integrity.job.ts# Verificación cadena auditoría cada 6h
-│   ├── seed/
-│   │   ├── admin.seed.ts        # Tenant default + superadmin
-│   │   └── seed.ts              # Datos de prueba realistas
-│   └── types/                    # Tipos globales + express.d.ts
-├── frontend/
+│   │   ├── auth/                  # Autenticación, 2FA, recuperación
+│   │   ├── doctor/                # CRUD doctores, invitaciones
+│   │   ├── booking/               # Reservas, slots, agenda
+│   │   ├── availability/          # Disponibilidad semanal + excepciones
+│   │   ├── guest/                 # Booking invitado por RUT
+│   │   ├── clinical-record/       # EHR, recetas, CIE-10, PDF
+│   │   ├── billing/               # Facturación, pagos, seguros
+│   │   ├── laboratory/            # Exámenes, solicitudes, resultados
+│   │   ├── analytics/             # Dashboard, KPIs, pronóstico
+│   │   ├── audit/                 # Logs de auditoría
+│   │   ├── specialties/           # Catálogo de especialidades
+│   │   ├── saas/                  # Planes, suscripciones, onboarding
+│   │   ├── super-admin/           # Panel global multi-tenant
+│   │   └── patient/               # (en desarrollo)
+│   ├── middlewares/               # auth, tenant, security, validate, errorHandler, etc.
+│   ├── shared/                    # DB pool, JWT, crypto, email, queue, i18n, RUT
+│   ├── jobs/                      # recordatorios (5min), auditoría (6h)
+│   ├── seed/                      # Seed datos de prueba
+│   └── types/                     # Definiciones globales TypeScript
+├── frontend/                      # Frontend React + Vite
 │   └── src/
-│       ├── pages/               # 18 páginas (públicas, doctor, admin, superadmin)
-│       ├── components/          # Navbar, LoadingState, ErrorState, EmptyState, Combobox
-│       ├── context/             # AuthContext, ThemeContext
-│       ├── i18n/                # Traducciones es/en/pt/fr
-│       ├── api/                 # Clientes Axios por módulo
-│       └── routes/              # AppRoutes + ProtectedRoute
+│       ├── pages/                 # 18 páginas (públicas, doctor, admin, superadmin)
+│       ├── components/            # Navbar, LoadingState, ErrorState, EmptyState, Combobox, etc.
+│       ├── context/               # AuthContext, ThemeContext
+│       ├── i18n/                  # Traducciones (es, en, pt, fr)
+│       ├── api/                   # Clientes Axios por módulo
+│       └── routes/                # AppRoutes + ProtectedRoute
 ├── db/
-│   └── init.sql                 # Schema inicial (12 tablas, índices, triggers, seed data)
-├── docker-compose.yml           # PostgreSQL 15
-├── Dockerfile                   # Build + deploy backend
-├── render.yaml                  # Configuración deploy Render
-└── .env.example                 # Variables de entorno
+│   └── init.sql                   # Schema completo + índices + triggers + seed
+├── docker-compose.yml             # PostgreSQL 15
+├── Dockerfile                     # Build + deploy backend
+├── render.yaml                    # Config Render
+└── .env.example                   # Template variables de entorno
 ```
 
 ---
 
-## Instalación rápida
+## 🚀 Inicio Rápido
 
 ```bash
-git clone <repo> && cd clinic-backend
+# 1. Clonar e instalar
+git clone https://github.com/bentlyy/Clinica-Salud-Vital.git
+cd Clinica-Salud-Vital
 npm install
+
+# 2. Base de datos (PostgreSQL 15)
 docker compose up -d db
+
+# 3. Variables de entorno
 cp .env.example .env
+# Editar .env con tus credenciales
+
+# 4. Iniciar desarrollo
 npm run dev
 ```
 
-Frontend en `http://localhost:5173`, API en `http://localhost:3000`.
+Frontend en [`http://localhost:5173`](http://localhost:5173), API en [`http://localhost:3000`](http://localhost:3000).
 
-### Scripts disponibles
+### Scripts Disponibles
 
 | Comando | Descripción |
 |---------|-------------|
-| `npm run dev` | Servidor de desarrollo (tsx watch) |
-| `npm start` | Producción (node dist/app.js) |
-| `npm test` | Tests + cobertura |
-| `npm run typecheck` | TypeScript check |
-| `npm run build` | Compilar TS + construir frontend |
+| `npm run dev` | Servidor de desarrollo con hot-reload (tsx watch) |
+| `npm start` | Producción (`node dist/app.js`) |
+| `npm test` | Tests con cobertura (Vitest) |
+| `npm run typecheck` | Verificación TypeScript |
+| `npm run build:backend` | Compilar TypeScript |
+| `npm run build:frontend` | Build frontend React |
+| `npm run build` | Build completo (backend + frontend) |
 
 ---
 
-## Variables de entorno
+## 🔌 API
 
-| Variable | Requerida | Descripción |
-|----------|-----------|-------------|
-| `DATABASE_URL` | Sí | PostgreSQL connection string |
-| `JWT_SECRET` | Sí | Secreto JWT (mín. 32 caracteres) |
-| `AUDIT_HMAC_SECRET` | Sí | Secreto HMAC para integridad de auditoría (mín. 32) |
-| `PHI_MASTER_KEY` | Sí | Clave para cifrado de datos clínicos (64 hex) |
-| `ENCRYPTION_KEY` | Sí | Clave cifrado 2FA (32 hex) |
-| `FRONTEND_URL` | Sí | URL del frontend para CORS |
-| `NODE_ENV` | No | `development` por defecto |
-| `PORT` | No | 3000 por defecto |
-| `EMAIL_USER` | No | Gmail SMTP user |
-| `EMAIL_PASS` | No | Gmail SMTP app password |
-| `SENDGRID_API_KEY` | No | API key SendGrid |
-| `TWILIO_*` | No | Credenciales Twilio (SMS/WhatsApp) |
-| `STRIPE_SECRET_KEY` | No | Stripe (modo simulado sin ella) |
-| `RECAPTCHA_SECRET_KEY` | No | Google reCAPTCHA |
-| `SENTRY_DSN` | No | Error tracking |
-| `ML_SIMPLIFIED` | No | `true` para modo stats sin TF.js |
-| `LOG_LEVEL` | No | `info` por defecto |
+La API REST usa el prefijo `/api`. Las respuestas siguen el formato `{ data, pagination }` para listas y objeto directo para recursos individuales.
 
-Ver `.env.example` para la lista completa con valores por defecto.
+### Convenciones
+
+| Aspecto | Formato |
+|---------|---------|
+| **Autenticación** | `Authorization: Bearer <jwt>` |
+| **Multi-tenancy** | Header `X-Tenant-Id` o desde el JWT |
+| **Paginación** | `?page=1&limit=20` (máx. 100) |
+| **Roles** | `superadmin`, `admin`, `doctor`, `patient` |
+
+### Endpoints Principales
+
+| Módulo | Prefijo | Propósito |
+|--------|---------|-----------|
+| Auth | `/api/auth` | register, login, refresh, logout, 2FA, change-password, forgot/reset |
+| Doctors | `/api/doctors` | CRUD, listar público, invitar, toggle activo |
+| Bookings | `/api/bookings` | CRUD, available-slots, daily-density, agenda |
+| Availability | `/api/availability` | Disponibilidad semanal |
+| Exceptions | `/api/exceptions` | Excepciones (full/partial day) |
+| Guest | `/api/guest` | Booking sin login por RUT |
+| Clinical Records | `/api/clinical-records` | EHR, CIE-10, recetas, PDF |
+| Billing | `/api/billing` | Facturas, pagos, seguros |
+| Laboratory | `/api/laboratory` | Tests, solicitudes, resultados |
+| Analytics | `/api/analytics` | Dashboard, KPIs, pronóstico |
+| Audit | `/api/audit` | Logs (admin) |
+| Specialties | `/api/specialties` | Catálogo público |
+| SaaS | `/api/saas` | Planes, onboarding, webhook Stripe, subscription |
+| Super Admin | `/api/super-admin` | Tenants, usuarios globales, stats |
 
 ---
 
-## Testing
+## 🧪 Testing
 
 ```bash
-npm test                          # 1122+ tests, cobertura
+npm test                          # Suite completa (backend)
+cd frontend && npm test           # Suite frontend
 npm run test:watch                # Modo watch
 npm run test:coverage             # Reporte HTML
 ```
 
-- **Framework**: Vitest 4 con pool forks
-- **Setup**: tests/setup.js con mocks de DB, auth, email
-- **Cobertura**: ~89% lines (threshold: 50%)
-- **Estructura**: 53 tests unitarios, 7 de integración, 93 archivos
-- **CI**: GitHub Actions ejecuta typecheck + test + build en cada push a master/main
+| Métrica | Valor |
+|---------|-------|
+| **Framework** | Vitest 4 con pool forks |
+| **Tests backend** | 1057 tests — 81 archivos |
+| **Tests frontend** | 300 tests — 19 archivos |
+| **Cobertura** | ~89% lines (threshold: 50%) |
+| **Setup** | Mocks de DB, auth, email, JWT |
+| **CI** | GitHub Actions: typecheck → test → build → deploy |
 
 ---
 
-## Seguridad
+## 🔒 Seguridad
 
-- **Helmet**: CSP (Google reCAPTCHA + fonts), HSTS preload, frameguard deny, permisos restringidos
-- **HPP**: Protección contra HTTP Parameter Pollution
-- **CORS**: Solo origen configurado en `FRONTEND_URL`
-- **Rate limiting**: Global (500/15 min), Auth (10/15 min), PHI (30/15 min), Guest (5/hora), SaaS (3/hora)
-- **Validación**: Zod 4 en todas las entradas (body, params, query)
-- **Sanitización**: sanitize-html para campos clínicos, redacción de campos sensibles en logs
-- **JWT**: HS256, 15 min de expiración, versionados para revocación
-- **Refresh tokens**: 30 días, rotación, almacenados en DB, revocables
-- **2FA**: TOTP con secreto cifrado AES-256-GCM
-- **Advisory locks**: PostgreSQL para evitar condiciones de carrera en creación de reservas
-- **Auditoría**: Logs encadenados con HMAC-SHA256, verificación de integridad cada 6 horas
-- **Sentry**: Captura de errores no manejados en producción
-
----
-
-## Multi-tenancy
-
-- Modelo de base de datos compartida con columna `tenant_id` en todas las tablas
-- Resolución automática via header `X-Tenant-Id` o desde el JWT del usuario
-- Middleware inyecta `req.tenant_id` y `req.locale`
-- Helpers `tenantQuery` filtran automáticamente por tenant
-- Planes SaaS: `free`, `basic`, `pro`, `enterprise` con límites configurables
-- Self-service: onboarding, checkout Stripe, cambio de plan, cancelación
+| Capa | Implementación |
+|------|---------------|
+| **Headers** | Helmet (CSP con reCAPTCHA + Google Fonts, HSTS preload, frameguard deny) |
+| **Validación** | Zod 4 en body, params y query de todos los endpoints |
+| **Autenticación** | JWT HS256 (15 min), refresh tokens (30 días con rotación y revocación) |
+| **2FA** | TOTP con secreto cifrado AES-256-GCM |
+| **Rate Limiting** | Global (500/15min), Auth (10/15min), PHI (30/15min), Guest (5/hora), SaaS (3/hora) |
+| **CORS** | Solo orígenes autorizados |
+| **Sanitización** | `sanitize-html` en campos clínicos, redacción de datos sensibles en logs |
+| **Anti-fraude** | Advisory locks PostgreSQL para condiciones de carrera |
+| **Auditoría** | Logs encadenados HMAC-SHA256, verificación de integridad cada 6h |
+| **Monitoreo** | Sentry para errores no manejados en producción |
 
 ---
 
-## API
+## 🐳 Despliegue
 
-La API REST usa el prefijo `/api` (no versionado explícitamente).
-
-**Convenciones**:
-- Formato respuesta: `{ data, pagination }` para listas, objeto directo para individual
-- Paginación: `?page=1&limit=20` (máx. 100)
-- Autenticación: `Authorization: Bearer <token>`
-- Multi-tenancy: header `X-Tenant-Id`
-- Roles: `superadmin`, `admin`, `doctor`, `patient`
-
-**Módulos principales**:
-
-| Módulo | Prefijo | Endpoints clave |
-|--------|---------|-----------------|
-| Auth | `/api/auth` | register, login, refresh, logout, 2FA, change-password, forgot/reset password |
-| Doctors | `/api/doctors` | CRUD, listar (público), invitar, toggle activo |
-| Bookings | `/api/bookings` | CRUD, available-slots, daily-density, agenda doctor |
-| Availability | `/api/availability` | CRUD disponibilidad semanal |
-| Exceptions | `/api/exceptions` | CRUD excepciones (full/partial day) |
-| Guest | `/api/guest` | Booking sin login, lookup por RUT |
-| Clinical Records | `/api/clinical-records` | EHR, CIE-10 search, prescriptions, PDF |
-| Billing | `/api/billing` | Facturas, stats, seguros |
-| Laboratory | `/api/laboratory` | Tests, solicitudes, resultados |
-| Analytics | `/api/analytics` | Dashboard, no-shows, demanda, tendencias, signos vitales |
-| Audit | `/api/audit` | Logs de auditoría (admin) |
-| Specialties | `/api/specialties` | Catálogo público |
-| SaaS | `/api/saas` | Planes, onboarding, Stripe webhook, suscripción, uso |
-| Super Admin | `/api/super-admin` | Tenants, usuarios globales, estadísticas |
-
----
-
-## Despliegue
-
-### Docker Compose (desarrollo)
+### Docker Compose (desarrollo local)
 
 ```bash
 docker compose up -d db
@@ -264,41 +319,52 @@ docker run -p 3000:3000 --env-file .env clinic-api
 
 ### Render (cloud)
 
-El archivo `render.yaml` contiene la configuración para deploy automatizado. GitHub Actions despliega automáticamente al hacer push a `master`:
+El archivo `render.yaml` contiene la configuración. El CI/CD despliega automáticamente al hacer push a `master`:
 
-1. TypeScript check
-2. Tests + cobertura
-3. Build backend + frontend
-4. Deploy a Render via webhook
-5. Health check post-deploy
+1. ✅ TypeScript check
+2. ✅ Tests + cobertura
+3. ✅ Build backend + frontend
+4. 🚀 Deploy a Render via webhook
+5. 💚 Health check post-deploy
 
 ---
 
-## Usuarios de prueba (seed)
+## 👤 Usuarios de Prueba (Seed)
 
 | Rol | Email | Password |
 |-----|-------|----------|
-| Super Admin | superadmin@clinic.com | REPLACED_PASSWORD |
-| Admin | admin@clinic.com | REPLACED_PASSWORD |
-| Doctor | juan@clinic.com | REPLACED_PASSWORD |
-| Patient | user1@clinic.com | REPLACED_PASSWORD |
+| 🔷 Super Admin | superadmin@clinic.com | `REPLACED_PASSWORD` |
+| 🟢 Admin | admin@clinic.com | `REPLACED_PASSWORD` |
+| 🟡 Doctor | juan@clinic.com | `REPLACED_PASSWORD` |
+| ⚪ Patient | user1@clinic.com | `REPLACED_PASSWORD` |
 
-Ejecutar seed automático al iniciar la app en desarrollo.
+Los datos de prueba se generan automáticamente al iniciar la app en desarrollo.
 
 ---
 
-## Estado del proyecto
+## 📊 Estado del Proyecto
 
-**Versión**: 1.0.0 — Producción
+<div align="center">
 
 | Aspecto | Estado |
 |---------|--------|
-| Backend tests | 1122+ tests, ~89% cobertura |
-| Frontend | 18 páginas, lazy loading, tema claro/oscuro |
-| Documentación API | docs/api/overview.md |
-| ADR | docs/adr/001-monolito-modular.md |
-| CI/CD | GitHub Actions + Render |
-| Seguridad | Helmet, CORS, rate limiting, Zod, 2FA, auditoría |
-| Multi-tenancy | Implementado con planes SaaS |
-| i18n | es/en completos, pt/fr parcial |
+| **Versión** | `1.0.0` — Producción |
+| **Backend** | 1057 tests — ~89% cobertura |
+| **Frontend** | 18 páginas — lazy loading — tema claro/oscuro |
+| **CI/CD** | GitHub Actions + Render |
+| **Seguridad** | Helmet, CORS, rate limiting, Zod, 2FA, auditoría HMAC |
+| **Multi-tenancy** | Implementado con planes SaaS auto-gestionables |
+| **i18n** | 🇪🇸 🇺🇸 completos — 🇧🇷 🇫🇷 parciales |
+| **Documentación** | API docs, ADR (monolito modular) |
 
+</div>
+
+---
+
+<div align="center">
+
+**Hecho con ❤️ para la salud digital**
+
+[Reportar Bug](https://github.com/bentlyy/Clinica-Salud-Vital/issues) · [Solicitar Feature](https://github.com/bentlyy/Clinica-Salud-Vital/issues) · [Ir al Sitio](https://clinica-salud-vital.onrender.com)
+
+</div>
