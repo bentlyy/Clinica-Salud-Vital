@@ -154,8 +154,7 @@ describe('reminder.job', () => {
   });
 
   it('logs error when email fails but continues', async () => {
-    const origSetTimeout = global.setTimeout;
-    global.setTimeout = function (fn) { fn(); return 0; };
+    vi.useFakeTimers();
 
     mockQuery.mockImplementation((sql) => {
       if (sql.includes('FROM bookings')) {
@@ -179,9 +178,16 @@ describe('reminder.job', () => {
       .mockResolvedValue({ sent: true });
 
     const { sendReminders } = await import('../../src/jobs/reminder.job.js');
-    await sendReminders('55 minutes', '65 minutes', 'reminder_1h_sent', 'Test');
 
-    global.setTimeout = origSetTimeout;
+    // sendReminders internally awaits setTimeout in sendWithRetry.
+    // Use fake timers with async advancement to fire all timer-based promises.
+    const promise = sendReminders('55 minutes', '65 minutes', 'reminder_1h_sent', 'Test');
+
+    // Advance time to trigger all retry timeouts (max 2000 + 4000 = 6000ms per email)
+    await vi.advanceTimersByTimeAsync(20000);
+
+    await promise;
+    vi.useRealTimers();
 
     expect(mockSendEmail).toHaveBeenCalledTimes(6);
   });

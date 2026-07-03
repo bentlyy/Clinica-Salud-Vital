@@ -2,8 +2,11 @@ export function sanitizeError(err) {
   if (!err) return 'Ocurrió un error inesperado';
 
   const apiMessage = err?.response?.data?.error;
-  if (apiMessage && typeof apiMessage === 'string' && apiMessage.length < 200) {
+  if (apiMessage && typeof apiMessage === 'string' && apiMessage.length <= 200) {
     return apiMessage;
+  }
+  if (apiMessage && typeof apiMessage === 'object') {
+    return 'Ocurrió un error inesperado';
   }
 
   const message = err?.message || String(err);
