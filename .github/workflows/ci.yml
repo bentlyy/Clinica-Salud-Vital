@@ -93,26 +93,43 @@ jobs:
     needs: [build-backend, build-frontend]
     steps:
       - name: Trigger Render deploy
-        run: curl -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
-      - name: Wait for Render build to start
+        run: |
+          echo "Triggering deploy via webhook..."
+          HTTP_CODE=$(curl -s -o /tmp/render_deploy_response.txt -w "%{http_code}" -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}")
+          echo "Webhook response code: $HTTP_CODE"
+          cat /tmp/render_deploy_response.txt
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "WARNING: Webhook responded $HTTP_CODE (not 200). Render may not have accepted the deploy."
+          fi
+      - name: Wait for Render build to start (120s)
         run: sleep 120
       - name: Wait for deployment and health check
         run: |
-          echo "Waiting for deploy to complete..."
+          URL="${{ secrets.RENDER_APP_URL }}"
+          echo "Health endpoint: $URL/health"
+          echo "Waiting for deploy to complete (up to 10 min)..."
           for i in $(seq 1 60); do
-            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "${{ secrets.RENDER_APP_URL }}/health" || echo "000")
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 10 --max-time 15 "$URL/health" 2>/tmp/curl_error.log || echo "000")
             if [ "$HTTP_CODE" = "200" ]; then
-              BODY=$(curl -s "${{ secrets.RENDER_APP_URL }}/health")
+              BODY=$(curl -s --max-time 10 "$URL/health")
               DB_STATUS=$(echo "$BODY" | python3 -c "import sys,json; print(json.load(sys.stdin).get('checks',{}).get('database',{}).get('status','error'))" 2>/dev/null || echo "error")
               if [ "$DB_STATUS" = "ok" ]; then
-                echo "Health check passed! App + DB are running."
+                echo "✅ Health check passed! App + DB are running."
                 exit 0
               fi
-              echo "Health endpoint returned 200 but DB status is $DB_STATUS — still waiting..."
+              echo "⚠️ Health endpoint returned 200 but DB status is $DB_STATUS — still waiting..."
+            else
+              if [ "$HTTP_CODE" = "000" ]; then
+                CURL_ERR=$(cat /tmp/curl_error.log)
+                echo "  curl error: $CURL_ERR"
+              fi
             fi
-            echo "Attempt $i/30: HTTP $HTTP_CODE - waiting 10s..."
+            echo "Attempt $i/60: HTTP $HTTP_CODE - waiting 10s..."
             sleep 10
           done
-          echo "Deploy health check failed after 30 retries"
+          echo "❌ Deploy health check failed after 60 retries"
+          echo "Verify: (1) RENDER_DEPLOY_HOOK_URL is valid in repo secrets"
+          echo "        (2) RENDER_APP_URL is https://clinica-salud-vital.onrender.com"
+          echo "        (3) The Render dashboard shows a successful deploy"
           exit 1
         shell: bash
