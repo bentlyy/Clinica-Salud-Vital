@@ -160,7 +160,7 @@ describe('AppRoutes', () => {
       renderRoutes([path]);
       const route = await screen.findByTestId('protected-route');
       expect(route).toHaveAttribute('data-expected-role', 'doctor');
-      expect(screen.getByTestId(testId)).toBeInTheDocument();
+      expect(await screen.findByTestId(testId)).toBeInTheDocument();
     });
 
     it('/doctor/lab-results has ProtectedRoute[role=doctor] + WithFeature[laboratory]', async () => {
@@ -188,7 +188,7 @@ describe('AppRoutes', () => {
       renderRoutes([path]);
       const route = await screen.findByTestId('protected-route');
       expect(route).toHaveAttribute('data-expected-role', 'admin');
-      expect(screen.getByTestId(testId)).toBeInTheDocument();
+      expect(await screen.findByTestId(testId)).toBeInTheDocument();
     });
 
     it('/admin/lab-tests has ProtectedRoute[role=admin] + WithFeature[laboratory]', async () => {
@@ -223,7 +223,7 @@ describe('AppRoutes', () => {
       renderRoutes([path]);
       const route = await screen.findByTestId('protected-route');
       expect(route).toHaveAttribute('data-expected-role', 'superadmin');
-      expect(screen.getByTestId(testId)).toBeInTheDocument();
+      expect(await screen.findByTestId(testId)).toBeInTheDocument();
     });
 
     it('/super-admin/tenants/:id has ProtectedRoute[role=superadmin]', async () => {
