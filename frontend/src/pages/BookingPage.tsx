@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import React from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { isAxiosError } from 'axios';
+import { extractList } from '../utils/extract-list';
 import { getDoctors } from '../api/doctors';
 import { getAvailableSlots, createBooking } from '../api/bookings';
 import { useAuth } from '../context/useAuth';
@@ -61,8 +62,7 @@ const BookingPage = React.memo(function BookingPage() {
     const controller = new AbortController();
     getDoctors({ signal: controller.signal })
       .then((data) => {
-        const docs = Array.isArray(data) ? data : (data.data || []);
-        setDoctors(docs);
+        setDoctors(extractList(data));
         const doctorParam = searchParams.get('doctor');
         if (doctorParam) {
           const id = Number(doctorParam);
@@ -80,7 +80,7 @@ const BookingPage = React.memo(function BookingPage() {
     if (!selectedDoctor || !date) return;
     const controller = new AbortController();
     getAvailableSlots(selectedDoctor, date, { signal: controller.signal })
-      .then((data) => { setSlots(Array.isArray(data) ? data : []); setSelectedTime(null); })
+      .then((data) => { setSlots(extractList(data)); setSelectedTime(null); })
       .catch(() => setError(t('booking.error')));
     return () => controller.abort();
   }, [selectedDoctor, date]);
