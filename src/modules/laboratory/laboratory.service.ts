@@ -180,47 +180,58 @@ export const getLabRequests = async ({ patient_id, doctor_id, status, start_date
   let query = `
     SELECT lr.*,
            d.name AS doctor_name, d.specialty AS doctor_specialty,
-           u.name AS patient_name
+           u.name AS patient_name,
+           COALESCE(
+             json_agg(
+               json_build_object('id', lri.id, 'lab_test_id', lri.lab_test_id, 'test_name', lt.name, 'status', lri.status, 'result_value', lri.result_value, 'result_notes', lri.result_notes, 'reference_range', lt.reference_range, 'unit', lt.unit)
+               ORDER BY lt.name
+             ) FILTER (WHERE lri.id IS NOT NULL),
+             '[]'::json
+           ) AS items
     FROM lab_requests lr
     LEFT JOIN doctors d ON lr.doctor_id = d.id
     LEFT JOIN users u ON lr.patient_id = u.id
+    LEFT JOIN lab_request_items lri ON lri.lab_request_id = lr.id
+    LEFT JOIN lab_tests lt ON lt.id = lri.lab_test_id
     WHERE 1=1
   `;
   const params: any[] = [];
-  let paramCount = 1;
 
   if (patient_id) {
-    query += ' AND lr.patient_id = $' + paramCount++;
     params.push(patient_id);
+    query += ' AND lr.patient_id = $' + params.length;
   }
 
   if (doctor_id) {
-    query += ' AND lr.doctor_id = $' + paramCount++;
     params.push(doctor_id);
+    query += ' AND lr.doctor_id = $' + params.length;
   }
 
   if (status) {
-    query += ' AND lr.status = $' + paramCount++;
     params.push(status);
+    query += ' AND lr.status = $' + params.length;
   }
 
   if (start_date) {
-    query += ' AND lr.created_at >= $' + paramCount++;
     params.push(start_date);
+    query += ' AND lr.created_at >= $' + params.length;
   }
 
   if (end_date) {
-    query += ' AND lr.created_at <= $' + paramCount++;
     params.push(end_date);
+    query += ' AND lr.created_at <= $' + params.length;
   }
 
   if (tenantId !== undefined) {
-    query += ' AND lr.tenant_id = $' + paramCount++;
     params.push(tenantId);
+    query += ' AND lr.tenant_id = $' + params.length;
   }
 
-  query += ' ORDER BY lr.created_at DESC LIMIT $' + paramCount++ + ' OFFSET $' + paramCount++;
-  params.push(limit, offset);
+  query += ' GROUP BY lr.id, d.id, u.id ORDER BY lr.created_at DESC';
+  params.push(limit);
+  query += ' LIMIT $' + params.length;
+  params.push(offset);
+  query += ' OFFSET $' + params.length;
 
   const result = await pool.query(query, params);
   return result.rows;
@@ -239,11 +250,21 @@ export const getLabRequestById = async (requestId: number | string, tenantId: st
   const result = await pool.query(`
     SELECT lr.*,
            d.name AS doctor_name, d.specialty AS doctor_specialty,
-           u.name AS patient_name
+           u.name AS patient_name,
+           COALESCE(
+             json_agg(
+               json_build_object('id', lri.id, 'lab_test_id', lri.lab_test_id, 'test_name', lt.name, 'status', lri.status, 'result_value', lri.result_value, 'result_notes', lri.result_notes, 'reference_range', lt.reference_range, 'unit', lt.unit)
+               ORDER BY lt.name
+             ) FILTER (WHERE lri.id IS NOT NULL),
+             '[]'::json
+           ) AS items
     FROM lab_requests lr
     LEFT JOIN doctors d ON lr.doctor_id = d.id
     LEFT JOIN users u ON lr.patient_id = u.id
+    LEFT JOIN lab_request_items lri ON lri.lab_request_id = lr.id
+    LEFT JOIN lab_tests lt ON lt.id = lri.lab_test_id
     WHERE lr.id = $1 AND lr.tenant_id = $2
+    GROUP BY lr.id, d.id, u.id
   `, [requestId, tenantId]);
   if (result.rows.length === 0) throw new NotFoundError('Lab request not found');
   return result.rows[0];
