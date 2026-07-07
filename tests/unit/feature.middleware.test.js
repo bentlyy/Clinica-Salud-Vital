@@ -28,13 +28,15 @@ describe('requireFeature middleware', () => {
     expect(next).toHaveBeenCalled();
   });
 
-  it('throws ForbiddenError when feature is disabled', async () => {
+  it('calls next with ForbiddenError when feature is disabled', async () => {
     mockCheckFeatureAccess.mockResolvedValueOnce(false);
 
     const middleware = requireFeature('laboratory');
+    await middleware(req, res, next);
 
-    await expect(middleware(req, res, next)).rejects.toThrow('requiere un plan superior');
-    expect(next).not.toHaveBeenCalled();
+    expect(next).toHaveBeenCalledWith(expect.objectContaining({
+      message: expect.stringContaining('requiere un plan superior'),
+    }));
   });
 
   it('passes the correct feature key to checkFeatureAccess', async () => {

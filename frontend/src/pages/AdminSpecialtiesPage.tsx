@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useI18n } from '../i18n/useI18n';
 import { getSpecialties, createSpecialty, updateSpecialty, deleteSpecialty } from '../api/specialties';
-import { logger } from '../utils/logger.js';
+import { logger } from '../utils/logger';
 
 interface DoctorInfo {
   id: number;

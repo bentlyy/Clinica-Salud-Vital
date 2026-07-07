@@ -1,7 +1,7 @@
 import { createContext, useState, useEffect, useCallback, useMemo } from 'react';
 import api from '../api/axios';
 
-interface AuthContextValue {
+export interface AuthContextValue {
   user: Record<string, unknown> | null;
   login: (email: string, password: string, totp_token?: string, captcha_token?: string, tenant_id?: string) => Promise<Record<string, unknown>>;
   register: (params: { email: string; password: string; name?: string; rut?: string; phone?: string; tenant_id?: string; invite_token?: string }) => Promise<Record<string, unknown>>;

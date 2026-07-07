@@ -2,7 +2,7 @@ import { useState, useEffect, lazy, Suspense } from 'react';
 import { useTheme } from '../context/useTheme';
 import { useI18n } from '../i18n/useI18n';
 import api from '../api/axios';
-import { logger } from '../utils/logger.js';
+import { logger } from '../utils/logger';
 
 const AnalyticsCharts = lazy(() => import('./AnalyticsCharts'));
 

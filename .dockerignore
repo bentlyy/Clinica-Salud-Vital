@@ -10,3 +10,14 @@ tests
 frontend/node_modules
 frontend/src
 frontend/public
+dist/
+.git/
+.husky/
+.github/
+tests/
+docs/
+wiki/
+scripts/
+*.pdf
+*.jpg
+*.png

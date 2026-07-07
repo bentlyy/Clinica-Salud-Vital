@@ -1,7 +1,8 @@
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useI18n } from '../i18n/useI18n';
 
-export default function PremiumLocked({ featureName }) {
+const PremiumLocked = React.memo(function PremiumLocked({ featureName }: { featureName?: string }) {
   const navigate = useNavigate();
   const { t } = useI18n();
 
@@ -20,4 +21,6 @@ export default function PremiumLocked({ featureName }) {
       </button>
     </div>
   );
-}
+});
+
+export default PremiumLocked;

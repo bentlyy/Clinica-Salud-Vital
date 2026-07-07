@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import React, { ReactNode } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../context/useAuth';
 import { useI18n } from '../i18n/useI18n';
@@ -24,11 +24,13 @@ function hasPermission(userRole: string, requiredRole: string): boolean {
   return allowed ? allowed.includes(requiredRole) : false;
 }
 
-export default function ProtectedRoute({ children, role }: ProtectedRouteProps) {
+const ProtectedRoute = React.memo(function ProtectedRoute({ children, role }: ProtectedRouteProps) {
   const { user, loading } = useAuth();
   const { t } = useI18n();
   if (loading) return <LoadingState message={t?.('protected.loading_session') || 'Cargando sesión...'} />;
   if (!user) return <Navigate to="/login" replace />;
-  if (role && !hasPermission(user.role, role)) return <Navigate to="/" replace />;
+  if (role && !hasPermission(user.role as string, role)) return <Navigate to="/" replace />;
   return children;
-}
+});
+
+export default ProtectedRoute;

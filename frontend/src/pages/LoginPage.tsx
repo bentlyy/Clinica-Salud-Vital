@@ -3,7 +3,8 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/useAuth';
 import { useI18n } from '../i18n/useI18n';
 import ReCAPTCHA from 'react-google-recaptcha';
-import { sanitizeError } from '../utils/error-sanitizer.js';
+import { isAxiosError } from 'axios';
+import { sanitizeError } from '../utils/error-sanitizer';
 
 const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
 const hasCaptcha = Boolean(RECAPTCHA_SITE_KEY);
@@ -61,7 +62,7 @@ export default function LoginPage() {
         navigate('/booking');
       }
     } catch (err) {
-      if (err.response?.data?.code === '2FA_REQUIRED' || err.response?.data?.error === '2FA token required') {
+      if (isAxiosError(err) && (err.response?.data?.code === '2FA_REQUIRED' || err.response?.data?.error === '2FA token required')) {
         setNeeds2FA(true);
       } else {
         setError(sanitizeError(err) || t('auth.invalid_credentials'));

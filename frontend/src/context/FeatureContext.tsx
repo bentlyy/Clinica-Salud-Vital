@@ -2,7 +2,7 @@ import { createContext, useState, useEffect, useCallback, useMemo } from 'react'
 import { getFeatures } from '../api/saas';
 import { useAuth } from './useAuth';
 
-interface FeatureContextValue {
+export interface FeatureContextValue {
   features: Record<string, boolean>;
   hasFeature: (key: string) => boolean;
   loading: boolean;

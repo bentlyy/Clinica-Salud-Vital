@@ -52,7 +52,7 @@ describe('authService.refreshToken', () => {
     mockClient.query.mockImplementation((sql) => {
       if (sql === 'BEGIN') return Promise.resolve({});
       if (sql.includes('FOR UPDATE')) return Promise.resolve({ rows: [{ id: 10, user_id: 1 }] });
-      if (sql.includes('SELECT * FROM users')) return Promise.resolve({ rows: [{ id: 1, email: 'user@test.com', role: 'user', tenant_id: 'default' }] });
+      if (sql.includes('FROM users WHERE id')) return Promise.resolve({ rows: [{ id: 1, email: 'user@test.com', role: 'user', tenant_id: 'default', token_version: 0 }] });
       if (sql.includes('UPDATE refresh_tokens SET revoked')) return Promise.resolve({});
       if (sql.includes('INSERT INTO refresh_tokens')) return Promise.resolve({});
       if (sql === 'COMMIT') return Promise.resolve({});
@@ -195,23 +195,31 @@ describe('auth2faService', () => {
   });
 
   it('enable2FA stores secret', async () => {
-    mockQuery.mockResolvedValueOnce({ rows: [] });
+    mockClient.query
+      .mockResolvedValueOnce({})  // BEGIN
+      .mockResolvedValueOnce({})  // UPDATE
+      .mockResolvedValueOnce({}); // COMMIT
     const { enable2FA } = await import('../../src/modules/auth/auth.service.js');
     const result = await enable2FA(1, 'user@test.com');
     expect(result.secret).toBeDefined();
     expect(result.qrCodeUrl).toContain('otpauth://totp/');
-    expect(mockQuery).toHaveBeenCalledWith(expect.stringContaining('UPDATE users SET totp_secret'), expect.any(Array));
+    expect(mockClient.query).toHaveBeenCalledWith(expect.stringContaining('UPDATE users SET totp_secret'), expect.any(Array));
   });
 
   it('verifyAndEnable2FA throws if not initialized', async () => {
-    mockQuery.mockResolvedValueOnce({ rows: [{}] });
+    mockClient.query
+      .mockResolvedValueOnce({})  // BEGIN
+      .mockResolvedValueOnce({ rows: [{}] })  // SELECT ... FOR UPDATE (no totp_secret)
+      .mockResolvedValueOnce({}); // ROLLBACK
     const { verifyAndEnable2FA } = await import('../../src/modules/auth/auth.service.js');
     await expect(verifyAndEnable2FA(1, '123456')).rejects.toThrow('2FA not initialized');
   });
 
   it('disable2FA clears secret', async () => {
+    mockQuery.mockReset();
+    mockCompare.mockReset();
     mockCompare.mockResolvedValueOnce(true);
-    mockQuery.mockResolvedValueOnce({ rows: [{ password: '$2b$12$hashedpassword123' }] });
+    mockQuery.mockResolvedValueOnce({ rows: [{ password: '$2b$12$hashedpassword123', totp_secret: null }] });
     mockQuery.mockResolvedValueOnce({ rows: [] });
     const { disable2FA } = await import('../../src/modules/auth/auth.service.js');
     await disable2FA(1, 'StrongPass1!');
@@ -233,15 +241,17 @@ describe('auth2faService', () => {
   });
 
   it('verifyAndEnable2FA throws if token invalid', async () => {
-    mockQuery.mockResolvedValue({ rows: [{ totp_secret: 'JBSWY3DPEHPK3PXP' }] });
+    mockClient.query
+      .mockResolvedValueOnce({})  // BEGIN
+      .mockResolvedValueOnce({ rows: [{ totp_secret: 'JBSWY3DPEHPK3PXP' }] })  // SELECT ... FOR UPDATE
+      .mockResolvedValueOnce({}); // ROLLBACK
 
     const { verifyAndEnable2FA } = await import('../../src/modules/auth/auth.service.js');
     await expect(verifyAndEnable2FA(1, '000000')).rejects.toThrow('Invalid 2FA token');
   });
 
   it('verifyAndEnable2FA succeeds with valid token', async () => {
-    mockQuery.mockResolvedValue({ rows: [{ totp_secret: 'JBSWY3DPEHPK3PXP' }] });
-
+    mockQuery.mockReset();
     const crypto = await import('crypto');
     const key = Buffer.from('valid-secret-key-here');
     const currentStep = Math.floor(Date.now() / 1000 / 30);
@@ -255,9 +265,15 @@ describe('auth2faService', () => {
     const code = ((hmacResult[offset] & 0x7f) << 24) | ((hmacResult[offset + 1] & 0xff) << 16) | ((hmacResult[offset + 2] & 0xff) << 8) | (hmacResult[offset + 3] & 0xff);
     const validToken = String(code % 1000000).padStart(6, '0');
 
+    mockClient.query
+      .mockResolvedValueOnce({})  // BEGIN
+      .mockResolvedValueOnce({ rows: [{ totp_secret: 'JBSWY3DPEHPK3PXP' }] })  // SELECT ... FOR UPDATE
+      .mockResolvedValueOnce({})  // UPDATE totp_enabled
+      .mockResolvedValueOnce({}); // COMMIT
+
     const { verifyAndEnable2FA } = await import('../../src/modules/auth/auth.service.js');
     const result = await verifyAndEnable2FA(1, validToken);
     expect(result).toBe(true);
-    expect(mockQuery).toHaveBeenCalledWith(expect.stringContaining('UPDATE users SET totp_enabled = true'), [1]);
+    expect(mockClient.query).toHaveBeenCalledWith(expect.stringContaining('UPDATE users SET totp_enabled = true'), [1]);
   });
 });

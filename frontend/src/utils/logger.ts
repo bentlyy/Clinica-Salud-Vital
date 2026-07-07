@@ -1,7 +1,7 @@
 const isDev = import.meta.env.DEV;
-const noop = () => {};
+const noop = (): void => {};
 
-const sendToServer = (level, ...args) => {
+const sendToServer = (level: string, ...args: unknown[]): void => {
   try {
     const msg = args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' ');
     if (typeof navigator.sendBeacon === 'function') {
@@ -13,9 +13,9 @@ const sendToServer = (level, ...args) => {
 };
 
 export const logger = {
-  info: isDev ? (...args) => console.info('[INFO]', ...args) : noop,
-  warn: isDev ? (...args) => console.warn('[WARN]', ...args) : noop,
-  error: (...args) => {
+  info: isDev ? (...args: unknown[]) => console.info('[INFO]', ...args) : noop,
+  warn: isDev ? (...args: unknown[]) => console.warn('[WARN]', ...args) : noop,
+  error: (...args: unknown[]) => {
     if (isDev) {
       console.error('[ERROR]', ...args);
     } else {

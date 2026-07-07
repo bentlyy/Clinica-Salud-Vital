@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import React from 'react';
 import api from '../api/axios';
 
 interface ComboboxProps {
@@ -9,11 +10,11 @@ interface ComboboxProps {
   className?: string;
 }
 
-export default function Combobox({ value, onChange, placeholder, required, className }: ComboboxProps) {
-  const [options, setOptions] = useState([]);
+function Combobox({ value, onChange, placeholder, required, className }: ComboboxProps) {
+  const [options, setOptions] = useState<string[]>([]);
   const [open, setOpen] = useState(false);
   const [highlighted, setHighlighted] = useState(-1);
-  const ref = useRef(null);
+  const ref = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -31,13 +32,13 @@ export default function Combobox({ value, onChange, placeholder, required, class
     setHighlighted(-1);
   }, [value, options]);
 
-  const select = useCallback((val) => {
+  const select = useCallback((val: string) => {
     onChange(val);
     setOpen(false);
     setHighlighted(-1);
   }, [onChange]);
 
-  const handleKeyDown = (e) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (!open) {
       if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
         setOpen(true);
@@ -62,14 +63,14 @@ export default function Combobox({ value, onChange, placeholder, required, class
     }
   };
 
-  const getVisibleOptions = () => {
+  const getVisibleOptions = (): string[] => {
     if (!value) return options;
     const q = value.toLowerCase();
     return options.filter(o => o.toLowerCase().includes(q));
   };
 
-  const handleBlur = (e) => {
-    if (!ref.current?.contains(e.relatedTarget)) {
+  const handleBlur = (e: React.FocusEvent<HTMLDivElement>) => {
+    if (!ref.current?.contains(e.relatedTarget as Node)) {
       setOpen(false);
     }
   };
@@ -128,3 +129,5 @@ export default function Combobox({ value, onChange, placeholder, required, class
     </div>
   );
 }
+
+export default React.memo(Combobox);

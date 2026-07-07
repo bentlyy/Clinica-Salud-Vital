@@ -23,17 +23,21 @@ beforeEach(() => {
 });
 
 describe('trackActivity', () => {
-  it('updates last_activity_at when user is present', () => {
+  it('updates last_activity_at when user is present (first call)', () => {
     const req = { user: { id: 42 } };
     const next = vi.fn();
 
     trackActivity(req, {}, next);
 
-    expect(mockQuery).toHaveBeenCalledWith(
-      expect.stringContaining('UPDATE users'),
-      [42]
-    );
-    expect(next).toHaveBeenCalled();
+    // Use setImmediate to wait for async query
+    const promise = new Promise(r => setImmediate(r));
+    return promise.then(() => {
+      expect(mockQuery).toHaveBeenCalledWith(
+        expect.stringContaining('UPDATE users'),
+        [42]
+      );
+      expect(next).toHaveBeenCalled();
+    });
   });
 
   it('does nothing when user is not present', () => {
@@ -53,7 +57,10 @@ describe('trackActivity', () => {
 
     trackActivity(req, {}, next);
 
-    expect(next).toHaveBeenCalled();
+    const promise = new Promise(r => setImmediate(r));
+    return promise.then(() => {
+      expect(next).toHaveBeenCalled();
+    });
   });
 
   it('handles user with additional properties', () => {
@@ -62,7 +69,32 @@ describe('trackActivity', () => {
 
     trackActivity(req, {}, next);
 
-    expect(mockQuery.mock.calls[0][1]).toEqual([99]);
-    expect(next).toHaveBeenCalled();
+    const promise = new Promise(r => setImmediate(r));
+    return promise.then(() => {
+      expect(mockQuery.mock.calls[0][1]).toEqual([99]);
+      expect(next).toHaveBeenCalled();
+    });
+  });
+
+  it('throttles: does not update again within 5 minutes', () => {
+    // Use a unique ID not used in prior tests to avoid module-scoped lastActivityMap interference
+    const req = { user: { id: 777 } };
+    const next = vi.fn();
+
+    // First call should trigger update
+    trackActivity(req, {}, next);
+    // Second call within 5 min should NOT trigger update
+    trackActivity(req, {}, next);
+
+    const promise = new Promise(r => setImmediate(r));
+    return promise.then(() => {
+      // Should only have been called once due to throttling
+      expect(mockQuery).toHaveBeenCalledTimes(1);
+      expect(mockQuery).toHaveBeenCalledWith(
+        expect.stringContaining('UPDATE users'),
+        [777]
+      );
+      expect(next).toHaveBeenCalledTimes(2);
+    });
   });
 });

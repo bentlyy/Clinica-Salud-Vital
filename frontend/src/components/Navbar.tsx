@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/useAuth';
 import { useTheme } from '../context/useTheme';
@@ -25,7 +26,7 @@ function NavLabLink({ to, label, enabled }: { to: string; label: string; enabled
   );
 }
 
-export default function Navbar() {
+const Navbar = React.memo(function Navbar() {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const { locale, t } = useI18n();
@@ -36,8 +37,8 @@ export default function Navbar() {
   const menuRef = useRef(null);
 
   useEffect(() => {
-    const handleClick = (e) => {
-      if (menuRef.current && !menuRef.current.contains(e.target)) {
+    const handleClick = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
         setMobileOpen(false);
       }
     };
@@ -73,13 +74,13 @@ export default function Navbar() {
         </button>
 
         <nav ref={menuRef} className={`navbar-nav${mobileOpen ? ' navbar-nav-open' : ''}`}>
-          {user && user.role !== 'admin' && (
+          {user && (user.role as string) !== 'admin' && (
             <>
               <Link to="/booking" className="nav-link" onClick={() => setMobileOpen(false)}>{t('nav.booking')}</Link>
             </>
           )}
 
-          {user?.role === 'doctor' && (
+          {(user?.role as string) === 'doctor' && (
             <>
               <Link to="/doctor" className="nav-link" onClick={() => setMobileOpen(false)}>{t('nav.doctor_panel')}</Link>
               <Link to="/doctor/calendar" className="nav-link" onClick={() => setMobileOpen(false)}>{t('nav.calendar')}</Link>
@@ -88,27 +89,27 @@ export default function Navbar() {
             </>
           )}
 
-          {user?.role === 'lab_technician' && (
+          {(user?.role as string) === 'lab_technician' && (
             <>
-              <Link to="/lab" className="nav-link" onClick={() => setMobileOpen(false)}>🔬 Laboratorio</Link>
-              <NavLabLink to="/my-lab-results" label="Mis Resultados" enabled={labEnabled} />
+              <Link to="/lab" className="nav-link" onClick={() => setMobileOpen(false)}>{t('nav.lab') || '🔬 Laboratorio'}</Link>
+              <NavLabLink to="/my-lab-results" label={t('nav.my_lab_results') || 'Mis Resultados'} enabled={labEnabled} />
             </>
           )}
 
-          {user?.role === 'admin' && (
+          {(user?.role as string) === 'admin' && (
             <>
-              <Link to="/admin/demo-data" className="nav-link" onClick={() => setMobileOpen(false)}>Demo Data</Link>
+              <Link to="/admin/demo-data" className="nav-link" onClick={() => setMobileOpen(false)}>{t('nav.demo_data') || 'Demo Data'}</Link>
               <Link to="/admin/specialties" className="nav-link" onClick={() => setMobileOpen(false)}>{t('nav.specialties')}</Link>
               <NavLabLink to="/admin/lab-tests" label={t('nav.lab_tests')} enabled={labEnabled} />
               <Link to="/admin/register-doctor" className="nav-link nav-link-accent" onClick={() => setMobileOpen(false)}>{t('nav.register_doctor')}</Link>
             </>
           )}
 
-          {user?.role === 'superadmin' && (
+          {(user?.role as string) === 'superadmin' && (
             <>
               <Link to="/super-admin" className="nav-link" onClick={() => setMobileOpen(false)}>{t('nav.dashboard')}</Link>
               <Link to="/super-admin/tenants" className="nav-link" onClick={() => setMobileOpen(false)}>{t('nav.tenants')}</Link>
-              <Link to="/super-admin/demo-data" className="nav-link" onClick={() => setMobileOpen(false)}>Demo Data</Link>
+              <Link to="/super-admin/demo-data" className="nav-link" onClick={() => setMobileOpen(false)}>{t('nav.demo_data') || 'Demo Data'}</Link>
             </>
           )}
 
@@ -146,8 +147,8 @@ export default function Navbar() {
             {user && (
               <div className="navbar-user">
                 <div className="user-info">
-                  <span className="user-name">{user.name || user.email}</span>
-                  {user.name && <span className="user-email">{user.email}</span>}
+                  <span className="user-name">{user.name as string || user.email as string}</span>
+                  {user.name && <span className="user-email">{user.email as string}</span>}
                 </div>
                 <button onClick={async () => { await logout(); navigate('/'); }} className="btn btn-ghost btn-sm">
                   {t('nav.logout')}
@@ -159,4 +160,6 @@ export default function Navbar() {
       </div>
     </header>
   );
-}
+});
+
+export default Navbar;

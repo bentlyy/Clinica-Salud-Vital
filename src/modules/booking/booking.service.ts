@@ -8,6 +8,7 @@ import { BadRequestError, NotFoundError } from '../../utils/errors.js';
 import { logger } from '../../utils/logger.js';
 import { isValidDate, isValidTime, getDayOfWeek } from '../../shared/date.js';
 import { validateBookingSlot } from '../../shared/booking-utils.js';
+import { PaginationParams, PaginatedResponse } from '../../types/index.js';
 
 interface BookingInput {
   doctor_id: number;
@@ -20,23 +21,10 @@ interface BookingInput {
   phone?: string;
 }
 
-interface PaginationOptions {
-  page?: number;
-  limit?: number;
-}
-
-interface BookingData {
-  data: unknown[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  };
-}
-
-export const getAllBookings = async ({ page = 1, limit = 100 }: PaginationOptions = {}, tenantId?: string): Promise<BookingData> => {
-  const offset = (page - 1) * limit;
+export const getAllBookings = async ({ page = 1, limit = 100 }: Partial<PaginationParams> = {}, tenantId?: string): Promise<PaginatedResponse<unknown>> => {
+  const safePage = Math.max(1, Math.floor(page));
+  const safeLimit = Math.max(1, Math.min(500, Math.floor(limit)));
+  const offset = (safePage - 1) * safeLimit;
   const params: (string | number)[] = [limit, offset];
 
   let whereClause = '';
@@ -60,17 +48,15 @@ export const getAllBookings = async ({ page = 1, limit = 100 }: PaginationOption
   const countQuery = tenantId !== undefined
     ? 'SELECT COUNT(*) FROM bookings WHERE tenant_id = $1'
     : 'SELECT COUNT(*) FROM bookings';
-  const countParams = tenantId !== undefined ? [tenantId] : [];
+      const countParams = tenantId !== undefined ? [tenantId] : [];
   const countResult = await pool.query(countQuery, countParams);
 
   return {
     data: result.rows,
-    pagination: {
-      page,
-      limit,
-      total: parseInt(countResult.rows[0].count),
-      totalPages: Math.ceil(parseInt(countResult.rows[0].count) / limit)
-    }
+    total: parseInt(countResult.rows[0].count),
+    page: safePage,
+    limit: safeLimit,
+    totalPages: Math.ceil(parseInt(countResult.rows[0].count) / safeLimit)
   };
 };
 
@@ -92,7 +78,7 @@ export const createBooking = async ({ doctor_id, user_id, date, time, duration =
     await client.query('BEGIN');
 
     await client.query(
-      `SELECT pg_advisory_xact_lock(hashtext($1::text || $2))`,
+      `SELECT pg_advisory_xact_lock($1::bigint, (hashtext($2::text)::bit(32)::bigint))`,
       [doctor_id, date]
     );
 
@@ -159,8 +145,10 @@ export const createBooking = async ({ doctor_id, user_id, date, time, duration =
   }
 };
 
-export const getBookingsByUser = async (user_id: number, { page = 1, limit = 20 }: PaginationOptions = {}, tenantId: string): Promise<BookingData> => {
-  const offset = (page - 1) * limit;
+export const getBookingsByUser = async (user_id: number, { page = 1, limit = 20 }: Partial<PaginationParams> = {}, tenantId: string): Promise<PaginatedResponse<unknown>> => {
+  const safePage = Math.max(1, Math.floor(page));
+  const safeLimit = Math.max(1, Math.min(500, Math.floor(limit)));
+  const offset = (safePage - 1) * safeLimit;
   const params: (string | number)[] = [user_id, limit, offset, tenantId];
 
   const result = await pool.query(`
@@ -180,16 +168,14 @@ export const getBookingsByUser = async (user_id: number, { page = 1, limit = 20 
 
   return {
     data: result.rows,
-    pagination: {
-      page,
-      limit,
-      total: parseInt(countResult.rows[0].count),
-      totalPages: Math.ceil(parseInt(countResult.rows[0].count) / limit)
-    }
+    total: parseInt(countResult.rows[0].count),
+    page: safePage,
+    limit: safeLimit,
+    totalPages: Math.ceil(parseInt(countResult.rows[0].count) / safeLimit)
   };
 };
 
-export const deleteBooking = async (booking_id: number, user_id: number, tenantId: string): Promise<{ message: string }> => {
+export const cancelBooking = async (booking_id: number, user_id: number, tenantId: string): Promise<{ message: string }> => {
   if (!Number.isInteger(booking_id) || !Number.isInteger(user_id)) {
     throw new BadRequestError('Invalid booking id');
   }
@@ -303,8 +289,10 @@ export const getDailyBookingDensity = async (
   return result.rows;
 };
 
-export const getBookingsByDoctor = async (doctor_id: number, { page = 1, limit = 50 }: PaginationOptions = {}, tenantId: string): Promise<BookingData> => {
-  const offset = (page - 1) * limit;
+export const getBookingsByDoctor = async (doctor_id: number, { page = 1, limit = 50 }: Partial<PaginationParams> = {}, tenantId: string): Promise<PaginatedResponse<unknown>> => {
+  const safePage = Math.max(1, Math.floor(page));
+  const safeLimit = Math.max(1, Math.min(500, Math.floor(limit)));
+  const offset = (safePage - 1) * safeLimit;
   const params: (string | number)[] = [doctor_id, limit, offset, tenantId];
 
   const result = await pool.query(`
@@ -326,11 +314,9 @@ export const getBookingsByDoctor = async (doctor_id: number, { page = 1, limit =
 
   return {
     data: result.rows,
-    pagination: {
-      page,
-      limit,
-      total: parseInt(countResult.rows[0].count),
-      totalPages: Math.ceil(parseInt(countResult.rows[0].count) / limit)
-    }
+    total: parseInt(countResult.rows[0].count),
+    page: safePage,
+    limit: safeLimit,
+    totalPages: Math.ceil(parseInt(countResult.rows[0].count) / safeLimit)
   };
 };

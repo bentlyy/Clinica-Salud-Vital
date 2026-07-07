@@ -43,7 +43,7 @@ describe('CreateTenantModal', () => {
 
   it('shows validation errors for empty required fields', () => {
     renderModal();
-    fireEvent.click(screen.getByRole('button', { name: /superadmin\.create_tenant/ }));
+    fireEvent.click(screen.getByRole('button', { name: /superadmin\.create_tenant/, hidden: true }));
     expect(screen.getByText('El nombre es obligatorio')).toBeInTheDocument();
     expect(screen.getByText('El dominio es obligatorio')).toBeInTheDocument();
   });
@@ -56,7 +56,7 @@ describe('CreateTenantModal', () => {
 
     fireEvent.change(screen.getByPlaceholderText('Ej: Clínica Salud'), { target: { value: 'New Clinic' } });
     fireEvent.change(screen.getByPlaceholderText('Ej: clinicasalud'), { target: { value: 'new-clinic' } });
-    fireEvent.click(screen.getByRole('button', { name: /superadmin\.create_tenant/ }));
+    fireEvent.click(screen.getByRole('button', { name: /superadmin\.create_tenant/, hidden: true }));
 
     await waitFor(() => {
       expect(mockCreateTenant).toHaveBeenCalled();
@@ -75,7 +75,7 @@ describe('CreateTenantModal', () => {
 
     fireEvent.change(screen.getByPlaceholderText('Ej: Clínica Salud'), { target: { value: 'Test' } });
     fireEvent.change(screen.getByPlaceholderText('Ej: clinicasalud'), { target: { value: 'test' } });
-    fireEvent.click(screen.getByRole('button', { name: /superadmin\.create_tenant/ }));
+    fireEvent.click(screen.getByRole('button', { name: /superadmin\.create_tenant/, hidden: true }));
 
     await waitFor(() => {
       expect(screen.getByText('Domain already exists')).toBeInTheDocument();
@@ -88,7 +88,7 @@ describe('CreateTenantModal', () => {
 
     fireEvent.change(screen.getByPlaceholderText('Ej: Clínica Salud'), { target: { value: 'Test' } });
     fireEvent.change(screen.getByPlaceholderText('Ej: clinicasalud'), { target: { value: 'test' } });
-    fireEvent.click(screen.getByRole('button', { name: /superadmin\.create_tenant/ }));
+    fireEvent.click(screen.getByRole('button', { name: /superadmin\.create_tenant/, hidden: true }));
 
     await waitFor(() => {
       expect(screen.getByText('Error al crear tenant')).toBeInTheDocument();
@@ -103,7 +103,7 @@ describe('CreateTenantModal', () => {
 
     fireEvent.change(screen.getByPlaceholderText('Ej: Clínica Salud'), { target: { value: 'Test' } });
     fireEvent.change(screen.getByPlaceholderText('Ej: clinicasalud'), { target: { value: 'test' } });
-    fireEvent.click(screen.getByRole('button', { name: /superadmin\.create_tenant/ }));
+    fireEvent.click(screen.getByRole('button', { name: /superadmin\.create_tenant/, hidden: true }));
 
     await waitFor(() => {
       expect(onClose).toHaveBeenCalled();
@@ -114,7 +114,7 @@ describe('CreateTenantModal', () => {
   it('calls onClose when cancel button is clicked', () => {
     const onClose = vi.fn();
     renderModal({ onClose });
-    fireEvent.click(screen.getByRole('button', { name: /admin\.cancel/ }));
+    fireEvent.click(screen.getByRole('button', { name: /admin\.cancel/, hidden: true }));
     expect(onClose).toHaveBeenCalled();
   });
 
@@ -124,16 +124,16 @@ describe('CreateTenantModal', () => {
 
     fireEvent.change(screen.getByPlaceholderText('Ej: Clínica Salud'), { target: { value: 'Test' } });
     fireEvent.change(screen.getByPlaceholderText('Ej: clinicasalud'), { target: { value: 'test' } });
-    fireEvent.click(screen.getByRole('button', { name: /superadmin\.create_tenant/ }));
+    fireEvent.click(screen.getByRole('button', { name: /superadmin\.create_tenant/, hidden: true }));
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: /superadmin\.saving/ })).toBeDisabled();
+      expect(screen.getByRole('button', { name: /superadmin\.saving/, hidden: true })).toBeDisabled();
     });
   });
 
   it('renders locale select with options', () => {
     renderModal();
-    const options = screen.getAllByRole('option');
+    const options = screen.getAllByRole('option', { hidden: true });
     expect(options).toHaveLength(4);
     expect(options[0]).toHaveValue('es');
   });

@@ -8,7 +8,7 @@ const TAG_LENGTH = 16;
 function getEncryptionKey(): Buffer {
   const secret = process.env.ENCRYPTION_KEY;
   if (!secret) throw new Error('ENCRYPTION_KEY environment variable must be set separately from JWT_SECRET');
-  return crypto.createHash('sha256').update(secret).digest();
+  return crypto.pbkdf2Sync(secret, 'encryption-key-salt', 100000, 32, 'sha256');
 }
 
 export function encrypt(text: string): string {
@@ -36,5 +36,6 @@ export function decrypt(encoded: string): string {
 }
 
 export function hashToken(token: string): string {
-  return crypto.createHash('sha256').update(token).digest('hex');
+  const secret = process.env.AUDIT_HMAC_SECRET || 'default-hmac-secret-change-in-production';
+  return crypto.createHmac('sha256', secret).update(token).digest('hex');
 }
