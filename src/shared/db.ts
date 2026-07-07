@@ -17,9 +17,10 @@ const poolMax = parseInt(process.env.DB_POOL_MAX || '25', 10);
 
 const dbCaCert = process.env.DB_CA_CERT;
 const isProd = process.env.NODE_ENV === 'production';
+const rejectUnauthorized = process.env.DB_SSL_REJECT_UNAUTHORIZED === 'true';
 const sslConfig = !isInternalDb() && isProd
   ? dbCaCert
-    ? { ca: dbCaCert, rejectUnauthorized: true }
+    ? { ca: dbCaCert, rejectUnauthorized }
     : { rejectUnauthorized: false }
   : false;
 
