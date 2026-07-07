@@ -213,7 +213,7 @@ describe('seedAdmin', () => {
 
     await seedAdmin();
 
-    expect(mockLogger.info).toHaveBeenCalledWith('Seed completo: admin, doctores (con disponibilidad) y pacientes creados');
+    expect(mockLogger.info).toHaveBeenCalledWith('Seed completo: admin, doctores (con disponibilidad), pacientes y laboratorio creados');
   });
 
   it('uses env variable for password', async () => {
