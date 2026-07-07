@@ -77,6 +77,13 @@ const Navbar = React.memo(function Navbar() {
           {user && (user.role as string) !== 'admin' && (
             <>
               <Link to="/booking" className="nav-link" onClick={() => setMobileOpen(false)}>{t('nav.booking')}</Link>
+              {(user?.role as string) === 'user' || (user?.role as string) === 'patient' ? (
+                <>
+                  <Link to="/my-bookings" className="nav-link" onClick={() => setMobileOpen(false)}>{t('nav.my_bookings')}</Link>
+                  <Link to="/my-medical-history" className="nav-link" onClick={() => setMobileOpen(false)}>{t('nav.medical_history')}</Link>
+                  <NavLabLink to="/my-lab-results" label={t('nav.my_lab_results')} enabled={labEnabled} />
+                </>
+              ) : null}
             </>
           )}
 
