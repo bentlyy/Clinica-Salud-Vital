@@ -338,6 +338,7 @@ El archivo `render.yaml` contiene la configuración. El CI/CD despliega automát
 | 🟢 Admin | admin@clinic.com | `REPLACED_PASSWORD` |
 | 🟡 Doctor | juan@clinic.com | `REPLACED_PASSWORD` |
 | ⚪ Patient | user1@clinic.com | `REPLACED_PASSWORD` |
+| 🔬 Laboratorio | lab@clinic.com | `REPLACED_PASSWORD` |
 
 Los datos de prueba se generan automáticamente al iniciar la app en desarrollo.
 
