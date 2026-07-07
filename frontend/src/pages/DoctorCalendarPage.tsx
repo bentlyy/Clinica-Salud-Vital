@@ -493,64 +493,6 @@ export default function DoctorCalendarPage() {
         </div>
       )}
 
-      <style>{`
-        .fc { font-family: inherit; font-size: 13px; }
-        .fc .fc-toolbar { margin-bottom: 10px; }
-        .fc .fc-toolbar-title { font-size: 1.1em; font-weight: 600; }
-        .fc .fc-button {
-          font-family: inherit; font-size: 12px !important; padding: 5px 10px !important;
-          border-radius: 6px !important; border: 1px solid var(--border-light) !important;
-          background: var(--bg-primary) !important; color: var(--text-primary) !important;
-          transition: all 0.15s !important; box-shadow: none !important;
-        }
-        .fc .fc-button:hover { background: var(--bg-secondary) !important; }
-        .fc .fc-button:focus { box-shadow: none !important; }
-        .fc .fc-button-primary:not(:disabled).fc-button-active,
-        .fc .fc-button-primary:not(:disabled):active {
-          background: var(--primary-600) !important; border-color: var(--primary-600) !important;
-          color: #fff !important;
-        }
-        .fc .fc-today-button { font-weight: 600 !important; }
-        .fc .fc-button .fc-icon { font-size: 1em; }
-        .fc .fc-col-header-cell { padding: 4px 0; background: var(--bg-secondary); }
-        .fc .fc-day-today { background: var(--primary-50) !important; }
-        .fc .fc-timegrid-slot { height: 1.6em; }
-        .fc .fc-timegrid-now-indicator-line { border-color: var(--danger-500); }
-        .fc .fc-timegrid-now-indicator-arrow {
-          border-color: var(--danger-500); border-width: 5px 0 5px 6px;
-        }
-        .fc .fc-event {
-          border-radius: 4px; font-size: 11px; padding: 0;
-          border-width: 1px; cursor: pointer;
-        }
-        .fc .fc-event.ev-avail {
-          opacity: 0.3; cursor: default;
-        }
-        .fc .fc-event.ev-blocked { font-weight: 600; opacity: 0.9; }
-        .fc .fc-event.ev-booking {
-          font-weight: 500;
-          box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-        }
-        .fc .fc-event.ev-booking:hover { filter: brightness(1.1); }
-        .fc .fc-scrollgrid,
-        .fc .fc-scrollgrid td,
-        .fc .fc-scrollgrid th,
-        .fc .fc-timegrid-axis,
-        .fc .fc-timegrid-slot-lane {
-          border-color: var(--border-light);
-        }
-        .fc .fc-timegrid-col { width: 100% !important; }
-        .fc .fc-timegrid-body { width: 100% !important; }
-        .fc .fc-daygrid-body { width: 100% !important; }
-        .fc .fc-timegrid-slots table,
-        .fc .fc-timegrid-col-events table,
-        .fc .fc-timegrid-bg-harness table {
-          width: 100% !important;
-        }
-        .fc .fc-daygrid-day-frame { cursor: pointer; }
-        .fc .fc-daygrid-day-frame:hover { filter: brightness(0.95); }
-        .fc .fc-daygrid-more-link { font-size: 11px; font-weight: 600; }
-      `}</style>
     </div>
   );
 }
