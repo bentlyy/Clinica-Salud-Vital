@@ -9,6 +9,7 @@ import {
   getGrowthAnalytics, getHealthScores, getOperations,
   getChurn, getAlerts
 } from '../api/super-admin';
+import { extractList } from '../utils/extract-list';
 import { useI18n } from '../i18n/useI18n';
 
 const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
@@ -104,13 +105,13 @@ export default function SuperAdminDashboardPage() {
       const [dashRes, healthRes, opsRes, churnRes, alertsRes, topRes, growRes, revRes] = results;
 
       if (dashRes.status === 'fulfilled') setDashboard(dashRes.value.data?.data ?? dashRes.value.data ?? dashRes.value);
-      if (healthRes.status === 'fulfilled') setHealthScores(Array.isArray(healthRes.value) ? healthRes.value : (healthRes.value.data ?? []));
+      if (healthRes.status === 'fulfilled') setHealthScores(extractList(healthRes.value));
       if (opsRes.status === 'fulfilled') setOperations(opsRes.value.data?.data ?? opsRes.value.data ?? opsRes.value);
       if (churnRes.status === 'fulfilled') setChurn(churnRes.value.data?.data ?? churnRes.value.data ?? churnRes.value);
-      if (alertsRes.status === 'fulfilled') setAlerts(Array.isArray(alertsRes.value) ? alertsRes.value : (alertsRes.value.data ?? []));
-      if (topRes.status === 'fulfilled') setTopTenants(Array.isArray(topRes.value) ? topRes.value : (topRes.value.data ?? []));
-      if (growRes.status === 'fulfilled') setGrowth(Array.isArray(growRes.value) ? growRes.value : (growRes.value.data ?? []));
-      if (revRes.status === 'fulfilled') setRevenue(Array.isArray(revRes.value) ? revRes.value : (revRes.value.data ?? []));
+      if (alertsRes.status === 'fulfilled') setAlerts(extractList(alertsRes.value));
+      if (topRes.status === 'fulfilled') setTopTenants(extractList(topRes.value));
+      if (growRes.status === 'fulfilled') setGrowth(extractList(growRes.value));
+      if (revRes.status === 'fulfilled') setRevenue(extractList(revRes.value));
 
       setLoading(false);
     };

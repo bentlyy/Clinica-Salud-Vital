@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/axios';
+import { extractList } from '../utils/extract-list';
 import { downloadLabOrderPdf } from '../api/laboratory';
 
 const STATUS_TABS = [
@@ -31,7 +32,7 @@ export default function LabTechnicianDashboardPage() {
       const params = {};
       if (statusFilter) params.status = statusFilter;
       const res = await api.get('/laboratory/lab/all', { params });
-      setRequests(Array.isArray(res.data) ? res.data : []);
+      setRequests(extractList(res.data));
     } catch (err) {
       setError(err.response?.data?.error || 'Error al cargar solicitudes');
     } finally {

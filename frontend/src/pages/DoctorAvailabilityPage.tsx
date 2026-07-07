@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { extractList } from '../utils/extract-list';
 import {
   getAvailability,
   createAvailability,
@@ -38,7 +39,7 @@ export default function DoctorAvailabilityPage() {
       setLoading(true);
       setError(null);
       const data = await getAvailability();
-      setAvailability(Array.isArray(data) ? data : []);
+      setAvailability(extractList(data));
     } catch {
       setError(t('doctor_availability.error'));
     } finally {

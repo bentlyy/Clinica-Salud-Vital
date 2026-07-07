@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useI18n } from '../i18n/useI18n';
+import { extractList } from '../utils/extract-list';
 import { getLabRequests } from '../api/laboratory';
 
 interface LabRequest {
@@ -26,7 +27,7 @@ export default function AdminLabRequestsPage() {
     (async () => {
       try {
         const data = await getLabRequests({ limit: 500 });
-        setRequests(Array.isArray(data) ? data : []);
+        setRequests(extractList(data));
       } catch {
         setRequests([]);
       } finally {
