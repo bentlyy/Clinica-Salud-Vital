@@ -25,6 +25,14 @@ const mockCtrl = Object.fromEntries([
   'getInvoices', 'getInvoiceById', 'createInvoice', 'updateInvoiceStatus', 'deleteInvoice', 'getBillingStats',
   // laboratory
   'getLabTests', 'createLabTest', 'updateLabTest', 'deleteLabTest', 'getLabRequests', 'getLabRequestById', 'createLabRequest', 'updateLabRequestStatus', 'updateLabRequestItemResult', 'cancelLabRequest', 'downloadLabOrderPDF', 'getLabRequestsForLab', 'updateLabRequestItemStatusCtrl', 'setLabTypeCtrl',
+  'getDashboardMetricsCtrl', 'getAreaDashboardCtrl', 'getAnalyticsDataCtrl',
+  'getSamplesCtrl', 'getSampleByIdCtrl', 'createSampleCtrl', 'receiveSampleCtrl', 'verifySampleCtrl', 'assignSampleCtrl', 'recordSampleQCCtrl', 'rejectSampleCtrl',
+  'getLabAreasCtrl', 'createLabAreaCtrl',
+  'getQCRecordsCtrl', 'createQCRecordCtrl', 'getQCStatisticsCtrl',
+  'getEquipmentCtrl', 'createEquipmentCtrl', 'updateEquipmentCtrl',
+  'getReagentsCtrl', 'createReagentCtrl', 'updateReagentStockCtrl',
+  'getNotificationsCtrl', 'acknowledgeNotificationCtrl',
+  'validateItemByTechCtrl', 'validateItemByDoctorCtrl', 'signItemCtrl', 'deliverItemCtrl', 'getItemHistoryCtrl',
   // availability
   'createAvailability', 'getAvailabilityByDoctor', 'getMyAvailability', 'deleteAvailability',
   // exception

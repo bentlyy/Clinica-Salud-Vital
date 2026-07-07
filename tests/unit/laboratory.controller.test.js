@@ -33,7 +33,7 @@ describe('laboratoryController.getLabTests', () => {
 
     laboratoryController.getLabTests(req, res, next);
     await flush();
-    expect(laboratoryService.getLabTests).toHaveBeenCalledWith({ category: 'hematology', active: true, limit: 10, offset: 0 });
+    expect(laboratoryService.getLabTests).toHaveBeenCalledWith({ category: 'hematology', active: true, areaId: 0, limit: 10, offset: 0 });
     expect(res.json).toHaveBeenCalledWith([{ id: 1, name: 'Blood Test' }]);
   });
 });
