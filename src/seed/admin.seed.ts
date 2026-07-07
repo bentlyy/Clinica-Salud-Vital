@@ -384,5 +384,10 @@ export const seedAdmin = async (): Promise<void> => {
     );
   }
 
-  logger.info('Seed completo: admin, doctores (con disponibilidad) y pacientes creados');
+  await pool.query(
+    'INSERT INTO users (email, password, name, role, rut, tenant_id) VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT (tenant_id, email) DO NOTHING',
+    ['lab@clinic.com', hash, 'Encargado de Laboratorio', 'lab_technician', '19333444-1', DEFAULT_TENANT_ID]
+  );
+
+  logger.info('Seed completo: admin, doctores (con disponibilidad), pacientes y laboratorio creados');
 };
