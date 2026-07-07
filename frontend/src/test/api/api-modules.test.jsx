@@ -62,15 +62,22 @@ import {
   getLabRequests,
   getLabRequestById,
   createLabRequest,
-  updateLabRequest,
-  deleteLabRequest,
-  addLabResult,
+  updateLabRequestStatus,
+  cancelLabRequest,
   updateLabResultItem,
   downloadLabOrderPdf,
   getLabResultsByClinicalRecord,
   createLabTest,
   updateLabTest,
   deleteLabTest,
+  getLabDashboardMetrics,
+  getLabSamples,
+  getLabAreas,
+  getLabQCRecords,
+  getLabEquipment,
+  getLabReagents,
+  getLabNotifications,
+  getAllLabRequestsForLab,
 } from '../../api/laboratory';
 
 import {
@@ -456,54 +463,39 @@ describe('laboratory API module', () => {
     expect(result).toEqual({ id: 'lr200', patient_id: 1, test: 'Blood count' });
   });
 
-  it('updateLabRequest calls api.put with signal passthrough', async () => {
+  it('updateLabRequestStatus calls api.patch with signal passthrough', async () => {
     const signal = new AbortController().signal;
-    mockApiInstance.put.mockResolvedValue({ data: { id: 'lr3', status: 'completed' } });
+    mockApiInstance.patch.mockResolvedValue({ data: { id: 'lr3', status: 'completed' } });
 
-    const result = await updateLabRequest('lr3', { status: 'completed' }, { signal });
+    const result = await updateLabRequestStatus('lr3', 'completed', { signal });
 
-    expect(mockApiInstance.put).toHaveBeenCalledWith(
-      '/laboratory/lr3',
+    expect(mockApiInstance.patch).toHaveBeenCalledWith(
+      '/laboratory/lr3/status',
       { status: 'completed' },
       { signal }
     );
     expect(result).toEqual({ id: 'lr3', status: 'completed' });
   });
 
-  it('deleteLabRequest calls api.delete with signal passthrough', async () => {
+  it('cancelLabRequest calls api.delete with signal passthrough', async () => {
     const signal = new AbortController().signal;
     mockApiInstance.delete.mockResolvedValue({ data: { success: true } });
 
-    const result = await deleteLabRequest('lr7', { signal });
+    await cancelLabRequest('lr7', { signal });
 
     expect(mockApiInstance.delete).toHaveBeenCalledWith('/laboratory/lr7', {
       signal,
     });
-    expect(result).toEqual({ success: true });
   });
 
-  it('addLabResult calls api.post with signal', async () => {
+  it('updateLabResultItem calls api.patch with signal', async () => {
     const signal = new AbortController().signal;
-    mockApiInstance.post.mockResolvedValue({ data: { id: 'res1' } });
-
-    const result = await addLabResult('lr1', { value: 10 }, { signal });
-
-    expect(mockApiInstance.post).toHaveBeenCalledWith(
-      '/laboratory/lr1/results',
-      { value: 10 },
-      { signal }
-    );
-    expect(result).toEqual({ id: 'res1' });
-  });
-
-  it('updateLabResultItem calls api.put with signal', async () => {
-    const signal = new AbortController().signal;
-    mockApiInstance.put.mockResolvedValue({ data: { id: 'item1' } });
+    mockApiInstance.patch.mockResolvedValue({ data: { id: 'item1' } });
 
     const result = await updateLabResultItem('lr1', 'item1', { value: 15 }, { signal });
 
-    expect(mockApiInstance.put).toHaveBeenCalledWith(
-      '/laboratory/lr1/results/item1',
+    expect(mockApiInstance.patch).toHaveBeenCalledWith(
+      '/laboratory/items/item1/result',
       { value: 15 },
       { signal }
     );
@@ -570,12 +562,11 @@ describe('laboratory API module', () => {
     const signal = new AbortController().signal;
     mockApiInstance.delete.mockResolvedValue({ data: { deleted: true } });
 
-    const result = await deleteLabTest('lt5', { signal });
+    await deleteLabTest('lt5', { signal });
 
     expect(mockApiInstance.delete).toHaveBeenCalledWith('/laboratory/tests/lt5', {
       signal,
     });
-    expect(result).toEqual({ deleted: true });
   });
 });
 

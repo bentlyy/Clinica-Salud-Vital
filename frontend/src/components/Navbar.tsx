@@ -99,8 +99,10 @@ const Navbar = React.memo(function Navbar() {
 
           {(user?.role as string) === 'lab_technician' && (
             <>
-              <Link to="/lab" className="nav-link" onClick={() => setMobileOpen(false)}>{t('nav.lab') || '🔬 Laboratorio'}</Link>
-              <NavLabLink to="/my-lab-results" label={t('nav.my_lab_results') || 'Mis Resultados'} enabled={labEnabled} />
+              <Link to="/lab/dashboard" className="nav-link" onClick={() => setMobileOpen(false)}>📊 Dashboard</Link>
+              <Link to="/lab/analytics" className="nav-link" onClick={() => setMobileOpen(false)}>📈 Analytics</Link>
+              <Link to="/lab/qc" className="nav-link" onClick={() => setMobileOpen(false)}>🧪 Control Calidad</Link>
+              <NavLabLink to="/my-lab-results" label={t('nav.my_lab_results') || 'Pacientes'} enabled={labEnabled} />
             </>
           )}
 

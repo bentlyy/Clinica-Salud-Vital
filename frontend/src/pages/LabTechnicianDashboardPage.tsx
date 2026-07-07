@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import { extractList } from '../utils/extract-list';
 import { downloadLabOrderPdf } from '../api/laboratory';
@@ -81,6 +81,30 @@ export default function LabTechnicianDashboardPage() {
             Gestiona las órdenes de exámenes, procesa muestras y carga resultados
           </p>
         </div>
+      </div>
+
+      <div className="grid grid-3" style={{ gap: 12, marginBottom: 24 }}>
+        <Link to="/lab/dashboard" className="card" style={{ padding: '16px 20px', textDecoration: 'none', color: 'inherit', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 14, border: '1px solid var(--border-light)' }}>
+          <div style={{ width: 44, height: 44, borderRadius: 12, background: '#f0f9ff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>📊</div>
+          <div>
+            <strong style={{ fontSize: 15 }}>Dashboard</strong>
+            <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--text-secondary)' }}>Métricas en tiempo real, SLA, work queue</p>
+          </div>
+        </Link>
+        <Link to="/lab/analytics" className="card" style={{ padding: '16px 20px', textDecoration: 'none', color: 'inherit', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 14, border: '1px solid var(--border-light)' }}>
+          <div style={{ width: 44, height: 44, borderRadius: 12, background: '#f5f3ff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>📈</div>
+          <div>
+            <strong style={{ fontSize: 15 }}>Analytics</strong>
+            <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--text-secondary)' }}>Tendencias por doctor, área y mes</p>
+          </div>
+        </Link>
+        <Link to="/lab/qc" className="card" style={{ padding: '16px 20px', textDecoration: 'none', color: 'inherit', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 14, border: '1px solid var(--border-light)' }}>
+          <div style={{ width: 44, height: 44, borderRadius: 12, background: '#f0fdf4', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>🧪</div>
+          <div>
+            <strong style={{ fontSize: 15 }}>Control de Calidad</strong>
+            <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--text-secondary)' }}>Levey-Jennings, registros QC</p>
+          </div>
+        </Link>
       </div>
 
       <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>

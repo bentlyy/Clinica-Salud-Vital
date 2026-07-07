@@ -36,12 +36,14 @@ export default function LabResultDetailPage() {
   if (!request) return <div className="page-container"><p>{t('lab_results.not_found')}</p></div>;
 
   const r = request;
-  const Icon = getLabIcon(r.test_name || '');
-  const color = getLabColor(r.test_name || '');
+  const items = r.items || [];
+  const testNames = items.map(i => i.test_name).filter(Boolean).join(', ');
+  const mainTestName = testNames || `${t('lab_results.request')} #${r.id}`;
+  const Icon = getLabIcon(mainTestName);
+  const color = getLabColor(mainTestName);
   const isCompleted = r.status === 'completed';
   const statusLabel = isCompleted ? t('lab_results.completed') : r.status === 'cancelled' ? t('lab_results.cancelled') : t('lab_results.pending');
   const statusBadgeClass = isCompleted ? 'badge-success' : r.status === 'cancelled' ? 'badge-ghost' : 'badge-warning';
-  const items = r.items || [];
   const completedItems = items.filter(i => i.result_value);
   const progressPct = items.length > 0 ? Math.round((completedItems.length / items.length) * 100) : 0;
 
@@ -62,7 +64,7 @@ export default function LabResultDetailPage() {
             <Icon size={30} color={color} />
           </div>
           <div>
-            <h1 style={{ marginBottom: 2 }}>{r.test_name || `${t('lab_results.request')} #${r.id}`}</h1>
+            <h1 style={{ marginBottom: 2 }}>{mainTestName}</h1>
             <p style={{ color: 'var(--text-secondary)', fontSize: 13, margin: 0 }}>
               <span>📅 {r.created_at?.split('T')[0] || '-'}</span>
               {r.doctor_name && <span style={{ marginLeft: 12 }}>🩺 {r.doctor_name}</span>}
