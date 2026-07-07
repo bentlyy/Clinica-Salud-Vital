@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useI18n } from '../i18n/useI18n';
+import { extractList } from '../utils/extract-list';
 import { getDoctors } from '../api/doctors';
 import { getSpecialties } from '../api/specialties';
 
@@ -58,8 +59,8 @@ export default function SpecialistsPage() {
           getDoctors(),
           getSpecialties(),
         ]);
-        setDoctors(Array.isArray(docs) ? docs : []);
-        setSpecialties(Array.isArray(specs) ? specs : []);
+        setDoctors(extractList(docs));
+        setSpecialties(extractList(specs));
       } catch {
         setError(t('specialists.error'));
       } finally {
