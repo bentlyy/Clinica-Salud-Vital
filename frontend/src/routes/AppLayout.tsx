@@ -1,13 +1,15 @@
-import { Suspense, ReactNode } from 'react';
+import React, { Suspense, ReactNode } from 'react';
 import Navbar from '../components/Navbar';
 
-export default function AppLayout({ children }: { children: ReactNode }) {
+const AppLayout = React.memo(function AppLayout({ children }: { children: ReactNode }) {
   return (
     <>
       <Navbar />
-      <Suspense fallback={<div style={{ padding: '2rem', textAlign: 'center' }}>Cargando...</div>}>
+      <Suspense fallback={<div className="app-layout-fallback">Cargando...</div>}>
         {children}
       </Suspense>
     </>
   );
-}
+});
+
+export default AppLayout;

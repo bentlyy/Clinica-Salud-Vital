@@ -19,7 +19,8 @@ COPY package.json package-lock.json ./
 RUN npm ci --omit=dev && npm cache clean --force
 
 COPY --from=builder /app/dist/ dist/
-COPY frontend/dist/ frontend/dist/
+RUN mkdir -p frontend/dist
+COPY frontend/dist/ frontend/dist/ || true
 
 USER appuser
 

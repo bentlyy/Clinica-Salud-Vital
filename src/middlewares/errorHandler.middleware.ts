@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import { NotFoundError } from '../utils/errors.js';
 import { logger } from '../utils/logger.js';
 
 export interface AppErrorWithStatus extends Error {
@@ -34,7 +35,5 @@ export const errorHandler = (
 
 export const notFoundHandler = (req: Request, res: Response, next: NextFunction): void => {
   logger.warn('Route not found', { url: req.originalUrl, method: req.method });
-  const err = new Error(`Route ${req.method} ${req.originalUrl} not found`) as AppErrorWithStatus;
-  err.statusCode = 404;
-  next(err);
+  next(new NotFoundError(`Route ${req.method} ${req.originalUrl} not found`));
 };

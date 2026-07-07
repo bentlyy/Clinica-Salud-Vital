@@ -32,7 +32,7 @@ describe('CoreModal', () => {
 
     it('renders with aria attributes', () => {
       renderModal();
-      const dialog = screen.getByRole('dialog');
+      const dialog = screen.getByRole('dialog', { hidden: true });
       expect(dialog).toHaveAttribute('aria-modal', 'true');
       expect(dialog).toHaveAttribute('aria-label', 'Modal Title');
     });

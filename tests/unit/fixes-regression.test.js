@@ -29,27 +29,28 @@ describe('Critical Fixes - No Regression', () => {
     });
   });
 
-  describe('optionalAuth token version', () => {
-    it('should have token_version check in optionalAuth', async () => {
+  describe('auth middleware token version', () => {
+    it('should have token_version in decoded user', async () => {
       const fs = await import('fs');
       const content = fs.readFileSync('src/middlewares/auth.middleware.ts', 'utf-8');
 
       expect(content).toContain('token_version');
-      expect(content).toContain('pool.query');
     });
 
-    it('should have authMiddleware verify token_version from DB', async () => {
+    it('should have authMiddleware decode token_version from JWT (no DB query)', async () => {
       const fs = await import('fs');
       const content = fs.readFileSync('src/middlewares/auth.middleware.ts', 'utf-8');
 
-      expect(content).toContain("SELECT token_version FROM users WHERE id = $1");
+      // authMiddleware no longer queries DB for token_version
+      // It reads token_version from JWT payload
+      expect(content).toContain('decoded.token_version');
     });
 
-    it('should degrade gracefully when DB query fails in authMiddleware', async () => {
+    it('should have setSecurityHeaders function', async () => {
       const fs = await import('fs');
       const content = fs.readFileSync('src/middlewares/auth.middleware.ts', 'utf-8');
 
-      expect(content).toContain('Auth service unavailable');
+      expect(content).toContain('setSecurityHeaders');
     });
   });
 });

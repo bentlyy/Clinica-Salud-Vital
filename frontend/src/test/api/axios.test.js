@@ -33,7 +33,7 @@ describe('axios instance', () => {
 
   it('creates axios instance with correct config', async () => {
     import.meta.env.VITE_API_URL = '/api';
-    const apiModule = await import('../../api/axios.js');
+    const apiModule = await import('../../api/axios');
     expect(axios.create).toHaveBeenCalledWith({
       baseURL: '/api',
       withCredentials: true,
@@ -43,7 +43,7 @@ describe('axios instance', () => {
   it('throws if VITE_API_URL is not set', async () => {
     const originalUrl = import.meta.env.VITE_API_URL;
     import.meta.env.VITE_API_URL = '';
-    await expect(import('../../api/axios.js')).rejects.toThrow('VITE_API_URL');
+    await expect(import('../../api/axios')).rejects.toThrow('VITE_API_URL');
     import.meta.env.VITE_API_URL = originalUrl;
   });
 });
@@ -56,7 +56,7 @@ describe('request interceptor', () => {
     import.meta.env.VITE_API_URL = '/api';
     localStorage.clear();
     vi.resetModules();
-    apiModule = await import('../../api/axios.js');
+    apiModule = await import('../../api/axios');
     requestHandler = mockAxiosInstance.interceptors.request.use.mock.calls[0][0];
   });
 
@@ -105,7 +105,7 @@ describe('response interceptor', () => {
     vi.clearAllMocks();
     localStorage.clear();
     vi.resetModules();
-    apiModule = await import('../../api/axios.js');
+    apiModule = await import('../../api/axios');
     responseHandler = mockAxiosInstance.interceptors.response.use.mock.calls[0][0];
     errorHandler = mockAxiosInstance.interceptors.response.use.mock.calls[0][1];
   });

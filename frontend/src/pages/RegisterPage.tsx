@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/useAuth';
 import { useI18n } from '../i18n/useI18n';
-import { formatRut, validateRut, cleanRut } from '../utils/rut.js';
-import { sanitizeError } from '../utils/error-sanitizer.js';
+import { formatRut, validateRut, cleanRut } from '../utils/rut';
+import { sanitizeError } from '../utils/error-sanitizer';
 import api from '../api/axios';
 
 export default function RegisterPage() {

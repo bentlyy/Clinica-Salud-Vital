@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { sanitizeError } from '../../utils/error-sanitizer.js';
+import { sanitizeError } from '../../utils/error-sanitizer';
 
 describe('sanitizeError', () => {
   it('returns fallback for null/undefined', () => {

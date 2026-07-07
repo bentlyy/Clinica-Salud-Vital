@@ -130,7 +130,7 @@ export default function HomePage() {
         </div>
 
         {showReminderInfo && (
-          <div className="card reminder-detail-card" style={{ marginTop: 20 }}>
+          <div className="card reminder-detail-card info-card">
             <div className="reminder-steps">
               <div className="reminder-step">
                 <div className="reminder-step-number">1</div>
@@ -165,7 +165,7 @@ export default function HomePage() {
         )}
 
         {showSurgeryInfo && (
-          <div className="card reminder-detail-card" style={{ marginTop: 20 }}>
+          <div className="card reminder-detail-card info-card">
             <div className="reminder-steps">
               <div className="reminder-step">
                 <div className="reminder-step-number">1</div>
@@ -200,7 +200,7 @@ export default function HomePage() {
         )}
 
         {showLabInfo && (
-          <div className="card reminder-detail-card" style={{ marginTop: 20 }}>
+          <div className="card reminder-detail-card info-card">
             <div className="reminder-steps">
               <div className="reminder-step">
                 <div className="reminder-step-number">1</div>
@@ -242,15 +242,15 @@ export default function HomePage() {
         {loading ? (
           <div className="grid grid-4">
             {[1, 2, 3, 4].map(i => (
-              <div key={i} className="card specialty-card" style={{ opacity: 0.5, textAlign: 'center', padding: 28 }}>
-                <div style={{ fontSize: '2rem', marginBottom: 12 }}>🔬</div>
-                <div style={{ height: 16, background: 'var(--gray-200)', borderRadius: 4, marginBottom: 8, width: '60%', margin: '0 auto 8px' }} />
-                <div style={{ height: 12, background: 'var(--gray-200)', borderRadius: 4, width: '80%', margin: '0 auto' }} />
+              <div key={i} className="card specialty-card specialty-card-skeleton">
+                <div className="skeleton-icon">🔬</div>
+                <div className="skeleton-line skeleton-line-60" />
+                <div className="skeleton-line skeleton-line-80" />
               </div>
             ))}
           </div>
         ) : specialties.length === 0 ? (
-          <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 40 }}>
+          <p className="text-center text-muted-lg">
             No hay especialidades disponibles
           </p>
         ) : (
@@ -311,7 +311,7 @@ export default function HomePage() {
                         <div className="specialty-detail-section">
                           <h4>{t('home.specialists_title')}</h4>
                           {specDoctors.length === 0 ? (
-                            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+                            <p className="text-muted-sm">
                               No hay doctores disponibles para esta especialidad
                             </p>
                           ) : (
@@ -331,8 +331,8 @@ export default function HomePage() {
 
                         <button
                           onClick={() => navigate('/booking')}
-                          className="btn btn-primary btn-lg btn-block"
-                          style={{ backgroundColor: spec.color, marginTop: 8 }}
+                          className="btn btn-primary btn-lg btn-block specialty-btn"
+                          style={{ backgroundColor: spec.color }}
                         >
                           {t('home.book_with_specialist', { name: spec.name })}
                         </button>
