@@ -1,14 +1,18 @@
 import type { ReactNode } from 'react';
 
+import type { ReactNode, DragEvent } from 'react';
+
 interface KanbanColumnProps {
   title: string;
   color: string;
   count: number;
   loading?: boolean;
   children: ReactNode;
+  onDrop?: (e: DragEvent) => void;
+  onDragOver?: (e: DragEvent) => void;
 }
 
-export default function KanbanColumn({ title, color, count, loading, children }: KanbanColumnProps) {
+export default function KanbanColumn({ title, color, count, loading, children, onDrop, onDragOver }: KanbanColumnProps) {
   return (
     <div style={{
       minWidth: 220,
@@ -35,14 +39,18 @@ export default function KanbanColumn({ title, color, count, loading, children }:
           {count}
         </span>
       </div>
-      <div style={{
-        flex: 1,
-        padding: '4px',
-        borderRadius: 8,
-        background: '#f9fafb',
-        minHeight: 200,
-        overflow: 'auto',
-      }}>
+      <div
+        onDrop={onDrop}
+        onDragOver={onDragOver}
+        style={{
+          flex: 1,
+          padding: '4px',
+          borderRadius: 8,
+          background: '#f9fafb',
+          minHeight: 200,
+          overflow: 'auto',
+        }}
+      >
         {loading ? (
           <p style={{ fontSize: 12, color: 'var(--text-muted)', textAlign: 'center', padding: 20 }}>
             Cargando...

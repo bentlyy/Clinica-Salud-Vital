@@ -1,11 +1,14 @@
 import type { LabRequest, LabRequestStatus } from '../../types';
 import { LAB_STATUS_LABELS, LAB_STATUS_COLORS } from '../../types';
 import KanbanColumn from './KanbanColumn';
+import { useLabContextMenu, type ContextMenuAction } from '../../hooks/useLabContextMenu';
 
 interface KanbanBoardProps {
   requests: LabRequest[];
   onSelectRequest: (request: LabRequest) => void;
   onStatusChange: (requestId: number, newStatus: LabRequestStatus) => void;
+  onRejectRequest?: (requestId: number) => void;
+  onPrintRequest?: (requestId: number) => void;
   columns?: LabRequestStatus[];
   loading?: boolean;
 }
@@ -18,8 +21,46 @@ const DEFAULT_COLUMNS: LabRequestStatus[] = [
 
 export default function KanbanBoard({
   requests, onSelectRequest, onStatusChange,
+  onRejectRequest, onPrintRequest,
   columns = DEFAULT_COLUMNS, loading,
 }: KanbanBoardProps) {
+  const { show, contextMenu } = useLabContextMenu();
+
+  const handleContextMenu = (e: React.MouseEvent, req: LabRequest) => {
+    const actions: ContextMenuAction[] = [
+      { label: 'Ver detalle', icon: '👁', onClick: () => onSelectRequest(req) },
+    ];
+    if (onStatusChange && req.status !== 'delivered' && req.status !== 'cancelled') {
+      actions.push(
+        { divider: true },
+        { label: 'Mover a Pendiente', icon: '📋', onClick: () => onStatusChange(req.id, 'pending'), disabled: req.status === 'pending' },
+        { label: 'Mover a Recibido', icon: '📥', onClick: () => onStatusChange(req.id, 'received'), disabled: req.status === 'received' },
+        { label: 'Mover a Procesando', icon: '⚙', onClick: () => onStatusChange(req.id, 'processing'), disabled: req.status === 'processing' },
+      );
+    }
+    if (onPrintRequest) {
+      actions.push(
+        { divider: true },
+        { label: 'Imprimir orden', icon: '🖨', onClick: () => onPrintRequest(req.id) },
+      );
+    }
+    if (onRejectRequest && req.status !== 'delivered' && req.status !== 'cancelled') {
+      actions.push(
+        { divider: true },
+        { label: 'Rechazar solicitud', icon: '✕', onClick: () => onRejectRequest(req.id), danger: true },
+      );
+    }
+    show(e, actions);
+  };
+
+  const handleColumnDrop = (statusKey: LabRequestStatus) => (e: React.DragEvent) => {
+    e.preventDefault();
+    const draggedId = Number(e.dataTransfer.getData('text/plain'));
+    if (draggedId) {
+      onStatusChange(draggedId, statusKey);
+    }
+  };
+
   return (
     <div style={{ display: 'flex', gap: 12, overflow: 'auto', paddingBottom: 16, minHeight: '60vh' }}>
       {columns.map((statusKey) => {
@@ -34,6 +75,8 @@ export default function KanbanBoard({
             color={color}
             count={items.length}
             loading={loading}
+            onDrop={handleColumnDrop(statusKey)}
+            onDragOver={(e) => e.preventDefault()}
           >
             {items.map((req) => (
               <div
@@ -43,14 +86,7 @@ export default function KanbanBoard({
                   e.dataTransfer.setData('text/plain', String(req.id));
                   e.dataTransfer.effectAllowed = 'move';
                 }}
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  const draggedId = Number(e.dataTransfer.getData('text/plain'));
-                  if (draggedId && draggedId !== req.id) {
-                    onStatusChange(draggedId, statusKey);
-                  }
-                }}
+                onContextMenu={(e) => handleContextMenu(e, req)}
                 style={{ cursor: 'grab' }}
                 onClick={() => onSelectRequest(req)}
               >
@@ -60,11 +96,12 @@ export default function KanbanBoard({
           </KanbanColumn>
         );
       })}
+      {contextMenu}
     </div>
   );
 }
 
-function KanbanCardPreview({ request: r, color }: { request: LabRequest; color: string }) {
+export function KanbanCardPreview({ request: r, color }: { request: LabRequest; color: string }) {
   const items = r.items || [];
   const completedItems = items.filter(i =>
     ['validated_tech', 'validated_doctor', 'signed', 'delivered', 'completed'].includes(i.status)
