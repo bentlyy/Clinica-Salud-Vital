@@ -21,6 +21,7 @@ const MyMedicalHistoryPage = lazy(() => import('../pages/MyMedicalHistoryPage'))
 const MyMedicalHistoryDetailPage = lazy(() => import('../pages/MyMedicalHistoryDetailPage'));
 const MyLabResultsPage = lazy(() => import('../pages/MyLabResultsPage'));
 const LabResultDetailPage = lazy(() => import('../pages/LabResultDetailPage'));
+const LabTestsCatalogPage = lazy(() => import('../pages/LabTestsCatalogPage'));
 const RegisterDoctorPage = lazy(() => import('../pages/RegisterDoctorPage'));
 const AnalyticsPage = lazy(() => import('../pages/AnalyticsPage'));
 const AdminSpecialtiesPage = lazy(() => import('../pages/AdminSpecialtiesPage'));
@@ -51,6 +52,7 @@ export default function AppRoutes() {
       <Route path="/my-medical-history/:id" element={<ProtectedRoute><AppLayout><MyMedicalHistoryDetailPage /></AppLayout></ProtectedRoute>} />
       <Route path="/my-lab-results" element={<ProtectedRoute><AppLayout><WithFeature featureKey="laboratory"><MyLabResultsPage /></WithFeature></AppLayout></ProtectedRoute>} />
       <Route path="/my-lab-results/:id" element={<ProtectedRoute><AppLayout><WithFeature featureKey="laboratory"><LabResultDetailPage /></WithFeature></AppLayout></ProtectedRoute>} />
+      <Route path="/lab-tests" element={<ProtectedRoute><AppLayout><WithFeature featureKey="laboratory"><LabTestsCatalogPage /></WithFeature></AppLayout></ProtectedRoute>} />
 
       <Route path="/doctor" element={<ProtectedRoute role="doctor"><AppLayout><DoctorPanel /></AppLayout></ProtectedRoute>} />
       <Route path="/doctor/availability" element={<ProtectedRoute role="doctor"><AppLayout><DoctorAvailabilityPage /></AppLayout></ProtectedRoute>} />
