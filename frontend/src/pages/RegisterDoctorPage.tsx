@@ -218,7 +218,7 @@ function UsersTab({ t }) {
       const params = { page: 1, limit: 200 };
       if (search) params.search = search;
       const res = await api.get('/doctors/users', { params });
-      setUsers(res.data);
+      setUsers(res.data.data || []);
     } catch (err) {
       setError(err.response?.data?.error || t('manage_staff.load_users_error'));
     } finally {
