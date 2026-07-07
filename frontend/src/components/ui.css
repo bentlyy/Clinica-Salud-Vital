@@ -1838,6 +1838,13 @@
   }
 }
 
+/* ===== APP LAYOUT FALLBACK ===== */
+.app-layout-fallback {
+  padding: 2rem;
+  text-align: center;
+  color: var(--text-secondary);
+}
+
 /* ===== COMBOBOX ===== */
 .combobox-wrapper {
   position: relative;

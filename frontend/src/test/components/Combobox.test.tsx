@@ -216,7 +216,9 @@ describe('Combobox', () => {
       await screen.findByText('Cardiología');
       fireEvent.keyDown(input, { key: 'ArrowDown' });
       fireEvent.keyDown(input, { key: 'Enter' });
-      expect(screen.queryByText('Cardiología')).not.toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.queryByText('Cardiología')).not.toBeInTheDocument();
+      });
     });
 
     it('highlights on mouse enter', async () => {

@@ -1,16 +1,16 @@
-import axios from 'axios';
+import axios, { type AxiosInstance, type AxiosError, type InternalAxiosRequestConfig } from 'axios';
 
 if (!import.meta.env.VITE_API_URL) {
   throw new Error('VITE_API_URL environment variable is required');
 }
 
-const api = axios.create({
+const api: AxiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
   withCredentials: true,
 });
 
 api.interceptors.request.use(
-  (config) => {
+  (config: InternalAxiosRequestConfig) => {
     const tenantId = localStorage.getItem('tenant_id');
     if (tenantId) {
       config.headers['X-Tenant-Id'] = tenantId;
@@ -24,22 +24,22 @@ api.interceptors.request.use(
     }
     return config;
   },
-  (error) => Promise.reject(error)
+  (error: AxiosError) => Promise.reject(error)
 );
 
 api.interceptors.response.use(
   (response) => {
     const csrfHeader = response.headers['x-csrf-token'];
     if (csrfHeader) {
-      localStorage.setItem('csrf_token', csrfHeader);
+      localStorage.setItem('csrf_token', csrfHeader as string);
     }
     return response;
   },
-  async (error) => {
+  async (error: AxiosError) => {
     if (axios.isCancel(error)) return Promise.reject(error);
 
     const status = error.response?.status;
-    const code = error.response?.data?.code;
+    const code = (error.response?.data as Record<string, unknown>)?.code;
 
     if (status === 401 && code === 'TOKEN_EXPIRED') {
       try {
@@ -49,8 +49,8 @@ api.interceptors.response.use(
           { withCredentials: true }
         );
 
-        error.config.headers = { ...error.config.headers, Authorization: 'Bearer ' + data.access_token };
-        return api(error.config);
+        error.config!.headers = { ...error.config!.headers, Authorization: 'Bearer ' + (data as Record<string, string>).access_token };
+        return api(error.config!);
       } catch (refreshError) {
         localStorage.removeItem('user');
         localStorage.removeItem('tenant_id');

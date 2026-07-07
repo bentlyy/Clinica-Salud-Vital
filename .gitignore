@@ -66,5 +66,8 @@ keys/
 tmp/
 temp/
 
+# Test output files
+test-output*.txt
+
 # Documentation (auto-generated)
 docs/

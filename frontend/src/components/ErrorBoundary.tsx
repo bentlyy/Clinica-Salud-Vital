@@ -1,6 +1,6 @@
 import { Component } from 'react';
 import { I18nContext } from '../i18n/useI18n';
-import { logger } from '../utils/logger.js';
+import { logger } from '../utils/logger';
 
 interface ErrorBoundaryProps {
   children: React.ReactNode;

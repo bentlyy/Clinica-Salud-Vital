@@ -1,7 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { jwtManager } from '../shared/jwt.service.js';
 import { UserRole } from '../types/index.js';
-import { pool } from '../shared/db.js';
 import { UnauthorizedError, ForbiddenError } from '../utils/errors.js';
 
 export interface JwtUser {
@@ -69,17 +68,6 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
   const reqTenantId = req.tenant_id || process.env.DEFAULT_TENANT_ID || 'default';
   if (reqTenantId && user.tenant_id !== reqTenantId && user.role !== 'superadmin') {
     next(new UnauthorizedError('Tenant mismatch'));
-    return;
-  }
-
-  try {
-    const { rows } = await pool.query('SELECT token_version FROM users WHERE id = $1', [user.id]);
-    if (rows.length && rows[0].token_version !== user.token_version) {
-      next(new UnauthorizedError('Token revoked'));
-      return;
-    }
-  } catch {
-    next(new UnauthorizedError('Auth service unavailable'));
     return;
   }
 

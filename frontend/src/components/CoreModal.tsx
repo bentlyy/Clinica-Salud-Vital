@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, memo, type ReactNode } from 'react';
 import './Modal.css';
 
 interface CoreModalProps {
@@ -10,7 +10,7 @@ interface CoreModalProps {
 
 const FOCUSABLE_SELECTOR = 'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
-export default function CoreModal({ isOpen, onClose, title, children }: CoreModalProps) {
+const CoreModal = memo(function CoreModal({ isOpen, onClose, title, children }: CoreModalProps) {
   const overlayRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
 
@@ -58,7 +58,7 @@ export default function CoreModal({ isOpen, onClose, title, children }: CoreModa
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay" ref={overlayRef} onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+    <div className="modal-overlay" ref={overlayRef} aria-hidden="true" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="modal-content" ref={contentRef} role="dialog" aria-modal="true" aria-label={title}>
         <div className="modal-header">
           <h2>{title}</h2>
@@ -68,4 +68,6 @@ export default function CoreModal({ isOpen, onClose, title, children }: CoreModa
       </div>
     </div>
   );
-}
+});
+
+export default CoreModal;
