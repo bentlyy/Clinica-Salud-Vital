@@ -52,6 +52,10 @@ vi.mock('../../i18n/useI18n', () => ({
         'nav.specialists': 'Especialistas',
         'nav.login': 'Iniciar Sesión',
         'nav.logout': 'Salir',
+        'nav.demo_data': 'Demo Data',
+        'nav.lab': '🔬 Laboratorio',
+        'nav.lab_results': 'Resultados Lab',
+        'nav.my_lab_results': 'Mis Resultados',
       };
       return map[key] || key;
     },
@@ -136,7 +140,9 @@ describe('Navbar', () => {
       mockUserRef.current = { role: 'lab_technician', name: 'Lab', email: 'lab@test.com' };
       renderNavbar();
       expect(screen.getByText('Reservar')).toBeInTheDocument();
-      expect(screen.getByText('🔬 Laboratorio')).toHaveAttribute('href', '/lab');
+      expect(screen.getByText('📊 Dashboard')).toHaveAttribute('href', '/lab/dashboard');
+      expect(screen.getByText('📈 Analytics')).toHaveAttribute('href', '/lab/analytics');
+      expect(screen.getByText('🧪 Control Calidad')).toHaveAttribute('href', '/lab/qc');
       expect(screen.queryByText('Panel')).not.toBeInTheDocument();
     });
 

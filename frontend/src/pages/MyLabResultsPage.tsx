@@ -48,6 +48,11 @@ export default function MyLabResultsPage() {
       </div>
     );
   }
+  const getRequestTestNames = (r) => {
+    if (!r.items || r.items.length === 0) return `Solicitud #${r.id}`;
+    return r.items.map(i => i.test_name).filter(Boolean).join(', ');
+  };
+
   if (requests.length === 0) {
     return (
       <div className="page-container">
@@ -123,8 +128,9 @@ export default function MyLabResultsPage() {
           </h2>
           <div className="grid" style={{ gap: 14 }}>
             {pending.map((r) => {
-              const Icon = getLabIcon(r.test_name || '');
-              const color = getLabColor(r.test_name || '');
+              const testName = getRequestTestNames(r);
+              const Icon = getLabIcon(testName);
+              const color = getLabColor(testName);
               return (
                 <LabCard key={r.id} request={r} icon={<Icon size={26} color={color} />} color={color} statusLabel={STATUS_LABEL[r.status] || 'Pendiente'} badgeClass={STATUS_BADGE[r.status] || 'badge-warning'} onClick={() => navigate(`/my-lab-results/${r.id}`)} t={t} section="pending" />
               );
@@ -141,8 +147,9 @@ export default function MyLabResultsPage() {
           </h2>
           <div className="grid" style={{ gap: 14 }}>
             {completed.map((r) => {
-              const Icon = getLabIcon(r.test_name || '');
-              const color = getLabColor(r.test_name || '');
+              const testName = getRequestTestNames(r);
+              const Icon = getLabIcon(testName);
+              const color = getLabColor(testName);
               return (
                 <LabCard key={r.id} request={r} icon={<Icon size={26} color={color} />} color={color} statusLabel={STATUS_LABEL[r.status] || 'Completado'} badgeClass={STATUS_BADGE[r.status] || 'badge-success'} onClick={() => navigate(`/my-lab-results/${r.id}`)} t={t} section="completed" />
               );
@@ -207,7 +214,7 @@ function LabCard({ request: r, icon, color, statusLabel, badgeClass, onClick, t,
         </div>
         <div style={{ flex: 1, padding: '16px 18px', minWidth: 0 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8, marginBottom: 6 }}>
-            <strong style={{ fontSize: 15, lineHeight: 1.3 }}>{r.test_name || `Solicitud #${r.id}`}</strong>
+            <strong style={{ fontSize: 15, lineHeight: 1.3 }}>{r.items?.[0]?.test_name || `Solicitud #${r.id}`}</strong>
             <span className={`badge ${badgeClass}`} style={{ flexShrink: 0, fontSize: 11 }}>{statusLabel}</span>
           </div>
           <div style={{ fontSize: 13, color: 'var(--text-secondary)', display: 'flex', flexWrap: 'wrap', gap: 14, marginBottom: showItems ? 10 : 0 }}>
