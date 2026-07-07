@@ -22,6 +22,10 @@ const MyMedicalHistoryDetailPage = lazy(() => import('../pages/MyMedicalHistoryD
 const MyLabResultsPage = lazy(() => import('../pages/MyLabResultsPage'));
 const LabResultDetailPage = lazy(() => import('../pages/LabResultDetailPage'));
 const LabTestsCatalogPage = lazy(() => import('../pages/LabTestsCatalogPage'));
+const LabDashboardPage = lazy(() => import('../modules/laboratory/pages/LabDashboardPage'));
+const LabAreaDashboardPage = lazy(() => import('../modules/laboratory/pages/LabAreaDashboardPage'));
+const LabAnalyticsPage = lazy(() => import('../modules/laboratory/pages/LabAnalyticsPage'));
+const LabQCPage = lazy(() => import('../modules/laboratory/pages/LabQCPage'));
 const RegisterDoctorPage = lazy(() => import('../pages/RegisterDoctorPage'));
 const AnalyticsPage = lazy(() => import('../pages/AnalyticsPage'));
 const AdminSpecialtiesPage = lazy(() => import('../pages/AdminSpecialtiesPage'));
@@ -69,6 +73,10 @@ export default function AppRoutes() {
       <Route path="/admin/demo-data" element={<ProtectedRoute role="admin"><AppLayout><AdminDemoDataPage /></AppLayout></ProtectedRoute>} />
 
       <Route path="/lab" element={<ProtectedRoute role="lab_technician"><AppLayout><WithFeature featureKey="laboratory"><LabTechnicianDashboardPage /></WithFeature></AppLayout></ProtectedRoute>} />
+      <Route path="/lab/dashboard" element={<ProtectedRoute role="lab_technician"><AppLayout><WithFeature featureKey="laboratory"><LabDashboardPage /></WithFeature></AppLayout></ProtectedRoute>} />
+      <Route path="/lab/dashboard/:areaId" element={<ProtectedRoute role="lab_technician"><AppLayout><WithFeature featureKey="laboratory"><LabAreaDashboardPage /></WithFeature></AppLayout></ProtectedRoute>} />
+      <Route path="/lab/analytics" element={<ProtectedRoute role="lab_technician"><AppLayout><WithFeature featureKey="laboratory"><LabAnalyticsPage /></WithFeature></AppLayout></ProtectedRoute>} />
+      <Route path="/lab/qc" element={<ProtectedRoute role="lab_technician"><AppLayout><WithFeature featureKey="laboratory"><LabQCPage /></WithFeature></AppLayout></ProtectedRoute>} />
       <Route path="/lab/requests/:id" element={<ProtectedRoute role="lab_technician"><AppLayout><WithFeature featureKey="laboratory"><LabResultDetailPage /></WithFeature></AppLayout></ProtectedRoute>} />
       <Route path="/super-admin" element={<ProtectedRoute role="superadmin"><AppLayout><SuperAdminDashboardPage /></AppLayout></ProtectedRoute>} />
       <Route path="/super-admin/tenants" element={<ProtectedRoute role="superadmin"><AppLayout><SuperAdminTenantsPage /></AppLayout></ProtectedRoute>} />
