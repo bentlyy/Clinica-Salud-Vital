@@ -30,6 +30,8 @@ export default function DoctorLabResultsPage() {
   const [labTests, setLabTests] = useState([]);
   const [records, setRecords] = useState([]);
   const [saving, setSaving] = useState(false);
+  const [resultValues, setResultValues] = useState<Record<string, string>>({});
+  const [resultNotes, setResultNotes] = useState<Record<string, string>>({});
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -55,7 +57,16 @@ export default function DoctorLabResultsPage() {
   const viewDetail = async (id) => {
     try {
       const res = await getLabRequestById(id);
-      setSelectedRequest(res.data || res);
+      const req = res.data || res;
+      setSelectedRequest(req);
+      const values: Record<string, string> = {};
+      const notes: Record<string, string> = {};
+      (req.items || []).forEach((item: any) => {
+        values[item.id] = item.result_value || '';
+        notes[item.id] = item.result_notes || '';
+      });
+      setResultValues(values);
+      setResultNotes(notes);
       setView('detail');
     } catch {
       setError(t('lab_results.error_loading'));
@@ -93,7 +104,7 @@ export default function DoctorLabResultsPage() {
       await createLabRequest({
         patient_id: Number(formData.patient_id),
         notes: formData.notes || undefined,
-        items: formData.items.map(i => ({ lab_test_id: Number(i.lab_test_id), notes: i.notes || undefined })),
+        test_ids: formData.items.map(i => Number(i.lab_test_id)),
       });
       await fetchData();
       setView('list');
@@ -110,17 +121,25 @@ export default function DoctorLabResultsPage() {
     try {
       const items = selectedRequest.items || [];
       for (const item of items) {
-        const input = document.getElementById(`result-${item.id}`);
-        const notesInput = document.getElementById(`result-notes-${item.id}`);
-        if (input && input.value) {
+        const value = resultValues[item.id];
+        if (value) {
           await updateLabResultItem(selectedRequest.id, item.id, {
-            result_value: input.value,
-            result_notes: notesInput?.value || undefined,
+            result_value: value,
+            result_notes: resultNotes[item.id] || undefined,
           });
         }
       }
       const res = await getLabRequestById(selectedRequest.id);
-      setSelectedRequest(res.data || res);
+      const req = res.data || res;
+      setSelectedRequest(req);
+      const values: Record<string, string> = {};
+      const notes: Record<string, string> = {};
+      (req.items || []).forEach((item: any) => {
+        values[item.id] = item.result_value || '';
+        notes[item.id] = item.result_notes || '';
+      });
+      setResultValues(values);
+      setResultNotes(notes);
     } catch (err) {
       setError(t('lab_results.error_save'));
     } finally {
@@ -128,7 +147,12 @@ export default function DoctorLabResultsPage() {
     }
   };
 
-  const getPatientName = (r) => r.patient_email || `${t('lab_results.patient')} #${r.patient_id}`;
+  const getRequestTestNames = (r) => {
+    if (!r.items || r.items.length === 0) return `#${r.id}`;
+    return r.items.map(i => i.test_name).filter(Boolean).join(', ');
+  };
+
+  const getPatientName = (r) => r.patient_name || r.patient_email || `${t('lab_results.patient')} #${r.patient_id}`;
 
   if (view === 'detail' && selectedRequest) {
     const r = selectedRequest;
@@ -136,7 +160,7 @@ export default function DoctorLabResultsPage() {
       <div className="page-container-wide">
         <div className="page-header">
           <div>
-            <h1 style={{ marginBottom: 4 }}>{r.test_name || `${t('lab_results.request')} #${r.id}`}</h1>
+            <h1 style={{ marginBottom: 4 }}>{getRequestTestNames(r)}</h1>
             <p style={{ color: 'var(--text-secondary)' }}>
               {t('lab_results.patient')}: {getPatientName(r)} — {r.created_at?.split('T')[0]}
             </p>
@@ -165,9 +189,9 @@ export default function DoctorLabResultsPage() {
                   <div className="form-group">
                     <label className="form-label">{t('lab_results.result_value')}</label>
                     <input
-                      id={`result-${item.id}`}
                       className="form-input"
-                      defaultValue={item.result_value || ''}
+                      value={resultValues[item.id] || ''}
+                      onChange={e => setResultValues(prev => ({ ...prev, [item.id]: e.target.value }))}
                       placeholder={t('lab_results.result_placeholder')}
                       disabled={!!item.result_value}
                     />
@@ -175,9 +199,9 @@ export default function DoctorLabResultsPage() {
                   <div className="form-group">
                     <label className="form-label">{t('lab_results.result_notes')}</label>
                     <input
-                      id={`result-notes-${item.id}`}
                       className="form-input"
-                      defaultValue={item.result_notes || ''}
+                      value={resultNotes[item.id] || ''}
+                      onChange={e => setResultNotes(prev => ({ ...prev, [item.id]: e.target.value }))}
                       placeholder={t('lab_results.notes_placeholder')}
                       disabled={!!item.result_value}
                     />
@@ -312,7 +336,7 @@ export default function DoctorLabResultsPage() {
                 <tbody>
                   {requests.map((r) => (
                     <tr key={r.id} style={{ borderBottom: '1px solid var(--border-light)' }}>
-                      <td style={{ padding: 10 }}>{r.test_name || `#${r.id}`}</td>
+                      <td style={{ padding: 10 }}>{(r.items?.[0]?.test_name) || `#${r.id}`}</td>
                       <td style={{ padding: 10 }}>{r.patient_name || getPatientName(r)}</td>
                       <td style={{ padding: 10 }}>{r.doctor_name || '—'}</td>
                       <td style={{ padding: 10 }}>{r.created_at?.split('T')[0] || '-'}</td>
