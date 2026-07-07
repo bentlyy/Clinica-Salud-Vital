@@ -1,6 +1,6 @@
 import { createContext, useState, useEffect, useCallback, useMemo } from 'react';
 
-interface ThemeContextValue {
+export interface ThemeContextValue {
   theme: 'light' | 'dark';
   toggleTheme: () => void;
 }

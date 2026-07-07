@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 vi.mock('../../src/modules/booking/booking.service.js', () => ({
   createBooking: vi.fn(),
   getBookingsByUser: vi.fn(),
-  deleteBooking: vi.fn(),
+  cancelBooking: vi.fn(),
   getAvailableSlots: vi.fn(),
   getBookingsByDoctor: vi.fn(),
 }));
@@ -61,18 +61,19 @@ describe('bookingController.getMyBookings', () => {
 
 describe('bookingController.cancelBooking', () => {
   it('cancels a booking', async () => {
-    vi.mocked(bookingService.deleteBooking).mockResolvedValue({ message: 'Booking cancelled' });
+    vi.mocked(bookingService.cancelBooking).mockResolvedValue({ message: 'Booking cancelled' });
     const req = { user: { id: 1 }, tenant_id: 'test', params: { id: '5' } };
-    const res = { json: vi.fn() };
+    const res = { status: vi.fn().mockReturnThis(), json: vi.fn() };
     const next = vi.fn();
 
     bookingController.cancelBooking(req, res, next);
     await flush();
 
-    expect(bookingService.deleteBooking).toHaveBeenCalledWith(5, 1, 'test');
+    expect(bookingService.cancelBooking).toHaveBeenCalledWith(5, 1, 'test');
     expect(res.json).toHaveBeenCalledWith({ message: 'Booking cancelled' });
   });
 });
+
 
 describe('bookingController.getDoctorBookings', () => {
   it('returns doctor bookings', async () => {

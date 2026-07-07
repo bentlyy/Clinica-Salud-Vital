@@ -244,3 +244,53 @@ button {
   h2 { font-size: 1.5rem; }
   h3 { font-size: 1.2rem; }
 }
+
+.info-card {
+  margin-top: 20px;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.text-muted-lg {
+  text-align: center;
+  color: var(--text-muted);
+  padding: 40px;
+}
+
+.text-muted-sm {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.specialty-card-skeleton {
+  opacity: 0.5;
+  text-align: center;
+  padding: 28px;
+}
+
+.skeleton-icon {
+  font-size: 2rem;
+  margin-bottom: 12px;
+}
+
+.skeleton-line {
+  height: 16px;
+  background: var(--gray-200);
+  border-radius: 4px;
+  margin: 0 auto;
+}
+
+.skeleton-line-60 {
+  width: 60%;
+  margin-bottom: 8px;
+}
+
+.skeleton-line-80 {
+  width: 80%;
+}
+
+.specialty-btn {
+  margin-top: 8px;
+}

@@ -18,7 +18,9 @@ const poolMax = parseInt(process.env.DB_POOL_MAX || '25', 10);
 const dbCaCert = process.env.DB_CA_CERT;
 const isProd = process.env.NODE_ENV === 'production';
 const sslConfig = !isInternalDb() && isProd
-  ? { rejectUnauthorized: false, ...(dbCaCert ? { ca: dbCaCert, rejectUnauthorized: false } : {}) }
+  ? dbCaCert
+    ? { ca: dbCaCert, rejectUnauthorized: true }
+    : { rejectUnauthorized: false }
   : false;
 
 export const pool = new Pool({
@@ -55,6 +57,8 @@ export const readPool = readOnlyUrl
       idleTimeoutMillis: 30000,
       connectionTimeoutMillis: 15000,
       statement_timeout: 60000,
+      query_timeout: 30000,
+      idle_in_transaction_session_timeout: 60000,
     })
   : pool;
 

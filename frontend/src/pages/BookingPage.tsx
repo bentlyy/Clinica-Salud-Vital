@@ -1,5 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
+import React from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { isAxiosError } from 'axios';
 import { getDoctors } from '../api/doctors';
 import { getAvailableSlots, createBooking } from '../api/bookings';
 import { useAuth } from '../context/useAuth';
@@ -12,7 +14,7 @@ interface Doctor {
   [key: string]: unknown;
 }
 
-export default function BookingPage() {
+const BookingPage = React.memo(function BookingPage() {
   const { t } = useI18n();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -83,7 +85,7 @@ export default function BookingPage() {
     return () => controller.abort();
   }, [selectedDoctor, date]);
 
-  const handleConfirm = async () => {
+  const handleConfirm = useCallback(async () => {
     if (submitting) return;
 
     setError(null);
@@ -111,11 +113,15 @@ export default function BookingPage() {
 
       setSuccess(true);
     } catch (err) {
-      setError(err.response?.data?.error || t('booking.error'));
+      if (isAxiosError(err)) {
+        setError(err.response?.data?.error || t('booking.error'));
+      } else {
+        setError(t('booking.error'));
+      }
     } finally {
       setSubmitting(false);
     }
-  };
+  }, [submitting, selectedDoctor, date, selectedTime, t]);
 
   const canGoToStep2 = selectedDoctor && date && selectedTime;
 
@@ -300,4 +306,6 @@ export default function BookingPage() {
       )}
     </div>
   );
-}
+});
+
+export default BookingPage;

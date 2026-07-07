@@ -206,7 +206,7 @@ export const login = async ({ email, password, totp_token, captcha_token }: Logi
 
   logger.debug('Login attempt', { email, tenantId });
 
-  const result = await pool.query<User>('SELECT * FROM users WHERE email = $1 AND tenant_id = $2', [email, tenantId]);
+  const result = await pool.query<User>('SELECT id, email, name, rut, phone, role, password, password_changed, totp_enabled, totp_secret, tenant_id, active, last_activity_at, failed_attempts, locked_until, token_version FROM users WHERE email = $1 AND tenant_id = $2', [email, tenantId]);
   const user = result.rows[0];
 
   if (!user) {
@@ -303,7 +303,7 @@ export const refreshToken = async ({ refresh_token }: RefreshParams): Promise<{
       return null;
     }
 
-    const userResult = await client.query<User>('SELECT * FROM users WHERE id = $1 AND active = true', [tokenRecord.user_id]);
+    const userResult = await client.query<User>('SELECT id, email, name, rut, phone, role, password, password_changed, totp_enabled, totp_secret, tenant_id, active, last_activity_at, failed_attempts, locked_until, token_version FROM users WHERE id = $1 AND active = true', [tokenRecord.user_id]);
     const user = userResult.rows[0];
     if (!user) {
       await client.query('ROLLBACK');
@@ -453,29 +453,51 @@ export const verifyToken = (secret: string, token: string): boolean => {
 };
 
 export const enable2FA = async (userId: number, email: string): Promise<{ secret: string; qrCodeUrl: string }> => {
-  const { secret, qrCodeUrl } = generateSecret(email);
-  const encryptedSecret = encrypt(secret);
-  await pool.query(
-    'UPDATE users SET totp_secret = $1, totp_enabled = false WHERE id = $2',
-    [encryptedSecret, userId]
-  );
-  return { secret, qrCodeUrl };
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const { secret, qrCodeUrl } = generateSecret(email);
+    const encryptedSecret = encrypt(secret);
+    await client.query(
+      'UPDATE users SET totp_secret = $1, totp_enabled = false WHERE id = $2',
+      [encryptedSecret, userId]
+    );
+    await client.query('COMMIT');
+    return { secret, qrCodeUrl };
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
+  }
 };
 
 export const verifyAndEnable2FA = async (userId: number, token: string): Promise<boolean> => {
-  const result = await pool.query('SELECT totp_secret FROM users WHERE id = $1', [userId]);
-  const storedSecret = result.rows[0]?.totp_secret;
-  if (!storedSecret) {
-    throw new BadRequestError('2FA not initialized');
-  }
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const result = await client.query('SELECT totp_secret FROM users WHERE id = $1 FOR UPDATE', [userId]);
+    const storedSecret = result.rows[0]?.totp_secret;
+    if (!storedSecret) {
+      await client.query('ROLLBACK');
+      throw new BadRequestError('2FA not initialized');
+    }
 
-  const isValid = verifyToken(storedSecret, token);
-  if (!isValid) {
-    throw new BadRequestError('Invalid 2FA token');
-  }
+    const isValid = verifyToken(storedSecret, token);
+    if (!isValid) {
+      await client.query('ROLLBACK');
+      throw new BadRequestError('Invalid 2FA token');
+    }
 
-  await pool.query('UPDATE users SET totp_enabled = true WHERE id = $1', [userId]);
-  return true;
+    await client.query('UPDATE users SET totp_enabled = true WHERE id = $1', [userId]);
+    await client.query('COMMIT');
+    return true;
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
+  }
 };
 
 export const disable2FA = async (userId: number, password: string, totpToken?: string): Promise<void> => {
@@ -514,44 +536,51 @@ export const is2FARequired = async (userId: number): Promise<boolean> => {
 const RESET_TOKEN_EXPIRY = '1h';
 
 export const forgotPassword = async (email: string, tenantId: string): Promise<void> => {
+  const startTime = Date.now();
+
   const result = await pool.query(
     `SELECT id, email, name FROM users WHERE email = $1 AND active = true AND tenant_id = $2`,
     [email, tenantId]
   );
 
-  if (result.rows.length === 0) {
-    return;
+  const user = result.rows[0];
+
+  if (user) {
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const tokenHash = hashToken(resetToken);
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+
+    await pool.query(
+      `INSERT INTO password_reset_tokens (user_id, token, expires_at)
+       VALUES ($1, $2, $3)
+       ON CONFLICT (user_id) DO UPDATE SET token = EXCLUDED.token, expires_at = EXCLUDED.expires_at, used = false`,
+      [user.id, tokenHash, expiresAt]
+    );
+
+    const frontendUrl = process.env.FRONTEND_URL || process.env.RENDER_EXTERNAL_URL || 'http://localhost:5173';
+    const resetUrl = `${frontendUrl}/reset-password?token=${resetToken}&email=${encodeURIComponent(email)}`;
+
+    try {
+      await sendEmail({
+        to: email,
+        subject: 'Restablecimiento de contraseña',
+        html: `
+          <h2>Restablecimiento de contraseña</h2>
+          <p>Haz clic en el siguiente enlace para restablecer tu contraseña. Este enlace expira en 1 hora.</p>
+          <p><a href="${resetUrl}">Restablecer contraseña</a></p>
+          <p>Si no solicitaste este cambio, ignora este mensaje.</p>
+        `,
+        tenantId,
+      });
+    } catch (err) {
+      logger.error('Error sending password reset email', { error: (err as Error).message });
+    }
   }
 
-  const user = result.rows[0];
-  const resetToken = crypto.randomBytes(32).toString('hex');
-  const tokenHash = hashToken(resetToken);
-  const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
-
-  await pool.query(
-    `INSERT INTO password_reset_tokens (user_id, token, expires_at)
-     VALUES ($1, $2, $3)
-     ON CONFLICT (user_id) DO UPDATE SET token = EXCLUDED.token, expires_at = EXCLUDED.expires_at, used = false`,
-    [user.id, tokenHash, expiresAt]
-  );
-
-  const frontendUrl = process.env.FRONTEND_URL || process.env.RENDER_EXTERNAL_URL || 'http://localhost:5173';
-  const resetUrl = `${frontendUrl}/reset-password?token=${resetToken}&email=${encodeURIComponent(email)}`;
-
-  try {
-    await sendEmail({
-      to: email,
-      subject: 'Restablecimiento de contraseña',
-      html: `
-        <h2>Restablecimiento de contraseña</h2>
-        <p>Haz clic en el siguiente enlace para restablecer tu contraseña. Este enlace expira en 1 hora.</p>
-        <p><a href="${resetUrl}">Restablecer contraseña</a></p>
-        <p>Si no solicitaste este cambio, ignora este mensaje.</p>
-      `,
-      tenantId,
-    });
-  } catch (err) {
-    logger.error('Error sending password reset email', { error: (err as Error).message });
+  const elapsed = Date.now() - startTime;
+  const minTime = 200;
+  if (elapsed < minTime) {
+    await new Promise(resolve => setTimeout(resolve, minTime - elapsed));
   }
 };
 
@@ -609,9 +638,9 @@ export const resetPassword = async (token: string, email: string, newPassword: s
   }
 };
 
-export const resetAdminPassword = async (tenantId: string): Promise<{ email: string; password: string }> => {
+export const resetAdminPassword = async (tenantId: string): Promise<{ email: string }> => {
   const email = process.env.ADMIN_EMAIL || 'admin@clinic.com';
-  const password = process.env.SEED_PASSWORD || process.env.ADMIN_PASSWORD;
+  const password = process.env.SEED_PASSWORD ?? process.env.ADMIN_PASSWORD;
   if (!password) throw new Error('SEED_PASSWORD or ADMIN_PASSWORD environment variable is required');
   const hash = await bcrypt.hash(password, 12);
 
@@ -627,5 +656,5 @@ export const resetAdminPassword = async (tenantId: string): Promise<{ email: str
   await pool.query('UPDATE refresh_tokens SET revoked = true WHERE user_id = $1', [result.rows[0].id]);
 
   logger.info('Admin password reset', { email, tenantId });
-  return { email, password };
+  return { email };
 };

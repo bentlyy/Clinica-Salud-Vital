@@ -1,4 +1,4 @@
-export const formatRut = (rut) => {
+export const formatRut = (rut: string): string => {
   const cleaned = rut.replace(/[^0-9kK]/g, '');
   if (cleaned.length < 2) return cleaned;
   const dv = cleaned.slice(-1).toUpperCase();
@@ -6,9 +6,9 @@ export const formatRut = (rut) => {
   return body.replace(/\B(?=(\d{3})+(?!\d))/g, '.') + '-' + dv;
 };
 
-export const cleanRut = (rut) => rut.replace(/[^0-9kK]/g, '').toUpperCase();
+export const cleanRut = (rut: string): string => rut.replace(/[^0-9kK]/g, '').toUpperCase();
 
-export const validateRut = (rut) => {
+export const validateRut = (rut: string): boolean => {
   const cleaned = cleanRut(rut);
   if (cleaned.length < 2) return false;
 
@@ -28,7 +28,7 @@ export const validateRut = (rut) => {
   const remainder = sum % 11;
   const expectedDv = 11 - remainder;
 
-  let computedDv;
+  let computedDv: string;
   if (expectedDv === 11) computedDv = '0';
   else if (expectedDv === 10) computedDv = 'K';
   else computedDv = String(expectedDv);

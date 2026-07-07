@@ -16,7 +16,7 @@ const router = Router();
 
 router.post('/', authMiddleware, validateZod(createBookingSchema), createBooking);
 router.get('/me', authMiddleware, getMyBookings);
-router.delete('/:id', authMiddleware, validateZod(bookingIdSchema, 'params'), cancelBooking);
+router.patch('/:id/cancel', authMiddleware, validateZod(bookingIdSchema, 'params'), cancelBooking);
 router.get('/available-slots', validateZod(availableSlotsSchema, 'query'), getAvailableSlots);
 router.get('/doctor/daily-density', authMiddleware, authorize('doctor'), getDailyDensity);
 router.get('/doctor', authMiddleware, authorize('doctor'), getDoctorBookings);

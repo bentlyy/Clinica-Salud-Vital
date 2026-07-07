@@ -2,134 +2,44 @@ name: CI
 
 on:
   push:
-    branches: [master, main]
+    branches: [main]
   pull_request:
-    branches: [master, main]
+    branches: [main]
 
 jobs:
-  typecheck:
-    name: TypeScript Check
+  build-and-test:
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: 'npm'
-      - run: npm ci
-      - run: npm run typecheck
 
-  test:
-    name: Tests + Coverage
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: 'npm'
-      - run: npm ci
-      - run: npm test
-      - uses: actions/upload-artifact@v4
-        with:
-          name: coverage-report
-          path: coverage/
+    strategy:
+      matrix:
+        node-version: [20]
 
-  build-backend:
-    name: Build Backend
-    runs-on: ubuntu-latest
-    needs: [typecheck, test]
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: 'npm'
-      - run: npm ci
-      - run: npm run build:backend
 
-  test-frontend:
-    name: Frontend Tests
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: ${{ matrix.node-version }}
           cache: 'npm'
-          cache-dependency-path: frontend/package-lock.json
-      - name: Install dependencies
-        working-directory: ./frontend
+
+      - name: Install backend dependencies
         run: npm ci
-      - name: Run tests
-        working-directory: ./frontend
+
+      - name: Install frontend dependencies
+        run: npm ci
+        working-directory: frontend
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Run backend tests
         run: npm test
 
-  build-frontend:
-    name: Build Frontend
-    runs-on: ubuntu-latest
-    needs: [typecheck, test-frontend]
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: 'npm'
-          cache-dependency-path: frontend/package-lock.json
-      - name: Install dependencies
-        working-directory: ./frontend
-        run: npm ci
-      - name: Build
-        working-directory: ./frontend
-        run: npm run build
-        env:
-          VITE_API_URL: /api/v1
-          VITE_RECAPTCHA_SITE_KEY: ${{ secrets.VITE_RECAPTCHA_SITE_KEY }}
+      - name: Run frontend tests
+        run: npm test
+        working-directory: frontend
 
-  deploy:
-    name: Deploy to Render
-    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
-    runs-on: ubuntu-latest
-    needs: [build-backend, build-frontend]
-    steps:
-      - name: Trigger Render deploy
-        run: |
-          echo "Triggering deploy via webhook..."
-          HTTP_CODE=$(curl -s -o /tmp/render_deploy_response.txt -w "%{http_code}" -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}")
-          echo "Webhook response code: $HTTP_CODE"
-          cat /tmp/render_deploy_response.txt
-          if [ "$HTTP_CODE" != "200" ]; then
-            echo "WARNING: Webhook responded $HTTP_CODE (not 200). Render may not have accepted the deploy."
-          fi
-      - name: Wait for Render build to start (120s)
-        run: sleep 120
-      - name: Wait for deployment and health check
-        run: |
-          URL="${{ secrets.RENDER_APP_URL }}"
-          echo "Health endpoint: $URL/health"
-          echo "Waiting for deploy to complete (up to 10 min)..."
-          for i in $(seq 1 60); do
-            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 10 --max-time 15 "$URL/health" 2>/tmp/curl_error.log || echo "000")
-            if [ "$HTTP_CODE" = "200" ]; then
-              BODY=$(curl -s --max-time 10 "$URL/health")
-              DB_STATUS=$(echo "$BODY" | python3 -c "import sys,json; print(json.load(sys.stdin).get('checks',{}).get('database',{}).get('status','error'))" 2>/dev/null || echo "error")
-              if [ "$DB_STATUS" = "ok" ]; then
-                echo "✅ Health check passed! App + DB are running."
-                exit 0
-              fi
-              echo "⚠️ Health endpoint returned 200 but DB status is $DB_STATUS — still waiting..."
-            else
-              if [ "$HTTP_CODE" = "000" ]; then
-                CURL_ERR=$(cat /tmp/curl_error.log)
-                echo "  curl error: $CURL_ERR"
-              fi
-            fi
-            echo "Attempt $i/60: HTTP $HTTP_CODE - waiting 10s..."
-            sleep 10
-          done
-          echo "❌ Deploy health check failed after 60 retries"
-          echo "Verify: (1) RENDER_DEPLOY_HOOK_URL is valid in repo secrets"
-          echo "        (2) RENDER_APP_URL is https://clinica-salud-vital.onrender.com"
-          echo "        (3) The Render dashboard shows a successful deploy"
-          exit 1
-        shell: bash
+      - name: Build frontend
+        run: npm run build
+        working-directory: frontend

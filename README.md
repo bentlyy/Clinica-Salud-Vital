@@ -17,8 +17,9 @@ Plataforma integral para administrar clínicas, pacientes, médicos, citas, hist
 [![Render](https://img.shields.io/badge/Render-46E3B7?logo=render&logoColor=white)](https://render.com/)
 [![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
 [![CI](https://img.shields.io/github/actions/workflow/status/bentlyy/Clinica-Salud-Vital/ci.yml?branch=master&label=CI&logo=githubactions)](https://github.com/bentlyy/Clinica-Salud-Vital/actions)
-[![Tests](https://img.shields.io/badge/tests-1357%20passed-2ea043)](#-testing)
+[![Tests](https://img.shields.io/badge/tests-1058%20passed-2ea043)](#-testing)
 [![Coverage](https://img.shields.io/badge/coverage-~89%25-2ea043)](#-testing)
+[![Audit](https://img.shields.io/badge/audit-160%20hallazgos-FF6B6B)](#-auditor%C3%ADa-y-mejora)
 
 </div>
 
@@ -275,9 +276,9 @@ npm run test:coverage             # Reporte HTML
 | Métrica | Valor |
 |---------|-------|
 | **Framework** | Vitest 4 con pool forks |
-| **Tests backend** | 1057 tests — 81 archivos |
-| **Tests frontend** | 300 tests — 19 archivos |
-| **Cobertura** | ~89% lines (threshold: 50%) |
+| **Tests backend** | 1058 tests — 81 archivos |
+| **Tests frontend** | 23 tests — 4 archivos |
+| **Cobertura** | ~89% lines (threshold: 70%) |
 | **Setup** | Mocks de DB, auth, email, JWT |
 | **CI** | GitHub Actions: typecheck → test → build → deploy |
 
@@ -349,13 +350,14 @@ Los datos de prueba se generan automáticamente al iniciar la app en desarrollo.
 | Aspecto | Estado |
 |---------|--------|
 | **Versión** | `1.0.0` — Producción |
-| **Backend** | 1057 tests — ~89% cobertura |
+| **Backend** | 1058 tests — ~89% cobertura — typecheck sin errores |
 | **Frontend** | 18 páginas — lazy loading — tema claro/oscuro |
 | **CI/CD** | GitHub Actions + Render |
 | **Seguridad** | Helmet, CORS, rate limiting, Zod, 2FA, auditoría HMAC |
 | **Multi-tenancy** | Implementado con planes SaaS auto-gestionables |
 | **i18n** | 🇪🇸 🇺🇸 🇧🇷 🇫🇷 completos — 811 claves c/u |
-| **Documentación** | API docs, ADR (monolito modular) |
+| **Auditoría** | 160 hallazgos corregidos — 74 archivos modificados |
+| **Documentación** | API docs, ADR (monolito modular), Wiki Obsidian |
 
 </div>
 

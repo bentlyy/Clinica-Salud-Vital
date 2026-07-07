@@ -12,8 +12,8 @@ const getSecret = (): string => {
 class JWTManager {
   sign(payload: Record<string, unknown>, options?: SignOptions): string {
     return jwt.sign(payload, getSecret(), {
-      expiresIn: options?.expiresIn || '15m',
       ...options,
+      expiresIn: options?.expiresIn || '15m',
       algorithm: 'HS256',
     });
   }
@@ -37,6 +37,6 @@ class JWTManager {
 
 export const jwtManager = new JWTManager();
 
-export function getJWKS() {
+export function getJWKS(): { keys: never[] } {
   return { keys: [] };
 }

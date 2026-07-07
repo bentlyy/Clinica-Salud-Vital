@@ -148,7 +148,6 @@ describe('GET /api/doctors/me', () => {
 
   it('returns 404 if doctor profile not found', async () => {
     mockQuery
-      .mockResolvedValueOnce({ rows: [{ token_version: 0 }] })
       .mockResolvedValueOnce({ rows: [] });
 
     const res = await request(app)
@@ -160,7 +159,6 @@ describe('GET /api/doctors/me', () => {
 
   it('returns doctor profile', async () => {
     mockQuery
-      .mockResolvedValueOnce({ rows: [{ token_version: 0 }] })
       .mockResolvedValueOnce({ rows: [{ id: 2, name: 'Dr. Test', user_id: 2 }] });
 
     const res = await request(app)

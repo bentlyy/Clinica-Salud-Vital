@@ -157,11 +157,11 @@ describe('bookingService.getBookingsByUser', () => {
   });
 });
 
-describe('bookingService.deleteBooking', () => {
+describe('bookingService.cancelBooking', () => {
   it('cancels booking successfully', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [{ id: 1 }] });
 
-    const result = await bookingService.deleteBooking(1, 1);
+    const result = await bookingService.cancelBooking(1, 1);
 
     expect(result.message).toBe('Booking cancelled successfully');
   });
@@ -169,21 +169,21 @@ describe('bookingService.deleteBooking', () => {
   it('throws if booking not found', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [] });
 
-    await expect(bookingService.deleteBooking(999, 1)).rejects.toThrow('Booking not found or unauthorized');
+    await expect(bookingService.cancelBooking(999, 1)).rejects.toThrow('Booking not found or unauthorized');
   });
 
   it('throws if id is not integer', async () => {
-    await expect(bookingService.deleteBooking('abc', 1)).rejects.toThrow('Invalid booking id');
+    await expect(bookingService.cancelBooking('abc', 1)).rejects.toThrow('Invalid booking id');
   });
 
   it('throws if user_id is not integer', async () => {
-    await expect(bookingService.deleteBooking(1, 'abc')).rejects.toThrow('Invalid booking id');
+    await expect(bookingService.cancelBooking(1, 'abc')).rejects.toThrow('Invalid booking id');
   });
 
   it('cancels booking with tenant_id', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [{ id: 1 }] });
 
-    const result = await bookingService.deleteBooking(1, 1, 'tenant-1');
+    const result = await bookingService.cancelBooking(1, 1, 'tenant-1');
 
     expect(result.message).toBe('Booking cancelled successfully');
     expect(mockQuery).toHaveBeenCalledWith(
@@ -326,7 +326,7 @@ describe('bookingService.getAllBookings', () => {
     const result = await bookingService.getAllBookings({ page: 1, limit: 50 });
 
     expect(result.data).toHaveLength(1);
-    expect(result.pagination.total).toBe(1);
+    expect(result.total).toBe(1);
   });
 
   it('returns paginated bookings with tenant_id', async () => {

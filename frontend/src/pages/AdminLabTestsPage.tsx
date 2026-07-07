@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useI18n } from '../i18n/useI18n';
 import { getLabTests, createLabTest, updateLabTest, deleteLabTest } from '../api/laboratory';
-import { logger } from '../utils/logger.js';
+import { logger } from '../utils/logger';
 
 interface LabTest {
   id: number;
