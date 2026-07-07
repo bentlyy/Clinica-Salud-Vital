@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useI18n } from '../i18n/useI18n';
+import { extractList } from '../utils/extract-list';
 import { getAllBookings } from '../api/bookings';
 import { getClinicalRecords } from '../api/clinicalRecords';
 import { getLabRequests } from '../api/laboratory';
@@ -54,9 +55,9 @@ export default function SuperAdminDemoDataPage() {
           getClinicalRecords({ limit: 200 }).catch(() => []),
           getLabRequests({ limit: 200 }).catch(() => []),
         ]);
-        setBookings(Array.isArray(bRes?.data) ? bRes.data : []);
-        setRecords(Array.isArray(cRes) ? cRes : []);
-        setLabReqs(Array.isArray(lRes) ? lRes : []);
+        setBookings(extractList(bRes));
+        setRecords(extractList(cRes));
+        setLabReqs(extractList(lRes));
       } catch {
         setBookings([]);
         setRecords([]);
