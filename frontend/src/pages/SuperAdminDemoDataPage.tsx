@@ -4,6 +4,11 @@ import { extractList } from '../utils/extract-list';
 import { getAllBookings } from '../api/bookings';
 import { getClinicalRecords } from '../api/clinicalRecords';
 import { getLabRequests } from '../api/laboratory';
+import Button from '../components/ui/Button';
+import Badge from '../components/ui/Badge';
+import Card from '../components/ui/Card';
+import Alert from '../components/ui/Alert';
+import { PageContainer, PageHeader } from '../components/ui/PageContainer';
 
 interface Booking {
   id: number;
@@ -75,36 +80,36 @@ export default function SuperAdminDemoDataPage() {
   ];
 
   const statusBadge = (status: string) => {
-    const cls = status === 'completed' ? 'badge-success' : status === 'cancelled' ? 'badge-ghost' : 'badge-warning';
-    return <span className={`badge ${cls}`}>{status}</span>;
+    const variant = status === 'completed' ? 'success' : status === 'cancelled' ? 'neutral' : 'warning';
+    return <Badge variant={variant}>{status}</Badge>;
   };
 
   return (
-    <div className="page-container">
-      <div className="alert alert-info" style={{ marginBottom: 24 }}>
+    <PageContainer maxWidth="xl">
+      <Alert variant="info" style={{ marginBottom: 24 }}>
         <strong>Datos Globales</strong> — Esta sección muestra toda la información del sistema a nivel global (todos los tenants).
-      </div>
+      </Alert>
 
-      <div style={{ display: 'flex', gap: 4, marginBottom: 24, borderBottom: '2px solid var(--border-light)' }}>
+      <div style={{ display: 'flex', gap: 4, marginBottom: 24, borderBottom: '2px solid var(--ds-border)' }}>
         {tabs.map(t => (
-          <button
+          <Button
             key={t.key}
             onClick={() => setTab(t.key)}
-            className={`btn ${tab === t.key ? 'btn-primary' : 'btn-ghost'}`}
+            variant={tab === t.key ? 'primary' : 'ghost'}
             style={{ borderRadius: '8px 8px 0 0', padding: '10px 20px' }}
           >
-            {t.label} <span className="badge badge-info" style={{ marginLeft: 6 }}>{t.count}</span>
-          </button>
+            {t.label} <Badge variant="info" style={{ marginLeft: 6 }}>{t.count}</Badge>
+          </Button>
         ))}
       </div>
 
-      {loading && <p className="text-muted">Cargando datos globales...</p>}
+      {loading && <p style={{ color: 'var(--ds-text-tertiary)' }}>Cargando datos globales...</p>}
 
       {!loading && tab === 'bookings' && (
-        <div className="card">
-          <div className="table-responsive">
+        <Card padding="md">
+          <div style={{ overflowX: 'auto' }}>
             <div style={{ maxHeight: 480, overflowY: 'auto' }}>
-              <table className="table" style={{ tableLayout: 'fixed' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
                   <tr>
                     <th style={{ minWidth: 140 }}>Paciente</th>
@@ -117,7 +122,7 @@ export default function SuperAdminDemoDataPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {bookings.length === 0 && <tr><td colSpan={7} className="text-muted" style={{ textAlign: 'center', padding: 24 }}>No hay reservas.</td></tr>}
+                  {bookings.length === 0 && <tr><td colSpan={7} style={{ color: 'var(--ds-text-tertiary)', textAlign: 'center', padding: 24 }}>No hay reservas.</td></tr>}
                   {bookings.map(b => (
                     <tr key={b.id}>
                       <td>{b.patient_name}</td>
@@ -133,14 +138,14 @@ export default function SuperAdminDemoDataPage() {
               </table>
             </div>
           </div>
-        </div>
+        </Card>
       )}
 
       {!loading && tab === 'clinical' && (
-        <div className="card">
-          <div className="table-responsive">
+        <Card padding="md">
+          <div style={{ overflowX: 'auto' }}>
             <div style={{ maxHeight: 480, overflowY: 'auto' }}>
-              <table className="table" style={{ tableLayout: 'fixed' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
                   <tr>
                     <th style={{ minWidth: 140 }}>Paciente</th>
@@ -152,7 +157,7 @@ export default function SuperAdminDemoDataPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {records.length === 0 && <tr><td colSpan={6} className="text-muted" style={{ textAlign: 'center', padding: 24 }}>No hay historial clínico.</td></tr>}
+                  {records.length === 0 && <tr><td colSpan={6} style={{ color: 'var(--ds-text-tertiary)', textAlign: 'center', padding: 24 }}>No hay historial clínico.</td></tr>}
                   {records.map(r => (
                     <tr key={r.id}>
                       <td>{r.patient_name}</td>
@@ -167,14 +172,14 @@ export default function SuperAdminDemoDataPage() {
               </table>
             </div>
           </div>
-        </div>
+        </Card>
       )}
 
       {!loading && tab === 'lab' && (
-        <div className="card">
-          <div className="table-responsive">
+        <Card padding="md">
+          <div style={{ overflowX: 'auto' }}>
             <div style={{ maxHeight: 480, overflowY: 'auto' }}>
-              <table className="table" style={{ tableLayout: 'fixed' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
                   <tr>
                     <th style={{ minWidth: 110 }}>N° Solicitud</th>
@@ -186,7 +191,7 @@ export default function SuperAdminDemoDataPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {labReqs.length === 0 && <tr><td colSpan={6} className="text-muted" style={{ textAlign: 'center', padding: 24 }}>No hay exámenes.</td></tr>}
+                  {labReqs.length === 0 && <tr><td colSpan={6} style={{ color: 'var(--ds-text-tertiary)', textAlign: 'center', padding: 24 }}>No hay exámenes.</td></tr>}
                   {labReqs.map(r => (
                     <tr key={r.id}>
                       <td>{r.request_number || `#${r.id}`}</td>
@@ -201,8 +206,8 @@ export default function SuperAdminDemoDataPage() {
               </table>
             </div>
           </div>
-        </div>
+        </Card>
       )}
-    </div>
+    </PageContainer>
   );
 }

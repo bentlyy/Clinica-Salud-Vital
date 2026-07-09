@@ -4,6 +4,11 @@ import api from '../api/axios';
 import { extractList } from '../utils/extract-list';
 import { downloadLabOrderPdf } from '../api/laboratory';
 import { logger } from '../utils/logger';
+import Button from '../components/ui/Button';
+import Badge from '../components/ui/Badge';
+import Card from '../components/ui/Card';
+import Alert from '../components/ui/Alert';
+import { PageContainer, PageHeader } from '../components/ui/PageContainer';
 
 interface LabRequest {
   id: number;
@@ -35,21 +40,21 @@ const STATUS_TABS = [
   { key: 'delivered', label: 'Entregadas' },
 ];
 
-const STATUS_BADGE: Record<string, string> = {
-  pending: 'badge-warning',
-  received: 'badge-info',
-  verified: 'badge-info',
-  assigned: 'badge-info',
-  processing: 'badge-info',
-  qc_review: 'badge-warning',
-  result_entered: 'badge-info',
-  validated_tech: 'badge-success',
-  validated_doctor: 'badge-success',
-  signed: 'badge-success',
-  delivered: 'badge-success',
-  cancelled: 'badge-ghost',
-  rejected: 'badge-ghost',
-  repeated: 'badge-warning',
+const STATUS_BADGE: Record<string, 'success' | 'warning' | 'info' | 'neutral'> = {
+  pending: 'warning',
+  received: 'info',
+  verified: 'info',
+  assigned: 'info',
+  processing: 'info',
+  qc_review: 'warning',
+  result_entered: 'info',
+  validated_tech: 'success',
+  validated_doctor: 'success',
+  signed: 'success',
+  delivered: 'success',
+  cancelled: 'neutral',
+  rejected: 'neutral',
+  repeated: 'warning',
 };
 
 export default function LabTechnicianDashboardPage() {
@@ -115,58 +120,61 @@ export default function LabTechnicianDashboardPage() {
   };
 
   return (
-    <div className="page-container-wide">
-      <div className="page-header">
-        <div>
-          <h1 style={{ marginBottom: 4 }}>Panel de Laboratorio</h1>
-          <p style={{ color: 'var(--text-secondary)' }}>
-            Gestiona las órdenes de exámenes, procesa muestras y carga resultados
-          </p>
-        </div>
-      </div>
+    <PageContainer maxWidth="xl">
+      <PageHeader
+        title="Panel de Laboratorio"
+        subtitle="Gestiona las órdenes de exámenes, procesa muestras y carga resultados"
+      />
 
       <div className="flex-row" style={{ gap: 12, marginBottom: 24 }}>
-        <Link to="/lab/dashboard" className="card flex-row items-center" style={{ padding: '16px 20px', textDecoration: 'none', color: 'inherit', gap: 14, border: '1px solid var(--border-light)', flex: 1 }}>
-          <div style={{ width: 44, height: 44, borderRadius: 12, background: '#f0f9ff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>📊</div>
-          <div>
-            <strong style={{ fontSize: 15 }}>Dashboard</strong>
-            <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--text-secondary)' }}>Métricas en tiempo real, SLA, work queue</p>
-          </div>
+        <Link to="/lab/dashboard" style={{ textDecoration: 'none', color: 'inherit', flex: 1 }}>
+          <Card padding="md" style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            <div style={{ width: 44, height: 44, borderRadius: 12, background: '#f0f9ff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>📊</div>
+            <div>
+              <strong style={{ fontSize: 15 }}>Dashboard</strong>
+              <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--ds-text-secondary)' }}>Métricas en tiempo real, SLA, work queue</p>
+            </div>
+          </Card>
         </Link>
-        <Link to="/lab/analytics" className="card flex-row items-center" style={{ padding: '16px 20px', textDecoration: 'none', color: 'inherit', gap: 14, border: '1px solid var(--border-light)', flex: 1 }}>
-          <div style={{ width: 44, height: 44, borderRadius: 12, background: '#f5f3ff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>📈</div>
-          <div>
-            <strong style={{ fontSize: 15 }}>Analytics</strong>
-            <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--text-secondary)' }}>Tendencias por doctor, área y mes</p>
-          </div>
+        <Link to="/lab/analytics" style={{ textDecoration: 'none', color: 'inherit', flex: 1 }}>
+          <Card padding="md" style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            <div style={{ width: 44, height: 44, borderRadius: 12, background: '#f5f3ff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>📈</div>
+            <div>
+              <strong style={{ fontSize: 15 }}>Analytics</strong>
+              <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--ds-text-secondary)' }}>Tendencias por doctor, área y mes</p>
+            </div>
+          </Card>
         </Link>
-        <Link to="/lab/qc" className="card flex-row items-center" style={{ padding: '16px 20px', textDecoration: 'none', color: 'inherit', gap: 14, border: '1px solid var(--border-light)', flex: 1 }}>
-          <div style={{ width: 44, height: 44, borderRadius: 12, background: '#f0fdf4', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>🧪</div>
-          <div>
-            <strong style={{ fontSize: 15 }}>Control de Calidad</strong>
-            <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--text-secondary)' }}>Levey-Jennings, registros QC</p>
-          </div>
+        <Link to="/lab/qc" style={{ textDecoration: 'none', color: 'inherit', flex: 1 }}>
+          <Card padding="md" style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            <div style={{ width: 44, height: 44, borderRadius: 12, background: '#f0fdf4', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>🧪</div>
+            <div>
+              <strong style={{ fontSize: 15 }}>Control de Calidad</strong>
+              <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--ds-text-secondary)' }}>Levey-Jennings, registros QC</p>
+            </div>
+          </Card>
         </Link>
       </div>
 
       <div className="flex-row" style={{ gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
         {STATUS_TABS.map((tab) => (
-          <button
+          <Button
             key={tab.key || 'all'}
+            variant={statusFilter === tab.key || (!statusFilter && !tab.key) ? 'primary' : 'ghost'}
+            size="sm"
             onClick={() => setStatusFilter(tab.key)}
-            className={`btn ${statusFilter === tab.key || (!statusFilter && !tab.key) ? 'btn-primary' : 'btn-ghost'} btn-sm`}
           >
             {tab.label}
             {tab.key && requests.filter(r => r.status === tab.key).length > 0 && (
               <span style={{ marginLeft: 6, opacity: 0.7 }}>({requests.filter(r => r.status === tab.key).length})</span>
             )}
-          </button>
+          </Button>
         ))}
       </div>
 
-      {error && <div className="alert alert-error">{error}</div>}
+      {error && <Alert variant="error">{error}</Alert>}
 
-      {loading && <p style={{ color: 'var(--text-muted)' }}>Cargando solicitudes...</p>}
+      {loading && <p style={{ color: 'var(--ds-text-tertiary)' }}>Cargando solicitudes...</p>}
 
       {!loading && requests.length === 0 && (
         <div className="empty-state">
@@ -177,23 +185,23 @@ export default function LabTechnicianDashboardPage() {
       )}
 
       {requests.map((r) => (
-        <div key={r.id} className="card" style={{ padding: 20, marginBottom: 12 }}>
+        <Card key={r.id} padding="lg" style={{ marginBottom: 12 }}>
           <div className="flex-row" style={{ justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
             <div>
               <strong style={{ fontSize: 16 }}>{r.request_number || `#${r.id}`}</strong>
-              <span style={{ marginLeft: 12, fontSize: 13, color: 'var(--text-secondary)' }}>
+              <span style={{ marginLeft: 12, fontSize: 13, color: 'var(--ds-text-secondary)' }}>
                 {r.created_at?.split('T')[0]}
               </span>
             </div>
             <div className="flex-row" style={{ gap: 8, alignItems: 'center' }}>
               <span className={`badge ${STATUS_BADGE[r.status] || 'badge-ghost'}`}>{r.status}</span>
               {r.lab_type && (
-                <span className="badge badge-info">{r.lab_type === 'internal' ? 'Interno' : 'Externo'}</span>
+                <span className="ds-badge ds-badge-info">{r.lab_type === 'internal' ? 'Interno' : 'Externo'}</span>
               )}
             </div>
           </div>
 
-          <div style={{ fontSize: 14, color: 'var(--text-secondary)', marginBottom: 12 }}>
+          <div style={{ fontSize: 14, color: 'var(--ds-text-secondary)', marginBottom: 12 }}>
             <span>Paciente: <strong>{r.patient_name || `ID ${r.patient_id}`}</strong></span>
             {r.patient_rut && <span style={{ marginLeft: 16 }}>RUT: {r.patient_rut}</span>}
             <span style={{ marginLeft: 16 }}>Doctor: {r.doctor_name || '—'}</span>
@@ -220,13 +228,13 @@ export default function LabTechnicianDashboardPage() {
                         </span>
                       </td>
                       <td>
-                        {item.result_value || <span style={{ color: 'var(--text-muted)' }}>—</span>}
+                        {item.result_value || <span style={{ color: 'var(--ds-text-tertiary)' }}>—</span>}
                       </td>
                       <td style={{ textAlign: 'right' }}>
                         <select
                           value={item.status}
                           onChange={(e) => updateItemStatus(item.id, e.target.value)}
-                          className="form-input"
+                          className="ds-input"
                           style={{ fontSize: 12, padding: '4px 8px', width: 130 }}
                         >
                           <option value="pending">Pendiente</option>
@@ -244,11 +252,11 @@ export default function LabTechnicianDashboardPage() {
             </div>
           </div>
 
-          <div className="flex-row" style={{ gap: 8, justifyContent: 'flex-end', borderTop: '1px solid var(--border-light)', paddingTop: 12 }}>
+          <div className="flex-row" style={{ gap: 8, justifyContent: 'flex-end', borderTop: '1px solid var(--ds-border)', paddingTop: 12 }}>
             <select
               value={r.status}
               onChange={(e) => updateStatus(r.id, e.target.value)}
-              className="form-input"
+              className="ds-input"
               style={{ fontSize: 13, padding: '6px 12px', width: 160 }}
             >
               <option value="pending">Pendiente</option>
@@ -258,10 +266,10 @@ export default function LabTechnicianDashboardPage() {
               <option value="delivered">Entregada</option>
               <option value="cancelled">Cancelada</option>
             </select>
-            <button onClick={() => downloadPdf(r.id)} className="btn btn-outline btn-sm">PDF</button>
+            <Button variant="outline" size="sm" onClick={() => downloadPdf(r.id)}>PDF</Button>
           </div>
-        </div>
+        </Card>
       ))}
-    </div>
+    </PageContainer>
   );
 }

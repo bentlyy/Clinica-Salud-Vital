@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useI18n } from '../i18n/useI18n';
 import { getClinicalRecords } from '../api/clinicalRecords';
+import Badge from '../components/ui/Badge';
+import Card from '../components/ui/Card';
+import { PageContainer, PageHeader } from '../components/ui/PageContainer';
 
 interface ClinicalRecord {
   id: number;
@@ -41,26 +44,25 @@ export default function AdminMedicalHistoryPage() {
   }, {});
 
   if (loading) {
-    return <div className="page-container"><p className="text-muted">Cargando historial médico...</p></div>;
+    return <PageContainer maxWidth="md"><p style={{ color: 'var(--ds-text-tertiary)' }}>Cargando historial médico...</p></PageContainer>;
   }
 
   return (
-    <div className="page-container">
-      <h1 className="page-title">Historial Médico</h1>
-      <p className="page-subtitle">Todos los registros clínicos agrupados por doctor</p>
+    <PageContainer maxWidth="xl">
+      <PageHeader title="Historial Médico" subtitle="Todos los registros clínicos agrupados por doctor" />
 
       {Object.keys(grouped).length === 0 && (
         <p className="text-muted">No hay registros clínicos.</p>
       )}
 
       {Object.entries(grouped).map(([doctorKey, doctorRecords]) => (
-        <div key={doctorKey} className="card mb-4">
-          <div className="card-header">
-            <h2 className="card-title">{doctorKey}</h2>
-            <span className="badge badge-info">{doctorRecords.length} registros</span>
+        <Card key={doctorKey} padding="md" style={{ marginBottom: 20 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <h2 style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>{doctorKey}</h2>
+            <Badge variant="info">{doctorRecords.length} registros</Badge>
           </div>
-          <div className="table-responsive">
-            <table className="table">
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr>
                   <th>Paciente</th>
@@ -78,17 +80,17 @@ export default function AdminMedicalHistoryPage() {
                     <td>{r.diagnosis || '—'}</td>
                     <td>{new Date(r.created_at).toLocaleDateString()}</td>
                     <td>
-                      <span className={`badge ${r.status === 'completed' ? 'badge-success' : r.status === 'draft' ? 'badge-warning' : 'badge-ghost'}`}>
+                      <Badge variant={r.status === 'completed' ? 'success' : r.status === 'draft' ? 'warning' : 'default'}>
                         {r.status === 'completed' ? 'Completado' : r.status === 'draft' ? 'Borrador' : 'Cancelado'}
-                      </span>
+                      </Badge>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-        </div>
+        </Card>
       ))}
-    </div>
+    </PageContainer>
   );
 }

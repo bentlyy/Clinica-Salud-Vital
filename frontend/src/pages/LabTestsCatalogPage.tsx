@@ -4,6 +4,11 @@ import { useI18n } from '../i18n/useI18n';
 import { getLabIcon, getLabColor } from '../components/lab-icons/LabIcons';
 import LoadingState from '../components/LoadingState';
 import ErrorState from '../components/ErrorState';
+import Button from '../components/ui/Button';
+import Badge from '../components/ui/Badge';
+import Card from '../components/ui/Card';
+import Alert from '../components/ui/Alert';
+import { PageContainer, PageHeader } from '../components/ui/PageContainer';
 
 interface LabTestItem {
   id: string | number;
@@ -108,18 +113,15 @@ export default function LabTestsCatalogPage() {
 
   if (error) {
     return (
-      <div className="page-container">
-        <div className="page-header">
-          <h1>🔬 Exámenes de Laboratorio</h1>
-          <p>Catálogo de análisis clínicos disponibles</p>
-        </div>
+      <PageContainer maxWidth="xl">
+        <PageHeader title="🔬 Exámenes de Laboratorio" subtitle="Catálogo de análisis clínicos disponibles" />
         <ErrorState message={error} onRetry={() => window.location.reload()} />
-      </div>
+      </PageContainer>
     );
   }
 
   return (
-    <div className="page-container-wide">
+    <PageContainer maxWidth="xl">
       <div style={{
         background: 'linear-gradient(135deg, #0f766e, #0d9488)',
         borderRadius: 16,
@@ -188,9 +190,9 @@ export default function LabTestsCatalogPage() {
             style={{
               padding: '8px 16px',
               borderRadius: 20,
-              border: '1px solid var(--border-light)',
+              border: '1px solid var(--ds-border)',
               background: !activeCategory ? '#0d9488' : 'transparent',
-              color: !activeCategory ? 'white' : 'var(--text-secondary)',
+              color: !activeCategory ? 'white' : 'var(--ds-text-secondary)',
               cursor: 'pointer',
               fontSize: 13,
               fontWeight: 500,
@@ -206,9 +208,9 @@ export default function LabTestsCatalogPage() {
               style={{
                 padding: '8px 16px',
                 borderRadius: 20,
-                border: '1px solid var(--border-light)',
+                border: '1px solid var(--ds-border)',
                 background: activeCategory === cat.prefix ? '#0d9488' : 'transparent',
-                color: activeCategory === cat.prefix ? 'white' : 'var(--text-secondary)',
+                color: activeCategory === cat.prefix ? 'white' : 'var(--ds-text-secondary)',
                 cursor: 'pointer',
                 fontSize: 13,
                 fontWeight: 500,
@@ -222,13 +224,13 @@ export default function LabTestsCatalogPage() {
       )}
 
       {Object.keys(grouped).length === 0 && (
-        <div className="card" style={{ padding: 40, textAlign: 'center' }}>
+        <Card padding="md" style={{ padding: 40, textAlign: 'center' }}>
           <div style={{ fontSize: 48, marginBottom: 12 }}>🔬</div>
           <h3 style={{ margin: '0 0 6px' }}>{search ? 'Sin resultados' : 'No hay exámenes disponibles'}</h3>
-          <p style={{ color: 'var(--text-muted)', fontSize: 14, margin: 0 }}>
+          <p style={{ color: 'var(--ds-text-tertiary)', fontSize: 14, margin: 0 }}>
             {search ? `No encontramos "${search}". Intenta con otro término.` : 'No hay exámenes publicados en el catálogo.'}
           </p>
-        </div>
+        </Card>
       )}
 
       {Object.entries(grouped).map(([prefix, items]) => {
@@ -243,7 +245,7 @@ export default function LabTestsCatalogPage() {
                 padding: '2px 10px',
                 borderRadius: 10,
                 background: '#f1f5f9',
-                color: 'var(--text-muted)',
+                color: 'var(--ds-text-tertiary)',
               }}>{items.length} examen{items.length !== 1 ? 'es' : ''}</span>
             </div>
             <div className="grid" style={{ gap: 14 }}>
@@ -254,11 +256,10 @@ export default function LabTestsCatalogPage() {
                 const preparation = getPreparation(test.code || '');
 
                 return (
-                  <div
+                  <Card
                     key={test.id}
-                    className="card"
+                    padding="none"
                     style={{
-                      padding: 0,
                       overflow: 'hidden',
                       border: `1px solid ${color}20`,
                       transition: 'all 0.2s',
@@ -289,7 +290,7 @@ export default function LabTestsCatalogPage() {
                         </div>
                         <span style={{
                           fontSize: 10,
-                          color: 'var(--text-muted)',
+                          color: 'var(--ds-text-tertiary)',
                           marginTop: 4,
                           fontWeight: 600,
                           letterSpacing: '0.3px',
@@ -298,8 +299,8 @@ export default function LabTestsCatalogPage() {
                       <div style={{ flex: 1, padding: '16px 20px', minWidth: 0 }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, marginBottom: 6 }}>
                           <div>
-                            <strong style={{ fontSize: 15, color: 'var(--text-primary)' }}>{test.name}</strong>
-                            <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--text-secondary)' }}>
+                            <strong style={{ fontSize: 15, color: 'var(--ds-text-primary)' }}>{test.name}</strong>
+                            <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--ds-text-secondary)' }}>
                               {test.description || 'Análisis clínico de laboratorio'}
                             </p>
                           </div>
@@ -361,9 +362,9 @@ export default function LabTestsCatalogPage() {
                             background: '#f8fafc',
                             borderRadius: 8,
                             fontSize: 12,
-                            color: 'var(--text-secondary)',
+                            color: 'var(--ds-text-secondary)',
                           }}>
-                            <strong style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.3px' }}>Valores de Referencia</strong>
+                            <strong style={{ fontSize: 11, color: 'var(--ds-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.3px' }}>Valores de Referencia</strong>
                             <div style={{ marginTop: 4, display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                               {refs.slice(0, 3).map(([key, range]) => {
                                 const refStr = range.max !== undefined
@@ -374,7 +375,7 @@ export default function LabTestsCatalogPage() {
                                     padding: '2px 8px',
                                     borderRadius: 6,
                                     background: 'white',
-                                    border: '1px solid var(--border-light)',
+                                    border: '1px solid var(--ds-border)',
                                     fontSize: 11,
                                   }}>
                                     {key.replace(/_/g, ' ')}: {refStr}
@@ -382,7 +383,7 @@ export default function LabTestsCatalogPage() {
                                 );
                               })}
                               {refs.length > 3 && (
-                                <span style={{ fontSize: 11, color: 'var(--text-muted)', padding: '2px 8px' }}>
+                                <span style={{ fontSize: 11, color: 'var(--ds-text-tertiary)', padding: '2px 8px' }}>
                                   +{refs.length - 3} más
                                 </span>
                               )}
@@ -391,13 +392,13 @@ export default function LabTestsCatalogPage() {
                         )}
                       </div>
                     </div>
-                  </div>
+                  </Card>
                 );
               })}
             </div>
           </section>
         );
       })}
-    </div>
+    </PageContainer>
   );
 }

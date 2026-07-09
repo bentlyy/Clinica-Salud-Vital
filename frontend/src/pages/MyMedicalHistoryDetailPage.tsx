@@ -3,6 +3,11 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { getClinicalRecordById } from '../api/clinicalRecords';
 import { getLabResultsByClinicalRecord } from '../api/laboratory';
 import { useI18n } from '../i18n/useI18n';
+import Button from '../components/ui/Button';
+import Badge from '../components/ui/Badge';
+import Card from '../components/ui/Card';
+import Alert from '../components/ui/Alert';
+import { PageContainer, PageHeader } from '../components/ui/PageContainer';
 
 export default function MyMedicalHistoryDetailPage() {
   const { t } = useI18n();
@@ -27,38 +32,38 @@ export default function MyMedicalHistoryDetailPage() {
       .finally(() => setLoading(false));
   }, [id]);
 
-  if (loading) return <div className="page-container"><p>{t('medical_history.loading')}</p></div>;
-  if (error) return <div className="page-container"><div className="alert alert-error">{error}</div></div>;
-  if (!record) return <div className="page-container"><p>{t('medical_history.not_found')}</p></div>;
+  if (loading) return <PageContainer maxWidth="md"><p style={{ color: 'var(--ds-text-tertiary)' }}>{t('medical_history.loading')}</p></PageContainer>;
+  if (error) return <PageContainer maxWidth="md"><Alert variant="error">{error}</Alert></PageContainer>;
+  if (!record) return <PageContainer maxWidth="md"><p>{t('medical_history.not_found')}</p></PageContainer>;
 
   return (
-    <div className="page-container-wide">
-      <div className="page-header">
-        <div>
-          <h1 style={{ marginBottom: 4 }}>{t('medical_history.detail_title')}</h1>
-          <p style={{ color: 'var(--text-secondary)' }}>
-            {record.created_at?.split('T')[0]} — {record.doctor_name || t('medical_history.doctor_unknown')}
-          </p>
-        </div>
-        <button onClick={() => navigate('/my-medical-history')} className="btn btn-ghost">← {t('medical_history.back')}</button>
-      </div>
+    <PageContainer maxWidth="xl">
+      <PageHeader
+        title={t('medical_history.detail_title')}
+        subtitle={`${record.created_at?.split('T')[0]} — ${record.doctor_name || t('medical_history.doctor_unknown')}`}
+        actions={
+          <Button variant="ghost" onClick={() => navigate('/my-medical-history')}>
+            ← {t('medical_history.back')}
+          </Button>
+        }
+      />
 
-      {error && <div className="alert alert-error">{error}</div>}
+      {error && <Alert variant="error">{error}</Alert>}
 
-      <div className="analytics-card">
+      <Card padding="md" style={{ marginBottom: 20 }}>
         <h3>{t('medical_history.chief_complaint')}</h3>
         <p>{record.chief_complaint}</p>
-      </div>
+      </Card>
 
       {record.anamnesis && (
-        <div className="analytics-card">
+        <Card padding="md" style={{ marginBottom: 20 }}>
           <h3>{t('medical_history.anamnesis')}</h3>
           <p style={{ whiteSpace: 'pre-wrap' }}>{record.anamnesis}</p>
-        </div>
+        </Card>
       )}
 
       {record.vital_signs && Object.values(record.vital_signs).some(v => v) && (
-        <div className="analytics-card">
+        <Card padding="md" style={{ marginBottom: 20 }}>
           <h3>{t('medical_history.vital_signs')}</h3>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 12 }}>
             {record.vital_signs.blood_pressure && <div><strong>{t('clinical_records.blood_pressure')}:</strong> {record.vital_signs.blood_pressure}</div>}
@@ -69,86 +74,86 @@ export default function MyMedicalHistoryDetailPage() {
             {record.vital_signs.height && <div><strong>{t('medical_history.height')}:</strong> {record.vital_signs.height} cm</div>}
             {record.vital_signs.bmi && <div><strong>IMC:</strong> {record.vital_signs.bmi}</div>}
           </div>
-        </div>
+        </Card>
       )}
 
       {record.physical_exam && (
-        <div className="analytics-card">
+        <Card padding="md" style={{ marginBottom: 20 }}>
           <h3>{t('clinical_records.physical_exam')}</h3>
           <p style={{ whiteSpace: 'pre-wrap' }}>{record.physical_exam}</p>
-        </div>
+        </Card>
       )}
 
       {record.diagnosis && (
-        <div className="analytics-card">
+        <Card padding="md" style={{ marginBottom: 20 }}>
           <h3>{t('clinical_records.diagnosis_label')}</h3>
           <p style={{ whiteSpace: 'pre-wrap' }}>{record.diagnosis}</p>
-        </div>
+        </Card>
       )}
 
       {record.cie10_codes?.length > 0 && (
-        <div className="analytics-card">
+        <Card padding="md" style={{ marginBottom: 20 }}>
           <h3>{t('clinical_records.cie10_codes')}</h3>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             {record.cie10_codes.map((c) => (
-              <span key={c} className="badge badge-info">{c}</span>
+              <Badge key={c} variant="info">{c}</Badge>
             ))}
           </div>
-        </div>
+        </Card>
       )}
 
       {record.treatment_plan && (
-        <div className="analytics-card">
+        <Card padding="md" style={{ marginBottom: 20 }}>
           <h3>{t('medical_history.treatment_plan')}</h3>
           <p style={{ whiteSpace: 'pre-wrap' }}>{record.treatment_plan}</p>
-        </div>
+        </Card>
       )}
 
       {record.prescriptions?.length > 0 && (
-        <div className="analytics-card">
+        <Card padding="md" style={{ marginBottom: 20 }}>
           <h3>{t('medical_history.prescriptions')}</h3>
           {record.prescriptions.map((p, i) => (
-            <div key={p.id || i} style={{ padding: '12px 0', borderBottom: '1px solid var(--border-light)' }}>
+            <div key={p.id || i} style={{ padding: '12px 0', borderBottom: '1px solid var(--ds-border)' }}>
               <strong>{p.medication}</strong> — {p.dosage}, {p.frequency}
               {p.duration && <span>, {p.duration}</span>}
-              {p.instructions && <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--text-secondary)' }}>{p.instructions}</p>}
+              {p.instructions && <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--ds-text-secondary)' }}>{p.instructions}</p>}
             </div>
           ))}
-        </div>
+        </Card>
       )}
 
       {labResults.length > 0 && (
-        <div className="analytics-card">
+        <Card padding="md" style={{ marginBottom: 20 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
             <h3 style={{ margin: 0 }}>{t('medical_history.lab_results')}</h3>
-            <button onClick={() => setShowLab(!showLab)} className="btn btn-outline btn-sm">
+            <Button variant="outline" size="sm" onClick={() => setShowLab(!showLab)}>
               {showLab ? t('medical_history.hide') : t('medical_history.show')}
-            </button>
+            </Button>
           </div>
           {showLab && labResults.map((req) => (
-            <div key={req.id} style={{ marginBottom: 16, padding: 12, border: '1px solid var(--border-light)', borderRadius: 8 }}>
+            <div key={req.id} style={{ marginBottom: 16, padding: 12, border: '1px solid var(--ds-border)', borderRadius: 8 }}>
               <strong>{req.test_name || t('lab_results.request')} #{req.id}</strong>
-              <span className={`badge ${req.status === 'completed' ? 'badge-success' : 'badge-warning'}`} style={{ marginLeft: 8 }}>
+              <Badge variant={req.status === 'completed' ? 'success' : 'warning'} style={{ marginLeft: 8 }}>
                 {req.status}
-              </span>
+              </Badge>
               {(req.items || []).map((item) => (
                 <div key={item.id} style={{ padding: '8px 0 0 16px', fontSize: 14 }}>
-                  <strong>{item.test_name}</strong>: {item.result_value || <span style={{ color: 'var(--text-muted)' }}>{t('lab_results.pending')}</span>}
-                  {item.reference_range && <span style={{ color: 'var(--text-secondary)', marginLeft: 8 }}>({item.reference_range})</span>}
-                  {item.result_notes && <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--text-secondary)' }}>{item.result_notes}</p>}
+                  <strong>{item.test_name}</strong>: {item.result_value || <span style={{ color: 'var(--ds-text-tertiary)' }}>{t('lab_results.pending')}</span>}
+                  {item.reference_range && <span style={{ color: 'var(--ds-text-secondary)', marginLeft: 8 }}>({item.reference_range})</span>}
+                  {item.result_notes && <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--ds-text-secondary)' }}>{item.result_notes}</p>}
                 </div>
               ))}
             </div>
           ))}
-        </div>
+        </Card>
       )}
 
       {record.notes && (
-        <div className="analytics-card">
+        <Card padding="md" style={{ marginBottom: 20 }}>
           <h3>{t('medical_history.notes')}</h3>
           <p style={{ whiteSpace: 'pre-wrap' }}>{record.notes}</p>
-        </div>
+        </Card>
       )}
-    </div>
+    </PageContainer>
   );
 }

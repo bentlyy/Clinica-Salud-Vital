@@ -3,6 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { listTenants, updateTenant, getHealthScores } from '../api/super-admin';
 import { useI18n } from '../i18n/useI18n';
 import CreateTenantModal from '../components/CreateTenantModal';
+import Button from '../components/ui/Button';
+import { PageContainer, PageHeader } from '../components/ui/PageContainer';
+import Card from '../components/ui/Card';
+import Badge from '../components/ui/Badge';
+import { TextField } from '../components/ui/FormField';
+import DataTable from '../components/ui/DataTable';
+import Alert from '../components/ui/Alert';
 
 const FILTER_ALL = 'all';
 const FILTER_ACTIVE = 'active';
@@ -60,11 +67,6 @@ export default function SuperAdminTenantsPage() {
     }).catch(() => {});
   }, []);
 
-  const handleSearch = (e) => {
-    e.preventDefault();
-    setPage(1);
-  };
-
   const handleFilterChange = (newFilter) => {
     setFilter(newFilter);
     setPage(1);
@@ -92,63 +94,66 @@ export default function SuperAdminTenantsPage() {
   const totalPages = Math.ceil(total / limit);
 
   return (
-    <div className="page-container-wide" style={{ padding: '32px 24px' }}>
-      <div className="page-header-row">
-        <div>
-          <h1 style={{ margin: 0 }}>{t('superadmin.manage_tenants')}</h1>
-          <p style={{ color: 'var(--text-secondary)', marginTop: 4, fontSize: 14 }}>{total} tenants</p>
-        </div>
-        <button className="btn btn--primary" onClick={() => setShowCreateModal(true)}>
-          + {t('superadmin.create_tenant')}
-        </button>
-      </div>
+    <PageContainer maxWidth="xl">
+      <PageHeader
+        title={t('superadmin.manage_tenants')}
+        subtitle={`${total} tenants`}
+        actions={
+          <Button variant="primary" onClick={() => setShowCreateModal(true)}>
+            + {t('superadmin.create_tenant')}
+          </Button>
+        }
+      />
 
-      {error && <div className="alert alert--error" style={{ margin: '16px 0' }}>{error}</div>}
+      {error && <Alert variant="error" style={{ margin: '16px 0' }}>{error}</Alert>}
 
-      <div className="search-filter-bar">
-        <form onSubmit={handleSearch} className="search-form">
+      <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 24, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: 8, flex: 1, minWidth: 200 }}>
           <input
-            type="text" className="input" placeholder={t('superadmin.search')}
-            value={search} onChange={(e) => setSearch(e.target.value)}
+            type="text"
+            placeholder={t('superadmin.search')}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="ds-input"
+            style={{ flex: 1 }}
           />
-          <button type="submit" className="btn btn--primary">{t('superadmin.search')}</button>
-        </form>
-
-        <div className="filter-btns">
-          <button
-            className={`btn btn--sm ${filter === FILTER_ALL ? 'btn--primary' : 'btn--outline'}`}
-            onClick={() => handleFilterChange(FILTER_ALL)}
-          >{t('superadmin.view_all') || 'Todos'}</button>
-          <button
-            className={`btn btn--sm ${filter === FILTER_ACTIVE ? 'btn--primary' : 'btn--outline'}`}
-            onClick={() => handleFilterChange(FILTER_ACTIVE)}
-          >{t('superadmin.active_label')}</button>
-          <button
-            className={`btn btn--sm ${filter === FILTER_INACTIVE ? 'btn--primary' : 'btn--outline'}`}
-            onClick={() => handleFilterChange(FILTER_INACTIVE)}
-          >{t('superadmin.inactive')}</button>
+          <Button variant="primary" onClick={() => setPage(1)}>{t('superadmin.search')}</Button>
+        </div>
+        <div style={{ display: 'flex', gap: 6 }}>
+          <Button variant={filter === FILTER_ALL ? 'primary' : 'outline'} size="sm" onClick={() => handleFilterChange(FILTER_ALL)}>
+            {t('superadmin.view_all') || 'Todos'}
+          </Button>
+          <Button variant={filter === FILTER_ACTIVE ? 'primary' : 'outline'} size="sm" onClick={() => handleFilterChange(FILTER_ACTIVE)}>
+            {t('superadmin.active_label')}
+          </Button>
+          <Button variant={filter === FILTER_INACTIVE ? 'primary' : 'outline'} size="sm" onClick={() => handleFilterChange(FILTER_INACTIVE)}>
+            {t('superadmin.inactive')}
+          </Button>
         </div>
       </div>
 
       {loading ? (
-        <div className="loading-state">{t('superadmin.title')}...</div>
+        <div className="ds-table-loading">
+          {[1,2,3,4,5].map(i => <div key={i} className="ds-table-loading-row"><div className="ds-table-loading-cell" style={{width:'100%'}}/><div className="ds-table-loading-cell" style={{width:'80%'}}/><div className="ds-table-loading-cell" style={{width:'60%'}}/></div>)}
+        </div>
       ) : tenants.length === 0 ? (
-        <div className="empty-state">
-          <p>{t('superadmin.no_tenants')}</p>
+        <div className="ds-table-empty">
+          <div className="ds-table-empty-icon">📋</div>
+          <div className="ds-table-empty-text">{t('superadmin.no_tenants')}</div>
         </div>
       ) : (
         <>
           <div className="tenant-grid">
             {tenants.map((tenant) => (
-              <div key={tenant.id} className="card tenant-card">
+              <div key={tenant.id} className="ds-card tenant-card">
                 <div className="tenant-card-header">
                   <div className="tenant-card-title">
                     <h3>{tenant.name}</h3>
                     <code className="tenant-id">{tenant.id}</code>
                   </div>
-                  <span className={`badge ${tenant.active ? 'badge-success' : 'badge-danger'}`}>
+                  <Badge variant={tenant.active ? 'success' : 'danger'}>
                     {tenant.active ? t('superadmin.active_label') : t('superadmin.inactive')}
-                  </span>
+                  </Badge>
                 </div>
 
                 <div className="tenant-card-domain">
@@ -185,30 +190,33 @@ export default function SuperAdminTenantsPage() {
                 </div>
 
                 <div className="tenant-card-actions">
-                  <button className="btn btn--outline btn--sm" onClick={() => navigate(`/super-admin/tenants/${tenant.id}`)}>
+                  <Button variant="outline" size="sm" onClick={() => navigate(`/super-admin/tenants/${tenant.id}`)}>
                     {t('superadmin.view')}
-                  </button>
-                  <button
-                    className={`btn btn--sm ${tenant.active ? 'btn--warning' : 'btn--success'}`}
+                  </Button>
+                  <Button
+                    variant={tenant.active ? 'warning' : 'success'}
+                    size="sm"
                     onClick={() => handleToggleActive(tenant)}
                     disabled={togglingId === tenant.id}
                   >
                     {togglingId === tenant.id ? '...' : (tenant.active ? t('superadmin.inactive') : t('superadmin.active_label'))}
-                  </button>
+                  </Button>
                 </div>
               </div>
             ))}
           </div>
 
           {totalPages > 1 && (
-            <div className="pagination-row">
-              <button className="btn btn--outline btn--sm" disabled={page <= 1} onClick={() => setPage(page - 1)}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, marginTop: 24 }}>
+              <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(page - 1)}>
                 {t('superadmin.previous')}
-              </button>
-              <span className="pagination-info">{t('superadmin.page_of', { page, total: totalPages })}</span>
-              <button className="btn btn--outline btn--sm" disabled={page >= totalPages} onClick={() => setPage(page + 1)}>
+              </Button>
+              <span style={{ fontSize: 13, color: 'var(--ds-text-secondary)' }}>
+                {t('superadmin.page_of', { page, total: totalPages })}
+              </span>
+              <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage(page + 1)}>
                 {t('superadmin.next')}
-              </button>
+              </Button>
             </div>
           )}
         </>
@@ -219,6 +227,6 @@ export default function SuperAdminTenantsPage() {
         onClose={() => setShowCreateModal(false)}
         onCreated={handleCreated}
       />
-    </div>
+    </PageContainer>
   );
 }

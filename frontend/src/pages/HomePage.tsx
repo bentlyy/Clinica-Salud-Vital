@@ -4,6 +4,9 @@ import { useAuth } from '../context/useAuth';
 import { useI18n } from '../i18n/useI18n';
 import api from '../api/axios';
 import { getDoctors } from '../api/doctors';
+import Button from '../components/ui/Button';
+import Card from '../components/ui/Card';
+import { PageContainer } from '../components/ui/PageContainer';
 
 interface Specialty {
   id: number;
@@ -55,7 +58,7 @@ const HomePage = React.memo(function HomePage() {
   };
 
   return (
-    <div className="page-container-wide">
+    <PageContainer maxWidth="xl">
       {/* Hero */}
       <section className="hero">
         <div className="hero-decoration hero-decoration-1">+</div>
@@ -64,11 +67,11 @@ const HomePage = React.memo(function HomePage() {
           <h1 className="hero-title">{t('home.hero_title')}</h1>
           <p className="hero-subtitle">{t('home.hero_subtitle')}</p>
           <div className="hero-actions">
-            <button onClick={() => navigate('/booking')} className="btn btn-primary btn-lg">
+            <Button variant="primary" size="lg" onClick={() => navigate('/booking')}>
               {t('home.book_appointment')}
-            </button>
+            </Button>
             {!user && (
-              <Link to="/login" className="btn btn-outline btn-lg">{t('home.login')}</Link>
+              <Link to="/login" className="ds-btn ds-btn--outline ds-btn--lg">{t('home.login')}</Link>
             )}
           </div>
         </div>
@@ -80,7 +83,7 @@ const HomePage = React.memo(function HomePage() {
         <div className="features-decoration features-decoration-2">+</div>
         <div className="grid grid-3">
           <div
-            className="card card-subtle feature-card feature-card-clickable"
+            className="feature-card-clickable"
             onClick={() => navigate('/specialists')}
             role="button"
             tabIndex={0}
@@ -93,7 +96,7 @@ const HomePage = React.memo(function HomePage() {
           </div>
 
           <div
-            className="card card-subtle feature-card feature-card-clickable"
+            className="feature-card-clickable"
             onClick={() => navigate('/booking')}
             role="button"
             tabIndex={0}
@@ -106,7 +109,7 @@ const HomePage = React.memo(function HomePage() {
           </div>
 
           <div
-            className="card card-subtle feature-card feature-card-clickable"
+            className="feature-card-clickable"
             onClick={() => setShowReminderInfo(!showReminderInfo)}
             role="button"
             tabIndex={0}
@@ -119,7 +122,7 @@ const HomePage = React.memo(function HomePage() {
           </div>
 
           <div
-            className="card card-subtle feature-card feature-card-clickable"
+            className="feature-card-clickable"
             onClick={() => setShowSurgeryInfo(!showSurgeryInfo)}
             role="button"
             tabIndex={0}
@@ -132,7 +135,7 @@ const HomePage = React.memo(function HomePage() {
           </div>
 
           <div
-            className="card card-subtle feature-card feature-card-clickable"
+            className="feature-card-clickable"
             onClick={() => setShowLabInfo(!showLabInfo)}
             role="button"
             tabIndex={0}
@@ -146,7 +149,7 @@ const HomePage = React.memo(function HomePage() {
         </div>
 
         {showReminderInfo && (
-          <div className="card reminder-detail-card info-card">
+          <div className="reminder-detail-card info-card">
             <div className="reminder-steps">
               <div className="reminder-step">
                 <div className="reminder-step-number">1</div>
@@ -181,7 +184,7 @@ const HomePage = React.memo(function HomePage() {
         )}
 
         {showSurgeryInfo && (
-          <div className="card reminder-detail-card info-card">
+          <div className="reminder-detail-card info-card">
             <div className="reminder-steps">
               <div className="reminder-step">
                 <div className="reminder-step-number">1</div>
@@ -216,7 +219,7 @@ const HomePage = React.memo(function HomePage() {
         )}
 
         {showLabInfo && (
-          <div className="card reminder-detail-card info-card">
+          <div className="reminder-detail-card info-card">
             <div className="reminder-steps">
               <div className="reminder-step">
                 <div className="reminder-step-number">1</div>
@@ -258,7 +261,7 @@ const HomePage = React.memo(function HomePage() {
         {loading ? (
           <div className="grid grid-4">
             {[1, 2, 3, 4].map(i => (
-              <div key={i} className="card specialty-card specialty-card-skeleton">
+              <div key={i} className="specialty-card-skeleton">
                 <div className="skeleton-icon">🔬</div>
                 <div className="skeleton-line skeleton-line-60" />
                 <div className="skeleton-line skeleton-line-80" />
@@ -345,13 +348,15 @@ const HomePage = React.memo(function HomePage() {
                           )}
                         </div>
 
-                        <button
+                        <Button
+                          variant="primary"
+                          size="lg"
                           onClick={() => navigate('/booking')}
-                          className="btn btn-primary btn-lg btn-block specialty-btn"
-                          style={{ backgroundColor: spec.color }}
+                          style={{ width: '100%', backgroundColor: spec.color }}
+                          className="specialty-btn"
                         >
                           {t('home.book_with_specialist', { name: spec.name })}
-                        </button>
+                        </Button>
                       </div>
                     </div>
                   );
@@ -364,7 +369,7 @@ const HomePage = React.memo(function HomePage() {
 
       {/* Policy */}
       <section className="section">
-        <div className="card card-subtle policy-card">
+        <div className="policy-card">
           <h3>{t('home.policy_title')}</h3>
           <p>{t('home.policy_desc')}</p>
         </div>
@@ -372,7 +377,7 @@ const HomePage = React.memo(function HomePage() {
 
       {/* CTA */}
       <section className="section">
-        <div className="card cta-card">
+        <div className="cta-card">
           <h3>{t('home.already_booked_title')}</h3>
           <p>{t('home.already_booked_desc')}</p>
         </div>
@@ -383,7 +388,7 @@ const HomePage = React.memo(function HomePage() {
         <p>{t('home.footer_text')}</p>
         <p className="footer-detail">{t('home.footer_address')}</p>
       </footer>
-    </div>
+    </PageContainer>
   );
 });
 
