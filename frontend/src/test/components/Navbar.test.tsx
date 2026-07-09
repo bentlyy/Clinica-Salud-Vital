@@ -56,6 +56,9 @@ vi.mock('../../i18n/useI18n', () => ({
         'nav.lab': '🔬 Laboratorio',
         'nav.lab_results': 'Resultados Lab',
         'nav.my_lab_results': 'Mis Resultados',
+        'nav.lab_dashboard': '📊 Dashboard',
+        'nav.lab_analytics': '📈 Analytics',
+        'nav.lab_qc': '🧪 Control Calidad',
       };
       return map[key] || key;
     },

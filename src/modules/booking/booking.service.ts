@@ -22,8 +22,8 @@ interface BookingInput {
 }
 
 export const getAllBookings = async ({ page = 1, limit = 100 }: Partial<PaginationParams> = {}, tenantId?: string): Promise<PaginatedResponse<unknown>> => {
-  const safePage = Math.max(1, Math.floor(page));
-  const safeLimit = Math.max(1, Math.min(500, Math.floor(limit)));
+  const safePage = Math.max(1, Number.isInteger(page) ? page : 1);
+  const safeLimit = Math.max(1, Math.min(500, Number.isInteger(limit) ? limit : 100));
   const offset = (safePage - 1) * safeLimit;
   const params: (string | number)[] = [limit, offset];
 
@@ -146,8 +146,8 @@ export const createBooking = async ({ doctor_id, user_id, date, time, duration =
 };
 
 export const getBookingsByUser = async (user_id: number, { page = 1, limit = 20 }: Partial<PaginationParams> = {}, tenantId: string): Promise<PaginatedResponse<unknown>> => {
-  const safePage = Math.max(1, Math.floor(page));
-  const safeLimit = Math.max(1, Math.min(500, Math.floor(limit)));
+  const safePage = Math.max(1, Number.isInteger(page) ? page : 1);
+  const safeLimit = Math.max(1, Math.min(500, Number.isInteger(limit) ? limit : 20));
   const offset = (safePage - 1) * safeLimit;
   const params: (string | number)[] = [user_id, limit, offset, tenantId];
 
@@ -290,8 +290,8 @@ export const getDailyBookingDensity = async (
 };
 
 export const getBookingsByDoctor = async (doctor_id: number, { page = 1, limit = 50 }: Partial<PaginationParams> = {}, tenantId: string): Promise<PaginatedResponse<unknown>> => {
-  const safePage = Math.max(1, Math.floor(page));
-  const safeLimit = Math.max(1, Math.min(500, Math.floor(limit)));
+  const safePage = Math.max(1, Number.isInteger(page) ? page : 1);
+  const safeLimit = Math.max(1, Math.min(500, Number.isInteger(limit) ? limit : 50));
   const offset = (safePage - 1) * safeLimit;
   const params: (string | number)[] = [doctor_id, limit, offset, tenantId];
 

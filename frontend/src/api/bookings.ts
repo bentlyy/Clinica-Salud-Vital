@@ -20,39 +20,41 @@ export interface Slot {
   [key: string]: unknown;
 }
 
-export const getAvailableSlots = async (doctorId: string, date: string, options: Record<string, unknown> = {}): Promise<Slot[]> => {
+import type { AxiosRequestConfig } from 'axios';
+
+export const getAvailableSlots = async (doctorId: string | number, date: string, options: AxiosRequestConfig = {}): Promise<Slot[]> => {
   const res = await api.get(
     `/bookings/available-slots?doctor_id=${doctorId}&date=${date}`, options
   );
   return res.data;
 };
 
-export const createBooking = async (data: Record<string, unknown>, options: Record<string, unknown> = {}): Promise<Booking> => {
+export const createBooking = async (data: Record<string, unknown>, options: AxiosRequestConfig = {}): Promise<Booking> => {
   const res = await api.post('/bookings', data, options);
   return res.data;
 };
 
-export const getAllBookings = async (params: Record<string, unknown> = {}, options: Record<string, unknown> = {}): Promise<Booking[]> => {
+export const getAllBookings = async (params: Record<string, unknown> = {}, options: AxiosRequestConfig = {}): Promise<Booking[]> => {
   const res = await api.get('/bookings/all', { ...options, params });
   return res.data;
 };
 
-export const getMyBookings = async (options: Record<string, unknown> = {}): Promise<Booking[]> => {
+export const getMyBookings = async (options: AxiosRequestConfig = {}): Promise<Booking[]> => {
   const res = await api.get('/bookings/me', options);
   return res.data;
 };
 
-export const deleteBooking = async (id: string, options: Record<string, unknown> = {}): Promise<void> => {
+export const deleteBooking = async (id: string, options: AxiosRequestConfig = {}): Promise<void> => {
   const res = await api.delete(`/bookings/${id}`, options);
   return res.data;
 };
 
-export const confirmBooking = async (token: string, options: Record<string, unknown> = {}): Promise<Booking> => {
+export const confirmBooking = async (token: string, options: AxiosRequestConfig = {}): Promise<Booking> => {
   const res = await api.post('/confirmation/confirm', { token }, options);
   return res.data;
 };
 
-export const getDailyDensity = async (start: string, end: string, options: Record<string, unknown> = {}): Promise<unknown> => {
+export const getDailyDensity = async (start: string, end: string, options: AxiosRequestConfig = {}): Promise<unknown> => {
   const res = await api.get(`/bookings/doctor/daily-density?start=${start}&end=${end}`, options);
   return res.data;
 };

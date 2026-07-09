@@ -36,9 +36,10 @@ export default function AdminSpecialtiesPage() {
     try {
       const data = await getSpecialties();
       setSpecialties(data);
-    } catch (err: any) {
+    } catch (err: unknown) {
       logger.error('Failed to load specialties', err);
-      setError(err?.response?.data?.error || err.message || t('admin.error_load'));
+      const msg = err instanceof Error ? err.message : String(err);
+      setError((err as { response?: { data?: { error?: string } } })?.response?.data?.error || msg || t('admin.error_load'));
     } finally {
       setLoading(false);
     }
@@ -53,9 +54,10 @@ export default function AdminSpecialtiesPage() {
       await createSpecialty({ name: newName.trim() });
       setNewName('');
       await load();
-    } catch (err: any) {
+    } catch (err: unknown) {
       logger.error('Failed to create specialty', err);
-      setError(err?.response?.data?.error || err.message || t('admin.error_create'));
+      const msg = err instanceof Error ? err.message : String(err);
+      setError((err as { response?: { data?: { error?: string } } })?.response?.data?.error || msg || t('admin.error_create'));
     }
   };
 
@@ -75,7 +77,7 @@ export default function AdminSpecialtiesPage() {
     if (!editId) return;
     setError(null);
     try {
-      const payload: any = {};
+      const payload: Record<string, unknown> = {};
       if (editData.name !== undefined) payload.name = editData.name;
       if (editData.icon !== undefined) payload.icon = editData.icon;
       if (editData.description !== undefined) payload.description = editData.description;
@@ -85,9 +87,10 @@ export default function AdminSpecialtiesPage() {
       await updateSpecialty(editId, payload);
       cancelEdit();
       await load();
-    } catch (err: any) {
+    } catch (err: unknown) {
       logger.error('Failed to update specialty', err);
-      setError(err?.response?.data?.error || err.message || t('admin.error_update'));
+      const msg = err instanceof Error ? err.message : String(err);
+      setError((err as { response?: { data?: { error?: string } } })?.response?.data?.error || msg || t('admin.error_update'));
     }
   };
 
@@ -109,108 +112,110 @@ export default function AdminSpecialtiesPage() {
     try {
       await deleteSpecialty(id);
       await load();
-    } catch (err: any) {
+    } catch (err: unknown) {
       logger.error('Failed to delete specialty', err);
-      setError(err?.response?.data?.error || err.message || t('admin.error_delete'));
+      const msg = err instanceof Error ? err.message : String(err);
+      setError((err as { response?: { data?: { error?: string } } })?.response?.data?.error || msg || t('admin.error_delete'));
     }
   };
 
-  if (loading) return <div className="page-container" style={{ padding: '2rem', textAlign: 'center' }}>{t('admin.loading')}</div>;
+  if (loading) return <div className="page-container text-center" style={{ padding: '2rem' }}>{t('admin.loading')}</div>;
 
   return (
-    <div className="page-container" style={{ padding: '2rem', maxWidth: 960, margin: '0 auto' }}>
+    <div className="page-container" style={{ maxWidth: 960, margin: '0 auto' }}>
       <h1>{t('admin.specialties_title')}</h1>
 
-      {error && <div className="alert alert-error" style={{ marginBottom: 16 }}>{error}</div>}
+      {error && <div className="alert alert-error">{error}</div>}
 
-      <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
+      <div className="flex-row" style={{ gap: 8, marginBottom: 24 }}>
         <input
           value={newName}
           onChange={(e) => setNewName(e.target.value)}
           placeholder={t('admin.new_specialty_placeholder')}
-          style={{ flex: 1, padding: '8px 12px', borderRadius: 6, border: '1px solid #ccc' }}
+          className="form-input"
+          style={{ flex: 1 }}
         />
         <button className="btn btn-primary" onClick={handleCreate}>{t('admin.add')}</button>
       </div>
 
       {specialties.length === 0 && !loading ? (
-        <p style={{ color: 'var(--text-muted)', textAlign: 'center', padding: 40 }}>{t('admin.no_specialties')}</p>
+        <p className="text-center text-muted-lg" style={{ padding: 40 }}>{t('admin.no_specialties')}</p>
       ) : (
         specialties.map((s) => (
           <div key={s.id} className="card" style={{ marginBottom: 16, padding: 16 }}>
             {editId === s.id ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+              <div className="flex-col" style={{ gap: 12 }}>
+                <div className="flex-row" style={{ gap: 12, flexWrap: 'wrap' }}>
                   <div style={{ flex: 1, minWidth: 150 }}>
-                    <label style={{ fontSize: 12, fontWeight: 600 }}>{t('admin.name')}</label>
-                    <input value={editData.name || ''} onChange={(e) => setEditData({ ...editData, name: e.target.value })} style={{ width: '100%', padding: '6px 10px', borderRadius: 4, border: '1px solid #ccc' }} />
+                    <label className="label-sm">{t('admin.name')}</label>
+                    <input value={editData.name || ''} onChange={(e) => setEditData({ ...editData, name: e.target.value })} className="form-input" />
                   </div>
                   <div style={{ width: 80 }}>
-                    <label style={{ fontSize: 12, fontWeight: 600 }}>{t('admin.icon')}</label>
-                    <input value={editData.icon || ''} onChange={(e) => setEditData({ ...editData, icon: e.target.value })} style={{ width: '100%', padding: '6px 10px', borderRadius: 4, border: '1px solid #ccc' }} />
+                    <label className="label-sm">{t('admin.icon')}</label>
+                    <input value={editData.icon || ''} onChange={(e) => setEditData({ ...editData, icon: e.target.value })} className="form-input" />
                   </div>
                   <div style={{ width: 110 }}>
-                    <label style={{ fontSize: 12, fontWeight: 600 }}>{t('admin.color')}</label>
-                    <input value={editData.color || ''} onChange={(e) => setEditData({ ...editData, color: e.target.value })} style={{ width: '100%', padding: '6px 10px', borderRadius: 4, border: '1px solid #ccc' }} />
+                    <label className="label-sm">{t('admin.color')}</label>
+                    <input value={editData.color || ''} onChange={(e) => setEditData({ ...editData, color: e.target.value })} className="form-input" />
                   </div>
                 </div>
                 <div>
-                  <label style={{ fontSize: 12, fontWeight: 600 }}>{t('admin.description')}</label>
-                  <textarea value={editData.description || ''} onChange={(e) => setEditData({ ...editData, description: e.target.value })} style={{ width: '100%', padding: '6px 10px', borderRadius: 4, border: '1px solid #ccc', minHeight: 60 }} />
+                  <label className="label-sm">{t('admin.description')}</label>
+                  <textarea value={editData.description || ''} onChange={(e) => setEditData({ ...editData, description: e.target.value })} className="form-input" style={{ minHeight: 60 }} />
                 </div>
                 <div>
-                  <label style={{ fontSize: 12, fontWeight: 600 }}>{t('admin.department')}</label>
-                  <input value={editData.department || ''} onChange={(e) => setEditData({ ...editData, department: e.target.value })} style={{ width: '100%', padding: '6px 10px', borderRadius: 4, border: '1px solid #ccc' }} />
+                  <label className="label-sm">{t('admin.department')}</label>
+                  <input value={editData.department || ''} onChange={(e) => setEditData({ ...editData, department: e.target.value })} className="form-input" />
                 </div>
                 <div>
-                  <label style={{ fontSize: 12, fontWeight: 600 }}>{t('admin.procedures')}</label>
-                  <ul style={{ margin: '4px 0 8px', paddingLeft: 20 }}>
+                  <label className="label-sm">{t('admin.procedures')}</label>
+                  <ul className="ul-sm" style={{ margin: '4px 0 8px' }}>
                     {(editData.procedures || []).map((p, i) => (
-                      <li key={i} style={{ marginBottom: 4 }}>
+                      <li key={i} className="li-sm">
                         {p}
-                        <button className="btn btn-ghost btn-sm" style={{ marginLeft: 8, color: '#e74c3c' }} onClick={() => removeProcedure(i)}>&times;</button>
+                        <button className="btn btn-ghost btn-sm icon-danger" style={{ marginLeft: 8 }} onClick={() => removeProcedure(i)}>&times;</button>
                       </li>
                     ))}
                   </ul>
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <input value={newProcedure} onChange={(e) => setNewProcedure(e.target.value)} placeholder={t('admin.new_procedure_placeholder')} style={{ flex: 1, padding: '6px 10px', borderRadius: 4, border: '1px solid #ccc' }} />
+                  <div className="flex-row" style={{ gap: 8 }}>
+                    <input value={newProcedure} onChange={(e) => setNewProcedure(e.target.value)} placeholder={t('admin.new_procedure_placeholder')} className="form-input" style={{ flex: 1 }} />
                     <button className="btn btn-primary btn-sm" onClick={addProcedure}>{t('admin.add')}</button>
                   </div>
                 </div>
-                <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                <div className="flex-row" style={{ gap: 8, justifyContent: 'flex-end' }}>
                   <button className="btn btn-primary" onClick={handleSave}>{t('admin.save')}</button>
                   <button className="btn btn-ghost" onClick={cancelEdit}>{t('admin.cancel')}</button>
                 </div>
               </div>
             ) : (
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div className="flex-row" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                    <span style={{ fontSize: 24 }}>{s.icon}</span>
-                    <h3 style={{ margin: 0 }}>{s.name}</h3>
-                    <span style={{ width: 12, height: 12, borderRadius: '50%', backgroundColor: s.color, display: 'inline-block' }} />
+                  <div className="flex-row" style={{ alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                    <span className="icon-lg">{s.icon}</span>
+                    <h3 className="m-0">{s.name}</h3>
+                    <span className="color-dot" style={{ backgroundColor: s.color }} />
                   </div>
-                  {s.description && <p style={{ margin: 0, fontSize: 13, color: '#666' }}>{s.description}</p>}
+                  {s.description && <p className="text-sm text-secondary">{s.description}</p>}
                   {s.doctors.length > 0 && (
-                    <div style={{ marginTop: 8 }}>
-                      <strong style={{ fontSize: 12 }}>{t('admin.doctors')}:</strong>
-                      <ul style={{ margin: '2px 0 0', paddingLeft: 20 }}>
-                        {s.doctors.map((d) => <li key={d.id} style={{ fontSize: 13 }}>{d.name} {d.email ? `<${d.email}>` : ''}</li>)}
+                    <div className="mt-sm">
+                      <strong className="label-sm">{t('admin.doctors')}:</strong>
+                      <ul className="ul-sm">
+                        {s.doctors.map((d) => <li key={d.id} className="li-sm">{d.name} {d.email ? `<${d.email}>` : ''}</li>)}
                       </ul>
                     </div>
                   )}
                   {s.procedures.length > 0 && (
-                    <div style={{ marginTop: 8 }}>
-                      <strong style={{ fontSize: 12 }}>{t('admin.procedures')}:</strong>
-                      <ul style={{ margin: '2px 0 0', paddingLeft: 20 }}>
-                        {s.procedures.map((p, i) => <li key={i} style={{ fontSize: 13 }}>{p}</li>)}
+                    <div className="mt-sm">
+                      <strong className="label-sm">{t('admin.procedures')}:</strong>
+                      <ul className="ul-sm">
+                        {s.procedures.map((p, i) => <li key={i} className="li-sm">{p}</li>)}
                       </ul>
                     </div>
                   )}
                 </div>
-                <div style={{ display: 'flex', gap: 8 }}>
+                <div className="flex-row" style={{ gap: 8 }}>
                   <button className="btn btn-ghost btn-sm" onClick={() => startEdit(s)}>{t('admin.edit')}</button>
-                  <button className="btn btn-ghost btn-sm" style={{ color: '#e74c3c' }} onClick={() => handleDelete(s.id)}>{t('admin.delete')}</button>
+                  <button className="btn btn-ghost btn-sm icon-danger" onClick={() => handleDelete(s.id)}>{t('admin.delete')}</button>
                 </div>
               </div>
             )}

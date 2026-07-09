@@ -26,6 +26,7 @@ import { logger } from './utils/logger.js';
 import cron from 'node-cron';
 import { registerWorkers } from './shared/queue.service.js';
 import pkg from '../package.json';
+import type { QueryConfig } from 'pg';
 
 declare global {
   var stripeWarning: boolean | undefined;
@@ -312,7 +313,7 @@ const startServer = async (): Promise<void> => {
       step('DB retry loop');
       for (let attempt = 1; attempt <= 10; attempt++) {
         try {
-          await pool.query({ text: 'SELECT 1', signal: AbortSignal.timeout(10000) } as any);
+          await pool.query({ text: 'SELECT 1', signal: AbortSignal.timeout(10000) } as QueryConfig & { signal: AbortSignal });
           break;
         } catch (dbErr) {
           logger.warn(`DB connection attempt ${attempt}/10 failed`, { error: (dbErr as Error).message, code: (dbErr as NodeJS.ErrnoException).code });
