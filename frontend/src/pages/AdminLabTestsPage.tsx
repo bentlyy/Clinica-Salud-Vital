@@ -2,6 +2,14 @@ import { useEffect, useState } from 'react';
 import { useI18n } from '../i18n/useI18n';
 import { getLabTests, createLabTest, updateLabTest, deleteLabTest } from '../api/laboratory';
 import { logger } from '../utils/logger';
+import Button from '../components/ui/Button';
+import Card from '../components/ui/Card';
+import { PageContainer, PageHeader } from '../components/ui/PageContainer';
+import { TextField } from '../components/ui/FormField';
+import Badge from '../components/ui/Badge';
+import Alert from '../components/ui/Alert';
+import DataTable from '../components/ui/DataTable';
+import type { Column } from '../components/ui/DataTable';
 
 interface LabTest {
   id: number;
@@ -107,34 +115,37 @@ export default function AdminLabTestsPage() {
     }
   };
 
-  if (loading) return <div className="page-container text-center" style={{ padding: '2rem' }}>{t('admin.loading')}</div>;
+  if (loading) return <div className="text-center" style={{ padding: '2rem' }}>{t('admin.loading')}</div>;
 
   return (
-    <div className="page-container" style={{ maxWidth: 960, margin: '0 auto' }}>
-      <h1>{t('admin.lab_tests_title')}</h1>
+    <PageContainer>
+      <PageHeader title={t('admin.lab_tests_title')} />
 
-      {error && <div className="alert alert-error mb-sm">{error}</div>}
+      {error && <Alert variant="error" style={{marginBottom: 16}}>{error}</Alert>}
 
-      <div className="flex-row gap-sm mb-sm" style={{ marginBottom: 24 }}>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 24, flexWrap: 'wrap' }}>
         <input
           value={newName}
           onChange={(e) => setNewName(e.target.value)}
           placeholder={t('admin.new_test_placeholder')}
-          className="form-input"
-          style={{ flex: 1 }}
+          className="ds-input"
+          style={{ flex: 1, minWidth: 200 }}
         />
         <input
           value={newCategory}
           onChange={(e) => setNewCategory(e.target.value)}
           placeholder={t('admin.category')}
-          className="form-input"
+          className="ds-input"
           style={{ width: 150 }}
         />
-        <button className="btn btn-primary" onClick={handleCreate}>{t('admin.add')}</button>
+        <Button variant="primary" onClick={handleCreate}>{t('admin.add')}</Button>
       </div>
 
       {tests.length === 0 && !loading ? (
-        <p className="text-center text-muted-lg" style={{ padding: 40 }}>{t('admin.no_tests')}</p>
+        <div className="ds-table-empty">
+          <div className="ds-table-empty-icon">🔬</div>
+          <div className="ds-table-empty-title">{t('admin.no_tests')}</div>
+        </div>
       ) : (
         <div className="table-wrapper">
         <table className="table">
@@ -156,43 +167,43 @@ export default function AdminLabTestsPage() {
                     <div className="flex-col gap-md">
                       <div className="flex-row gap-md flex-wrap">
                         <div style={{ flex: 1, minWidth: 150 }}>
-                          <label className="label-sm">{t('admin.name')}</label>
-                          <input value={editData.name || ''} onChange={(e) => setEditData({ ...editData, name: e.target.value })} className="form-input" />
+                          <label className="ds-label">{t('admin.name')}</label>
+                          <input value={editData.name || ''} onChange={(e) => setEditData({ ...editData, name: e.target.value })} className="ds-input" />
                         </div>
                         <div style={{ flex: 1, minWidth: 120 }}>
-                          <label className="label-sm">{t('admin.code')}</label>
-                          <input value={editData.code || ''} onChange={(e) => setEditData({ ...editData, code: e.target.value })} className="form-input" />
+                          <label className="ds-label">{t('admin.code')}</label>
+                          <input value={editData.code || ''} onChange={(e) => setEditData({ ...editData, code: e.target.value })} className="ds-input" />
                         </div>
                         <div style={{ flex: 1, minWidth: 120 }}>
-                          <label className="label-sm">{t('admin.category')}</label>
-                          <input value={editData.category || ''} onChange={(e) => setEditData({ ...editData, category: e.target.value })} className="form-input" />
+                          <label className="ds-label">{t('admin.category')}</label>
+                          <input value={editData.category || ''} onChange={(e) => setEditData({ ...editData, category: e.target.value })} className="ds-input" />
                         </div>
                       </div>
                       <div>
-                        <label className="label-sm">{t('admin.description')}</label>
-                        <textarea value={editData.description || ''} onChange={(e) => setEditData({ ...editData, description: e.target.value })} className="form-input" style={{ minHeight: 60 }} />
+                        <label className="ds-label">{t('admin.description')}</label>
+                        <textarea value={editData.description || ''} onChange={(e) => setEditData({ ...editData, description: e.target.value })} className="ds-input" style={{ minHeight: 60 }} />
                       </div>
                       <div className="flex-row gap-md">
                         <div style={{ width: 100 }}>
-                          <label className="label-sm">{t('admin.unit')}</label>
-                          <input value={editData.unit || ''} onChange={(e) => setEditData({ ...editData, unit: e.target.value })} className="form-input" />
+                          <label className="ds-label">{t('admin.unit')}</label>
+                          <input value={editData.unit || ''} onChange={(e) => setEditData({ ...editData, unit: e.target.value })} className="ds-input" />
                         </div>
                         <div style={{ width: 100 }}>
-                          <label className="label-sm">{t('admin.price')}</label>
-                          <input type="number" value={editData.price ?? 0} onChange={(e) => setEditData({ ...editData, price: Number(e.target.value) })} className="form-input" />
+                          <label className="ds-label">{t('admin.price')}</label>
+                          <input type="number" value={editData.price ?? 0} onChange={(e) => setEditData({ ...editData, price: Number(e.target.value) })} className="ds-input" />
                         </div>
                         <div style={{ width: 100 }}>
-                          <label className="label-sm">Ref. Min</label>
-                          <input type="number" value={editData.reference_min ?? ''} onChange={(e) => setEditData({ ...editData, reference_min: e.target.value ? Number(e.target.value) : null })} className="form-input" />
+                          <label className="ds-label">Ref. Min</label>
+                          <input type="number" value={editData.reference_min ?? ''} onChange={(e) => setEditData({ ...editData, reference_min: e.target.value ? Number(e.target.value) : null })} className="ds-input" />
                         </div>
                         <div style={{ width: 100 }}>
-                          <label className="label-sm">Ref. Max</label>
-                          <input type="number" value={editData.reference_max ?? ''} onChange={(e) => setEditData({ ...editData, reference_max: e.target.value ? Number(e.target.value) : null })} className="form-input" />
+                          <label className="ds-label">Ref. Max</label>
+                          <input type="number" value={editData.reference_max ?? ''} onChange={(e) => setEditData({ ...editData, reference_max: e.target.value ? Number(e.target.value) : null })} className="ds-input" />
                         </div>
                       </div>
                       <div className="flex-row gap-sm justify-end">
-                        <button className="btn btn-primary" onClick={handleSave}>{t('admin.save')}</button>
-                        <button className="btn btn-ghost" onClick={cancelEdit}>{t('admin.cancel')}</button>
+                        <Button variant="primary" onClick={handleSave}>{t('admin.save')}</Button>
+                        <Button variant="ghost" onClick={cancelEdit}>{t('admin.cancel')}</Button>
                       </div>
                     </div>
                   </td>
@@ -203,14 +214,14 @@ export default function AdminLabTestsPage() {
                     <td>{test.unit || '-'}</td>
                     <td>${Number(test.price).toFixed(2)}</td>
                     <td>
-                      <button className={`btn btn-sm ${test.active ? 'btn-primary' : 'btn-ghost'}`} onClick={() => toggleActive(test)}>
+                      <Button variant={test.active ? 'primary' : 'ghost'} size="sm" onClick={() => toggleActive(test)}>
                         {test.active ? t('admin.yes') : t('admin.no')}
-                      </button>
+                      </Button>
                     </td>
                     <td>
                       <div className="flex-row gap-sm">
-                        <button className="btn btn-ghost btn-sm" onClick={() => startEdit(test)}>{t('admin.edit')}</button>
-                        <button className="btn btn-ghost btn-sm icon-danger" onClick={() => handleDelete(test.id)}>{t('admin.delete')}</button>
+                        <Button variant="ghost" size="sm" onClick={() => startEdit(test)}>{t('admin.edit')}</Button>
+                        <Button variant="ghost" size="sm" onClick={() => handleDelete(test.id)} style={{ color: 'var(--ds-danger-500)' }}>{t('admin.delete')}</Button>
                       </div>
                     </td>
                   </>
@@ -221,6 +232,6 @@ export default function AdminLabTestsPage() {
         </table>
         </div>
       )}
-    </div>
+    </PageContainer>
   );
 }

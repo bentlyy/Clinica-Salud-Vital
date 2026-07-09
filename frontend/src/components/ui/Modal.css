@@ -1,0 +1,89 @@
+.ds-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: var(--ds-z-modal);
+  padding: var(--ds-spacing-4);
+  animation: ds-modal-fade-in 0.15s ease;
+}
+
+@keyframes ds-modal-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes ds-modal-slide-in {
+  from { opacity: 0; transform: translateY(12px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.ds-modal {
+  background: var(--ds-surface);
+  border-radius: var(--ds-radius-xl);
+  width: 100%;
+  max-width: 520px;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: var(--ds-shadow-2xl);
+  animation: ds-modal-slide-in 0.2s ease;
+}
+
+.ds-modal--sm { max-width: 400px; }
+.ds-modal--lg { max-width: 640px; }
+.ds-modal--xl { max-width: 800px; }
+.ds-modal--full { max-width: 95vw; max-height: 95vh; }
+
+.ds-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--ds-spacing-5) var(--ds-spacing-6);
+  border-bottom: 1px solid var(--ds-border);
+}
+
+.ds-modal-title {
+  font-size: var(--ds-text-xl);
+  font-weight: var(--ds-font-semibold);
+  color: var(--ds-text-primary);
+  margin: 0;
+}
+
+.ds-modal-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: var(--ds-text-tertiary);
+  border-radius: var(--ds-radius-sm);
+  transition: var(--ds-transition);
+  font-size: 18px;
+}
+
+.ds-modal-close:hover {
+  background: var(--ds-surface-hover);
+  color: var(--ds-text-primary);
+}
+
+.ds-modal-body {
+  padding: var(--ds-spacing-6);
+}
+
+.ds-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--ds-spacing-3);
+  padding: var(--ds-spacing-4) var(--ds-spacing-6);
+  border-top: 1px solid var(--ds-border);
+}
+
+@media (max-width: 600px) {
+  .ds-modal { max-height: 100vh; border-radius: var(--ds-radius-lg); }
+}

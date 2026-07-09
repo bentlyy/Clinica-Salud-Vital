@@ -5,6 +5,10 @@ import { useI18n } from '../i18n/useI18n';
 import { formatRut, validateRut, cleanRut } from '../utils/rut';
 import { sanitizeError } from '../utils/error-sanitizer';
 import api from '../api/axios';
+import Button from '../components/ui/Button';
+import Card from '../components/ui/Card';
+import Alert from '../components/ui/Alert';
+import { PageContainer } from '../components/ui/PageContainer';
 
 export default function RegisterPage() {
   const { t } = useI18n();
@@ -60,25 +64,25 @@ export default function RegisterPage() {
 
   if (loadingInvite) {
     return (
-      <div className="page-container" style={{ maxWidth: 480 }}>
-        <div className="card" style={{ padding: 40, textAlign: 'center' }}>
+      <PageContainer maxWidth="sm">
+        <Card padding="lg" style={{ textAlign: 'center' }}>
           <div className="loading-spinner" />
-          <p style={{ marginTop: 16, color: 'var(--text-secondary)' }}>Verificando invitación...</p>
-        </div>
-      </div>
+          <p style={{ marginTop: 16, color: 'var(--ds-text-secondary)' }}>Verificando invitación...</p>
+        </Card>
+      </PageContainer>
     );
   }
 
   return (
-    <div className="page-container" style={{ maxWidth: 480 }}>
-      <div className="card" style={{ padding: 40 }}>
+    <PageContainer maxWidth="sm">
+      <Card padding="lg">
         <div style={{ textAlign: 'center', marginBottom: 28 }}>
           <div style={{ fontSize: 40, marginBottom: 8 }}>📋</div>
           <h2>{t('register.title')}</h2>
           <p>{t('register.subtitle')}</p>
         </div>
 
-        {error && <div className="alert alert-error">{error}</div>}
+        {error && <Alert variant="error">{error}</Alert>}
 
         <form onSubmit={handleSubmit}>
           <div className="form-group">
@@ -86,9 +90,9 @@ export default function RegisterPage() {
             <input name="email" type="email" required value={form.email}
               onChange={(e) => setForm({ ...form, email: e.target.value })}
               placeholder={t('register.email_placeholder')}
-              className="form-input"
+              className="ds-input"
               readOnly={!!inviteData}
-              style={inviteData ? { background: 'var(--gray-100)', cursor: 'not-allowed' } : {}}
+              style={inviteData ? { background: 'var(--ds-gray-100)', cursor: 'not-allowed' } : {}}
             />
             {inviteData && (
               <p className="form-hint">Este correo fue registrado en tu invitación. No puede modificarse.</p>
@@ -100,42 +104,42 @@ export default function RegisterPage() {
             <input name="name" value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
               placeholder="Tu nombre"
-              className="form-input"
+              className="ds-input"
               readOnly={!!inviteData}
-              style={inviteData ? { background: 'var(--gray-100)', cursor: 'not-allowed' } : {}}
+              style={inviteData ? { background: 'var(--ds-gray-100)', cursor: 'not-allowed' } : {}}
             />
           </div>
 
           <div className="form-group">
             <label className="form-label">{t('register.rut')}</label>
-            <input name="rut" value={form.rut} onChange={(e) => setForm({ ...form, rut: formatRut(e.target.value) })} placeholder={t('register.rut_placeholder')} className="form-input" />
+            <input name="rut" value={form.rut} onChange={(e) => setForm({ ...form, rut: formatRut(e.target.value) })} placeholder={t('register.rut_placeholder')} className="ds-input" />
             <p className="form-hint">{t('register.rut_hint')}</p>
           </div>
 
           <div className="form-group">
             <label className="form-label">{t('register.phone')}</label>
-            <input name="phone" type="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder={t('register.phone_placeholder')} className="form-input" />
+            <input name="phone" type="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder={t('register.phone_placeholder')} className="ds-input" />
           </div>
 
           <div className="form-group">
             <label className="form-label">{t('register.password')} <span className="required">*</span></label>
-            <input name="password" type="password" required minLength={8} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder={t('register.password_placeholder')} className="form-input" />
+            <input name="password" type="password" required minLength={8} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder={t('register.password_placeholder')} className="ds-input" />
           </div>
 
           <div className="form-group">
             <label className="form-label">{t('register.confirm_password')} <span className="required">*</span></label>
-            <input name="confirmPassword" type="password" required minLength={8} value={form.confirmPassword} onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })} placeholder={t('register.confirm_placeholder')} className="form-input" />
+            <input name="confirmPassword" type="password" required minLength={8} value={form.confirmPassword} onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })} placeholder={t('register.confirm_placeholder')} className="ds-input" />
           </div>
 
-          <button type="submit" disabled={submitting} className="btn btn-primary btn-block btn-lg" style={{ marginTop: 8 }}>
+          <Button variant="primary" type="submit" disabled={submitting} size="lg" style={{ width: '100%', marginTop: 8 }}>
             {submitting ? t('register.button_loading') : t('register.button')}
-          </button>
+          </Button>
         </form>
 
         <p style={{ textAlign: 'center', marginTop: 20 }}>
           {t('register.have_account')} <Link to="/login">{t('register.login_link_text')}</Link>
         </p>
-      </div>
-    </div>
+      </Card>
+    </PageContainer>
   );
 }

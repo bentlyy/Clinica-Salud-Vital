@@ -4,6 +4,9 @@ import { useI18n } from '../i18n/useI18n';
 import { extractList } from '../utils/extract-list';
 import { getDoctors } from '../api/doctors';
 import { getSpecialties } from '../api/specialties';
+import Button from '../components/ui/Button';
+import Alert from '../components/ui/Alert';
+import { PageContainer } from '../components/ui/PageContainer';
 
 const specialtyIcons = {
   Cardiología: '❤️',
@@ -77,17 +80,17 @@ export default function SpecialistsPage() {
 
   if (loading) {
     return (
-      <div className="page-container-wide">
+      <PageContainer maxWidth="xl">
         <div className="sp-loading">
           <div className="sp-spinner" />
           <p>{t('specialists.loading')}</p>
         </div>
-      </div>
+      </PageContainer>
     );
   }
 
   return (
-    <div className="page-container-wide">
+    <PageContainer maxWidth="xl">
       <section className="sp-hero">
         <h1 className="sp-hero-title">
           {t('specialists.title')} <span className="text-accent">{t('specialists.title_accent')}</span>
@@ -97,7 +100,7 @@ export default function SpecialistsPage() {
         </p>
       </section>
 
-      {error && <div className="alert alert-error">{error}</div>}
+      {error && <Alert variant="error">{error}</Alert>}
 
       <section className="sp-section">
         <div className="sp-filter-bar">
@@ -140,16 +143,18 @@ export default function SpecialistsPage() {
                   {specialtyIcons[doc.specialty] || '🩺'} {t(specialtyKeyMap[doc.specialty] || doc.specialty)}
                 </span>
               </div>
-              <button
-                className="btn btn-primary btn-sm sp-book-btn"
+              <Button
+                variant="primary"
+                size="sm"
+                className="sp-book-btn"
                 onClick={() => navigate(`/booking?doctor=${doc.id}`)}
               >
                 {t('specialists.book')}
-              </button>
+              </Button>
             </div>
           ))}
         </div>
       </section>
-    </div>
+    </PageContainer>
   );
 }

@@ -9,6 +9,10 @@ import { useI18n } from '../i18n/useI18n';
 import LoadingState from '../components/LoadingState';
 import EmptyState from '../components/EmptyState';
 import ErrorState from '../components/ErrorState';
+import Button from '../components/ui/Button';
+import Card from '../components/ui/Card';
+import Alert from '../components/ui/Alert';
+import { PageContainer, PageHeader } from '../components/ui/PageContainer';
 
 const days = {
   0: { es: 'Domingo', en: 'Sunday', pt: 'Domingo', fr: 'Dimanche' },
@@ -141,46 +145,46 @@ export default function DoctorAvailabilityPage() {
   const hasWeekendAvail = weekends.length > 0;
 
   return (
-    <div className="page-container">
-      <div className="page-header">
-        <h1>{t('doctor_availability.title')}</h1>
-      </div>
+    <PageContainer maxWidth="md">
+      <PageHeader title={t('doctor_availability.title')} />
 
-      <div className="card card-subtle" style={{ marginBottom: 20, padding: '14px 18px', fontSize: 14, borderLeft: '4px solid var(--primary-500)' }}>
+      <Card variant="subtle" padding="md" style={{ marginBottom: 20, borderLeft: '4px solid var(--ds-primary-500)' }}>
         <strong>{t('availability_weekend_tip')}</strong>
-      </div>
+      </Card>
 
       {error && <ErrorState message={error} />}
 
       <div style={{ marginBottom: 20, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
         {[1, 2, 3, 4, 5].map((d) => (
-          <button
+          <Button
             key={d}
+            variant="outline"
+            size="sm"
             onClick={() => handleGenerateWeekday(d, '09:00', '17:00')}
             disabled={creating}
-            className="btn btn-outline btn-sm"
           >
             {t('doctor_availability.generate_for')} {dayName(d)}
-          </button>
+          </Button>
         ))}
         {!hasWeekendAvail && (
           <>
             {[0, 6].map((d) => (
-              <button
+              <Button
                 key={d}
+                variant="outline"
+                size="sm"
                 onClick={() => handleGenerateWeekday(d, '10:00', '14:00')}
                 disabled={creating}
-                className="btn btn-outline btn-sm"
-                style={{ borderColor: 'var(--primary-400)', color: 'var(--primary-600)' }}
+                style={{ borderColor: 'var(--ds-primary-400)', color: 'var(--ds-primary-600)' }}
               >
                 {t('doctor_availability.generate_weekend')} {dayName(d)}
-              </button>
+              </Button>
             ))}
           </>
         )}
       </div>
 
-      <div className="card" style={{ marginBottom: 24 }}>
+      <Card padding="md" style={{ marginBottom: 24 }}>
         <h3 style={{ marginBottom: 16 }}>{t('doctor_availability.add_title')}</h3>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-end' }}>
           <div>
@@ -188,7 +192,7 @@ export default function DoctorAvailabilityPage() {
             <select
               value={day}
               onChange={(e) => setDay(Number(e.target.value))}
-              className="form-input"
+              className="ds-input"
               style={{ width: 'auto' }}
             >
               {Object.entries(days).map(([key, val]) => (
@@ -202,7 +206,7 @@ export default function DoctorAvailabilityPage() {
               type="time"
               value={startTime}
               onChange={(e) => setStartTime(e.target.value)}
-              className="form-input"
+              className="ds-input"
               style={{ width: 'auto' }}
             />
           </div>
@@ -212,15 +216,15 @@ export default function DoctorAvailabilityPage() {
               type="time"
               value={endTime}
               onChange={(e) => setEndTime(e.target.value)}
-              className="form-input"
+              className="ds-input"
               style={{ width: 'auto' }}
             />
           </div>
-          <button onClick={handleCreate} disabled={creating} className="btn btn-primary">
+          <Button variant="primary" onClick={handleCreate} disabled={creating}>
             {creating ? t('doctor_availability.generating') : t('doctor_availability.add')}
-          </button>
+          </Button>
         </div>
-      </div>
+      </Card>
 
       <h3 style={{ marginBottom: 16 }}>{t('doctor_availability.current')}</h3>
 
@@ -236,22 +240,22 @@ export default function DoctorAvailabilityPage() {
 
       {!loading && weekdays.length > 0 && (
         <>
-          <h4 style={{ marginBottom: 10, color: 'var(--text-secondary)', fontSize: 14, fontWeight: 600 }}>
+          <h4 style={{ marginBottom: 10, color: 'var(--ds-text-secondary)', fontSize: 14, fontWeight: 600 }}>
             {t('availability_weekdays')}
           </h4>
           <div className="grid" style={{ gap: 10, marginBottom: 20 }}>
             {weekdays.map((a) => (
-              <div key={a.id} className="card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 20px' }}>
+              <Card key={a.id} padding="md" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
                   <strong style={{ fontSize: '0.95rem' }}>{dayName(a.day_of_week)}</strong>
-                  <span style={{ color: 'var(--text-secondary)', marginLeft: 12 }}>
+                  <span style={{ color: 'var(--ds-text-secondary)', marginLeft: 12 }}>
                     {a.start_time} → {a.end_time}
                   </span>
                 </div>
-                <button onClick={() => handleDelete(a.id)} className="btn btn-danger btn-sm">
+                <Button variant="danger" size="sm" onClick={() => handleDelete(a.id)}>
                   {t('doctor_availability.delete')}
-                </button>
-              </div>
+                </Button>
+              </Card>
             ))}
           </div>
         </>
@@ -259,29 +263,29 @@ export default function DoctorAvailabilityPage() {
 
       {!loading && (weekends.length > 0 || hasWeekendAvail) && (
         <>
-          <h4 style={{ marginBottom: 10, color: 'var(--text-secondary)', fontSize: 14, fontWeight: 600 }}>
+          <h4 style={{ marginBottom: 10, color: 'var(--ds-text-secondary)', fontSize: 14, fontWeight: 600 }}>
             {t('availability_weekends')}
           </h4>
           <div className="grid" style={{ gap: 10 }}>
             {weekends.map((a) => (
-              <div key={a.id} className="card" style={{
+              <Card key={a.id} padding="md" style={{
                 display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                padding: '14px 20px', borderLeft: '4px solid var(--primary-400)',
+                borderLeft: '4px solid var(--ds-primary-400)',
               }}>
                 <div>
                   <strong style={{ fontSize: '0.95rem' }}>{dayName(a.day_of_week)}</strong>
-                  <span style={{ color: 'var(--text-secondary)', marginLeft: 12 }}>
+                  <span style={{ color: 'var(--ds-text-secondary)', marginLeft: 12 }}>
                     {a.start_time} → {a.end_time}
                   </span>
                 </div>
-                <button onClick={() => handleDelete(a.id)} className="btn btn-danger btn-sm">
+                <Button variant="danger" size="sm" onClick={() => handleDelete(a.id)}>
                   {t('doctor_availability.delete')}
-                </button>
-              </div>
+                </Button>
+              </Card>
             ))}
           </div>
         </>
       )}
-    </div>
+    </PageContainer>
   );
 }

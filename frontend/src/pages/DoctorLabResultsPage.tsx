@@ -12,6 +12,11 @@ import {
   getClinicalRecords,
 } from '../api/clinicalRecords';
 import { useNavigate } from 'react-router-dom';
+import Button from '../components/ui/Button';
+import Badge from '../components/ui/Badge';
+import Alert from '../components/ui/Alert';
+import Card from '../components/ui/Card';
+import { PageContainer, PageHeader } from '../components/ui/PageContainer';
 
 export default function DoctorLabResultsPage() {
   const { t } = useI18n();
@@ -160,39 +165,35 @@ export default function DoctorLabResultsPage() {
       created_at?: string; notes?: string; patient_name?: string; patient_email?: string; patient_id?: number;
     };
     return (
-      <div className="page-container-wide">
-        <div className="page-header">
-          <div>
-            <h1 style={{ marginBottom: 4 }}>{getRequestTestNames(r)}</h1>
-            <p style={{ color: 'var(--text-secondary)' }}>
-              {t('lab_results.patient')}: {getPatientName(r)} — {r.created_at?.split('T')[0]}
-            </p>
-          </div>
-          <button onClick={() => { setView('list'); setSelectedRequest(null); }} className="btn btn-ghost">← {t('lab_results.back')}</button>
-        </div>
+      <PageContainer maxWidth="xl">
+        <PageHeader
+          title={getRequestTestNames(r)}
+          subtitle={`${t('lab_results.patient')}: ${getPatientName(r)} — ${r.created_at?.split('T')[0]}`}
+          actions={<Button variant="ghost" onClick={() => { setView('list'); setSelectedRequest(null); }}>← {t('lab_results.back')}</Button>}
+        />
 
-        {error && <div className="alert alert-error">{error}</div>}
+        {error && <Alert variant="error">{error}</Alert>}
 
-        <div className="analytics-card">
+        <Card padding="md" style={{ marginBottom: 20 }}>
           <h3>{t('lab_results.items')}</h3>
           {(r.items || []).map((item) => {
             const test = labTests.find((t) => t.id === item.lab_test_id);
             return (
-              <div key={item.id} style={{ padding: '16px 0', borderBottom: '1px solid var(--border-light)' }}>
+              <div key={item.id} style={{ padding: '16px 0', borderBottom: '1px solid var(--ds-border)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                   <strong>{test?.name || item.test_name || `${t('lab_results.test')} #${item.lab_test_id}`}</strong>
-                  {item.result_value && <span className="badge badge-success">{t('lab_results.completed')}</span>}
+          {item.result_value && <Badge variant="success">{t('lab_results.completed')}</Badge>}
                 </div>
                 {item.reference_range && (
-                  <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 8 }}>
+                  <div style={{ fontSize: 13, color: 'var(--ds-text-secondary)', marginBottom: 8 }}>
                     {t('lab_results.reference_range')}: {item.reference_range}
-                  </div>
-                )}
+                  </div>)
+                }
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                   <div className="form-group">
                     <label className="form-label">{t('lab_results.result_value')}</label>
                     <input
-                      className="form-input"
+                      className="ds-input"
                       value={resultValues[item.id] || ''}
                       onChange={e => setResultValues(prev => ({ ...prev, [item.id]: e.target.value }))}
                       placeholder={t('lab_results.result_placeholder')}
@@ -202,7 +203,7 @@ export default function DoctorLabResultsPage() {
                   <div className="form-group">
                     <label className="form-label">{t('lab_results.result_notes')}</label>
                     <input
-                      className="form-input"
+                      className="ds-input"
                       value={resultNotes[item.id] || ''}
                       onChange={e => setResultNotes(prev => ({ ...prev, [item.id]: e.target.value }))}
                       placeholder={t('lab_results.notes_placeholder')}
@@ -220,30 +221,30 @@ export default function DoctorLabResultsPage() {
             </div>
           )}
           <div style={{ marginTop: 16 }}>
-            <button onClick={handleAddResult} className="btn btn-primary" disabled={saving}>
+            <Button variant="primary" onClick={handleAddResult} disabled={saving}>
               {saving ? t('lab_results.saving') : t('lab_results.save_results')}
-            </button>
+            </Button>
           </div>
-        </div>
-      </div>
+        </Card>
+      </PageContainer>
     );
   }
 
   if (view === 'new') {
     return (
-      <div className="page-container-wide">
-        <div className="page-header">
-          <h1>{t('lab_results.new_request')}</h1>
-          <button onClick={() => setView('list')} className="btn btn-ghost">← {t('lab_results.back')}</button>
-        </div>
+      <PageContainer maxWidth="xl">
+        <PageHeader
+          title={t('lab_results.new_request')}
+          actions={<Button variant="ghost" onClick={() => setView('list')}>← {t('lab_results.back')}</Button>}
+        />
 
-        {error && <div className="alert alert-error">{error}</div>}
+        {error && <Alert variant="error">{error}</Alert>}
 
-        <div className="analytics-card">
+        <Card padding="md" style={{ marginBottom: 20 }}>
           <div className="form-group">
             <label className="form-label">{t('lab_results.patient')} *</label>
             <select
-              className="form-input"
+              className="ds-input"
               value={formData.patient_id}
               onChange={e => setFormData(prev => ({ ...prev, patient_id: e.target.value }))}
             >
@@ -257,7 +258,7 @@ export default function DoctorLabResultsPage() {
           <div className="form-group">
             <label className="form-label">{t('lab_results.request_notes')}</label>
             <textarea
-              className="form-input"
+              className="ds-input"
               rows={2}
               value={formData.notes}
               onChange={e => setFormData(prev => ({ ...prev, notes: e.target.value }))}
@@ -271,7 +272,7 @@ export default function DoctorLabResultsPage() {
               <div className="form-group" style={{ flex: 1 }}>
                 {idx === 0 && <label className="form-label">{t('lab_results.test')} *</label>}
                 <select
-                  className="form-input"
+                  className="ds-input"
                   value={item.lab_test_id}
                   onChange={e => updateItem(idx, 'lab_test_id', e.target.value)}
                 >
@@ -284,50 +285,50 @@ export default function DoctorLabResultsPage() {
               <div className="form-group" style={{ flex: 1 }}>
                 {idx === 0 && <label className="form-label">{t('lab_results.result_notes')}</label>}
                 <input
-                  className="form-input"
+                  className="ds-input"
                   value={item.notes}
                   onChange={e => updateItem(idx, 'notes', e.target.value)}
                   placeholder={t('lab_results.notes_placeholder')}
                 />
               </div>
               {formData.items.length > 1 && (
-                <button onClick={() => removeItem(idx)} className="btn btn-ghost btn-sm" style={{ color: 'var(--danger-500)', marginBottom: idx === 0 ? 20 : 0 }}>✕</button>
+                <Button variant="ghost" size="sm" onClick={() => removeItem(idx)} style={{ color: 'var(--ds-danger-500)', marginBottom: idx === 0 ? 20 : 0 }}>✕</Button>
               )}
             </div>
           ))}
-          <button onClick={addItem} className="btn btn-outline btn-sm">+ {t('lab_results.add_test')}</button>
-        </div>
+          <Button variant="outline" size="sm" onClick={addItem}>+ {t('lab_results.add_test')}</Button>
+        </Card>
 
         <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', padding: '16px 0' }}>
-          <button onClick={() => setView('list')} className="btn btn-ghost">{t('lab_results.cancel')}</button>
-          <button onClick={handleSave} className="btn btn-primary" disabled={saving}>
+          <Button variant="ghost" onClick={() => setView('list')}>{t('lab_results.cancel')}</Button>
+          <Button variant="primary" onClick={handleSave} disabled={saving}>
             {saving ? t('lab_results.saving') : t('lab_results.create')}
-          </button>
+          </Button>
         </div>
-      </div>
+      </PageContainer>
     );
   }
 
   return (
-    <div className="page-container-wide">
-      <div className="page-header">
-        <h1>{t('lab_results.manage_title')}</h1>
-        <button onClick={handleNewRequest} className="btn btn-primary">{t('lab_results.new_request')}</button>
-      </div>
+    <PageContainer maxWidth="xl">
+      <PageHeader
+        title={t('lab_results.manage_title')}
+        actions={<Button variant="primary" onClick={handleNewRequest}>{t('lab_results.new_request')}</Button>}
+      />
 
-      {error && <div className="alert alert-error">{error}</div>}
+      {error && <Alert variant="error">{error}</Alert>}
 
       {loading ? (
         <p>{t('lab_results.loading')}</p>
       ) : (
-        <div className="analytics-card">
+        <Card padding="md" style={{ marginBottom: 20 }}>
           {requests.length === 0 ? (
             <div className="empty-state"><p>{t('lab_results.empty_doctor')}</p></div>
           ) : (
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', fontSize: 13 }}>
                 <thead>
-                  <tr style={{ background: 'var(--bg-primary)' }}>
+                  <tr style={{ background: 'var(--ds-bg-primary)' }}>
                     <th style={{ padding: 10, textAlign: 'left' }}>{t('lab_results.request')}</th>
                     <th style={{ padding: 10, textAlign: 'left' }}>{t('lab_results.patient')}</th>
                     <th style={{ padding: 10, textAlign: 'left' }}>Doctor</th>
@@ -338,31 +339,33 @@ export default function DoctorLabResultsPage() {
                 </thead>
                 <tbody>
                   {requests.map((r) => (
-                    <tr key={r.id} style={{ borderBottom: '1px solid var(--border-light)' }}>
+                    <tr key={r.id} style={{ borderBottom: '1px solid var(--ds-border)' }}>
                       <td style={{ padding: 10 }}>{(r.items?.[0]?.test_name) || `#${r.id}`}</td>
                       <td style={{ padding: 10 }}>{r.patient_name || getPatientName(r)}</td>
                       <td style={{ padding: 10 }}>{r.doctor_name || '—'}</td>
                       <td style={{ padding: 10 }}>{r.created_at?.split('T')[0] || '-'}</td>
                       <td style={{ padding: 10 }}>
-                        <span className={`badge ${r.status === 'completed' ? 'badge-success' : 'badge-warning'}`}>{r.status}</span>
+                        <Badge variant={r.status === 'completed' ? 'success' : 'warning'}>{r.status}</Badge>
                       </td>
                       <td style={{ padding: 10, textAlign: 'right', whiteSpace: 'nowrap' }}>
-                        <button onClick={() => viewDetail(r.id)} className="btn btn-outline btn-sm">{t('lab_results.view')}</button>
-                        <button
+                        <Button variant="outline" size="sm" onClick={() => viewDetail(r.id)}>{t('lab_results.view')}</Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
                           onClick={() => downloadLabOrderPdf(r.id).then(blob => {
                             const url = URL.createObjectURL(blob);
                             const a = document.createElement('a');
                             a.href = url; a.download = `orden-${r.id}.pdf`; a.click();
                             URL.revokeObjectURL(url);
                           })}
-                          className="btn btn-ghost btn-sm"
                           style={{ marginLeft: 4 }}
-                        >PDF</button>
-                        <button
+                        >PDF</Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
                           onClick={() => navigate(`/doctor/patient-history?patientId=${r.patient_id}`)}
-                          className="btn btn-ghost btn-sm"
                           style={{ marginLeft: 4 }}
-                        >{t('lab_results.view_history')}</button>
+                        >{t('lab_results.view_history')}</Button>
                       </td>
                     </tr>
                   ))}
@@ -370,8 +373,8 @@ export default function DoctorLabResultsPage() {
               </table>
             </div>
           )}
-        </div>
+        </Card>
       )}
-    </div>
+    </PageContainer>
   );
 }
