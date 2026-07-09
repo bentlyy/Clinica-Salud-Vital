@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { useLabAreas } from '../hooks/useLabAreas';
 import QCDashboard from '../components/qc/QCDashboard';
 import ReagentStockTable from '../components/inventory/ReagentStockTable';
-import { PageContainer, PageHeader } from '../../components/ui/PageContainer';
-import Button from '../../components/ui/Button';
+import { PageContainer, PageHeader } from '../../../components/ui/PageContainer';
+import Button from '../../../components/ui/Button';
 
 export default function LabQCPage() {
   const { areas, selectedAreaId, setSelectedAreaId } = useLabAreas();
