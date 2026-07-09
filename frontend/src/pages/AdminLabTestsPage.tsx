@@ -32,9 +32,10 @@ export default function AdminLabTestsPage() {
     try {
       const data = await getLabTests({ active: 'all' });
       setTests(data);
-    } catch (err: any) {
+    } catch (err: unknown) {
       logger.error('Failed to load lab tests', err);
-      setError(err?.response?.data?.error || err.message || t('admin.error_load'));
+      const msg = err instanceof Error ? err.message : String(err);
+      setError((err as { response?: { data?: { error?: string } } })?.response?.data?.error || msg || t('admin.error_load'));
     } finally {
       setLoading(false);
     }
@@ -50,9 +51,10 @@ export default function AdminLabTestsPage() {
       setNewName('');
       setNewCategory('');
       await load();
-    } catch (err: any) {
+    } catch (err: unknown) {
       logger.error('Failed to create lab test', err);
-      setError(err?.response?.data?.error || err.message || t('admin.error_create'));
+      const msg = err instanceof Error ? err.message : String(err);
+      setError((err as { response?: { data?: { error?: string } } })?.response?.data?.error || msg || t('admin.error_create'));
     }
   };
 
@@ -73,9 +75,10 @@ export default function AdminLabTestsPage() {
       await updateLabTest(editId, editData);
       cancelEdit();
       await load();
-    } catch (err: any) {
+    } catch (err: unknown) {
       logger.error('Failed to update lab test', err);
-      setError(err?.response?.data?.error || err.message || t('admin.error_update'));
+      const msg = err instanceof Error ? err.message : String(err);
+      setError((err as { response?: { data?: { error?: string } } })?.response?.data?.error || msg || t('admin.error_update'));
     }
   };
 
@@ -84,9 +87,10 @@ export default function AdminLabTestsPage() {
     try {
       await updateLabTest(test.id, { active: !test.active });
       await load();
-    } catch (err: any) {
+    } catch (err: unknown) {
       logger.error('Failed to toggle lab test status', err);
-      setError(err?.response?.data?.error || err.message || t('admin.error_update'));
+      const msg = err instanceof Error ? err.message : String(err);
+      setError((err as { response?: { data?: { error?: string } } })?.response?.data?.error || msg || t('admin.error_update'));
     }
   };
 
@@ -96,93 +100,97 @@ export default function AdminLabTestsPage() {
     try {
       await deleteLabTest(id);
       await load();
-    } catch (err: any) {
+    } catch (err: unknown) {
       logger.error('Failed to delete lab test', err);
-      setError(err?.response?.data?.error || err.message || t('admin.error_delete'));
+      const msg = err instanceof Error ? err.message : String(err);
+      setError((err as { response?: { data?: { error?: string } } })?.response?.data?.error || msg || t('admin.error_delete'));
     }
   };
 
-  if (loading) return <div className="page-container" style={{ padding: '2rem', textAlign: 'center' }}>{t('admin.loading')}</div>;
+  if (loading) return <div className="page-container text-center" style={{ padding: '2rem' }}>{t('admin.loading')}</div>;
 
   return (
-    <div className="page-container" style={{ padding: '2rem', maxWidth: 960, margin: '0 auto' }}>
+    <div className="page-container" style={{ maxWidth: 960, margin: '0 auto' }}>
       <h1>{t('admin.lab_tests_title')}</h1>
 
-      {error && <div className="alert alert-error" style={{ marginBottom: 16 }}>{error}</div>}
+      {error && <div className="alert alert-error mb-sm">{error}</div>}
 
-      <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
+      <div className="flex-row gap-sm mb-sm" style={{ marginBottom: 24 }}>
         <input
           value={newName}
           onChange={(e) => setNewName(e.target.value)}
           placeholder={t('admin.new_test_placeholder')}
-          style={{ flex: 1, padding: '8px 12px', borderRadius: 6, border: '1px solid #ccc' }}
+          className="form-input"
+          style={{ flex: 1 }}
         />
         <input
           value={newCategory}
           onChange={(e) => setNewCategory(e.target.value)}
           placeholder={t('admin.category')}
-          style={{ width: 150, padding: '8px 12px', borderRadius: 6, border: '1px solid #ccc' }}
+          className="form-input"
+          style={{ width: 150 }}
         />
         <button className="btn btn-primary" onClick={handleCreate}>{t('admin.add')}</button>
       </div>
 
       {tests.length === 0 && !loading ? (
-        <p style={{ color: 'var(--text-muted)', textAlign: 'center', padding: 40 }}>{t('admin.no_tests')}</p>
+        <p className="text-center text-muted-lg" style={{ padding: 40 }}>{t('admin.no_tests')}</p>
       ) : (
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <div className="table-wrapper">
+        <table className="table">
           <thead>
-            <tr style={{ borderBottom: '2px solid #ddd', textAlign: 'left' }}>
-              <th style={{ padding: '8px 12px' }}>{t('admin.name')}</th>
-              <th style={{ padding: '8px 12px' }}>{t('admin.category')}</th>
-              <th style={{ padding: '8px 12px' }}>{t('admin.unit')}</th>
-              <th style={{ padding: '8px 12px' }}>{t('admin.price')}</th>
-              <th style={{ padding: '8px 12px' }}>{t('admin.active')}</th>
-              <th style={{ padding: '8px 12px' }}>{t('admin.actions')}</th>
+            <tr>
+              <th>{t('admin.name')}</th>
+              <th>{t('admin.category')}</th>
+              <th>{t('admin.unit')}</th>
+              <th>{t('admin.price')}</th>
+              <th>{t('admin.active')}</th>
+              <th>{t('admin.actions')}</th>
             </tr>
           </thead>
           <tbody>
             {tests.map((test) => (
-              <tr key={test.id} style={{ borderBottom: '1px solid #eee', verticalAlign: 'top' }}>
+              <tr key={test.id}>
                 {editId === test.id ? (
                   <td colSpan={6} style={{ padding: 12 }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                    <div className="flex-col gap-md">
+                      <div className="flex-row gap-md flex-wrap">
                         <div style={{ flex: 1, minWidth: 150 }}>
-                          <label style={{ fontSize: 12, fontWeight: 600 }}>{t('admin.name')}</label>
-                          <input value={editData.name || ''} onChange={(e) => setEditData({ ...editData, name: e.target.value })} style={{ width: '100%', padding: '6px 10px', borderRadius: 4, border: '1px solid #ccc' }} />
+                          <label className="label-sm">{t('admin.name')}</label>
+                          <input value={editData.name || ''} onChange={(e) => setEditData({ ...editData, name: e.target.value })} className="form-input" />
                         </div>
                         <div style={{ flex: 1, minWidth: 120 }}>
-                          <label style={{ fontSize: 12, fontWeight: 600 }}>{t('admin.code')}</label>
-                          <input value={editData.code || ''} onChange={(e) => setEditData({ ...editData, code: e.target.value })} style={{ width: '100%', padding: '6px 10px', borderRadius: 4, border: '1px solid #ccc' }} />
+                          <label className="label-sm">{t('admin.code')}</label>
+                          <input value={editData.code || ''} onChange={(e) => setEditData({ ...editData, code: e.target.value })} className="form-input" />
                         </div>
                         <div style={{ flex: 1, minWidth: 120 }}>
-                          <label style={{ fontSize: 12, fontWeight: 600 }}>{t('admin.category')}</label>
-                          <input value={editData.category || ''} onChange={(e) => setEditData({ ...editData, category: e.target.value })} style={{ width: '100%', padding: '6px 10px', borderRadius: 4, border: '1px solid #ccc' }} />
+                          <label className="label-sm">{t('admin.category')}</label>
+                          <input value={editData.category || ''} onChange={(e) => setEditData({ ...editData, category: e.target.value })} className="form-input" />
                         </div>
                       </div>
                       <div>
-                        <label style={{ fontSize: 12, fontWeight: 600 }}>{t('admin.description')}</label>
-                        <textarea value={editData.description || ''} onChange={(e) => setEditData({ ...editData, description: e.target.value })} style={{ width: '100%', padding: '6px 10px', borderRadius: 4, border: '1px solid #ccc', minHeight: 60 }} />
+                        <label className="label-sm">{t('admin.description')}</label>
+                        <textarea value={editData.description || ''} onChange={(e) => setEditData({ ...editData, description: e.target.value })} className="form-input" style={{ minHeight: 60 }} />
                       </div>
-                      <div style={{ display: 'flex', gap: 12 }}>
+                      <div className="flex-row gap-md">
                         <div style={{ width: 100 }}>
-                          <label style={{ fontSize: 12, fontWeight: 600 }}>{t('admin.unit')}</label>
-                          <input value={editData.unit || ''} onChange={(e) => setEditData({ ...editData, unit: e.target.value })} style={{ width: '100%', padding: '6px 10px', borderRadius: 4, border: '1px solid #ccc' }} />
+                          <label className="label-sm">{t('admin.unit')}</label>
+                          <input value={editData.unit || ''} onChange={(e) => setEditData({ ...editData, unit: e.target.value })} className="form-input" />
                         </div>
                         <div style={{ width: 100 }}>
-                          <label style={{ fontSize: 12, fontWeight: 600 }}>{t('admin.price')}</label>
-                          <input type="number" value={editData.price ?? 0} onChange={(e) => setEditData({ ...editData, price: Number(e.target.value) })} style={{ width: '100%', padding: '6px 10px', borderRadius: 4, border: '1px solid #ccc' }} />
+                          <label className="label-sm">{t('admin.price')}</label>
+                          <input type="number" value={editData.price ?? 0} onChange={(e) => setEditData({ ...editData, price: Number(e.target.value) })} className="form-input" />
                         </div>
                         <div style={{ width: 100 }}>
-                          <label style={{ fontSize: 12, fontWeight: 600 }}>Ref. Min</label>
-                          <input type="number" value={editData.reference_min ?? ''} onChange={(e) => setEditData({ ...editData, reference_min: e.target.value ? Number(e.target.value) : null })} style={{ width: '100%', padding: '6px 10px', borderRadius: 4, border: '1px solid #ccc' }} />
+                          <label className="label-sm">Ref. Min</label>
+                          <input type="number" value={editData.reference_min ?? ''} onChange={(e) => setEditData({ ...editData, reference_min: e.target.value ? Number(e.target.value) : null })} className="form-input" />
                         </div>
                         <div style={{ width: 100 }}>
-                          <label style={{ fontSize: 12, fontWeight: 600 }}>Ref. Max</label>
-                          <input type="number" value={editData.reference_max ?? ''} onChange={(e) => setEditData({ ...editData, reference_max: e.target.value ? Number(e.target.value) : null })} style={{ width: '100%', padding: '6px 10px', borderRadius: 4, border: '1px solid #ccc' }} />
+                          <label className="label-sm">Ref. Max</label>
+                          <input type="number" value={editData.reference_max ?? ''} onChange={(e) => setEditData({ ...editData, reference_max: e.target.value ? Number(e.target.value) : null })} className="form-input" />
                         </div>
                       </div>
-                      <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                      <div className="flex-row gap-sm justify-end">
                         <button className="btn btn-primary" onClick={handleSave}>{t('admin.save')}</button>
                         <button className="btn btn-ghost" onClick={cancelEdit}>{t('admin.cancel')}</button>
                       </div>
@@ -190,19 +198,19 @@ export default function AdminLabTestsPage() {
                   </td>
                 ) : (
                   <>
-                    <td style={{ padding: '8px 12px' }}>{test.name}</td>
-                    <td style={{ padding: '8px 12px' }}>{test.category || '-'}</td>
-                    <td style={{ padding: '8px 12px' }}>{test.unit || '-'}</td>
-                    <td style={{ padding: '8px 12px' }}>${Number(test.price).toFixed(2)}</td>
-                    <td style={{ padding: '8px 12px' }}>
+                    <td>{test.name}</td>
+                    <td>{test.category || '-'}</td>
+                    <td>{test.unit || '-'}</td>
+                    <td>${Number(test.price).toFixed(2)}</td>
+                    <td>
                       <button className={`btn btn-sm ${test.active ? 'btn-primary' : 'btn-ghost'}`} onClick={() => toggleActive(test)}>
                         {test.active ? t('admin.yes') : t('admin.no')}
                       </button>
                     </td>
-                    <td style={{ padding: '8px 12px' }}>
-                      <div style={{ display: 'flex', gap: 8 }}>
+                    <td>
+                      <div className="flex-row gap-sm">
                         <button className="btn btn-ghost btn-sm" onClick={() => startEdit(test)}>{t('admin.edit')}</button>
-                        <button className="btn btn-ghost btn-sm" style={{ color: '#e74c3c' }} onClick={() => handleDelete(test.id)}>{t('admin.delete')}</button>
+                        <button className="btn btn-ghost btn-sm icon-danger" onClick={() => handleDelete(test.id)}>{t('admin.delete')}</button>
                       </div>
                     </td>
                   </>
@@ -211,6 +219,7 @@ export default function AdminLabTestsPage() {
             ))}
           </tbody>
         </table>
+        </div>
       )}
     </div>
   );

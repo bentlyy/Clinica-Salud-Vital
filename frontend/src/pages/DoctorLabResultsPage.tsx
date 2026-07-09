@@ -16,19 +16,19 @@ import { useNavigate } from 'react-router-dom';
 export default function DoctorLabResultsPage() {
   const { t } = useI18n();
   const navigate = useNavigate();
-  const [requests, setRequests] = useState([]);
+  const [requests, setRequests] = useState<unknown[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [view, setView] = useState('list');
-  const [selectedRequest, setSelectedRequest] = useState(null);
+  const [error, setError] = useState<string | null>(null);
+  const [view, setView] = useState<'list' | 'detail' | 'new'>('list');
+  const [selectedRequest, setSelectedRequest] = useState<Record<string, unknown> | null>(null);
 
   const [formData, setFormData] = useState({
     patient_id: '',
     notes: '',
     items: [{ lab_test_id: '', notes: '' }],
   });
-  const [labTests, setLabTests] = useState([]);
-  const [records, setRecords] = useState([]);
+  const [labTests, setLabTests] = useState<{ id: number; name: string; category?: string }[]>([]);
+  const [records, setRecords] = useState<{ id: number; patient_id?: number; patient_name?: string; patient_email?: string }[]>([]);
   const [saving, setSaving] = useState(false);
   const [resultValues, setResultValues] = useState<Record<string, string>>({});
   const [resultNotes, setResultNotes] = useState<Record<string, string>>({});
@@ -54,14 +54,14 @@ export default function DoctorLabResultsPage() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  const viewDetail = async (id) => {
+  const viewDetail = async (id: number) => {
     try {
       const res = await getLabRequestById(id);
       const req = res.data || res;
       setSelectedRequest(req);
       const values: Record<string, string> = {};
       const notes: Record<string, string> = {};
-      (req.items || []).forEach((item: any) => {
+      (req.items || []).forEach((item: { id: string; result_value?: string; result_notes?: string }) => {
         values[item.id] = item.result_value || '';
         notes[item.id] = item.result_notes || '';
       });
@@ -134,7 +134,7 @@ export default function DoctorLabResultsPage() {
       setSelectedRequest(req);
       const values: Record<string, string> = {};
       const notes: Record<string, string> = {};
-      (req.items || []).forEach((item: any) => {
+      (req.items || []).forEach((item: { id: string; result_value?: string; result_notes?: string }) => {
         values[item.id] = item.result_value || '';
         notes[item.id] = item.result_notes || '';
       });
@@ -147,15 +147,18 @@ export default function DoctorLabResultsPage() {
     }
   };
 
-  const getRequestTestNames = (r) => {
+  const getRequestTestNames = (r: { id: number; items?: Array<{ test_name?: string }> }) => {
     if (!r.items || r.items.length === 0) return `#${r.id}`;
     return r.items.map(i => i.test_name).filter(Boolean).join(', ');
   };
 
-  const getPatientName = (r) => r.patient_name || r.patient_email || `${t('lab_results.patient')} #${r.patient_id}`;
+  const getPatientName = (r: { patient_name?: string; patient_email?: string; patient_id?: number }) => r.patient_name || r.patient_email || `${t('lab_results.patient')} #${r.patient_id}`;
 
   if (view === 'detail' && selectedRequest) {
-    const r = selectedRequest;
+    const r = selectedRequest as {
+      id: number; items?: Array<{ id: string; lab_test_id?: number; test_name?: string; result_value?: string; result_notes?: string; reference_range?: string }>;
+      created_at?: string; notes?: string; patient_name?: string; patient_email?: string; patient_id?: number;
+    };
     return (
       <div className="page-container-wide">
         <div className="page-header">

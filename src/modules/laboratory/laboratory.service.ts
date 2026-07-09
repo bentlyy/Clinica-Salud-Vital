@@ -26,7 +26,7 @@ export interface LabRequestFilters {
   offset?: number;
 }
 
-export const getLabTests = async ({ category, active = true, areaId, limit = 50, offset = 0 }: LabTestFilters = {}) => {
+export const getLabTests = async ({ category, active = true, areaId, limit = 50, offset = 0 }: LabTestFilters = {}, tenantId?: string) => {
   let query = 'SELECT * FROM lab_tests WHERE 1=1';
   const params: any[] = [];
   let paramCount = 1;
@@ -44,6 +44,11 @@ export const getLabTests = async ({ category, active = true, areaId, limit = 50,
   if (areaId !== undefined) {
     query += ' AND lab_area_id = $' + paramCount++;
     params.push(areaId);
+  }
+
+  if (tenantId !== undefined) {
+    query += ' AND tenant_id = $' + paramCount++;
+    params.push(tenantId);
   }
 
   query += ' ORDER BY name LIMIT $' + paramCount++ + ' OFFSET $' + paramCount++;
@@ -183,7 +188,7 @@ export const getLabRequests = async ({ patient_id, doctor_id, status, start_date
            u.name AS patient_name,
            COALESCE(
              json_agg(
-               json_build_object('id', lri.id, 'lab_test_id', lri.lab_test_id, 'test_name', lt.name, 'status', lri.status, 'result_value', lri.result_value, 'result_notes', lri.result_notes, 'reference_range', lt.reference_range, 'unit', lt.unit)
+               json_build_object('id', lri.id, 'lab_test_id', lri.lab_test_id, 'test_name', lt.name, 'status', lri.status, 'result_value', lri.result_value, 'result_notes', lri.result_notes, 'reference_ranges', lt.reference_ranges, 'unit', lt.unit)
                ORDER BY lt.name
              ) FILTER (WHERE lri.id IS NOT NULL),
              '[]'::json
@@ -253,7 +258,7 @@ export const getLabRequestById = async (requestId: number | string, tenantId: st
            u.name AS patient_name,
            COALESCE(
              json_agg(
-               json_build_object('id', lri.id, 'lab_test_id', lri.lab_test_id, 'test_name', lt.name, 'status', lri.status, 'result_value', lri.result_value, 'result_notes', lri.result_notes, 'reference_range', lt.reference_range, 'unit', lt.unit)
+               json_build_object('id', lri.id, 'lab_test_id', lri.lab_test_id, 'test_name', lt.name, 'status', lri.status, 'result_value', lri.result_value, 'result_notes', lri.result_notes, 'reference_ranges', lt.reference_ranges, 'unit', lt.unit)
                ORDER BY lt.name
              ) FILTER (WHERE lri.id IS NOT NULL),
              '[]'::json

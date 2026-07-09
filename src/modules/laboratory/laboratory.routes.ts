@@ -18,6 +18,7 @@ import {
   getReagentsCtrl, createReagentCtrl, updateReagentStockCtrl,
   getNotificationsCtrl, acknowledgeNotificationCtrl,
   validateItemByTechCtrl, validateItemByDoctorCtrl, signItemCtrl, deliverItemCtrl, getItemHistoryCtrl,
+  handleLabEvents,
 } from './laboratory.controller.js';
 
 const router = Router();
@@ -31,14 +32,6 @@ router.post('/tests', authorize('admin', 'superadmin'), createLabTest);
 router.put('/tests/:id', authorize('admin', 'superadmin'), updateLabTest);
 router.delete('/tests/:id', authorize('admin', 'superadmin'), deleteLabTest);
 
-// === Lab Requests ===
-router.get('/', authorize('admin', 'superadmin', 'doctor', 'lab_technician', 'user', 'patient'), getLabRequests);
-router.get('/:id', authorize('admin', 'superadmin', 'doctor', 'lab_technician', 'user', 'patient'), validateZod(labRequestIdSchema, 'params'), getLabRequestById);
-router.post('/', authorize('admin', 'doctor'), validateZod(createLabRequestSchema), createLabRequest);
-router.patch('/:id/status', authorize('admin', 'superadmin', 'doctor', 'lab_technician'), validateZod(labRequestIdSchema, 'params'), updateLabRequestStatus);
-router.delete('/:id', authorize('admin', 'doctor'), validateZod(labRequestIdSchema, 'params'), cancelLabRequest);
-router.get('/:id/pdf', authorize('admin', 'superadmin', 'doctor', 'lab_technician', 'user', 'patient'), validateZod(labRequestIdSchema, 'params'), downloadLabOrderPDF);
-
 // === Lab Technician ===
 router.get('/lab/all', authorize('admin', 'superadmin', 'lab_technician'), getLabRequestsForLab);
 router.patch('/lab/items/:item_id/status', authorize('admin', 'superadmin', 'lab_technician'), updateLabRequestItemStatusCtrl);
@@ -47,7 +40,7 @@ router.patch('/lab/:id/lab-type', authorize('admin', 'superadmin', 'lab_technici
 // === Dashboard ===
 router.get('/dashboard', authorize('admin', 'superadmin', 'lab_technician'), getDashboardMetricsCtrl);
 router.get('/dashboard/area/:areaId', authorize('admin', 'superadmin', 'lab_technician'), getAreaDashboardCtrl);
-router.get('/dashboard/analytics', authorize('admin', 'superadmin'), getAnalyticsDataCtrl);
+router.get('/dashboard/analytics', authorize('admin', 'superadmin', 'lab_technician'), getAnalyticsDataCtrl);
 
 // === Sample Management ===
 router.get('/samples', authorize('admin', 'superadmin', 'lab_technician'), getSamplesCtrl);
@@ -59,7 +52,7 @@ router.patch('/samples/:id/assign', authorize('admin', 'superadmin', 'lab_techni
 router.patch('/samples/:id/qc', authorize('admin', 'superadmin', 'lab_technician'), recordSampleQCCtrl);
 router.patch('/samples/:id/reject', authorize('admin', 'superadmin', 'lab_technician'), rejectSampleCtrl);
 
-// === Results & Validation ===
+// === Items (Results & Validation) ===
 router.patch('/items/:item_id/result', authorize('admin', 'superadmin', 'doctor', 'lab_technician'), updateLabRequestItemResult);
 router.patch('/items/:item_id/validate-tech', authorize('admin', 'superadmin', 'lab_technician'), validateItemByTechCtrl);
 router.patch('/items/:item_id/validate-doctor', authorize('admin', 'superadmin', 'doctor'), validateItemByDoctorCtrl);
@@ -90,5 +83,15 @@ router.patch('/reagents/:id/stock', authorize('admin', 'superadmin'), updateReag
 router.get('/notifications', authorize('admin', 'superadmin', 'lab_technician'), getNotificationsCtrl);
 router.patch('/notifications/:id/ack', authorize('admin', 'superadmin', 'lab_technician'), acknowledgeNotificationCtrl);
 
-export default router;
+// === Real-time Events (SSE) ===
+router.get('/events', authorize('admin', 'superadmin', 'lab_technician'), handleLabEvents);
 
+// === Lab Requests (parameterized routes must be LAST) ===
+router.get('/', authorize('admin', 'superadmin', 'doctor', 'lab_technician', 'user', 'patient'), getLabRequests);
+router.get('/:id', authorize('admin', 'superadmin', 'doctor', 'lab_technician', 'user', 'patient'), validateZod(labRequestIdSchema, 'params'), getLabRequestById);
+router.post('/', authorize('admin', 'doctor'), validateZod(createLabRequestSchema), createLabRequest);
+router.patch('/:id/status', authorize('admin', 'superadmin', 'doctor', 'lab_technician'), validateZod(labRequestIdSchema, 'params'), updateLabRequestStatus);
+router.delete('/:id', authorize('admin', 'doctor'), validateZod(labRequestIdSchema, 'params'), cancelLabRequest);
+router.get('/:id/pdf', authorize('admin', 'superadmin', 'doctor', 'lab_technician', 'user', 'patient'), validateZod(labRequestIdSchema, 'params'), downloadLabOrderPDF);
+
+export default router;

@@ -1,248 +1,106 @@
 import api from './axios';
+import {
+  getLabTests as moduleGetLabTests,
+  createLabTest as moduleCreateLabTest,
+  updateLabTest as moduleUpdateLabTest,
+  deleteLabTest as moduleDeleteLabTest,
+  getLabRequests as moduleGetLabRequests,
+  getLabRequestById as moduleGetLabRequestById,
+  createLabRequest as moduleCreateLabRequest,
+  updateLabRequestStatus as moduleUpdateLabRequestStatus,
+  cancelLabRequest as moduleCancelLabRequest,
+  downloadLabOrderPdf as moduleDownloadLabOrderPdf,
+  updateLabRequestItemResult as moduleUpdateLabRequestItemResult,
+  getAllRequestsForLab as moduleGetAllRequestsForLab,
+  getDashboardMetrics as moduleGetDashboardMetrics,
+  getAreaDashboard as moduleGetAreaDashboard,
+  getAnalyticsData as moduleGetAnalyticsData,
+  getSamples as moduleGetSamples,
+  getSampleById as moduleGetSampleById,
+  createSample as moduleCreateSample,
+  receiveSample as moduleReceiveSample,
+  verifySample as moduleVerifySample,
+  assignSample as moduleAssignSample,
+  recordSampleQC as moduleRecordSampleQC,
+  rejectSample as moduleRejectSample,
+  getLabAreas as moduleGetLabAreas,
+  createLabArea as moduleCreateLabArea,
+  getQCRecords as moduleGetQCRecords,
+  createQCRecord as moduleCreateQCRecord,
+  getQCStatistics as moduleGetQCStatistics,
+  getEquipment as moduleGetEquipment,
+  createEquipment as moduleCreateEquipment,
+  updateEquipment as moduleUpdateEquipment,
+  getReagents as moduleGetReagents,
+  createReagent as moduleCreateReagent,
+  updateReagentStock as moduleUpdateReagentStock,
+  getNotifications as moduleGetNotifications,
+  acknowledgeNotification as moduleAcknowledgeNotification,
+} from '../modules/laboratory/api/laboratory.api';
 
-export interface LabTest {
-  id: string;
-  name: string;
-  category?: string;
-  unit?: string;
-  price?: number;
-  active?: boolean;
-  [key: string]: unknown;
-}
-
-export interface LabRequest {
-  id: string;
-  patient_id: string;
-  doctor_id: string;
-  clinical_record_id?: string;
-  status?: string;
-  notes?: string;
-  created_at?: string;
-  items?: LabRequestItem[];
-  [key: string]: unknown;
-}
-
-export interface LabRequestItem {
-  id: string;
-  lab_test_id: string;
-  test_name?: string;
-  result_value?: string;
-  result_notes?: string;
-  reference_range?: string;
-  unit?: string;
-  [key: string]: unknown;
-}
-
-export interface DashboardMetrics {
-  pending: number;
-  received: number;
-  in_progress: number;
-  pending_validation: number;
-  validated: number;
-  delivered: number;
-  rejected: number;
-  repeated: number;
-  urgent: number;
-  critical_unvalidated: number;
-  average_processing_time_min: number;
-  samples_processed_today: number;
-  productivity_per_hour: number;
-  sla_breached: number;
-  sla_at_risk: number;
-  [key: string]: unknown;
-}
+export type { LabTest, LabRequest, LabRequestItem, DashboardMetrics } from '../modules/laboratory/types';
 
 // === Test Catalog ===
-export const getLabTests = async (params: Record<string, unknown> = {}, options: Record<string, unknown> = {}): Promise<LabTest[]> => {
-  const res = await api.get('/laboratory/tests', { params, signal: options.signal as AbortSignal });
-  return res.data;
-};
-
-export const createLabTest = async (data: Record<string, unknown>, options: Record<string, unknown> = {}): Promise<LabTest> => {
-  const res = await api.post('/laboratory/tests', data, { signal: options.signal as AbortSignal });
-  return res.data;
-};
-
-export const updateLabTest = async (id: string, data: Record<string, unknown>, options: Record<string, unknown> = {}): Promise<LabTest> => {
-  const res = await api.put(`/laboratory/tests/${id}`, data, { signal: options.signal as AbortSignal });
-  return res.data;
-};
-
-export const deleteLabTest = async (id: string, options: Record<string, unknown> = {}): Promise<void> => {
-  await api.delete(`/laboratory/tests/${id}`, { signal: options.signal as AbortSignal });
-};
+export const getLabTests = (params?: Record<string, unknown>): ReturnType<typeof moduleGetLabTests> => moduleGetLabTests(params);
+export const createLabTest = (data: Record<string, unknown>): ReturnType<typeof moduleCreateLabTest> => moduleCreateLabTest(data);
+export const updateLabTest = (id: number, data: Record<string, unknown>): ReturnType<typeof moduleUpdateLabTest> => moduleUpdateLabTest(id, data);
+export const deleteLabTest = (id: number): ReturnType<typeof moduleDeleteLabTest> => moduleDeleteLabTest(id);
 
 // === Lab Requests ===
-export const getLabRequests = async (params: Record<string, unknown> = {}, options: Record<string, unknown> = {}): Promise<LabRequest[]> => {
-  const res = await api.get('/laboratory', { params, signal: options.signal as AbortSignal });
-  return res.data;
-};
+export const getLabRequests = (params?: Record<string, unknown>): ReturnType<typeof moduleGetLabRequests> => moduleGetLabRequests(params);
+export const getLabRequestById = (id: number): ReturnType<typeof moduleGetLabRequestById> => moduleGetLabRequestById(id);
+export const createLabRequest = (data: Record<string, unknown>): ReturnType<typeof moduleCreateLabRequest> => moduleCreateLabRequest(data as any);
+export const updateLabRequestStatus = (id: number, status: string): ReturnType<typeof moduleUpdateLabRequestStatus> => moduleUpdateLabRequestStatus(id, status as any);
+export const cancelLabRequest = (id: number): ReturnType<typeof moduleCancelLabRequest> => moduleCancelLabRequest(id);
+export const downloadLabOrderPdf = (id: number): ReturnType<typeof moduleDownloadLabOrderPdf> => moduleDownloadLabOrderPdf(id);
 
-export const getLabRequestById = async (id: string, options: Record<string, unknown> = {}): Promise<LabRequest> => {
-  const res = await api.get(`/laboratory/${id}`, { signal: options.signal as AbortSignal });
-  return res.data;
-};
-
-export const createLabRequest = async (data: Record<string, unknown>, options: Record<string, unknown> = {}): Promise<LabRequest> => {
-  const res = await api.post('/laboratory', data, { signal: options.signal as AbortSignal });
-  return res.data;
-};
-
-export const updateLabRequestStatus = async (id: string, status: string, options: Record<string, unknown> = {}): Promise<LabRequest> => {
-  const res = await api.patch(`/laboratory/${id}/status`, { status }, { signal: options.signal as AbortSignal });
-  return res.data;
-};
-
-export const cancelLabRequest = async (id: string, options: Record<string, unknown> = {}): Promise<void> => {
-  await api.delete(`/laboratory/${id}`, { signal: options.signal as AbortSignal });
-};
-
-export const downloadLabOrderPdf = async (id: string, options: Record<string, unknown> = {}): Promise<Blob> => {
-  const res = await api.get(`/laboratory/${id}/pdf`, { responseType: 'blob', signal: options.signal as AbortSignal });
-  return res.data;
-};
-
-// === Results ===
-export const updateLabResultItem = async (id: string, itemId: string, data: Record<string, unknown>, options: Record<string, unknown> = {}): Promise<LabRequest> => {
-  const res = await api.patch(`/laboratory/items/${itemId}/result`, data, { signal: options.signal as AbortSignal });
-  return res.data;
-};
+// === Results (alias for DoctorLabResultsPage compat) ===
+export const updateLabResultItem = (id: string, itemId: string, data: Record<string, unknown>): ReturnType<typeof moduleUpdateLabRequestItemResult> =>
+  moduleUpdateLabRequestItemResult(Number(itemId), data as any);
 
 // === Lab Technician ===
-export const getAllLabRequestsForLab = async (status?: string, options: Record<string, unknown> = {}): Promise<LabRequest[]> => {
-  const res = await api.get('/laboratory/lab/all', { params: status ? { status } : {}, signal: options.signal as AbortSignal });
-  return res.data;
-};
+export const getAllLabRequestsForLab = (status?: string): ReturnType<typeof moduleGetAllRequestsForLab> => moduleGetAllRequestsForLab(status);
 
 // === Dashboard ===
-export const getLabDashboardMetrics = async (options: Record<string, unknown> = {}): Promise<DashboardMetrics> => {
-  const res = await api.get('/laboratory/dashboard', { signal: options.signal as AbortSignal });
-  return res.data;
-};
-
-export const getLabAreaDashboard = async (areaId: number, options: Record<string, unknown> = {}): Promise<any> => {
-  const res = await api.get(`/laboratory/dashboard/area/${areaId}`, { signal: options.signal as AbortSignal });
-  return res.data;
-};
-
-export const getLabAnalytics = async (options: Record<string, unknown> = {}): Promise<any> => {
-  const res = await api.get('/laboratory/dashboard/analytics', { signal: options.signal as AbortSignal });
-  return res.data;
-};
+export const getLabDashboardMetrics = (): ReturnType<typeof moduleGetDashboardMetrics> => moduleGetDashboardMetrics();
+export const getLabAreaDashboard = (areaId: number): ReturnType<typeof moduleGetAreaDashboard> => moduleGetAreaDashboard(areaId);
+export const getLabAnalytics = (): ReturnType<typeof moduleGetAnalyticsData> => moduleGetAnalyticsData();
 
 // === Samples ===
-export const getLabSamples = async (params: Record<string, unknown> = {}, options: Record<string, unknown> = {}): Promise<any[]> => {
-  const res = await api.get('/laboratory/samples', { params, signal: options.signal as AbortSignal });
-  return res.data;
-};
-
-export const getLabSampleById = async (id: string, options: Record<string, unknown> = {}): Promise<any> => {
-  const res = await api.get(`/laboratory/samples/${id}`, { signal: options.signal as AbortSignal });
-  return res.data;
-};
-
-export const createLabSample = async (data: Record<string, unknown>, options: Record<string, unknown> = {}): Promise<any> => {
-  const res = await api.post('/laboratory/samples', data, { signal: options.signal as AbortSignal });
-  return res.data;
-};
-
-export const receiveLabSample = async (id: string, data: Record<string, unknown>, options: Record<string, unknown> = {}): Promise<any> => {
-  const res = await api.patch(`/laboratory/samples/${id}/receive`, data, { signal: options.signal as AbortSignal });
-  return res.data;
-};
-
-export const verifyLabSample = async (id: string, options: Record<string, unknown> = {}): Promise<any> => {
-  const res = await api.patch(`/laboratory/samples/${id}/verify`, {}, { signal: options.signal as AbortSignal });
-  return res.data;
-};
-
-export const assignLabSample = async (id: string, data: Record<string, unknown>, options: Record<string, unknown> = {}): Promise<any> => {
-  const res = await api.patch(`/laboratory/samples/${id}/assign`, data, { signal: options.signal as AbortSignal });
-  return res.data;
-};
-
-export const recordSampleQC = async (id: string, data: Record<string, unknown>, options: Record<string, unknown> = {}): Promise<any> => {
-  const res = await api.patch(`/laboratory/samples/${id}/qc`, data, { signal: options.signal as AbortSignal });
-  return res.data;
-};
-
-export const rejectLabSample = async (id: string, data: Record<string, unknown>, options: Record<string, unknown> = {}): Promise<any> => {
-  const res = await api.patch(`/laboratory/samples/${id}/reject`, data, { signal: options.signal as AbortSignal });
-  return res.data;
-};
+export const getLabSamples = (params?: Record<string, unknown>): ReturnType<typeof moduleGetSamples> => moduleGetSamples(params);
+export const getLabSampleById = (id: string): ReturnType<typeof moduleGetSampleById> => moduleGetSampleById(Number(id));
+export const createLabSample = (data: Record<string, unknown>): ReturnType<typeof moduleCreateSample> => moduleCreateSample(data);
+export const receiveLabSample = (id: string, data: Record<string, unknown>): ReturnType<typeof moduleReceiveSample> => moduleReceiveSample(Number(id), data);
+export const verifyLabSample = (id: string): ReturnType<typeof moduleVerifySample> => moduleVerifySample(Number(id));
+export const assignLabSample = (id: string, data: Record<string, unknown>): ReturnType<typeof moduleAssignSample> => moduleAssignSample(Number(id), data as any);
+export const recordSampleQC = (id: string, data: Record<string, unknown>): ReturnType<typeof moduleRecordSampleQC> => moduleRecordSampleQC(Number(id), data as any);
+export const rejectLabSample = (id: string, data: Record<string, unknown>): ReturnType<typeof moduleRejectSample> => moduleRejectSample(Number(id), data.rejection_reason || '');
 
 // === Areas ===
-export const getLabAreas = async (options: Record<string, unknown> = {}): Promise<any[]> => {
-  const res = await api.get('/laboratory/areas', { signal: options.signal as AbortSignal });
-  return res.data;
-};
-
-export const createLabArea = async (data: Record<string, unknown>, options: Record<string, unknown> = {}): Promise<any> => {
-  const res = await api.post('/laboratory/areas', data, { signal: options.signal as AbortSignal });
-  return res.data;
-};
+export const getLabAreas = (): ReturnType<typeof moduleGetLabAreas> => moduleGetLabAreas();
+export const createLabArea = (data: Record<string, unknown>): ReturnType<typeof moduleCreateLabArea> => moduleCreateLabArea(data);
 
 // === QC Records ===
-export const getLabQCRecords = async (options: Record<string, unknown> = {}): Promise<any[]> => {
-  const res = await api.get('/laboratory/qc', { signal: options.signal as AbortSignal });
-  return res.data;
-};
-
-export const createLabQCRecord = async (data: Record<string, unknown>, options: Record<string, unknown> = {}): Promise<any> => {
-  const res = await api.post('/laboratory/qc', data, { signal: options.signal as AbortSignal });
-  return res.data;
-};
-
-export const getLabQCStatistics = async (options: Record<string, unknown> = {}): Promise<any> => {
-  const res = await api.get('/laboratory/qc/statistics', { signal: options.signal as AbortSignal });
-  return res.data;
-};
+export const getLabQCRecords = (): ReturnType<typeof moduleGetQCRecords> => moduleGetQCRecords();
+export const createLabQCRecord = (data: Record<string, unknown>): ReturnType<typeof moduleCreateQCRecord> => moduleCreateQCRecord(data);
+export const getLabQCStatistics = (): ReturnType<typeof moduleGetQCStatistics> => moduleGetQCStatistics();
 
 // === Equipment ===
-export const getLabEquipment = async (options: Record<string, unknown> = {}): Promise<any[]> => {
-  const res = await api.get('/laboratory/equipment', { signal: options.signal as AbortSignal });
-  return res.data;
-};
-
-export const createLabEquipment = async (data: Record<string, unknown>, options: Record<string, unknown> = {}): Promise<any> => {
-  const res = await api.post('/laboratory/equipment', data, { signal: options.signal as AbortSignal });
-  return res.data;
-};
-
-export const updateLabEquipment = async (id: string, data: Record<string, unknown>, options: Record<string, unknown> = {}): Promise<any> => {
-  const res = await api.put(`/laboratory/equipment/${id}`, data, { signal: options.signal as AbortSignal });
-  return res.data;
-};
+export const getLabEquipment = (): ReturnType<typeof moduleGetEquipment> => moduleGetEquipment();
+export const createLabEquipment = (data: Record<string, unknown>): ReturnType<typeof moduleCreateEquipment> => moduleCreateEquipment(data);
+export const updateLabEquipment = (id: string, data: Record<string, unknown>): ReturnType<typeof moduleUpdateEquipment> => moduleUpdateEquipment(Number(id), data);
 
 // === Reagents ===
-export const getLabReagents = async (options: Record<string, unknown> = {}): Promise<any[]> => {
-  const res = await api.get('/laboratory/reagents', { signal: options.signal as AbortSignal });
-  return res.data;
-};
-
-export const createLabReagent = async (data: Record<string, unknown>, options: Record<string, unknown> = {}): Promise<any> => {
-  const res = await api.post('/laboratory/reagents', data, { signal: options.signal as AbortSignal });
-  return res.data;
-};
-
-export const updateLabReagentStock = async (id: string, data: Record<string, unknown>, options: Record<string, unknown> = {}): Promise<any> => {
-  const res = await api.patch(`/laboratory/reagents/${id}/stock`, data, { signal: options.signal as AbortSignal });
-  return res.data;
-};
+export const getLabReagents = (): ReturnType<typeof moduleGetReagents> => moduleGetReagents();
+export const createLabReagent = (data: Record<string, unknown>): ReturnType<typeof moduleCreateReagent> => moduleCreateReagent(data);
+export const updateLabReagentStock = (id: string, data: Record<string, unknown>): ReturnType<typeof moduleUpdateReagentStock> => moduleUpdateReagentStock(Number(id), data.quantity as number);
 
 // === Notifications ===
-export const getLabNotifications = async (options: Record<string, unknown> = {}): Promise<any[]> => {
-  const res = await api.get('/laboratory/notifications', { signal: options.signal as AbortSignal });
-  return res.data;
-};
+export const getLabNotifications = (): ReturnType<typeof moduleGetNotifications> => moduleGetNotifications();
+export const acknowledgeLabNotification = (id: string): ReturnType<typeof moduleAcknowledgeNotification> => moduleAcknowledgeNotification(Number(id));
 
-export const acknowledgeLabNotification = async (id: string, options: Record<string, unknown> = {}): Promise<any> => {
-  const res = await api.patch(`/laboratory/notifications/${id}/ack`, {}, { signal: options.signal as AbortSignal });
-  return res.data;
-};
-
-// === Clinical Records ===
-export const getLabResultsByClinicalRecord = async (clinicalRecordId: string, options: Record<string, unknown> = {}): Promise<LabRequest[]> => {
-  const res = await api.get(`/clinical-records/${clinicalRecordId}/lab-results`, { signal: options.signal as AbortSignal });
+// === Clinical Records (not in module API) ===
+export const getLabResultsByClinicalRecord = async (clinicalRecordId: string): Promise<any[]> => {
+  const res = await api.get(`/clinical-records/${clinicalRecordId}/lab-results`);
   return res.data;
 };

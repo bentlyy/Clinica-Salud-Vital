@@ -1,20 +1,36 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/useAuth';
 import { useI18n } from '../i18n/useI18n';
 import api from '../api/axios';
 import { getDoctors } from '../api/doctors';
 
-export default function HomePage() {
+interface Specialty {
+  id: number;
+  name: string;
+  icon: string;
+  description: string;
+  department: string;
+  procedures: string[];
+  color: string;
+}
+
+interface Doctor {
+  id: number;
+  name: string;
+  specialty: string;
+}
+
+const HomePage = React.memo(function HomePage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { t } = useI18n();
-  const [expandedSpecialty, setExpandedSpecialty] = useState(null);
+  const [expandedSpecialty, setExpandedSpecialty] = useState<number | null>(null);
   const [showReminderInfo, setShowReminderInfo] = useState(false);
   const [showSurgeryInfo, setShowSurgeryInfo] = useState(false);
   const [showLabInfo, setShowLabInfo] = useState(false);
-  const [specialties, setSpecialties] = useState([]);
-  const [doctorsBySpecialty, setDoctorsBySpecialty] = useState({});
+  const [specialties, setSpecialties] = useState<Specialty[]>([]);
+  const [doctorsBySpecialty, setDoctorsBySpecialty] = useState<Record<string, Doctor[]>>({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -34,7 +50,7 @@ export default function HomePage() {
     }).finally(() => setLoading(false));
   }, []);
 
-  const toggleSpecialty = (id) => {
+  const toggleSpecialty = (id: number) => {
     setExpandedSpecialty(expandedSpecialty === id ? null : id);
   };
 
@@ -369,4 +385,6 @@ export default function HomePage() {
       </footer>
     </div>
   );
-}
+});
+
+export default HomePage;

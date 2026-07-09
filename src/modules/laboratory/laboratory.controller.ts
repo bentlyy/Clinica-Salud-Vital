@@ -3,6 +3,7 @@ import * as doctorService from '../doctor/doctor.service.js';
 import { asyncHandler } from '../../middlewares/asyncHandler.middleware.js';
 import { NotFoundError, BadRequestError } from '../../utils/errors.js';
 import { getQuery, getQueryInt } from '../../shared/query.js';
+import { onLabEvent, emitLabEvent, LAB_EVENTS } from './lab-events.service.js';
 
 // === Test Catalog ===
 export const getLabTests = asyncHandler(async (req, res) => {
@@ -11,13 +12,14 @@ export const getLabTests = asyncHandler(async (req, res) => {
   const active = getQuery(req.query, 'active');
   const limit = getQueryInt(req.query, 'limit', 50);
   const offset = getQueryInt(req.query, 'offset', 0);
+  const tenantId = req.user!.role === 'superadmin' ? undefined : req.tenant_id;
   const tests = await laboratoryService.getLabTests({
     category,
     areaId,
-    active: active !== 'false',
+    active: active === 'all' ? undefined : active !== 'false',
     limit,
     offset,
-  });
+  }, tenantId);
   res.json(tests);
 });
 
@@ -100,18 +102,23 @@ export const createLabRequest = asyncHandler(async (req, res) => {
 
   const data = { ...req.body, doctor_id: doctor.id };
   const request = await laboratoryService.createLabRequest(data, req.tenant_id);
+  emitLabEvent(LAB_EVENTS.NEW_REQUEST, { id: request.id, request_number: request.request_number });
+  emitLabEvent(LAB_EVENTS.METRICS_UPDATE, {});
   res.status(201).json(request);
 });
 
 export const updateLabRequestStatus = asyncHandler(async (req, res) => {
   const { status } = req.body;
   const request = await laboratoryService.updateLabRequestStatus(Number(req.params.id), status, req.tenant_id);
+  emitLabEvent(LAB_EVENTS.STATUS_CHANGE, { id: request.id, status: request.status });
+  emitLabEvent(LAB_EVENTS.METRICS_UPDATE, {});
   res.json(request);
 });
 
 export const updateLabRequestItemResult = asyncHandler(async (req, res) => {
   const { result_value, result_notes } = req.body;
   const item = await laboratoryService.updateLabRequestItemResult(Number(req.params.item_id), result_value, req.tenant_id, result_notes);
+  emitLabEvent(LAB_EVENTS.METRICS_UPDATE, {});
   res.json(item);
 });
 
@@ -147,6 +154,8 @@ export const getLabRequestsForLab = asyncHandler(async (req, res) => {
 export const updateLabRequestItemStatusCtrl = asyncHandler(async (req, res) => {
   const { status } = req.body;
   const item = await laboratoryService.updateLabRequestItemStatus(Number(req.params.item_id), status, req.tenant_id);
+  emitLabEvent(LAB_EVENTS.STATUS_CHANGE, { item_id: Number(req.params.item_id), status });
+  emitLabEvent(LAB_EVENTS.METRICS_UPDATE, {});
   res.json(item);
 });
 
@@ -158,6 +167,8 @@ export const setLabTypeCtrl = asyncHandler(async (req, res) => {
 
 export const cancelLabRequest = asyncHandler(async (req, res) => {
   const result = await laboratoryService.cancelLabRequest(Number(req.params.id), req.user!.id, req.user!.role, req.tenant_id);
+  emitLabEvent(LAB_EVENTS.STATUS_CHANGE, { id: result.id, status: result.status });
+  emitLabEvent(LAB_EVENTS.METRICS_UPDATE, {});
   res.json(result);
 });
 
@@ -318,3 +329,33 @@ export const acknowledgeNotificationCtrl = asyncHandler(async (req, res) => {
   const notification = await laboratoryService.acknowledgeNotification(Number(req.params.id), req.user!.id, req.tenant_id);
   res.json(notification);
 });
+
+// === Real-time Events (SSE) ===
+export const handleLabEvents = (req: any, res: any) => {
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache',
+    'Connection': 'keep-alive',
+    'X-Accel-Buffering': 'no',
+  });
+
+  res.write(`event: connected\ndata: {}\n\n`);
+
+  const unsubs: (() => void)[] = [];
+  for (const [backendEvent, sseEvent] of Object.entries(LAB_EVENTS)) {
+    const listener = (data: unknown) => {
+      res.write(`event: ${sseEvent}\ndata: ${JSON.stringify(data)}\n\n`);
+    };
+    const off = onLabEvent(backendEvent, listener);
+    unsubs.push(off);
+  }
+
+  const heartbeat = setInterval(() => {
+    res.write(`:heartbeat\n\n`);
+  }, 30000);
+
+  req.on('close', () => {
+    clearInterval(heartbeat);
+    unsubs.forEach(fn => fn());
+  });
+};
