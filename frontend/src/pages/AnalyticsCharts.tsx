@@ -1,5 +1,7 @@
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, AreaChart, Area } from 'recharts';
 import { useI18n } from '../i18n/useI18n';
+import Card from '../components/ui/Card';
+import Badge from '../components/ui/Badge';
 
 const DAY_KEYS = {
   'Lunes': 'analytics.monday',
@@ -32,7 +34,7 @@ export function NoShowsPanel({ data, colors, chartRed, chartGreen }) {
         </div>
       </div>
 
-      <div className="analytics-card">
+      <Card padding="md" style={{ marginBottom: 20 }}>
         <h3>{t('analytics.no_shows_by_doctor')}</h3>
         <ResponsiveContainer width="100%" height={300}>
           <BarChart data={data}>
@@ -44,16 +46,16 @@ export function NoShowsPanel({ data, colors, chartRed, chartGreen }) {
             <Bar dataKey="noShows" fill={chartRed} name={t('analytics.no_shows')} />
           </BarChart>
         </ResponsiveContainer>
-      </div>
+      </Card>
 
-      <div className="analytics-card">
+      <Card padding="md" style={{ marginBottom: 20 }}>
         <h3>{t('analytics.no_show_prediction')}</h3>
-        <p style={{ fontSize: 14, color: 'var(--text-secondary)' }}>
+        <p style={{ fontSize: 14, color: 'var(--ds-text-secondary)' }}>
           {t('analytics.no_show_prediction_desc')}
         </p>
         <table style={{ width: '100%', marginTop: 12, fontSize: 13 }}>
           <thead>
-            <tr style={{ background: 'var(--bg-primary)' }}>
+            <tr style={{ background: 'var(--ds-bg-primary)' }}>
               <th style={{ padding: 10, textAlign: 'left' }}>{t('analytics.doctor')}</th>
               <th style={{ padding: 10, textAlign: 'right' }}>{t('analytics.risk')}</th>
               <th style={{ padding: 10, textAlign: 'right' }}>{t('analytics.recommendation')}</th>
@@ -61,7 +63,7 @@ export function NoShowsPanel({ data, colors, chartRed, chartGreen }) {
           </thead>
           <tbody>
             {data.slice(0, 5).map((d, i) => (
-              <tr key={i} style={{ borderBottom: '1px solid var(--border-light)' }}>
+              <tr key={i} style={{ borderBottom: '1px solid var(--ds-border)' }}>
                 <td style={{ padding: 10 }}>{d.doctor}</td>
                 <td style={{ padding: 10, textAlign: 'right', color: d.noShows / d.total > 0.15 ? chartRed : chartGreen }}>
                   {((d.noShows / d.total) * 100).toFixed(1)}%
@@ -73,7 +75,7 @@ export function NoShowsPanel({ data, colors, chartRed, chartGreen }) {
             ))}
           </tbody>
         </table>
-      </div>
+      </Card>
     </div>
   );
 }
@@ -82,7 +84,7 @@ export function DiagnosesPanel({ data, colors, chartGreen }) {
   const { t } = useI18n();
   return (
     <div>
-      <div className="analytics-card">
+      <Card padding="md" style={{ marginBottom: 20 }}>
         <h3>{t('analytics.top_diagnoses')}</h3>
         <ResponsiveContainer width="100%" height={300}>
           <BarChart data={data} layout="vertical">
@@ -93,20 +95,20 @@ export function DiagnosesPanel({ data, colors, chartGreen }) {
             <Bar dataKey="count" fill={colors[1]} name={t('analytics.cases')} />
           </BarChart>
         </ResponsiveContainer>
-      </div>
+      </Card>
 
-      <div className="analytics-card">
+      <Card padding="md" style={{ marginBottom: 20 }}>
         <h3>{t('analytics.top_diagnoses')}</h3>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
           {data.slice(0, 6).map((d, i) => (
-            <div key={i} style={{ background: 'var(--bg-primary)', padding: 12, borderRadius: 8, border: '1px solid var(--border-light)' }}>
+            <div key={i} style={{ background: 'var(--ds-bg-primary)', padding: 12, borderRadius: 8, border: '1px solid var(--ds-border)' }}>
               <div style={{ fontWeight: 600, fontSize: 13 }}>{d.diagnosis}</div>
-              <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{d.count} {t('analytics.cases')}</div>
+              <div style={{ fontSize: 12, color: 'var(--ds-text-secondary)' }}>{d.count} {t('analytics.cases')}</div>
               <div style={{ fontSize: 11, color: chartGreen, marginTop: 4 }}>CIE-10: {d.cie10 || t('analytics.na')}</div>
             </div>
           ))}
         </div>
-      </div>
+      </Card>
     </div>
   );
 }
@@ -132,7 +134,7 @@ export function DemandPanel({ data, colors, chartRed, chartGreen }) {
         </div>
       </div>
 
-      <div className="analytics-card">
+      <Card padding="md" style={{ marginBottom: 20 }}>
         <h3>{t('analytics.daily_demand')}</h3>
         <ResponsiveContainer width="100%" height={300}>
           <AreaChart data={data}>
@@ -143,16 +145,16 @@ export function DemandPanel({ data, colors, chartRed, chartGreen }) {
             <Area type="monotone" dataKey="bookings" stroke={colors[0]} fill={colors[0]} fillOpacity={0.3} name={t('analytics.appointments')} />
           </AreaChart>
         </ResponsiveContainer>
-      </div>
+      </Card>
 
-      <div className="analytics-card">
+      <Card padding="md" style={{ marginBottom: 20 }}>
         <h3>{t('analytics.demand_forecast')}</h3>
-        <p style={{ fontSize: 14, color: 'var(--text-secondary)' }}>
+        <p style={{ fontSize: 14, color: 'var(--ds-text-secondary)' }}>
           {t('analytics.demand_forecast_desc')}
         </p>
         <div style={{ marginTop: 12 }}>
           {data.slice(0, 7).map((d, i) => (
-            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--border-light)' }}>
+            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--ds-border)' }}>
               <span>{d.date}</span>
               <span style={{ fontWeight: 600 }}>{d.predicted || d.bookings} {t('analytics.appointments')}</span>
               <span style={{ color: d.predicted && d.predicted > d.bookings ? chartRed : chartGreen }}>
@@ -161,7 +163,7 @@ export function DemandPanel({ data, colors, chartRed, chartGreen }) {
             </div>
           ))}
         </div>
-      </div>
+      </Card>
     </div>
   );
 }
@@ -170,9 +172,9 @@ export function SchedulesPanel({ data, chartRed, chartGreen }) {
   const { t } = useI18n();
   return (
     <div>
-      <div className="analytics-card">
+      <Card padding="md" style={{ marginBottom: 20 }}>
         <h3>{t('analytics.best_slots')}</h3>
-        <p style={{ fontSize: 14, color: 'var(--text-secondary)', marginBottom: 16 }}>
+        <p style={{ fontSize: 14, color: 'var(--ds-text-secondary)', marginBottom: 16 }}>
           {t('analytics.best_slots_desc')}
         </p>
         <div style={{ display: 'grid', gap: 8 }}>
@@ -185,7 +187,7 @@ export function SchedulesPanel({ data, chartRed, chartGreen }) {
                   {['09:00', '10:00', '11:00', '14:00', '15:00', '16:00'].map((hour) => {
                     const hourData = dayData?.hours?.find(h => h.time === hour);
                     const score = hourData?.score ?? 50;
-                    const bg = score > 70 ? chartGreen : score > 40 ? 'var(--chart-warning)' : chartRed;
+                    const bg = score > 70 ? chartGreen : score > 40 ? 'var(--ds-warning-500)' : chartRed;
                     return (
                       <div key={hour} style={{ flex: 1, padding: 8, background: bg, borderRadius: 4, textAlign: 'center', color: 'white', fontSize: 11 }}>
                         {hour}<br />{score}%
@@ -197,13 +199,13 @@ export function SchedulesPanel({ data, chartRed, chartGreen }) {
             );
           })}
         </div>
-      </div>
+      </Card>
 
-      <div className="analytics-card">
+      <Card padding="md" style={{ marginBottom: 20 }}>
         <h3>{t('analytics.schedule_recommendations')}</h3>
         <table style={{ width: '100%', fontSize: 13 }}>
           <thead>
-            <tr style={{ background: 'var(--bg-primary)' }}>
+            <tr style={{ background: 'var(--ds-bg-primary)' }}>
               <th style={{ padding: 10, textAlign: 'left' }}>{t('analytics.day')}</th>
               <th style={{ padding: 10, textAlign: 'left' }}>{t('analytics.best_time')}</th>
               <th style={{ padding: 10, textAlign: 'left' }}>{t('analytics.occupancy')}</th>
@@ -211,15 +213,15 @@ export function SchedulesPanel({ data, chartRed, chartGreen }) {
           </thead>
           <tbody>
             {data.slice(0, 5).map((d, i) => (
-              <tr key={i} style={{ borderBottom: '1px solid var(--border-light)' }}>
+              <tr key={i} style={{ borderBottom: '1px solid var(--ds-border)' }}>
                 <td style={{ padding: 10 }}>{d.day}</td>
                 <td style={{ padding: 10 }}>{d.bestTime}</td>
                 <td style={{ padding: 10 }}>
                   <span style={{
                     padding: '4px 8px',
                     borderRadius: 4,
-                    background: d.occupancy > 70 ? 'var(--danger-50)' : 'var(--primary-50)',
-                    color: d.occupancy > 70 ? 'var(--danger-600)' : 'var(--primary-700)'
+                    background: d.occupancy > 70 ? 'var(--ds-danger-50)' : 'var(--ds-primary-50)',
+                    color: d.occupancy > 70 ? 'var(--ds-danger-600)' : 'var(--ds-primary-700)'
                   }}>
                     {d.occupancy}%
                   </span>
@@ -228,7 +230,7 @@ export function SchedulesPanel({ data, chartRed, chartGreen }) {
             ))}
           </tbody>
         </table>
-      </div>
+      </Card>
     </div>
   );
 }
@@ -254,13 +256,13 @@ export function VitalsPanel({ data, chartRed, chartGreen }) {
       </div>
 
       {anomalies.length > 0 && (
-        <div className="analytics-card">
+        <Card padding="md" style={{ marginBottom: 20 }}>
           <h3>{t('analytics.vital_anomalies')}</h3>
-          <p style={{ fontSize: 14, color: 'var(--text-secondary)' }}>
+          <p style={{ fontSize: 14, color: 'var(--ds-text-secondary)' }}>
             {t('analytics.vital_anomalies_desc')}
           </p>
           {anomalies.map((d, i) => (
-            <div key={i} className="alert-card danger" style={{ marginTop: 12 }}>
+            <Card key={i} padding="md" variant="subtle" style={{ marginTop: 12, borderLeft: '4px solid var(--ds-danger-500)' }}>
               <strong>{t('analytics.patient_id')}: {d.patientId}</strong>
               <div style={{ marginTop: 8, fontSize: 13 }}>
                 <div>{t('analytics.date')}: {d.date}</div>
@@ -268,12 +270,12 @@ export function VitalsPanel({ data, chartRed, chartGreen }) {
                 <div>{t('analytics.heart_rate')}: {d.heartRate} {t('analytics.bpm')} {d.heartRateAnomaly && <span style={{ color: chartRed }}>⚠️</span>}</div>
                 <div>{t('analytics.temperature')}: {d.temperature}°C {d.tempAnomaly && <span style={{ color: chartRed }}>⚠️</span>}</div>
               </div>
-            </div>
+            </Card>
           ))}
-        </div>
+        </Card>
       )}
 
-      <div className="analytics-card">
+      <Card padding="md" style={{ marginBottom: 20 }}>
         <h3>{t('analytics.vital_distribution')}</h3>
         <ResponsiveContainer width="100%" height={250}>
           <PieChart>
@@ -295,7 +297,7 @@ export function VitalsPanel({ data, chartRed, chartGreen }) {
             <Tooltip />
           </PieChart>
         </ResponsiveContainer>
-      </div>
+      </Card>
     </div>
   );
 }

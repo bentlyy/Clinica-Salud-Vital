@@ -4,6 +4,11 @@ import api from '../api/axios';
 import { extractList } from '../utils/extract-list';
 import Combobox from '../components/Combobox';
 import { useI18n } from '../i18n/useI18n';
+import Button from '../components/ui/Button';
+import Alert from '../components/ui/Alert';
+import { PageContainer, PageHeader } from '../components/ui/PageContainer';
+import Card from '../components/ui/Card';
+import Badge from '../components/ui/Badge';
 
 const ROLE_CONFIG = {
   admin: { icon: '🛡️', color: '#6c5ce7' },
@@ -47,43 +52,43 @@ function InviteTab({ t, onSent }) {
 
   return (
     <form onSubmit={handleSubmit}>
-      {error && <div className="alert alert-error">{error}</div>}
+      {error && <Alert variant="error">{error}</Alert>}
 
       <div className="form-group">
         <label className="form-label">{t('manage_staff.user_type')}</label>
-        <div style={{ display: 'flex', gap: 0, marginBottom: 8, background: 'var(--gray-100)', borderRadius: 'var(--radius-sm)', padding: 4 }}>
+        <div style={{ display: 'flex', gap: 0, marginBottom: 8, background: 'var(--ds-gray-100)', borderRadius: 'var(--ds-radius-sm)', padding: 4 }}>
           <button type="button" onClick={() => setRole('patient')} style={{
             flex: 1, padding: '10px 16px', border: 'none', borderRadius: 6,
-            background: role === 'patient' ? 'var(--bg-secondary)' : 'transparent',
-            color: role === 'patient' ? 'var(--accent-500)' : 'var(--text-secondary)',
+            background: role === 'patient' ? 'var(--ds-bg-secondary)' : 'transparent',
+            color: role === 'patient' ? 'var(--ds-primary-500)' : 'var(--ds-text-secondary)',
             fontWeight: role === 'patient' ? 600 : 400, cursor: 'pointer', fontSize: '0.9rem',
-            transition: 'var(--transition)', boxShadow: role === 'patient' ? 'var(--shadow-sm)' : 'none',
+            transition: 'var(--ds-transition)', boxShadow: role === 'patient' ? 'var(--ds-shadow-sm)' : 'none',
           }}>🧑‍⚕️ {t('manage_staff.patient_option')}</button>
           <button type="button" onClick={() => setRole('doctor')} style={{
             flex: 1, padding: '10px 16px', border: 'none', borderRadius: 6,
-            background: role === 'doctor' ? 'var(--bg-secondary)' : 'transparent',
-            color: role === 'doctor' ? 'var(--accent-500)' : 'var(--text-secondary)',
+            background: role === 'doctor' ? 'var(--ds-bg-secondary)' : 'transparent',
+            color: role === 'doctor' ? 'var(--ds-primary-500)' : 'var(--ds-text-secondary)',
             fontWeight: role === 'doctor' ? 600 : 400, cursor: 'pointer', fontSize: '0.9rem',
-            transition: 'var(--transition)', boxShadow: role === 'doctor' ? 'var(--shadow-sm)' : 'none',
+            transition: 'var(--ds-transition)', boxShadow: role === 'doctor' ? 'var(--ds-shadow-sm)' : 'none',
           }}>🩺 {t('manage_staff.doctor_option')}</button>
           <button type="button" onClick={() => setRole('lab_technician')} style={{
             flex: 1, padding: '10px 16px', border: 'none', borderRadius: 6,
-            background: role === 'lab_technician' ? 'var(--bg-secondary)' : 'transparent',
-            color: role === 'lab_technician' ? 'var(--accent-500)' : 'var(--text-secondary)',
+            background: role === 'lab_technician' ? 'var(--ds-bg-secondary)' : 'transparent',
+            color: role === 'lab_technician' ? 'var(--ds-primary-500)' : 'var(--ds-text-secondary)',
             fontWeight: role === 'lab_technician' ? 600 : 400, cursor: 'pointer', fontSize: '0.9rem',
-            transition: 'var(--transition)', boxShadow: role === 'lab_technician' ? 'var(--shadow-sm)' : 'none',
+            transition: 'var(--ds-transition)', boxShadow: role === 'lab_technician' ? 'var(--ds-shadow-sm)' : 'none',
           }}>🔬 {t('manage_staff.lab_technician_option')}</button>
         </div>
       </div>
 
       <div className="form-group">
         <label className="form-label">{t('manage_staff.email_label')} <span className="required">*</span></label>
-        <input type="email" required value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder={t('manage_staff.email_placeholder')} className="form-input" />
+        <input type="email" required value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder={t('manage_staff.email_placeholder')} className="ds-input" />
       </div>
 
       <div className="form-group">
         <label className="form-label">{t('manage_staff.full_name')}</label>
-        <input type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder={role === 'doctor' ? t('manage_staff.doctor_name_placeholder') : t('manage_staff.patient_name_placeholder')} className="form-input" />
+        <input type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder={role === 'doctor' ? t('manage_staff.doctor_name_placeholder') : t('manage_staff.patient_name_placeholder')} className="ds-input" />
         <p className="form-hint">{t('manage_staff.name_hint')}</p>
       </div>
 
@@ -99,9 +104,9 @@ function InviteTab({ t, onSent }) {
           {t('manage_staff.lab_technician_description')}
         </p>
       )}
-      <button type="submit" disabled={submitting} className="btn btn-primary btn-block btn-lg" style={{ marginTop: role === 'doctor' || role === 'lab_technician' ? 0 : 8 }}>
+      <Button variant="primary" type="submit" disabled={submitting} size="lg" style={{ width: '100%', marginTop: role === 'doctor' || role === 'lab_technician' ? 0 : 8 }}>
         {submitting ? t('manage_staff.sending') : t('manage_staff.send_invite')}
-      </button>
+      </Button>
     </form>
   );
 }
@@ -169,7 +174,7 @@ function RoleCard({ role, users, onToggle, toggling, t }) {
   return (
     <div style={{
       display: 'flex', flexDirection: 'column', minHeight: 0,
-      borderRadius: 'var(--radius-sm)',
+      borderRadius: 'var(--ds-radius-sm)',
       border: `1px solid ${cfg.color}20`,
       background: `linear-gradient(180deg, ${cfg.color}08, transparent)`,
       overflow: 'hidden',
@@ -190,7 +195,7 @@ function RoleCard({ role, users, onToggle, toggling, t }) {
       </div>
       <div style={{ flex: 1, overflowY: 'auto', padding: '8px', minHeight: 0 }}>
         {users.length === 0 ? (
-          <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textAlign: 'center', padding: '24px 8px' }}>
+          <p style={{ fontSize: '0.85rem', color: 'var(--ds-text-tertiary)', textAlign: 'center', padding: '24px 8px' }}>
             {t('manage_staff.no_users_registered', { role: roleLabel.toLowerCase() })}
           </p>
         ) : (
@@ -252,22 +257,22 @@ function UsersTab({ t }) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: 560 }}>
-      {error && <div className="alert alert-error" style={{ marginBottom: 8 }}>{error}</div>}
+      {error && <Alert variant="error" style={{ marginBottom: 8 }}>{error}</Alert>}
 
       <div style={{ position: 'relative', marginBottom: 12 }}>
-        <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', fontSize: '0.85rem' }}>🔍</span>
+        <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--ds-text-tertiary)', fontSize: '0.85rem' }}>🔍</span>
         <input
           type="text" value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder={t('manage_staff.search')}
-          className="form-input"
+          className="ds-input"
           style={{ paddingLeft: 34, fontSize: '0.9rem' }}
         />
       </div>
 
       {loading ? (
         <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ textAlign: 'center', color: 'var(--text-muted)' }}>
+          <div style={{ textAlign: 'center', color: 'var(--ds-text-tertiary)' }}>
             <div style={{ fontSize: '2rem', marginBottom: 8 }}>⏳</div>
             <div>{t('manage_staff.loading')}</div>
           </div>
@@ -302,63 +307,63 @@ export default function RegisterDoctorPage() {
 
   if (sent) {
     return (
-      <div className="page-container" style={{ maxWidth: 520 }}>
-        <div className="card card-accent" style={{ padding: 40, textAlign: 'center' }}>
+      <PageContainer maxWidth="sm">
+        <Card padding="lg" style={{ textAlign: 'center' }}>
           <div style={{ fontSize: 48, marginBottom: 16 }}>📧</div>
-          <h2 style={{ marginBottom: 8, color: 'var(--primary-700)' }}>{t('manage_staff.invitation_sent')}</h2>
-          <p style={{ color: 'var(--text-secondary)', marginBottom: 24 }}>
+          <h2 style={{ marginBottom: 8, color: 'var(--ds-primary-700)' }}>{t('manage_staff.invitation_sent')}</h2>
+          <p style={{ color: 'var(--ds-text-secondary)', marginBottom: 24 }}>
             {t('manage_staff.invitation_sent_before')} <strong>{sent}</strong> {t('manage_staff.invitation_sent_after')}
           </p>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
-            <button onClick={() => setSent(null)} className="btn btn-primary">
+            <Button variant="primary" onClick={() => setSent(null)}>
               {t('manage_staff.invite_another')}
-            </button>
-            <button onClick={() => navigate('/admin/tenant')} className="btn btn-ghost">{t('manage_staff.back_to_panel')}</button>
+            </Button>
+            <Button variant="ghost" onClick={() => navigate('/admin/tenant')}>{t('manage_staff.back_to_panel')}</Button>
           </div>
-        </div>
-      </div>
+        </Card>
+      </PageContainer>
     );
   }
 
   return (
-    <div className="page-container" style={{ maxWidth: 960 }}>
+    <PageContainer maxWidth="xl">
       <div style={{ marginBottom: 24, textAlign: 'center' }}>
         <h1 style={{ marginBottom: 8 }}>{t('manage_staff.title')}</h1>
-        <p style={{ color: 'var(--text-secondary)' }}>{t('manage_staff.subtitle')}</p>
+        <p style={{ color: 'var(--ds-text-secondary)' }}>{t('manage_staff.subtitle')}</p>
       </div>
 
-      <div style={{ display: 'flex', gap: 0, marginBottom: 24, background: 'var(--gray-100)', borderRadius: 'var(--radius-sm)', padding: 4 }}>
+      <div style={{ display: 'flex', gap: 0, marginBottom: 24, background: 'var(--ds-gray-100)', borderRadius: 'var(--ds-radius-sm)', padding: 4 }}>
         <button
           onClick={() => setTab('users')}
           style={{
             flex: 1, padding: '10px 16px', border: 'none', borderRadius: 6,
-            background: tab === 'users' ? 'var(--bg-secondary)' : 'transparent',
-            color: tab === 'users' ? 'var(--accent-500)' : 'var(--text-secondary)',
+            background: tab === 'users' ? 'var(--ds-bg-secondary)' : 'transparent',
+            color: tab === 'users' ? 'var(--ds-primary-500)' : 'var(--ds-text-secondary)',
             fontWeight: tab === 'users' ? 600 : 400, cursor: 'pointer', fontSize: '0.9rem',
-            transition: 'var(--transition)', boxShadow: tab === 'users' ? 'var(--shadow-sm)' : 'none',
+            transition: 'var(--ds-transition)', boxShadow: tab === 'users' ? 'var(--ds-shadow-sm)' : 'none',
           }}
         >👥 {t('manage_staff.users_tab')}</button>
         <button
           onClick={() => setTab('invite')}
           style={{
             flex: 1, padding: '10px 16px', border: 'none', borderRadius: 6,
-            background: tab === 'invite' ? 'var(--bg-secondary)' : 'transparent',
-            color: tab === 'invite' ? 'var(--accent-500)' : 'var(--text-secondary)',
+            background: tab === 'invite' ? 'var(--ds-bg-secondary)' : 'transparent',
+            color: tab === 'invite' ? 'var(--ds-primary-500)' : 'var(--ds-text-secondary)',
             fontWeight: tab === 'invite' ? 600 : 400, cursor: 'pointer', fontSize: '0.9rem',
-            transition: 'var(--transition)', boxShadow: tab === 'invite' ? 'var(--shadow-sm)' : 'none',
+            transition: 'var(--ds-transition)', boxShadow: tab === 'invite' ? 'var(--ds-shadow-sm)' : 'none',
           }}
         >📨 {t('manage_staff.invite_tab')}</button>
       </div>
 
-      <div className="card" style={{ padding: 24 }}>
+      <Card padding="md">
         {tab === 'invite' ? <InviteTab t={t} onSent={setSent} /> : <UsersTab t={t} />}
-      </div>
+      </Card>
 
-      <div className="card card-subtle" style={{ marginTop: 20, padding: 20 }}>
-        <p style={{ fontSize: 14, color: 'var(--text-muted)', margin: 0 }}>
+      <Card variant="subtle" padding="md" style={{ marginTop: 20 }}>
+        <p style={{ fontSize: 14, color: 'var(--ds-text-tertiary)', margin: 0 }}>
           {t('manage_staff.deactivate_warning')}
         </p>
-      </div>
-    </div>
+      </Card>
+    </PageContainer>
   );
 }

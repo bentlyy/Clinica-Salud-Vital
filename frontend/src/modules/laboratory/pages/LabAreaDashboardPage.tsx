@@ -10,6 +10,9 @@ import DashboardWorkQueue from '../components/dashboard/DashboardWorkQueue';
 import KanbanBoard from '../components/kanban/KanbanBoard';
 import LabCard from '../components/shared/LabCard';
 import type { LabRequest, LabRequestStatus } from '../types';
+import { PageContainer, PageHeader } from '../../../components/ui/PageContainer';
+import Button from '../../../components/ui/Button';
+import Card from '../../../components/ui/Card';
 
 export default function LabAreaDashboardPage() {
   const { areaId } = useParams<{ areaId: string }>();
@@ -53,11 +56,11 @@ export default function LabAreaDashboardPage() {
   }, [setRequests]);
 
   return (
-    <div className="page-container-wide">
+    <PageContainer maxWidth="xl">
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
-        <button onClick={() => navigate('/lab')} className="btn btn-ghost btn-sm">
+        <Button variant="ghost" size="sm" onClick={() => navigate('/lab')}>
           ← Volver al dashboard general
-        </button>
+        </Button>
         {area && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <span style={{
@@ -70,14 +73,15 @@ export default function LabAreaDashboardPage() {
         <div style={{ flex: 1 }} />
         <div style={{ display: 'flex', gap: 4 }}>
           {(['dashboard', 'kanban', 'list'] as const).map((mode) => (
-            <button
+            <Button
               key={mode}
+              variant={viewMode === mode ? 'primary' : 'ghost'}
+              size="sm"
               onClick={() => setViewMode(mode)}
-              className={`btn btn-sm ${viewMode === mode ? 'btn-primary' : 'btn-ghost'}`}
               style={{ fontSize: 12 }}
             >
               {mode === 'dashboard' ? '📊 Dashboard' : mode === 'kanban' ? '📋 Kanban' : '📄 Lista'}
-            </button>
+            </Button>
           ))}
         </div>
       </div>
@@ -88,24 +92,23 @@ export default function LabAreaDashboardPage() {
         </div>
       )}
 
-      <div className="grid grid-2" style={{ gap: 14, marginBottom: 24 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 24 }}>
         {area && (
-          <div className="card" style={{
-            padding: '16px 20px',
+          <Card padding="md" style={{
             borderLeft: `4px solid ${area.color}`,
           }}>
             <h3 style={{ fontSize: 14, fontWeight: 600, marginBottom: 8 }}>🔬 Información del área</h3>
             <p style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{area.description}</p>
-          </div>
+          </Card>
         )}
-        <div className="card" style={{ padding: '16px 20px' }}>
+        <Card padding="md">
           <h3 style={{ fontSize: 14, fontWeight: 600, marginBottom: 8 }}>⚡ Acciones rápidas</h3>
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-            <button className="btn btn-sm" style={{ background: '#22c55e20', color: '#16a34a' }}>Validar todo</button>
-            <button className="btn btn-sm" style={{ background: '#3b82f620', color: '#2563eb' }}>Imprimir lote</button>
-            <button className="btn btn-sm" style={{ background: '#f59e0b20', color: '#d97706' }}>Reporte QC</button>
+            <Button size="sm" style={{ background: '#22c55e20', color: '#16a34a' }}>Validar todo</Button>
+            <Button size="sm" style={{ background: '#3b82f620', color: '#2563eb' }}>Imprimir lote</Button>
+            <Button size="sm" style={{ background: '#f59e0b20', color: '#d97706' }}>Reporte QC</Button>
           </div>
-        </div>
+        </Card>
       </div>
 
       {viewMode === 'dashboard' && (
@@ -128,7 +131,7 @@ export default function LabAreaDashboardPage() {
       {viewMode === 'list' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {loading ? (
-            <p style={{ color: 'var(--text-muted)' }}>Cargando...</p>
+            <p style={{ color: 'var(--ds-text-tertiary)' }}>Cargando...</p>
           ) : areaRequests.length === 0 ? (
             <div className="empty-state">
               <div className="empty-state-icon">🔬</div>
@@ -141,6 +144,6 @@ export default function LabAreaDashboardPage() {
           )}
         </div>
       )}
-    </div>
+    </PageContainer>
   );
 }

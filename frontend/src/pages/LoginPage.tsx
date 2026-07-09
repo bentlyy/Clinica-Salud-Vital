@@ -5,6 +5,9 @@ import { useI18n } from '../i18n/useI18n';
 import ReCAPTCHA from 'react-google-recaptcha';
 import { isAxiosError } from 'axios';
 import { sanitizeError } from '../utils/error-sanitizer';
+import Button from '../components/ui/Button';
+import { PageContainer } from '../components/ui/PageContainer';
+import Alert from '../components/ui/Alert';
 
 const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
 const hasCaptcha = Boolean(RECAPTCHA_SITE_KEY);
@@ -74,14 +77,14 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="page-container login-page-container">
-      <div className="card login-card">
+    <PageContainer maxWidth="sm">
+      <div className="ds-card" style={{ padding: 40 }}>
         <div className="login-header">
           <h2 className="login-title">{t('auth.login_title')}</h2>
           <p className="login-subtitle">{t('auth.login_subtitle')}</p>
         </div>
 
-        {error && <div className="alert alert-error">{error}</div>}
+        {error && <Alert variant="error">{error}</Alert>}
 
         <form onSubmit={handleSubmit}>
           <div className="form-group">
@@ -93,7 +96,7 @@ export default function LoginPage() {
               value={form.email}
               onChange={(e) => setForm({ ...form, email: e.target.value })}
               placeholder={t('auth.email_placeholder')}
-              className="form-input"
+              className="ds-input"
             />
           </div>
 
@@ -106,7 +109,7 @@ export default function LoginPage() {
               value={form.password}
               onChange={(e) => setForm({ ...form, password: e.target.value })}
               placeholder={t('auth.password_placeholder')}
-              className="form-input"
+              className="ds-input"
             />
           </div>
 
@@ -120,7 +123,7 @@ export default function LoginPage() {
                 value={form.totp_token}
                 onChange={(e) => setForm({ ...form, totp_token: e.target.value })}
                 placeholder={t('auth.totp_placeholder')}
-                className="form-input"
+                className="ds-input"
                 maxLength={6}
                 autoFocus
               />
@@ -136,9 +139,9 @@ export default function LoginPage() {
             </div>
           )}
 
-          <button type="submit" disabled={submitting} className="btn btn-primary btn-block btn-lg login-submit-btn">
+          <Button variant="primary" type="submit" disabled={submitting} size="lg" style={{ width: '100%', marginTop: 8 }}>
             {submitting ? t('auth.logging_in') : needs2FA ? t('auth.verify_2fa') : t('auth.login_button')}
-          </button>
+          </Button>
         </form>
 
         <div className="login-footer">
@@ -149,6 +152,6 @@ export default function LoginPage() {
           )}
         </div>
       </div>
-    </div>
+    </PageContainer>
   );
 }

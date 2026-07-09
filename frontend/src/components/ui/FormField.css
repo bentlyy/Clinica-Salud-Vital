@@ -1,0 +1,81 @@
+.ds-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-spacing-1);
+  margin-bottom: var(--ds-spacing-4);
+}
+
+.ds-field__label {
+  font-size: var(--ds-text-sm);
+  font-weight: var(--ds-font-semibold);
+  color: var(--ds-text-primary);
+}
+
+.ds-field__required {
+  color: var(--ds-danger-500);
+  margin-left: 2px;
+}
+
+.ds-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1.5px solid var(--ds-border);
+  border-radius: var(--ds-radius-md);
+  font-size: var(--ds-text-base);
+  font-family: var(--ds-font-sans);
+  color: var(--ds-text-primary);
+  background: var(--ds-surface);
+  transition: var(--ds-transition);
+  line-height: 1.5;
+  height: 38px;
+}
+
+.ds-input:focus {
+  outline: none;
+  border-color: var(--ds-primary-500);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ds-primary-500) 15%, transparent);
+}
+
+.ds-input::placeholder {
+  color: var(--ds-text-tertiary);
+}
+
+.ds-input:disabled {
+  background: var(--ds-surface-hover);
+  color: var(--ds-text-tertiary);
+  cursor: not-allowed;
+}
+
+.ds-input--error {
+  border-color: var(--ds-danger-500);
+}
+
+.ds-input--error:focus {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ds-danger-500) 15%, transparent);
+}
+
+textarea.ds-input {
+  height: auto;
+  min-height: 80px;
+  resize: vertical;
+}
+
+.ds-select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748B' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 36px;
+}
+
+.ds-field__error {
+  font-size: var(--ds-text-xs);
+  color: var(--ds-danger-500);
+  line-height: 1.4;
+}
+
+.ds-field__hint {
+  font-size: var(--ds-text-xs);
+  color: var(--ds-text-tertiary);
+  line-height: 1.4;
+}

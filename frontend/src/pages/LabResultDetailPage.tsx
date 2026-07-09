@@ -6,6 +6,9 @@ import { useAuth } from '../context/useAuth';
 import { getLabIcon, getLabColor } from '../components/lab-icons/LabIcons';
 import LoadingState from '../components/LoadingState';
 import ErrorState from '../components/ErrorState';
+import Button from '../components/ui/Button';
+import Card from '../components/ui/Card';
+import { PageContainer, PageHeader } from '../components/ui/PageContainer';
 
 export default function LabResultDetailPage() {
   const { t } = useI18n();
@@ -33,7 +36,7 @@ export default function LabResultDetailPage() {
 
   if (loading) return <LoadingState message={t('lab_results.loading')} />;
   if (error) return <ErrorState message={error} onRetry={() => { setError(null); setLoading(true); getLabRequestById(id).then((res) => setRequest(res.data || res)).catch(() => setError(t('lab_results.error_loading'))).finally(() => setLoading(false)); }} />;
-  if (!request) return <div className="page-container"><p>{t('lab_results.not_found')}</p></div>;
+  if (!request) return <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px' }}><p>{t('lab_results.not_found')}</p></div>;
 
   const r = request;
   const items = r.items || [];
@@ -48,35 +51,39 @@ export default function LabResultDetailPage() {
   const progressPct = items.length > 0 ? Math.round((completedItems.length / items.length) * 100) : 0;
 
   return (
-    <div className="page-container-wide">
-      <div className="page-header" style={{ marginBottom: 24 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <div style={{
-            width: 56,
-            height: 56,
-            borderRadius: 14,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            background: `${color}15`,
-            flexShrink: 0,
-          }}>
-            <Icon size={30} color={color} />
-          </div>
-          <div>
-            <h1 style={{ marginBottom: 2 }}>{mainTestName}</h1>
-            <p style={{ color: 'var(--text-secondary)', fontSize: 13, margin: 0 }}>
-              <span>📅 {r.created_at?.split('T')[0] || '-'}</span>
-              {r.doctor_name && <span style={{ marginLeft: 12 }}>🩺 {r.doctor_name}</span>}
-              {r.patient_name && <span style={{ marginLeft: 12 }}>👤 {r.patient_name}</span>}
-            </p>
-          </div>
-        </div>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <span className={`badge ${statusBadgeClass}`} style={{ fontSize: 12 }}>{statusLabel}</span>
-          <button onClick={goBack} className="btn btn-ghost btn-sm">← {t('lab_results.back')}</button>
-        </div>
-      </div>
+    <PageContainer maxWidth="xl">
+      <PageHeader
+        title={
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 16 }}>
+            <span style={{
+              width: 56,
+              height: 56,
+              borderRadius: 14,
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: `${color}15`,
+              flexShrink: 0,
+            }}>
+              <Icon size={30} color={color} />
+            </span>
+            {mainTestName}
+          </span>
+        }
+        subtitle={
+          <>
+            <span>📅 {r.created_at?.split('T')[0] || '-'}</span>
+            {r.doctor_name && <span style={{ marginLeft: 12 }}>🩺 {r.doctor_name}</span>}
+            {r.patient_name && <span style={{ marginLeft: 12 }}>👤 {r.patient_name}</span>}
+          </>
+        }
+        actions={
+          <>
+            <span className={`badge ${statusBadgeClass}`} style={{ fontSize: 12 }}>{statusLabel}</span>
+            <Button variant="ghost" size="sm" onClick={goBack}>← {t('lab_results.back')}</Button>
+          </>
+        }
+      />
 
       {items.length > 0 && (
         <div style={{
@@ -106,26 +113,26 @@ export default function LabResultDetailPage() {
               {completedItems.length}/{items.length}
             </span>
           </div>
-          <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: 0 }}>
+          <p style={{ fontSize: 12, color: 'var(--ds-text-secondary)', margin: 0 }}>
             {isCompleted ? t('lab_results.all_completed') : t('lab_results.x_of_y_completed').replace('{x}', completedItems.length).replace('{y}', items.length)}
           </p>
         </div>
       )}
 
-      <div className="analytics-card">
+      <Card padding="md">
         <h3 style={{ marginBottom: 16 }}>{t('lab_results.results')}</h3>
 
         {items.length === 0 ? (
-          <p style={{ color: 'var(--text-muted)' }}>{t('lab_results.no_items')}</p>
+          <p style={{ color: 'var(--ds-text-tertiary)' }}>{t('lab_results.no_items')}</p>
         ) : (
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', fontSize: 14, borderCollapse: 'collapse' }}>
               <thead>
-                <tr style={{ background: 'var(--bg-primary)' }}>
-                  <th style={{ padding: '10px 12px', textAlign: 'left', borderBottom: '2px solid var(--border-light)' }}>{t('lab_results.test')}</th>
-                  <th style={{ padding: '10px 12px', textAlign: 'left', borderBottom: '2px solid var(--border-light)' }}>{t('lab_results.result_value')}</th>
-                  <th style={{ padding: '10px 12px', textAlign: 'left', borderBottom: '2px solid var(--border-light)' }}>{t('lab_results.reference_range')}</th>
-                  <th style={{ padding: '10px 12px', textAlign: 'left', borderBottom: '2px solid var(--border-light)' }}>{t('lab_results.result_notes')}</th>
+                <tr style={{ background: 'var(--ds-bg-primary)' }}>
+                  <th style={{ padding: '10px 12px', textAlign: 'left', borderBottom: '2px solid var(--ds-border)' }}>{t('lab_results.test')}</th>
+                  <th style={{ padding: '10px 12px', textAlign: 'left', borderBottom: '2px solid var(--ds-border)' }}>{t('lab_results.result_value')}</th>
+                  <th style={{ padding: '10px 12px', textAlign: 'left', borderBottom: '2px solid var(--ds-border)' }}>{t('lab_results.reference_range')}</th>
+                  <th style={{ padding: '10px 12px', textAlign: 'left', borderBottom: '2px solid var(--ds-border)' }}>{t('lab_results.result_notes')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -135,11 +142,11 @@ export default function LabResultDetailPage() {
                     ? '#065f46'
                     : hasResult
                       ? '#065f46'
-                      : 'var(--text-muted)';
-                  const bgColor = idx % 2 === 0 ? 'transparent' : 'var(--bg-primary)';
+                      : 'var(--ds-text-tertiary)';
+                  const bgColor = idx % 2 === 0 ? 'transparent' : 'var(--ds-bg-primary)';
 
                   return (
-                    <tr key={item.id} style={{ borderBottom: '1px solid var(--border-light)', background: bgColor }}>
+                    <tr key={item.id} style={{ borderBottom: '1px solid var(--ds-border)', background: bgColor }}>
                       <td style={{ padding: '12px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                           <div style={{
@@ -159,18 +166,18 @@ export default function LabResultDetailPage() {
                             color: resultColor,
                           }}>
                             {item.result_value}
-                            {item.unit && <span style={{ fontWeight: 400, color: 'var(--text-secondary)', marginLeft: 4 }}>{item.unit}</span>}
+                            {item.unit && <span style={{ fontWeight: 400, color: 'var(--ds-text-secondary)', marginLeft: 4 }}>{item.unit}</span>}
                           </span>
                         ) : (
-                          <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                          <span style={{ color: 'var(--ds-text-tertiary)', fontStyle: 'italic' }}>
                             {t('lab_results.pending')}
                           </span>
                         )}
                       </td>
-                      <td style={{ padding: '12px', color: 'var(--text-secondary)', fontSize: 13 }}>
+                      <td style={{ padding: '12px', color: 'var(--ds-text-secondary)', fontSize: 13 }}>
                         {item.reference_range || '-'}
                       </td>
-                      <td style={{ padding: '12px', color: 'var(--text-secondary)', fontSize: 13 }}>
+                      <td style={{ padding: '12px', color: 'var(--ds-text-secondary)', fontSize: 13 }}>
                         {item.result_notes || '-'}
                       </td>
                     </tr>
@@ -184,10 +191,10 @@ export default function LabResultDetailPage() {
         {r.notes && (
           <div style={{ marginTop: 20, padding: 16, background: `${color}08`, borderRadius: 10, border: `1px solid ${color}20` }}>
             <strong style={{ fontSize: 13 }}>{t('lab_results.request_notes')}:</strong>
-            <p style={{ fontSize: 14, margin: '6px 0 0', color: 'var(--text-secondary)' }}>{r.notes}</p>
+            <p style={{ fontSize: 14, margin: '6px 0 0', color: 'var(--ds-text-secondary)' }}>{r.notes}</p>
           </div>
         )}
-      </div>
-    </div>
+      </Card>
+    </PageContainer>
   );
 }

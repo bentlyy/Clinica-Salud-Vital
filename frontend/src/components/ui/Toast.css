@@ -1,0 +1,67 @@
+.ds-toast-container {
+  position: fixed;
+  bottom: var(--ds-spacing-6);
+  right: var(--ds-spacing-6);
+  z-index: var(--ds-z-toast);
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-spacing-2);
+  max-width: 400px;
+  pointer-events: none;
+}
+
+.ds-toast {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-spacing-3);
+  padding: var(--ds-spacing-3) var(--ds-spacing-4);
+  background: var(--ds-surface);
+  border-radius: var(--ds-radius-lg);
+  box-shadow: var(--ds-shadow-lg);
+  border: 1px solid var(--ds-border);
+  pointer-events: auto;
+  animation: ds-toast-in 0.25s ease;
+  min-width: 280px;
+}
+
+@keyframes ds-toast-in {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.ds-toast--success { border-left: 3px solid var(--ds-success-500); }
+.ds-toast--error { border-left: 3px solid var(--ds-danger-500); }
+.ds-toast--warning { border-left: 3px solid var(--ds-warning-500); }
+.ds-toast--info { border-left: 3px solid var(--ds-primary-500); }
+
+.ds-toast__icon {
+  width: 24px; height: 24px;
+  border-radius: var(--ds-radius-full);
+  display: flex; align-items: center; justify-content: center;
+  font-size: var(--ds-text-xs);
+  font-weight: var(--ds-font-bold);
+  flex-shrink: 0;
+}
+.ds-toast--success .ds-toast__icon { background: var(--ds-success-50); color: var(--ds-success-600); }
+.ds-toast--error .ds-toast__icon { background: var(--ds-danger-50); color: var(--ds-danger-600); }
+.ds-toast--warning .ds-toast__icon { background: var(--ds-warning-50); color: var(--ds-warning-600); }
+.ds-toast--info .ds-toast__icon { background: var(--ds-primary-50); color: var(--ds-primary-600); }
+
+.ds-toast__message {
+  flex: 1;
+  font-size: var(--ds-text-sm);
+  color: var(--ds-text-primary);
+  line-height: 1.4;
+}
+
+.ds-toast__close {
+  display: flex; align-items: center; justify-content: center;
+  width: 24px; height: 24px;
+  border: none; background: none; cursor: pointer;
+  color: var(--ds-text-tertiary);
+  border-radius: var(--ds-radius-sm);
+  transition: var(--ds-transition);
+  flex-shrink: 0;
+  font-size: 16px;
+}
+.ds-toast__close:hover { background: var(--ds-surface-hover); color: var(--ds-text-primary); }

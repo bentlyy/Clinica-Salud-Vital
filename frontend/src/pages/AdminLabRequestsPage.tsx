@@ -3,6 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { useI18n } from '../i18n/useI18n';
 import { extractList } from '../utils/extract-list';
 import { getLabRequests } from '../api/laboratory';
+import Button from '../components/ui/Button';
+import Badge from '../components/ui/Badge';
+import Card from '../components/ui/Card';
+import Alert from '../components/ui/Alert';
+import { PageContainer, PageHeader } from '../components/ui/PageContainer';
 
 interface LabRequest {
   id: number;
@@ -44,26 +49,25 @@ export default function AdminLabRequestsPage() {
   }, {});
 
   if (loading) {
-    return <div className="page-container"><p className="text-muted">Cargando solicitudes...</p></div>;
+    return <PageContainer maxWidth="xl"><p style={{ color: 'var(--ds-text-tertiary)' }}>Cargando solicitudes...</p></PageContainer>;
   }
 
   return (
-    <div className="page-container">
-      <h1 className="page-title">Solicitudes de Laboratorio</h1>
-      <p className="page-subtitle">Todas las solicitudes de exámenes agrupadas por doctor</p>
+    <PageContainer maxWidth="xl">
+      <PageHeader title="Solicitudes de Laboratorio" subtitle="Todas las solicitudes de exámenes agrupadas por doctor" />
 
       {Object.keys(grouped).length === 0 && (
-        <p className="text-muted">No hay solicitudes de laboratorio.</p>
+        <p style={{ color: 'var(--ds-text-tertiary)' }}>No hay solicitudes de laboratorio.</p>
       )}
 
       {Object.entries(grouped).map(([doctorKey, doctorRequests]) => (
-        <div key={doctorKey} className="card mb-4">
-          <div className="card-header">
-            <h2 className="card-title">{doctorKey}</h2>
-            <span className="badge badge-info">{doctorRequests.length} solicitudes</span>
+        <Card key={doctorKey} padding="md" style={{ marginBottom: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+            <h2 style={{ margin: 0, fontSize: 'var(--ds-text-lg)', fontWeight: 600 }}>{doctorKey}</h2>
+            <Badge variant="info">{doctorRequests.length} solicitudes</Badge>
           </div>
-          <div className="table-responsive">
-            <table className="table">
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr>
                   <th>N° Solicitud</th>
@@ -80,31 +84,32 @@ export default function AdminLabRequestsPage() {
                     <td>{r.request_number || `#${r.id}`}</td>
                     <td>{r.patient_name || `ID ${r.patient_id}`}</td>
                     <td>
-                      <span className={`badge ${r.priority === 'urgent' ? 'badge-error' : r.priority === 'emergency' ? 'badge-error' : 'badge-ghost'}`}>
+                      <Badge variant={r.priority === 'urgent' || r.priority === 'emergency' ? 'danger' : 'neutral'}>
                         {r.priority}
-                      </span>
+                      </Badge>
                     </td>
                     <td>{r.created_at?.split('T')[0] || '-'}</td>
                     <td>
-                      <span className={`badge ${r.status === 'completed' ? 'badge-success' : r.status === 'cancelled' ? 'badge-ghost' : 'badge-warning'}`}>
+                      <Badge variant={r.status === 'completed' ? 'success' : r.status === 'cancelled' ? 'neutral' : 'warning'}>
                         {r.status}
-                      </span>
+                      </Badge>
                     </td>
                     <td style={{ textAlign: 'right' }}>
-                      <button
+                      <Button
                         onClick={() => navigate(`/my-lab-results/${r.id}`)}
-                        className="btn btn-outline btn-sm"
+                        variant="outline"
+                        size="sm"
                       >
                         Ver
-                      </button>
+                      </Button>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-        </div>
+        </Card>
       ))}
-    </div>
+    </PageContainer>
   );
 }

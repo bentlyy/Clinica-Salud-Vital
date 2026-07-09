@@ -3,6 +3,9 @@ import { useTheme } from '../context/useTheme';
 import { useI18n } from '../i18n/useI18n';
 import api from '../api/axios';
 import { logger } from '../utils/logger';
+import Button from '../components/ui/Button';
+import Alert from '../components/ui/Alert';
+import { PageContainer, PageHeader } from '../components/ui/PageContainer';
 
 const AnalyticsCharts = lazy(() => import('./AnalyticsCharts'));
 
@@ -70,29 +73,30 @@ export default function AnalyticsPage() {
 
   if (loading) {
     return (
-      <div className="page-container">
+      <PageContainer maxWidth="xl">
         <div style={{ textAlign: 'center', padding: 60 }}>
           <div className="spinner" style={{ margin: 'auto' }}></div>
           <p>{t('analytics.loading')}</p>
         </div>
-      </div>
+      </PageContainer>
     );
   }
 
   const { colors, chartRed, chartGreen } = getColors(theme);
 
   return (
-    <div className="page-container">
-      <div style={{ marginBottom: 24 }}>
-        <h1 style={{ marginBottom: 4 }}>{t('analytics.title')}</h1>
-        <p style={{ color: 'var(--text-secondary)' }}>{t('analytics.subtitle')}</p>
-      </div>
+    <PageContainer maxWidth="xl">
+      <PageHeader title={t('analytics.title')} subtitle={t('analytics.subtitle')} />
 
       {fetchError && (
-        <div style={{ background: 'var(--danger-50, #fef2f2)', border: '1px solid var(--danger-200, #fecaca)', borderRadius: 8, padding: '16px 20px', marginBottom: 20, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
-          <span style={{ color: 'var(--danger-700, #b91c1c)' }}>{t('analytics.fetch_error')}</span>
-          <button onClick={fetchAllData} style={{ padding: '8px 16px', border: 'none', borderRadius: 6, background: 'var(--danger-500, #ef4444)', color: '#fff', cursor: 'pointer', fontSize: 14 }}>{t('analytics.retry')}</button>
-        </div>
+        <Alert variant="error" style={{ marginBottom: 20 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+            <span>{t('analytics.fetch_error')}</span>
+            <Button variant="primary" size="sm" onClick={fetchAllData} style={{ marginLeft: 16 }}>
+              {t('analytics.retry')}
+            </Button>
+          </div>
+        </Alert>
       )}
 
       <div className="analytics-tabs">
@@ -104,7 +108,7 @@ export default function AnalyticsPage() {
         ))}
       </div>
 
-      <Suspense fallback={<div className="page-container" style={{ textAlign: 'center', padding: 40 }}><div className="spinner" style={{ margin: 'auto' }}></div><p>{t('analytics.loading')}</p></div>}>
+      <Suspense fallback={<div style={{ textAlign: 'center', padding: 40 }}><div className="spinner" style={{ margin: 'auto' }}></div><p>{t('analytics.loading')}</p></div>}>
         <div className="analytics-content">
           {activeTab === 'noshow' && <AnalyticsCharts.NoShowsPanel data={data.noShows} colors={colors} chartRed={chartRed} chartGreen={chartGreen} />}
           {activeTab === 'diagnoses' && <AnalyticsCharts.DiagnosesPanel data={data.diagnoses} colors={colors} chartGreen={chartGreen} />}
@@ -113,6 +117,6 @@ export default function AnalyticsPage() {
           {activeTab === 'vitals' && <AnalyticsCharts.VitalsPanel data={data.vitals} chartRed={chartRed} chartGreen={chartGreen} />}
         </div>
       </Suspense>
-    </div>
+    </PageContainer>
   );
 }

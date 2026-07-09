@@ -2,6 +2,10 @@ import { useEffect, useState } from 'react';
 import { useI18n } from '../i18n/useI18n';
 import { getSpecialties, createSpecialty, updateSpecialty, deleteSpecialty } from '../api/specialties';
 import { logger } from '../utils/logger';
+import Button from '../components/ui/Button';
+import Card from '../components/ui/Card';
+import { PageContainer, PageHeader } from '../components/ui/PageContainer';
+import Alert from '../components/ui/Alert';
 
 interface DoctorInfo {
   id: number;
@@ -119,72 +123,75 @@ export default function AdminSpecialtiesPage() {
     }
   };
 
-  if (loading) return <div className="page-container text-center" style={{ padding: '2rem' }}>{t('admin.loading')}</div>;
+  if (loading) return <div className="text-center" style={{ padding: '2rem' }}>{t('admin.loading')}</div>;
 
   return (
-    <div className="page-container" style={{ maxWidth: 960, margin: '0 auto' }}>
-      <h1>{t('admin.specialties_title')}</h1>
+    <PageContainer>
+      <PageHeader title={t('admin.specialties_title')} />
 
-      {error && <div className="alert alert-error">{error}</div>}
+      {error && <Alert variant="error">{error}</Alert>}
 
-      <div className="flex-row" style={{ gap: 8, marginBottom: 24 }}>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
         <input
           value={newName}
           onChange={(e) => setNewName(e.target.value)}
           placeholder={t('admin.new_specialty_placeholder')}
-          className="form-input"
+          className="ds-input"
           style={{ flex: 1 }}
         />
-        <button className="btn btn-primary" onClick={handleCreate}>{t('admin.add')}</button>
+        <Button variant="primary" onClick={handleCreate}>{t('admin.add')}</Button>
       </div>
 
       {specialties.length === 0 && !loading ? (
-        <p className="text-center text-muted-lg" style={{ padding: 40 }}>{t('admin.no_specialties')}</p>
+        <div className="ds-table-empty">
+          <div className="ds-table-empty-icon">🏥</div>
+          <div className="ds-table-empty-title">{t('admin.no_specialties')}</div>
+        </div>
       ) : (
         specialties.map((s) => (
-          <div key={s.id} className="card" style={{ marginBottom: 16, padding: 16 }}>
+          <Card key={s.id} style={{ marginBottom: 16 }}>
             {editId === s.id ? (
               <div className="flex-col" style={{ gap: 12 }}>
                 <div className="flex-row" style={{ gap: 12, flexWrap: 'wrap' }}>
                   <div style={{ flex: 1, minWidth: 150 }}>
-                    <label className="label-sm">{t('admin.name')}</label>
-                    <input value={editData.name || ''} onChange={(e) => setEditData({ ...editData, name: e.target.value })} className="form-input" />
+                    <label className="ds-label">{t('admin.name')}</label>
+                    <input value={editData.name || ''} onChange={(e) => setEditData({ ...editData, name: e.target.value })} className="ds-input" />
                   </div>
                   <div style={{ width: 80 }}>
-                    <label className="label-sm">{t('admin.icon')}</label>
-                    <input value={editData.icon || ''} onChange={(e) => setEditData({ ...editData, icon: e.target.value })} className="form-input" />
+                    <label className="ds-label">{t('admin.icon')}</label>
+                    <input value={editData.icon || ''} onChange={(e) => setEditData({ ...editData, icon: e.target.value })} className="ds-input" />
                   </div>
                   <div style={{ width: 110 }}>
-                    <label className="label-sm">{t('admin.color')}</label>
-                    <input value={editData.color || ''} onChange={(e) => setEditData({ ...editData, color: e.target.value })} className="form-input" />
+                    <label className="ds-label">{t('admin.color')}</label>
+                    <input value={editData.color || ''} onChange={(e) => setEditData({ ...editData, color: e.target.value })} className="ds-input" />
                   </div>
                 </div>
                 <div>
-                  <label className="label-sm">{t('admin.description')}</label>
-                  <textarea value={editData.description || ''} onChange={(e) => setEditData({ ...editData, description: e.target.value })} className="form-input" style={{ minHeight: 60 }} />
+                  <label className="ds-label">{t('admin.description')}</label>
+                  <textarea value={editData.description || ''} onChange={(e) => setEditData({ ...editData, description: e.target.value })} className="ds-input" style={{ minHeight: 60 }} />
                 </div>
                 <div>
-                  <label className="label-sm">{t('admin.department')}</label>
-                  <input value={editData.department || ''} onChange={(e) => setEditData({ ...editData, department: e.target.value })} className="form-input" />
+                  <label className="ds-label">{t('admin.department')}</label>
+                  <input value={editData.department || ''} onChange={(e) => setEditData({ ...editData, department: e.target.value })} className="ds-input" />
                 </div>
                 <div>
-                  <label className="label-sm">{t('admin.procedures')}</label>
+                  <label className="ds-label">{t('admin.procedures')}</label>
                   <ul className="ul-sm" style={{ margin: '4px 0 8px' }}>
                     {(editData.procedures || []).map((p, i) => (
                       <li key={i} className="li-sm">
                         {p}
-                        <button className="btn btn-ghost btn-sm icon-danger" style={{ marginLeft: 8 }} onClick={() => removeProcedure(i)}>&times;</button>
+                        <Button variant="ghost" size="sm" onClick={() => removeProcedure(i)} style={{ marginLeft: 8, color: 'var(--ds-danger-500)' }}>&times;</Button>
                       </li>
                     ))}
                   </ul>
                   <div className="flex-row" style={{ gap: 8 }}>
-                    <input value={newProcedure} onChange={(e) => setNewProcedure(e.target.value)} placeholder={t('admin.new_procedure_placeholder')} className="form-input" style={{ flex: 1 }} />
-                    <button className="btn btn-primary btn-sm" onClick={addProcedure}>{t('admin.add')}</button>
+                    <input value={newProcedure} onChange={(e) => setNewProcedure(e.target.value)} placeholder={t('admin.new_procedure_placeholder')} className="ds-input" style={{ flex: 1 }} />
+                    <Button variant="primary" size="sm" onClick={addProcedure}>{t('admin.add')}</Button>
                   </div>
                 </div>
                 <div className="flex-row" style={{ gap: 8, justifyContent: 'flex-end' }}>
-                  <button className="btn btn-primary" onClick={handleSave}>{t('admin.save')}</button>
-                  <button className="btn btn-ghost" onClick={cancelEdit}>{t('admin.cancel')}</button>
+                  <Button variant="primary" onClick={handleSave}>{t('admin.save')}</Button>
+                  <Button variant="ghost" onClick={cancelEdit}>{t('admin.cancel')}</Button>
                 </div>
               </div>
             ) : (
@@ -198,7 +205,7 @@ export default function AdminSpecialtiesPage() {
                   {s.description && <p className="text-sm text-secondary">{s.description}</p>}
                   {s.doctors.length > 0 && (
                     <div className="mt-sm">
-                      <strong className="label-sm">{t('admin.doctors')}:</strong>
+                      <strong className="ds-label">{t('admin.doctors')}:</strong>
                       <ul className="ul-sm">
                         {s.doctors.map((d) => <li key={d.id} className="li-sm">{d.name} {d.email ? `<${d.email}>` : ''}</li>)}
                       </ul>
@@ -206,7 +213,7 @@ export default function AdminSpecialtiesPage() {
                   )}
                   {s.procedures.length > 0 && (
                     <div className="mt-sm">
-                      <strong className="label-sm">{t('admin.procedures')}:</strong>
+                      <strong className="ds-label">{t('admin.procedures')}:</strong>
                       <ul className="ul-sm">
                         {s.procedures.map((p, i) => <li key={i} className="li-sm">{p}</li>)}
                       </ul>
@@ -214,14 +221,14 @@ export default function AdminSpecialtiesPage() {
                   )}
                 </div>
                 <div className="flex-row" style={{ gap: 8 }}>
-                  <button className="btn btn-ghost btn-sm" onClick={() => startEdit(s)}>{t('admin.edit')}</button>
-                  <button className="btn btn-ghost btn-sm icon-danger" onClick={() => handleDelete(s.id)}>{t('admin.delete')}</button>
+                  <Button variant="ghost" size="sm" onClick={() => startEdit(s)}>{t('admin.edit')}</Button>
+                  <Button variant="ghost" size="sm" onClick={() => handleDelete(s.id)} style={{ color: 'var(--ds-danger-500)' }}>{t('admin.delete')}</Button>
                 </div>
               </div>
             )}
-          </div>
+          </Card>
         ))
       )}
-    </div>
+    </PageContainer>
   );
 }
