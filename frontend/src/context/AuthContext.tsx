@@ -1,10 +1,21 @@
 import { createContext, useState, useEffect, useCallback, useMemo } from 'react';
 import api from '../api/axios';
+import { logger } from '../utils/logger';
+
+export interface AuthUser {
+  id?: number;
+  email?: string;
+  role?: string;
+  name?: string;
+  rut?: string;
+  phone?: string;
+  tenant_id?: string;
+}
 
 export interface AuthContextValue {
-  user: Record<string, unknown> | null;
-  login: (email: string, password: string, totp_token?: string, captcha_token?: string, tenant_id?: string) => Promise<Record<string, unknown>>;
-  register: (params: { email: string; password: string; name?: string; rut?: string; phone?: string; tenant_id?: string; invite_token?: string }) => Promise<Record<string, unknown>>;
+  user: AuthUser | null;
+  login: (email: string, password: string, totp_token?: string, captcha_token?: string, tenant_id?: string) => Promise<AuthUser>;
+  register: (params: { email: string; password: string; name?: string; rut?: string; phone?: string; tenant_id?: string; invite_token?: string }) => Promise<AuthUser>;
   logout: () => Promise<void>;
   loading: boolean;
 }
@@ -12,19 +23,18 @@ export interface AuthContextValue {
 export const AuthContext = createContext<AuthContextValue | null>(null);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const [user, setUser] = useState<Record<string, unknown> | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
 
   const logout = useCallback(async () => {
     try {
       await api.post('/auth/logout');
     } catch (err) {
-      console.warn('Logout API call failed:', err);
-    } finally {
-      localStorage.removeItem('user');
-      localStorage.removeItem('tenant_id');
-      setUser(null);
+      logger.warn('Logout API call failed:', err);
     }
+    localStorage.removeItem('user');
+    localStorage.removeItem('tenant_id');
+    setUser(null);
   }, []);
 
   useEffect(() => {

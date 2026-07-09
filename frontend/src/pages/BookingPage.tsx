@@ -66,7 +66,7 @@ const BookingPage = React.memo(function BookingPage() {
         const doctorParam = searchParams.get('doctor');
         if (doctorParam) {
           const id = Number(doctorParam);
-          if (docs.some(d => d.id === id)) {
+          if (data.some((d: Doctor) => d.id === id)) {
             setSelectedDoctor(id);
           }
         }

@@ -2592,6 +2592,78 @@
   font-size: 16px;
 }
 
+/* ===== UTILITY CLASSES ===== */
+.flex-row {
+  display: flex;
+}
+.flex-col {
+  display: flex;
+  flex-direction: column;
+}
+.flex-wrap {
+  flex-wrap: wrap;
+}
+.justify-end {
+  justify-content: flex-end;
+}
+.items-center {
+  align-items: center;
+}
+.gap-xs {
+  gap: 4px;
+}
+.gap-sm {
+  gap: 8px;
+}
+.gap-md {
+  gap: 12px;
+}
+.gap-lg {
+  gap: 16px;
+}
+.m-0 {
+  margin: 0;
+}
+.mt-sm {
+  margin-top: 8px;
+}
+.mb-sm {
+  margin-bottom: 8px;
+}
+.text-sm {
+  font-size: 13px;
+}
+.text-secondary {
+  color: var(--text-secondary);
+}
+.label-sm {
+  font-size: 12px;
+  font-weight: 600;
+}
+.icon-lg {
+  font-size: 24px;
+}
+.icon-danger {
+  color: #e74c3c;
+}
+.icon-danger:hover {
+  color: #c0392b;
+}
+.ul-sm {
+  margin: 2px 0 0;
+  padding-left: 20px;
+}
+.li-sm {
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+.color-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
 /* ===== MODAL FOCUS ===== */
 .modal-content:focus-visible {
   outline: 2px solid var(--accent-500);

@@ -13,7 +13,7 @@ const locales = [
   { code: 'fr', label: 'FR' },
 ];
 
-function NavLabLink({ to, label, enabled }: { to: string; label: string; enabled: boolean }) {
+const NavLabLink = React.memo(function NavLabLink({ to, label, enabled }: { to: string; label: string; enabled: boolean }) {
   return (
     <Link
       to={enabled ? to : '#'}
@@ -24,7 +24,7 @@ function NavLabLink({ to, label, enabled }: { to: string; label: string; enabled
       {!enabled && <span className="lock-badge">🔒</span>}
     </Link>
   );
-}
+});
 
 const Navbar = React.memo(function Navbar() {
   const { user, logout } = useAuth();
@@ -99,10 +99,10 @@ const Navbar = React.memo(function Navbar() {
 
           {(user?.role as string) === 'lab_technician' && (
             <>
-              <Link to="/lab/dashboard" className="nav-link" onClick={() => setMobileOpen(false)}>📊 Dashboard</Link>
-              <Link to="/lab/analytics" className="nav-link" onClick={() => setMobileOpen(false)}>📈 Analytics</Link>
-              <Link to="/lab/qc" className="nav-link" onClick={() => setMobileOpen(false)}>🧪 Control Calidad</Link>
-              <NavLabLink to="/my-lab-results" label={t('nav.my_lab_results') || 'Pacientes'} enabled={labEnabled} />
+              <Link to="/lab/dashboard" className="nav-link" onClick={() => setMobileOpen(false)}>{t('nav.lab_dashboard')}</Link>
+              <Link to="/lab/analytics" className="nav-link" onClick={() => setMobileOpen(false)}>{t('nav.lab_analytics')}</Link>
+              <Link to="/lab/qc" className="nav-link" onClick={() => setMobileOpen(false)}>{t('nav.lab_qc')}</Link>
+              <NavLabLink to="/my-lab-results" label={t('nav.my_lab_results')} enabled={labEnabled} />
             </>
           )}
 
