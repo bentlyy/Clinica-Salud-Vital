@@ -8,7 +8,7 @@ function ErrorState({ message, onRetry }: { message: string; onRetry?: () => voi
       <span>{message}</span>
       {onRetry && (
         <button onClick={onRetry} className="btn btn-sm error-state__btn">
-          {t?.('error_state.retry') || 'Reintentar'}
+          {t('error_state.retry') || 'Reintentar'}
         </button>
       )}
     </div>

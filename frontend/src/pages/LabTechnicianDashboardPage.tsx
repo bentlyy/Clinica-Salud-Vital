@@ -3,38 +3,74 @@ import { Link, useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import { extractList } from '../utils/extract-list';
 import { downloadLabOrderPdf } from '../api/laboratory';
+import { logger } from '../utils/logger';
+
+interface LabRequest {
+  id: number;
+  request_number?: string;
+  status: string;
+  lab_type?: string;
+  created_at?: string;
+  patient_name?: string;
+  patient_id: number;
+  patient_rut?: string;
+  doctor_name?: string;
+  items?: LabItem[];
+}
+
+interface LabItem {
+  id: number;
+  test_name?: string;
+  status: string;
+  result_value?: string;
+  lab_test_id?: number;
+}
 
 const STATUS_TABS = [
-  { key: undefined, label: 'Todas' },
+  { key: undefined as string | undefined, label: 'Todas' },
   { key: 'pending', label: 'Pendientes' },
-  { key: 'in_progress', label: 'En Proceso' },
-  { key: 'completed', label: 'Completadas' },
+  { key: 'received', label: 'Recibidas' },
+  { key: 'processing', label: 'En Proceso' },
+  { key: 'result_entered', label: 'C/Resultado' },
+  { key: 'delivered', label: 'Entregadas' },
 ];
 
-const STATUS_BADGE = {
+const STATUS_BADGE: Record<string, string> = {
   pending: 'badge-warning',
-  in_progress: 'badge-info',
-  completed: 'badge-success',
+  received: 'badge-info',
+  verified: 'badge-info',
+  assigned: 'badge-info',
+  processing: 'badge-info',
+  qc_review: 'badge-warning',
+  result_entered: 'badge-info',
+  validated_tech: 'badge-success',
+  validated_doctor: 'badge-success',
+  signed: 'badge-success',
+  delivered: 'badge-success',
   cancelled: 'badge-ghost',
+  rejected: 'badge-ghost',
+  repeated: 'badge-warning',
 };
 
 export default function LabTechnicianDashboardPage() {
   const navigate = useNavigate();
-  const [requests, setRequests] = useState([]);
+  const [requests, setRequests] = useState<LabRequest[]>([]);
   const [loading, setLoading] = useState(true);
-  const [statusFilter, setStatusFilter] = useState(undefined);
-  const [error, setError] = useState(null);
+  const [statusFilter, setStatusFilter] = useState<string | undefined>(undefined);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchRequests = async () => {
     setLoading(true);
     setError(null);
     try {
-      const params = {};
+      const params: Record<string, string> = {};
       if (statusFilter) params.status = statusFilter;
       const res = await api.get('/laboratory/lab/all', { params });
       setRequests(extractList(res.data));
     } catch (err) {
-      setError(err.response?.data?.error || 'Error al cargar solicitudes');
+      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Error al cargar solicitudes';
+      setError(msg);
+      logger.error('Failed to load lab requests', err);
     } finally {
       setLoading(false);
     }
@@ -42,33 +78,39 @@ export default function LabTechnicianDashboardPage() {
 
   useEffect(() => { fetchRequests(); }, [statusFilter]);
 
-  const updateStatus = async (id, newStatus) => {
+  const updateStatus = async (id: number, newStatus: string) => {
     try {
       await api.patch(`/laboratory/${id}/status`, { status: newStatus });
       fetchRequests();
     } catch (err) {
-      alert(err.response?.data?.error || 'Error al actualizar estado');
+      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Error al actualizar estado';
+      setError(msg);
+      logger.error('Failed to update status', err);
     }
   };
 
-  const updateItemStatus = async (itemId, newStatus) => {
+  const updateItemStatus = async (itemId: number, newStatus: string) => {
     try {
       await api.patch(`/laboratory/lab/items/${itemId}/status`, { status: newStatus });
       fetchRequests();
     } catch (err) {
-      alert(err.response?.data?.error || 'Error al actualizar item');
+      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Error al actualizar item';
+      setError(msg);
+      logger.error('Failed to update item status', err);
     }
   };
 
-  const downloadPdf = async (id) => {
+  const downloadPdf = async (id: number) => {
     try {
       const blob = await downloadLabOrderPdf(id);
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url; a.download = `orden-${id}.pdf`; a.click();
       URL.revokeObjectURL(url);
-    } catch {
-      alert('Error al descargar PDF');
+    } catch (err) {
+      const msg = 'Error al descargar PDF';
+      setError(msg);
+      logger.error('Failed to download PDF', err);
     }
   };
 
@@ -83,22 +125,22 @@ export default function LabTechnicianDashboardPage() {
         </div>
       </div>
 
-      <div className="grid grid-3" style={{ gap: 12, marginBottom: 24 }}>
-        <Link to="/lab/dashboard" className="card" style={{ padding: '16px 20px', textDecoration: 'none', color: 'inherit', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 14, border: '1px solid var(--border-light)' }}>
+      <div className="flex-row" style={{ gap: 12, marginBottom: 24 }}>
+        <Link to="/lab/dashboard" className="card flex-row items-center" style={{ padding: '16px 20px', textDecoration: 'none', color: 'inherit', gap: 14, border: '1px solid var(--border-light)', flex: 1 }}>
           <div style={{ width: 44, height: 44, borderRadius: 12, background: '#f0f9ff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>📊</div>
           <div>
             <strong style={{ fontSize: 15 }}>Dashboard</strong>
             <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--text-secondary)' }}>Métricas en tiempo real, SLA, work queue</p>
           </div>
         </Link>
-        <Link to="/lab/analytics" className="card" style={{ padding: '16px 20px', textDecoration: 'none', color: 'inherit', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 14, border: '1px solid var(--border-light)' }}>
+        <Link to="/lab/analytics" className="card flex-row items-center" style={{ padding: '16px 20px', textDecoration: 'none', color: 'inherit', gap: 14, border: '1px solid var(--border-light)', flex: 1 }}>
           <div style={{ width: 44, height: 44, borderRadius: 12, background: '#f5f3ff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>📈</div>
           <div>
             <strong style={{ fontSize: 15 }}>Analytics</strong>
             <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--text-secondary)' }}>Tendencias por doctor, área y mes</p>
           </div>
         </Link>
-        <Link to="/lab/qc" className="card" style={{ padding: '16px 20px', textDecoration: 'none', color: 'inherit', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 14, border: '1px solid var(--border-light)' }}>
+        <Link to="/lab/qc" className="card flex-row items-center" style={{ padding: '16px 20px', textDecoration: 'none', color: 'inherit', gap: 14, border: '1px solid var(--border-light)', flex: 1 }}>
           <div style={{ width: 44, height: 44, borderRadius: 12, background: '#f0fdf4', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>🧪</div>
           <div>
             <strong style={{ fontSize: 15 }}>Control de Calidad</strong>
@@ -107,7 +149,7 @@ export default function LabTechnicianDashboardPage() {
         </Link>
       </div>
 
-      <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
+      <div className="flex-row" style={{ gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
         {STATUS_TABS.map((tab) => (
           <button
             key={tab.key || 'all'}
@@ -136,14 +178,14 @@ export default function LabTechnicianDashboardPage() {
 
       {requests.map((r) => (
         <div key={r.id} className="card" style={{ padding: 20, marginBottom: 12 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
+          <div className="flex-row" style={{ justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
             <div>
               <strong style={{ fontSize: 16 }}>{r.request_number || `#${r.id}`}</strong>
               <span style={{ marginLeft: 12, fontSize: 13, color: 'var(--text-secondary)' }}>
                 {r.created_at?.split('T')[0]}
               </span>
             </div>
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <div className="flex-row" style={{ gap: 8, alignItems: 'center' }}>
               <span className={`badge ${STATUS_BADGE[r.status] || 'badge-ghost'}`}>{r.status}</span>
               {r.lab_type && (
                 <span className="badge badge-info">{r.lab_type === 'internal' ? 'Interno' : 'Externo'}</span>
@@ -158,46 +200,51 @@ export default function LabTechnicianDashboardPage() {
           </div>
 
           <div style={{ marginBottom: 12 }}>
-            <table style={{ width: '100%', fontSize: 13 }}>
-              <thead>
-                <tr style={{ background: 'var(--bg-primary)' }}>
-                  <th style={{ padding: '6px 10px', textAlign: 'left' }}>Examen</th>
-                  <th style={{ padding: '6px 10px', textAlign: 'left' }}>Estado</th>
-                  <th style={{ padding: '6px 10px', textAlign: 'left' }}>Resultado</th>
-                  <th style={{ padding: '6px 10px', textAlign: 'right' }}>Acción</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(r.items || []).map((item) => (
-                  <tr key={item.id} style={{ borderBottom: '1px solid var(--border-light)' }}>
-                    <td style={{ padding: '6px 10px' }}>{item.test_name}</td>
-                    <td style={{ padding: '6px 10px' }}>
-                      <span className={`badge ${STATUS_BADGE[item.status] || 'badge-ghost'}`} style={{ fontSize: 11 }}>
-                        {item.status}
-                      </span>
-                    </td>
-                    <td style={{ padding: '6px 10px' }}>
-                      {item.result_value || <span style={{ color: 'var(--text-muted)' }}>—</span>}
-                    </td>
-                    <td style={{ padding: '6px 10px', textAlign: 'right' }}>
-                      <select
-                        value={item.status}
-                        onChange={(e) => updateItemStatus(item.id, e.target.value)}
-                        className="form-input"
-                        style={{ fontSize: 12, padding: '4px 8px', width: 130 }}
-                      >
-                        <option value="pending">Pendiente</option>
-                        <option value="in_progress">En Proceso</option>
-                        <option value="completed">Completado</option>
-                      </select>
-                    </td>
+            <div className="table-wrapper">
+              <table className="table" style={{ fontSize: 13 }}>
+                <thead>
+                  <tr>
+                    <th>Examen</th>
+                    <th>Estado</th>
+                    <th>Resultado</th>
+                    <th style={{ textAlign: 'right' }}>Acción</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {(r.items || []).map((item) => (
+                    <tr key={item.id}>
+                      <td>{item.test_name}</td>
+                      <td>
+                        <span className={`badge ${STATUS_BADGE[item.status] || 'badge-ghost'}`} style={{ fontSize: 11 }}>
+                          {item.status}
+                        </span>
+                      </td>
+                      <td>
+                        {item.result_value || <span style={{ color: 'var(--text-muted)' }}>—</span>}
+                      </td>
+                      <td style={{ textAlign: 'right' }}>
+                        <select
+                          value={item.status}
+                          onChange={(e) => updateItemStatus(item.id, e.target.value)}
+                          className="form-input"
+                          style={{ fontSize: 12, padding: '4px 8px', width: 130 }}
+                        >
+                          <option value="pending">Pendiente</option>
+                          <option value="received">Recibido</option>
+                          <option value="processing">En Proceso</option>
+                          <option value="result_entered">C/Resultado</option>
+                          <option value="delivered">Entregado</option>
+                          <option value="cancelled">Cancelado</option>
+                        </select>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
 
-          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', borderTop: '1px solid var(--border-light)', paddingTop: 12 }}>
+          <div className="flex-row" style={{ gap: 8, justifyContent: 'flex-end', borderTop: '1px solid var(--border-light)', paddingTop: 12 }}>
             <select
               value={r.status}
               onChange={(e) => updateStatus(r.id, e.target.value)}
@@ -205,8 +252,10 @@ export default function LabTechnicianDashboardPage() {
               style={{ fontSize: 13, padding: '6px 12px', width: 160 }}
             >
               <option value="pending">Pendiente</option>
-              <option value="in_progress">En Proceso</option>
-              <option value="completed">Completada</option>
+              <option value="received">Recibida</option>
+              <option value="processing">En Proceso</option>
+              <option value="result_entered">C/Resultado</option>
+              <option value="delivered">Entregada</option>
               <option value="cancelled">Cancelada</option>
             </select>
             <button onClick={() => downloadPdf(r.id)} className="btn btn-outline btn-sm">PDF</button>

@@ -1,8 +1,9 @@
-import { lazy } from 'react';
+import { lazy, Suspense } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import ProtectedRoute from './ProtectedRoute';
 import WithFeature from '../components/WithFeature';
 import AppLayout from './AppLayout';
+import LoadingState from '../components/LoadingState';
 
 const HomePage = lazy(() => import('../pages/HomePage'));
 const LoginPage = lazy(() => import('../pages/LoginPage'));
@@ -41,6 +42,7 @@ const NotFoundPage = lazy(() => import('../pages/NotFoundPage'));
 
 export default function AppRoutes() {
   return (
+    <Suspense fallback={<LoadingState fullPage />}>
     <Routes>
       <Route path="/" element={<AppLayout><HomePage /></AppLayout>} />
       <Route path="/login" element={<AppLayout><LoginPage /></AppLayout>} />
@@ -85,5 +87,6 @@ export default function AppRoutes() {
 
       <Route path="*" element={<AppLayout><NotFoundPage /></AppLayout>} />
     </Routes>
+    </Suspense>
   );
 }
