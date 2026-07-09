@@ -31,6 +31,10 @@ ALTER TABLE lab_tests ADD COLUMN IF NOT EXISTS volume_ml NUMERIC(10, 2);
 
 -- Expand lab_requests statuses
 ALTER TABLE lab_requests DROP CONSTRAINT IF EXISTS lab_requests_status_check;
+-- Migrate old status values before adding new constraint
+UPDATE lab_requests SET status = 'processing' WHERE status = 'in_progress';
+UPDATE lab_requests SET status = 'delivered' WHERE status = 'completed';
+UPDATE lab_requests SET status = 'received' WHERE status = 'collected';
 ALTER TABLE lab_requests ADD CONSTRAINT lab_requests_status_check 
   CHECK (status IN ('pending', 'received', 'verified', 'assigned', 'processing', 'qc_review', 'result_entered', 'validated_tech', 'validated_doctor', 'signed', 'delivered', 'cancelled', 'rejected', 'repeated'));
 
@@ -43,6 +47,9 @@ ALTER TABLE lab_requests ADD COLUMN IF NOT EXISTS urgency_reason TEXT;
 
 -- Expand lab_request_items
 ALTER TABLE lab_request_items DROP CONSTRAINT IF EXISTS lab_request_items_status_check;
+-- Migrate old status values before adding new constraint
+UPDATE lab_request_items SET status = 'processing' WHERE status = 'in_progress';
+UPDATE lab_request_items SET status = 'delivered' WHERE status = 'completed';
 ALTER TABLE lab_request_items ADD CONSTRAINT lab_request_items_status_check 
   CHECK (status IN ('pending', 'received', 'verified', 'assigned', 'processing', 'qc_review', 'result_entered', 'validated_tech', 'validated_doctor', 'signed', 'delivered', 'cancelled', 'rejected', 'repeated'));
 
