@@ -13,6 +13,11 @@ import {
 } from '../api/clinicalRecords';
 import { getDoctorBookings } from '../api/doctors';
 import { getLabResultsByClinicalRecord, getLabTests } from '../api/laboratory';
+import Button from '../components/ui/Button';
+import Card from '../components/ui/Card';
+import Badge from '../components/ui/Badge';
+import { PageContainer, PageHeader } from '../components/ui/PageContainer';
+import Alert from '../components/ui/Alert';
 
 const ROUTES_MAP = {
   oral: 'Oral',
@@ -317,54 +322,52 @@ export default function DoctorClinicalRecordsPage() {
 
   if (view === 'form') {
     return (
-      <div className="page-container-wide">
-        <div className="page-header">
-          <div>
-            <h1 style={{ marginBottom: 4 }}>{selectedRecordId ? t('clinical_records.edit_record') : t('clinical_records.new_record')}</h1>
-            <p style={{ color: 'var(--text-secondary)' }}>
-              {formData.patient_id ? `${t('clinical_records.patient_id_label')}: ${formData.patient_id}` : t('clinical_records.complete_patient_data')}
-            </p>
-          </div>
-          <button onClick={handleCancel} className="btn btn-ghost">← {t('clinical_records.back')}</button>
-        </div>
+      <PageContainer maxWidth="xl">
+        <PageHeader
+          title={selectedRecordId ? t('clinical_records.edit_record') : t('clinical_records.new_record')}
+          subtitle={formData.patient_id ? `${t('clinical_records.patient_id_label')}: ${formData.patient_id}` : t('clinical_records.complete_patient_data')}
+          actions={
+            <Button variant="ghost" onClick={handleCancel}>← {t('clinical_records.back')}</Button>
+          }
+        />
 
-        {error && <div className="alert alert-error">{error}</div>}
+        {error && <Alert variant="error">{error}</Alert>}
 
-        <div className="analytics-card">
+        <Card padding="md" style={{ marginBottom: 20 }}>
           <h3>Motivo de Consulta</h3>
           <div className="form-group">
             <label className="form-label">Motivo de consulta *</label>
             <textarea
-              className="form-input"
+              className="ds-input"
               rows={2}
               value={formData.chief_complaint}
               onChange={e => setFormData(prev => ({ ...prev, chief_complaint: e.target.value }))}
               placeholder="Ej: Dolor de cabeza persistente, control rutinario..."
             />
           </div>
-        </div>
+        </Card>
 
-        <div className="analytics-card">
+        <Card padding="md" style={{ marginBottom: 20 }}>
           <h3>Anamnesis</h3>
           <div className="form-group">
             <label className="form-label">Historia de la enfermedad actual / Antecedentes</label>
             <textarea
-              className="form-input"
+              className="ds-input"
               rows={4}
               value={formData.anamnesis}
               onChange={e => setFormData(prev => ({ ...prev, anamnesis: e.target.value }))}
               placeholder="Evolución del síntoma, antecedentes mórbidos, familiares, hábitos..."
             />
           </div>
-        </div>
+        </Card>
 
-        <div className="analytics-card">
+        <Card padding="md" style={{ marginBottom: 20 }}>
           <h3>Signos Vitales</h3>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 12 }}>
             <div className="form-group">
               <label className="form-label">{t('clinical_records.blood_pressure')}</label>
               <input
-                className="form-input"
+                className="ds-input"
                 value={formData.vital_signs.blood_pressure}
                 onChange={e => handleVitalSignChange('blood_pressure', e.target.value)}
                 placeholder="Ej: 120/80"
@@ -373,7 +376,7 @@ export default function DoctorClinicalRecordsPage() {
             <div className="form-group">
               <label className="form-label">{t('clinical_records.heart_rate')}</label>
               <input
-                className="form-input"
+                className="ds-input"
                 type="number"
                 value={formData.vital_signs.heart_rate}
                 onChange={e => handleVitalSignChange('heart_rate', e.target.value)}
@@ -383,7 +386,7 @@ export default function DoctorClinicalRecordsPage() {
             <div className="form-group">
               <label className="form-label">Temperatura (°C)</label>
               <input
-                className="form-input"
+                className="ds-input"
                 type="number"
                 step="0.1"
                 value={formData.vital_signs.temperature}
@@ -394,7 +397,7 @@ export default function DoctorClinicalRecordsPage() {
             <div className="form-group">
               <label className="form-label">Frec. respiratoria (rpm)</label>
               <input
-                className="form-input"
+                className="ds-input"
                 type="number"
                 value={formData.vital_signs.respiratory_rate}
                 onChange={e => handleVitalSignChange('respiratory_rate', e.target.value)}
@@ -404,7 +407,7 @@ export default function DoctorClinicalRecordsPage() {
             <div className="form-group">
               <label className="form-label">Sat. O2 (%)</label>
               <input
-                className="form-input"
+                className="ds-input"
                 type="number"
                 value={formData.vital_signs.oxygen_saturation}
                 onChange={e => handleVitalSignChange('oxygen_saturation', e.target.value)}
@@ -414,7 +417,7 @@ export default function DoctorClinicalRecordsPage() {
             <div className="form-group">
               <label className="form-label">Peso (kg)</label>
               <input
-                className="form-input"
+                className="ds-input"
                 type="number"
                 step="0.1"
                 value={formData.vital_signs.weight}
@@ -425,7 +428,7 @@ export default function DoctorClinicalRecordsPage() {
             <div className="form-group">
               <label className="form-label">Talla (cm)</label>
               <input
-                className="form-input"
+                className="ds-input"
                 type="number"
                 value={formData.vital_signs.height}
                 onChange={e => handleVitalSignChange('height', e.target.value)}
@@ -435,7 +438,7 @@ export default function DoctorClinicalRecordsPage() {
             <div className="form-group">
               <label className="form-label">IMC</label>
               <input
-                className="form-input"
+                className="ds-input"
                 type="number"
                 step="0.1"
                 value={formData.vital_signs.bmi}
@@ -444,28 +447,28 @@ export default function DoctorClinicalRecordsPage() {
               />
             </div>
           </div>
-        </div>
+        </Card>
 
-        <div className="analytics-card">
+        <Card padding="md" style={{ marginBottom: 20 }}>
           <h3>{t('clinical_records.physical_exam')}</h3>
           <div className="form-group">
             <label className="form-label">{t('clinical_records.physical_exam_label')}</label>
             <textarea
-              className="form-input"
+              className="ds-input"
               rows={4}
               value={formData.physical_exam}
               onChange={e => setFormData(prev => ({ ...prev, physical_exam: e.target.value }))}
               placeholder="Inspección, palpación, auscultación... orientado por sistema"
             />
           </div>
-        </div>
+        </Card>
 
-        <div className="analytics-card">
+        <Card padding="md" style={{ marginBottom: 20 }}>
           <h3>Diagnóstico</h3>
           <div className="form-group">
             <label className="form-label">{t('clinical_records.diagnosis_label')}</label>
             <textarea
-              className="form-input"
+              className="ds-input"
               rows={3}
               value={formData.diagnosis}
               onChange={e => setFormData(prev => ({ ...prev, diagnosis: e.target.value }))}
@@ -477,13 +480,13 @@ export default function DoctorClinicalRecordsPage() {
             <label className="form-label">{t('clinical_records.cie10_codes')}</label>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
               {formData.cie10_codes.map((code, i) => (
-                <span key={code} className="badge badge-info" style={{ cursor: 'pointer' }} onClick={() => removeCie10Code(i)}>
+                <Badge key={code} variant="info" style={{ cursor: 'pointer' }} onClick={() => removeCie10Code(i)}>
                   {code} ✕
-                </span>
+                </Badge>
               ))}
             </div>
             <input
-              className="form-input"
+              className="ds-input"
               value={cie10Query}
               onChange={e => setCie10Query(e.target.value)}
               placeholder="Buscar código CIE-10..."
@@ -491,15 +494,15 @@ export default function DoctorClinicalRecordsPage() {
             {cie10Open && cie10Results.length > 0 && (
               <div style={{
                 position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 100,
-                background: 'var(--bg-primary)', border: '1px solid var(--border-light)',
+                background: 'var(--ds-bg-primary)', border: '1px solid var(--ds-border)',
                 borderRadius: 8, maxHeight: 200, overflowY: 'auto', boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
               }}>
                 {cie10Results.slice(0, 10).map((r) => (
                   <div
                     key={r.code || r.codigo}
                     onClick={() => addCie10Code(r.code || r.codigo, r.description || r.descripcion)}
-                    style={{ padding: '8px 12px', cursor: 'pointer', borderBottom: '1px solid var(--border-light)', fontSize: 13 }}
-                    onMouseOver={e => e.currentTarget.style.background = 'var(--bg-secondary)'}
+                    style={{ padding: '8px 12px', cursor: 'pointer', borderBottom: '1px solid var(--ds-border)', fontSize: 13 }}
+                    onMouseOver={e => e.currentTarget.style.background = 'var(--ds-bg-secondary)'}
                     onMouseOut={e => e.currentTarget.style.background = 'transparent'}
                   >
                     <strong>{r.code || r.codigo}</strong> — {r.description || r.descripcion}
@@ -508,26 +511,26 @@ export default function DoctorClinicalRecordsPage() {
               </div>
             )}
           </div>
-        </div>
+        </Card>
 
-        <div className="analytics-card">
+        <Card padding="md" style={{ marginBottom: 20 }}>
           <h3>Plan de Tratamiento</h3>
           <div className="form-group">
             <label className="form-label">Indicaciones y tratamiento</label>
             <textarea
-              className="form-input"
+              className="ds-input"
               rows={3}
               value={formData.treatment_plan}
               onChange={e => setFormData(prev => ({ ...prev, treatment_plan: e.target.value }))}
               placeholder="Dieta, ejercicio, medicamentos, derivaciones..."
             />
           </div>
-        </div>
+        </Card>
 
         {labTests.length > 0 && (
-          <div className="analytics-card">
+          <Card padding="md" style={{ marginBottom: 20 }}>
             <h3>Exámenes de Laboratorio</h3>
-            <p style={{ fontSize: 14, color: 'var(--text-secondary)', marginBottom: 12 }}>
+            <p style={{ fontSize: 14, color: 'var(--ds-text-secondary)', marginBottom: 12 }}>
               Selecciona los exámenes que deseas solicitar para este paciente. Se creará una orden de laboratorio automáticamente.
             </p>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
@@ -537,8 +540,8 @@ export default function DoctorClinicalRecordsPage() {
                   style={{
                     display: 'flex', alignItems: 'center', gap: 6,
                     padding: '6px 12px', borderRadius: 6, cursor: 'pointer',
-                    border: '1px solid var(--border-light)',
-                    background: formData.lab_test_ids.includes(test.id) ? 'var(--primary-50)' : 'transparent',
+                    border: '1px solid var(--ds-border)',
+                    background: formData.lab_test_ids.includes(test.id) ? 'var(--ds-primary-50)' : 'transparent',
                     fontSize: 14,
                   }}
                 >
@@ -548,50 +551,50 @@ export default function DoctorClinicalRecordsPage() {
                     onChange={() => toggleLabTest(test.id)}
                   />
                   {test.name}
-                  {test.category && <span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>({test.category})</span>}
+                  {test.category && <span style={{ fontSize: 11, color: 'var(--ds-text-secondary)' }}>({test.category})</span>}
                 </label>
               ))}
             </div>
-          </div>
+          </Card>
         )}
 
-        <div className="analytics-card">
+        <Card padding="md" style={{ marginBottom: 20 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
             <h3 style={{ margin: 0 }}>Receta / Prescripciones</h3>
-            <button onClick={addPrescription} className="btn btn-outline btn-sm">+ {t('clinical_records.add_medication')}</button>
+            <Button variant="outline" size="sm" onClick={addPrescription}>+ {t('clinical_records.add_medication')}</Button>
           </div>
           {prescriptions.length === 0 && (
-            <p style={{ color: 'var(--text-secondary)', fontSize: 14 }}>{t('clinical_records.no_medications')}</p>
+            <p style={{ color: 'var(--ds-text-secondary)', fontSize: 14 }}>{t('clinical_records.no_medications')}</p>
           )}
           {prescriptions.map((p, idx) => (
             <div key={idx} style={{
               padding: 16, marginBottom: 12, borderRadius: 8,
-              border: '1px solid var(--border-light)', background: 'var(--bg-primary)',
+              border: '1px solid var(--ds-border)', background: 'var(--ds-bg-primary)',
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
                 <strong>Medicamento #{idx + 1}</strong>
-                <button onClick={() => removePrescription(idx)} className="btn btn-ghost btn-sm" style={{ color: 'var(--danger-500)' }}>Eliminar</button>
+                <Button variant="ghost" size="sm" onClick={() => removePrescription(idx)} style={{ color: 'var(--ds-danger-500)' }}>Eliminar</Button>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 8 }}>
                 <div className="form-group">
                   <label className="form-label">Medicamento *</label>
-                  <input className="form-input" value={p.medication} onChange={e => updatePrescriptionField(idx, 'medication', e.target.value)} placeholder="Ej: Enalapril" />
+                  <input className="ds-input" value={p.medication} onChange={e => updatePrescriptionField(idx, 'medication', e.target.value)} placeholder="Ej: Enalapril" />
                 </div>
                 <div className="form-group">
                   <label className="form-label">Dosis *</label>
-                  <input className="form-input" value={p.dosage} onChange={e => updatePrescriptionField(idx, 'dosage', e.target.value)} placeholder="Ej: 10 mg" />
+                  <input className="ds-input" value={p.dosage} onChange={e => updatePrescriptionField(idx, 'dosage', e.target.value)} placeholder="Ej: 10 mg" />
                 </div>
                 <div className="form-group">
                   <label className="form-label">Frecuencia *</label>
-                  <input className="form-input" value={p.frequency} onChange={e => updatePrescriptionField(idx, 'frequency', e.target.value)} placeholder="Ej: Cada 12 horas" />
+                  <input className="ds-input" value={p.frequency} onChange={e => updatePrescriptionField(idx, 'frequency', e.target.value)} placeholder="Ej: Cada 12 horas" />
                 </div>
                 <div className="form-group">
                   <label className="form-label">{t('clinical_records.medication_duration')}</label>
-                  <input className="form-input" value={p.duration} onChange={e => updatePrescriptionField(idx, 'duration', e.target.value)} placeholder="Ej: 10 días" />
+                  <input className="ds-input" value={p.duration} onChange={e => updatePrescriptionField(idx, 'duration', e.target.value)} placeholder="Ej: 10 días" />
                 </div>
                 <div className="form-group">
                   <label className="form-label">{t('clinical_records.medication_route')}</label>
-                  <select className="form-input" value={p.route} onChange={e => updatePrescriptionField(idx, 'route', e.target.value)}>
+                  <select className="ds-input" value={p.route} onChange={e => updatePrescriptionField(idx, 'route', e.target.value)}>
                     {Object.entries(ROUTES_MAP).map(([val, label]) => (
                       <option key={val} value={val}>{label}</option>
                     ))}
@@ -599,148 +602,146 @@ export default function DoctorClinicalRecordsPage() {
                 </div>
                 <div className="form-group" style={{ gridColumn: '1 / -1' }}>
                   <label className="form-label">{t('clinical_records.medication_instructions')}</label>
-                  <input className="form-input" value={p.instructions} onChange={e => updatePrescriptionField(idx, 'instructions', e.target.value)} placeholder="Ej: Tomar después de las comidas" />
+                  <input className="ds-input" value={p.instructions} onChange={e => updatePrescriptionField(idx, 'instructions', e.target.value)} placeholder="Ej: Tomar después de las comidas" />
                 </div>
               </div>
             </div>
           ))}
-        </div>
+        </Card>
 
-        <div className="analytics-card">
+        <Card padding="md" style={{ marginBottom: 20 }}>
           <h3>Notas</h3>
           <div className="form-group">
             <label className="form-label">Notas adicionales</label>
             <textarea
-              className="form-input"
+              className="ds-input"
               rows={2}
               value={formData.notes}
               onChange={e => setFormData(prev => ({ ...prev, notes: e.target.value }))}
               placeholder="Comentarios, observaciones, próximos pasos..."
             />
           </div>
-        </div>
+        </Card>
 
         {selectedRecordId && labResults.length > 0 && (
-          <div className="analytics-card">
+          <Card padding="md" style={{ marginBottom: 20 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
               <h3 style={{ margin: 0 }}>{t('clinical_records.lab_results')}</h3>
-              <button onClick={() => setShowLab(!showLab)} className="btn btn-outline btn-sm">
+              <Button variant="outline" size="sm" onClick={() => setShowLab(!showLab)}>
                 {showLab ? t('clinical_records.hide') : t('clinical_records.show')}
-              </button>
+              </Button>
             </div>
             {showLab && labResults.map((req) => (
-              <div key={req.id} style={{ marginBottom: 12, padding: 12, border: '1px solid var(--border-light)', borderRadius: 8 }}>
+              <div key={req.id} style={{ marginBottom: 12, padding: 12, border: '1px solid var(--ds-border)', borderRadius: 8 }}>
                 <strong>{req.test_name || `${t('lab_results.request')} #${req.id}`}</strong>
-                <span className={`badge ${req.status === 'completed' ? 'badge-success' : 'badge-warning'}`} style={{ marginLeft: 8 }}>{req.status}</span>
+                <Badge variant={req.status === 'completed' ? 'success' : 'warning'} style={{ marginLeft: 8 }}>{req.status}</Badge>
                 {(req.items || []).map((item) => (
                   <div key={item.id} style={{ padding: '4px 0 0 16px', fontSize: 14 }}>
-                    <strong>{item.test_name}</strong>: {item.result_value || <span style={{ color: 'var(--text-muted)' }}>{t('lab_results.pending')}</span>}
-                    {item.reference_range && <span style={{ color: 'var(--text-secondary)', marginLeft: 8 }}>({item.reference_range})</span>}
+                    <strong>{item.test_name}</strong>: {item.result_value || <span style={{ color: 'var(--ds-text-tertiary)' }}>{t('lab_results.pending')}</span>}
+                    {item.reference_range && <span style={{ color: 'var(--ds-text-secondary)', marginLeft: 8 }}>({item.reference_range})</span>}
                   </div>
                 ))}
               </div>
             ))}
-          </div>
+          </Card>
         )}
 
         <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', padding: '16px 0' }}>
-          <button onClick={handleCancel} className="btn btn-ghost" disabled={saving}>{t('clinical_records.cancel')}</button>
-          <button onClick={() => handleSave('draft')} className="btn btn-outline" disabled={saving || !formData.chief_complaint}>
+          <Button variant="ghost" onClick={handleCancel} disabled={saving}>{t('clinical_records.cancel')}</Button>
+          <Button variant="outline" onClick={() => handleSave('draft')} disabled={saving || !formData.chief_complaint}>
             {saving ? t('clinical_records.saving') : t('clinical_records.save')}
-          </button>
-          <button onClick={() => handleSave('completed')} className="btn btn-primary" disabled={saving || !formData.chief_complaint}>
+          </Button>
+          <Button variant="primary" onClick={() => handleSave('completed')} disabled={saving || !formData.chief_complaint}>
             {saving ? t('clinical_records.saving') : t('clinical_records.save_complete')}
-          </button>
+          </Button>
         </div>
-      </div>
+      </PageContainer>
     );
   }
 
   return (
-    <div className="page-container-wide">
-      <div className="page-header">
-        <h1>{t('clinical_records.title')}</h1>
-      </div>
+    <PageContainer maxWidth="xl">
+      <PageHeader title={t('clinical_records.title')} />
 
-      {error && <div className="alert alert-error">{error}</div>}
+      {error && <Alert variant="error">{error}</Alert>}
 
       {loading ? (
         <div style={{ textAlign: 'center', padding: 60 }}>
-          <div className="spinner" style={{ margin: 'auto' }}></div>
-          <p>Cargando...</p>
+          <div className="ds-spinner" style={{ margin: 'auto' }}></div>
+          <p style={{ color: 'var(--ds-text-secondary)' }}>Cargando...</p>
         </div>
       ) : (
         <>
           {bookingsWithoutRecord.length > 0 && (
-            <div className="analytics-card">
+            <Card padding="md" style={{ marginBottom: 20 }}>
               <h3>{t('clinical_records.pending_title')}</h3>
-              <p style={{ fontSize: 14, color: 'var(--text-secondary)', marginBottom: 16 }}>
+              <p style={{ fontSize: 14, color: 'var(--ds-text-secondary)', marginBottom: 16 }}>
                 Estos pacientes tienen citas próximas y aún no tienen ficha clínica registrada.
               </p>
               <div style={{ display: 'grid', gap: 8 }}>
                 {bookingsWithoutRecord.slice(0, 10).map((b) => (
-                  <div key={b.id} className="card" style={{ padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+                  <Card key={b.id} padding="sm" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
                     <div>
                       <strong>{getBookingPatientName(b)}</strong>
-                      <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
+                      <div style={{ fontSize: 13, color: 'var(--ds-text-secondary)' }}>
                         {b.date} — {b.time} ({b.duration} min)
                       </div>
                     </div>
-                    <button onClick={() => navigate(`/doctor/patient-history?patientId=${b.user_id}`)} className="btn btn-ghost btn-sm" style={{ marginRight: 8 }}>
+                    <Button variant="ghost" size="sm" onClick={() => navigate(`/doctor/patient-history?patientId=${b.user_id}`)} style={{ marginRight: 8 }}>
                       {t('clinical_records.view_history')}
-                    </button>
-                    <button onClick={() => handleNewRecord(b)} className="btn btn-primary btn-sm">
+                    </Button>
+                    <Button variant="primary" size="sm" onClick={() => handleNewRecord(b)}>
                       {t('clinical_records.new_record')}
-                    </button>
-                  </div>
+                    </Button>
+                  </Card>
                 ))}
               </div>
-            </div>
+            </Card>
           )}
 
-          <div className="analytics-card">
+          <Card padding="md" style={{ marginBottom: 20 }}>
             <h3>{t('clinical_records.registered_title')}</h3>
             {records.length === 0 ? (
               <div className="empty-state">
                 <p>{t('clinical_records.no_records')}</p>
               </div>
             ) : (
-              <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', fontSize: 13 }}>
+              <div className="ds-table-wrapper">
+                <table className="ds-table" style={{ fontSize: 13 }}>
                   <thead>
-                    <tr style={{ background: 'var(--bg-primary)' }}>
-                      <th style={{ padding: 10, textAlign: 'left' }}>{t('clinical_records.patient')}</th>
-                      <th style={{ padding: 10, textAlign: 'left' }}>{t('clinical_records.diagnosis')}</th>
-                      <th style={{ padding: 10, textAlign: 'left' }}>{t('clinical_records.date')}</th>
-                      <th style={{ padding: 10, textAlign: 'left' }}>Estado</th>
-                      <th style={{ padding: 10, textAlign: 'right' }}>{t('clinical_records.actions')}</th>
+                    <tr>
+                      <th>{t('clinical_records.patient')}</th>
+                      <th>{t('clinical_records.diagnosis')}</th>
+                      <th>{t('clinical_records.date')}</th>
+                      <th>Estado</th>
+                      <th style={{ textAlign: 'right' }}>{t('clinical_records.actions')}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {records.map((r) => (
-                      <tr key={r.id} style={{ borderBottom: '1px solid var(--border-light)' }}>
-                        <td style={{ padding: 10 }}>{getPatientName(r)}</td>
-                        <td style={{ padding: 10, maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {r.diagnosis || <span style={{ color: 'var(--text-muted)' }}>{t('clinical_records.no_diagnosis')}</span>}
+                      <tr key={r.id}>
+                        <td>{getPatientName(r)}</td>
+                        <td style={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {r.diagnosis || <span style={{ color: 'var(--ds-text-tertiary)' }}>{t('clinical_records.no_diagnosis')}</span>}
                         </td>
-                        <td style={{ padding: 10 }}>{r.created_at?.split('T')[0] || '-'}</td>
-                        <td style={{ padding: 10 }}>
-                          <span className={`badge ${r.status === 'completed' ? 'badge-success' : r.status === 'cancelled' ? 'badge-danger' : 'badge-warning'}`}>
+                        <td>{r.created_at?.split('T')[0] || '-'}</td>
+                        <td>
+                          <Badge variant={r.status === 'completed' ? 'success' : r.status === 'cancelled' ? 'danger' : 'warning'}>
                             {r.status === 'completed' ? t('clinical_records.status_completed') : r.status === 'cancelled' ? t('clinical_records.status_cancelled') : t('clinical_records.status_draft')}
-                          </span>
+                          </Badge>
                         </td>
-                        <td style={{ padding: 10, textAlign: 'right' }}>
+                        <td style={{ textAlign: 'right' }}>
                           <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-                            <button onClick={() => navigate(`/doctor/patient-history?patientId=${r.patient_id}`)} className="btn btn-ghost btn-sm">
+                            <Button variant="ghost" size="sm" onClick={() => navigate(`/doctor/patient-history?patientId=${r.patient_id}`)}>
                               {t('clinical_records.view_history')}
-                            </button>
-                            <button onClick={() => handleEditRecord(r.id)} className="btn btn-outline btn-sm">
+                            </Button>
+                            <Button variant="outline" size="sm" onClick={() => handleEditRecord(r.id)}>
                               {r.status === 'draft' ? t('clinical_records.edit') : t('clinical_records.view')}
-                            </button>
+                            </Button>
                             {r.status === 'draft' && (
-                              <button onClick={() => handleDelete(r.id)} className="btn btn-ghost btn-sm" style={{ color: 'var(--danger-500)' }}>
+                              <Button variant="ghost" size="sm" onClick={() => handleDelete(r.id)} style={{ color: 'var(--ds-danger-500)' }}>
                                 {t('clinical_records.delete')}
-                              </button>
+                              </Button>
                             )}
                           </div>
                         </td>
@@ -750,9 +751,9 @@ export default function DoctorClinicalRecordsPage() {
                 </table>
               </div>
             )}
-          </div>
+          </Card>
         </>
       )}
-    </div>
+    </PageContainer>
   );
 }

@@ -7,6 +7,10 @@ import { getDoctors } from '../api/doctors';
 import { getAvailableSlots, createBooking } from '../api/bookings';
 import { useAuth } from '../context/useAuth';
 import { useI18n } from '../i18n/useI18n';
+import Button from '../components/ui/Button';
+import Card from '../components/ui/Card';
+import Alert from '../components/ui/Alert';
+import { PageContainer } from '../components/ui/PageContainer';
 
 interface Doctor {
   id: number;
@@ -127,31 +131,31 @@ const BookingPage = React.memo(function BookingPage() {
 
   if (success) {
     return (
-      <div className="page-container">
-        <div className="card bk-success-card">
+      <PageContainer maxWidth="sm">
+        <Card padding="lg" style={{ textAlign: 'center' }}>
           <div className="bk-success-icon">✅</div>
           <h2 className="bk-success-title">{t('booking.success_title')}</h2>
           <p className="bk-success-desc">
             {t('booking.success_desc', { email: form.email })}
           </p>
           <div className="bk-success-actions">
-            <button onClick={() => navigate('/my-bookings')} className="btn btn-success">
+            <Button variant="primary" onClick={() => navigate('/my-bookings')}>
               {t('booking.view_bookings')}
-            </button>
-            <button onClick={() => navigate('/')} className="btn btn-ghost">
+            </Button>
+            <Button variant="ghost" onClick={() => navigate('/')}>
               {t('booking.back_home')}
-            </button>
+            </Button>
           </div>
-        </div>
-      </div>
+        </Card>
+      </PageContainer>
     );
   }
 
   return (
-    <div className="page-container bk-page">
+    <PageContainer maxWidth="md">
       <h1 className="bk-page-title">{t('booking.title')}</h1>
 
-      {error && <div className="alert alert-error">{error}</div>}
+      {error && <Alert variant="error">{error}</Alert>}
 
       <div className="steps">
         <div className={`step ${step === 1 ? 'active' : step > 1 ? 'completed' : ''}`}>
@@ -175,7 +179,7 @@ const BookingPage = React.memo(function BookingPage() {
               value={date}
               min={today}
               onChange={(e) => { setDate(e.target.value); setSlots([]); setSelectedTime(null); }}
-              className="form-input"
+              className="ds-input"
             />
           </div>
 
@@ -239,13 +243,13 @@ const BookingPage = React.memo(function BookingPage() {
 
           <div className="bk-nav-row">
             {canGoToStep2 ? (
-              <button onClick={() => setStep(2)} className="btn btn-primary btn-lg">
+              <Button variant="primary" size="lg" onClick={() => setStep(2)}>
                 {t('booking.continue')} →
-              </button>
+              </Button>
             ) : (
-              <button disabled className="btn btn-ghost btn-lg">
+              <Button variant="ghost" size="lg" disabled>
                 {t('booking.select_requirements')}
-              </button>
+              </Button>
             )}
           </div>
         </div>
@@ -264,47 +268,48 @@ const BookingPage = React.memo(function BookingPage() {
 
           <div className="user-badge user-badge-logged">🔒 {t('booking.logged_in_as', { email: user.email })}</div>
 
-          <div className="card">
+          <Card padding="md">
             <h3 className="bk-section-title">{t('booking.personal_data_title')}</h3>
             <div className="grid grid-2">
               <div className="form-group">
                 <label className="form-label">{t('booking.rut_label')}</label>
-                <input value={form.rut} disabled placeholder={t('booking.rut_placeholder')} className="form-input" />
+                <input value={form.rut} disabled placeholder={t('booking.rut_placeholder')} className="ds-input" />
               </div>
               <div className="form-group">
                 <label className="form-label">{t('booking.name_label')}</label>
-                <input value={form.name} disabled placeholder={t('booking.name_placeholder')} className="form-input" />
+                <input value={form.name} disabled placeholder={t('booking.name_placeholder')} className="ds-input" />
               </div>
               <div className="form-group">
                 <label className="form-label">{t('booking.email_label')}</label>
-                <input value={form.email} disabled placeholder={t('booking.email_placeholder')} className="form-input" />
+                <input value={form.email} disabled placeholder={t('booking.email_placeholder')} className="ds-input" />
               </div>
               <div className="form-group">
                 <label className="form-label">{t('booking.phone_label')}</label>
-                <input value={form.phone} disabled placeholder={t('booking.phone_placeholder')} className="form-input" />
+                <input value={form.phone} disabled placeholder={t('booking.phone_placeholder')} className="ds-input" />
               </div>
             </div>
 
             <p className="bk-profile-hint">
               {t('booking.profile_data_hint')}
             </p>
-          </div>
+          </Card>
 
           <div className="bk-action-row">
-            <button onClick={() => setStep(1)} className="btn btn-ghost btn-lg">
+            <Button variant="ghost" size="lg" onClick={() => setStep(1)}>
               ← {t('booking.back')}
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="primary"
+              size="lg"
               onClick={handleConfirm}
               disabled={submitting}
-              className="btn btn-primary btn-lg"
             >
               {submitting ? t('booking.confirming') : t('booking.confirm')}
-            </button>
+            </Button>
           </div>
         </div>
       )}
-    </div>
+    </PageContainer>
   );
 });
 

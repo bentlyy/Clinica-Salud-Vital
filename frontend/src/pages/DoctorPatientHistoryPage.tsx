@@ -3,6 +3,11 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { getClinicalRecordsByPatient, getClinicalRecordById } from '../api/clinicalRecords';
 import { getLabRequests } from '../api/laboratory';
 import { useI18n } from '../i18n/useI18n';
+import Button from '../components/ui/Button';
+import Badge from '../components/ui/Badge';
+import Alert from '../components/ui/Alert';
+import Card from '../components/ui/Card';
+import { PageContainer, PageHeader } from '../components/ui/PageContainer';
 
 export default function DoctorPatientHistoryPage() {
   const { t } = useI18n();
@@ -43,83 +48,85 @@ export default function DoctorPatientHistoryPage() {
 
   if (!patientId) {
     return (
-      <div className="page-container">
+      <PageContainer maxWidth="xl">
         <div className="empty-state">
           <p>{t('doctor_patient_history.no_patient')}</p>
         </div>
-      </div>
+      </PageContainer>
     );
   }
 
   if (selectedRecord) {
     const r = selectedRecord;
     return (
-      <div className="page-container-wide">
-        <div className="page-header">
-          <h1>{t('doctor_patient_history.record_detail')}</h1>
-          <button onClick={() => setSelectedRecord(null)} className="btn btn-ghost">← {t('doctor_patient_history.back')}</button>
-        </div>
-        <div className="analytics-card">
+      <PageContainer maxWidth="xl">
+        <PageHeader
+          title={t('doctor_patient_history.record_detail')}
+          actions={<Button variant="ghost" onClick={() => setSelectedRecord(null)}>← {t('doctor_patient_history.back')}</Button>}
+        />
+        <Card padding="md" style={{ marginBottom: 12 }}>
           <h3>{t('medical_history.chief_complaint')}</h3>
           <p>{r.chief_complaint}</p>
-        </div>
-        {r.anamnesis && <div className="analytics-card"><h3>{t('medical_history.anamnesis')}</h3><p style={{ whiteSpace: 'pre-wrap' }}>{r.anamnesis}</p></div>}
-        {r.diagnosis && <div className="analytics-card"><h3>{t('clinical_records.diagnosis_label')}</h3><p style={{ whiteSpace: 'pre-wrap' }}>{r.diagnosis}</p></div>}
-        {r.treatment_plan && <div className="analytics-card"><h3>{t('medical_history.treatment_plan')}</h3><p style={{ whiteSpace: 'pre-wrap' }}>{r.treatment_plan}</p></div>}
+        </Card>
+        {r.anamnesis && <Card padding="md" style={{ marginBottom: 12 }}><h3>{t('medical_history.anamnesis')}</h3><p style={{ whiteSpace: 'pre-wrap' }}>{r.anamnesis}</p></Card>}
+        {r.diagnosis && <Card padding="md" style={{ marginBottom: 12 }}><h3>{t('clinical_records.diagnosis_label')}</h3><p style={{ whiteSpace: 'pre-wrap' }}>{r.diagnosis}</p></Card>}
+        {r.treatment_plan && <Card padding="md" style={{ marginBottom: 12 }}><h3>{t('medical_history.treatment_plan')}</h3><p style={{ whiteSpace: 'pre-wrap' }}>{r.treatment_plan}</p></Card>}
         {r.prescriptions?.length > 0 && (
-          <div className="analytics-card">
+          <Card padding="md" style={{ marginBottom: 12 }}>
             <h3>{t('medical_history.prescriptions')}</h3>
             {r.prescriptions.map((p, i) => (
-              <div key={p.id || i} style={{ padding: '8px 0', borderBottom: '1px solid var(--border-light)' }}>
+              <div key={p.id || i} style={{ padding: '8px 0', borderBottom: '1px solid var(--ds-border)' }}>
                 <strong>{p.medication}</strong> — {p.dosage}, {p.frequency}
               </div>
             ))}
-          </div>
+          </Card>
         )}
-      </div>
+      </PageContainer>
     );
   }
 
   return (
-    <div className="page-container-wide">
-      <div className="page-header">
-        <h1>{t('doctor_patient_history.title')} — {t('doctor_patient_history.patient')} #{patientId}</h1>
-        <button onClick={() => navigate('/doctor/clinical-records')} className="btn btn-ghost">← {t('doctor_patient_history.back')}</button>
-      </div>
+    <PageContainer maxWidth="xl">
+      <PageHeader
+        title={`${t('doctor_patient_history.title')} — ${t('doctor_patient_history.patient')} #${patientId}`}
+        actions={<Button variant="ghost" onClick={() => navigate('/doctor/clinical-records')}>← {t('doctor_patient_history.back')}</Button>}
+      />
 
-      {error && <div className="alert alert-error">{error}</div>}
+      {error && <Alert variant="error">{error}</Alert>}
       {loading && <p>{t('doctor_patient_history.loading')}</p>}
 
       {!loading && (
         <>
-          <div style={{ display: 'flex', gap: 0, marginBottom: 24, borderBottom: '2px solid var(--border-light)' }}>
-            <button
+          <div style={{ display: 'flex', gap: 0, marginBottom: 24, borderBottom: '2px solid var(--ds-border)' }}>
+            <Button
+              variant="ghost"
               onClick={() => setTab('records')}
               style={{
-                padding: '12px 24px', border: 'none', background: tab === 'records' ? 'var(--primary-50)' : 'transparent',
-                color: tab === 'records' ? 'var(--primary-600)' : 'var(--text-secondary)', fontWeight: 600, cursor: 'pointer',
-                borderBottom: tab === 'records' ? '2px solid var(--primary-500)' : '2px solid transparent', marginBottom: -2,
+                padding: '12px 24px', border: 'none', borderRadius: 0, background: tab === 'records' ? 'var(--ds-primary-50)' : 'transparent',
+                color: tab === 'records' ? 'var(--ds-primary-600)' : 'var(--ds-text-secondary)', fontWeight: 600,
+                borderBottom: tab === 'records' ? '2px solid var(--ds-primary-500)' : '2px solid transparent', marginBottom: -2,
               }}
-            >{t('doctor_patient_history.clinical_records')} ({records.length})</button>
-            <button
+            >{t('doctor_patient_history.clinical_records')} ({records.length})</Button>
+            <Button
+              variant="ghost"
               onClick={() => setTab('lab')}
               style={{
-                padding: '12px 24px', border: 'none', background: tab === 'lab' ? 'var(--primary-50)' : 'transparent',
-                color: tab === 'lab' ? 'var(--primary-600)' : 'var(--text-secondary)', fontWeight: 600, cursor: 'pointer',
-                borderBottom: tab === 'lab' ? '2px solid var(--primary-500)' : '2px solid transparent', marginBottom: -2,
+                padding: '12px 24px', border: 'none', borderRadius: 0, background: tab === 'lab' ? 'var(--ds-primary-50)' : 'transparent',
+                color: tab === 'lab' ? 'var(--ds-primary-600)' : 'var(--ds-text-secondary)', fontWeight: 600,
+                borderBottom: tab === 'lab' ? '2px solid var(--ds-primary-500)' : '2px solid transparent', marginBottom: -2,
               }}
-            >{t('doctor_patient_history.lab_results')} ({labRequests.length})</button>
+            >{t('doctor_patient_history.lab_results')} ({labRequests.length})</Button>
           </div>
 
           {tab === 'records' && (
-            <div className="analytics-card">
+            <Card padding="md">
               {records.length === 0 ? (
                 <div className="empty-state"><p>{t('doctor_patient_history.no_records')}</p></div>
               ) : (
                 <div style={{ overflowX: 'auto' }}>
                   <table style={{ width: '100%', fontSize: 13 }}>
                     <thead>
-                      <tr style={{ background: 'var(--bg-primary)' }}>
+                      <tr style={{ background: 'var(--ds-bg-primary)' }}>
                         <th style={{ padding: 10, textAlign: 'left' }}>{t('clinical_records.date')}</th>
                         <th style={{ padding: 10, textAlign: 'left' }}>{t('clinical_records.diagnosis')}</th>
                         <th style={{ padding: 10, textAlign: 'left' }}>{t('medical_history.chief_complaint')}</th>
@@ -129,17 +136,17 @@ export default function DoctorPatientHistoryPage() {
                     </thead>
                     <tbody>
                       {records.map((r) => (
-                        <tr key={r.id} style={{ borderBottom: '1px solid var(--border-light)' }}>
+                        <tr key={r.id} style={{ borderBottom: '1px solid var(--ds-border)' }}>
                           <td style={{ padding: 10 }}>{r.created_at?.split('T')[0] || '-'}</td>
                           <td style={{ padding: 10, maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                             {r.diagnosis || '-'}
                           </td>
                           <td style={{ padding: 10 }}>{r.chief_complaint}</td>
                           <td style={{ padding: 10 }}>
-                            <span className={`badge ${r.status === 'completed' ? 'badge-success' : 'badge-warning'}`}>{r.status}</span>
+                            <Badge variant={r.status === 'completed' ? 'success' : 'warning'}>{r.status}</Badge>
                           </td>
                           <td style={{ padding: 10, textAlign: 'right' }}>
-                            <button onClick={() => viewRecord(r.id)} className="btn btn-outline btn-sm">{t('medical_history.view')}</button>
+                            <Button variant="outline" size="sm" onClick={() => viewRecord(r.id)}>{t('medical_history.view')}</Button>
                           </td>
                         </tr>
                       ))}
@@ -147,18 +154,18 @@ export default function DoctorPatientHistoryPage() {
                   </table>
                 </div>
               )}
-            </div>
+            </Card>
           )}
 
           {tab === 'lab' && (
-            <div className="analytics-card">
+            <Card padding="md">
               {labRequests.length === 0 ? (
                 <div className="empty-state"><p>{t('doctor_patient_history.no_lab_results')}</p></div>
               ) : (
                 <div style={{ overflowX: 'auto' }}>
                   <table style={{ width: '100%', fontSize: 13 }}>
                     <thead>
-                      <tr style={{ background: 'var(--bg-primary)' }}>
+                      <tr style={{ background: 'var(--ds-bg-primary)' }}>
                         <th style={{ padding: 10, textAlign: 'left' }}>{t('lab_results.request')}</th>
                         <th style={{ padding: 10, textAlign: 'left' }}>{t('lab_results.date')}</th>
                         <th style={{ padding: 10, textAlign: 'left' }}>{t('lab_results.doctor')}</th>
@@ -168,15 +175,15 @@ export default function DoctorPatientHistoryPage() {
                     </thead>
                     <tbody>
                       {labRequests.map((r) => (
-                        <tr key={r.id} style={{ borderBottom: '1px solid var(--border-light)' }}>
+                        <tr key={r.id} style={{ borderBottom: '1px solid var(--ds-border)' }}>
                           <td style={{ padding: 10 }}>{r.test_name || `#${r.id}`}</td>
                           <td style={{ padding: 10 }}>{r.created_at?.split('T')[0] || '-'}</td>
                           <td style={{ padding: 10 }}>{r.doctor_name || '-'}</td>
                           <td style={{ padding: 10 }}>
-                            <span className={`badge ${r.status === 'completed' ? 'badge-success' : 'badge-warning'}`}>{r.status}</span>
+                            <Badge variant={r.status === 'completed' ? 'success' : 'warning'}>{r.status}</Badge>
                           </td>
                           <td style={{ padding: 10, textAlign: 'right' }}>
-                            <button onClick={() => navigate(`/doctor/lab-results/${r.id}`)} className="btn btn-outline btn-sm">{t('medical_history.view')}</button>
+                            <Button variant="outline" size="sm" onClick={() => navigate(`/doctor/lab-results/${r.id}`)}>{t('medical_history.view')}</Button>
                           </td>
                         </tr>
                       ))}
@@ -184,10 +191,10 @@ export default function DoctorPatientHistoryPage() {
                   </table>
                 </div>
               )}
-            </div>
+            </Card>
           )}
         </>
       )}
-    </div>
+    </PageContainer>
   );
 }

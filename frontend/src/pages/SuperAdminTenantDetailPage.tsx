@@ -2,6 +2,11 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getTenantDetail, updateTenant, listUsers, toggleUserActive } from '../api/super-admin';
 import { useI18n } from '../i18n/useI18n';
+import Button from '../components/ui/Button';
+import Badge from '../components/ui/Badge';
+import Card from '../components/ui/Card';
+import Alert from '../components/ui/Alert';
+import { PageContainer, PageHeader } from '../components/ui/PageContainer';
 
 const ROLE_CONFIG = {
   admin: { icon: '🛡️', label: 'Administradores', color: '#6c5ce7' },
@@ -76,7 +81,7 @@ function RoleCard({ role, users, onToggle, toggling }) {
   return (
     <div style={{
       display: 'flex', flexDirection: 'column', minHeight: 0,
-      borderRadius: 'var(--radius-sm)',
+      borderRadius: 'var(--ds-radius-sm)',
       border: `1px solid ${cfg.color}20`,
       background: `linear-gradient(180deg, ${cfg.color}08, transparent)`,
       overflow: 'hidden',
@@ -97,7 +102,7 @@ function RoleCard({ role, users, onToggle, toggling }) {
       </div>
       <div style={{ flex: 1, overflowY: 'auto', padding: '8px', minHeight: 0 }}>
         {users.length === 0 ? (
-          <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textAlign: 'center', padding: '24px 8px' }}>
+          <p style={{ fontSize: '0.85rem', color: 'var(--ds-text-tertiary)', textAlign: 'center', padding: '24px 8px' }}>
             No hay {cfg.label.toLowerCase()} registrados
           </p>
         ) : (
@@ -205,59 +210,61 @@ export default function SuperAdminTenantDetailPage() {
     }
   };
 
-  if (loading) return <div className="page-container" style={{ textAlign: 'center', padding: 80 }}>{t('superadmin.title')}...</div>;
+  if (loading) return <PageContainer maxWidth="xl"><div style={{ textAlign: 'center', padding: 80 }}>{t('superadmin.title')}...</div></PageContainer>;
 
   if (!detail) {
     return (
-      <div className="page-container" style={{ textAlign: 'center', padding: 80 }}>
-        <h2>{t('superadmin.tenant_not_found')}</h2>
-        <button className="btn btn--primary" onClick={() => navigate('/super-admin/tenants')}>{t('superadmin.back_to_list')}</button>
-      </div>
+      <PageContainer maxWidth="xl">
+        <div style={{ textAlign: 'center', padding: 80 }}>
+          <h2>{t('superadmin.tenant_not_found')}</h2>
+          <Button variant="primary" onClick={() => navigate('/super-admin/tenants')}>{t('superadmin.back_to_list')}</Button>
+        </div>
+      </PageContainer>
     );
   }
 
   const { tenant, stats, subscription } = detail;
 
   return (
-    <div className="page-container-wide" style={{ padding: '32px 24px' }}>
-      <button className="btn btn--outline btn--sm" style={{ marginBottom: 16 }} onClick={() => navigate('/super-admin/tenants')}>
+    <PageContainer maxWidth="xl" style={{ paddingTop: 32, paddingBottom: 32 }}>
+      <Button variant="outline" size="sm" style={{ marginBottom: 16 }} onClick={() => navigate('/super-admin/tenants')}>
         ← {t('superadmin.back_to_list')}
-      </button>
+      </Button>
 
-      <div className="page-header-row" style={{ marginBottom: 24 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
         <div>
           <h1 style={{ margin: 0 }}>{tenant.name}</h1>
-          <code style={{ color: 'var(--text-secondary)', fontSize: 13 }}>{t('superadmin.id')}: {tenant.id}</code>
+          <code style={{ color: 'var(--ds-text-secondary)', fontSize: 13 }}>{t('superadmin.id')}: {tenant.id}</code>
         </div>
-        <span className={`badge badge--${tenant.active ? 'success' : 'error'}`} style={{ fontSize: 14, padding: '6px 14px' }}>
+        <Badge variant={tenant.active ? 'success' : 'error'} style={{ fontSize: 14, padding: '6px 14px' }}>
           {tenant.active ? t('superadmin.active_label') : t('superadmin.inactive')}
-        </span>
+        </Badge>
       </div>
 
-      {error && <div className="alert alert--error" style={{ margin: '16px 0' }}>{error}</div>}
-      {success && <div className="alert alert--success" style={{ margin: '16px 0' }}>{success}</div>}
+      {error && <Alert variant="error" style={{ margin: '16px 0' }}>{error}</Alert>}
+      {success && <Alert variant="success" style={{ margin: '16px 0' }}>{success}</Alert>}
 
       <div className="stats-grid">
-        <div className="card stat-card">
-          <div className="stat-value">{stats?.patient_count || 0}</div>
-          <div className="stat-label">{t('saas.patients')}</div>
-        </div>
-        <div className="card stat-card">
-          <div className="stat-value">{stats?.doctor_count || 0}</div>
-          <div className="stat-label">{t('saas.doctors')}</div>
-        </div>
-        <div className="card stat-card">
-          <div className="stat-value">{stats?.booking_count || 0}</div>
-          <div className="stat-label">{t('superadmin.bookings')}</div>
-        </div>
-        <div className="card stat-card">
-          <div className="stat-value">{stats?.invoice_count || 0}</div>
-          <div className="stat-label">{t('saas.invoices')}</div>
-        </div>
+        <Card padding="md" className="stat-card" style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: 24, fontWeight: 700 }}>{stats?.patient_count || 0}</div>
+          <div style={{ fontSize: 13, color: 'var(--ds-text-secondary)' }}>{t('saas.patients')}</div>
+        </Card>
+        <Card padding="md" className="stat-card" style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: 24, fontWeight: 700 }}>{stats?.doctor_count || 0}</div>
+          <div style={{ fontSize: 13, color: 'var(--ds-text-secondary)' }}>{t('saas.doctors')}</div>
+        </Card>
+        <Card padding="md" className="stat-card" style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: 24, fontWeight: 700 }}>{stats?.booking_count || 0}</div>
+          <div style={{ fontSize: 13, color: 'var(--ds-text-secondary)' }}>{t('superadmin.bookings')}</div>
+        </Card>
+        <Card padding="md" className="stat-card" style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: 24, fontWeight: 700 }}>{stats?.invoice_count || 0}</div>
+          <div style={{ fontSize: 13, color: 'var(--ds-text-secondary)' }}>{t('saas.invoices')}</div>
+        </Card>
       </div>
 
       {subscription && (
-        <div className="card" style={{ padding: 24, marginBottom: 24 }}>
+        <Card padding="md" style={{ marginBottom: 24 }}>
           <h3 style={{ marginBottom: 16 }}>{t('superadmin.subscription')}</h3>
           <div className="detail-grid-2col">
             <div><span className="detail-label">{t('tenant.plan')}:</span> <strong>{subscription.plan_name}</strong></div>
@@ -265,18 +272,18 @@ export default function SuperAdminTenantDetailPage() {
             <div><span className="detail-label">{t('tenant.period_start')}:</span> {subscription.current_period_start ? new Date(subscription.current_period_start).toLocaleDateString() : '-'}</div>
             <div><span className="detail-label">{t('tenant.period_end')}:</span> {subscription.current_period_end ? new Date(subscription.current_period_end).toLocaleDateString() : '-'}</div>
           </div>
-        </div>
+        </Card>
       )}
 
-      <div className="card" style={{ padding: 24, marginBottom: 24 }}>
+      <Card padding="md" style={{ marginBottom: 24 }}>
         <h3 style={{ marginBottom: 16 }}>{t('superadmin.config')}</h3>
         <div className="form-group">
           <label>{t('superadmin.name')}</label>
-          <input type="text" className="input" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} />
+          <input type="text" className="ds-input" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} />
         </div>
         <div className="form-group">
           <label>{t('super_admin.tenant_locale_label')}</label>
-          <select className="input" value={form.locale} onChange={(e) => setForm((f) => ({ ...f, locale: e.target.value }))}>
+          <select className="ds-input" value={form.locale} onChange={(e) => setForm((f) => ({ ...f, locale: e.target.value }))}>
             <option value="es">{t('super_admin.spanish')}</option>
             <option value="en">{t('super_admin.english')}</option>
             <option value="pt">{t('super_admin.portuguese')}</option>
@@ -285,7 +292,7 @@ export default function SuperAdminTenantDetailPage() {
         </div>
         <div className="form-group">
           <label>{t('saas.timezone')}</label>
-          <input type="text" className="input" value={form.timezone} onChange={(e) => setForm((f) => ({ ...f, timezone: e.target.value }))} />
+          <input type="text" className="ds-input" value={form.timezone} onChange={(e) => setForm((f) => ({ ...f, timezone: e.target.value }))} />
         </div>
         <div className="form-group">
           <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -293,25 +300,25 @@ export default function SuperAdminTenantDetailPage() {
             {t('superadmin.active_label')}
           </label>
         </div>
-        <button className="btn btn--primary" onClick={handleSave} disabled={saving}>
+        <Button variant="primary" onClick={handleSave} disabled={saving}>
           {saving ? t('superadmin.saving') : t('superadmin.save')}
-        </button>
-      </div>
+        </Button>
+      </Card>
 
-      <div className="card" style={{ padding: 24, minHeight: 750, display: 'flex', flexDirection: 'column' }}>
+      <Card padding="md" style={{ minHeight: 750, display: 'flex', flexDirection: 'column' }}>
         <div style={{ flexShrink: 0 }}>
           <h3 style={{ marginBottom: 4 }}>{t('superadmin.users')}</h3>
-          <p style={{ color: 'var(--text-secondary)', fontSize: 14, marginBottom: 16 }}>
+          <p style={{ color: 'var(--ds-text-secondary)', fontSize: 14, marginBottom: 16 }}>
             {users.length} Usuarios - {t('manage_staff.title')}
           </p>
 
           <div style={{ position: 'relative', marginBottom: 12 }}>
-            <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', fontSize: '0.85rem' }}>🔍</span>
+            <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--ds-text-tertiary)', fontSize: '0.85rem' }}>🔍</span>
             <input
               type="text" value={usersSearch}
               onChange={(e) => setUsersSearch(e.target.value)}
               placeholder="Buscar por nombre, email o RUT..."
-              className="form-input"
+              className="ds-input"
               style={{ paddingLeft: 34, fontSize: '0.9rem' }}
             />
           </div>
@@ -320,7 +327,7 @@ export default function SuperAdminTenantDetailPage() {
         <div style={{ flex: 1, minHeight: 0 }}>
           {usersLoading ? (
             <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <div style={{ textAlign: 'center', color: 'var(--text-muted)' }}>
+              <div style={{ textAlign: 'center', color: 'var(--ds-text-tertiary)' }}>
                 <div style={{ fontSize: '2rem', marginBottom: 8 }}>⏳</div>
                 <div>{t('manage_staff.loading')}</div>
               </div>
@@ -344,7 +351,7 @@ export default function SuperAdminTenantDetailPage() {
             </div>
           )}
         </div>
-      </div>
-    </div>
+      </Card>
+    </PageContainer>
   );
 }

@@ -11,6 +11,10 @@ import { useTheme } from '../context/useTheme';
 import { useI18n } from '../i18n/useI18n';
 import LoadingState from '../components/LoadingState';
 import ErrorState from '../components/ErrorState';
+import Button from '../components/ui/Button';
+import Badge from '../components/ui/Badge';
+import Card from '../components/ui/Card';
+import { PageContainer, PageHeader } from '../components/ui/PageContainer';
 
 function mergeSlots(slots) {
   if (!slots.length) return [];
@@ -316,22 +320,18 @@ export default function DoctorCalendarPage() {
   const today = () => calendarRef.current?.getApi().today();
 
   return (
-    <div className="page-container-wide" style={{ display: 'flex', flexDirection: 'column', minHeight: '100%' }}>
-      <div className="page-header">
-        <div>
-          <h1 style={{ margin: 0 }}>{t('doctor_calendar.title')}</h1>
-          <p style={{ color: 'var(--text-secondary)', marginTop: 4 }}>
-            {t('doctor_calendar.subtitle')}
-          </p>
-        </div>
-        <button onClick={today} className="btn btn-outline btn-sm">{t('doctor_calendar.today')}</button>
-      </div>
+    <PageContainer maxWidth="xl" style={{ display: 'flex', flexDirection: 'column', minHeight: '100%' }}>
+      <PageHeader
+        title={t('doctor_calendar.title')}
+        subtitle={t('doctor_calendar.subtitle')}
+        actions={<Button variant="outline" size="sm" onClick={today}>{t('doctor_calendar.today')}</Button>}
+      />
 
       {error && <ErrorState message={error} />}
 
       <div style={{
         display: 'flex', gap: 8, marginBottom: 16, padding: '10px 16px',
-        background: 'var(--bg-secondary)', borderRadius: 8, alignItems: 'center', flexWrap: 'wrap', flexShrink: 0,
+        background: 'var(--ds-bg-secondary)', borderRadius: 8, alignItems: 'center', flexWrap: 'wrap', flexShrink: 0,
       }}>
         <span style={{ fontWeight: 600, fontSize: 13, marginRight: 4 }}>{t('doctor_calendar.filter_show')}</span>
         {[
@@ -348,8 +348,8 @@ export default function DoctorCalendarPage() {
               fontSize: 13, fontWeight: 500, userSelect: 'none',
               transition: 'all 0.15s',
               background: f.active ? f.color : 'transparent',
-              color: f.active ? '#fff' : 'var(--text-secondary)',
-              outline: f.active ? 'none' : '1px solid var(--border-light)',
+              color: f.active ? '#fff' : 'var(--ds-text-secondary)',
+              outline: f.active ? 'none' : '1px solid var(--ds-border)',
             }}
           >
             <span style={{
@@ -360,12 +360,12 @@ export default function DoctorCalendarPage() {
             {f.active && <span style={{ fontSize: 11, marginLeft: 2 }}>✓</span>}
           </button>
         ))}
-        {loading && <span style={{ fontSize: 12, color: 'var(--text-muted)', marginLeft: 8 }}>{t('doctor_calendar.updating')}</span>}
+        {loading && <span style={{ fontSize: 12, color: 'var(--ds-text-tertiary)', marginLeft: 8 }}>{t('doctor_calendar.updating')}</span>}
       </div>
 
       <div style={{
         display: 'flex', gap: 12, marginBottom: 12, flexWrap: 'wrap',
-        padding: '8px 16px', background: 'var(--bg-secondary)', borderRadius: 8,
+        padding: '8px 16px', background: 'var(--ds-bg-secondary)', borderRadius: 8,
         fontSize: 12, alignItems: 'center',
       }}>
         <span style={{ fontWeight: 600, marginRight: 4 }}>{t('density_legend')}</span>
@@ -381,10 +381,10 @@ export default function DoctorCalendarPage() {
               display: 'inline-block', width: 14, height: 14, borderRadius: 3,
               background: item.color.bg, border: '1px solid ' + item.color.text,
             }} />
-            <span style={{ color: 'var(--text-secondary)' }}>{t(item.color.labelKey)}</span>
+            <span style={{ color: 'var(--ds-text-secondary)' }}>{t(item.color.labelKey)}</span>
           </span>
         ))}
-        <span style={{ marginLeft: 'auto', color: 'var(--text-muted)', fontSize: 11 }}>
+        <span style={{ marginLeft: 'auto', color: 'var(--ds-text-tertiary)', fontSize: 11 }}>
           {t('density_hint')}
         </span>
       </div>
@@ -393,8 +393,8 @@ export default function DoctorCalendarPage() {
         <LoadingState message={t('doctor_calendar.loading')} fullPage />
       ) : (
         <div style={{
-          background: 'var(--bg-primary)', borderRadius: 12,
-          border: '1px solid var(--border-light)', overflow: 'hidden',
+          background: 'var(--ds-bg-primary)', borderRadius: 12,
+          border: '1px solid var(--ds-border)', overflow: 'hidden',
           flex: 1, minHeight: 400,
         }}>
           <FullCalendar
@@ -446,7 +446,7 @@ export default function DoctorCalendarPage() {
           <div style={MODAL} onClick={e => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
               <h3 style={{ margin: 0, fontSize: 18 }}>{t('doctor_calendar.detail_title')}</h3>
-              <button onClick={() => setSelectedBooking(null)} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: 'var(--text-secondary)' }}>✕</button>
+              <button onClick={() => setSelectedBooking(null)} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: 'var(--ds-text-secondary)' }}>✕</button>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <Row label={t('doctor_calendar.patient')} value={selectedBooking.patient} />
@@ -456,9 +456,9 @@ export default function DoctorCalendarPage() {
               <Row label={t('booking.date_label')} value={selectedBooking.date} />
               <Row label={t('booking.time_label')} value={`${selectedBooking.time} (${selectedBooking.duration} min)`} />
               <Row label={t('doctor_calendar.status')} value={
-                <span className={`badge ${selectedBooking.confirmed ? 'badge-success' : 'badge-warning'}`}>
+                <Badge variant={selectedBooking.confirmed ? 'success' : 'warning'}>
                   {selectedBooking.confirmed ? t('doctor_calendar.status_confirmed') : t('doctor_calendar.status_pending')}
-                </span>
+                </Badge>
               } />
             </div>
           </div>
@@ -469,15 +469,15 @@ export default function DoctorCalendarPage() {
         <div style={OVERLAY} onClick={() => setBlockModal(prev => ({ ...prev, open: false }))}>
           <div style={MODAL} onClick={e => e.stopPropagation()}>
             <h3 style={{ margin: '0 0 16px' }}>{t('doctor_calendar.block_modal_title')}</h3>
-            <p style={{ fontSize: 14, color: 'var(--text-secondary)', marginBottom: 16 }}>
+            <p style={{ fontSize: 14, color: 'var(--ds-text-secondary)', marginBottom: 16 }}>
               {blockModal.date} — {blockModal.start} a {blockModal.end}
             </p>
             <div style={{ marginBottom: 16 }}>
               <label style={{ display: 'block', fontSize: 13, marginBottom: 6, fontWeight: 500 }}>{t('doctor_calendar.block_reason')}</label>
               <input
                 style={{
-                  width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid var(--border-light)',
-                  background: 'var(--bg-primary)', color: 'var(--text-primary)', fontSize: 14,
+                  width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid var(--ds-border)',
+                  background: 'var(--ds-bg-primary)', color: 'var(--ds-text-primary)', fontSize: 14,
                   outline: 'none', boxSizing: 'border-box',
                 }}
                 value={blockReason}
@@ -486,21 +486,21 @@ export default function DoctorCalendarPage() {
               />
             </div>
             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-              <button onClick={() => setBlockModal(prev => ({ ...prev, open: false }))} className="btn btn-ghost">{t('doctor_calendar.cancel')}</button>
-              <button onClick={confirmBlock} className="btn btn-primary">{t('doctor_calendar.block_modal_title')}</button>
+              <Button variant="ghost" onClick={() => setBlockModal(prev => ({ ...prev, open: false }))}>{t('doctor_calendar.cancel')}</Button>
+              <Button variant="primary" onClick={confirmBlock}>{t('doctor_calendar.block_modal_title')}</Button>
             </div>
           </div>
         </div>
       )}
 
-    </div>
+    </PageContainer>
   );
 }
 
 function Row({ label, value }) {
   return (
     <div>
-      <strong style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{label}</strong>
+      <strong style={{ fontSize: 13, color: 'var(--ds-text-secondary)' }}>{label}</strong>
       <p style={{ margin: '2px 0 0', fontSize: 14 }}>{value}</p>
     </div>
   );
@@ -513,7 +513,7 @@ const OVERLAY = {
 };
 
 const MODAL = {
-  background: 'var(--bg-primary)', borderRadius: 12, padding: 24,
+  background: 'var(--ds-bg-primary)', borderRadius: 12, padding: 24,
   maxWidth: 420, width: '100%',
   boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
 };
