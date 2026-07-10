@@ -39,6 +39,9 @@ frontend/.env
 # Frontend build output
 frontend/dist/
 
+# Frontend new (work in progress)
+frontend-new/
+
 # Binary files
 *.pdf
 
