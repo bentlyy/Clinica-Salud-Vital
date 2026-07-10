@@ -75,121 +75,51 @@ export default function LoginPage() {
   };
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', backgroundColor: 'var(--background)' }}>
-      {/* Left panel - branding */}
-      <div style={{
-        flex: 1,
-        display: 'none',
-        flexDirection: 'column',
-        justifyContent: 'center',
-        alignItems: 'center',
-        background: 'linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #1e293b 100%)',
-        padding: 40,
-        position: 'relative',
-        overflow: 'hidden',
-      }} className="login-branding">
-        <div style={{
-          position: 'absolute',
-          top: '-50%',
-          right: '-30%',
-          width: '600px',
-          height: '600px',
-          borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(37,99,235,0.1) 0%, transparent 70%)',
-        }} />
-        <div style={{
-          position: 'absolute',
-          bottom: '-20%',
-          left: '-10%',
-          width: '400px',
-          height: '400px',
-          borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(124,58,237,0.08) 0%, transparent 70%)',
-        }} />
-        <div style={{ position: 'relative', zIndex: 1, maxWidth: 400, textAlign: 'center' }}>
-          <div style={{
-            width: 64,
-            height: 64,
-            borderRadius: 16,
-            background: 'linear-gradient(135deg, #2563eb, #7c3aed)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            margin: '0 auto 24px',
-          }}>
+    <div className="login-page">
+      <div className="login-branding">
+        <div className="login-brand-orb login-brand-orb--1" />
+        <div className="login-brand-orb login-brand-orb--2" />
+        <div className="login-brand-content">
+          <div className="login-brand-logo">
             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
             </svg>
           </div>
-          <h1 style={{ fontSize: 28, fontWeight: 700, color: '#fff', marginBottom: 8 }}>Clinic</h1>
-          <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.6)', lineHeight: 1.6 }}>
+          <h1 className="login-brand-title">Salud Vital</h1>
+          <p className="login-brand-subtitle">
             {t('auth.login_subtitle') || 'Sistema de gestión clínica y administración de pacientes'}
           </p>
-          <div style={{ marginTop: 40, display: 'flex', flexDirection: 'column', gap: 16, textAlign: 'left' }}>
+          <div className="login-brand-features">
             {[
               { icon: '🏥', text: 'Gestión de pacientes' },
               { icon: '📅', text: 'Citas y calendario' },
               { icon: '📋', text: 'Historial clínico digital' },
               { icon: '📊', text: 'Reportes y analytics' },
             ].map((item, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <span style={{ fontSize: 20 }}>{item.icon}</span>
-                <span style={{ fontSize: 14, color: 'rgba(255,255,255,0.7)' }}>{item.text}</span>
+              <div key={i} className="login-brand-feature">
+                <span className="login-brand-feature-icon">{item.icon}</span>
+                <span className="login-brand-feature-text">{item.text}</span>
               </div>
             ))}
           </div>
         </div>
       </div>
 
-      {/* Right panel - login form */}
-      <div style={{
-        flex: 1,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: 24,
-        minWidth: 0,
-      }}>
-        <div style={{ width: '100%', maxWidth: 400 }}>
-          {/* Mobile logo */}
-          <div style={{ textAlign: 'center', marginBottom: 32 }} className="login-mobile-logo">
-            <div style={{
-              width: 48,
-              height: 48,
-              borderRadius: 12,
-              background: 'linear-gradient(135deg, #2563eb, #7c3aed)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              margin: '0 auto 12px',
-            }}>
+      <div className="login-form-panel">
+        <div className="login-form-wrapper">
+          <div className="login-mobile-logo">
+            <div className="login-mobile-logo-icon">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
               </svg>
             </div>
-            <h1 style={{ fontSize: 22, fontWeight: 700, margin: 0 }}>Clinic</h1>
-            <p style={{ color: 'var(--muted)', fontSize: 14, marginTop: 4 }}>{t('auth.login_subtitle')}</p>
+            <h1 className="login-mobile-title">Salud Vital</h1>
+            <p className="login-mobile-subtitle">{t('auth.login_subtitle')}</p>
           </div>
 
-          <div style={{
-            backgroundColor: 'var(--card-bg)',
-            border: '1px solid var(--border)',
-            borderRadius: 'var(--radius-xl)',
-            padding: 32,
-            boxShadow: 'var(--shadow-lg)',
-          }}>
+          <div className="login-card">
             {error && (
-              <div style={{
-                padding: '12px 16px',
-                backgroundColor: 'var(--danger-light)',
-                color: 'var(--danger)',
-                borderRadius: 'var(--radius)',
-                fontSize: 13,
-                marginBottom: 20,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-              }}>
+              <div className="login-error">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="12" cy="12" r="10" />
                   <line x1="12" y1="8" x2="12" y2="12" />
@@ -199,11 +129,11 @@ export default function LoginPage() {
               </div>
             )}
 
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={handleSubmit} className="login-form">
               <div className="form-group">
-                <label className="form-label">{t('auth.email')} <span style={{ color: 'var(--danger)' }}>*</span></label>
+                <label className="form-label">{t('auth.email')} <span className="required">*</span></label>
                 <input
-                  className="input"
+                  className="ds-input"
                   type="email"
                   value={form.email}
                   onChange={(e) => setForm({ ...form, email: e.target.value })}
@@ -212,32 +142,22 @@ export default function LoginPage() {
                   autoFocus
                 />
               </div>
+
               <div className="form-group">
-                <label className="form-label">{t('auth.password')} <span style={{ color: 'var(--danger)' }}>*</span></label>
-                <div style={{ position: 'relative' }}>
+                <label className="form-label">{t('auth.password')} <span className="required">*</span></label>
+                <div className="login-password-wrapper">
                   <input
-                    className="input"
+                    className="ds-input"
                     type={showPassword ? 'text' : 'password'}
                     value={form.password}
                     onChange={(e) => setForm({ ...form, password: e.target.value })}
                     required
                     placeholder={t('auth.password_placeholder')}
-                    style={{ paddingRight: 40 }}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    style={{
-                      position: 'absolute',
-                      right: 10,
-                      top: '50%',
-                      transform: 'translateY(-50%)',
-                      background: 'none',
-                      border: 'none',
-                      cursor: 'pointer',
-                      color: 'var(--muted)',
-                      padding: 4,
-                    }}
+                    className="login-password-toggle"
                   >
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       {showPassword ? (
@@ -256,38 +176,39 @@ export default function LoginPage() {
                   </button>
                 </div>
               </div>
+
               {needs2FA && (
                 <div className="form-group">
-                  <label className="form-label">{t('auth.totp_code')} <span style={{ color: 'var(--danger)' }}>*</span></label>
+                  <label className="form-label">{t('auth.totp_code')} <span className="required">*</span></label>
                   <input
-                    className="input"
+                    className="ds-input login-totp-input"
                     type="text"
                     value={form.totp_token}
                     onChange={(e) => setForm({ ...form, totp_token: e.target.value })}
                     placeholder={t('auth.totp_placeholder')}
                     maxLength={6}
                     autoFocus
-                    style={{ textAlign: 'center', fontSize: 20, letterSpacing: 8 }}
                   />
                 </div>
               )}
+
               {hasCaptcha && ReCAPTCHA && (
-                <div className="form-group" style={{ display: 'flex', justifyContent: 'center' }}>
+                <div className="form-group login-captcha">
                   <ReCAPTCHA
                     ref={recaptchaRef}
                     sitekey={RECAPTCHA_SITE_KEY}
                   />
                 </div>
               )}
+
               <button
-                className="btn btn-primary btn-lg"
+                className="login-submit-btn"
                 type="submit"
                 disabled={submitting}
-                style={{ width: '100%', marginTop: 8 }}
               >
                 {submitting ? (
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ animation: 'spin 0.8s linear infinite' }}>
+                  <span className="login-submit-loading">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="login-spinner">
                       <circle cx="12" cy="12" r="10" strokeDasharray="31.4 31.4" />
                     </svg>
                     {t('auth.logging_in')}
@@ -296,29 +217,383 @@ export default function LoginPage() {
               </button>
             </form>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 20, fontSize: 13 }}>
+            <div className="login-footer">
               {tenantId && (
-                <Link to={`/register?tenant=${tenantId}`} style={{ color: 'var(--primary)', fontWeight: 500 }}>
-                  {t('auth.register_link')}
+                <Link to={`/register?tenant=${tenantId}`} className="login-register-link">
+                  {t('auth.no_account')} {t('auth.register_link')}
                 </Link>
               )}
+              <Link to="/forgot-password" className="login-forgot-link">
+                ¿Olvidaste tu contraseña?
+              </Link>
             </div>
           </div>
 
-          <p style={{ textAlign: 'center', color: 'var(--muted)', fontSize: 12, marginTop: 24 }}>
-            &copy; {new Date().getFullYear()} Clinic. Todos los derechos reservados.
+          <p className="login-copyright">
+            &copy; {new Date().getFullYear()} Salud Vital. Todos los derechos reservados.
           </p>
         </div>
       </div>
 
       <style>{`
-        @keyframes spin {
+        @keyframes login-spin {
           from { transform: rotate(0deg); }
           to { transform: rotate(360deg); }
         }
+
+        .login-page {
+          min-height: 100vh;
+          display: flex;
+          background-color: var(--bg-primary);
+        }
+
+        /* Left branding panel */
+        .login-branding {
+          flex: 1;
+          display: none;
+          flex-direction: column;
+          justify-content: center;
+          align-items: center;
+          background: linear-gradient(135deg, var(--ds-neutral-900) 0%, var(--accent-700) 50%, var(--ds-neutral-800) 100%);
+          padding: 40px;
+          position: relative;
+          overflow: hidden;
+        }
+
+        .login-brand-orb {
+          position: absolute;
+          border-radius: 50%;
+          pointer-events: none;
+        }
+
+        .login-brand-orb--1 {
+          top: -50%;
+          right: -30%;
+          width: 600px;
+          height: 600px;
+          background: radial-gradient(circle, rgba(37,99,235,0.12) 0%, transparent 70%);
+        }
+
+        .login-brand-orb--2 {
+          bottom: -20%;
+          left: -10%;
+          width: 400px;
+          height: 400px;
+          background: radial-gradient(circle, rgba(76,175,80,0.1) 0%, transparent 70%);
+        }
+
+        .login-brand-content {
+          position: relative;
+          z-index: 1;
+          max-width: 400px;
+          text-align: center;
+        }
+
+        .login-brand-logo {
+          width: 72px;
+          height: 72px;
+          border-radius: 20px;
+          background: linear-gradient(135deg, var(--accent-500), var(--primary-500));
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin: 0 auto 28px;
+          box-shadow: 0 8px 32px rgba(25, 118, 210, 0.3);
+        }
+
+        .login-brand-title {
+          font-family: var(--font-serif);
+          font-size: 2rem;
+          font-weight: 700;
+          color: #fff;
+          margin-bottom: 12px;
+          letter-spacing: -0.02em;
+        }
+
+        .login-brand-subtitle {
+          font-size: 15px;
+          color: rgba(255,255,255,0.6);
+          line-height: 1.6;
+          margin: 0;
+        }
+
+        .login-brand-features {
+          margin-top: 44px;
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+          text-align: left;
+        }
+
+        .login-brand-feature {
+          display: flex;
+          align-items: center;
+          gap: 14px;
+          padding: 10px 14px;
+          border-radius: var(--radius-md);
+          background: rgba(255,255,255,0.05);
+          transition: background 0.2s;
+        }
+
+        .login-brand-feature:hover {
+          background: rgba(255,255,255,0.1);
+        }
+
+        .login-brand-feature-icon {
+          font-size: 22px;
+          width: 36px;
+          height: 36px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: rgba(255,255,255,0.08);
+          border-radius: var(--radius-sm);
+        }
+
+        .login-brand-feature-text {
+          font-size: 14px;
+          color: rgba(255,255,255,0.8);
+          font-weight: 500;
+        }
+
+        /* Right form panel */
+        .login-form-panel {
+          flex: 1;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 24px;
+          min-width: 0;
+        }
+
+        .login-form-wrapper {
+          width: 100%;
+          max-width: 420px;
+        }
+
+        .login-mobile-logo {
+          text-align: center;
+          margin-bottom: 36px;
+        }
+
+        .login-mobile-logo-icon {
+          width: 52px;
+          height: 52px;
+          border-radius: 14px;
+          background: linear-gradient(135deg, var(--accent-500), var(--primary-500));
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin: 0 auto 14px;
+          box-shadow: 0 4px 16px rgba(25, 118, 210, 0.25);
+        }
+
+        .login-mobile-title {
+          font-family: var(--font-serif);
+          font-size: 1.5rem;
+          font-weight: 700;
+          margin: 0;
+          color: var(--text-primary);
+        }
+
+        .login-mobile-subtitle {
+          color: var(--text-muted);
+          font-size: 14px;
+          margin-top: 6px;
+        }
+
+        .login-card {
+          background: var(--bg-secondary);
+          border: 1px solid var(--border-light);
+          border-radius: var(--radius-xl);
+          padding: 36px;
+          box-shadow: var(--shadow-lg);
+        }
+
+        .login-error {
+          padding: 12px 16px;
+          background: var(--danger-50);
+          color: var(--danger-500);
+          border-radius: var(--radius-md);
+          font-size: 13px;
+          margin-bottom: 20px;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          border: 1px solid rgba(244, 67, 54, 0.15);
+        }
+
+        .login-form {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+        }
+
+        .login-form .form-group {
+          margin-bottom: 8px;
+        }
+
+        .login-form .form-label {
+          display: block;
+          font-size: 13px;
+          font-weight: 500;
+          color: var(--text-primary);
+          margin-bottom: 6px;
+        }
+
+        .login-form .required {
+          color: var(--danger-500);
+        }
+
+        .login-form .ds-input {
+          width: 100%;
+          padding: 10px 14px;
+          font-size: 14px;
+          border: 1.5px solid var(--border-light);
+          border-radius: var(--radius-md);
+          background: var(--bg-primary);
+          color: var(--text-primary);
+          transition: border-color 0.2s, box-shadow 0.2s;
+          outline: none;
+        }
+
+        .login-form .ds-input:focus {
+          border-color: var(--accent-500);
+          box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.1);
+        }
+
+        .login-form .ds-input::placeholder {
+          color: var(--text-muted);
+        }
+
+        .login-password-wrapper {
+          position: relative;
+        }
+
+        .login-password-wrapper .ds-input {
+          padding-right: 44px;
+        }
+
+        .login-password-toggle {
+          position: absolute;
+          right: 10px;
+          top: 50%;
+          transform: translateY(-50%);
+          background: none;
+          border: none;
+          cursor: pointer;
+          color: var(--text-muted);
+          padding: 4px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: var(--radius-sm);
+          transition: color 0.2s, background 0.2s;
+        }
+
+        .login-password-toggle:hover {
+          color: var(--text-secondary);
+          background: var(--gray-100);
+        }
+
+        .login-totp-input {
+          text-align: center;
+          font-size: 20px !important;
+          letter-spacing: 8px;
+          font-family: var(--font-mono);
+        }
+
+        .login-captcha {
+          display: flex;
+          justify-content: center;
+        }
+
+        .login-submit-btn {
+          width: 100%;
+          padding: 12px 24px;
+          margin-top: 8px;
+          font-size: 15px;
+          font-weight: 600;
+          color: #fff;
+          background: linear-gradient(135deg, var(--accent-500), var(--accent-600));
+          border: none;
+          border-radius: var(--radius-md);
+          cursor: pointer;
+          transition: transform 0.15s, box-shadow 0.2s, opacity 0.2s;
+          box-shadow: 0 4px 12px rgba(25, 118, 210, 0.25);
+        }
+
+        .login-submit-btn:hover:not(:disabled) {
+          transform: translateY(-1px);
+          box-shadow: 0 6px 20px rgba(25, 118, 210, 0.35);
+        }
+
+        .login-submit-btn:active:not(:disabled) {
+          transform: translateY(0);
+        }
+
+        .login-submit-btn:disabled {
+          opacity: 0.7;
+          cursor: not-allowed;
+        }
+
+        .login-submit-loading {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 10px;
+        }
+
+        .login-spinner {
+          animation: login-spin 0.8s linear infinite;
+        }
+
+        .login-footer {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-top: 20px;
+          font-size: 13px;
+        }
+
+        .login-register-link {
+          color: var(--accent-500);
+          font-weight: 500;
+          text-decoration: none;
+          transition: color 0.2s;
+        }
+
+        .login-register-link:hover {
+          color: var(--accent-600);
+        }
+
+        .login-forgot-link {
+          color: var(--text-muted);
+          text-decoration: none;
+          transition: color 0.2s;
+        }
+
+        .login-forgot-link:hover {
+          color: var(--text-secondary);
+        }
+
+        .login-copyright {
+          text-align: center;
+          color: var(--text-muted);
+          font-size: 12px;
+          margin-top: 28px;
+        }
+
+        /* Responsive */
         @media (min-width: 900px) {
           .login-branding { display: flex !important; }
           .login-mobile-logo { display: none; }
+        }
+
+        @media (max-width: 899px) {
+          .login-card {
+            padding: 28px 24px;
+          }
         }
       `}</style>
     </div>
