@@ -9,6 +9,7 @@ import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Alert from '../components/ui/Alert';
 import { PageContainer, PageHeader } from '../components/ui/PageContainer';
+import './AdminDemoDataPage.css';
 
 interface Booking {
   id: number;
@@ -74,56 +75,55 @@ export default function AdminDemoDataPage() {
   }, []);
 
   const tabs: { key: Tab; label: string; count: number }[] = [
-    { key: 'bookings', label: 'Reservas', count: bookings.length },
-    { key: 'clinical', label: 'Historial Clínico', count: records.length },
-    { key: 'lab', label: 'Exámenes', count: labReqs.length },
+    { key: 'bookings', label: t('demo_data.tab_bookings') || 'Reservas', count: bookings.length },
+    { key: 'clinical', label: t('demo_data.tab_clinical') || 'Historial Clínico', count: records.length },
+    { key: 'lab', label: t('demo_data.tab_lab') || 'Exámenes', count: labReqs.length },
   ];
 
   const statusBadge = (status: string) => {
     const variant = status === 'completed' ? 'success' : status === 'cancelled' ? 'default' : 'warning';
-    return <Badge variant={variant as any}>{status}</Badge>;
+    return <Badge variant={variant as 'success' | 'default' | 'warning'}>{status}</Badge>;
   };
 
   return (
     <PageContainer maxWidth="xl">
       <Alert variant="info" style={{ marginBottom: 24 }}>
-        <strong>Datos de Demostración</strong> — Esta sección muestra la información de ejemplo precargada en el sistema.
-        Los datos aquí presentados son solo para fines de demostración.
+        <strong>{t('demo_data.title') || 'Datos de Demostración'}</strong> — {t('demo_data.description') || 'Esta sección muestra la información de ejemplo precargada en el sistema.'}
       </Alert>
 
-      <div style={{ display: 'flex', gap: 4, marginBottom: 24, borderBottom: '2px solid var(--ds-border)' }}>
-        {tabs.map(t => (
+      <div className="demo-tabs">
+        {tabs.map(tb => (
           <Button
-            key={t.key}
-            variant={tab === t.key ? 'primary' : 'ghost'}
-            onClick={() => setTab(t.key)}
-            style={{ borderRadius: '8px 8px 0 0', padding: '10px 20px' }}
+            key={tb.key}
+            variant={tab === tb.key ? 'primary' : 'ghost'}
+            onClick={() => setTab(tb.key)}
+            className="demo-tab"
           >
-            {t.label} <Badge variant="info" style={{ marginLeft: 6 }}>{t.count}</Badge>
+            {tb.label} <Badge variant="info" className="demo-tab-badge">{tb.count}</Badge>
           </Button>
         ))}
       </div>
 
-      {loading && <p style={{ color: 'var(--ds-text-tertiary)' }}>Cargando datos de demostración...</p>}
+      {loading && <p className="demo-loading">{t('demo_data.loading') || 'Cargando datos de demostración...'}</p>}
 
       {!loading && tab === 'bookings' && (
         <Card padding="md">
-          <div style={{ overflowX: 'auto' }}>
-            <div style={{ maxHeight: 480, overflowY: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
+          <div className="demo-table-wrapper">
+            <div className="demo-table-scroll">
+              <table className="demo-table">
                 <thead>
                   <tr>
-                    <th style={{ minWidth: 140 }}>Paciente</th>
-                    <th style={{ minWidth: 110 }}>RUT</th>
-                    <th style={{ minWidth: 140 }}>Doctor</th>
-                    <th style={{ minWidth: 120 }}>Especialidad</th>
-                    <th style={{ minWidth: 100 }}>Fecha</th>
-                    <th style={{ minWidth: 70 }}>Hora</th>
-                    <th style={{ minWidth: 90 }}>Estado</th>
+                    <th className="demo-th-paciente">{t('demo_data.patient') || 'Paciente'}</th>
+                    <th className="demo-th-rut">RUT</th>
+                    <th className="demo-th-doctor">{t('demo_data.doctor') || 'Doctor'}</th>
+                    <th className="demo-th-especialidad">{t('demo_data.specialty') || 'Especialidad'}</th>
+                    <th className="demo-th-fecha">{t('demo_data.date') || 'Fecha'}</th>
+                    <th className="demo-th-hora">{t('demo_data.time') || 'Hora'}</th>
+                    <th className="demo-th-estado">{t('demo_data.status') || 'Estado'}</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {bookings.length === 0 && <tr><td colSpan={7} style={{ color: 'var(--ds-text-tertiary)', textAlign: 'center', padding: 24 }}>No hay reservas.</td></tr>}
+                  {bookings.length === 0 && <tr><td colSpan={7} className="demo-empty">{t('demo_data.no_bookings') || 'No hay reservas.'}</td></tr>}
                   {bookings.map(b => (
                     <tr key={b.id}>
                       <td>{b.patient_name}</td>
@@ -144,21 +144,21 @@ export default function AdminDemoDataPage() {
 
       {!loading && tab === 'clinical' && (
         <Card padding="md">
-          <div style={{ overflowX: 'auto' }}>
-            <div style={{ maxHeight: 480, overflowY: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
+          <div className="demo-table-wrapper">
+            <div className="demo-table-scroll">
+              <table className="demo-table">
                 <thead>
                   <tr>
-                    <th style={{ minWidth: 140 }}>Paciente</th>
-                    <th style={{ minWidth: 110 }}>RUT</th>
-                    <th style={{ minWidth: 140 }}>Doctor</th>
-                    <th style={{ minWidth: 160 }}>Diagnóstico</th>
-                    <th style={{ minWidth: 100 }}>Fecha</th>
-                    <th style={{ minWidth: 90 }}>Estado</th>
+                    <th className="demo-th-paciente">{t('demo_data.patient') || 'Paciente'}</th>
+                    <th className="demo-th-rut">RUT</th>
+                    <th className="demo-th-doctor">{t('demo_data.doctor') || 'Doctor'}</th>
+                    <th className="demo-th-diagnostico">{t('demo_data.diagnosis') || 'Diagnóstico'}</th>
+                    <th className="demo-th-fecha">{t('demo_data.date') || 'Fecha'}</th>
+                    <th className="demo-th-estado">{t('demo_data.status') || 'Estado'}</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {records.length === 0 && <tr><td colSpan={6} style={{ color: 'var(--ds-text-tertiary)', textAlign: 'center', padding: 24 }}>No hay historial clínico.</td></tr>}
+                  {records.length === 0 && <tr><td colSpan={6} className="demo-empty">{t('demo_data.no_records') || 'No hay historial clínico.'}</td></tr>}
                   {records.map(r => (
                     <tr key={r.id}>
                       <td>{r.patient_name}</td>
@@ -178,21 +178,21 @@ export default function AdminDemoDataPage() {
 
       {!loading && tab === 'lab' && (
         <Card padding="md">
-          <div style={{ overflowX: 'auto' }}>
-            <div style={{ maxHeight: 480, overflowY: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
+          <div className="demo-table-wrapper">
+            <div className="demo-table-scroll">
+              <table className="demo-table">
                 <thead>
                   <tr>
-                    <th style={{ minWidth: 110 }}>N° Solicitud</th>
-                    <th style={{ minWidth: 140 }}>Paciente</th>
-                    <th style={{ minWidth: 140 }}>Doctor</th>
-                    <th style={{ minWidth: 90 }}>Prioridad</th>
-                    <th style={{ minWidth: 100 }}>Fecha</th>
-                    <th style={{ minWidth: 90 }}>Estado</th>
+                    <th className="demo-th-solicitud">{t('demo_data.request_number') || 'N° Solicitud'}</th>
+                    <th className="demo-th-paciente">{t('demo_data.patient') || 'Paciente'}</th>
+                    <th className="demo-th-doctor">{t('demo_data.doctor') || 'Doctor'}</th>
+                    <th className="demo-th-prioridad">{t('demo_data.priority') || 'Prioridad'}</th>
+                    <th className="demo-th-fecha">{t('demo_data.date') || 'Fecha'}</th>
+                    <th className="demo-th-estado">{t('demo_data.status') || 'Estado'}</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {labReqs.length === 0 && <tr><td colSpan={6} style={{ color: 'var(--ds-text-tertiary)', textAlign: 'center', padding: 24 }}>No hay exámenes.</td></tr>}
+                  {labReqs.length === 0 && <tr><td colSpan={6} className="demo-empty">{t('demo_data.no_lab') || 'No hay exámenes.'}</td></tr>}
                   {labReqs.map(r => (
                     <tr key={r.id}>
                       <td>{r.request_number || `#${r.id}`}</td>
