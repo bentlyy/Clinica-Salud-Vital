@@ -1,6 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap');
 @import './styles/tokens.css';
 @import './components/ui/ui-base.css';
+@import './styles/prototypes.css';
 
 :root {
   --primary-50: #e8f5e9;
