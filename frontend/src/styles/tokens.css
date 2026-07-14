@@ -20,17 +20,17 @@
     --ds-neutral-900: #0F172A;
     --ds-neutral-950: #020617;
 
-    /* Primary (Medical Blue) */
-    --ds-primary-50: #EFF6FF;
-    --ds-primary-100: #DBEAFE;
-    --ds-primary-200: #BFDBFE;
-    --ds-primary-300: #93C5FD;
-    --ds-primary-400: #60A5FA;
-    --ds-primary-500: #3B82F6;
-    --ds-primary-600: #2563EB;
-    --ds-primary-700: #1D4ED8;
-    --ds-primary-800: #1E40AF;
-    --ds-primary-900: #1E3A8A;
+    /* Primary (Teal/Aqua) */
+    --ds-primary-50: #f0fdfa;
+    --ds-primary-100: #ccfbf1;
+    --ds-primary-200: #99f6e4;
+    --ds-primary-300: #5eead4;
+    --ds-primary-400: #2dd4bf;
+    --ds-primary-500: #14b8a6;
+    --ds-primary-600: #0d9488;
+    --ds-primary-700: #0f766e;
+    --ds-primary-800: #115e59;
+    --ds-primary-900: #134e4a;
 
     /* Success (Medical Green) */
     --ds-success-50: #F0FDF4;
@@ -184,6 +184,22 @@
     --ds-transition: all var(--ds-duration-normal) var(--ds-ease-out);
     --ds-transition-fast: all var(--ds-duration-fast) var(--ds-ease-out);
     --ds-transition-slow: all var(--ds-duration-slow) var(--ds-ease-in-out);
+
+    /* ---- Teal Palette (for prototypes) ---- */
+    --ds-teal-50: #f0fdfa;
+    --ds-teal-100: #ccfbf1;
+    --ds-teal-200: #99f6e4;
+    --ds-teal-300: #5eead4;
+    --ds-teal-400: #2dd4bf;
+    --ds-teal-500: #14b8a6;
+    --ds-teal-600: #0d9488;
+    --ds-teal-700: #0f766e;
+    --ds-teal-800: #115e59;
+    --ds-teal-900: #134e4a;
+
+    /* ---- Sidebar constants ---- */
+    --ds-sidebar-w: 260px;
+    --ds-topbar-h: 64px;
   }
 
   /* ---- Dark Theme ---- */
