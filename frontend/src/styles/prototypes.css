@@ -1,0 +1,582 @@
+/* ==========================================================================
+   Prototypes — Teal/Aqua Design System Components
+   Based on login-options prototype HTML files
+   ========================================================================== */
+
+/* =============================  LAYOUT  =================================== */
+
+.ds-layout { display: flex; min-height: 100vh; }
+.ds-layout-main { flex: 1; margin-left: var(--ds-sidebar-w, 260px); display: flex; flex-direction: column; min-height: 100vh; }
+.ds-main-content { flex: 1; padding: 24px 32px; overflow-y: auto; }
+
+/* =============================  SIDEBAR  ================================= */
+
+.ds-sidebar {
+  position: fixed; top: 0; left: 0; bottom: 0; width: var(--ds-sidebar-w, 260px);
+  background: var(--ds-surface, #fff);
+  border-right: 1px solid var(--ds-border, #E2E8F0);
+  display: flex; flex-direction: column; z-index: var(--ds-z-navbar, 300);
+}
+.ds-sidebar-brand {
+  padding: 20px 24px; display: flex; align-items: center; gap: 12px;
+  border-bottom: 1px solid var(--ds-border-subtle, #F1F5F9);
+}
+.ds-sidebar-brand-icon {
+  width: 38px; height: 38px;
+  background: linear-gradient(135deg, var(--ds-teal-600, #0d9488), var(--ds-teal-700, #0f766e));
+  border-radius: 12px; display: flex; align-items: center; justify-content: center;
+  font-size: 20px; flex-shrink: 0;
+}
+.ds-sidebar-brand-text { font-size: 16px; font-weight: 700; color: var(--ds-teal-900, #134e4a); }
+.ds-sidebar-brand-role {
+  font-size: 10px; color: var(--ds-text-tertiary, #94A3B8);
+  font-weight: 500; text-transform: uppercase; letter-spacing: 1px;
+}
+.ds-sidebar-nav { flex: 1; padding: 16px 12px; overflow-y: auto; }
+.ds-nav-section { margin-bottom: 20px; }
+.ds-nav-section-label {
+  font-size: 10px; font-weight: 600; color: var(--ds-text-tertiary, #94A3B8);
+  text-transform: uppercase; letter-spacing: 1.2px;
+  padding: 0 12px; margin-bottom: 6px;
+}
+.ds-nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px; border-radius: 10px;
+  font-size: 13px; font-weight: 500; color: var(--ds-text-secondary, #64748B);
+  cursor: pointer; transition: all 0.2s; text-decoration: none;
+  margin-bottom: 2px; border: 1px solid transparent;
+}
+.ds-nav-item:hover { background: var(--ds-teal-50, #f0fdfa); color: var(--ds-teal-700, #0f766e); }
+.ds-nav-item.active {
+  background: var(--ds-teal-50, #f0fdfa); color: var(--ds-teal-700, #0f766e);
+  font-weight: 600; border-color: var(--ds-teal-100, #ccfbf1);
+}
+.ds-nav-icon { width: 18px; text-align: center; font-size: 15px; flex-shrink: 0; }
+.ds-nav-badge {
+  margin-left: auto; background: var(--ds-teal-500, #14b8a6); color: white;
+  font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 10px;
+}
+.ds-sidebar-footer {
+  padding: 16px; border-top: 1px solid var(--ds-border-subtle, #F1F5F9);
+}
+.ds-sidebar-user {
+  display: flex; align-items: center; gap: 10px; padding: 8px;
+  border-radius: 10px; cursor: pointer; transition: background 0.2s;
+}
+.ds-sidebar-user:hover { background: var(--ds-surface-hover, #F8FAFC); }
+.ds-sidebar-avatar {
+  width: 34px; height: 34px; border-radius: 10px;
+  background: linear-gradient(135deg, var(--ds-teal-400, #2dd4bf), var(--ds-teal-600, #0d9488));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; color: white; flex-shrink: 0;
+}
+.ds-sidebar-user-name { font-size: 13px; font-weight: 600; color: var(--ds-text-primary, #1E293B); }
+.ds-sidebar-user-email { font-size: 11px; color: var(--ds-text-tertiary, #94A3B8); }
+.ds-sidebar-user-role { font-size: 11px; color: var(--ds-text-tertiary, #94A3B8); }
+
+/* =============================  TOPBAR  =================================== */
+
+.ds-topbar {
+  height: var(--ds-topbar-h, 64px); background: var(--ds-surface, #fff);
+  border-bottom: 1px solid var(--ds-border, #E2E8F0);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 32px; position: sticky; top: 0; z-index: var(--ds-z-sticky, 200);
+}
+.ds-topbar-left { display: flex; align-items: center; gap: 16px; }
+.ds-topbar-title { font-size: 18px; font-weight: 700; color: var(--ds-text-primary, #1E293B); }
+.ds-topbar-breadcrumb { font-size: 12px; color: var(--ds-text-tertiary, #94A3B8); }
+.ds-topbar-right { display: flex; align-items: center; gap: 12px; }
+.ds-topbar-search {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--ds-surface-hover, #F8FAFC);
+  border: 1px solid var(--ds-border, #E2E8F0);
+  border-radius: 10px; padding: 8px 14px; width: 240px;
+}
+.ds-topbar-search input {
+  border: none; background: none; outline: none;
+  font-size: 13px; font-family: inherit; color: var(--ds-text-primary, #1E293B); width: 100%;
+}
+.ds-topbar-search input::placeholder { color: var(--ds-text-tertiary, #94A3B8); }
+.ds-topbar-btn {
+  width: 36px; height: 36px; border-radius: 10px; border: 1px solid var(--ds-border, #E2E8F0);
+  background: var(--ds-surface, #fff); display: flex; align-items: center; justify-content: center;
+  cursor: pointer; font-size: 16px; transition: all 0.2s; position: relative;
+}
+.ds-topbar-btn:hover { background: var(--ds-surface-hover, #F8FAFC); border-color: var(--ds-border-hover, #CBD5E1); }
+.ds-topbar-btn .ds-notif-dot {
+  position: absolute; top: 6px; right: 6px; width: 8px; height: 8px;
+  background: var(--ds-danger-500, #ef4444); border-radius: 50%; border: 2px solid white;
+}
+.ds-icon-btn {
+  width: 36px; height: 36px; border-radius: 10px; border: 1px solid var(--ds-border, #E2E8F0);
+  background: var(--ds-surface, #fff); display: flex; align-items: center; justify-content: center;
+  cursor: pointer; font-size: 16px; transition: all 0.2s; position: relative; color: var(--ds-text-secondary, #64748B);
+}
+.ds-icon-btn:hover { background: var(--ds-surface-hover, #F8FAFC); border-color: var(--ds-border-hover, #CBD5E1); }
+
+.ds-search-input {
+  border: 1px solid var(--ds-border, #E2E8F0); background: var(--ds-surface-hover, #F8FAFC);
+  border-radius: 10px; padding: 8px 14px; font-size: 13px; font-family: inherit;
+  color: var(--ds-text-primary, #1E293B); width: 240px; outline: none; transition: border-color 0.2s;
+}
+.ds-search-input:focus { border-color: var(--ds-teal-400, #2dd4bf); background: var(--ds-surface, #fff); }
+.ds-search-input::placeholder { color: var(--ds-text-tertiary, #94A3B8); }
+
+.ds-lang-selector { position: relative; }
+.ds-lang-dropdown {
+  position: absolute; top: 100%; right: 0; margin-top: 4px;
+  background: var(--ds-surface, #fff); border: 1px solid var(--ds-border, #E2E8F0);
+  border-radius: 10px; box-shadow: 0 4px 16px rgba(0,0,0,0.08); z-index: 100; min-width: 100px;
+}
+.ds-lang-dropdown button {
+  display: block; width: 100%; padding: 8px 14px; border: none; background: none;
+  font-size: 13px; font-family: inherit; cursor: pointer; text-align: left;
+  color: var(--ds-text-primary, #1E293B); transition: background 0.15s;
+}
+.ds-lang-dropdown button:hover { background: var(--ds-surface-hover, #F8FAFC); }
+.ds-lang-dropdown button:first-child { border-radius: 10px 10px 0 0; }
+.ds-lang-dropdown button:last-child { border-radius: 0 0 10px 10px; }
+
+.ds-lang-switch {
+  display: flex; gap: 2px; background: var(--ds-surface-hover, #F1F5F9);
+  border-radius: 8px; padding: 3px;
+}
+.ds-lang-btn {
+  padding: 4px 8px; border: none; border-radius: 6px; font-size: 11px;
+  font-weight: 600; font-family: inherit; color: var(--ds-text-tertiary, #94A3B8);
+  background: none; cursor: pointer; transition: all 0.2s;
+}
+.ds-lang-btn.active { background: white; color: var(--ds-teal-700, #0f766e); box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+
+/* ==========================  MAIN LAYOUT  ================================= */
+
+.ds-main {
+  margin-left: var(--ds-sidebar-w, 260px);
+  min-height: 100vh;
+}
+.ds-page-content {
+  padding: 28px 32px;
+}
+
+/* ==========================  SECTION HEADER  ============================== */
+
+.ds-section-header {
+  display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;
+}
+.ds-section-title {
+  font-size: 20px; font-weight: 700; color: var(--ds-text-primary, #1E293B);
+}
+.ds-section-subtitle {
+  font-size: 13px; color: var(--ds-text-tertiary, #94A3B8); margin-top: 2px;
+}
+
+/* ===========================  STATS GRID  ================================= */
+
+.ds-stats-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 16px; margin-bottom: 28px;
+}
+.ds-stat-card {
+  background: var(--ds-surface, #fff); border: 1px solid var(--ds-border, #E2E8F0);
+  border-radius: 16px; padding: 20px; display: flex; align-items: flex-start; gap: 14px;
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+.ds-stat-card:hover { box-shadow: var(--ds-shadow-md); transform: translateY(-1px); }
+.ds-stat-icon {
+  width: 44px; height: 44px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;
+}
+.ds-stat-icon--teal { background: var(--ds-teal-50, #f0fdfa); }
+.ds-stat-icon--blue { background: #eff6ff; }
+.ds-stat-icon--amber { background: #fffbeb; }
+.ds-stat-icon--rose { background: #fff1f2; }
+.ds-stat-icon--purple { background: #f5f3ff; }
+.ds-stat-value { font-size: 24px; font-weight: 800; color: var(--ds-text-primary, #1E293B); line-height: 1; }
+.ds-stat-label { font-size: 12px; color: var(--ds-text-secondary, #64748B); margin-top: 4px; }
+.ds-stat-change {
+  font-size: 11px; font-weight: 600; margin-top: 6px;
+  display: inline-flex; align-items: center; gap: 3px; padding: 2px 8px;
+  border-radius: 6px;
+}
+.ds-stat-change--up { background: #ecfdf5; color: #059669; }
+.ds-stat-change--down { background: #fef2f2; color: #dc2626; }
+
+/* ==========================  TWO COLUMN  ================================== */
+
+.ds-two-col { display: grid; grid-template-columns: 2fr 1fr; gap: 24px; }
+.ds-two-col-equal { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+
+/* ==========================  PROTOTYPE CARD  ============================== */
+
+.ds-proto-card {
+  background: var(--ds-surface, #fff); border: 1px solid var(--ds-border, #E2E8F0);
+  border-radius: 16px; overflow: hidden; margin-bottom: 24px;
+}
+.ds-proto-card-header {
+  padding: 18px 24px; display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 1px solid var(--ds-border-subtle, #F1F5F9);
+}
+.ds-proto-card-title { font-size: 15px; font-weight: 700; color: var(--ds-text-primary, #1E293B); }
+.ds-proto-card-subtitle { font-size: 12px; color: var(--ds-text-tertiary, #94A3B8); font-weight: 400; }
+.ds-proto-card-actions { display: flex; gap: 8px; }
+.ds-proto-card-body { padding: 24px; }
+.ds-proto-card-padded { padding: 32px; }
+
+/* ==========================  PROTOTYPE BUTTONS  =========================== */
+
+.ds-proto-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 16px; border-radius: 10px; font-size: 12px; font-weight: 600;
+  font-family: inherit; cursor: pointer; transition: all 0.2s; border: none;
+}
+.ds-proto-btn--primary { background: var(--ds-teal-600, #0d9488); color: white; }
+.ds-proto-btn--primary:hover {
+  background: var(--ds-teal-700, #0f766e);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(13,148,136,0.25);
+}
+.ds-proto-btn--outline {
+  background: var(--ds-surface, #fff); border: 1.5px solid var(--ds-border, #E2E8F0);
+  color: var(--ds-text-secondary, #64748B);
+}
+.ds-proto-btn--outline:hover { border-color: var(--ds-teal-300, #5eead4); color: var(--ds-teal-700, #0f766e); }
+.ds-proto-btn--danger {
+  background: #fef2f2; border: 1.5px solid #fecaca; color: #dc2626;
+}
+.ds-proto-btn--danger:hover { background: #fee2e2; }
+.ds-proto-btn--amber {
+  background: #fffbeb; border: 1.5px solid #fde68a; color: #d97706;
+}
+.ds-proto-btn--amber:hover { background: #fef3c7; }
+.ds-proto-btn--sm { padding: 6px 12px; font-size: 11px; }
+.ds-proto-btn--lg { padding: 10px 24px; font-size: 14px; }
+
+/* ==========================  PROTOTYPE TABLE  ============================= */
+
+.ds-proto-table { width: 100%; border-collapse: collapse; }
+.ds-proto-table th {
+  text-align: left; padding: 12px 24px; font-size: 11px; font-weight: 600;
+  color: var(--ds-text-tertiary, #94A3B8); text-transform: uppercase; letter-spacing: 0.8px;
+  background: var(--ds-surface-hover, #F8FAFC);
+  border-bottom: 1px solid var(--ds-border-subtle, #F1F5F9);
+}
+.ds-proto-table td {
+  padding: 14px 24px; font-size: 13px; color: var(--ds-text-primary, #1E293B);
+  border-bottom: 1px solid var(--ds-border-subtle, #F1F5F9);
+}
+.ds-proto-table tr:hover td { background: var(--ds-surface-hover, #F8FAFC); }
+.ds-proto-table .ds-user-cell { display: flex; align-items: center; gap: 10px; }
+
+/* ==========================  PROTOTYPE BADGE  ============================= */
+
+.ds-proto-badge {
+  display: inline-flex; padding: 4px 10px; border-radius: 8px;
+  font-size: 11px; font-weight: 600;
+}
+.ds-proto-badge--teal { background: var(--ds-teal-50, #f0fdfa); color: var(--ds-teal-700, #0f766e); }
+.ds-proto-badge--amber { background: #fffbeb; color: #d97706; }
+.ds-proto-badge--blue { background: #eff6ff; color: #2563eb; }
+.ds-proto-badge--rose { background: #fff1f2; color: #e11d48; }
+.ds-proto-badge--green { background: #ecfdf5; color: #059669; }
+.ds-proto-badge--gray { background: var(--ds-surface-hover, #F1F5F9); color: var(--ds-text-secondary, #64748B); }
+.ds-proto-badge--purple { background: #f5f3ff; color: #7c3aed; }
+
+/* ==========================  USER AVATAR  ================================= */
+
+.ds-user-avatar {
+  width: 32px; height: 32px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700; color: white; flex-shrink: 0;
+}
+.ds-user-avatar--teal { background: linear-gradient(135deg, var(--ds-teal-400, #2dd4bf), var(--ds-teal-600, #0d9488)); }
+.ds-user-avatar--blue { background: linear-gradient(135deg, #60a5fa, #3b82f6); }
+.ds-user-avatar--amber { background: linear-gradient(135deg, #fbbf24, #f59e0b); }
+.ds-user-avatar--rose { background: linear-gradient(135deg, #fb7185, #e11d48); }
+.ds-user-avatar--purple { background: linear-gradient(135deg, #a78bfa, #7c3aed); }
+
+/* =========================  APPOINTMENT ITEMS  ============================= */
+
+.ds-appt-list { padding: 0; }
+.ds-appt-item {
+  display: flex; align-items: center; gap: 14px; padding: 14px 24px;
+  border-bottom: 1px solid var(--ds-border-subtle, #F1F5F9);
+  transition: background 0.15s;
+}
+.ds-appt-item:hover { background: var(--ds-surface-hover, #F8FAFC); }
+.ds-appt-item:last-child { border-bottom: none; }
+.ds-appt-time {
+  font-size: 12px; font-weight: 700; color: var(--ds-teal-700, #0f766e);
+  background: var(--ds-teal-50, #f0fdfa); padding: 6px 10px; border-radius: 8px;
+  min-width: 60px; text-align: center;
+}
+.ds-appt-info { flex: 1; }
+.ds-appt-patient { font-size: 13px; font-weight: 600; color: var(--ds-text-primary, #1E293B); }
+.ds-appt-type { font-size: 11px; color: var(--ds-text-tertiary, #94A3B8); margin-top: 2px; }
+
+/* =======================  ACTIVITY LIST  ================================== */
+
+.ds-activity-list { padding: 0; }
+.ds-activity-item {
+  display: flex; gap: 12px; padding: 14px 24px;
+  border-bottom: 1px solid var(--ds-border-subtle, #F1F5F9);
+}
+.ds-activity-dot {
+  width: 8px; height: 8px; border-radius: 50%; margin-top: 5px; flex-shrink: 0;
+}
+.ds-activity-text { font-size: 13px; color: var(--ds-text-secondary, #64748B); line-height: 1.4; }
+.ds-activity-text strong { color: var(--ds-text-primary, #1E293B); font-weight: 600; }
+.ds-activity-time { font-size: 11px; color: var(--ds-text-tertiary, #94A3B8); margin-top: 2px; }
+
+/* =======================  QUICK ACTIONS  ================================== */
+
+.ds-quick-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 20px; }
+.ds-quick-action {
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  padding: 16px 12px; border-radius: 12px; border: 1.5px solid var(--ds-border-subtle, #F1F5F9);
+  background: var(--ds-surface, #fff); cursor: pointer; transition: all 0.2s; text-align: center;
+}
+.ds-quick-action:hover { border-color: var(--ds-teal-300, #5eead4); background: var(--ds-teal-50, #f0fdfa); }
+.ds-quick-action-icon { font-size: 24px; }
+.ds-quick-action-label { font-size: 11px; font-weight: 600; color: var(--ds-text-secondary, #64748B); }
+
+/* =======================  MINI CALENDAR  ================================== */
+
+.ds-mini-cal { padding: 20px; }
+.ds-cal-header {
+  display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;
+}
+.ds-cal-header h3 { font-size: 14px; font-weight: 700; color: var(--ds-text-primary, #1E293B); }
+.ds-cal-nav { display: flex; gap: 4px; }
+.ds-cal-nav button {
+  width: 28px; height: 28px; border-radius: 8px; border: 1px solid var(--ds-border, #E2E8F0);
+  background: var(--ds-surface, #fff); cursor: pointer; display: flex;
+  align-items: center; justify-content: center;
+  font-size: 12px; color: var(--ds-text-secondary, #64748B);
+}
+.ds-cal-grid {
+  display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center;
+}
+.ds-cal-day-name {
+  font-size: 10px; font-weight: 600; color: var(--ds-text-tertiary, #94A3B8);
+  padding: 4px; text-transform: uppercase;
+}
+.ds-cal-day {
+  width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center;
+  justify-content: center; font-size: 12px; color: var(--ds-text-secondary, #64748B);
+  cursor: pointer; margin: 0 auto;
+}
+.ds-cal-day:hover { background: var(--ds-surface-hover, #F8FAFC); }
+.ds-cal-day--today { background: var(--ds-teal-600, #0d9488); color: white; font-weight: 700; }
+.ds-cal-day--event { position: relative; }
+.ds-cal-day--event::after {
+  content: ''; position: absolute; bottom: 2px; width: 4px; height: 4px;
+  border-radius: 50%; background: var(--ds-teal-400, #2dd4bf);
+}
+.ds-cal-day--other { color: var(--ds-text-disabled, #CBD5E1); }
+
+/* =======================  PROTOTYPE FORM  ================================= */
+
+.ds-proto-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.ds-form-group { margin-bottom: 16px; }
+.ds-form-group label {
+  display: block; font-size: 12px; font-weight: 600; color: var(--ds-text-secondary, #64748B);
+  margin-bottom: 6px;
+}
+.ds-form-input {
+  width: 100%; padding: 10px 14px; border: 1.5px solid var(--ds-border, #E2E8F0);
+  border-radius: 10px; font-size: 13px; font-family: inherit; color: var(--ds-text-primary, #1E293B);
+  background: var(--ds-surface, #fff); outline: none; transition: all 0.2s;
+}
+.ds-form-input:focus { border-color: var(--ds-teal-500, #14b8a6); box-shadow: 0 0 0 3px rgba(13,148,136,0.08); }
+.ds-form-input::placeholder { color: var(--ds-text-tertiary, #94A3B8); }
+select.ds-form-input {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 12px center;
+}
+
+/* =======================  MODAL (prototype style)  ======================== */
+
+.ds-proto-modal-overlay {
+  display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+  backdrop-filter: blur(4px); z-index: 500; align-items: center; justify-content: center;
+}
+.ds-proto-modal-overlay.show { display: flex; }
+.ds-proto-modal {
+  background: var(--ds-surface, #fff); border-radius: 20px; width: 500px;
+  max-height: 80vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+}
+.ds-proto-modal-header {
+  padding: 24px 28px 0; display: flex; justify-content: space-between; align-items: center;
+}
+.ds-proto-modal-title { font-size: 18px; font-weight: 700; color: var(--ds-text-primary, #1E293B); }
+.ds-proto-modal-close {
+  width: 32px; height: 32px; border-radius: 8px; border: none;
+  background: var(--ds-surface-hover, #F1F5F9);
+  cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center;
+  color: var(--ds-text-secondary, #64748B); transition: background 0.15s;
+}
+.ds-proto-modal-close:hover { background: var(--ds-border, #E2E8F0); }
+.ds-proto-modal-body { padding: 24px 28px; }
+.ds-proto-modal-footer {
+  padding: 0 28px 24px; display: flex; gap: 10px; justify-content: flex-end;
+}
+
+/* =======================  WELCOME BANNER  ================================= */
+
+.ds-welcome-banner {
+  background: linear-gradient(135deg, var(--ds-teal-500, #14b8a6) 0%, var(--ds-teal-700, #0f766e) 100%);
+  border-radius: 16px; padding: 28px 32px;
+  color: white; margin-bottom: 28px; position: relative; overflow: hidden;
+}
+.ds-welcome-banner::after {
+  content: ''; position: absolute; right: -30px; top: -30px;
+  width: 160px; height: 160px; border-radius: 50%;
+  background: rgba(255,255,255,.08);
+}
+.ds-welcome-banner::before {
+  content: ''; position: absolute; right: 40px; bottom: -40px;
+  width: 120px; height: 120px; border-radius: 50%;
+  background: rgba(255,255,255,.05);
+}
+.ds-welcome-banner h2 { font-size: 22px; font-weight: 700; margin-bottom: 4px; position: relative; z-index: 1; color: white; }
+.ds-welcome-banner p { font-size: 14px; opacity: .85; position: relative; z-index: 1; color: white; }
+
+/* =======================  APPOINTMENT CARDS (grid)  ======================= */
+
+.ds-appt-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
+.ds-appt-card {
+  background: var(--ds-surface, #fff); border: 1px solid var(--ds-border, #E2E8F0);
+  border-radius: 12px; padding: 18px; transition: all .2s;
+  position: relative; overflow: hidden;
+}
+.ds-appt-card::before {
+  content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+  width: 4px; border-radius: 4px 0 0 4px;
+}
+.ds-appt-card--confirmed::before { background: var(--ds-success-600, #16a34a); }
+.ds-appt-card--pending::before { background: var(--ds-warning-600, #d97706); }
+.ds-appt-card--completed::before { background: var(--ds-primary-500, #14b8a6); }
+.ds-appt-card--cancelled::before { background: var(--ds-danger-500, #ef4444); }
+.ds-appt-card:hover { box-shadow: var(--ds-shadow-md); transform: translateY(-1px); }
+.ds-appt-card-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 12px; }
+.ds-appt-date-box {
+  background: var(--ds-teal-50, #f0fdfa); border-radius: 10px; padding: 10px 14px; text-align: center;
+  min-width: 60px;
+}
+
+/* =======================  TAG  ============================================ */
+
+.ds-tag {
+  display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px;
+  border-radius: 6px; font-size: 11px; font-weight: 500;
+}
+.ds-tag--teal { background: var(--ds-teal-50, #f0fdfa); color: var(--ds-teal-700, #0f766e); }
+.ds-tag--gray { background: var(--ds-surface-hover, #F1F5F9); color: var(--ds-text-secondary, #64748B); }
+
+/* =======================  FILTER BAR  ===================================== */
+
+.ds-filter-bar {
+  display: flex; gap: 12px; align-items: center; margin-bottom: 20px; flex-wrap: wrap;
+}
+.ds-filter-bar .ds-topbar-search { width: 280px; }
+.ds-filter-bar select.ds-form-input { width: auto; min-width: 160px; }
+
+/* =======================  EMPTY STATE  ==================================== */
+
+.ds-empty-state {
+  text-align: center; padding: 48px 24px;
+}
+.ds-empty-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.5; }
+.ds-empty-title { font-size: 16px; font-weight: 700; color: var(--ds-text-secondary, #64748B); margin-bottom: 4px; }
+.ds-empty-desc { font-size: 13px; color: var(--ds-text-tertiary, #94A3B8); margin-bottom: 20px; }
+
+/* =======================  LAB STATUS DOT  ================================= */
+
+.ds-lab-status-dot {
+  width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px;
+}
+.ds-lab-status-dot--active { background: #10b981; }
+.ds-lab-status-dot--inactive { background: var(--ds-text-tertiary, #94A3B8); }
+
+/* =======================  PATIENT QUICK ACTIONS  ========================== */
+
+.ds-patient-actions {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; margin-top: 24px;
+}
+.ds-patient-action {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--ds-surface, #fff); border: 1.5px solid var(--ds-border, #E2E8F0);
+  border-radius: 12px; padding: 16px 18px;
+  cursor: pointer; transition: all .2s;
+}
+.ds-patient-action:hover {
+  border-color: var(--ds-teal-400, #2dd4bf); background: var(--ds-teal-50, #f0fdfa);
+  transform: translateY(-2px); box-shadow: var(--ds-shadow-md);
+}
+.ds-patient-action .pa-icon {
+  width: 40px; height: 40px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; background: var(--ds-teal-50, #f0fdfa);
+}
+.ds-patient-action .pa-text { font-size: 13.5px; font-weight: 600; color: var(--ds-text-primary, #1E293B); }
+.ds-patient-action .pa-desc { font-size: 11.5px; color: var(--ds-text-tertiary, #94A3B8); }
+
+/* =======================  PAGE VIEW (single page app)  ==================== */
+
+.ds-page-view { display: none; }
+.ds-page-view.active { display: block; }
+
+/* =======================  RESPONSIVE  ===================================== */
+
+@media (max-width: 768px) {
+  .ds-sidebar { transform: translateX(-100%); }
+  .ds-sidebar.open { transform: translateX(0); }
+  .ds-main { margin-left: 0; }
+  .ds-stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .ds-two-col, .ds-two-col-equal { grid-template-columns: 1fr; }
+  .ds-page-content { padding: 20px 16px; }
+  .ds-topbar { padding: 0 16px; }
+  .ds-topbar-search { width: 160px; }
+  .ds-proto-form-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 480px) {
+  .ds-stats-grid { grid-template-columns: 1fr; }
+}
+
+/* =======================  DARK THEME ADJUSTMENTS  ========================= */
+
+[data-theme="dark"] .ds-sidebar {
+  background: var(--ds-surface, #1E293B);
+  border-right-color: var(--ds-border, #334155);
+}
+[data-theme="dark"] .ds-sidebar-brand-text { color: var(--ds-teal-300, #5eead4); }
+[data-theme="dark"] .ds-sidebar-brand { border-bottom-color: var(--ds-border, #334155); }
+[data-theme="dark"] .ds-nav-item:hover { background: var(--ds-surface-hover, #334155); }
+[data-theme="dark"] .ds-nav-item.active { background: rgba(20, 184, 166, 0.1); }
+[data-theme="dark"] .ds-sidebar-footer { border-top-color: var(--ds-border, #334155); }
+[data-theme="dark"] .ds-topbar {
+  background: var(--ds-surface, #1E293B);
+  border-bottom-color: var(--ds-border, #334155);
+}
+[data-theme="dark"] .ds-topbar-search {
+  background: var(--ds-surface-hover, #334155);
+  border-color: var(--ds-border, #475569);
+}
+[data-theme="dark"] .ds-lang-btn.active { background: var(--ds-surface-active, #475569); }
+[data-theme="dark"] .ds-proto-card { background: var(--ds-surface, #1E293B); border-color: var(--ds-border, #334155); }
+[data-theme="dark"] .ds-proto-card-header { border-bottom-color: var(--ds-border, #334155); }
+[data-theme="dark"] .ds-stat-card { background: var(--ds-surface, #1E293B); border-color: var(--ds-border, #334155); }
+[data-theme="dark"] .ds-proto-table th { background: var(--ds-surface-hover, #334155); }
+[data-theme="dark"] .ds-proto-table td { border-bottom-color: var(--ds-border, #334155); }
+[data-theme="dark"] .ds-proto-table tr:hover td { background: var(--ds-surface-hover, #334155); }
+[data-theme="dark"] .ds-appt-item { border-bottom-color: var(--ds-border, #334155); }
+[data-theme="dark"] .ds-form-input { background: var(--ds-surface-hover, #334155); border-color: var(--ds-border, #475569); color: var(--ds-text-primary, #F8FAFC); }
+[data-theme="dark"] .ds-proto-modal { background: var(--ds-surface, #1E293B); }
+[data-theme="dark"] .ds-quick-action { background: var(--ds-surface, #1E293B); border-color: var(--ds-border, #334155); }
+[data-theme="dark"] .ds-quick-action:hover { background: rgba(20, 184, 166, 0.1); }
+[data-theme="dark"] .ds-appt-card { background: var(--ds-surface, #1E293B); border-color: var(--ds-border, #334155); }
+[data-theme="dark"] .ds-patient-action { background: var(--ds-surface, #1E293B); border-color: var(--ds-border, #334155); }
+[data-theme="dark"] .ds-patient-action:hover { background: rgba(20, 184, 166, 0.1); }
+[data-theme="dark"] .ds-welcome-banner::after,
+[data-theme="dark"] .ds-welcome-banner::before { opacity: 0.15; }
