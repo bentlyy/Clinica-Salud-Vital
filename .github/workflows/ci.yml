@@ -10,9 +10,32 @@ jobs:
   build-and-test:
     runs-on: ubuntu-latest
 
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: clinic
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d clinic"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
     strategy:
       matrix:
         node-version: [20]
+
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/clinic
+      JWT_SECRET: ci-test-jwt-secret-at-least-32-characters-long
+      AUDIT_HMAC_SECRET: ci-test-audit-hmac-secret-at-least-32-characters
+      ENCRYPTION_KEY: 0123456789ABCDEF0123456789ABCDEF
+      INVITE_JWT_SECRET: ci-test-invite-secret-at-least-32-characters
+      NODE_ENV: test
 
     steps:
       - uses: actions/checkout@v4
@@ -33,12 +56,19 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+      - name: Lint frontend
+        run: npm run lint
+        working-directory: frontend
+
       - name: Run backend tests
         run: npm test
 
       - name: Run frontend tests
         run: npm test
         working-directory: frontend
+
+      - name: Build backend
+        run: npm run build:backend
 
       - name: Build frontend
         run: npm run build
