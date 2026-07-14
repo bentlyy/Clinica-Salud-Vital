@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Opción 7: Teal Aqua Clinical</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      min-height: 100vh;
+      background: #f0fdfa;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Decorative organic shapes */
+    .deco-circle {
+      position: fixed;
+      border-radius: 50%;
+      opacity: 0.5;
+      z-index: 0;
+    }
+    .deco-1 { width: 500px; height: 500px; background: radial-gradient(circle, #99f6e4 0%, transparent 70%); top: -150px; right: -100px; }
+    .deco-2 { width: 400px; height: 400px; background: radial-gradient(circle, #ccfbf1 0%, transparent 70%); bottom: -120px; left: -80px; }
+    .deco-3 { width: 200px; height: 200px; background: radial-gradient(circle, #5eead4 0%, transparent 70%); top: 50%; left: 30%; opacity: 0.2; }
+
+    .page {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      width: 920px;
+      min-height: 540px;
+      background: white;
+      border-radius: 28px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.03), 0 4px 16px rgba(0,0,0,0.04), 0 16px 48px rgba(0,0,0,0.06);
+      overflow: hidden;
+    }
+
+    /* Left: Illustration */
+    .visual-side {
+      flex: 1.15;
+      background: linear-gradient(160deg, #0d9488 0%, #0f766e 50%, #115e59 100%);
+      padding: 48px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .visual-side::before {
+      content: '';
+      position: absolute;
+      width: 300px;
+      height: 300px;
+      border: 2px solid rgba(255,255,255,0.08);
+      border-radius: 50%;
+      top: -80px;
+      right: -80px;
+    }
+
+    .visual-side::after {
+      content: '';
+      position: absolute;
+      width: 200px;
+      height: 200px;
+      border: 2px solid rgba(255,255,255,0.06);
+      border-radius: 50%;
+      bottom: 20px;
+      left: -60px;
+    }
+
+    .visual-top { position: relative; z-index: 1; }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 24px;
+      padding: 6px 16px;
+      font-size: 12px;
+      font-weight: 500;
+      color: rgba(255,255,255,0.9);
+    }
+
+    .pulse-dot {
+      width: 8px;
+      height: 8px;
+      background: #34d399;
+      border-radius: 50%;
+      animation: pulse-ring 2s infinite;
+      position: relative;
+    }
+
+    .pulse-dot::after {
+      content: '';
+      position: absolute;
+      inset: -4px;
+      border-radius: 50%;
+      border: 2px solid #34d399;
+      animation: ring-expand 2s infinite;
+    }
+
+    @keyframes pulse-ring {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(0.8); }
+    }
+
+    @keyframes ring-expand {
+      0% { opacity: 1; transform: scale(1); }
+      100% { opacity: 0; transform: scale(2); }
+    }
+
+    .visual-main {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+
+    .medical-icon {
+      width: 80px;
+      height: 80px;
+      background: rgba(255,255,255,0.15);
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 40px;
+      margin-bottom: 24px;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .visual-main h2 {
+      color: white;
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .visual-main p {
+      color: rgba(255,255,255,0.7);
+      font-size: 14px;
+      line-height: 1.5;
+      max-width: 280px;
+    }
+
+    .visual-bottom {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      gap: 12px;
+    }
+
+    .info-card {
+      flex: 1;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 14px;
+      padding: 14px;
+      backdrop-filter: blur(8px);
+    }
+
+    .info-card-val {
+      font-size: 20px;
+      font-weight: 700;
+      color: white;
+    }
+
+    .info-card-label {
+      font-size: 11px;
+      color: rgba(255,255,255,0.6);
+      margin-top: 2px;
+    }
+
+    /* Right: Form */
+    .form-side {
+      flex: 1;
+      padding: 48px 40px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .form-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 32px;
+    }
+
+    .form-brand-icon {
+      width: 34px;
+      height: 34px;
+      background: #0d9488;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+
+    .form-brand-name {
+      font-size: 17px;
+      font-weight: 700;
+      color: #134e4a;
+    }
+
+    .form-title {
+      font-size: 24px;
+      font-weight: 700;
+      color: #134e4a;
+      margin-bottom: 4px;
+    }
+
+    .form-subtitle {
+      font-size: 13px;
+      color: #6b7280;
+      margin-bottom: 30px;
+    }
+
+    .field {
+      margin-bottom: 18px;
+    }
+
+    .field label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: #4b5563;
+      margin-bottom: 6px;
+    }
+
+    .field-input {
+      position: relative;
+    }
+
+    .field-input .fi-icon {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 16px;
+      height: 16px;
+      color: #9ca3af;
+    }
+
+    .field-input .fi-icon svg {
+      width: 100%;
+      height: 100%;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .field input {
+      width: 100%;
+      padding: 12px 14px 12px 40px;
+      border: 1.5px solid #e5e7eb;
+      border-radius: 10px;
+      font-size: 14px;
+      font-family: inherit;
+      color: #1f2937;
+      background: #f9fafb;
+      outline: none;
+      transition: all 0.2s;
+    }
+
+    .field input::placeholder { color: #9ca3af; }
+
+    .field input:focus {
+      border-color: #0d9488;
+      background: white;
+      box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.1);
+    }
+
+    .pw-vis {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: #9ca3af;
+      cursor: pointer;
+      font-size: 12px;
+      font-family: inherit;
+      font-weight: 500;
+    }
+
+    .pw-vis:hover { color: #0d9488; }
+
+    .totp-box input {
+      text-align: center;
+      font-size: 26px;
+      letter-spacing: 10px;
+      font-weight: 700;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      color: #0d9488;
+    }
+
+    .opts {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 22px;
+      font-size: 12px;
+    }
+
+    .opts .chk {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: #6b7280;
+      cursor: pointer;
+    }
+
+    .opts .chk input { accent-color: #0d9488; }
+
+    .opts a {
+      color: #0d9488;
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .opts a:hover { text-decoration: underline; }
+
+    .btn-login {
+      width: 100%;
+      padding: 13px;
+      background: linear-gradient(135deg, #0d9488, #0f766e);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .btn-login:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(13, 148, 136, 0.35);
+    }
+
+    .or-sep {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin: 22px 0;
+      font-size: 11px;
+      color: #d1d5db;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .or-sep::before, .or-sep::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: #e5e7eb;
+    }
+
+    .btn-guest {
+      width: 100%;
+      padding: 12px;
+      background: white;
+      border: 1.5px solid #e5e7eb;
+      border-radius: 12px;
+      color: #6b7280;
+      font-size: 13px;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-guest:hover {
+      border-color: #0d9488;
+      color: #0d9488;
+      background: #f0fdfa;
+    }
+
+    .signup {
+      text-align: center;
+      margin-top: 20px;
+      font-size: 13px;
+      color: #9ca3af;
+    }
+
+    .signup a {
+      color: #0d9488;
+      font-weight: 600;
+      text-decoration: none;
+    }
+
+    .signup a:hover { text-decoration: underline; }
+
+    @media (max-width: 900px) {
+      .visual-side { display: none; }
+      .page { width: 92%; max-width: 420px; min-height: auto; border-radius: 20px; }
+      .form-side { padding: 36px 28px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="deco-circle deco-1"></div>
+  <div class="deco-circle deco-2"></div>
+  <div class="deco-circle deco-3"></div>
+
+  <div class="page">
+    <div class="visual-side">
+      <div class="visual-top">
+        <div class="status-badge">
+          <span class="pulse-dot"></span>
+          Sistema activo
+        </div>
+      </div>
+      <div class="visual-main">
+        <div class="medical-icon">🩺</div>
+        <h2>Tu salud, nuestra prioridad</h2>
+        <p>Plataforma integral con historiales clínicos, laboratorio, analytics predictivos y más.</p>
+      </div>
+      <div class="visual-bottom">
+        <div class="info-card">
+          <div class="info-card-val">12k+</div>
+          <div class="info-card-label">Pacientes atendidos</div>
+        </div>
+        <div class="info-card">
+          <div class="info-card-val">98%</div>
+          <div class="info-card-label">Satisfacción</div>
+        </div>
+        <div class="info-card">
+          <div class="info-card-val">24/7</div>
+          <div class="info-card-label">Disponible</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-side">
+      <div class="form-brand">
+        <div class="form-brand-icon">💚</div>
+        <span class="form-brand-name">Salud Vital</span>
+      </div>
+
+      <h2 class="form-title">Bienvenido de nuevo</h2>
+      <p class="form-subtitle">Ingresa para acceder a tu panel de control</p>
+
+      <form onsubmit="event.preventDefault(); alert('Demo teal');">
+        <div class="field">
+          <label>Correo electrónico</label>
+          <div class="field-input">
+            <span class="fi-icon"><svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg></span>
+            <input type="email" placeholder="doctor@clinica.com">
+          </div>
+        </div>
+        <div class="field">
+          <label>Contraseña</label>
+          <div class="field-input">
+            <span class="fi-icon"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
+            <input type="password" placeholder="Ingresa tu contraseña">
+            <button type="button" class="pw-vis" onclick="var i=this.parentElement.querySelector('input'); i.type=i.type==='password'?'text':'password';">Mostrar</button>
+          </div>
+        </div>
+        <div class="field totp-box" style="display:none;">
+          <label>Código 2FA</label>
+          <div class="field-input">
+            <input type="text" placeholder="000000" maxlength="6">
+          </div>
+        </div>
+
+        <div class="opts">
+          <label class="chk"><input type="checkbox"> Recordarme</label>
+          <a href="#">¿Olvidaste tu contraseña?</a>
+        </div>
+
+        <button type="submit" class="btn-login">Iniciar Sesión</button>
+      </form>
+
+      <div class="or-sep">o</div>
+
+      <button class="btn-guest">🎫 Reservar como invitado</button>
+
+      <p class="signup">¿No tienes cuenta? <a href="#">Regístrate aquí</a></p>
+    </div>
+  </div>
+</body>
+</html>
