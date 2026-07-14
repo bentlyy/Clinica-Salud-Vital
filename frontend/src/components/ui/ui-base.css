@@ -59,18 +59,18 @@
 /* --- Variants --- */
 
 .ds-btn--primary {
-  background: var(--ds-primary-500, #1976D2);
+  background: var(--ds-primary-500, #14b8a6);
   color: white;
 }
 
 .ds-btn--primary:hover:not(:disabled) {
-  background: var(--ds-primary-600, #1565C0);
+  background: var(--ds-primary-600, #0d9488);
   box-shadow: var(--ds-shadow-md, 0 4px 12px rgba(0,0,0,0.07));
   transform: translateY(-1px);
 }
 
 .ds-btn--primary:active:not(:disabled) {
-  background: var(--ds-primary-700, #0D47A1);
+  background: var(--ds-primary-700, #0f766e);
   transform: translateY(0);
 }
 
@@ -87,12 +87,12 @@
 
 .ds-btn--outline {
   background: transparent;
-  color: var(--ds-primary-600, #1565C0);
-  border-color: var(--ds-primary-500, #1976D2);
+  color: var(--ds-primary-600, #0d9488);
+  border-color: var(--ds-primary-500, #14b8a6);
 }
 
 .ds-btn--outline:hover:not(:disabled) {
-  background: var(--ds-primary-50, #E3F2FD);
+  background: var(--ds-primary-50, #f0fdfa);
   transform: translateY(-1px);
 }
 
@@ -159,7 +159,7 @@
 .ds-btn--outline .ds-btn__spinner,
 .ds-btn--ghost .ds-btn__spinner {
   border-color: var(--ds-border, #E2E8F0);
-  border-top-color: var(--ds-primary-500, #1976D2);
+  border-top-color: var(--ds-primary-500, #14b8a6);
 }
 
 @keyframes ds-spin {

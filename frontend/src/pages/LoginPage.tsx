@@ -254,7 +254,7 @@ export default function LoginPage() {
           flex-direction: column;
           justify-content: center;
           align-items: center;
-          background: linear-gradient(135deg, var(--ds-neutral-900) 0%, var(--accent-700) 50%, var(--ds-neutral-800) 100%);
+          background: linear-gradient(160deg, var(--ds-teal-600, #0d9488) 0%, var(--ds-teal-700, #0f766e) 50%, var(--ds-teal-800, #115e59) 100%);
           padding: 40px;
           position: relative;
           overflow: hidden;
@@ -271,7 +271,7 @@ export default function LoginPage() {
           right: -30%;
           width: 600px;
           height: 600px;
-          background: radial-gradient(circle, rgba(37,99,235,0.12) 0%, transparent 70%);
+          background: radial-gradient(circle, rgba(13,148,136,0.12) 0%, transparent 70%);
         }
 
         .login-brand-orb--2 {
@@ -279,7 +279,7 @@ export default function LoginPage() {
           left: -10%;
           width: 400px;
           height: 400px;
-          background: radial-gradient(circle, rgba(76,175,80,0.1) 0%, transparent 70%);
+          background: radial-gradient(circle, rgba(13,148,136,0.1) 0%, transparent 70%);
         }
 
         .login-brand-content {
@@ -293,12 +293,12 @@ export default function LoginPage() {
           width: 72px;
           height: 72px;
           border-radius: 20px;
-          background: linear-gradient(135deg, var(--accent-500), var(--primary-500));
+          background: linear-gradient(135deg, var(--accent-500), var(--accent-600));
           display: flex;
           align-items: center;
           justify-content: center;
           margin: 0 auto 28px;
-          box-shadow: 0 8px 32px rgba(25, 118, 210, 0.3);
+          box-shadow: 0 8px 32px rgba(13, 148, 136, 0.3);
         }
 
         .login-brand-title {
@@ -380,12 +380,12 @@ export default function LoginPage() {
           width: 52px;
           height: 52px;
           border-radius: 14px;
-          background: linear-gradient(135deg, var(--accent-500), var(--primary-500));
+          background: linear-gradient(135deg, var(--accent-500), var(--accent-600));
           display: flex;
           align-items: center;
           justify-content: center;
           margin: 0 auto 14px;
-          box-shadow: 0 4px 16px rgba(25, 118, 210, 0.25);
+          box-shadow: 0 4px 16px rgba(13, 148, 136, 0.25);
         }
 
         .login-mobile-title {
@@ -459,7 +459,7 @@ export default function LoginPage() {
 
         .login-form .ds-input:focus {
           border-color: var(--accent-500);
-          box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.1);
+          box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.1);
         }
 
         .login-form .ds-input::placeholder {
@@ -520,12 +520,12 @@ export default function LoginPage() {
           border-radius: var(--radius-md);
           cursor: pointer;
           transition: transform 0.15s, box-shadow 0.2s, opacity 0.2s;
-          box-shadow: 0 4px 12px rgba(25, 118, 210, 0.25);
+          box-shadow: 0 4px 12px rgba(13, 148, 136, 0.25);
         }
 
         .login-submit-btn:hover:not(:disabled) {
           transform: translateY(-1px);
-          box-shadow: 0 6px 20px rgba(25, 118, 210, 0.35);
+          box-shadow: 0 6px 20px rgba(13, 148, 136, 0.35);
         }
 
         .login-submit-btn:active:not(:disabled) {

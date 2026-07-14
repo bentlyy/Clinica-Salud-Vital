@@ -22,13 +22,13 @@
 }
 
 [data-theme="dark"] .nav-link-accent {
-  background: rgba(25, 118, 210, 0.15);
-  color: #64b5f6;
+  background: rgba(13, 148, 136, 0.15);
+  color: #5eead4;
 }
 
 [data-theme="dark"] .nav-link-accent:hover {
-  background: rgba(25, 118, 210, 0.25);
-  color: #90caf9;
+  background: rgba(13, 148, 136, 0.25);
+  color: #2dd4bf;
 }
 
 [data-theme="dark"] .navbar-user {
@@ -1065,31 +1065,31 @@
 }
 
 .features-section .card-subtle {
-  background: #f3e5f5;
+  background: #f0fdfa;
   border-color: transparent;
 }
 
 .features-section .card-subtle:hover {
   background: var(--bg-secondary);
-  border-color: #ce93d8;
+  border-color: #99f6e4;
 }
 
 .features-section .feature-icon {
-  filter: drop-shadow(0 2px 4px rgba(156, 39, 176, 0.15));
+  filter: drop-shadow(0 2px 4px rgba(13, 148, 136, 0.15));
 }
 
 [data-theme="dark"] .features-section .card-subtle {
-  background: #1a0a2e;
+  background: #0a2e2a;
   border-color: transparent;
 }
 
 [data-theme="dark"] .features-section .card-subtle:hover {
   background: var(--bg-secondary);
-  border-color: #7b1fa2;
+  border-color: #115e59;
 }
 
 [data-theme="dark"] .features-section .feature-icon {
-  filter: drop-shadow(0 2px 4px rgba(156, 39, 176, 0.3));
+  filter: drop-shadow(0 2px 4px rgba(13, 148, 136, 0.3));
 }
 
 .features-decoration {
@@ -1264,7 +1264,7 @@
   right: 0;
   width: 200px;
   height: 200px;
-  background: radial-gradient(circle, rgba(76, 175, 80, 0.08), transparent);
+  background: radial-gradient(circle, rgba(13, 148, 136, 0.08), transparent);
   border-radius: 50%;
 }
 
@@ -1305,7 +1305,7 @@
 .feature-card-clickable:hover {
   transform: translateY(-6px);
   box-shadow: var(--shadow-xl);
-  border-color: var(--accent-200, #93c5fd);
+  border-color: var(--accent-200, #99f6e4);
 }
 
 .feature-link {
@@ -1755,7 +1755,7 @@
 .sp-doctor-card:hover {
   box-shadow: var(--shadow-lg);
   transform: translateY(-4px);
-  border-color: var(--accent-200, #bbdefb);
+  border-color: var(--accent-200, #99f6e4);
 }
 
 .sp-doctor-avatar {
@@ -2778,7 +2778,7 @@
 .fc .fc-button:focus { box-shadow: none !important; }
 .fc .fc-button-primary:not(:disabled).fc-button-active,
 .fc .fc-button-primary:not(:disabled):active {
-  background: var(--primary-600) !important; border-color: var(--primary-600) !important;
+  background: var(--primary-600, #0d9488) !important; border-color: var(--primary-600, #0d9488) !important;
   color: #fff !important;
 }
 .fc .fc-today-button { font-weight: 600 !important; }
