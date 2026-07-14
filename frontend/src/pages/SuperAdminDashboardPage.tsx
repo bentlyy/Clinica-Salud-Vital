@@ -18,7 +18,15 @@ import Badge from '../components/ui/Badge';
 
 const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 
-function KpiCard({ label, value, delta, icon, color }) {
+interface KpiCardProps {
+  label: string;
+  value: string | number;
+  delta?: number;
+  icon: string;
+  color: string;
+}
+
+function KpiCard({ label, value, delta, icon, color }: KpiCardProps) {
   return (
     <Card variant="default" padding="md" style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
@@ -35,7 +43,14 @@ function KpiCard({ label, value, delta, icon, color }) {
   );
 }
 
-function SectionCard({ title, subtitle, children, style }) {
+interface SectionCardProps {
+  title: string;
+  subtitle?: string;
+  children: React.ReactNode;
+  style?: React.CSSProperties;
+}
+
+function SectionCard({ title, subtitle, children, style }: SectionCardProps) {
   return (
     <Card padding="lg" style={{ marginBottom: 20, ...style }}>
       <div style={{ marginBottom: 16 }}>
@@ -47,8 +62,8 @@ function SectionCard({ title, subtitle, children, style }) {
   );
 }
 
-function HealthBar({ score }) {
-  const getColor = (s) => {
+function HealthBar({ score }: { score: number }) {
+  const getColor = (s: number) => {
     if (s >= 80) return 'var(--chart-green)';
     if (s >= 50) return '#fbbf24';
     if (s >= 20) return '#fb923c';
@@ -64,7 +79,7 @@ function HealthBar({ score }) {
   );
 }
 
-function AlertBadge({ severity }) {
+function AlertBadge({ severity }: { severity: string }) {
   const config = {
     critical: { color: '#ef4444', label: 'Crítica' },
     high: { color: '#fb923c', label: 'Alta' },
@@ -82,16 +97,16 @@ function AlertBadge({ severity }) {
 
 export default function SuperAdminDashboardPage() {
   const { t } = useI18n();
-  const [activeSection, setActiveSection] = useState('resumen');
-  const [loading, setLoading] = useState(true);
-  const [dashboard, setDashboard] = useState(null);
-  const [healthScores, setHealthScores] = useState([]);
-  const [operations, setOperations] = useState(null);
-  const [churn, setChurn] = useState(null);
-  const [alerts, setAlerts] = useState([]);
-  const [topTenants, setTopTenants] = useState([]);
-  const [growth, setGrowth] = useState([]);
-  const [revenue, setRevenue] = useState([]);
+  const [activeSection, setActiveSection] = useState<string>('resumen');
+  const [loading, setLoading] = useState<boolean>(true);
+  const [dashboard, setDashboard] = useState<Record<string, unknown> | null>(null);
+  const [healthScores, setHealthScores] = useState<Array<Record<string, unknown>>>([]);
+  const [operations, setOperations] = useState<Record<string, unknown> | null>(null);
+  const [churn, setChurn] = useState<Record<string, unknown> | null>(null);
+  const [alerts, setAlerts] = useState<Array<Record<string, unknown>>>([]);
+  const [topTenants, setTopTenants] = useState<Array<Record<string, unknown>>>([]);
+  const [growth, setGrowth] = useState<Array<Record<string, unknown>>>([]);
+  const [revenue, setRevenue] = useState<Array<Record<string, unknown>>>([]);
 
   useEffect(() => {
     const load = async () => {

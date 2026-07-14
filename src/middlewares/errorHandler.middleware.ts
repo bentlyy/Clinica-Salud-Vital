@@ -27,7 +27,7 @@ export const errorHandler = (
   const message = isDev || !isInternalError(statusCode) ? err.message : 'Internal server error';
 
   const body: Record<string, unknown> = { error: message };
-  if (err.code) body.code = err.code;
+  if (isDev && err.code) body.code = err.code;
   if (isDev && err.stack) body.stack = err.stack;
 
   res.status(statusCode).json(body);
@@ -35,5 +35,5 @@ export const errorHandler = (
 
 export const notFoundHandler = (req: Request, res: Response, next: NextFunction): void => {
   logger.warn('Route not found', { url: req.originalUrl, method: req.method });
-  next(new NotFoundError(`Route ${req.method} ${req.originalUrl} not found`));
+  next(new NotFoundError('Route not found'));
 };

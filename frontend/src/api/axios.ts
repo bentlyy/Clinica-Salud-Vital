@@ -4,6 +4,8 @@ if (!import.meta.env.VITE_API_URL) {
   throw new Error('VITE_API_URL environment variable is required');
 }
 
+let isRefreshing = false;
+
 const api: AxiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
   withCredentials: true,
@@ -42,6 +44,14 @@ api.interceptors.response.use(
     const code = (error.response?.data as Record<string, unknown>)?.code;
 
     if (status === 401 && code === 'TOKEN_EXPIRED') {
+      if (isRefreshing) {
+        localStorage.removeItem('user');
+        localStorage.removeItem('tenant_id');
+        window.dispatchEvent(new CustomEvent('auth:expired', { detail: { reason: 'refresh_in_progress' } }));
+        return Promise.reject(new Error('Session expired, please log in again'));
+      }
+
+      isRefreshing = true;
       try {
         const { data } = await axios.post(
           `${api.defaults.baseURL}/auth/refresh`,
@@ -49,13 +59,18 @@ api.interceptors.response.use(
           { withCredentials: true }
         );
 
-        error.config!.headers = { ...error.config!.headers, Authorization: 'Bearer ' + (data as Record<string, string>).access_token };
-        return api(error.config!);
+        if (error.config) {
+          error.config.headers = { ...error.config.headers, Authorization: 'Bearer ' + (data as Record<string, string>).access_token };
+          return api(error.config);
+        }
+        return Promise.reject(new Error('No config available to retry'));
       } catch (refreshError) {
         localStorage.removeItem('user');
         localStorage.removeItem('tenant_id');
         window.dispatchEvent(new CustomEvent('auth:expired', { detail: { reason: 'refresh_failed' } }));
         return Promise.reject(refreshError || new Error('Session expired, please log in again'));
+      } finally {
+        isRefreshing = false;
       }
     }
 
