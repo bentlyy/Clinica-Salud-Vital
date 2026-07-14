@@ -1,0 +1,1480 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Salud Vital — Panel Doctor (Prototipo)</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --teal-50: #f0fdfa; --teal-100: #ccfbf1; --teal-200: #99f6e4; --teal-300: #5eead4;
+      --teal-400: #2dd4bf; --teal-500: #14b8a6; --teal-600: #0d9488; --teal-700: #0f766e;
+      --teal-800: #115e59; --teal-900: #134e4a;
+      --gray-50: #f9fafb; --gray-100: #f3f4f6; --gray-200: #e5e7eb; --gray-300: #d1d5db;
+      --gray-400: #9ca3af; --gray-500: #6b7280; --gray-600: #4b5563; --gray-700: #374151;
+      --gray-800: #1f2937; --gray-900: #111827;
+      --sidebar-w: 260px; --topbar-h: 64px;
+    }
+    body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--gray-50); color: var(--gray-800); }
+
+    /* SIDEBAR */
+    .sidebar {
+      position: fixed; top: 0; left: 0; bottom: 0; width: var(--sidebar-w);
+      background: white; border-right: 1px solid var(--gray-200);
+      display: flex; flex-direction: column; z-index: 100;
+    }
+    .sidebar-brand {
+      padding: 20px 24px; display: flex; align-items: center; gap: 12px;
+      border-bottom: 1px solid var(--gray-100);
+    }
+    .sidebar-brand-icon {
+      width: 38px; height: 38px; background: linear-gradient(135deg, var(--teal-600), var(--teal-700));
+      border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px;
+    }
+    .sidebar-brand-text { font-size: 16px; font-weight: 700; color: var(--teal-900); }
+    .sidebar-brand-role { font-size: 10px; color: var(--gray-400); font-weight: 500; text-transform: uppercase; letter-spacing: 1px; }
+
+    .sidebar-nav { flex: 1; padding: 16px 12px; overflow-y: auto; }
+    .nav-section { margin-bottom: 20px; }
+    .nav-section-label {
+      font-size: 10px; font-weight: 600; color: var(--gray-400);
+      text-transform: uppercase; letter-spacing: 1.2px;
+      padding: 0 12px; margin-bottom: 6px;
+    }
+    .nav-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 12px; border-radius: 10px;
+      font-size: 13px; font-weight: 500; color: var(--gray-500);
+      cursor: pointer; transition: all 0.2s; text-decoration: none;
+      margin-bottom: 2px;
+    }
+    .nav-item:hover { background: var(--teal-50); color: var(--teal-700); }
+    .nav-item.active { background: var(--teal-50); color: var(--teal-700); font-weight: 600; border: 1px solid var(--teal-100); }
+    .nav-item .ni-icon { width: 18px; text-align: center; font-size: 15px; flex-shrink: 0; }
+    .nav-item .ni-badge {
+      margin-left: auto; background: var(--teal-500); color: white;
+      font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 10px;
+    }
+
+    .sidebar-footer {
+      padding: 16px; border-top: 1px solid var(--gray-100);
+    }
+    .sidebar-user {
+      display: flex; align-items: center; gap: 10px; padding: 8px;
+      border-radius: 10px; cursor: pointer; transition: background 0.2s;
+    }
+    .sidebar-user:hover { background: var(--gray-50); }
+    .sidebar-avatar {
+      width: 34px; height: 34px; border-radius: 10px;
+      background: linear-gradient(135deg, var(--teal-400), var(--teal-600));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; font-weight: 700; color: white;
+    }
+    .sidebar-user-name { font-size: 13px; font-weight: 600; color: var(--gray-800); }
+    .sidebar-user-specialty { font-size: 11px; color: var(--gray-400); }
+
+    /* MAIN CONTENT */
+    .main { margin-left: var(--sidebar-w); min-height: 100vh; }
+
+    /* TOPBAR */
+    .topbar {
+      height: var(--topbar-h); background: white; border-bottom: 1px solid var(--gray-200);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 32px; position: sticky; top: 0; z-index: 50;
+    }
+    .topbar-left { display: flex; align-items: center; gap: 16px; }
+    .topbar-title { font-size: 18px; font-weight: 700; color: var(--gray-900); }
+    .topbar-breadcrumb { font-size: 12px; color: var(--gray-400); }
+    .topbar-right { display: flex; align-items: center; gap: 12px; }
+    .topbar-search {
+      display: flex; align-items: center; gap: 8px;
+      background: var(--gray-50); border: 1px solid var(--gray-200);
+      border-radius: 10px; padding: 8px 14px; width: 240px;
+    }
+    .topbar-search input {
+      border: none; background: none; outline: none;
+      font-size: 13px; font-family: inherit; color: var(--gray-700); width: 100%;
+    }
+    .topbar-search input::placeholder { color: var(--gray-400); }
+    .topbar-btn {
+      width: 36px; height: 36px; border-radius: 10px; border: 1px solid var(--gray-200);
+      background: white; display: flex; align-items: center; justify-content: center;
+      cursor: pointer; font-size: 16px; transition: all 0.2s; position: relative;
+    }
+    .topbar-btn:hover { background: var(--gray-50); border-color: var(--gray-300); }
+    .topbar-btn .notif-dot {
+      position: absolute; top: 6px; right: 6px; width: 8px; height: 8px;
+      background: #ef4444; border-radius: 50%; border: 2px solid white;
+    }
+    .lang-switch {
+      display: flex; gap: 2px; background: var(--gray-100); border-radius: 8px; padding: 3px;
+    }
+    .lang-switch button {
+      padding: 4px 8px; border: none; border-radius: 6px; font-size: 11px;
+      font-weight: 600; font-family: inherit; color: var(--gray-400);
+      background: none; cursor: pointer; transition: all 0.2s;
+    }
+    .lang-switch button.active { background: white; color: var(--teal-700); box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+
+    /* PAGE CONTENT */
+    .page-content { padding: 28px 32px; }
+    .page-view { display: none; }
+    .page-view.active { display: block; }
+
+    /* STATS CARDS */
+    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
+    .stat-card {
+      background: white; border: 1px solid var(--gray-200); border-radius: 16px;
+      padding: 20px; display: flex; align-items: flex-start; gap: 14px;
+      transition: box-shadow 0.2s, transform 0.2s;
+    }
+    .stat-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.06); transform: translateY(-1px); }
+    .stat-icon {
+      width: 44px; height: 44px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;
+    }
+    .stat-icon.si-teal { background: var(--teal-50); }
+    .stat-icon.si-blue { background: #eff6ff; }
+    .stat-icon.si-amber { background: #fffbeb; }
+    .stat-icon.si-rose { background: #fff1f2; }
+    .stat-value { font-size: 24px; font-weight: 800; color: var(--gray-900); line-height: 1; }
+    .stat-label { font-size: 12px; color: var(--gray-500); margin-top: 4px; }
+    .stat-change {
+      font-size: 11px; font-weight: 600; margin-top: 6px;
+      display: inline-flex; align-items: center; gap: 3px; padding: 2px 8px;
+      border-radius: 6px;
+    }
+    .stat-change.up { background: #ecfdf5; color: #059669; }
+    .stat-change.down { background: #fef2f2; color: #dc2626; }
+
+    /* CARDS */
+    .card {
+      background: white; border: 1px solid var(--gray-200); border-radius: 16px;
+      overflow: hidden; margin-bottom: 24px;
+    }
+    .card-header {
+      padding: 18px 24px; display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 1px solid var(--gray-100);
+    }
+    .card-title { font-size: 15px; font-weight: 700; color: var(--gray-900); }
+    .card-subtitle { font-size: 12px; color: var(--gray-400); font-weight: 400; }
+    .card-actions { display: flex; gap: 8px; }
+
+    /* BUTTONS */
+    .btn {
+      padding: 8px 16px; border-radius: 10px; font-size: 12px; font-weight: 600;
+      font-family: inherit; cursor: pointer; transition: all 0.2s; border: none;
+    }
+    .btn-primary { background: var(--teal-600); color: white; }
+    .btn-primary:hover { background: var(--teal-700); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(13,148,136,0.25); }
+    .btn-outline { background: white; border: 1.5px solid var(--gray-200); color: var(--gray-600); }
+    .btn-outline:hover { border-color: var(--teal-300); color: var(--teal-700); }
+    .btn-sm { padding: 6px 12px; font-size: 11px; }
+    .btn-danger { background: #fef2f2; border: 1.5px solid #fecaca; color: #dc2626; }
+    .btn-danger:hover { background: #fee2e2; }
+
+    /* TABLES */
+    table { width: 100%; border-collapse: collapse; }
+    th {
+      text-align: left; padding: 12px 24px; font-size: 11px; font-weight: 600;
+      color: var(--gray-400); text-transform: uppercase; letter-spacing: 0.8px;
+      background: var(--gray-50); border-bottom: 1px solid var(--gray-100);
+    }
+    td {
+      padding: 14px 24px; font-size: 13px; color: var(--gray-700);
+      border-bottom: 1px solid var(--gray-50);
+    }
+    tr:hover td { background: var(--gray-50); }
+
+    /* BADGES */
+    .badge {
+      display: inline-flex; padding: 4px 10px; border-radius: 8px;
+      font-size: 11px; font-weight: 600;
+    }
+    .badge-teal { background: var(--teal-50); color: var(--teal-700); }
+    .badge-amber { background: #fffbeb; color: #d97706; }
+    .badge-blue { background: #eff6ff; color: #2563eb; }
+    .badge-rose { background: #fff1f2; color: #e11d48; }
+    .badge-green { background: #ecfdf5; color: #059669; }
+    .badge-gray { background: var(--gray-100); color: var(--gray-500); }
+    .badge-purple { background: #f5f3ff; color: #7c3aed; }
+
+    /* USER CELLS */
+    .user-cell { display: flex; align-items: center; gap: 10px; }
+    .user-avatar {
+      width: 32px; height: 32px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 700; color: white; flex-shrink: 0;
+    }
+    .avatar-teal { background: linear-gradient(135deg, var(--teal-400), var(--teal-600)); }
+    .avatar-blue { background: linear-gradient(135deg, #60a5fa, #3b82f6); }
+    .avatar-amber { background: linear-gradient(135deg, #fbbf24, #f59e0b); }
+    .avatar-rose { background: linear-gradient(135deg, #fb7185, #e11d48); }
+    .avatar-purple { background: linear-gradient(135deg, #a78bfa, #7c3aed); }
+
+    /* TWO COL LAYOUT */
+    .two-col { display: grid; grid-template-columns: 2fr 1fr; gap: 24px; }
+    .two-col-equal { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+
+    /* APPOINTMENT LIST */
+    .appt-item {
+      display: flex; align-items: center; gap: 14px; padding: 14px 24px;
+      border-bottom: 1px solid var(--gray-50); transition: background 0.15s;
+    }
+    .appt-item:hover { background: var(--gray-50); }
+    .appt-item:last-child { border-bottom: none; }
+    .appt-time {
+      font-size: 12px; font-weight: 700; color: var(--teal-700);
+      background: var(--teal-50); padding: 6px 10px; border-radius: 8px;
+      min-width: 60px; text-align: center;
+    }
+    .appt-info { flex: 1; }
+    .appt-patient { font-size: 13px; font-weight: 600; color: var(--gray-800); }
+    .appt-type { font-size: 11px; color: var(--gray-400); margin-top: 2px; }
+    .appt-status { padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 600; }
+
+    /* QUICK ACTIONS */
+    .quick-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 20px; }
+    .quick-action {
+      display: flex; flex-direction: column; align-items: center; gap: 8px;
+      padding: 16px 12px; border-radius: 12px; border: 1.5px solid var(--gray-100);
+      background: white; cursor: pointer; transition: all 0.2s; text-align: center;
+    }
+    .quick-action:hover { border-color: var(--teal-300); background: var(--teal-50); }
+    .quick-action-icon { font-size: 24px; }
+    .quick-action-label { font-size: 11px; font-weight: 600; color: var(--gray-600); }
+
+    /* FORMS */
+    .form-group { margin-bottom: 16px; }
+    .form-group label {
+      display: block; font-size: 12px; font-weight: 600; color: var(--gray-600); margin-bottom: 6px;
+    }
+    .form-input {
+      width: 100%; padding: 10px 14px; border: 1.5px solid var(--gray-200);
+      border-radius: 10px; font-size: 13px; font-family: inherit; color: var(--gray-800);
+      background: white; outline: none; transition: all 0.2s;
+    }
+    .form-input:focus { border-color: var(--teal-500); box-shadow: 0 0 0 3px rgba(13,148,136,0.08); }
+    .form-input::placeholder { color: var(--gray-400); }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+    /* MODAL */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+      backdrop-filter: blur(4px); z-index: 200; align-items: center; justify-content: center;
+    }
+    .modal-overlay.show { display: flex; }
+    .modal {
+      background: white; border-radius: 20px; width: 560px; max-height: 85vh;
+      overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+    }
+    .modal-header {
+      padding: 24px 28px 0; display: flex; justify-content: space-between; align-items: center;
+    }
+    .modal-title { font-size: 18px; font-weight: 700; color: var(--gray-900); }
+    .modal-close {
+      width: 32px; height: 32px; border-radius: 8px; border: none; background: var(--gray-100);
+      cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center;
+      color: var(--gray-500); transition: background 0.15s;
+    }
+    .modal-close:hover { background: var(--gray-200); }
+    .modal-body { padding: 24px 28px; }
+    .modal-footer { padding: 0 28px 24px; display: flex; gap: 10px; justify-content: flex-end; }
+
+    /* PAGE SECTIONS */
+    .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .section-title { font-size: 20px; font-weight: 700; color: var(--gray-900); }
+    .section-subtitle { font-size: 13px; color: var(--gray-400); margin-top: 2px; }
+
+    .tag { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 500; }
+    .tag-teal { background: var(--teal-50); color: var(--teal-700); }
+    .tag-gray { background: var(--gray-100); color: var(--gray-500); }
+
+    /* ============================
+       WEEKLY CALENDAR VIEW
+    ============================ */
+    .cal-week { padding: 24px; }
+    .cal-week-header {
+      display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;
+    }
+    .cal-week-title { font-size: 16px; font-weight: 700; color: var(--gray-900); }
+    .cal-nav { display: flex; gap: 6px; align-items: center; }
+    .cal-nav button {
+      width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--gray-200);
+      background: white; cursor: pointer; display: flex; align-items: center; justify-content: center;
+      font-size: 13px; color: var(--gray-500); transition: all 0.15s;
+    }
+    .cal-nav button:hover { border-color: var(--teal-300); color: var(--teal-700); }
+    .cal-nav span { font-size: 13px; font-weight: 600; color: var(--gray-700); min-width: 140px; text-align: center; }
+
+    .cal-grid {
+      display: grid; grid-template-columns: 60px repeat(7, 1fr); border: 1px solid var(--gray-200);
+      border-radius: 12px; overflow: hidden; background: white;
+    }
+    .cal-day-header {
+      padding: 12px 8px; text-align: center; font-size: 11px; font-weight: 600;
+      color: var(--gray-500); background: var(--gray-50); border-bottom: 1px solid var(--gray-200);
+      text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .cal-day-header.today { color: var(--teal-700); background: var(--teal-50); }
+    .cal-day-header .day-num {
+      display: block; font-size: 16px; font-weight: 700; color: var(--gray-800); margin-top: 2px;
+    }
+    .cal-day-header.today .day-num { color: var(--teal-700); }
+    .cal-time-label {
+      padding: 8px; font-size: 11px; font-weight: 500; color: var(--gray-400);
+      border-right: 1px solid var(--gray-200); border-bottom: 1px solid var(--gray-100);
+      text-align: center; background: var(--gray-50); display: flex; align-items: center; justify-content: center;
+    }
+    .cal-cell {
+      border-right: 1px solid var(--gray-100); border-bottom: 1px solid var(--gray-100);
+      min-height: 48px; padding: 2px; position: relative;
+    }
+    .cal-cell:last-child { border-right: none; }
+    .cal-event {
+      padding: 4px 6px; border-radius: 6px; font-size: 10px; font-weight: 600;
+      margin: 1px; cursor: pointer; transition: opacity 0.15s; line-height: 1.3;
+    }
+    .cal-event:hover { opacity: 0.85; }
+    .cal-event.ev-consult { background: #dbeafe; color: #1d4ed8; border-left: 3px solid #3b82f6; }
+    .cal-event.ev-followup { background: #ecfdf5; color: #065f46; border-left: 3px solid #10b981; }
+    .cal-event.ev-emergency { background: #fef2f2; color: #991b1b; border-left: 3px solid #ef4444; }
+    .cal-event.ev-lab { background: #f5f3ff; color: #5b21b6; border-left: 3px solid #8b5cf6; }
+    .cal-event.ev-surgery { background: #fff7ed; color: #9a3412; border-left: 3px solid #f97316; }
+    .cal-legend { display: flex; gap: 16px; margin-top: 16px; justify-content: center; }
+    .cal-legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--gray-500); }
+    .cal-legend-dot { width: 10px; height: 10px; border-radius: 3px; }
+
+    /* ============================
+       CLINICAL RECORDS
+    ============================ */
+    .filter-bar {
+      display: flex; gap: 12px; align-items: center; margin-bottom: 20px; flex-wrap: wrap;
+    }
+    .filter-bar .topbar-search { width: 280px; }
+    .filter-bar select.form-input { width: auto; min-width: 160px; }
+
+    /* ============================
+       LAB RESULTS
+    ============================ */
+    .lab-status-dot {
+      width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px;
+    }
+    .lab-status-dot.pending { background: #f59e0b; }
+    .lab-status-dot.process { background: #3b82f6; }
+    .lab-status-dot.completed { background: #10b981; }
+
+    /* ============================
+       AVAILABILITY SCHEDULE
+    ============================ */
+    .schedule-row {
+      display: flex; align-items: center; gap: 16px; padding: 16px 24px;
+      border-bottom: 1px solid var(--gray-50);
+    }
+    .schedule-row:last-child { border-bottom: none; }
+    .schedule-day {
+      width: 100px; font-size: 13px; font-weight: 600; color: var(--gray-700); flex-shrink: 0;
+    }
+    .schedule-toggle {
+      position: relative; width: 40px; height: 22px; flex-shrink: 0;
+    }
+    .schedule-toggle input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider {
+      position: absolute; inset: 0; background: var(--gray-300); border-radius: 11px;
+      cursor: pointer; transition: background 0.2s;
+    }
+    .toggle-slider::before {
+      content: ''; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px;
+      background: white; border-radius: 50%; transition: transform 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+    }
+    .schedule-toggle input:checked + .toggle-slider { background: var(--teal-500); }
+    .schedule-toggle input:checked + .toggle-slider::before { transform: translateX(18px); }
+    .schedule-times { display: flex; gap: 10px; align-items: center; flex: 1; }
+    .schedule-times input[type="time"] {
+      padding: 6px 10px; border: 1.5px solid var(--gray-200); border-radius: 8px;
+      font-size: 13px; font-family: inherit; color: var(--gray-700); background: white;
+      outline: none; transition: border-color 0.2s;
+    }
+    .schedule-times input[type="time"]:focus { border-color: var(--teal-500); }
+    .schedule-times .time-separator { font-size: 12px; color: var(--gray-400); font-weight: 500; }
+    .schedule-break {
+      padding: 4px 10px; background: #fffbeb; color: #b45309; border-radius: 6px;
+      font-size: 11px; font-weight: 600;
+    }
+
+    /* EMPTY STATE */
+    .empty-state { text-align: center; padding: 48px 24px; }
+    .empty-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.5; }
+    .empty-title { font-size: 16px; font-weight: 700; color: var(--gray-700); margin-bottom: 4px; }
+    .empty-desc { font-size: 13px; color: var(--gray-400); margin-bottom: 20px; }
+
+    /* SCROLLBAR */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--gray-200); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--gray-300); }
+
+    /* TOAST */
+    .toast {
+      position: fixed; bottom: 24px; right: 24px; z-index: 300;
+      background: var(--gray-900); color: white; padding: 14px 20px;
+      border-radius: 12px; font-size: 13px; font-weight: 500;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+      transform: translateY(100px); opacity: 0; transition: all 0.3s ease;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .toast.show { transform: translateY(0); opacity: 1; }
+    .toast-success { background: var(--teal-700); }
+
+    /* RESPONSIVE */
+    @media (max-width: 1024px) {
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+      .two-col { grid-template-columns: 1fr; }
+      .two-col-equal { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 768px) {
+      .sidebar { transform: translateX(-100%); transition: transform 0.3s; }
+      .sidebar.open { transform: translateX(0); }
+      .main { margin-left: 0; }
+      .stats-grid { grid-template-columns: 1fr; }
+      .cal-grid { font-size: 10px; }
+      .filter-bar { flex-direction: column; align-items: stretch; }
+      .filter-bar .topbar-search { width: 100%; }
+      .topbar-search { width: 160px; }
+      .form-row { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ========== SIDEBAR ========== -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-brand">
+    <div class="sidebar-brand-icon">💚</div>
+    <div>
+      <div class="sidebar-brand-text">Salud Vital</div>
+      <div class="sidebar-brand-role">Panel Doctor</div>
+    </div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section">
+      <div class="nav-section-label">Principal</div>
+      <a class="nav-item active" onclick="showView('dashboard')" data-view="dashboard">
+        <span class="ni-icon">📊</span> Panel Principal
+      </a>
+      <a class="nav-item" onclick="showView('calendar')" data-view="calendar">
+        <span class="ni-icon">📅</span> Calendario
+      </a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-label">Atención</div>
+      <a class="nav-item" onclick="showView('records')" data-view="records">
+        <span class="ni-icon">📋</span> Historial Clínico
+      </a>
+      <a class="nav-item" onclick="showView('lab-results')" data-view="lab-results">
+        <span class="ni-icon">🔬</span> Resultados Labs <span class="ni-badge">3</span>
+      </a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-label">Configuración</div>
+      <a class="nav-item" onclick="showView('availability')" data-view="availability">
+        <span class="ni-icon">⚙️</span> Disponibilidad
+      </a>
+    </div>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="sidebar-user">
+      <div class="sidebar-avatar">CR</div>
+      <div>
+        <div class="sidebar-user-name">Dr. Carlos Ramírez</div>
+        <div class="sidebar-user-specialty">Cardiología</div>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<!-- ========== MAIN ========== -->
+<div class="main">
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <div>
+        <div class="topbar-title" id="topbar-title">Panel del Doctor</div>
+        <div class="topbar-breadcrumb" id="topbar-breadcrumb">Doctor / Panel Principal</div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <div class="topbar-search">
+        <span>🔍</span>
+        <input type="text" placeholder="Buscar pacientes, historial...">
+      </div>
+      <div class="lang-switch">
+        <button class="active">ES</button>
+        <button onclick="this.parentElement.querySelectorAll('button').forEach(b=>b.classList.remove('active')); this.classList.add('active');">EN</button>
+      </div>
+      <button class="topbar-btn" onclick="showToast('Tienes 3 notificaciones nuevas', 'success')">🔔<span class="notif-dot"></span></button>
+    </div>
+  </header>
+
+  <div class="page-content">
+
+    <!-- ===== VIEW: PANEL PRINCIPAL ===== -->
+    <div class="page-view active" id="view-dashboard">
+      <div class="section-header">
+        <div>
+          <div class="section-title">Buenos días, Dr. Ramírez</div>
+          <div class="section-subtitle">Resumen de tu día — Martes, 14 de Julio 2026</div>
+        </div>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon si-teal">📅</div>
+          <div>
+            <div class="stat-value">6</div>
+            <div class="stat-label">Citas Hoy</div>
+            <div class="stat-change up">↑ 2 vs ayer</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon si-blue">👥</div>
+          <div>
+            <div class="stat-value">12</div>
+            <div class="stat-label">Pacientes Activos</div>
+            <div class="stat-change up">↑ 15%</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon si-amber">⏳</div>
+          <div>
+            <div class="stat-value">4</div>
+            <div class="stat-label">Pendientes</div>
+            <div class="stat-change down">Requieren revisión</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon si-rose">❌</div>
+          <div>
+            <div class="stat-value">2</div>
+            <div class="stat-label">Canceladas</div>
+            <div class="stat-change down">↓ esta semana</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Citas de Hoy</div>
+              <div class="card-subtitle">6 citas programadas</div>
+            </div>
+            <button class="btn btn-outline btn-sm" onclick="showView('calendar')">Ver Calendario →</button>
+          </div>
+          <div class="appt-item">
+            <div class="appt-time">08:00</div>
+            <div class="appt-info">
+              <div class="appt-patient">María García López</div>
+              <div class="appt-type">Control cardíaco — Seguimiento post-operatorio</div>
+            </div>
+            <span class="badge badge-green">Confirmada</span>
+          </div>
+          <div class="appt-item">
+            <div class="appt-time">09:00</div>
+            <div class="appt-info">
+              <div class="appt-patient">Juan Carlos Medina</div>
+              <div class="appt-type">Consulta inicial — Dolor torácico</div>
+            </div>
+            <span class="badge badge-green">Confirmada</span>
+          </div>
+          <div class="appt-item">
+            <div class="appt-time">10:00</div>
+            <div class="appt-info">
+              <div class="appt-patient">Roberto Díaz Fernández</div>
+              <div class="appt-type">Electrocardiograma — Revisión anual</div>
+            </div>
+            <span class="badge badge-teal">En curso</span>
+          </div>
+          <div class="appt-item">
+            <div class="appt-time">11:00</div>
+            <div class="appt-info">
+              <div class="appt-patient">Ana Lucía Torres Ruiz</div>
+              <div class="appt-type">Ecocardiograma — Seguimiento</div>
+            </div>
+            <span class="badge badge-amber">Pendiente</span>
+          </div>
+          <div class="appt-item">
+            <div class="appt-time">14:00</div>
+            <div class="appt-info">
+              <div class="appt-patient">Pedro Morales Gutiérrez</div>
+              <div class="appt-type">Control de presión arterial</div>
+            </div>
+            <span class="badge badge-amber">Pendiente</span>
+          </div>
+          <div class="appt-item">
+            <div class="appt-time">15:30</div>
+            <div class="appt-info">
+              <div class="appt-patient">Laura Vega Castillo</div>
+              <div class="appt-type">Prueba de esfuerzo — Valoración</div>
+            </div>
+            <span class="badge badge-gray">Programada</span>
+          </div>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:24px;">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Acciones Rápidas</div>
+            </div>
+            <div class="quick-actions">
+              <div class="quick-action" onclick="showView('calendar')">
+                <div class="quick-action-icon">📅</div>
+                <div class="quick-action-label">Ver Calendario</div>
+              </div>
+              <div class="quick-action" onclick="showView('records')">
+                <div class="quick-action-icon">📋</div>
+                <div class="quick-action-label">Nuevo Historial</div>
+              </div>
+              <div class="quick-action" onclick="showView('lab-results')">
+                <div class="quick-action-icon">🔬</div>
+                <div class="quick-action-label">Ver Labs</div>
+              </div>
+              <div class="quick-action" onclick="showView('availability')">
+                <div class="quick-action-icon">⏰</div>
+                <div class="quick-action-label">Mi Horario</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header"><div class="card-title">Pacientes Recientes</div></div>
+            <div style="padding: 4px 0;">
+              <div style="display:flex; align-items:center; gap:12px; padding:10px 24px; border-bottom:1px solid var(--gray-50);">
+                <div class="user-avatar avatar-teal" style="width:32px;height:32px;font-size:11px;">MG</div>
+                <div style="flex:1;"><div style="font-size:13px;font-weight:600;color:var(--gray-800);">María García</div><div style="font-size:11px;color:var(--gray-400);">Última visita: Hoy</div></div>
+                <span class="badge badge-green" style="font-size:10px;">Activo</span>
+              </div>
+              <div style="display:flex; align-items:center; gap:12px; padding:10px 24px; border-bottom:1px solid var(--gray-50);">
+                <div class="user-avatar avatar-blue" style="width:32px;height:32px;font-size:11px;">JM</div>
+                <div style="flex:1;"><div style="font-size:13px;font-weight:600;color:var(--gray-800);">Juan Medina</div><div style="font-size:11px;color:var(--gray-400);">Última visita: Hoy</div></div>
+                <span class="badge badge-green" style="font-size:10px;">Activo</span>
+              </div>
+              <div style="display:flex; align-items:center; gap:12px; padding:10px 24px;">
+                <div class="user-avatar avatar-amber" style="width:32px;height:32px;font-size:11px;">RD</div>
+                <div style="flex:1;"><div style="font-size:13px;font-weight:600;color:var(--gray-800);">Roberto Díaz</div><div style="font-size:11px;color:var(--gray-400);">Última visita: 10 Jul</div></div>
+                <span class="badge badge-green" style="font-size:10px;">Activo</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Actividad Reciente</div>
+        </div>
+        <div style="padding: 0;">
+          <div style="display:flex;gap:12px;padding:14px 24px;border-bottom:1px solid var(--gray-50);">
+            <div style="width:8px;height:8px;border-radius:50%;background:var(--teal-500);margin-top:5px;flex-shrink:0;"></div>
+            <div><div style="font-size:13px;color:var(--gray-600);line-height:1.4;"><strong style="color:var(--gray-800);font-weight:600;">María García</strong> confirmó su cita de control cardíaco</div><div style="font-size:11px;color:var(--gray-400);margin-top:2px;">Hace 12 min</div></div>
+          </div>
+          <div style="display:flex;gap:12px;padding:14px 24px;border-bottom:1px solid var(--gray-50);">
+            <div style="width:8px;height:8px;border-radius:50%;background:#3b82f6;margin-top:5px;flex-shrink:0;"></div>
+            <div><div style="font-size:13px;color:var(--gray-600);line-height:1.4;"><strong style="color:var(--gray-800);font-weight:600;">Laboratorio</strong> publicó resultado de hemograma para Roberto D.</div><div style="font-size:11px;color:var(--gray-400);margin-top:2px;">Hace 1 hora</div></div>
+          </div>
+          <div style="display:flex;gap:12px;padding:14px 24px;border-bottom:1px solid var(--gray-50);">
+            <div style="width:8px;height:8px;border-radius:50%;background:#f59e0b;margin-top:5px;flex-shrink:0;"></div>
+            <div><div style="font-size:13px;color:var(--gray-600);line-height:1.4;"><strong style="color:var(--gray-800);font-weight:600;">Sistema</strong> recordatorio: Cita con Ana Torres mañana a las 10:00</div><div style="font-size:11px;color:var(--gray-400);margin-top:2px;">Hace 2 horas</div></div>
+          </div>
+          <div style="display:flex;gap:12px;padding:14px 24px;">
+            <div style="width:8px;height:8px;border-radius:50%;background:#8b5cf6;margin-top:5px;flex-shrink:0;"></div>
+            <div><div style="font-size:13px;color:var(--gray-600);line-height:1.4;"><strong style="color:var(--gray-800);font-weight:600;">Dr. Ramírez</strong> actualizó historial de Juan Carlos Medina</div><div style="font-size:11px;color:var(--gray-400);margin-top:2px;">Ayer, 16:30</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== VIEW: CALENDARIO ===== -->
+    <div class="page-view" id="view-calendar">
+      <div class="section-header">
+        <div>
+          <div class="section-title">Calendario Semanal</div>
+          <div class="section-subtitle">Vista de citas y disponibilidad</div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-outline btn-sm">Hoy</button>
+          <button class="btn btn-primary btn-sm">Semana</button>
+          <button class="btn btn-outline btn-sm">Mes</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="cal-week">
+          <div class="cal-week-header">
+            <div class="cal-nav">
+              <button onclick="navigateWeek(-1)">◀</button>
+              <span id="cal-week-label">7 — 13 Julio, 2026</span>
+              <button onclick="navigateWeek(1)">▶</button>
+            </div>
+          </div>
+
+          <div class="cal-grid">
+            <!-- Header Row -->
+            <div class="cal-day-header" style="background:var(--gray-50);"></div>
+            <div class="cal-day-header">Lun<span class="day-num">7</span></div>
+            <div class="cal-day-header">Mar<span class="day-num">8</span></div>
+            <div class="cal-day-header">Mié<span class="day-num">9</span></div>
+            <div class="cal-day-header">Jue<span class="day-num">10</span></div>
+            <div class="cal-day-header today">Vie<span class="day-num">11</span></div>
+            <div class="cal-day-header">Sáb<span class="day-num">12</span></div>
+            <div class="cal-day-header">Dom<span class="day-num">13</span></div>
+
+            <!-- 8:00 -->
+            <div class="cal-time-label">8:00</div>
+            <div class="cal-cell"><div class="cal-event ev-consult">08:00 María García</div></div>
+            <div class="cal-cell"><div class="cal-event ev-followup">08:00 Pedro Morales</div></div>
+            <div class="cal-cell"></div>
+            <div class="cal-cell"><div class="cal-event ev-consult">08:00 Laura Vega</div></div>
+            <div class="cal-cell"><div class="cal-event ev-consult">08:00 María García</div></div>
+            <div class="cal-cell"></div>
+            <div class="cal-cell"></div>
+
+            <!-- 9:00 -->
+            <div class="cal-time-label">9:00</div>
+            <div class="cal-cell"><div class="cal-event ev-lab">09:00 ECG Roberto</div></div>
+            <div class="cal-cell"></div>
+            <div class="cal-cell"><div class="cal-event ev-consult">09:00 Juan Medina</div></div>
+            <div class="cal-cell"></div>
+            <div class="cal-cell"><div class="cal-event ev-consult">09:00 Juan Medina</div></div>
+            <div class="cal-cell"></div>
+            <div class="cal-cell"></div>
+
+            <!-- 10:00 -->
+            <div class="cal-time-label">10:00</div>
+            <div class="cal-cell"><div class="cal-event ev-followup">10:00 Ana Torres</div></div>
+            <div class="cal-cell"><div class="cal-event ev-emergency">10:00 Urgencia</div></div>
+            <div class="cal-cell"></div>
+            <div class="cal-cell"><div class="cal-event ev-followup">10:00 Ana Torres</div></div>
+            <div class="cal-cell"><div class="cal-event ev-followup">10:00 Roberto Díaz</div></div>
+            <div class="cal-cell"></div>
+            <div class="cal-cell"></div>
+
+            <!-- 11:00 -->
+            <div class="cal-time-label">11:00</div>
+            <div class="cal-cell"></div>
+            <div class="cal-cell"><div class="cal-event ev-consult">11:00 Carlos Ruiz</div></div>
+            <div class="cal-cell"><div class="cal-event ev-consult">11:00 Pedro Morales</div></div>
+            <div class="cal-cell"></div>
+            <div class="cal-cell"><div class="cal-event ev-lab">11:00 Eco cardiac.</div></div>
+            <div class="cal-cell"></div>
+            <div class="cal-cell"></div>
+
+            <!-- 14:00 -->
+            <div class="cal-time-label">14:00</div>
+            <div class="cal-cell"><div class="cal-event ev-consult">14:00 Pedro Morales</div></div>
+            <div class="cal-cell"></div>
+            <div class="cal-cell"><div class="cal-event ev-surgery">14:00 Cirugía</div></div>
+            <div class="cal-cell"><div class="cal-event ev-consult">14:00 Laura Vega</div></div>
+            <div class="cal-cell"><div class="cal-event ev-consult">14:00 Pedro Morales</div></div>
+            <div class="cal-cell"></div>
+            <div class="cal-cell"></div>
+
+            <!-- 15:00 -->
+            <div class="cal-time-label">15:00</div>
+            <div class="cal-cell"></div>
+            <div class="cal-cell"></div>
+            <div class="cal-cell"></div>
+            <div class="cal-cell"><div class="cal-event ev-emergency">15:00 Urgencia</div></div>
+            <div class="cal-cell"><div class="cal-event ev-consult">15:30 Laura Vega</div></div>
+            <div class="cal-cell"></div>
+            <div class="cal-cell"></div>
+
+            <!-- 16:00 -->
+            <div class="cal-time-label">16:00</div>
+            <div class="cal-cell"></div>
+            <div class="cal-cell"></div>
+            <div class="cal-cell"></div>
+            <div class="cal-cell"></div>
+            <div class="cal-cell"></div>
+            <div class="cal-cell"></div>
+            <div class="cal-cell"></div>
+          </div>
+
+          <div class="cal-legend">
+            <div class="cal-legend-item"><div class="cal-legend-dot" style="background:#3b82f6;"></div> Consulta</div>
+            <div class="cal-legend-item"><div class="cal-legend-dot" style="background:#10b981;"></div> Seguimiento</div>
+            <div class="cal-legend-item"><div class="cal-legend-dot" style="background:#ef4444;"></div> Urgencia</div>
+            <div class="cal-legend-item"><div class="cal-legend-dot" style="background:#8b5cf6;"></div> Laboratorio</div>
+            <div class="cal-legend-item"><div class="cal-legend-dot" style="background:#f97316;"></div> Procedimiento</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== VIEW: HISTORIAL CLÍNICO ===== -->
+    <div class="page-view" id="view-records">
+      <div class="section-header">
+        <div>
+          <div class="section-title">Historial Clínico</div>
+          <div class="section-subtitle">Expedientes de tus pacientes</div>
+        </div>
+        <button class="btn btn-primary" onclick="showModal()">+ Nuevo Registro</button>
+      </div>
+
+      <div class="filter-bar">
+        <div class="topbar-search" style="width:280px;">
+          <span>🔍</span>
+          <input type="text" placeholder="Buscar por nombre, diagnóstico...">
+        </div>
+        <select class="form-input" style="width:auto;min-width:150px;">
+          <option>Todos los diagnósticos</option>
+          <option>Insuficiencia Cardíaca</option>
+          <option>Arritmia</option>
+          <option>Hipertensión</option>
+          <option>Valvulopatía</option>
+        </select>
+        <select class="form-input" style="width:auto;min-width:140px;">
+          <option>Último mes</option>
+          <option>Últimos 3 meses</option>
+          <option>Último año</option>
+          <option>Todo</option>
+        </select>
+      </div>
+
+      <div class="card">
+        <table>
+          <thead>
+            <tr>
+              <th>Paciente</th>
+              <th>Última Visita</th>
+              <th>Diagnóstico</th>
+              <th>Tratamiento</th>
+              <th>Estado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+                <div class="user-cell">
+                  <div class="user-avatar avatar-teal">MG</div>
+                  <div><strong>María García López</strong><div style="font-size:11px;color:var(--gray-400);">DNI: 12345678</div></div>
+                </div>
+              </td>
+              <td>14 Jul 2026</td>
+              <td>Insuficiencia Cardíaca II</td>
+              <td>Enalapril 10mg, Furosemida 40mg</td>
+              <td><span class="badge badge-green">Estable</span></td>
+              <td><button class="btn btn-outline btn-sm" onclick="showRecordModal('María García López', 'Insuficiencia Cardíaca II', 'Enalapril 10mg, Furosemida 40mg', '14 Jul 2026', 'Control cardíaco programado para el próximo mes. Paciente estable, sin síntomas de descompensación.')">Ver Detalle</button></td>
+            </tr>
+            <tr>
+              <td>
+                <div class="user-cell">
+                  <div class="user-avatar avatar-blue">JM</div>
+                  <div><strong>Juan Carlos Medina</strong><div style="font-size:11px;color:var(--gray-400);">DNI: 87654321</div></div>
+                </div>
+              </td>
+              <td>14 Jul 2026</td>
+              <td>Arritmia Auricular</td>
+              <td>Amiodarona 200mg, Warfarina 5mg</td>
+              <td><span class="badge badge-amber">En Tratamiento</span></td>
+              <td><button class="btn btn-outline btn-sm" onclick="showRecordModal('Juan Carlos Medina', 'Arritmia Auricular', 'Amiodarona 200mg, Warfarina 5mg', '14 Jul 2026', 'Paciente con fibrilación auricular paroxística. Iniciar anticoagulación. Control INR en 2 semanas.')">Ver Detalle</button></td>
+            </tr>
+            <tr>
+              <td>
+                <div class="user-cell">
+                  <div class="user-avatar avatar-amber">RD</div>
+                  <div><strong>Roberto Díaz Fernández</strong><div style="font-size:11px;color:var(--gray-400);">DNI: 11223344</div></div>
+                </div>
+              </td>
+              <td>11 Jul 2026</td>
+              <td>Hipertensión Arterial</td>
+              <td>Amlodipino 5mg, Losartán 50mg</td>
+              <td><span class="badge badge-green">Estable</span></td>
+              <td><button class="btn btn-outline btn-sm" onclick="showRecordModal('Roberto Díaz Fernández', 'Hipertensión Arterial', 'Amlodipino 5mg, Losartán 50mg', '11 Jul 2026', 'PA controlada 128/82. Mantener tratamiento actual. Próximo control en 3 meses.')">Ver Detalle</button></td>
+            </tr>
+            <tr>
+              <td>
+                <div class="user-cell">
+                  <div class="user-avatar avatar-rose">AT</div>
+                  <div><strong>Ana Lucía Torres</strong><div style="font-size:11px;color:var(--gray-400);">DNI: 55667788</div></div>
+                </div>
+              </td>
+              <td>10 Jul 2026</td>
+              <td>Valvulopatía Mitral</td>
+              <td>Penicilina Benzatina proflaxis</td>
+              <td><span class="badge badge-teal">Seguimiento</span></td>
+              <td><button class="btn btn-outline btn-sm" onclick="showRecordModal('Ana Lucía Torres', 'Valvulopatía Mitral', 'Penicilina Benzatina proflaxis', '10 Jul 2026', 'Ecocardiograma programado para evaluar progresión de estenosis mitral. Continuar profilaxis.')">Ver Detalle</button></td>
+            </tr>
+            <tr>
+              <td>
+                <div class="user-cell">
+                  <div class="user-avatar avatar-purple">PM</div>
+                  <div><strong>Pedro Morales</strong><div style="font-size:11px;color:var(--gray-400);">DNI: 99887766</div></div>
+                </div>
+              </td>
+              <td>7 Jul 2026</td>
+              <td>Post-Infarto Agudo</td>
+              <td>Aspirina 100mg, Atorvastatina 40mg, Clopidogrel 75mg</td>
+              <td><span class="badge badge-amber">En Tratamiento</span></td>
+              <td><button class="btn btn-outline btn-sm" onclick="showRecordModal('Pedro Morales', 'Post-Infarto Agudo', 'Aspirina 100mg, Atorvastatina 40mg, Clopidogrel 75mg', '7 Jul 2026', 'Rehabilitación cardíaca en curso. Tolerancia al ejercicio moderada. Continuar DAPT por 12 meses.')">Ver Detalle</button></td>
+            </tr>
+            <tr>
+              <td>
+                <div class="user-cell">
+                  <div class="user-avatar avatar-teal">LV</div>
+                  <div><strong>Laura Vega Castillo</strong><div style="font-size:11px;color:var(--gray-400);">DNI: 44332211</div></div>
+                </div>
+              </td>
+              <td>3 Jul 2026</td>
+              <td>Miocardiopatía Dilatada</td>
+              <td>Bisoprolol 5mg, Sacubitril/Valsartán 50mg</td>
+              <td><span class="badge badge-purple">Observación</span></td>
+              <td><button class="btn btn-outline btn-sm" onclick="showRecordModal('Laura Vega Castillo', 'Miocardiopatía Dilatada', 'Bisoprolol 5mg, Sacubitril/Valsartán 50mg', '3 Jul 2026', 'Fracción de eyección 38%. Evaluación para implante de device. Prueba de esfuerzo solicitada.')">Ver Detalle</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ===== VIEW: RESULTADOS LABS ===== -->
+    <div class="page-view" id="view-lab-results">
+      <div class="section-header">
+        <div>
+          <div class="section-title">Resultados de Laboratorio</div>
+          <div class="section-subtitle">Análisis clínicos de tus pacientes</div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-outline btn-sm">Exportar</button>
+          <button class="btn btn-primary btn-sm">Solicitar Prueba</button>
+        </div>
+      </div>
+
+      <div class="stats-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom:20px;">
+        <div class="stat-card">
+          <div class="stat-icon si-amber">⏳</div>
+          <div>
+            <div class="stat-value">3</div>
+            <div class="stat-label">Pendientes</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon si-blue">🔄</div>
+          <div>
+            <div class="stat-value">2</div>
+            <div class="stat-label">En Proceso</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon si-teal">✅</div>
+          <div>
+            <div class="stat-value">8</div>
+            <div class="stat-label">Completados</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Todos los Resultados</div>
+          <div style="display:flex;gap:8px;">
+            <select class="form-input" style="width:auto;padding:6px 10px;font-size:11px;">
+              <option>Todos los estados</option>
+              <option>Pendiente</option>
+              <option>En Proceso</option>
+              <option>Completado</option>
+            </select>
+          </div>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Paciente</th>
+              <th>Prueba</th>
+              <th>Fecha Solicitud</th>
+              <th>Resultado</th>
+              <th>Estado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+                <div class="user-cell">
+                  <div class="user-avatar avatar-teal">MG</div>
+                  <div><strong>María García</strong></div>
+                </div>
+              </td>
+              <td>Hemograma Completo</td>
+              <td>14 Jul 2026</td>
+              <td>—</td>
+              <td><span class="badge badge-amber"><span class="lab-status-dot pending"></span>Pendiente</span></td>
+              <td><button class="btn btn-outline btn-sm">Ver</button></td>
+            </tr>
+            <tr>
+              <td>
+                <div class="user-cell">
+                  <div class="user-avatar avatar-teal">MG</div>
+                  <div><strong>María García</strong></div>
+                </div>
+              </td>
+              <td>BNP (Péptido Natriurético)</td>
+              <td>14 Jul 2026</td>
+              <td>—</td>
+              <td><span class="badge badge-blue"><span class="lab-status-dot process"></span>En Proceso</span></td>
+              <td><button class="btn btn-outline btn-sm">Ver</button></td>
+            </tr>
+            <tr>
+              <td>
+                <div class="user-cell">
+                  <div class="user-avatar avatar-blue">JM</div>
+                  <div><strong>Juan Medina</strong></div>
+                </div>
+              </td>
+              <td>INR / Tiempo Protrombina</td>
+              <td>14 Jul 2026</td>
+              <td>—</td>
+              <td><span class="badge badge-amber"><span class="lab-status-dot pending"></span>Pendiente</span></td>
+              <td><button class="btn btn-outline btn-sm">Ver</button></td>
+            </tr>
+            <tr>
+              <td>
+                <div class="user-cell">
+                  <div class="user-avatar avatar-blue">JM</div>
+                  <div><strong>Juan Medina</strong></div>
+                </div>
+              </td>
+              <td>Electrocardiograma</td>
+              <td>14 Jul 2026</td>
+              <td>—</td>
+              <td><span class="badge badge-blue"><span class="lab-status-dot process"></span>En Proceso</span></td>
+              <td><button class="btn btn-outline btn-sm">Ver</button></td>
+            </tr>
+            <tr>
+              <td>
+                <div class="user-cell">
+                  <div class="user-avatar avatar-amber">RD</div>
+                  <div><strong>Roberto Díaz</strong></div>
+                </div>
+              </td>
+              <td>Lípidos Completo</td>
+              <td>11 Jul 2026</td>
+              <td>CT: 210, LDL: 130</td>
+              <td><span class="badge badge-green"><span class="lab-status-dot completed"></span>Completado</span></td>
+              <td><button class="btn btn-outline btn-sm" onclick="showLabDetailModal('Lípidos Completo')">Ver</button></td>
+            </tr>
+            <tr>
+              <td>
+                <div class="user-cell">
+                  <div class="user-avatar avatar-amber">RD</div>
+                  <div><strong>Roberto Díaz</strong></div>
+                </div>
+              </td>
+              <td>Glucosa en Ayunas</td>
+              <td>11 Jul 2026</td>
+              <td>95 mg/dL</td>
+              <td><span class="badge badge-green"><span class="lab-status-dot completed"></span>Completado</span></td>
+              <td><button class="btn btn-outline btn-sm" onclick="showLabDetailModal('Glucosa en Ayunas')">Ver</button></td>
+            </tr>
+            <tr>
+              <td>
+                <div class="user-cell">
+                  <div class="user-avatar avatar-rose">AT</div>
+                  <div><strong>Ana Torres</strong></div>
+                </div>
+              </td>
+              <td>Ecocardiograma Transtorácico</td>
+              <td>10 Jul 2026</td>
+              <td>—</td>
+              <td><span class="badge badge-amber"><span class="lab-status-dot pending"></span>Pendiente</span></td>
+              <td><button class="btn btn-outline btn-sm">Ver</button></td>
+            </tr>
+            <tr>
+              <td>
+                <div class="user-cell">
+                  <div class="user-avatar avatar-purple">PM</div>
+                  <div><strong>Pedro Morales</strong></div>
+                </div>
+              </td>
+              <td>Hemograma Completo</td>
+              <td>7 Jul 2026</td>
+              <td>Hb: 13.2, Hto: 39.8</td>
+              <td><span class="badge badge-green"><span class="lab-status-dot completed"></span>Completado</span></td>
+              <td><button class="btn btn-outline btn-sm" onclick="showLabDetailModal('Hemograma Completo')">Ver</button></td>
+            </tr>
+            <tr>
+              <td>
+                <div class="user-cell">
+                  <div class="user-avatar avatar-purple">PM</div>
+                  <div><strong>Pedro Morales</strong></div>
+                </div>
+              </td>
+              <td>Perfil Hepático</td>
+              <td>7 Jul 2026</td>
+              <td>AST: 28, ALT: 32</td>
+              <td><span class="badge badge-green"><span class="lab-status-dot completed"></span>Completado</span></td>
+              <td><button class="btn btn-outline btn-sm" onclick="showLabDetailModal('Perfil Hepático')">Ver</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ===== VIEW: DISPONIBILIDAD ===== -->
+    <div class="page-view" id="view-availability">
+      <div class="section-header">
+        <div>
+          <div class="section-title">Mi Disponibilidad</div>
+          <div class="section-subtitle">Configura tu horario semanal de atención</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Horario Semanal</div>
+          <div class="card-actions">
+            <button class="btn btn-outline btn-sm">Restablecer</button>
+            <button class="btn btn-primary btn-sm" onclick="showToast('Horario guardado correctamente', 'success')">Guardar Cambios</button>
+          </div>
+        </div>
+        <div>
+          <div class="schedule-row">
+            <div class="schedule-day">Lunes</div>
+            <label class="schedule-toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label>
+            <div class="schedule-times">
+              <input type="time" value="08:00">
+              <span class="time-separator">a</span>
+              <input type="time" value="17:00">
+              <span class="schedule-break">Almuerzo: 12:00 - 14:00</span>
+            </div>
+          </div>
+          <div class="schedule-row">
+            <div class="schedule-day">Martes</div>
+            <label class="schedule-toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label>
+            <div class="schedule-times">
+              <input type="time" value="08:00">
+              <span class="time-separator">a</span>
+              <input type="time" value="17:00">
+              <span class="schedule-break">Almuerzo: 12:00 - 14:00</span>
+            </div>
+          </div>
+          <div class="schedule-row">
+            <div class="schedule-day">Miércoles</div>
+            <label class="schedule-toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label>
+            <div class="schedule-times">
+              <input type="time" value="08:00">
+              <span class="time-separator">a</span>
+              <input type="time" value="17:00">
+              <span class="schedule-break">Almuerzo: 12:00 - 14:00</span>
+            </div>
+          </div>
+          <div class="schedule-row">
+            <div class="schedule-day">Jueves</div>
+            <label class="schedule-toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label>
+            <div class="schedule-times">
+              <input type="time" value="08:00">
+              <span class="time-separator">a</span>
+              <input type="time" value="17:00">
+              <span class="schedule-break">Almuerzo: 12:00 - 14:00</span>
+            </div>
+          </div>
+          <div class="schedule-row">
+            <div class="schedule-day">Viernes</div>
+            <label class="schedule-toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label>
+            <div class="schedule-times">
+              <input type="time" value="08:00">
+              <span class="time-separator">a</span>
+              <input type="time" value="15:00">
+              <span class="schedule-break">Almuerzo: 12:00 - 14:00</span>
+            </div>
+          </div>
+          <div class="schedule-row" style="background:var(--gray-50);">
+            <div class="schedule-day" style="color:var(--gray-400);">Sábado</div>
+            <label class="schedule-toggle"><input type="checkbox"><span class="toggle-slider"></span></label>
+            <div class="schedule-times" style="opacity:0.4;">
+              <input type="time" value="08:00" disabled>
+              <span class="time-separator">a</span>
+              <input type="time" value="12:00" disabled>
+              <span class="schedule-break" style="opacity:0.5;">No disponible</span>
+            </div>
+          </div>
+          <div class="schedule-row" style="background:var(--gray-50);">
+            <div class="schedule-day" style="color:var(--gray-400);">Domingo</div>
+            <label class="schedule-toggle"><input type="checkbox"><span class="toggle-slider"></span></label>
+            <div class="schedule-times" style="opacity:0.4;">
+              <input type="time" value="08:00" disabled>
+              <span class="time-separator">a</span>
+              <input type="time" value="12:00" disabled>
+              <span class="schedule-break" style="opacity:0.5;">No disponible</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="padding:24px;">
+        <div class="card-title" style="margin-bottom:16px;">Parámetros de Cita</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Duración de cada cita (minutos)</label>
+            <select class="form-input">
+              <option>15 minutos</option>
+              <option>20 minutos</option>
+              <option selected>30 minutos</option>
+              <option>45 minutos</option>
+              <option>60 minutos</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Buffer entre citas</label>
+            <select class="form-input">
+              <option>Sin buffer</option>
+              <option selected>5 minutos</option>
+              <option>10 minutos</option>
+              <option>15 minutos</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Tipo de consulta por defecto</label>
+            <select class="form-input">
+              <option selected>Consulta General</option>
+              <option>Seguimiento</option>
+              <option>Urgencia</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Citas máximas por día</label>
+            <input type="number" class="form-input" value="12" min="1" max="30">
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /page-content -->
+</div><!-- /main -->
+
+<!-- ========== MODALS ========== -->
+
+<!-- Record Detail Modal -->
+<div class="modal-overlay" id="modal-record">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Historial Clínico</div>
+      <button class="modal-close" onclick="hideModals()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px;">
+        <div class="sidebar-avatar" style="width:48px;height:48px;font-size:18px;" id="modal-record-avatar">MG</div>
+        <div>
+          <div style="font-size:16px;font-weight:700;color:var(--gray-900);" id="modal-record-name">María García López</div>
+          <div style="font-size:13px;color:var(--gray-400);">Paciente — Cardiología</div>
+        </div>
+      </div>
+
+      <div style="background:var(--gray-50);border-radius:12px;padding:16px;margin-bottom:16px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div>
+            <div style="font-size:11px;font-weight:600;color:var(--gray-400);text-transform:uppercase;margin-bottom:2px;">Diagnóstico</div>
+            <div style="font-size:13px;font-weight:600;color:var(--gray-800);" id="modal-record-dx">Insuficiencia Cardíaca II</div>
+          </div>
+          <div>
+            <div style="font-size:11px;font-weight:600;color:var(--gray-400);text-transform:uppercase;margin-bottom:2px;">Última Visita</div>
+            <div style="font-size:13px;font-weight:600;color:var(--gray-800);" id="modal-record-date">14 Jul 2026</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Tratamiento Actual</label>
+        <div style="padding:10px 14px;background:var(--teal-50);border-radius:8px;font-size:13px;color:var(--teal-800);font-weight:500;" id="modal-record-tx">
+          Enalapril 10mg, Furosemida 40mg
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Notas Clínicas</label>
+        <textarea class="form-input" rows="4" id="modal-record-notes" style="resize:vertical;">Control cardíaco programado para el próximo mes. Paciente estable, sin síntomas de descompensación.</textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="hideModals()">Cerrar</button>
+      <button class="btn btn-primary" onclick="showToast('Historial actualizado', 'success'); hideModals();">Guardar Cambios</button>
+    </div>
+  </div>
+</div>
+
+<!-- Lab Detail Modal -->
+<div class="modal-overlay" id="modal-lab">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Detalle del Resultado</div>
+      <button class="modal-close" onclick="hideModals()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+        <div>
+          <div style="font-size:16px;font-weight:700;color:var(--gray-900);" id="modal-lab-name">Lípidos Completo</div>
+          <div style="font-size:13px;color:var(--gray-400);">Solicitado: 11 Jul 2026</div>
+        </div>
+        <span class="badge badge-green"><span class="lab-status-dot completed"></span>Completado</span>
+      </div>
+
+      <div style="background:var(--gray-50);border-radius:12px;padding:16px;margin-bottom:16px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;text-align:center;">
+          <div>
+            <div style="font-size:11px;color:var(--gray-400);margin-bottom:4px;">Colesterol Total</div>
+            <div style="font-size:18px;font-weight:800;color:var(--gray-900);">210</div>
+            <div style="font-size:10px;color:var(--gray-400);">mg/dL</div>
+          </div>
+          <div>
+            <div style="font-size:11px;color:var(--gray-400);margin-bottom:4px;">LDL</div>
+            <div style="font-size:18px;font-weight:800;color:#d97706;">130</div>
+            <div style="font-size:10px;color:var(--gray-400);">mg/dL</div>
+          </div>
+          <div>
+            <div style="font-size:11px;color:var(--gray-400);margin-bottom:4px;">HDL</div>
+            <div style="font-size:18px;font-weight:800;color:var(--gray-900);">52</div>
+            <div style="font-size:10px;color:var(--gray-400);">mg/dL</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Observaciones del Doctor</label>
+        <textarea class="form-input" rows="3" placeholder="Agregar observaciones...">LDL ligeramente elevado. Ajustar dosis de estatina. Control en 3 meses.</textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="hideModals()">Cerrar</button>
+      <button class="btn btn-primary" onclick="showToast('Observaciones guardadas', 'success'); hideModals();">Guardar Observación</button>
+    </div>
+  </div>
+</div>
+
+<!-- New Record Modal -->
+<div class="modal-overlay" id="modal-new-record">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Nuevo Registro Clínico</div>
+      <button class="modal-close" onclick="hideModals()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Paciente</label>
+        <select class="form-input">
+          <option value="">Seleccionar paciente...</option>
+          <option>María García López</option>
+          <option>Juan Carlos Medina</option>
+          <option>Roberto Díaz Fernández</option>
+          <option>Ana Lucía Torres</option>
+          <option>Pedro Morales</option>
+          <option>Laura Vega Castillo</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Diagnóstico</label>
+          <input class="form-input" placeholder="Ej: Hipertensión Arterial">
+        </div>
+        <div class="form-group">
+          <label>Fecha</label>
+          <input type="date" class="form-input" value="2026-07-14">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Tratamiento</label>
+        <textarea class="form-input" rows="2" placeholder="Medicamentos, dosis, indicaciones..." style="resize:vertical;"></textarea>
+      </div>
+      <div class="form-group">
+        <label>Notas Clínicas</label>
+        <textarea class="form-input" rows="4" placeholder="Observaciones, plan de tratamiento, seguimiento..." style="resize:vertical;"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="hideModals()">Cancelar</button>
+      <button class="btn btn-primary" onclick="showToast('Registro clínico creado', 'success'); hideModals();">Crear Registro</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+  const viewTitles = {
+    'dashboard': ['Panel del Doctor', 'Doctor / Panel Principal'],
+    'calendar': ['Calendario', 'Doctor / Calendario Semanal'],
+    'records': ['Historial Clínico', 'Doctor / Historial Clínico'],
+    'lab-results': ['Resultados Labs', 'Doctor / Laboratorio'],
+    'availability': ['Disponibilidad', 'Doctor / Mi Horario']
+  };
+
+  function showView(id) {
+    document.querySelectorAll('.page-view').forEach(v => v.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    const view = document.getElementById('view-' + id);
+    if (view) view.classList.add('active');
+    const navItem = document.querySelector('[data-view="' + id + '"]');
+    if (navItem) navItem.classList.add('active');
+    const t = viewTitles[id] || ['Panel del Doctor', 'Doctor / Panel Principal'];
+    document.getElementById('topbar-title').textContent = t[0];
+    document.getElementById('topbar-breadcrumb').textContent = t[1];
+  }
+
+  function showModal() { document.getElementById('modal-new-record').classList.add('show'); }
+
+  function showRecordModal(name, dx, tx, date, notes) {
+    const initials = name.split(' ').map(w => w[0]).join('').substring(0, 2);
+    document.getElementById('modal-record-name').textContent = name;
+    document.getElementById('modal-record-avatar').textContent = initials;
+    document.getElementById('modal-record-dx').textContent = dx;
+    document.getElementById('modal-record-tx').textContent = tx;
+    document.getElementById('modal-record-date').textContent = date;
+    document.getElementById('modal-record-notes').value = notes;
+    document.getElementById('modal-record').classList.add('show');
+  }
+
+  function showLabDetailModal(name) {
+    document.getElementById('modal-lab-name').textContent = name;
+    document.getElementById('modal-lab').classList.add('show');
+  }
+
+  function hideModals() {
+    document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('show'));
+  }
+
+  document.querySelectorAll('.modal-overlay').forEach(overlay => {
+    overlay.addEventListener('click', function(e) {
+      if (e.target === this) hideModals();
+    });
+  });
+
+  let toastTimeout;
+  function showToast(message, type) {
+    const toast = document.getElementById('toast');
+    toast.textContent = (type === 'success' ? '✓ ' : '') + message;
+    toast.className = 'toast show' + (type === 'success' ? ' toast-success' : '');
+    clearTimeout(toastTimeout);
+    toastTimeout = setTimeout(() => { toast.classList.remove('show'); }, 3000);
+  }
+
+  const weekLabels = [
+    '7 — 13 Julio, 2026',
+    '14 — 20 Julio, 2026',
+    '21 — 27 Julio, 2026',
+    '28 Jul — 3 Agosto, 2026'
+  ];
+  let weekIndex = 0;
+  function navigateWeek(dir) {
+    weekIndex = Math.max(0, Math.min(weekLabels.length - 1, weekIndex + dir));
+    document.getElementById('cal-week-label').textContent = weekLabels[weekIndex];
+  }
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') hideModals();
+  });
+</script>
+</body>
+</html>

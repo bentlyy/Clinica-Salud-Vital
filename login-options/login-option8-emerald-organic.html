@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Opción 8: Emerald Organic</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      background: #ecfdf5;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Floating organic blobs */
+    .blob {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(80px);
+      z-index: 0;
+      animation: float 12s ease-in-out infinite;
+    }
+    .blob-1 { width: 500px; height: 500px; background: #86efac; top: -200px; left: -100px; animation-delay: 0s; }
+    .blob-2 { width: 400px; height: 400px; background: #6ee7b7; bottom: -150px; right: -100px; animation-delay: -4s; }
+    .blob-3 { width: 250px; height: 250px; background: #34d399; top: 40%; left: 60%; animation-delay: -8s; opacity: 0.3; }
+
+    @keyframes float {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      33% { transform: translate(20px, -30px) scale(1.05); }
+      66% { transform: translate(-15px, 20px) scale(0.95); }
+    }
+
+    .login-card {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 440px;
+      background: rgba(255,255,255,0.85);
+      backdrop-filter: blur(40px) saturate(180%);
+      border: 1px solid rgba(255,255,255,0.6);
+      border-radius: 32px;
+      padding: 48px 40px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.02), 0 8px 32px rgba(0,0,0,0.04);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 36px;
+    }
+
+    .brand-icon {
+      width: 44px;
+      height: 44px;
+      background: linear-gradient(135deg, #10b981, #059669);
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    }
+
+    .brand-text h1 {
+      font-size: 18px;
+      font-weight: 700;
+      color: #065f46;
+      line-height: 1.1;
+    }
+
+    .brand-text p {
+      font-size: 11px;
+      color: #6b7280;
+      margin-top: 2px;
+    }
+
+    .tab-row {
+      display: flex;
+      gap: 4px;
+      background: #f0fdf4;
+      border-radius: 12px;
+      padding: 4px;
+      margin-bottom: 32px;
+      border: 1px solid #d1fae5;
+    }
+
+    .tab {
+      flex: 1;
+      padding: 10px;
+      text-align: center;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 500;
+      color: #6b7280;
+      cursor: pointer;
+      transition: all 0.25s;
+      border: none;
+      background: none;
+      font-family: inherit;
+    }
+
+    .tab.active {
+      background: white;
+      color: #065f46;
+      font-weight: 600;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+
+    .tab:hover:not(.active) { color: #059669; }
+
+    .field {
+      margin-bottom: 18px;
+    }
+
+    .field label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      color: #374151;
+      margin-bottom: 6px;
+    }
+
+    .field-label-optional {
+      font-weight: 400;
+      color: #9ca3af;
+    }
+
+    .input-wrap {
+      position: relative;
+    }
+
+    .input-wrap .iw-icon {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #9ca3af;
+      pointer-events: none;
+    }
+
+    .iw-icon svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+    .input-wrap input {
+      width: 100%;
+      padding: 12px 44px 12px 40px;
+      border: 1.5px solid #e5e7eb;
+      border-radius: 12px;
+      font-size: 14px;
+      font-family: inherit;
+      color: #1f2937;
+      background: white;
+      outline: none;
+      transition: all 0.2s;
+    }
+
+    .input-wrap input::placeholder { color: #c0c0c0; }
+
+    .input-wrap input:focus {
+      border-color: #10b981;
+      box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+    }
+
+    .pw-toggle {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: #9ca3af;
+      cursor: pointer;
+      padding: 4px;
+    }
+
+    .pw-toggle:hover { color: #059669; }
+
+    .pw-toggle svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+    .totp-wrap input {
+      text-align: center;
+      font-size: 28px;
+      letter-spacing: 12px;
+      font-weight: 700;
+      color: #059669;
+      font-family: 'SF Mono', monospace;
+    }
+
+    .row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+
+    .chk-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: #6b7280;
+      cursor: pointer;
+    }
+
+    .chk-label input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      accent-color: #10b981;
+      cursor: pointer;
+    }
+
+    .forgot {
+      font-size: 13px;
+      color: #10b981;
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .forgot:hover { text-decoration: underline; }
+
+    .btn {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: white;
+      border: none;
+      border-radius: 14px;
+      font-size: 15px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.3s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, transparent 30%, rgba(255,255,255,0.15) 50%, transparent 70%);
+      transform: translateX(-100%);
+      transition: transform 0.5s;
+    }
+
+    .btn:hover::after { transform: translateX(100%); }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(16, 185, 129, 0.35);
+    }
+
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin: 24px 0;
+    }
+
+    .divider::before, .divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: #e5e7eb;
+    }
+
+    .divider span {
+      font-size: 11px;
+      color: #9ca3af;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      white-space: nowrap;
+    }
+
+    .guest-btn {
+      width: 100%;
+      padding: 13px;
+      background: #ecfdf5;
+      border: 1.5px solid #d1fae5;
+      border-radius: 14px;
+      color: #059669;
+      font-size: 14px;
+      font-weight: 500;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .guest-btn:hover {
+      background: #d1fae5;
+      border-color: #a7f3d0;
+      transform: translateY(-1px);
+    }
+
+    .signup {
+      text-align: center;
+      margin-top: 24px;
+      font-size: 13px;
+      color: #9ca3af;
+    }
+
+    .signup a {
+      color: #059669;
+      font-weight: 600;
+      text-decoration: none;
+    }
+
+    .signup a:hover { text-decoration: underline; }
+
+    @media (max-width: 500px) {
+      .login-card { padding: 32px 24px; border-radius: 24px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+  <div class="blob blob-3"></div>
+
+  <div class="login-card">
+    <div class="brand">
+      <div class="brand-icon">🌿</div>
+      <div class="brand-text">
+        <h1>Salud Vital</h1>
+        <p>Centro Médico Integral</p>
+      </div>
+    </div>
+
+    <div class="tab-row">
+      <button class="tab active" onclick="document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active')); this.classList.add('active');">Iniciar Sesión</button>
+      <button class="tab" onclick="document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active')); this.classList.add('active');">Acceso Rápido</button>
+    </div>
+
+    <form onsubmit="event.preventDefault(); alert('Demo emerald');">
+      <div class="field">
+        <label>Correo electrónico</label>
+        <div class="input-wrap">
+          <span class="iw-icon"><svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg></span>
+          <input type="email" placeholder="doctor@clinica.com">
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Contraseña</label>
+        <div class="input-wrap">
+          <span class="iw-icon"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
+          <input type="password" id="pw" placeholder="Ingresa tu contraseña">
+          <button type="button" class="pw-toggle" onclick="var i=document.getElementById('pw'); i.type=i.type==='password'?'text':'password';">
+            <svg viewBox="0 0 24 24"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="field totp-wrap" style="display:none;">
+        <label>Código de autenticación <span class="field-label-optional">(2FA)</span></label>
+        <div class="input-wrap">
+          <input type="text" placeholder="000000" maxlength="6">
+        </div>
+      </div>
+
+      <div class="row">
+        <label class="chk-label"><input type="checkbox"> Mantener sesión</label>
+        <a href="#" class="forgot">¿Olvidaste tu contraseña?</a>
+      </div>
+
+      <button type="submit" class="btn">Iniciar Sesión</button>
+    </form>
+
+    <div class="divider"><span>Acceso alternativo</span></div>
+
+    <button class="guest-btn">🎫 Reservar cita como invitado</button>
+
+    <p class="signup">¿No tienes una cuenta? <a href="#">Solicitar acceso</a></p>
+  </div>
+</body>
+</html>
