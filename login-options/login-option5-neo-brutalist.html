@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Opción 5: Neo-Brutalist</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      min-height: 100vh;
+      background: #fef3c7;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .card {
+      width: 440px;
+      background: white;
+      border: 3px solid #1a1a1a;
+      border-radius: 0;
+      box-shadow: 8px 8px 0 #1a1a1a;
+      position: relative;
+    }
+
+    .card-stripe {
+      height: 8px;
+      background: repeating-linear-gradient(
+        90deg,
+        #ef4444 0px, #ef4444 20px,
+        #f59e0b 20px, #f59e0b 40px,
+        #22c55e 40px, #22c55e 60px,
+        #3b82f6 60px, #3b82f6 80px,
+        #8b5cf6 80px, #8b5cf6 100px
+      );
+    }
+
+    .card-body {
+      padding: 36px 32px 32px;
+    }
+
+    .header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 28px;
+    }
+
+    .header-left {}
+
+    .brand-chip {
+      display: inline-block;
+      background: #1a1a1a;
+      color: #fef3c7;
+      padding: 4px 12px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 12px;
+    }
+
+    .header h1 {
+      font-size: 32px;
+      font-weight: 800;
+      line-height: 1;
+      letter-spacing: -1px;
+      color: #1a1a1a;
+    }
+
+    .header h1 span {
+      display: inline-block;
+      background: #fde047;
+      padding: 0 6px;
+      transform: rotate(-1deg);
+    }
+
+    .header-icon {
+      width: 48px;
+      height: 48px;
+      background: #ef4444;
+      border: 3px solid #1a1a1a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      flex-shrink: 0;
+      transform: rotate(3deg);
+    }
+
+    .subtitle {
+      font-size: 14px;
+      color: #525252;
+      margin-bottom: 28px;
+      line-height: 1.4;
+    }
+
+    .field {
+      margin-bottom: 18px;
+    }
+
+    .field label {
+      display: block;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: #1a1a1a;
+      margin-bottom: 8px;
+    }
+
+    .field input {
+      width: 100%;
+      padding: 14px 16px;
+      background: #f5f5f4;
+      border: 2.5px solid #1a1a1a;
+      font-size: 15px;
+      font-family: inherit;
+      color: #1a1a1a;
+      outline: none;
+      transition: all 0.15s;
+    }
+
+    .field input::placeholder { color: #a3a3a3; }
+
+    .field input:focus {
+      background: #fef9c3;
+      box-shadow: 4px 4px 0 #1a1a1a;
+      transform: translate(-2px, -2px);
+    }
+
+    .pw-row {
+      position: relative;
+    }
+
+    .pw-btn {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: #1a1a1a;
+      color: white;
+      border: none;
+      padding: 4px 10px;
+      font-size: 11px;
+      font-weight: 700;
+      font-family: inherit;
+      text-transform: uppercase;
+      cursor: pointer;
+    }
+
+    .pw-btn:hover { background: #ef4444; }
+
+    .totp-input {
+      text-align: center;
+      font-size: 32px;
+      letter-spacing: 12px;
+      font-weight: 800;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+    }
+
+    .submit-btn {
+      width: 100%;
+      padding: 16px;
+      background: #1a1a1a;
+      color: #fef3c7;
+      border: 3px solid #1a1a1a;
+      font-size: 16px;
+      font-weight: 800;
+      font-family: inherit;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      cursor: pointer;
+      transition: all 0.15s;
+      margin-top: 8px;
+    }
+
+    .submit-btn:hover {
+      background: #ef4444;
+      border-color: #ef4444;
+      box-shadow: 6px 6px 0 #1a1a1a;
+      transform: translate(-3px, -3px);
+    }
+
+    .submit-btn:active {
+      box-shadow: 2px 2px 0 #1a1a1a;
+      transform: translate(-1px, -1px);
+    }
+
+    .row-links {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 20px;
+    }
+
+    .row-links a {
+      font-size: 12px;
+      font-weight: 700;
+      color: #1a1a1a;
+      text-decoration: none;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .row-links a:hover { color: #ef4444; }
+
+    .sep {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 24px 0;
+      font-size: 11px;
+      font-weight: 700;
+      color: #a3a3a3;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+
+    .sep::before, .sep::after {
+      content: '';
+      flex: 1;
+      height: 2.5px;
+      background: #1a1a1a;
+    }
+
+    .guest-btn {
+      width: 100%;
+      padding: 14px;
+      background: white;
+      border: 2.5px solid #1a1a1a;
+      font-size: 13px;
+      font-weight: 700;
+      font-family: inherit;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .guest-btn:hover {
+      background: #fde047;
+      box-shadow: 4px 4px 0 #1a1a1a;
+      transform: translate(-2px, -2px);
+    }
+
+    .footer-stamp {
+      margin-top: 24px;
+      text-align: center;
+      font-size: 10px;
+      font-weight: 700;
+      color: #a3a3a3;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+
+    .stamp {
+      display: inline-block;
+      border: 2px solid #ef4444;
+      color: #ef4444;
+      padding: 4px 12px;
+      transform: rotate(-2deg);
+      margin-top: 8px;
+      font-size: 10px;
+    }
+
+    /* Corner decoration */
+    .corner {
+      position: absolute;
+      bottom: -12px;
+      right: -12px;
+      width: 24px;
+      height: 24px;
+      background: #22c55e;
+      border: 3px solid #1a1a1a;
+    }
+
+    @media (max-width: 500px) {
+      .card { width: 100%; box-shadow: 4px 4px 0 #1a1a1a; }
+      .card-body { padding: 28px 20px 24px; }
+      .header h1 { font-size: 26px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="card-stripe"></div>
+    <div class="corner"></div>
+    <div class="card-body">
+      <div class="header">
+        <div class="header-left">
+          <div class="brand-chip">Salud Vital</div>
+          <h1>Hola,<br><span>entra</span> 👋</h1>
+        </div>
+        <div class="header-icon">♥</div>
+      </div>
+
+      <p class="subtitle">Accede a tu panel para gestionar pacientes, citas y más.</p>
+
+      <form onsubmit="event.preventDefault(); alert('Demo brutalista');">
+        <div class="field">
+          <label>Email</label>
+          <input type="email" placeholder="doctor@clinica.com">
+        </div>
+        <div class="field">
+          <label>Contraseña</label>
+          <div class="pw-row">
+            <input type="password" placeholder="••••••••">
+            <button type="button" class="pw-btn" onclick="var i=this.previousElementSibling; i.type=i.type==='password'?'text':'password';">ver</button>
+          </div>
+        </div>
+        <div class="field" id="totp" style="display:none;">
+          <label>Código 2FA</label>
+          <input type="text" placeholder="000000" maxlength="6" class="totp-input">
+        </div>
+        <button type="submit" class="submit-btn">Entrar →</button>
+      </form>
+
+      <div class="row-links">
+        <a href="#">¿Olvidaste?</a>
+        <a href="#">Crear cuenta</a>
+      </div>
+
+      <div class="sep">o</div>
+
+      <button class="guest-btn">🎫 Invitado</button>
+
+      <div class="footer-stamp">
+        © 2026 Clínica Salud Vital
+        <div class="stamp">HECHO CON ♥</div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
