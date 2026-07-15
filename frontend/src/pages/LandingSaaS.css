@@ -309,7 +309,26 @@
   color: white; border: none; border-radius: 12px; font-size: 14px; font-weight: 600;
   font-family: inherit; cursor: pointer; transition: all 0.3s;
 }
-.ls-lm-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(13,148,136,0.35); }
+.ls-lm-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(13,148,136,0.35); }
+.ls-lm-btn:disabled { opacity: 0.7; cursor: not-allowed; }
+.ls-lm-error {
+  padding: 12px 16px; background: #fef2f2; color: #dc2626; border-radius: 10px;
+  font-size: 13px; margin-bottom: 18px; display: flex; align-items: center; gap: 10px;
+  border: 1px solid rgba(244,67,54,0.15);
+}
+.ls-lm-pw-toggle {
+  position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+  background: none; border: none; color: #9ca3af; cursor: pointer;
+  font-size: 12px; font-family: inherit; font-weight: 500;
+}
+.ls-lm-pw-toggle:hover { color: #0d9488; }
+.ls-lm-totp {
+  text-align: center; font-size: 26px; letter-spacing: 10px; font-weight: 700;
+  font-family: 'SF Mono', 'Fira Code', monospace; color: #0d9488;
+}
+.ls-lm-submit-loading { display: flex; align-items: center; justify-content: center; gap: 10px; }
+@keyframes ls-lm-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+.ls-lm-spinner { animation: ls-lm-spin 0.8s linear infinite; }
 .ls-lm-divider { display: flex; align-items: center; gap: 14px; margin: 20px 0; font-size: 11px; color: #9ca3af; text-transform: uppercase; letter-spacing: 1px; }
 .ls-lm-divider::before, .ls-lm-divider::after { content: ''; flex: 1; height: 1px; background: #e5e7eb; }
 .ls-lm-guest {

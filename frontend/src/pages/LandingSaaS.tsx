@@ -1,14 +1,32 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/useAuth';
+import { useI18n } from '../i18n/useI18n';
+import ReCAPTCHA from 'react-google-recaptcha';
+import { isAxiosError } from 'axios';
+import { sanitizeError } from '../utils/error-sanitizer';
 import './LandingSaaS.css';
+
+const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
+const hasCaptcha = Boolean(RECAPTCHA_SITE_KEY);
 
 const LandingSaaS = React.memo(function LandingSaaS() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, login } = useAuth();
+  const { t } = useI18n();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const recaptchaRef = useRef<ReCAPTCHA | null>(null);
+
   const [scrolled, setScrolled] = useState(false);
-  const [loginModalOpen, setLoginModalOpen] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+
+  const [loginModalOpen, setLoginModalOpen] = useState(false);
+  const [form, setForm] = useState({ email: '', password: '', totp_token: '' });
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [needs2FA, setNeeds2FA] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -17,10 +35,85 @@ const LandingSaaS = React.memo(function LandingSaaS() {
   }, []);
 
   useEffect(() => {
+    if (searchParams.get('openLogin') === '1') {
+      setLoginModalOpen(true);
+      setSearchParams({}, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
+
+  useEffect(() => {
     if (user) {
       navigate('/booking');
     }
   }, [user, navigate]);
+
+  const openLogin = useCallback(() => {
+    setError(null);
+    setNeeds2FA(false);
+    setForm({ email: '', password: '', totp_token: '' });
+    setLoginModalOpen(true);
+  }, []);
+
+  const closeLogin = useCallback(() => {
+    setLoginModalOpen(false);
+    setError(null);
+    setNeeds2FA(false);
+    setForm({ email: '', password: '', totp_token: '' });
+    recaptchaRef.current?.reset();
+  }, []);
+
+  const getCaptchaToken = () => {
+    if (!hasCaptcha) return undefined;
+    return recaptchaRef.current?.getValue();
+  };
+
+  const handleLoginSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setError(null);
+
+    if (!form.email.trim()) {
+      setError(t('auth.email_required') || 'El correo es requerido');
+      return;
+    }
+    if (!form.password.trim()) {
+      setError(t('auth.password_required') || 'La contraseña es requerida');
+      return;
+    }
+
+    const captcha_token = getCaptchaToken();
+    if (hasCaptcha && !captcha_token) {
+      setError(t('auth.captcha_required') || 'Completa el captcha');
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      const user = await login(form.email, form.password, needs2FA ? form.totp_token : undefined, captcha_token);
+      closeLogin();
+      const redirect = searchParams.get('redirect');
+      if (redirect) { navigate(redirect); return; }
+      if (user.role === 'superadmin') {
+        navigate('/super-admin/demo-data');
+      } else if (user.role === 'admin') {
+        navigate('/');
+      } else if (user.role === 'doctor') {
+        navigate('/doctor');
+      } else if (user.role === 'lab_technician') {
+        navigate('/lab');
+      } else {
+        navigate('/booking');
+      }
+    } catch (err) {
+      if (isAxiosError(err) && (err.response?.data?.code === '2FA_REQUIRED' || err.response?.data?.error === '2FA token required')) {
+        setNeeds2FA(true);
+      } else {
+        setError(sanitizeError(err) || t('auth.invalid_credentials'));
+      }
+      recaptchaRef.current?.reset();
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   const toggleFaq = (index: number) => {
     setOpenFaq(openFaq === index ? null : index);
@@ -127,7 +220,7 @@ const LandingSaaS = React.memo(function LandingSaaS() {
           <a href="#faq">FAQ</a>
         </div>
         <div className="ls-nav-actions">
-          <button className="ls-btn ls-btn-ghost" onClick={() => setLoginModalOpen(true)}>Iniciar Sesión</button>
+          <button className="ls-btn ls-btn-ghost" onClick={openLogin}>Iniciar Sesión</button>
           <a href="#pricing" className="ls-btn ls-btn-primary">Empezar Gratis</a>
         </div>
       </nav>
@@ -144,7 +237,7 @@ const LandingSaaS = React.memo(function LandingSaaS() {
           </p>
           <div className="ls-hero-actions">
             <a href="#pricing" className="ls-btn ls-btn-primary ls-btn-xl">🚀 Empezar Gratis — 14 días</a>
-            <button className="ls-btn ls-btn-outline ls-btn-xl" onClick={() => setLoginModalOpen(true)}>▶ Ver Demo en Vivo</button>
+            <button className="ls-btn ls-btn-outline ls-btn-xl" onClick={openLogin}>▶ Ver Demo en Vivo</button>
           </div>
           <div className="ls-hero-proof">
             <div className="ls-hero-avatars">
@@ -294,7 +387,7 @@ const LandingSaaS = React.memo(function LandingSaaS() {
           <p>Uníte a más de 2,400 profesionales que ya confían en Salud Vital. Empezá gratis hoy.</p>
           <div className="ls-cta-actions">
             <a href="#pricing" className="ls-btn ls-btn-white ls-btn-xl">🚀 Empezar Gratis</a>
-            <button className="ls-btn ls-btn-ghost-white ls-btn-xl" onClick={() => setLoginModalOpen(true)}>Iniciar Sesión</button>
+            <button className="ls-btn ls-btn-ghost-white ls-btn-xl" onClick={openLogin}>Iniciar Sesión</button>
           </div>
         </div>
       </section>
@@ -346,31 +439,114 @@ const LandingSaaS = React.memo(function LandingSaaS() {
       </footer>
 
       {/* LOGIN MODAL */}
-      <div className={`ls-modal-overlay ${loginModalOpen ? 'show' : ''}`} onClick={(e) => { if (e.target === e.currentTarget) setLoginModalOpen(false); }}>
+      <div className={`ls-modal-overlay ${loginModalOpen ? 'show' : ''}`} onClick={(e) => { if (e.target === e.currentTarget) closeLogin(); }}>
         <div className="ls-login-modal">
-          <button className="ls-modal-close" onClick={() => setLoginModalOpen(false)}>✕</button>
+          <button className="ls-modal-close" onClick={closeLogin}>✕</button>
           <div className="ls-modal-brand">
             <div className="ls-nav-brand-icon" style={{ width: 32, height: 32, fontSize: 16 }}>💚</div>
             <span style={{ fontSize: 16, fontWeight: 800, color: '#134e4a' }}>Salud Vital</span>
           </div>
-          <h2>Bienvenido de nuevo</h2>
-          <p className="ls-modal-subtitle">Ingresa para acceder a tu panel de control</p>
-          <div className="ls-lm-field">
-            <label>Correo electrónico</label>
-            <input className="ls-lm-input" type="email" placeholder="doctor@clinica.com" />
-          </div>
-          <div className="ls-lm-field">
-            <label>Contraseña</label>
-            <input className="ls-lm-input" type="password" placeholder="Ingresa tu contraseña" />
-          </div>
-          <div className="ls-lm-row">
-            <label className="ls-lm-chk"><input type="checkbox" /> Recordarme</label>
-            <a href="#" className="ls-lm-forgot">¿Olvidaste tu contraseña?</a>
-          </div>
-          <button className="ls-lm-btn" onClick={() => { setLoginModalOpen(false); navigate('/login'); }}>Iniciar Sesión</button>
+          <h2>{t('auth.login_title') || 'Bienvenido de nuevo'}</h2>
+          <p className="ls-modal-subtitle">{t('auth.login_subtitle') || 'Ingresa para acceder a tu panel de control'}</p>
+
+          {error && (
+            <div className="ls-lm-error">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="8" x2="12" y2="12" />
+                <line x1="12" y1="16" x2="12.01" y2="16" />
+              </svg>
+              {error}
+            </div>
+          )}
+
+          <form onSubmit={handleLoginSubmit}>
+            <div className="ls-lm-field">
+              <label>{t('auth.email') || 'Correo electrónico'}</label>
+              <input
+                className="ls-lm-input"
+                type="email"
+                value={form.email}
+                onChange={(e) => setForm({ ...form, email: e.target.value })}
+                placeholder={t('auth.email_placeholder') || 'doctor@clinica.com'}
+                autoFocus
+              />
+            </div>
+
+            <div className="ls-lm-field">
+              <label>{t('auth.password') || 'Contraseña'}</label>
+              <div style={{ position: 'relative' }}>
+                <input
+                  className="ls-lm-input"
+                  type={showPassword ? 'text' : 'password'}
+                  value={form.password}
+                  onChange={(e) => setForm({ ...form, password: e.target.value })}
+                  placeholder={t('auth.password_placeholder') || 'Ingresa tu contraseña'}
+                  style={{ paddingRight: 60 }}
+                />
+                <button
+                  type="button"
+                  className="ls-lm-pw-toggle"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? 'Ocultar' : 'Mostrar'}
+                </button>
+              </div>
+            </div>
+
+            {needs2FA && (
+              <div className="ls-lm-field">
+                <label>{t('auth.totp_code') || 'Código 2FA'}</label>
+                <input
+                  className="ls-lm-input ls-lm-totp"
+                  type="text"
+                  value={form.totp_token}
+                  onChange={(e) => setForm({ ...form, totp_token: e.target.value })}
+                  placeholder={t('auth.totp_placeholder') || '000000'}
+                  maxLength={6}
+                  autoFocus
+                />
+              </div>
+            )}
+
+            {hasCaptcha && ReCAPTCHA && (
+              <div className="ls-lm-field" style={{ display: 'flex', justifyContent: 'center' }}>
+                <ReCAPTCHA ref={recaptchaRef} sitekey={RECAPTCHA_SITE_KEY} />
+              </div>
+            )}
+
+            <div className="ls-lm-row">
+              <label className="ls-lm-chk">
+                <input type="checkbox" checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} />
+                Recordarme
+              </label>
+              <Link to="/forgot-password" className="ls-lm-forgot" onClick={closeLogin}>
+                ¿Olvidaste tu contraseña?
+              </Link>
+            </div>
+
+            <button type="submit" className="ls-lm-btn" disabled={submitting}>
+              {submitting ? (
+                <span className="ls-lm-submit-loading">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="ls-lm-spinner">
+                    <circle cx="12" cy="12" r="10" strokeDasharray="31.4 31.4" />
+                  </svg>
+                  {t('auth.logging_in') || 'Ingresando...'}
+                </span>
+              ) : needs2FA ? (t('auth.verify_2fa') || 'Verificar 2FA') : (t('auth.login_button') || 'Iniciar Sesión')}
+            </button>
+          </form>
+
           <div className="ls-lm-divider"><span>o</span></div>
-          <button className="ls-lm-guest" onClick={() => { setLoginModalOpen(false); navigate('/booking'); }}>🎫 Reservar como invitado</button>
-          <p className="ls-lm-signup">¿No tienes cuenta? <Link to="/register" onClick={() => setLoginModalOpen(false)}>Regístrate gratis</Link></p>
+
+          <Link to="/booking" className="ls-lm-guest" onClick={closeLogin}>
+            🎫 {t('auth.guest_booking') || 'Reservar como invitado'}
+          </Link>
+
+          <p className="ls-lm-signup">
+            {t('auth.no_account') || '¿No tienes cuenta?'}{' '}
+            <Link to="/register" onClick={closeLogin}>{t('auth.register_link') || 'Regístrate gratis'}</Link>
+          </p>
         </div>
       </div>
     </div>

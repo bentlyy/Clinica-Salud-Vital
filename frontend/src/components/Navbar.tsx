@@ -127,7 +127,7 @@ const Navbar = React.memo(function Navbar() {
             <>
               <Link to="/specialists" className="nav-link" onClick={() => setMobileOpen(false)}>{t('nav.specialists')}</Link>
               <Link to="/booking" className="nav-link" onClick={() => setMobileOpen(false)}>{t('nav.booking')}</Link>
-              <Link to="/login" className="nav-link" onClick={() => setMobileOpen(false)}>{t('nav.login')}</Link>
+              <Link to="/?openLogin=1" className="nav-link" onClick={() => setMobileOpen(false)}>{t('nav.login')}</Link>
             </>
           )}
 
