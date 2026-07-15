@@ -270,13 +270,23 @@ export default function LoginPage() {
         }
 
         .login7-page {
+          all: initial;
           min-height: 100vh;
+          width: 100%;
           background: #f0fdfa;
           display: flex;
           align-items: center;
           justify-content: center;
           position: relative;
           overflow: hidden;
+          box-sizing: border-box;
+          font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+          line-height: 1.5;
+          color: #1f2937;
+          -webkit-font-smoothing: antialiased;
+        }
+        .login7-page *, .login7-page *::before, .login7-page *::after {
+          box-sizing: border-box;
         }
 
         .login7-deco {
@@ -312,6 +322,24 @@ export default function LoginPage() {
           border-radius: 28px;
           box-shadow: 0 1px 2px rgba(0,0,0,0.03), 0 4px 16px rgba(0,0,0,0.04), 0 16px 48px rgba(0,0,0,0.06);
           overflow: hidden;
+        }
+        .login7-card h2 {
+          font-size: inherit;
+          font-weight: inherit;
+          letter-spacing: inherit;
+          font-family: inherit;
+          line-height: inherit;
+          color: inherit;
+        }
+        .login7-card p {
+          color: inherit;
+          line-height: inherit;
+          font-size: inherit;
+        }
+        .login7-card a {
+          color: inherit;
+          text-decoration: inherit;
+          transition: inherit;
         }
 
         /* Left visual panel */
