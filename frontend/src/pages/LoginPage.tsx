@@ -284,9 +284,12 @@ export default function LoginPage() {
           line-height: 1.5;
           color: #1f2937;
           -webkit-font-smoothing: antialiased;
+          flex: 1;
+          z-index: 1;
         }
         .login7-page *, .login7-page *::before, .login7-page *::after {
           box-sizing: border-box;
+          font-family: inherit;
         }
 
         .login7-deco {
@@ -322,24 +325,6 @@ export default function LoginPage() {
           border-radius: 28px;
           box-shadow: 0 1px 2px rgba(0,0,0,0.03), 0 4px 16px rgba(0,0,0,0.04), 0 16px 48px rgba(0,0,0,0.06);
           overflow: hidden;
-        }
-        .login7-card h2 {
-          font-size: inherit;
-          font-weight: inherit;
-          letter-spacing: inherit;
-          font-family: inherit;
-          line-height: inherit;
-          color: inherit;
-        }
-        .login7-card p {
-          color: inherit;
-          line-height: inherit;
-          font-size: inherit;
-        }
-        .login7-card a {
-          color: inherit;
-          text-decoration: inherit;
-          transition: inherit;
         }
 
         /* Left visual panel */
@@ -425,6 +410,8 @@ export default function LoginPage() {
           font-size: 24px;
           font-weight: 700;
           margin-bottom: 8px;
+          letter-spacing: normal;
+          line-height: 1.3;
         }
         .login7-visual-desc {
           color: rgba(255,255,255,0.7);
@@ -500,11 +487,14 @@ export default function LoginPage() {
           font-weight: 700;
           color: #134e4a;
           margin-bottom: 4px;
+          letter-spacing: normal;
+          line-height: 1.3;
         }
         .login7-form-subtitle {
           font-size: 13px;
           color: #6b7280;
           margin-bottom: 30px;
+          line-height: 1.5;
         }
 
         .login7-error {
@@ -689,6 +679,7 @@ export default function LoginPage() {
           margin-top: 20px;
           font-size: 13px;
           color: #9ca3af;
+          line-height: 1.5;
         }
         .login7-signup a {
           color: #0d9488;
