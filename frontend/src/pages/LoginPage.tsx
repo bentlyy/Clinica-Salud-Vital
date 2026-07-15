@@ -21,6 +21,7 @@ export default function LoginPage() {
   const [submitting, setSubmitting] = useState(false);
   const [needs2FA, setNeeds2FA] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
 
   const getCaptchaToken = () => {
     if (!hasCaptcha) return undefined;
@@ -75,65 +76,79 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="login-page">
-      <div className="login-branding">
-        <div className="login-brand-orb login-brand-orb--1" />
-        <div className="login-brand-orb login-brand-orb--2" />
-        <div className="login-brand-content">
-          <div className="login-brand-logo">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
-            </svg>
+    <div className="login7-page">
+      <div className="login7-deco login7-deco-1" />
+      <div className="login7-deco login7-deco-2" />
+      <div className="login7-deco login7-deco-3" />
+
+      <div className="login7-card">
+        <div className="login7-visual">
+          <div className="login7-visual-top">
+            <div className="login7-status-badge">
+              <span className="login7-pulse-dot" />
+              Sistema activo
+            </div>
           </div>
-          <h1 className="login-brand-title">Salud Vital</h1>
-          <p className="login-brand-subtitle">
-            {t('auth.login_subtitle') || 'Sistema de gestión clínica y administración de pacientes'}
-          </p>
-          <div className="login-brand-features">
-            {[
-              { icon: '🏥', text: 'Gestión de pacientes' },
-              { icon: '📅', text: 'Citas y calendario' },
-              { icon: '📋', text: 'Historial clínico digital' },
-              { icon: '📊', text: 'Reportes y analytics' },
-            ].map((item, i) => (
-              <div key={i} className="login-brand-feature">
-                <span className="login-brand-feature-icon">{item.icon}</span>
-                <span className="login-brand-feature-text">{item.text}</span>
-              </div>
-            ))}
+          <div className="login7-visual-main">
+            <div className="login7-medical-icon">🩺</div>
+            <h2 className="login7-visual-title">Tu salud, nuestra prioridad</h2>
+            <p className="login7-visual-desc">
+              Plataforma integral con historiales clínicos, laboratorio, analytics predictivos y más.
+            </p>
+          </div>
+          <div className="login7-visual-bottom">
+            <div className="login7-info-card">
+              <div className="login7-info-val">12k+</div>
+              <div className="login7-info-label">Pacientes atendidos</div>
+            </div>
+            <div className="login7-info-card">
+              <div className="login7-info-val">98%</div>
+              <div className="login7-info-label">Satisfacción</div>
+            </div>
+            <div className="login7-info-card">
+              <div className="login7-info-val">24/7</div>
+              <div className="login7-info-label">Disponible</div>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div className="login-form-panel">
-        <div className="login-form-wrapper">
-          <div className="login-mobile-logo">
-            <div className="login-mobile-logo-icon">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
-              </svg>
-            </div>
-            <h1 className="login-mobile-title">Salud Vital</h1>
-            <p className="login-mobile-subtitle">{t('auth.login_subtitle')}</p>
+        <div className="login7-form-side">
+          <div className="login7-mobile-logo">
+            <div className="login7-brand-icon">💚</div>
+            <span className="login7-brand-name">Salud Vital</span>
           </div>
 
-          <div className="login-card">
-            {error && (
-              <div className="login-error">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="12" cy="12" r="10" />
-                  <line x1="12" y1="8" x2="12" y2="12" />
-                  <line x1="12" y1="16" x2="12.01" y2="16" />
-                </svg>
-                {error}
-              </div>
-            )}
+          <div className="login7-form-brand">
+            <div className="login7-brand-icon">💚</div>
+            <span className="login7-brand-name">Salud Vital</span>
+          </div>
 
-            <form onSubmit={handleSubmit} className="login-form">
-              <div className="form-group">
-                <label className="form-label">{t('auth.email')} <span className="required">*</span></label>
+          <h2 className="login7-form-title">{t('auth.login_title') || 'Bienvenido de nuevo'}</h2>
+          <p className="login7-form-subtitle">{t('auth.login_subtitle') || 'Ingresa para acceder a tu panel de control'}</p>
+
+          {error && (
+            <div className="login7-error">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="8" x2="12" y2="12" />
+                <line x1="12" y1="16" x2="12.01" y2="16" />
+              </svg>
+              {error}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit}>
+            <div className="login7-field">
+              <label className="login7-label">{t('auth.email')}</label>
+              <div className="login7-input-wrap">
+                <span className="login7-input-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="2" y="4" width="20" height="16" rx="2" />
+                    <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+                  </svg>
+                </span>
                 <input
-                  className="ds-input"
+                  className="login7-input"
                   type="email"
                   value={form.email}
                   onChange={(e) => setForm({ ...form, email: e.target.value })}
@@ -142,46 +157,41 @@ export default function LoginPage() {
                   autoFocus
                 />
               </div>
+            </div>
 
-              <div className="form-group">
-                <label className="form-label">{t('auth.password')} <span className="required">*</span></label>
-                <div className="login-password-wrapper">
-                  <input
-                    className="ds-input"
-                    type={showPassword ? 'text' : 'password'}
-                    value={form.password}
-                    onChange={(e) => setForm({ ...form, password: e.target.value })}
-                    required
-                    placeholder={t('auth.password_placeholder')}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="login-password-toggle"
-                  >
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      {showPassword ? (
-                        <>
-                          <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
-                          <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
-                          <line x1="1" y1="1" x2="23" y2="23" />
-                        </>
-                      ) : (
-                        <>
-                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                          <circle cx="12" cy="12" r="3" />
-                        </>
-                      )}
-                    </svg>
-                  </button>
-                </div>
+            <div className="login7-field">
+              <label className="login7-label">{t('auth.password')}</label>
+              <div className="login7-input-wrap">
+                <span className="login7-input-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="11" width="18" height="11" rx="2" />
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                  </svg>
+                </span>
+                <input
+                  className="login7-input"
+                  type={showPassword ? 'text' : 'password'}
+                  value={form.password}
+                  onChange={(e) => setForm({ ...form, password: e.target.value })}
+                  required
+                  placeholder={t('auth.password_placeholder')}
+                />
+                <button
+                  type="button"
+                  className="login7-pw-toggle"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? 'Ocultar' : 'Mostrar'}
+                </button>
               </div>
+            </div>
 
-              {needs2FA && (
-                <div className="form-group">
-                  <label className="form-label">{t('auth.totp_code')} <span className="required">*</span></label>
+            {needs2FA && (
+              <div className="login7-field login7-totp-box">
+                <label className="login7-label">{t('auth.totp_code')}</label>
+                <div className="login7-input-wrap">
                   <input
-                    className="ds-input login-totp-input"
+                    className="login7-input login7-totp-input"
                     type="text"
                     value={form.totp_token}
                     onChange={(e) => setForm({ ...form, totp_token: e.target.value })}
@@ -190,410 +200,487 @@ export default function LoginPage() {
                     autoFocus
                   />
                 </div>
-              )}
+              </div>
+            )}
 
-              {hasCaptcha && ReCAPTCHA && (
-                <div className="form-group login-captcha">
-                  <ReCAPTCHA
-                    ref={recaptchaRef}
-                    sitekey={RECAPTCHA_SITE_KEY}
-                  />
-                </div>
-              )}
+            {hasCaptcha && ReCAPTCHA && (
+              <div className="login7-field login7-captcha">
+                <ReCAPTCHA
+                  ref={recaptchaRef}
+                  sitekey={RECAPTCHA_SITE_KEY}
+                />
+              </div>
+            )}
 
-              <button
-                className="login-submit-btn"
-                type="submit"
-                disabled={submitting}
-              >
-                {submitting ? (
-                  <span className="login-submit-loading">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="login-spinner">
-                      <circle cx="12" cy="12" r="10" strokeDasharray="31.4 31.4" />
-                    </svg>
-                    {t('auth.logging_in')}
-                  </span>
-                ) : needs2FA ? t('auth.verify_2fa') : t('auth.login_button')}
-              </button>
-            </form>
-
-            <div className="login-footer">
-              {tenantId && (
-                <Link to={`/register?tenant=${tenantId}`} className="login-register-link">
-                  {t('auth.no_account')} {t('auth.register_link')}
-                </Link>
-              )}
-              <Link to="/forgot-password" className="login-forgot-link">
+            <div className="login7-opts">
+              <label className="login7-chk">
+                <input
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                />
+                Recordarme
+              </label>
+              <Link to="/forgot-password" className="login7-forgot-link">
                 ¿Olvidaste tu contraseña?
               </Link>
             </div>
-          </div>
 
-          <p className="login-copyright">
-            &copy; {new Date().getFullYear()} Salud Vital. Todos los derechos reservados.
+            <button type="submit" className="login7-btn-submit" disabled={submitting}>
+              {submitting ? (
+                <span className="login7-submit-loading">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="login7-spinner">
+                    <circle cx="12" cy="12" r="10" strokeDasharray="31.4 31.4" />
+                  </svg>
+                  {t('auth.logging_in')}
+                </span>
+              ) : needs2FA ? t('auth.verify_2fa') : t('auth.login_button')}
+            </button>
+          </form>
+
+          <div className="login7-sep">{t('auth.or') || 'o'}</div>
+
+          <Link to="/booking" className="login7-btn-guest">
+            🎫 {t('auth.guest_booking') || 'Reservar como invitado'}
+          </Link>
+
+          <p className="login7-signup">
+            {t('auth.no_account')}{' '}
+            {tenantId ? (
+              <Link to={`/register?tenant=${tenantId}`}>{t('auth.register_link')}</Link>
+            ) : (
+              <Link to="/register">{t('auth.register_link')}</Link>
+            )}
           </p>
         </div>
       </div>
 
       <style>{`
-        @keyframes login-spin {
+        @keyframes login7-spin {
           from { transform: rotate(0deg); }
           to { transform: rotate(360deg); }
         }
-
-        .login-page {
-          min-height: 100vh;
-          display: flex;
-          background-color: var(--bg-primary);
+        @keyframes login7-pulse-ring {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(0.8); }
+        }
+        @keyframes login7-ring-expand {
+          0% { opacity: 1; transform: scale(1); }
+          100% { opacity: 0; transform: scale(2); }
         }
 
-        /* Left branding panel */
-        .login-branding {
-          flex: 1;
-          display: none;
-          flex-direction: column;
-          justify-content: center;
+        .login7-page {
+          min-height: 100vh;
+          background: #f0fdfa;
+          display: flex;
           align-items: center;
-          background: linear-gradient(160deg, var(--ds-teal-600, #0d9488) 0%, var(--ds-teal-700, #0f766e) 50%, var(--ds-teal-800, #115e59) 100%);
-          padding: 40px;
+          justify-content: center;
           position: relative;
           overflow: hidden;
         }
 
-        .login-brand-orb {
-          position: absolute;
+        .login7-deco {
+          position: fixed;
           border-radius: 50%;
+          opacity: 0.5;
+          z-index: 0;
           pointer-events: none;
         }
-
-        .login-brand-orb--1 {
-          top: -50%;
-          right: -30%;
-          width: 600px;
-          height: 600px;
-          background: radial-gradient(circle, rgba(13,148,136,0.12) 0%, transparent 70%);
+        .login7-deco-1 {
+          width: 500px; height: 500px;
+          background: radial-gradient(circle, #99f6e4 0%, transparent 70%);
+          top: -150px; right: -100px;
+        }
+        .login7-deco-2 {
+          width: 400px; height: 400px;
+          background: radial-gradient(circle, #ccfbf1 0%, transparent 70%);
+          bottom: -120px; left: -80px;
+        }
+        .login7-deco-3 {
+          width: 200px; height: 200px;
+          background: radial-gradient(circle, #5eead4 0%, transparent 70%);
+          top: 50%; left: 30%; opacity: 0.2;
         }
 
-        .login-brand-orb--2 {
-          bottom: -20%;
-          left: -10%;
-          width: 400px;
-          height: 400px;
-          background: radial-gradient(circle, rgba(13,148,136,0.1) 0%, transparent 70%);
-        }
-
-        .login-brand-content {
+        .login7-card {
           position: relative;
           z-index: 1;
-          max-width: 400px;
-          text-align: center;
-        }
-
-        .login-brand-logo {
-          width: 72px;
-          height: 72px;
-          border-radius: 20px;
-          background: linear-gradient(135deg, var(--accent-500), var(--accent-600));
           display: flex;
-          align-items: center;
-          justify-content: center;
-          margin: 0 auto 28px;
-          box-shadow: 0 8px 32px rgba(13, 148, 136, 0.3);
+          width: 920px;
+          min-height: 540px;
+          background: white;
+          border-radius: 28px;
+          box-shadow: 0 1px 2px rgba(0,0,0,0.03), 0 4px 16px rgba(0,0,0,0.04), 0 16px 48px rgba(0,0,0,0.06);
+          overflow: hidden;
         }
 
-        .login-brand-title {
-          font-family: var(--font-serif);
-          font-size: 2rem;
-          font-weight: 700;
-          color: #fff;
-          margin-bottom: 12px;
-          letter-spacing: -0.02em;
-        }
-
-        .login-brand-subtitle {
-          font-size: 15px;
-          color: rgba(255,255,255,0.6);
-          line-height: 1.6;
-          margin: 0;
-        }
-
-        .login-brand-features {
-          margin-top: 44px;
+        /* Left visual panel */
+        .login7-visual {
+          flex: 1.15;
+          background: linear-gradient(160deg, #0d9488 0%, #0f766e 50%, #115e59 100%);
+          padding: 48px;
           display: flex;
           flex-direction: column;
-          gap: 16px;
-          text-align: left;
+          justify-content: space-between;
+          position: relative;
+          overflow: hidden;
+        }
+        .login7-visual::before {
+          content: '';
+          position: absolute;
+          width: 300px; height: 300px;
+          border: 2px solid rgba(255,255,255,0.08);
+          border-radius: 50%;
+          top: -80px; right: -80px;
+        }
+        .login7-visual::after {
+          content: '';
+          position: absolute;
+          width: 200px; height: 200px;
+          border: 2px solid rgba(255,255,255,0.06);
+          border-radius: 50%;
+          bottom: 20px; left: -60px;
         }
 
-        .login-brand-feature {
-          display: flex;
+        .login7-visual-top { position: relative; z-index: 1; }
+
+        .login7-status-badge {
+          display: inline-flex;
           align-items: center;
-          gap: 14px;
-          padding: 10px 14px;
-          border-radius: var(--radius-md);
-          background: rgba(255,255,255,0.05);
-          transition: background 0.2s;
+          gap: 8px;
+          background: rgba(255,255,255,0.12);
+          border: 1px solid rgba(255,255,255,0.15);
+          border-radius: 24px;
+          padding: 6px 16px;
+          font-size: 12px;
+          font-weight: 500;
+          color: rgba(255,255,255,0.9);
+        }
+        .login7-pulse-dot {
+          width: 8px; height: 8px;
+          background: #34d399;
+          border-radius: 50%;
+          animation: login7-pulse-ring 2s infinite;
+          position: relative;
+        }
+        .login7-pulse-dot::after {
+          content: '';
+          position: absolute;
+          inset: -4px;
+          border-radius: 50%;
+          border: 2px solid #34d399;
+          animation: login7-ring-expand 2s infinite;
         }
 
-        .login-brand-feature:hover {
-          background: rgba(255,255,255,0.1);
+        .login7-visual-main {
+          position: relative;
+          z-index: 1;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          text-align: center;
         }
-
-        .login-brand-feature-icon {
-          font-size: 22px;
-          width: 36px;
-          height: 36px;
+        .login7-medical-icon {
+          width: 80px; height: 80px;
+          background: rgba(255,255,255,0.15);
+          border-radius: 20px;
           display: flex;
           align-items: center;
           justify-content: center;
-          background: rgba(255,255,255,0.08);
-          border-radius: var(--radius-sm);
+          font-size: 40px;
+          margin-bottom: 24px;
+          backdrop-filter: blur(10px);
+          border: 1px solid rgba(255,255,255,0.1);
+        }
+        .login7-visual-title {
+          color: white;
+          font-size: 24px;
+          font-weight: 700;
+          margin-bottom: 8px;
+        }
+        .login7-visual-desc {
+          color: rgba(255,255,255,0.7);
+          font-size: 14px;
+          line-height: 1.5;
+          max-width: 280px;
         }
 
-        .login-brand-feature-text {
-          font-size: 14px;
-          color: rgba(255,255,255,0.8);
-          font-weight: 500;
+        .login7-visual-bottom {
+          position: relative;
+          z-index: 1;
+          display: flex;
+          gap: 12px;
+        }
+        .login7-info-card {
+          flex: 1;
+          background: rgba(255,255,255,0.1);
+          border: 1px solid rgba(255,255,255,0.12);
+          border-radius: 14px;
+          padding: 14px;
+          backdrop-filter: blur(8px);
+        }
+        .login7-info-val {
+          font-size: 20px;
+          font-weight: 700;
+          color: white;
+        }
+        .login7-info-label {
+          font-size: 11px;
+          color: rgba(255,255,255,0.6);
+          margin-top: 2px;
         }
 
         /* Right form panel */
-        .login-form-panel {
+        .login7-form-side {
           flex: 1;
+          padding: 48px 40px;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+        }
+
+        .login7-form-brand {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          margin-bottom: 32px;
+        }
+        .login7-mobile-logo {
+          display: none;
+          align-items: center;
+          justify-content: center;
+          gap: 10px;
+          margin-bottom: 32px;
+        }
+        .login7-brand-icon {
+          width: 34px; height: 34px;
+          background: #0d9488;
+          border-radius: 10px;
           display: flex;
           align-items: center;
           justify-content: center;
-          padding: 24px;
-          min-width: 0;
+          font-size: 18px;
         }
-
-        .login-form-wrapper {
-          width: 100%;
-          max-width: 420px;
-        }
-
-        .login-mobile-logo {
-          text-align: center;
-          margin-bottom: 36px;
-        }
-
-        .login-mobile-logo-icon {
-          width: 52px;
-          height: 52px;
-          border-radius: 14px;
-          background: linear-gradient(135deg, var(--accent-500), var(--accent-600));
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          margin: 0 auto 14px;
-          box-shadow: 0 4px 16px rgba(13, 148, 136, 0.25);
-        }
-
-        .login-mobile-title {
-          font-family: var(--font-serif);
-          font-size: 1.5rem;
+        .login7-brand-name {
+          font-size: 17px;
           font-weight: 700;
-          margin: 0;
-          color: var(--text-primary);
+          color: #134e4a;
         }
 
-        .login-mobile-subtitle {
-          color: var(--text-muted);
-          font-size: 14px;
-          margin-top: 6px;
+        .login7-form-title {
+          font-size: 24px;
+          font-weight: 700;
+          color: #134e4a;
+          margin-bottom: 4px;
         }
-
-        .login-card {
-          background: var(--bg-secondary);
-          border: 1px solid var(--border-light);
-          border-radius: var(--radius-xl);
-          padding: 36px;
-          box-shadow: var(--shadow-lg);
-        }
-
-        .login-error {
-          padding: 12px 16px;
-          background: var(--danger-50);
-          color: var(--danger-500);
-          border-radius: var(--radius-md);
+        .login7-form-subtitle {
           font-size: 13px;
-          margin-bottom: 20px;
+          color: #6b7280;
+          margin-bottom: 30px;
+        }
+
+        .login7-error {
+          padding: 12px 16px;
+          background: #fef2f2;
+          color: #dc2626;
+          border-radius: 10px;
+          font-size: 13px;
+          margin-bottom: 18px;
           display: flex;
           align-items: center;
           gap: 10px;
           border: 1px solid rgba(244, 67, 54, 0.15);
         }
 
-        .login-form {
-          display: flex;
-          flex-direction: column;
-          gap: 4px;
+        .login7-field {
+          margin-bottom: 18px;
         }
-
-        .login-form .form-group {
-          margin-bottom: 8px;
-        }
-
-        .login-form .form-label {
+        .login7-label {
           display: block;
-          font-size: 13px;
-          font-weight: 500;
-          color: var(--text-primary);
+          font-size: 12px;
+          font-weight: 600;
+          color: #4b5563;
           margin-bottom: 6px;
         }
-
-        .login-form .required {
-          color: var(--danger-500);
+        .login7-input-wrap {
+          position: relative;
         }
-
-        .login-form .ds-input {
+        .login7-input-icon {
+          position: absolute;
+          left: 14px; top: 50%;
+          transform: translateY(-50%);
+          width: 16px; height: 16px;
+          color: #9ca3af;
+          display: flex;
+          align-items: center;
+        }
+        .login7-input-icon svg {
+          width: 100%; height: 100%;
+        }
+        .login7-input {
           width: 100%;
-          padding: 10px 14px;
+          padding: 12px 14px 12px 40px;
+          border: 1.5px solid #e5e7eb;
+          border-radius: 10px;
           font-size: 14px;
-          border: 1.5px solid var(--border-light);
-          border-radius: var(--radius-md);
-          background: var(--bg-primary);
-          color: var(--text-primary);
-          transition: border-color 0.2s, box-shadow 0.2s;
+          font-family: inherit;
+          color: #1f2937;
+          background: #f9fafb;
           outline: none;
+          transition: all 0.2s;
         }
-
-        .login-form .ds-input:focus {
-          border-color: var(--accent-500);
+        .login7-input::placeholder { color: #9ca3af; }
+        .login7-input:focus {
+          border-color: #0d9488;
+          background: white;
           box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.1);
         }
 
-        .login-form .ds-input::placeholder {
-          color: var(--text-muted);
-        }
-
-        .login-password-wrapper {
-          position: relative;
-        }
-
-        .login-password-wrapper .ds-input {
-          padding-right: 44px;
-        }
-
-        .login-password-toggle {
+        .login7-pw-toggle {
           position: absolute;
-          right: 10px;
-          top: 50%;
+          right: 12px; top: 50%;
           transform: translateY(-50%);
           background: none;
           border: none;
+          color: #9ca3af;
           cursor: pointer;
-          color: var(--text-muted);
-          padding: 4px;
+          font-size: 12px;
+          font-family: inherit;
+          font-weight: 500;
+        }
+        .login7-pw-toggle:hover { color: #0d9488; }
+
+        .login7-totp-box .login7-input {
+          text-align: center;
+          font-size: 26px;
+          letter-spacing: 10px;
+          font-weight: 700;
+          font-family: 'SF Mono', 'Fira Code', monospace;
+          color: #0d9488;
+        }
+
+        .login7-captcha {
+          display: flex;
+          justify-content: center;
+        }
+
+        .login7-opts {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 22px;
+          font-size: 12px;
+        }
+        .login7-chk {
           display: flex;
           align-items: center;
-          justify-content: center;
-          border-radius: var(--radius-sm);
-          transition: color 0.2s, background 0.2s;
-        }
-
-        .login-password-toggle:hover {
-          color: var(--text-secondary);
-          background: var(--gray-100);
-        }
-
-        .login-totp-input {
-          text-align: center;
-          font-size: 20px !important;
-          letter-spacing: 8px;
-          font-family: var(--font-mono);
-        }
-
-        .login-captcha {
-          display: flex;
-          justify-content: center;
-        }
-
-        .login-submit-btn {
-          width: 100%;
-          padding: 12px 24px;
-          margin-top: 8px;
-          font-size: 15px;
-          font-weight: 600;
-          color: #fff;
-          background: linear-gradient(135deg, var(--accent-500), var(--accent-600));
-          border: none;
-          border-radius: var(--radius-md);
+          gap: 6px;
+          color: #6b7280;
           cursor: pointer;
-          transition: transform 0.15s, box-shadow 0.2s, opacity 0.2s;
-          box-shadow: 0 4px 12px rgba(13, 148, 136, 0.25);
         }
+        .login7-chk input { accent-color: #0d9488; }
+        .login7-forgot-link {
+          color: #0d9488;
+          text-decoration: none;
+          font-weight: 500;
+        }
+        .login7-forgot-link:hover { text-decoration: underline; }
 
-        .login-submit-btn:hover:not(:disabled) {
+        .login7-btn-submit {
+          width: 100%;
+          padding: 13px;
+          background: linear-gradient(135deg, #0d9488, #0f766e);
+          color: white;
+          border: none;
+          border-radius: 12px;
+          font-size: 14px;
+          font-weight: 600;
+          font-family: inherit;
+          cursor: pointer;
+          transition: all 0.3s;
+        }
+        .login7-btn-submit:hover:not(:disabled) {
           transform: translateY(-1px);
           box-shadow: 0 6px 20px rgba(13, 148, 136, 0.35);
         }
-
-        .login-submit-btn:active:not(:disabled) {
-          transform: translateY(0);
-        }
-
-        .login-submit-btn:disabled {
+        .login7-btn-submit:disabled {
           opacity: 0.7;
           cursor: not-allowed;
         }
-
-        .login-submit-loading {
+        .login7-submit-loading {
           display: flex;
           align-items: center;
           justify-content: center;
           gap: 10px;
         }
-
-        .login-spinner {
-          animation: login-spin 0.8s linear infinite;
+        .login7-spinner {
+          animation: login7-spin 0.8s linear infinite;
         }
 
-        .login-footer {
+        .login7-sep {
           display: flex;
-          justify-content: space-between;
           align-items: center;
+          gap: 14px;
+          margin: 22px 0;
+          font-size: 11px;
+          color: #d1d5db;
+          text-transform: uppercase;
+          letter-spacing: 1px;
+        }
+        .login7-sep::before, .login7-sep::after {
+          content: '';
+          flex: 1;
+          height: 1px;
+          background: #e5e7eb;
+        }
+
+        .login7-btn-guest {
+          width: 100%;
+          padding: 12px;
+          background: white;
+          border: 1.5px solid #e5e7eb;
+          border-radius: 12px;
+          color: #6b7280;
+          font-size: 13px;
+          font-family: inherit;
+          cursor: pointer;
+          transition: all 0.2s;
+          text-align: center;
+          text-decoration: none;
+          display: block;
+          box-sizing: border-box;
+        }
+        .login7-btn-guest:hover {
+          border-color: #0d9488;
+          color: #0d9488;
+          background: #f0fdfa;
+        }
+
+        .login7-signup {
+          text-align: center;
           margin-top: 20px;
           font-size: 13px;
+          color: #9ca3af;
         }
-
-        .login-register-link {
-          color: var(--accent-500);
-          font-weight: 500;
+        .login7-signup a {
+          color: #0d9488;
+          font-weight: 600;
           text-decoration: none;
-          transition: color 0.2s;
         }
-
-        .login-register-link:hover {
-          color: var(--accent-600);
-        }
-
-        .login-forgot-link {
-          color: var(--text-muted);
-          text-decoration: none;
-          transition: color 0.2s;
-        }
-
-        .login-forgot-link:hover {
-          color: var(--text-secondary);
-        }
-
-        .login-copyright {
-          text-align: center;
-          color: var(--text-muted);
-          font-size: 12px;
-          margin-top: 28px;
-        }
+        .login7-signup a:hover { text-decoration: underline; }
 
         /* Responsive */
-        @media (min-width: 900px) {
-          .login-branding { display: flex !important; }
-          .login-mobile-logo { display: none; }
-        }
-
-        @media (max-width: 899px) {
-          .login-card {
-            padding: 28px 24px;
+        @media (max-width: 900px) {
+          .login7-visual { display: none; }
+          .login7-card {
+            width: 92%;
+            max-width: 420px;
+            min-height: auto;
+            border-radius: 20px;
           }
+          .login7-form-side { padding: 36px 28px; }
+          .login7-form-brand { display: none; }
+          .login7-mobile-logo { display: flex; }
         }
       `}</style>
     </div>
