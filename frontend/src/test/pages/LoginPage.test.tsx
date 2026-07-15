@@ -53,6 +53,21 @@ vi.mock('react-google-recaptcha', () => ({
   ),
 }));
 
+vi.mock('axios', () => ({
+  default: { isAxiosError: (err: unknown) => !!err && typeof err === 'object' && 'response' in err },
+  isAxiosError: (err: unknown) => !!err && typeof err === 'object' && 'response' in err,
+}));
+
+vi.mock('../../utils/error-sanitizer', () => ({
+  sanitizeError: (err: unknown) => {
+    if (err && typeof err === 'object' && 'response' in err) {
+      const r = (err as { response?: { data?: { error?: string } } }).response;
+      return r?.data?.error || String(err);
+    }
+    return String(err);
+  },
+}));
+
 function renderLoginPage() {
   return render(
     <BrowserRouter>
@@ -233,9 +248,10 @@ describe('LoginPage', () => {
     expect(screen.getByText('Regístrate aquí')).toHaveAttribute('href', '/register?tenant=test-tenant');
   });
 
-  it('does not show register link when no tenant param', () => {
+  it('shows register link without tenant param (links to /register)', () => {
     renderLoginPage();
-    expect(screen.queryByText('¿No tienes cuenta?')).not.toBeInTheDocument();
+    expect(screen.getByText('¿No tienes cuenta?')).toBeInTheDocument();
+    expect(screen.getByText('Regístrate aquí')).toHaveAttribute('href', '/register');
   });
 
   it('shows submitting state on button when logging in', async () => {
@@ -245,9 +261,9 @@ describe('LoginPage', () => {
     fireEvent.change(screen.getByPlaceholderText('••••••••'), { target: { value: 'pass' } });
     submitForm();
     await waitFor(() => {
-      expect(screen.getByText('Ingresando...')).toBeInTheDocument();
+      const btn = screen.getByRole('button', { name: /Ingresando/ });
+      expect(btn).toBeDisabled();
     });
-    expect(screen.getByText('Ingresando...')).toBeDisabled();
   });
 
   it('handles error with sanitized message when no data.error', async () => {
