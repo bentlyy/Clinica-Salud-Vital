@@ -54,7 +54,7 @@ export default function RegisterPage() {
       if (tenantId) body.tenant_id = tenantId;
       if (inviteToken) body.invite_token = inviteToken;
       await register(body);
-      navigate(tenantId ? `/login?tenant=${tenantId}` : '/login');
+      navigate(tenantId ? `/?openLogin=1&tenant=${tenantId}` : '/?openLogin=1');
     } catch (err) {
       setError(sanitizeError(err) || t('register.error'));
     } finally {
@@ -137,7 +137,7 @@ export default function RegisterPage() {
         </form>
 
         <p style={{ textAlign: 'center', marginTop: 20 }}>
-          {t('register.have_account')} <Link to="/login">{t('register.login_link_text')}</Link>
+          {t('register.have_account')} <Link to="/?openLogin=1">{t('register.login_link_text')}</Link>
         </p>
       </Card>
     </PageContainer>
