@@ -6,6 +6,7 @@ import AppLayout from './AppLayout';
 import LoadingState from '../components/LoadingState';
 
 const HomePage = lazy(() => import('../pages/HomePage'));
+const LandingSaaS = lazy(() => import('../pages/LandingSaaS'));
 const LoginPage = lazy(() => import('../pages/LoginPage'));
 const RegisterPage = lazy(() => import('../pages/RegisterPage'));
 const BookingPage = lazy(() => import('../pages/BookingPage'));
@@ -44,7 +45,7 @@ export default function AppRoutes() {
   return (
     <Suspense fallback={<LoadingState fullPage />}>
     <Routes>
-      <Route path="/" element={<AppLayout><HomePage /></AppLayout>} />
+      <Route path="/" element={<LandingSaaS />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
 
