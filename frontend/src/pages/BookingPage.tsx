@@ -52,7 +52,7 @@ const BookingPage = React.memo(function BookingPage() {
   }, [user]);
 
   useEffect(() => {
-    if (!user) navigate('/login');
+    if (!user) navigate('/?openLogin=1');
   }, [user, navigate]);
 
   const [loadingDoctors, setLoadingDoctors] = useState(true);

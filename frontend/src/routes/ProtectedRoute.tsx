@@ -28,7 +28,7 @@ const ProtectedRoute = React.memo(function ProtectedRoute({ children, role }: Pr
   const { user, loading } = useAuth();
   const { t } = useI18n();
   if (loading) return <LoadingState message={t?.('protected.loading_session') || 'Cargando sesión...'} />;
-  if (!user) return <Navigate to="/login" replace />;
+  if (!user) return <Navigate to="/?openLogin=1" replace />;
   if (role && !hasPermission(user.role as string, role)) return <Navigate to="/" replace />;
   return children;
 });
