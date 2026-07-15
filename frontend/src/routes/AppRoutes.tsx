@@ -45,8 +45,8 @@ export default function AppRoutes() {
     <Suspense fallback={<LoadingState fullPage />}>
     <Routes>
       <Route path="/" element={<AppLayout><HomePage /></AppLayout>} />
-      <Route path="/login" element={<AppLayout><LoginPage /></AppLayout>} />
-      <Route path="/register" element={<AppLayout><RegisterPage /></AppLayout>} />
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
 
       <Route path="/booking" element={<AppLayout><BookingPage /></AppLayout>} />
       <Route path="/specialists" element={<AppLayout><SpecialistsPage /></AppLayout>} />
