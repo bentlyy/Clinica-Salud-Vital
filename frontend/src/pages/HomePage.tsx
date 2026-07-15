@@ -71,7 +71,7 @@ const HomePage = React.memo(function HomePage() {
               {t('home.book_appointment')}
             </Button>
             {!user && (
-              <Link to="/login" className="ds-btn ds-btn--outline ds-btn--lg">{t('home.login')}</Link>
+              <Link to="/?openLogin=1" className="ds-btn ds-btn--outline ds-btn--lg">{t('home.login')}</Link>
             )}
           </div>
         </div>

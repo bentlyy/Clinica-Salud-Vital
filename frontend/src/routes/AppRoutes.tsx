@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import ProtectedRoute from './ProtectedRoute';
 import WithFeature from '../components/WithFeature';
 import AppLayout from './AppLayout';
@@ -7,7 +7,6 @@ import LoadingState from '../components/LoadingState';
 
 const HomePage = lazy(() => import('../pages/HomePage'));
 const LandingSaaS = lazy(() => import('../pages/LandingSaaS'));
-const LoginPage = lazy(() => import('../pages/LoginPage'));
 const RegisterPage = lazy(() => import('../pages/RegisterPage'));
 const BookingPage = lazy(() => import('../pages/BookingPage'));
 const SpecialistsPage = lazy(() => import('../pages/SpecialistsPage'));
@@ -46,7 +45,7 @@ export default function AppRoutes() {
     <Suspense fallback={<LoadingState fullPage />}>
     <Routes>
       <Route path="/" element={<LandingSaaS />} />
-      <Route path="/login" element={<LoginPage />} />
+      <Route path="/login" element={<Navigate to="/?openLogin=1" replace />} />
       <Route path="/register" element={<RegisterPage />} />
 
       <Route path="/booking" element={<AppLayout><BookingPage /></AppLayout>} />
