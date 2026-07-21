@@ -4,12 +4,9 @@ import { listTenants, updateTenant, getHealthScores } from '../api/super-admin';
 import { useI18n } from '../i18n/useI18n';
 import CreateTenantModal from '../components/CreateTenantModal';
 import Button from '../components/ui/Button';
-import { PageContainer, PageHeader } from '../components/ui/PageContainer';
-import Card from '../components/ui/Card';
 import Badge from '../components/ui/Badge';
-import { TextField } from '../components/ui/FormField';
-import DataTable from '../components/ui/DataTable';
 import Alert from '../components/ui/Alert';
+import './superadmin-theme.css';
 
 const FILTER_ALL = 'all';
 const FILTER_ACTIVE = 'active';
@@ -54,7 +51,7 @@ export default function SuperAdminTenantsPage() {
 
   useEffect(() => {
     const controller = new AbortController();
-    load(page, search, filter, { signal: controller.signal });
+    load(page, search, filter);
     return () => controller.abort();
   }, [page, filter, load]);
 
@@ -93,20 +90,37 @@ export default function SuperAdminTenantsPage() {
 
   const totalPages = Math.ceil(total / limit);
 
+  const getInitials = (name) => {
+    return (name || '').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+  };
+
+  const getTenantColor = (index) => {
+    const colors = [
+      'linear-gradient(135deg, #0d9488, #0f766e)',
+      'linear-gradient(135deg, #3b82f6, #2563eb)',
+      'linear-gradient(135deg, #8b5cf6, #7c3aed)',
+      'linear-gradient(135deg, #f97316, #ea580c)',
+      'linear-gradient(135deg, #6b7280, #4b5563)',
+    ];
+    return colors[index % colors.length];
+  };
+
   return (
-    <PageContainer maxWidth="xl">
-      <PageHeader
-        title={t('superadmin.manage_tenants')}
-        subtitle={`${total} tenants`}
-        actions={
-          <Button variant="primary" onClick={() => setShowCreateModal(true)}>
-            + {t('superadmin.create_tenant')}
-          </Button>
-        }
-      />
+    <div>
+      {/* Page Header */}
+      <div className="sa-page-header">
+        <div>
+          <h2>{t('superadmin.manage_tenants')}</h2>
+          <p>{total} tenants</p>
+        </div>
+        <Button variant="primary" onClick={() => setShowCreateModal(true)}>
+          + {t('superadmin.create_tenant')}
+        </Button>
+      </div>
 
       {error && <Alert variant="error" style={{ margin: '16px 0' }}>{error}</Alert>}
 
+      {/* Search and Filters */}
       <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 24, flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', gap: 8, flex: 1, minWidth: 200 }}>
           <input
@@ -143,67 +157,84 @@ export default function SuperAdminTenantsPage() {
         </div>
       ) : (
         <>
-          <div className="tenant-grid">
-            {tenants.map((tenant) => (
-              <div key={tenant.id} className="ds-card tenant-card">
-                <div className="tenant-card-header">
-                  <div className="tenant-card-title">
-                    <h3>{tenant.name}</h3>
-                    <code className="tenant-id">{tenant.id}</code>
-                  </div>
-                  <Badge variant={tenant.active ? 'success' : 'danger'}>
-                    {tenant.active ? t('superadmin.active_label') : t('superadmin.inactive')}
-                  </Badge>
-                </div>
-
-                <div className="tenant-card-domain">
-                  <span className="tenant-label">{t('superadmin.domain')}</span>
-                  <span>{tenant.domain || '-'}</span>
-                </div>
-
-                <div className="tenant-card-meta">
-                  <span>{t('superadmin.created')}: {tenant.created_at ? new Date(tenant.created_at).toLocaleDateString() : '-'}</span>
-                </div>
-
-                <div className="tenant-card-stats">
-                  <div className="stat-item">
-                    <span className="stat-value">{tenant.total_bookings ?? 0}</span>
-                    <span className="stat-label">{t('superadmin.bookings')}</span>
-                  </div>
-                  <div className="stat-item">
-                    <span className="stat-value">{tenant.total_users ?? 0}</span>
-                    <span className="stat-label">{t('superadmin.users')}</span>
-                  </div>
-                  <div className="stat-item">
-                    <span className="stat-value">{tenant.total_doctors ?? 0}</span>
-                    <span className="stat-label">{t('superadmin.doctors')}</span>
-                  </div>
-                  <div className="stat-item">
-                    <span className="stat-value" style={{ color: (() => {
-                      const s = healthScores[tenant.id] ?? 0;
-                      return s >= 80 ? 'var(--chart-green)' : s >= 50 ? '#fbbf24' : s >= 20 ? '#fb923c' : '#ef4444';
-                    })() }}>
-                      {healthScores[tenant.id] ?? '—'}
-                    </span>
-                    <span className="stat-label">Salud</span>
-                  </div>
-                </div>
-
-                <div className="tenant-card-actions">
-                  <Button variant="outline" size="sm" onClick={() => navigate(`/super-admin/tenants/${tenant.id}`)}>
-                    {t('superadmin.view')}
-                  </Button>
-                  <Button
-                    variant={tenant.active ? 'warning' : 'success'}
-                    size="sm"
-                    onClick={() => handleToggleActive(tenant)}
-                    disabled={togglingId === tenant.id}
-                  >
-                    {togglingId === tenant.id ? '...' : (tenant.active ? t('superadmin.inactive') : t('superadmin.active_label'))}
-                  </Button>
-                </div>
-              </div>
-            ))}
+          <div className="sa-card">
+            <div className="sa-table-container">
+              <table className="sa-table">
+                <thead>
+                  <tr>
+                    <th>Tenant</th>
+                    <th>Dominio</th>
+                    <th>Usuarios</th>
+                    <th>Doctores</th>
+                    <th>Citas</th>
+                    <th>Plan</th>
+                    <th>Salud</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {tenants.map((tenant, index) => {
+                    const score = healthScores[tenant.id] ?? null;
+                    const getScoreColor = (s: number) => s >= 80 ? 'var(--ds-success-500)' : s >= 50 ? '#fbbf24' : s >= 20 ? '#fb923c' : '#ef4444';
+                    return (
+                    <tr key={tenant.id}>
+                      <td>
+                        <div className="sa-tenant-name-cell">
+                          <div className="sa-tenant-logo" style={{ background: getTenantColor(index) }}>
+                            {getInitials(tenant.name)}
+                          </div>
+                          <div className="sa-tenant-name-text">
+                            <strong>{tenant.name}</strong>
+                          </div>
+                        </div>
+                      </td>
+                      <td>{tenant.domain || '-'}</td>
+                      <td>{Number(tenant.total_users ?? 0).toLocaleString()}</td>
+                      <td>{tenant.total_doctors ?? 0}</td>
+                      <td>{Number(tenant.total_bookings ?? 0).toLocaleString()}</td>
+                      <td>
+                        <span className={`sa-badge-plan ${tenant.plan === 'enterprise' ? 'sa-badge-enterprise' : tenant.plan === 'pro' ? 'sa-badge-pro' : 'sa-badge-basic'}`}>
+                          {tenant.plan || 'Basico'}
+                        </span>
+                      </td>
+                      <td>
+                        {score !== null ? (
+                          <span style={{ fontWeight: 700, color: getScoreColor(score) }}>{score}</span>
+                        ) : (
+                          <span style={{ color: 'var(--ds-text-tertiary)' }}>-</span>
+                        )}
+                      </td>
+                      <td>
+                        <span className={`sa-badge ${tenant.active ? 'sa-badge-active' : 'sa-badge-inactive'}`}>
+                          {tenant.active ? t('superadmin.active_label') : t('superadmin.inactive')}
+                        </span>
+                      </td>
+                      <td>
+                        <div style={{ display: 'flex', gap: 4 }}>
+                          <button
+                            className="sa-detail-back"
+                            title="Ver detalle"
+                            onClick={() => navigate(`/super-admin/tenants/${tenant.id}`)}
+                          >
+                            👁️
+                          </button>
+                          <button
+                            className="sa-detail-back"
+                            title={tenant.active ? 'Desactivar' : 'Reactivar'}
+                            onClick={() => handleToggleActive(tenant)}
+                            disabled={togglingId === tenant.id}
+                          >
+                            {togglingId === tenant.id ? '...' : (tenant.active ? '⛔' : '✅')}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
 
           {totalPages > 1 && (
@@ -227,6 +258,6 @@ export default function SuperAdminTenantsPage() {
         onClose={() => setShowCreateModal(false)}
         onCreated={handleCreated}
       />
-    </PageContainer>
+    </div>
   );
 }
