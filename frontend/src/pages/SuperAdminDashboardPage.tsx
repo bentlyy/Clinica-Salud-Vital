@@ -1,86 +1,39 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  AreaChart, Area, ComposedChart, Line, Legend, Cell
-} from 'recharts';
-import {
-  getDashboardAnalytics, getTopTenants, getRevenueAnalytics,
-  getGrowthAnalytics, getHealthScores, getOperations,
-  getChurn, getAlerts
+  getDashboardAnalytics, getHealthScores, getAlerts, getTopTenants, getRevenueAnalytics
 } from '../api/super-admin';
 import { extractList } from '../utils/extract-list';
-import { useI18n } from '../i18n/useI18n';
 import Button from '../components/ui/Button';
-import { PageContainer, PageHeader, PageSection } from '../components/ui/PageContainer';
-import Card from '../components/ui/Card';
-import Badge from '../components/ui/Badge';
-
-const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+import './superadmin-theme.css';
 
 interface KpiCardProps {
   label: string;
   value: string | number;
   delta?: number;
   icon: string;
-  color: string;
+  colorClass: string;
 }
 
-function KpiCard({ label, value, delta, icon, color }: KpiCardProps) {
+function KpiCard({ label, value, delta, icon, colorClass }: KpiCardProps) {
   return (
-    <Card variant="default" padding="md" style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-        <span style={{ fontSize: 18 }}>{icon}</span>
-        <span style={{ color: 'var(--ds-text-secondary)', fontSize: 'var(--ds-text-xs)', textTransform: 'uppercase', letterSpacing: '0.3px' }}>{label}</span>
+    <div className="sa-stat-card">
+      <div className="sa-stat-card-header">
+        <div className={`sa-stat-card-icon ${colorClass}`}>{icon}</div>
+        {delta !== undefined && (
+          <span className={`sa-stat-card-trend ${delta >= 0 ? 'up' : 'down'}`}>
+            {delta >= 0 ? '+' : ''}{delta}% este mes
+          </span>
+        )}
       </div>
-      <div style={{ fontSize: 26, fontWeight: 700, color }}>{value}</div>
-      {delta !== undefined && (
-        <div style={{ fontSize: 'var(--ds-text-xs)', color: delta >= 0 ? 'var(--ds-success-500)' : 'var(--ds-danger-500)' }}>
-          {delta >= 0 ? '↑' : '↓'} {Math.abs(delta)}% vs mes anterior
-        </div>
-      )}
-    </Card>
-  );
-}
-
-interface SectionCardProps {
-  title: string;
-  subtitle?: string;
-  children: React.ReactNode;
-  style?: React.CSSProperties;
-}
-
-function SectionCard({ title, subtitle, children, style }: SectionCardProps) {
-  return (
-    <Card padding="lg" style={{ marginBottom: 20, ...style }}>
-      <div style={{ marginBottom: 16 }}>
-        <h3 style={{ margin: 0, fontSize: 'var(--ds-text-lg)', fontWeight: 600 }}>{title}</h3>
-        {subtitle && <p style={{ margin: '2px 0 0', color: 'var(--ds-text-secondary)', fontSize: 'var(--ds-text-sm)' }}>{subtitle}</p>}
-      </div>
-      {children}
-    </Card>
-  );
-}
-
-function HealthBar({ score }: { score: number }) {
-  const getColor = (s: number) => {
-    if (s >= 80) return 'var(--chart-green)';
-    if (s >= 50) return '#fbbf24';
-    if (s >= 20) return '#fb923c';
-    return '#ef4444';
-  };
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%' }}>
-      <div style={{ flex: 1, height: 8, background: '#e5e7eb', borderRadius: 4, overflow: 'hidden' }}>
-        <div style={{ width: `${score}%`, height: '100%', background: getColor(score), borderRadius: 4, transition: 'width 0.5s' }} />
-      </div>
-      <span style={{ fontSize: 12, fontWeight: 600, color: getColor(score), minWidth: 28, textAlign: 'right' }}>{score}</span>
+      <div className="sa-stat-card-value">{value}</div>
+      <div className="sa-stat-card-label">{label}</div>
     </div>
   );
 }
 
 function AlertBadge({ severity }: { severity: string }) {
-  const config = {
+  const config: Record<string, { color: string; label: string }> = {
     critical: { color: '#ef4444', label: 'Crítica' },
     high: { color: '#fb923c', label: 'Alta' },
     medium: { color: '#fbbf24', label: 'Media' },
@@ -96,16 +49,11 @@ function AlertBadge({ severity }: { severity: string }) {
 }
 
 export default function SuperAdminDashboardPage() {
-  const { t } = useI18n();
-  const [activeSection, setActiveSection] = useState<string>('resumen');
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState(true);
   const [dashboard, setDashboard] = useState<Record<string, unknown> | null>(null);
   const [healthScores, setHealthScores] = useState<Array<Record<string, unknown>>>([]);
-  const [operations, setOperations] = useState<Record<string, unknown> | null>(null);
-  const [churn, setChurn] = useState<Record<string, unknown> | null>(null);
   const [alerts, setAlerts] = useState<Array<Record<string, unknown>>>([]);
   const [topTenants, setTopTenants] = useState<Array<Record<string, unknown>>>([]);
-  const [growth, setGrowth] = useState<Array<Record<string, unknown>>>([]);
   const [revenue, setRevenue] = useState<Array<Record<string, unknown>>>([]);
 
   useEffect(() => {
@@ -113,391 +61,169 @@ export default function SuperAdminDashboardPage() {
       const results = await Promise.allSettled([
         getDashboardAnalytics(),
         getHealthScores(),
-        getOperations(6),
-        getChurn(12),
         getAlerts(),
-        getTopTenants(20, 'bookings'),
-        getGrowthAnalytics(12),
+        getTopTenants(10, 'bookings'),
         getRevenueAnalytics(12),
       ]);
-
-      const [dashRes, healthRes, opsRes, churnRes, alertsRes, topRes, growRes, revRes] = results;
-
+      const [dashRes, healthRes, alertsRes, topRes, revRes] = results;
       if (dashRes.status === 'fulfilled') setDashboard(dashRes.value.data?.data ?? dashRes.value.data ?? dashRes.value);
       if (healthRes.status === 'fulfilled') setHealthScores(extractList(healthRes.value));
-      if (opsRes.status === 'fulfilled') setOperations(opsRes.value.data?.data ?? opsRes.value.data ?? opsRes.value);
-      if (churnRes.status === 'fulfilled') setChurn(churnRes.value.data?.data ?? churnRes.value.data ?? churnRes.value);
       if (alertsRes.status === 'fulfilled') setAlerts(extractList(alertsRes.value));
       if (topRes.status === 'fulfilled') setTopTenants(extractList(topRes.value));
-      if (growRes.status === 'fulfilled') setGrowth(extractList(growRes.value));
       if (revRes.status === 'fulfilled') setRevenue(extractList(revRes.value));
-
       setLoading(false);
     };
     load();
   }, []);
 
   const d = dashboard || {};
-  const churnData = churn || {};
-  const ops = operations || {};
 
   const revenueLast = revenue.length >= 2 ? revenue[revenue.length - 1] : null;
   const revenuePrev = revenue.length >= 2 ? revenue[revenue.length - 2] : null;
-
-  // Crecimiento mensual de tenants
-  const prevMonthTenants = growth.length >= 2 ? growth[growth.length - 2]?.new_tenants || 0 : 0;
-  const currMonthTenants = growth.length >= 1 ? growth[growth.length - 1]?.new_tenants || 0 : 0;
-  const growthPct = prevMonthTenants > 0 ? Math.round(((currMonthTenants - prevMonthTenants) / prevMonthTenants) * 100) : 0;
-
-  // Merge growth + revenue para composed chart
-  const combinedGrowth = growth.map((g, i) => ({
-    ...g,
-    revenue: revenue[i]?.revenue ? Number(revenue[i].revenue) : undefined,
-  }));
+  const revenueTrend = revenuePrev && Number(revenuePrev.revenue) > 0
+    ? Math.round(((Number(revenueLast?.revenue || 0) - Number(revenuePrev.revenue)) / Number(revenuePrev.revenue)) * 100)
+    : 0;
 
   if (loading) {
     return (
-      <PageContainer maxWidth="xl" style={{ textAlign: 'center', padding: 80 }}>
-        <div className="ds-loading-spinner" style={{ margin: '0 auto 16px', width: 36, height: 36, border: '3px solid var(--ds-border)', borderTopColor: 'var(--ds-primary-500)', borderRadius: '50%', animation: 'ds-spin 0.8s linear infinite' }} />
-        <p style={{ color: 'var(--ds-text-secondary)' }}>Cargando dashboard...</p>
-      </PageContainer>
+      <div style={{ textAlign: 'center', padding: 80 }}>
+        <div style={{ margin: '0 auto 16px', width: 36, height: 36, border: '3px solid var(--ds-border)', borderTopColor: 'var(--ds-primary-500)', borderRadius: '50%', animation: 'ds-spin 0.8s linear infinite' }} />
+        <p style={{ color: 'var(--ds-text-secondary)' }}>Cargando panel...</p>
+      </div>
     );
   }
 
-  const sections = [
-    { key: 'resumen', label: 'Resumen' },
-    { key: 'clinicas', label: 'Clínicas' },
-    { key: 'salud', label: 'Salud' },
-    { key: 'alertas', label: `Alertas${alerts.length ? ` (${alerts.length})` : ''}` },
-    { key: 'operacion', label: 'Operación' },
-    { key: 'facturacion', label: 'Facturación' },
-  ];
-
   return (
-    <PageContainer maxWidth="xl">
+    <div>
       {/* Header */}
-      <PageHeader
-        title="Panel de Control"
-        subtitle={`Visión general de la plataforma SaaS — ${d.active_tenants || 0} clínicas activas`}
-        actions={
-          <>
-            <Link to="/super-admin/tenants"><Button variant="outline" size="sm">Gestionar Clínicas</Button></Link>
-            <Link to="/super-admin/tenants?new=1" onClick={(e) => { e.preventDefault(); window.location.href = '/super-admin/tenants'; }}>
-              <Button variant="primary" size="sm">+ Nueva Clínica</Button>
-            </Link>
-          </>
-        }
-      />
-
-      {/* Navegación por pestañas */}
-      <div style={{
-        display: 'flex', gap: 2, marginBottom: 24, borderBottom: '2px solid var(--ds-border)',
-        overflowX: 'auto', flexWrap: 'nowrap',
-      }}>
-        {sections.map((s) => (
-          <button key={s.key} onClick={() => setActiveSection(s.key)}
-            style={{
-              padding: '10px 18px', border: 'none', background: 'none', cursor: 'pointer',
-              fontSize: 'var(--ds-text-sm)', fontWeight: activeSection === s.key ? 'var(--ds-font-semibold)' : 'var(--ds-font-normal)',
-              color: activeSection === s.key ? 'var(--ds-text-primary)' : 'var(--ds-text-tertiary)',
-              borderBottom: activeSection === s.key ? '2px solid var(--ds-primary-500)' : '2px solid transparent',
-              marginBottom: -2, whiteSpace: 'nowrap', transition: 'color 0.15s',
-            }}>
-            {s.label}
-          </button>
-        ))}
+      <div className="sa-page-header">
+        <div>
+          <h2>Panel Super Administrador</h2>
+          <p>Vision general de la plataforma — {d.active_tenants || 0} clinicas activas</p>
+        </div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <Link to="/super-admin/analytics"><Button variant="outline" size="sm">Ver Analiticas</Button></Link>
+          <Link to="/super-admin/tenants?new=1" onClick={(e) => { e.preventDefault(); window.location.href = '/super-admin/tenants'; }}>
+            <Button variant="primary" size="sm">+ Nueva Clinica</Button>
+          </Link>
+        </div>
       </div>
 
-      {/* === SECCIÓN: RESUMEN === */}
-      {activeSection === 'resumen' && (
-        <>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12, marginBottom: 20 }}>
-            <KpiCard label="Clínicas activas" value={d.active_tenants ?? 0} icon="🏢" color="var(--chart-blue)"
-              delta={growthPct} />
-            <KpiCard label="Nuevas este mes" value={d.new_tenants_this_month ?? 0} icon="✨" color="var(--chart-green)" />
-            <KpiCard label="Pacientes activos" value={d.active_patients ?? 0} icon="👥" color="var(--chart-purple)" />
-            <KpiCard label="Citas realizadas" value={d.confirmed_bookings ?? 0} icon="📅" color="var(--chart-orange)"
-              delta={(() => {
-                const g = growth;
-                if (g.length < 2) return undefined;
-                const curr = g[g.length - 1]?.new_bookings || 0;
-                const prev = g[g.length - 2]?.new_bookings || 0;
-                return prev > 0 ? Math.round(((curr - prev) / prev) * 100) : 0;
-              })()} />
-            <KpiCard label="MRR" value={`$${Number(d.mrr || 0).toLocaleString()}`} icon="💰" color="var(--chart-green)"
-              delta={(() => {
-                if (!revenueLast || !revenuePrev) return undefined;
-                const curr = Number(revenueLast.revenue || 0);
-                const prev = Number(revenuePrev.revenue || 0);
-                return prev > 0 ? Math.round(((curr - prev) / prev) * 100) : 0;
-              })()} />
-            <KpiCard label="Retención anual" value={churnData.annual_retention != null ? `${churnData.annual_retention}%` : '—'}
-              icon="🛡️" color="var(--chart-teal, #14b8a6)" />
-          </div>
+      {/* KPI Cards */}
+      <div className="sa-stats-grid">
+        <KpiCard label="Clinicas Activas" value={d.active_tenants ?? 0} icon="🏢" colorClass="teal" />
+        <KpiCard label="Usuarios Totales" value={Number(d.active_patients ?? 0).toLocaleString()} icon="👥" colorClass="blue" />
+        <KpiCard label="Doctores" value={d.confirmed_doctors ?? 0} icon="🩺" colorClass="green" />
+        <KpiCard label="Ingresos Mensuales" value={`$${Number(revenueLast?.revenue || d.mrr || 0).toLocaleString()}`} icon="💰" colorClass="orange" delta={revenueTrend} />
+      </div>
 
-          {/* Gráfico mixto: Crecimiento SaaS */}
-          <SectionCard title="Crecimiento Global" subtitle="Nuevos tenants, pacientes activos e ingresos mensuales">
-            {combinedGrowth.length > 0 ? (
-              <ResponsiveContainer width="100%" height={320}>
-                <ComposedChart data={combinedGrowth}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--ds-border)" />
-                  <XAxis dataKey="month" tick={{ fontSize: 11, fill: 'var(--ds-text-secondary)' }}
-                    tickFormatter={(m) => { const p = m.split('-'); return months[parseInt(p[1]) - 1] || m; }} />
-                  <YAxis yAxisId="left" tick={{ fontSize: 11, fill: 'var(--ds-text-secondary)' }} />
-                  <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11, fill: 'var(--ds-text-secondary)' }}
-                    tickFormatter={(v) => `$${v}`} />
-                  <Tooltip />
-                  <Legend />
-                  <Bar yAxisId="left" dataKey="new_tenants" fill="var(--chart-blue)" name="Nuevos tenants" radius={[2, 2, 0, 0]} />
-                  <Area yAxisId="left" dataKey="new_users" fill="var(--chart-purple)" stroke="var(--chart-purple)"
-                    fillOpacity={0.1} name="Nuevos usuarios" />
-                  <Line yAxisId="right" type="monotone" dataKey="revenue" stroke="var(--chart-green)" strokeWidth={2}
-                    name="Ingresos ($)" dot={false} />
-                </ComposedChart>
-              </ResponsiveContainer>
-            ) : (
-              <p style={{ color: 'var(--ds-text-tertiary)', textAlign: 'center', padding: 40 }}>Sin datos de crecimiento</p>
-            )}
-          </SectionCard>
-        </>
-      )}
-
-      {/* === SECCIÓN: CLÍNICAS === */}
-      {activeSection === 'clinicas' && (
-        <SectionCard title="Comparativa de Clínicas"
-          subtitle="Ranking completo con métricas clave y Health Score">
-          {topTenants.length > 0 ? (
-            <div className="ds-table-wrapper">
-              <table className="ds-table">
-                <thead>
-                  <tr style={{ borderBottom: '2px solid var(--ds-border)' }}>
-                    <th style={{ textAlign: 'left', padding: '10px 8px', fontWeight: 600 }}>#</th>
-                    <th style={{ textAlign: 'left', padding: '10px 8px', fontWeight: 600 }}>Clínica</th>
-                    <th style={{ textAlign: 'center', padding: '10px 8px', fontWeight: 600 }}>Pacientes</th>
-                    <th style={{ textAlign: 'center', padding: '10px 8px', fontWeight: 600 }}>Citas</th>
-                    <th style={{ textAlign: 'center', padding: '10px 8px', fontWeight: 600 }}>Ingresos</th>
-                    <th style={{ textAlign: 'center', padding: '10px 8px', fontWeight: 600 }}>Salud</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {topTenants.slice(0, 20).map((tenant, i) => {
-                    const health = healthScores.find((h) => h.id === tenant.id);
-                    const score = health?.health_score ?? 0;
-                    const getScoreColor = (s) => s >= 80 ? 'var(--chart-green)' : s >= 50 ? '#fbbf24' : s >= 20 ? '#fb923c' : '#ef4444';
-                    return (
-                      <tr key={tenant.id} style={{ borderBottom: '1px solid var(--ds-border)', cursor: 'pointer' }}
-                        onClick={() => window.location.href = `/super-admin/tenants/${tenant.id}`}>
-                        <td style={{ padding: '10px 8px', color: 'var(--ds-text-secondary)' }}>{i + 1}</td>
-                        <td style={{ padding: '10px 8px', fontWeight: 500 }}>
-                          {tenant.name}
-                          {!tenant.active && <span style={{ marginLeft: 6, fontSize: 10, color: '#ef4444' }}>(inactiva)</span>}
-                        </td>
-                        <td style={{ padding: '10px 8px', textAlign: 'center' }}>{tenant.total_users ?? 0}</td>
-                        <td style={{ padding: '10px 8px', textAlign: 'center' }}>{tenant.total_bookings ?? 0}</td>
-                        <td style={{ padding: '10px 8px', textAlign: 'center' }}>
-                          ${Number(tenant.metric_value ?? 0).toLocaleString()}
-                        </td>
-                        <td style={{ padding: '10px 8px', textAlign: 'center' }}>
-                          <span style={{ fontWeight: 700, color: getScoreColor(score) }}>{score}</span>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+      {/* Two-column layout: Alerts + Top Clinics */}
+      <div className="sa-grid-2">
+        {/* Alerts */}
+        <div className="sa-card">
+          <div className="sa-card-header">
+            <div>
+              <h2>Alertas</h2>
+              <p style={{ fontSize: 12, color: 'var(--ds-text-secondary)', margin: '2px 0 0' }}>
+                {alerts.length} alertas activas
+              </p>
             </div>
-          ) : (
-            <p style={{ color: 'var(--ds-text-tertiary)', textAlign: 'center', padding: 40 }}>No hay clínicas registradas</p>
-          )}
-        </SectionCard>
-      )}
-
-      {/* === SECCIÓN: SALUD === */}
-      {activeSection === 'salud' && (
-        <SectionCard title="Estado de Salud por Clínica"
-          subtitle="Health Score basado en actividad, tendencia, pacientes, cancelaciones y módulos usados — escala 0 a 100">
-          <details style={{ marginBottom: 12, fontSize: 12, color: 'var(--ds-text-tertiary)', cursor: 'pointer' }}>
-            <summary style={{ fontWeight: 500 }}>¿Cómo se calcula?</summary>
-            <p style={{ marginTop: 8, lineHeight: 1.6 }}>
-              Cada clínica recibe un puntaje de 0 a 100 basado en 5 factores con igual peso (20 pts c/u):
-            </p>
-            <ul style={{ paddingLeft: 20, marginTop: 4, lineHeight: 1.8 }}>
-              <li><strong>Actividad</strong> — días desde la última reserva. A más días, menor puntaje.</li>
-              <li><strong>Tendencia</strong> — compara reservas del último mes vs el mes anterior.</li>
-              <li><strong>Pacientes</strong> — cantidad de pacientes distintos en los últimos 30 días.</li>
-              <li><strong>Cancelaciones</strong> — tasa de cancelación sobre el total de reservas.</li>
-              <li><strong>Módulos</strong> — cuántos módulos usa la clínica (historias, laboratorio, reservas, facturación).</li>
-            </ul>
-            <p style={{ marginTop: 4 }}>Rangos: <strong style={{ color: 'var(--chart-green)' }}>Saludable</strong> (80-100) · <strong style={{ color: '#fbbf24' }}>Atención</strong> (50-79) · <strong style={{ color: '#fb923c' }}>Riesgo</strong> (20-49) · <strong style={{ color: '#ef4444' }}>Crítico</strong> (&lt;20)</p>
-          </details>
-          {healthScores.length > 0 ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              {healthScores.map((h) => {
-                const score = Number(h.health_score ?? 0);
-                const getColor = (s) => s >= 80 ? 'var(--chart-green)' : s >= 50 ? '#fbbf24' : s >= 20 ? '#fb923c' : '#ef4444';
-                const getLabel = (s) => s >= 80 ? 'Saludable' : s >= 50 ? 'Atención' : s >= 20 ? 'Riesgo' : 'Crítico';
-                return (
-                  <div key={h.id} style={{
-                    display: 'flex', alignItems: 'center', gap: 12,
-                    padding: '8px 12px', borderRadius: 8,
-                    background: 'var(--ds-surface)', border: '1px solid var(--ds-border)',
+            <Link to="/super-admin/analytics">
+              <Button variant="outline" size="sm">Ver todas</Button>
+            </Link>
+          </div>
+          <div className="sa-card-body">
+            {alerts.length > 0 ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {alerts.slice(0, 5).map((alert, i) => (
+                  <div key={i} style={{
+                    display: 'flex', alignItems: 'center', gap: 10,
+                    padding: '10px 14px', borderRadius: 8,
+                    background: 'var(--ds-surface-hover)', border: '1px solid var(--ds-border)',
                   }}>
-                    <div style={{ flex: '0 0 160px', fontWeight: 500, fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {h.name}
+                    <AlertBadge severity={alert.severity} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <strong style={{ fontSize: 13, display: 'block' }}>{alert.tenant_name}</strong>
+                      <span style={{ color: 'var(--ds-text-secondary)', fontSize: 12 }}>{alert.message}</span>
                     </div>
-                    <div style={{ flex: 1 }}>
-                      <HealthBar score={score} />
-                    </div>
-                    <div style={{ flex: '0 0 60px', textAlign: 'center', fontSize: 11, color: getColor(score), fontWeight: 600 }}>
-                      {getLabel(score)}
-                    </div>
-                    <Link to={`/super-admin/tenants/${h.id}`} style={{ flexShrink: 0 }}><Button variant="outline" size="sm">Ver</Button></Link>
+                    <Link to={`/super-admin/tenants/${alert.tenant_id}`} style={{ flexShrink: 0 }}>
+                      <Button variant="outline" size="sm">Ir</Button>
+                    </Link>
                   </div>
-                );
-              })}
-            </div>
-          ) : (
-            <p style={{ color: 'var(--ds-text-tertiary)', textAlign: 'center', padding: 40 }}>No hay datos de salud</p>
-          )}
-        </SectionCard>
-      )}
-
-      {/* === SECCIÓN: ALERTAS === */}
-      {activeSection === 'alertas' && (
-        <SectionCard title="Alertas Inteligentes" subtitle="Detectadas automáticamente según actividad de cada clínica">
-          {alerts.length > 0 ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {alerts.slice(0, 20).map((alert, i) => (
-                <div key={i} style={{
-                  display: 'flex', alignItems: 'center', gap: 12,
-                  padding: '10px 14px', borderRadius: 8,
-                  background: 'var(--ds-surface)', border: '1px solid var(--ds-border)',
-                }}>
-                  <AlertBadge severity={alert.severity} />
-                  <div style={{ flex: 1 }}>
-                    <strong style={{ fontSize: 13 }}>{alert.tenant_name}</strong>
-                    <span style={{ color: 'var(--ds-text-secondary)', fontSize: 12, marginLeft: 8 }}>{alert.message}</span>
-                  </div>
-                  <Link to={`/super-admin/tenants/${alert.tenant_id}`}><Button variant="outline" size="sm">Ir</Button></Link>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div style={{ textAlign: 'center', padding: 40 }}>
-              <span style={{ fontSize: 32 }}>✅</span>
-              <p style={{ color: 'var(--ds-text-tertiary)', marginTop: 8 }}>No hay alertas activas — todas las clínicas están saludables</p>
-            </div>
-          )}
-        </SectionCard>
-      )}
-
-      {/* === SECCIÓN: OPERACIÓN === */}
-      {activeSection === 'operacion' && (
-        <>
-          {/* Métricas operativas */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12, marginBottom: 20 }}>
-            <Card padding="md" style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: 24, fontWeight: 700, color: 'var(--chart-green)' }}>{ops.cancellation_rate || 0}%</div>
-              <div style={{ fontSize: 11, color: 'var(--ds-text-secondary)' }}>Tasa cancelación</div>
-            </Card>
-            <Card padding="md" style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: 24, fontWeight: 700, color: 'var(--chart-purple)' }}>{ops.no_show_rate || 0}%</div>
-              <div style={{ fontSize: 11, color: 'var(--ds-text-secondary)' }}>No-show rate</div>
-            </Card>
-            <Card padding="md" style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: 24, fontWeight: 700, color: 'var(--chart-blue)' }}>{ops.avg_lead_days || 0}</div>
-              <div style={{ fontSize: 11, color: 'var(--ds-text-secondary)' }}>Días prom. reserva→atención</div>
-            </Card>
-            <Card padding="md" style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: 24, fontWeight: 700, color: 'var(--chart-orange)' }}>{ops.total_bookings_period || 0}</div>
-              <div style={{ fontSize: 11, color: 'var(--ds-text-secondary)' }}>Citas (últimos 6m)</div>
-            </Card>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-            <SectionCard title="Especialidades más usadas">
-              {ops.specialties?.length > 0 ? (
-                <ResponsiveContainer width="100%" height={280}>
-                  <BarChart data={ops.specialties.slice(0, 8)} layout="vertical">
-                    <CartesianGrid strokeDasharray="3 3" stroke="var(--ds-border)" />
-                    <XAxis type="number" tick={{ fontSize: 11, fill: 'var(--ds-text-secondary)' }} />
-                    <YAxis dataKey="name" type="category" width={120} tick={{ fontSize: 11, fill: 'var(--ds-text-secondary)' }} />
-                    <Tooltip />
-                    <Bar dataKey="total" fill="var(--chart-blue)" radius={[0, 4, 4, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              ) : (
-                <p style={{ color: 'var(--ds-text-tertiary)', textAlign: 'center', padding: 40 }}>Sin datos</p>
-              )}
-            </SectionCard>
-
-            <SectionCard title="Top 10 Médicos por citas">
-              {ops.top_doctors?.length > 0 ? (
-                <ResponsiveContainer width="100%" height={280}>
-                  <BarChart data={ops.top_doctors} layout="vertical">
-                    <CartesianGrid strokeDasharray="3 3" stroke="var(--ds-border)" />
-                    <XAxis type="number" tick={{ fontSize: 11, fill: 'var(--ds-text-secondary)' }} />
-                    <YAxis dataKey="name" type="category" width={120} tick={{ fontSize: 11, fill: 'var(--ds-text-secondary)' }} />
-                    <Tooltip />
-                    <Bar dataKey="total_bookings" fill="var(--chart-purple)" radius={[0, 4, 4, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              ) : (
-                <p style={{ color: 'var(--ds-text-tertiary)', textAlign: 'center', padding: 40 }}>Sin datos</p>
-              )}
-            </SectionCard>
-          </div>
-        </>
-      )}
-
-      {/* === SECCIÓN: FACTURACIÓN === */}
-      {activeSection === 'facturacion' && (
-        <>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12, marginBottom: 20 }}>
-            <Card padding="md" style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--chart-green)' }}>
-                ${Number(churnData.mrr || d.mrr || 0).toLocaleString()}
+                ))}
               </div>
-              <div style={{ fontSize: 11, color: 'var(--ds-text-secondary)' }}>MRR</div>
-            </Card>
-            <Card padding="md" style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--chart-blue)' }}>
-                ${Number(churnData.arr || 0).toLocaleString()}
-              </div>
-              <div style={{ fontSize: 11, color: 'var(--ds-text-secondary)' }}>ARR</div>
-            </Card>
-            <Card padding="md" style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: 22, fontWeight: 700, color: churnData.churn_rate > 5 ? '#ef4444' : 'var(--chart-green)' }}>
-                {churnData.churn_rate || 0}%
-              </div>
-              <div style={{ fontSize: 11, color: 'var(--ds-text-secondary)' }}>Churn mensual</div>
-            </Card>
-            <Card padding="md" style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--chart-purple)' }}>
-                {churnData.annual_retention || 0}%
-              </div>
-              <div style={{ fontSize: 11, color: 'var(--ds-text-secondary)' }}>Retención anual</div>
-            </Card>
-          </div>
-
-          <SectionCard title="Evolución MRR" subtitle="Ingresos mensuales recurrentes últimos 12 meses">
-            {revenue.length > 0 ? (
-              <ResponsiveContainer width="100%" height={300}>
-                <AreaChart data={revenue}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--ds-border)" />
-                  <XAxis dataKey="month" tick={{ fontSize: 11, fill: 'var(--ds-text-secondary)' }}
-                    tickFormatter={(m) => { const p = m.split('-'); return months[parseInt(p[1]) - 1] || m; }} />
-                  <YAxis tick={{ fontSize: 11, fill: 'var(--ds-text-secondary)' }} tickFormatter={(v) => `$${v}`} />
-                  <Tooltip formatter={(value) => [`$${Number(value).toLocaleString()}`, 'Ingresos']} />
-                  <Area type="monotone" dataKey="revenue" stroke="var(--chart-green)" fill="var(--chart-green)" fillOpacity={0.15} strokeWidth={2} />
-                </AreaChart>
-              </ResponsiveContainer>
             ) : (
-              <p style={{ color: 'var(--ds-text-tertiary)', textAlign: 'center', padding: 40 }}>Sin datos financieros</p>
+              <div style={{ textAlign: 'center', padding: 30 }}>
+                <span style={{ fontSize: 28 }}>✅</span>
+                <p style={{ color: 'var(--ds-text-tertiary)', marginTop: 8, fontSize: 13 }}>Todas las clinicas saludables</p>
+              </div>
             )}
-          </SectionCard>
-        </>
-      )}
-    </PageContainer>
+          </div>
+        </div>
+
+        {/* Top Clinics */}
+        <div className="sa-card">
+          <div className="sa-card-header">
+            <div>
+              <h2>Top Clinicas</h2>
+              <p style={{ fontSize: 12, color: 'var(--ds-text-secondary)', margin: '2px 0 0' }}>Por cantidad de citas</p>
+            </div>
+            <Link to="/super-admin/tenants">
+              <Button variant="outline" size="sm">Ver todas</Button>
+            </Link>
+          </div>
+          <div className="sa-card-body">
+            {topTenants.length > 0 ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                {topTenants.slice(0, 5).map((tenant, i) => {
+                  const health = healthScores.find((h) => h.id === tenant.id);
+                  const score = health?.health_score ?? 0;
+                  const getScoreColor = (s: number) => s >= 80 ? 'var(--ds-success-500)' : s >= 50 ? '#fbbf24' : '#fb923c';
+                  const initials = (tenant.name || '').split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase();
+                  return (
+                    <div key={tenant.id} style={{
+                      display: 'flex', alignItems: 'center', gap: 12,
+                      padding: '10px 14px', borderRadius: 8,
+                      background: 'var(--ds-surface-hover)', border: '1px solid var(--ds-border)',
+                      cursor: 'pointer',
+                    }} onClick={() => window.location.href = `/super-admin/tenants/${tenant.id}`}>
+                      <div style={{ fontSize: 12, color: 'var(--ds-text-tertiary)', width: 16, textAlign: 'center' }}>{i + 1}</div>
+                      <div className="sa-tenant-logo" style={{ width: 32, height: 32, fontSize: 12, background: `linear-gradient(135deg, var(--ds-primary-500), var(--ds-primary-700))` }}>
+                        {initials}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontWeight: 600, fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tenant.name}</div>
+                        <div style={{ fontSize: 11, color: 'var(--ds-text-secondary)' }}>{tenant.total_bookings ?? 0} citas</div>
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontWeight: 700, fontSize: 13, color: getScoreColor(score) }}>{score}</div>
+                        <div style={{ fontSize: 10, color: 'var(--ds-text-tertiary)' }}>salud</div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <p style={{ color: 'var(--ds-text-tertiary)', textAlign: 'center', padding: 30 }}>No hay clinicas</p>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Quick actions bar */}
+      <div className="sa-card" style={{ marginTop: 20 }}>
+        <div className="sa-card-body" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+          <div style={{ fontSize: 13, color: 'var(--ds-text-secondary)' }}>
+            Accesos rapidos
+          </div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <Link to="/super-admin/tenants"><Button variant="outline" size="sm">🏢 Gestionar Clinicas</Button></Link>
+            <Link to="/super-admin/users"><Button variant="outline" size="sm">👥 Gestionar Usuarios</Button></Link>
+            <Link to="/super-admin/analytics"><Button variant="outline" size="sm">📈 Ver Analiticas</Button></Link>
+            <Link to="/super-admin/demo-data"><Button variant="outline" size="sm">🎯 Datos Demo</Button></Link>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
