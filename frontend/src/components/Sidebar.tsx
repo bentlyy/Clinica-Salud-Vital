@@ -57,10 +57,12 @@ const sections: Record<string, { label: string; items: NavItem[] }> = {
     ],
   },
   superadmin: {
-    label: 'Principal',
+    label: 'Plataforma',
     items: [
-      { icon: '📊', label: 'Dashboard', path: '/super-admin' },
-      { icon: '🏢', label: 'Tenants', path: '/super-admin/tenants' },
+      { icon: '📊', label: 'Panel Principal', path: '/super-admin' },
+      { icon: '🏢', label: 'Clínicas', path: '/super-admin/tenants' },
+      { icon: '👥', label: 'Usuarios', path: '/super-admin/users' },
+      { icon: '📈', label: 'Analíticas', path: '/super-admin/analytics' },
       { icon: '🎯', label: 'Datos Demo', path: '/super-admin/demo-data' },
     ],
   },
@@ -95,7 +97,7 @@ export default function Sidebar() {
           {roleSections.items.map((item) => (
             <a
               key={item.path}
-              className={`ds-nav-item${location.pathname === item.path ? ' active' : ''}`}
+              className={`ds-nav-item${location.pathname === item.path || (item.path !== '/' && location.pathname.startsWith(item.path)) ? ' active' : ''}`}
               onClick={() => navigate(item.path)}
             >
               <span className="ds-nav-icon">{item.icon}</span>
