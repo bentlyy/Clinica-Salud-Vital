@@ -111,6 +111,35 @@ export const updatePrescription = async (id: string | number, data: Prescription
   return result.rows[0];
 };
 
+export const getAllPrescriptions = async (tenantId: string) => {
+  const result = await pool.query(`
+    SELECT cr.id AS clinical_record_id, cr.patient_id, cr.doctor_id,
+           u.name AS patient_name,
+           d.name AS doctor_name,
+           cr.created_at,
+           COALESCE(
+             json_agg(
+               json_build_object(
+                 'name', p.medication,
+                 'dosage', p.dosage,
+                 'frequency', p.frequency,
+                 'duration', p.duration,
+                 'instructions', p.instructions
+               )
+             ) FILTER (WHERE p.id IS NOT NULL),
+             '[]'
+           ) AS medications
+    FROM clinical_records cr
+    JOIN users u ON cr.patient_id = u.id
+    JOIN doctors d ON cr.doctor_id = d.id
+    LEFT JOIN prescriptions p ON p.clinical_record_id = cr.id AND p.tenant_id = $1
+    WHERE cr.tenant_id = $1
+    GROUP BY cr.id, u.name, d.name, cr.created_at
+    ORDER BY cr.created_at DESC
+  `, [tenantId]);
+  return result.rows;
+};
+
 export const deletePrescription = async (id: string | number, doctor_id: number, tenantId: string) => {
   const result = await pool.query(`
     DELETE FROM prescriptions p

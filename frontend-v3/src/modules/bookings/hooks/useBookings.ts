@@ -1,0 +1,94 @@
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { bookingService } from '../services/booking.service';
+import type { BookingListParams, CreateBookingInput } from '../types/booking.types';
+import toast from 'react-hot-toast';
+
+export const bookingKeys = {
+  all: ['bookings'] as const,
+  myBookings: (params?: BookingListParams) => ['bookings', 'me', params] as const,
+  doctorBookings: (params?: BookingListParams) => ['bookings', 'doctor', params] as const,
+  allBookings: (params?: BookingListParams) => ['bookings', 'all', params] as const,
+  availableSlots: (doctorId: number, date: string) =>
+    ['bookings', 'available-slots', doctorId, date] as const,
+  dailyDensity: (start: string, end: string) =>
+    ['bookings', 'daily-density', start, end] as const,
+};
+
+const STALE_TIME = 30_000;
+
+export function useMyBookings(params?: BookingListParams) {
+  return useQuery({
+    queryKey: bookingKeys.myBookings(params),
+    queryFn: () => bookingService.getMyBookings(params),
+    staleTime: STALE_TIME,
+    enabled: !!params,
+    placeholderData: (prev) => prev,
+  });
+}
+
+export function useDoctorBookings(params?: BookingListParams) {
+  return useQuery({
+    queryKey: bookingKeys.doctorBookings(params),
+    queryFn: () => bookingService.getDoctorBookings(params),
+    staleTime: STALE_TIME,
+    enabled: !!params,
+    placeholderData: (prev) => prev,
+  });
+}
+
+export function useAllBookings(params?: BookingListParams) {
+  return useQuery({
+    queryKey: bookingKeys.allBookings(params),
+    queryFn: () => bookingService.getAllBookings(params),
+    staleTime: STALE_TIME,
+    enabled: !!params,
+    placeholderData: (prev) => prev,
+  });
+}
+
+export function useCreateBooking() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: CreateBookingInput) => bookingService.create(data),
+    onSuccess: () => {
+      toast.success('Cita creada correctamente');
+      void queryClient.invalidateQueries({ queryKey: bookingKeys.all });
+    },
+    onError: () => {
+      toast.error('Error al crear la cita');
+    },
+  });
+}
+
+export function useCancelBooking() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: number) => bookingService.cancel(id),
+    onSuccess: () => {
+      toast.success('Cita cancelada correctamente');
+      void queryClient.invalidateQueries({ queryKey: bookingKeys.all });
+    },
+    onError: () => {
+      toast.error('Error al cancelar la cita');
+    },
+  });
+}
+
+export function useAvailableSlots(doctorId: number | null, date: string | null) {
+  return useQuery({
+    queryKey: bookingKeys.availableSlots(doctorId ?? 0, date ?? ''),
+    queryFn: () => bookingService.getAvailableSlots(doctorId!, date!),
+    enabled: !!doctorId && !!date,
+    staleTime: STALE_TIME,
+  });
+}
+
+export function useDailyDensity(start: string, end: string) {
+  return useQuery({
+    queryKey: bookingKeys.dailyDensity(start, end),
+    queryFn: () => bookingService.getDailyDensity(start, end),
+    staleTime: STALE_TIME,
+  });
+}

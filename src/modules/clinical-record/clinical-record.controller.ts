@@ -177,6 +177,47 @@ export const deletePrescription = asyncHandler(async (req: Request, res: Respons
   res.json(result);
 });
 
+export const getAllPrescriptions = asyncHandler(async (req: Request, res: Response) => {
+  const tenantId = req.user!.role === 'superadmin' ? undefined : req.tenant_id;
+
+  let prescriptions;
+  if (req.user!.role === 'doctor') {
+    const doctor = await doctorService.getDoctorByUserId(req.user!.id, req.tenant_id);
+    if (!doctor) throw new NotFoundError('Doctor profile not found');
+    const { pool } = await import('../../shared/db.js');
+    const result = await pool.query(`
+      SELECT cr.id AS clinical_record_id, cr.patient_id, cr.doctor_id,
+             u.name AS patient_name,
+             d.name AS doctor_name,
+             cr.created_at,
+             COALESCE(
+               json_agg(
+                 json_build_object(
+                   'name', p.medication,
+                   'dosage', p.dosage,
+                   'frequency', p.frequency,
+                   'duration', p.duration,
+                   'instructions', p.instructions
+                 )
+               ) FILTER (WHERE p.id IS NOT NULL),
+               '[]'
+             ) AS medications
+      FROM clinical_records cr
+      JOIN users u ON cr.patient_id = u.id
+      JOIN doctors d ON cr.doctor_id = d.id
+      LEFT JOIN prescriptions p ON p.clinical_record_id = cr.id AND p.tenant_id = $2
+      WHERE cr.doctor_id = $1 AND cr.tenant_id = $2
+      GROUP BY cr.id, u.name, d.name, cr.created_at
+      ORDER BY cr.created_at DESC
+    `, [doctor.id, req.tenant_id]);
+    prescriptions = result.rows;
+  } else {
+    prescriptions = await prescriptionService.getAllPrescriptions(tenantId!);
+  }
+
+  res.json(prescriptions);
+});
+
 export const searchCie10 = asyncHandler(async (req: Request, res: Response) => {
   const { q, category, limit, offset } = req.query;
 
