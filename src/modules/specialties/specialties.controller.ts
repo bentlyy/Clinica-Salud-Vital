@@ -14,9 +14,9 @@ export const getSpecialtyById = asyncHandler(async (req: Request, res: Response)
 });
 
 export const createSpecialty = asyncHandler(async (req: Request, res: Response) => {
-  const { name } = req.body;
+  const { name, description } = req.body;
   if (!name) throw new BadRequestError('Name is required');
-  const specialty = await specialtiesService.createSpecialty(name);
+  const specialty = await specialtiesService.createSpecialty(name, description);
   res.status(201).json(specialty);
 });
 

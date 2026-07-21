@@ -46,6 +46,8 @@ import laboratoryRoutes from './modules/laboratory/laboratory.routes.js';
 import specialtiesRoutes from './modules/specialties/specialties.routes.js';
 import saasRoutes from './modules/saas/saas.routes.js';
 import superAdminRoutes from './modules/super-admin/super-admin.routes.js';
+import medicalHistoryRoutes from './modules/medical-history/medical-history.routes.js';
+import reportRoutes from './modules/reports/report.routes.js';
 
 const app: Express = express();
 
@@ -208,6 +210,8 @@ app.use(`${API_PREFIX}/laboratory`, laboratoryRoutes);
 app.use(`${API_PREFIX}/specialties`, specialtiesRoutes);
 app.use(`${API_PREFIX}/saas`, saasRoutes);
 app.use(`${API_PREFIX}/super-admin`, superAdminRoutes);
+app.use(`${API_PREFIX}/medical-history`, medicalHistoryRoutes);
+app.use(`${API_PREFIX}/reports`, reportRoutes);
 
 setupExpressErrorHandler(app);
 app.use(notFoundHandler);

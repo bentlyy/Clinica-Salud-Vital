@@ -1,0 +1,424 @@
+import { useState } from 'react';
+import {
+  Box,
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  TablePagination,
+  TextField,
+  InputAdornment,
+  Chip,
+  IconButton,
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Typography,
+  MenuItem,
+} from '@mui/material';
+import Search from '@mui/icons-material/Search';
+import Add from '@mui/icons-material/Add';
+import Visibility from '@mui/icons-material/Visibility';
+import Edit from '@mui/icons-material/Edit';
+import Science from '@mui/icons-material/Science';
+import { useNavigate } from 'react-router-dom';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { PageHeader } from '@/shared/components/ui/PageHeader';
+import { LoadingState } from '@/shared/components/ui/LoadingState';
+import { ErrorState } from '@/shared/components/ui/ErrorState';
+import { EmptyState } from '@/shared/components/ui/EmptyState';
+import { useAuth } from '@/shared/providers/AuthProvider';
+import {
+  useLabRequests,
+  useCreateLabRequest,
+} from '../hooks/useLab';
+import {
+  LAB_STATUS_CONFIG,
+  LAB_STATUS_OPTIONS,
+  LAB_PRIORITY_CONFIG,
+  LAB_PRIORITY_OPTIONS,
+  type LabRequestStatus,
+  type LabPriority,
+} from '../types/lab.types';
+
+const createRequestSchema = z.object({
+  patient_id: z.coerce.number().min(1, 'Paciente requerido'),
+  doctor_id: z.coerce.number().min(1, 'Doctor requerido'),
+  title: z.string().min(1, 'Título requerido').max(200, 'Máximo 200 caracteres'),
+  description: z.string().optional(),
+  priority: z.enum(['low', 'normal', 'high', 'urgent']),
+});
+
+type CreateRequestForm = z.infer<typeof createRequestSchema>;
+
+export default function LabRequestsPage() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
+  const [page, setPage] = useState(0);
+  const [limit] = useState(10);
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<LabRequestStatus | 'all'>('all');
+  const [priorityFilter, setPriorityFilter] = useState<LabPriority | 'all'>('all');
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+
+  const canCreate = user && (user.role === 'admin' || user.role === 'superadmin' || user.role === 'lab_technician' || user.role === 'doctor');
+
+  const {
+    data: response,
+    isLoading,
+    error,
+    refetch,
+  } = useLabRequests({
+    page: page + 1,
+    limit,
+    search: search || undefined,
+    status: statusFilter !== 'all' ? statusFilter : undefined,
+    priority: priorityFilter !== 'all' ? priorityFilter : undefined,
+  });
+
+  const createMutation = useCreateLabRequest();
+
+  const {
+    control,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<CreateRequestForm>({
+    resolver: zodResolver(createRequestSchema),
+    defaultValues: {
+      patient_id: 0,
+      doctor_id: 0,
+      title: '',
+      description: '',
+      priority: 'normal',
+    },
+  });
+
+  const requests = response?.data ?? [];
+  const total = response?.total ?? 0;
+
+  const handlePageChange = (_: unknown, newPage: number) => {
+    setPage(newPage);
+  };
+
+  const handleCreate = (data: CreateRequestForm) => {
+    createMutation.mutate(data, {
+      onSuccess: () => {
+        setCreateDialogOpen(false);
+        reset();
+      },
+    });
+  };
+
+  if (isLoading) return <LoadingState message="Cargando solicitudes..." />;
+  if (error) return <ErrorState error={error as Error} onRetry={() => void refetch()} />;
+
+  return (
+    <Box>
+      <PageHeader
+        title="Solicitudes de Laboratorio"
+        subtitle={`${total} solicitudes en total`}
+        action={
+          canCreate ? (
+            <Button
+              variant="contained"
+              startIcon={<Add />}
+              onClick={() => setCreateDialogOpen(true)}
+            >
+              Nueva Solicitud
+            </Button>
+          ) : undefined
+        }
+      />
+
+      {/* Filters */}
+      <Paper sx={{ p: 2, mb: 3, border: '1px solid #e5e7eb' }}>
+        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
+          <TextField
+            size="small"
+            placeholder="Buscar solicitudes..."
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(0);
+            }}
+            slotProps={{
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Search sx={{ fontSize: 18, color: '#9ca3af' }} />
+                  </InputAdornment>
+                ),
+              },
+            }}
+            sx={{ minWidth: 250 }}
+          />
+          <TextField
+            select
+            size="small"
+            label="Estado"
+            value={statusFilter}
+            onChange={(e) => {
+              setStatusFilter(e.target.value as LabRequestStatus | 'all');
+              setPage(0);
+            }}
+            sx={{ minWidth: 140 }}
+          >
+            {LAB_STATUS_OPTIONS.map((opt) => (
+              <MenuItem key={opt.value} value={opt.value}>
+                {opt.label}
+              </MenuItem>
+            ))}
+          </TextField>
+          <TextField
+            select
+            size="small"
+            label="Prioridad"
+            value={priorityFilter}
+            onChange={(e) => {
+              setPriorityFilter(e.target.value as LabPriority | 'all');
+              setPage(0);
+            }}
+            sx={{ minWidth: 140 }}
+          >
+            {LAB_PRIORITY_OPTIONS.map((opt) => (
+              <MenuItem key={opt.value} value={opt.value}>
+                {opt.label}
+              </MenuItem>
+            ))}
+          </TextField>
+        </Box>
+      </Paper>
+
+      {/* Table */}
+      {requests.length === 0 ? (
+        <EmptyState
+          icon={<Science sx={{ fontSize: 48, color: '#d1d5db' }} />}
+          title="No hay solicitudes"
+          message="No se encontraron solicitudes con los filtros seleccionados."
+          action={
+            canCreate
+              ? {
+                  label: 'Crear Solicitud',
+                  onClick: () => setCreateDialogOpen(true),
+                }
+              : undefined
+          }
+        />
+      ) : (
+        <TableContainer component={Paper} sx={{ border: '1px solid #e5e7eb' }}>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>Paciente</TableCell>
+                <TableCell>Título</TableCell>
+                <TableCell>Doctor</TableCell>
+                <TableCell>Estado</TableCell>
+                <TableCell>Prioridad</TableCell>
+                <TableCell>Fecha</TableCell>
+                <TableCell align="right">Acciones</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {requests.map((req) => {
+                const statusCfg = LAB_STATUS_CONFIG[req.status];
+                const priorityCfg = LAB_PRIORITY_CONFIG[req.priority];
+                return (
+                  <TableRow key={req.id} hover>
+                    <TableCell>
+                      <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                        {req.patient_name || `Paciente #${req.patient_id}`}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body2" sx={{ color: '#374151' }}>
+                        {req.title}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body2" sx={{ color: '#6b7280' }}>
+                        {req.doctor_name || `Dr. #${req.doctor_id}`}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Chip
+                        label={statusCfg.label}
+                        size="small"
+                        sx={{
+                          backgroundColor: statusCfg.bgColor,
+                          color: statusCfg.color,
+                          fontWeight: 500,
+                        }}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Chip
+                        label={priorityCfg.label}
+                        size="small"
+                        sx={{
+                          backgroundColor: priorityCfg.bgColor,
+                          color: priorityCfg.color,
+                          fontWeight: 500,
+                        }}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body2" sx={{ color: '#6b7280' }}>
+                        {new Date(req.created_at).toLocaleDateString('es-CL')}
+                      </Typography>
+                    </TableCell>
+                    <TableCell align="right">
+                      <IconButton
+                        size="small"
+                        onClick={() => navigate(`/laboratory/${req.id}`)}
+                        sx={{ color: '#6b7280' }}
+                      >
+                        <Visibility fontSize="small" />
+                      </IconButton>
+                      {(user?.role === 'admin' || user?.role === 'superadmin' || user?.role === 'lab_technician') && (
+                        <IconButton
+                          size="small"
+                          onClick={() => navigate(`/laboratory/${req.id}`)}
+                          sx={{ color: '#0d9488' }}
+                        >
+                          <Edit fontSize="small" />
+                        </IconButton>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+          <TablePagination
+            component="div"
+            count={total}
+            page={page}
+            onPageChange={handlePageChange}
+            rowsPerPage={limit}
+            labelRowsPerPage="Filas:"
+            labelDisplayedRows={({ from, to, count }) =>
+              `${from}–${to} de ${count}`
+            }
+          />
+        </TableContainer>
+      )}
+
+      {/* Create Dialog */}
+      <Dialog
+        open={createDialogOpen}
+        onClose={() => setCreateDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle sx={{ fontWeight: 600 }}>
+          Nueva Solicitud de Laboratorio
+        </DialogTitle>
+        <DialogContent>
+          <Box
+            component="form"
+            id="create-lab-request-form"
+            onSubmit={(e) => {
+              void handleSubmit(handleCreate)(e);
+            }}
+            sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}
+          >
+            <Controller
+              name="title"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Título"
+                  fullWidth
+                  error={!!errors.title}
+                  helperText={errors.title?.message}
+                />
+              )}
+            />
+            <Controller
+              name="patient_id"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="ID del Paciente"
+                  type="number"
+                  fullWidth
+                  error={!!errors.patient_id}
+                  helperText={errors.patient_id?.message}
+                />
+              )}
+            />
+            <Controller
+              name="doctor_id"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="ID del Doctor"
+                  type="number"
+                  fullWidth
+                  error={!!errors.doctor_id}
+                  helperText={errors.doctor_id?.message}
+                />
+              )}
+            />
+            <Controller
+              name="description"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Descripción (opcional)"
+                  fullWidth
+                  multiline
+                  rows={3}
+                />
+              )}
+            />
+            <Controller
+              name="priority"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  select
+                  label="Prioridad"
+                  fullWidth
+                >
+                  {LAB_PRIORITY_OPTIONS.filter((o) => o.value !== 'all').map((opt) => (
+                    <MenuItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              )}
+            />
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={() => setCreateDialogOpen(false)} sx={{ color: '#6b7280' }}>
+            Cancelar
+          </Button>
+          <Button
+            type="submit"
+            form="create-lab-request-form"
+            variant="contained"
+            disabled={createMutation.isPending}
+          >
+            {createMutation.isPending ? 'Creando...' : 'Crear Solicitud'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </Box>
+  );
+}

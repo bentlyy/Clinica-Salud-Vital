@@ -45,9 +45,10 @@ export const getAllSpecialties = async (): Promise<Specialty[]> => {
   }));
 };
 
-export const createSpecialty = async (name: string): Promise<Specialty> => {
+export const createSpecialty = async (name: string, description?: string): Promise<Specialty> => {
   if (!name || name.trim().length === 0) throw new BadRequestError('Name is required');
   const trimmed = name.trim();
+  const desc = description?.trim() || '';
 
   const exists = await pool.query(
     `SELECT id, name, icon, description, department, procedures, color
@@ -62,10 +63,10 @@ export const createSpecialty = async (name: string): Promise<Specialty> => {
   }
 
   const result = await pool.query(
-    `INSERT INTO specialties (name, tenant_id)
-     VALUES ($1, 'default')
+    `INSERT INTO specialties (name, description, tenant_id)
+     VALUES ($1, $2, 'default')
      RETURNING id, name, icon, description, department, procedures, color`,
-    [trimmed]
+    [trimmed, desc]
   );
   return {
     ...result.rows[0],
