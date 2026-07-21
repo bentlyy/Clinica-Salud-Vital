@@ -27,6 +27,20 @@ const clearAuthCookies = (res: Response): void => {
   res.clearCookie(REFRESH_COOKIE, { path: '/' });
 };
 
+export const getMyProfile = asyncHandler(async (req: Request, res: Response) => {
+  if (!req.user) {
+    throw new UnauthorizedError('Authentication required');
+  }
+  const { rows } = await pool.query(
+    'SELECT id, name, email, phone, role FROM users WHERE id = $1 AND active = true',
+    [req.user.id]
+  );
+  if (!rows[0]) {
+    throw new NotFoundError('User not found');
+  }
+  res.json(rows[0]);
+});
+
 export const inviteInfo = asyncHandler(async (req: Request, res: Response) => {
   const { token } = req.query;
   if (!token || typeof token !== 'string') {

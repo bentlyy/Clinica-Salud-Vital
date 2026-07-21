@@ -1,0 +1,65 @@
+import { apiClient } from '@/shared/services/api-client';
+
+export interface DashboardStats {
+  total_patients: number;
+  total_doctors: number;
+  total_bookings: number;
+  today_bookings: number;
+  confirmed_bookings: number;
+  cancelled_bookings: number;
+}
+
+export interface UpcomingBooking {
+  id: number;
+  date: string;
+  time: string;
+  duration: number;
+  status: string;
+  doctor_name: string;
+  patient_name: string | null;
+  guest_name: string | null;
+}
+
+function normalizeDate(raw: unknown): string {
+  if (!raw) return '';
+  const s = String(raw);
+  const match = s.match(/^(\d{4}-\d{2}-\d{2})/);
+  return match ? match[1] : s.split('T')[0] ?? s;
+}
+
+function normalizeTime(raw: unknown): string {
+  if (!raw) return '';
+  const s = String(raw);
+  const match = s.match(/^(\d{2}:\d{2})/);
+  return match ? match[1] : s.slice(0, 5);
+}
+
+export const analyticsService = {
+  getDashboardStats: async (): Promise<DashboardStats> => {
+    const { data } = await apiClient.get<{ data: DashboardStats }>('/analytics/dashboard');
+    return data.data;
+  },
+
+  getUpcomingBookings: async (): Promise<UpcomingBooking[]> => {
+    const today = new Date().toISOString().split('T')[0];
+    const { data } = await apiClient.get<{ data: Record<string, unknown>[] }>('/bookings/all', {
+      params: { page: 1, limit: 10 },
+    });
+    return (data.data ?? [])
+      .filter((b) => {
+        const bDate = normalizeDate(b.date);
+        return bDate >= today;
+      })
+      .map((b) => ({
+        id: Number(b.id),
+        date: normalizeDate(b.date),
+        time: normalizeTime(b.time),
+        duration: Number(b.duration) || 30,
+        status: String(b.status),
+        doctor_name: String(b.doctor_name || ''),
+        patient_name: b.patient_name ? String(b.patient_name) : null,
+        guest_name: b.guest_name ? String(b.guest_name) : null,
+      }))
+      .slice(0, 5);
+  },
+};
