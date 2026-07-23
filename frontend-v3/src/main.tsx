@@ -4,8 +4,10 @@ import { BrowserRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from '@/shared/providers/AuthProvider';
+import { FeatureProvider } from '@/shared/providers/FeatureProvider';
 import { AppRouter } from '@/app/router/AppRouter';
 import '@/app/config/global.css';
+import '@/i18n/i18n';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -22,7 +24,9 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <AuthProvider>
-          <AppRouter />
+          <FeatureProvider>
+            <AppRouter />
+          </FeatureProvider>
           <Toaster
             position="top-right"
             toastOptions={{

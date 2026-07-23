@@ -1,5 +1,9 @@
 import { apiClient } from '@/shared/services/api-client';
-import type { AdminAnalytics, DoctorAnalyticsStats, BookingsByMonth, BookingsByStatus, TopDoctor, DashboardStats } from '../types/analytics.types';
+import type {
+  AdminAnalytics, DoctorAnalyticsStats, BookingsByMonth, BookingsByStatus,
+  TopDoctor, DashboardStats, NoShowRecord, DiagnosisRecord, DemandRecord,
+  ScheduleRecord, VitalsRecord,
+} from '../types/analytics.types';
 
 interface BackendResponse<T> {
   data: T;
@@ -44,6 +48,31 @@ export const analyticsService = {
 
   async getMyStats(): Promise<DoctorAnalyticsStats> {
     const { data } = await apiClient.get<BackendResponse<DoctorAnalyticsStats>>('/analytics/my-stats');
+    return data.data;
+  },
+
+  async getNoShows(): Promise<NoShowRecord[]> {
+    const { data } = await apiClient.get<BackendResponse<NoShowRecord[]>>('/analytics/no-shows');
+    return data.data;
+  },
+
+  async getDiagnoses(): Promise<DiagnosisRecord[]> {
+    const { data } = await apiClient.get<BackendResponse<DiagnosisRecord[]>>('/analytics/diagnoses');
+    return data.data;
+  },
+
+  async getDemand(): Promise<DemandRecord[]> {
+    const { data } = await apiClient.get<BackendResponse<DemandRecord[]>>('/analytics/demand');
+    return data.data;
+  },
+
+  async getSchedules(): Promise<ScheduleRecord[]> {
+    const { data } = await apiClient.get<BackendResponse<ScheduleRecord[]>>('/analytics/schedules');
+    return data.data;
+  },
+
+  async getVitals(): Promise<VitalsRecord[]> {
+    const { data } = await apiClient.get<BackendResponse<VitalsRecord[]>>('/analytics/vitals');
     return data.data;
   },
 };
