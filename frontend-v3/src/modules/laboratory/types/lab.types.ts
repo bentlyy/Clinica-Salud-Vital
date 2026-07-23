@@ -1,25 +1,39 @@
 import type { PaginatedResponse } from '@/shared/types/api.types';
 
-export type LabRequestStatus = 'pending' | 'in_progress' | 'completed' | 'validated' | 'delivered';
+export type LabRequestStatus = 'pending' | 'collected' | 'in_progress' | 'completed' | 'cancelled';
 
-export type LabPriority = 'low' | 'normal' | 'high' | 'urgent';
+export type LabPriority = 'routine' | 'urgent' | 'emergency';
 
 export interface LabRequest {
   id: number;
-  tenant_id: number;
+  tenant_id: string;
+  request_number: string;
   patient_id: number;
   doctor_id: number;
-  booking_id?: number;
-  template_id?: number;
-  title: string;
-  description?: string;
+  clinical_record_id?: number;
   status: LabRequestStatus;
   priority: LabPriority;
-  results?: LabResult[];
+  notes?: string;
+  items?: LabRequestItem[];
   doctor_name?: string;
+  doctor_specialty?: string;
   patient_name?: string;
+  requested_at?: string;
+  collected_at?: string;
+  completed_at?: string;
   created_at: string;
   updated_at: string;
+}
+
+export interface LabRequestItem {
+  id: number;
+  lab_test_id: number;
+  test_name: string;
+  status: string;
+  result_value?: string;
+  result_notes?: string;
+  reference_ranges?: any;
+  unit?: string;
 }
 
 export interface LabResult {
@@ -62,12 +76,10 @@ export interface LabTemplate {
 
 export interface CreateLabRequestInput {
   patient_id: number;
-  doctor_id: number;
-  booking_id?: number;
-  template_id?: number;
-  title: string;
-  description?: string;
-  priority: LabPriority;
+  clinical_record_id?: number;
+  priority?: LabPriority;
+  notes?: string;
+  test_ids: number[];
 }
 
 export interface UpdateLabRequestInput {
@@ -123,37 +135,35 @@ export const LAB_STATUS_CONFIG: Record<
   { label: string; color: string; bgColor: string }
 > = {
   pending: { label: 'Pendiente', color: '#d97706', bgColor: '#fffbeb' },
-  in_progress: { label: 'En Progreso', color: '#2563eb', bgColor: '#eff6ff' },
+  collected: { label: 'Recolectado', color: '#2563eb', bgColor: '#eff6ff' },
+  in_progress: { label: 'En Progreso', color: '#7c3aed', bgColor: '#f5f3ff' },
   completed: { label: 'Completado', color: '#0d9488', bgColor: '#f0fdfa' },
-  validated: { label: 'Validado', color: '#7c3aed', bgColor: '#f5f3ff' },
-  delivered: { label: 'Entregado', color: '#059669', bgColor: '#ecfdf5' },
+  cancelled: { label: 'Cancelado', color: '#6b7280', bgColor: '#f9fafb' },
 };
 
 export const LAB_STATUS_OPTIONS: { value: LabRequestStatus | 'all'; label: string }[] = [
   { value: 'all', label: 'Todos' },
   { value: 'pending', label: 'Pendientes' },
+  { value: 'collected', label: 'Recolectados' },
   { value: 'in_progress', label: 'En Progreso' },
   { value: 'completed', label: 'Completados' },
-  { value: 'validated', label: 'Validados' },
-  { value: 'delivered', label: 'Entregados' },
+  { value: 'cancelled', label: 'Cancelados' },
 ];
 
 export const LAB_PRIORITY_CONFIG: Record<
   LabPriority,
   { label: string; color: string; bgColor: string }
 > = {
-  low: { label: 'Baja', color: '#6b7280', bgColor: '#f9fafb' },
-  normal: { label: 'Normal', color: '#0d9488', bgColor: '#f0fdfa' },
-  high: { label: 'Alta', color: '#d97706', bgColor: '#fffbeb' },
-  urgent: { label: 'Urgente', color: '#ef4444', bgColor: '#fef2f2' },
+  routine: { label: 'Rutina', color: '#6b7280', bgColor: '#f9fafb' },
+  urgent: { label: 'Urgente', color: '#d97706', bgColor: '#fffbeb' },
+  emergency: { label: 'Emergencia', color: '#ef4444', bgColor: '#fef2f2' },
 };
 
 export const LAB_PRIORITY_OPTIONS: { value: LabPriority | 'all'; label: string }[] = [
   { value: 'all', label: 'Todas' },
-  { value: 'low', label: 'Baja' },
-  { value: 'normal', label: 'Normal' },
-  { value: 'high', label: 'Alta' },
+  { value: 'routine', label: 'Rutina' },
   { value: 'urgent', label: 'Urgente' },
+  { value: 'emergency', label: 'Emergencia' },
 ];
 
 export const LAB_EQUIPMENT_STATUS_CONFIG: Record<

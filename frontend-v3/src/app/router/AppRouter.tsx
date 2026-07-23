@@ -2,13 +2,12 @@ import { Suspense, lazy } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from '@/shared/providers/AuthProvider';
 import { DashboardLayout } from '@/shared/components/layout/DashboardLayout';
-import { AuthLayout } from '@/shared/components/layout/AuthLayout';
 import { PatientLayout } from '@/shared/components/layout/PatientLayout';
 import { LoadingState } from '@/shared/components/ui/LoadingState';
 import type { ReactNode } from 'react';
 
 // Lazy loaded pages
-const LoginPage = lazy(() => import('@/modules/auth/pages/LoginPage'));
+const LandingPage = lazy(() => import('@/modules/landing/LandingPage'));
 const DashboardPage = lazy(() => import('@/modules/dashboard/pages/DashboardPage'));
 const UsersPage = lazy(() => import('@/modules/users/pages/UsersPage'));
 const DoctorsPage = lazy(() => import('@/modules/doctors/pages/DoctorsPage'));
@@ -48,26 +47,17 @@ const SpecialtiesPage = lazy(() => import('@/modules/specialties/pages/Specialti
 // Patients module
 const PatientsPage = lazy(() => import('@/modules/patients/pages/PatientsPage'));
 
-// Placeholder pages - will be replaced with real implementations
+// Placeholder pages
 const PlaceholderPage = lazy(() => import('@/shared/components/ui/PlaceholderPage'));
 
 function ProtectedRoute({ children, allowedRoles }: { children: ReactNode; allowedRoles?: string[] }) {
   const { user, isAuthenticated, isLoading } = useAuth();
 
   if (isLoading) return <LoadingState />;
-  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (!isAuthenticated) return <Navigate to="/" replace />;
   if (allowedRoles && user && !allowedRoles.includes(user.role)) {
     return <Navigate to="/dashboard" replace />;
   }
-
-  return <>{children}</>;
-}
-
-function GuestRoute({ children }: { children: ReactNode }) {
-  const { isAuthenticated, isLoading } = useAuth();
-
-  if (isLoading) return <LoadingState />;
-  if (isAuthenticated) return <Navigate to="/dashboard" replace />;
 
   return <>{children}</>;
 }
@@ -76,18 +66,6 @@ export function AppRouter() {
   return (
     <Suspense fallback={<LoadingState />}>
       <Routes>
-        {/* Auth routes */}
-        <Route element={<AuthLayout />}>
-          <Route
-            path="/login"
-            element={
-              <GuestRoute>
-                <LoginPage />
-              </GuestRoute>
-            }
-          />
-        </Route>
-
         {/* Dashboard routes (admin, doctor, lab, superadmin) */}
         <Route
           element={
@@ -138,9 +116,11 @@ export function AppRouter() {
           <Route path="/patient/settings" element={<SettingsPage />} />
         </Route>
 
-        {/* Root redirects to login */}
-        <Route path="/" element={<Navigate to="/login" replace />} />
-        <Route path="*" element={<Navigate to="/login" replace />} />
+        {/* Public landing page */}
+        <Route path="/" element={<LandingPage />} />
+
+        {/* Catch-all: go to landing */}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Suspense>
   );

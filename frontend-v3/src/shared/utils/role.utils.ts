@@ -1,6 +1,23 @@
 import { type JwtUser } from '@/shared/types/api.types';
 import { ROLE_PERMISSIONS } from '@/shared/constants/permissions';
 
+export function getRedirectPath(role: JwtUser['role']): string {
+  switch (role) {
+    case 'superadmin':
+      return '/saas';
+    case 'admin':
+      return '/dashboard';
+    case 'doctor':
+      return '/dashboard';
+    case 'lab_technician':
+      return '/laboratory';
+    case 'patient':
+      return '/patient';
+    default:
+      return '/dashboard';
+  }
+}
+
 export function hasPermission(role: JwtUser['role'], module: string, action?: string): boolean {
   const perms = ROLE_PERMISSIONS[role] as Record<string, unknown> | undefined;
   if (!perms) return false;

@@ -297,11 +297,15 @@ export const getBookingsByDoctor = async (doctor_id: number, { page = 1, limit =
 
   const result = await pool.query(`
     SELECT b.id, b.date, b.time, b.duration, b.status, b.confirmed,
+           COALESCE(u.name, '') AS patient_name,
            u.email AS patient_email,
            u.rut AS patient_rut,
-           b.guest_name, b.guest_email, b.guest_phone, b.guest_rut
+           b.guest_name, b.guest_email, b.guest_phone, b.guest_rut,
+           d.name AS doctor_name
     FROM bookings b
     LEFT JOIN users u ON b.user_id = u.id AND u.tenant_id = b.tenant_id
+    LEFT JOIN doctors doc ON b.doctor_id = doc.id AND doc.tenant_id = b.tenant_id
+    LEFT JOIN users d ON doc.user_id = d.id AND d.tenant_id = b.tenant_id
     WHERE b.doctor_id = $1 AND b.status != 'cancelled' AND b.tenant_id = $4
     ORDER BY b.date, b.time
     LIMIT $2 OFFSET $3

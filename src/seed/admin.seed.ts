@@ -344,10 +344,10 @@ export const seedAdmin = async (): Promise<void> => {
   );
 
   const doctorsData = [
-    { name: 'Dr. Juan Perez',   specialty: 'Cardiologia',  email: 'juan@clinic.com',   rut: '11222333-9' },
-    { name: 'Dra. Maria Lopez', specialty: 'Dermatologia', email: 'maria@clinic.com',  rut: '12333444-2' },
-    { name: 'Dr. Carlos Soto',  specialty: 'Neurologia',   email: 'carlos@clinic.com', rut: '13444555-6' },
-    { name: 'Dra. Ana Torres',  specialty: 'Pediatria',    email: 'ana@clinic.com',    rut: '14555666-K' },
+    { name: 'Juan Perez',   specialty: 'Cardiologia',  email: 'juan@clinic.com',   rut: '11222333-9' },
+    { name: 'Maria Lopez', specialty: 'Dermatologia', email: 'maria@clinic.com',  rut: '12333444-2' },
+    { name: 'Carlos Soto',  specialty: 'Neurologia',   email: 'carlos@clinic.com', rut: '13444555-6' },
+    { name: 'Ana Torres',  specialty: 'Pediatria',    email: 'ana@clinic.com',    rut: '14555666-K' },
   ];
 
   for (const doc of doctorsData) {

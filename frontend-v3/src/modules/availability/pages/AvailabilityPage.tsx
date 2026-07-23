@@ -16,10 +16,13 @@ import {
   Checkbox,
   ListItemText,
   OutlinedInput,
+  Chip,
+  Divider,
 } from '@mui/material';
 import Add from '@mui/icons-material/Add';
 import DeleteOutline from '@mui/icons-material/DeleteOutline';
 import Schedule from '@mui/icons-material/Schedule';
+import EventBusy from '@mui/icons-material/EventBusy';
 import { motion } from 'framer-motion';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -32,6 +35,9 @@ import {
   useAvailabilityRules,
   useCreateAvailabilityRule,
   useDeleteAvailabilityRule,
+  useAvailabilityExceptions,
+  useCreateAvailabilityException,
+  useDeleteAvailabilityException,
 } from '../hooks/useAvailability';
 import { AvailabilityGrid } from '../components/AvailabilityGrid';
 import { DAY_NAMES, WEEK_DAYS_ORDER } from '../types/availability.types';
@@ -57,7 +63,13 @@ const ruleSchema = z
     },
   );
 
+const exceptionSchema = z.object({
+  date: z.string().min(1, 'Selecciona una fecha'),
+  reason: z.string().min(1, 'Ingresa un motivo'),
+});
+
 type RuleFormData = z.infer<typeof ruleSchema>;
+type ExceptionFormData = z.infer<typeof exceptionSchema>;
 
 const TIME_OPTIONS = Array.from({ length: 48 }, (_, i) => {
   const h = Math.floor(i / 2);
@@ -67,11 +79,17 @@ const TIME_OPTIONS = Array.from({ length: 48 }, (_, i) => {
 
 export default function AvailabilityPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [exceptionDialogOpen, setExceptionDialogOpen] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
+  const [deleteExceptionConfirmId, setDeleteExceptionConfirmId] = useState<number | null>(null);
 
   const { data: rules, isLoading, isError, error, refetch } = useAvailabilityRules();
   const createMutation = useCreateAvailabilityRule();
   const deleteMutation = useDeleteAvailabilityRule();
+
+  const { data: exceptions, isLoading: isLoadingExceptions } = useAvailabilityExceptions();
+  const createExceptionMutation = useCreateAvailabilityException();
+  const deleteExceptionMutation = useDeleteAvailabilityException();
 
   const {
     control,
@@ -84,6 +102,19 @@ export default function AvailabilityPage() {
       day_of_week: [],
       start_time: '08:00',
       end_time: '12:00',
+    },
+  });
+
+  const {
+    control: exceptionControl,
+    handleSubmit: handleExceptionSubmit,
+    reset: resetException,
+    formState: { errors: exceptionErrors },
+  } = useForm<ExceptionFormData>({
+    resolver: zodResolver(exceptionSchema),
+    defaultValues: {
+      date: '',
+      reason: '',
     },
   });
 
@@ -123,6 +154,31 @@ export default function AvailabilityPage() {
       });
     }
   }, [deleteConfirmId, deleteMutation]);
+
+  const onSubmitException = useCallback(
+    (data: ExceptionFormData) => {
+      createExceptionMutation.mutate(
+        { date: data.date, reason: data.reason },
+        {
+          onSuccess: () => {
+            resetException();
+            setExceptionDialogOpen(false);
+          },
+        },
+      );
+    },
+    [createExceptionMutation, resetException],
+  );
+
+  const handleDeleteExceptionConfirm = useCallback(() => {
+    if (deleteExceptionConfirmId !== null) {
+      deleteExceptionMutation.mutate(deleteExceptionConfirmId, {
+        onSuccess: () => {
+          setDeleteExceptionConfirmId(null);
+        },
+      });
+    }
+  }, [deleteExceptionConfirmId, deleteExceptionMutation]);
 
   if (isLoading) return <LoadingState message="Cargando horarios..." />;
   if (isError) return <ErrorState error={error as Error} onRetry={refetch} />;
@@ -181,6 +237,50 @@ export default function AvailabilityPage() {
           <AvailabilityGrid rules={rulesList} onDelete={(id) => setDeleteConfirmId(id)} />
         </Box>
       )}
+
+      {/* Exceptions section */}
+      <Box sx={{ mt: 4 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+          <Typography variant="h6" sx={{ fontWeight: 600, color: '#1f2937' }}>
+            Excepciones (días libre)
+          </Typography>
+          <Button
+            variant="outlined"
+            startIcon={<Add />}
+            onClick={() => {
+              resetException({ date: '', reason: '' });
+              setExceptionDialogOpen(true);
+            }}
+            sx={{ borderColor: '#d1d5db', color: '#374151', textTransform: 'none' }}
+          >
+            Agregar Excepción
+          </Button>
+        </Box>
+
+        {isLoadingExceptions ? (
+          <LoadingState message="Cargando excepciones..." />
+        ) : exceptions && exceptions.length > 0 ? (
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5 }}>
+            {exceptions.map((ex) => (
+              <Chip
+                key={ex.id}
+                icon={<EventBusy />}
+                label={`${new Date(ex.date + 'T00:00:00').toLocaleDateString('es-CL', { weekday: 'short', day: 'numeric', month: 'short' })} — ${ex.reason}`}
+                onDelete={() => setDeleteExceptionConfirmId(ex.id)}
+                sx={{
+                  backgroundColor: '#fef2f2',
+                  color: '#991b1b',
+                  '& .MuiChip-deleteIcon': { color: '#ef4444' },
+                }}
+              />
+            ))}
+          </Box>
+        ) : (
+          <Typography variant="body2" sx={{ color: '#6b7280', fontStyle: 'italic' }}>
+            No tienes excepciones registradas. Las excepciones permiten bloquear días completos en tu agenda.
+          </Typography>
+        )}
+      </Box>
 
       {/* Create dialog */}
       <Dialog
@@ -346,6 +446,118 @@ export default function AvailabilityPage() {
             color="error"
             disabled={deleteMutation.isPending}
             startIcon={deleteMutation.isPending ? <CircularProgress size={16} color="inherit" /> : undefined}
+          >
+            Eliminar
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Create exception dialog */}
+      <Dialog
+        open={exceptionDialogOpen}
+        onClose={() => setExceptionDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: '16px', border: '1px solid #e5e7eb' } }}
+      >
+        <DialogTitle>
+          <Typography variant="h5" sx={{ fontWeight: 700, color: '#1f2937' }}>
+            Nueva Excepción
+          </Typography>
+        </DialogTitle>
+        <Box component="form" onSubmit={handleExceptionSubmit(onSubmitException)}>
+          <DialogContent>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+              <Controller
+                name="date"
+                control={exceptionControl}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    type="date"
+                    fullWidth
+                    label="Fecha"
+                    slotProps={{ inputLabel: { shrink: true } }}
+                    error={!!exceptionErrors.date}
+                    helperText={exceptionErrors.date?.message}
+                  />
+                )}
+              />
+              <Controller
+                name="reason"
+                control={exceptionControl}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    fullWidth
+                    label="Motivo"
+                    placeholder="Ej: Vacaciones, capacitación, día personal..."
+                    error={!!exceptionErrors.reason}
+                    helperText={exceptionErrors.reason?.message}
+                  />
+                )}
+              />
+            </Box>
+          </DialogContent>
+          <DialogActions sx={{ px: 3, pb: 3, pt: 1 }}>
+            <Button
+              onClick={() => setExceptionDialogOpen(false)}
+              variant="outlined"
+              sx={{ borderColor: '#d1d5db', color: '#374151', '&:hover': { borderColor: '#9ca3af' } }}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="submit"
+              variant="contained"
+              disabled={createExceptionMutation.isPending}
+              sx={{
+                background: 'linear-gradient(135deg, #0d9488 0%, #0f766e 100%)',
+                '&:hover': {
+                  background: 'linear-gradient(135deg, #0f766e 0%, #115e59 100%)',
+                },
+                px: 4,
+              }}
+            >
+              {createExceptionMutation.isPending ? (
+                <CircularProgress size={20} color="inherit" />
+              ) : (
+                'Guardar'
+              )}
+            </Button>
+          </DialogActions>
+        </Box>
+      </Dialog>
+
+      {/* Delete exception confirmation dialog */}
+      <Dialog
+        open={deleteExceptionConfirmId !== null}
+        onClose={() => setDeleteExceptionConfirmId(null)}
+        PaperProps={{ sx: { borderRadius: '16px', border: '1px solid #e5e7eb' } }}
+      >
+        <DialogTitle>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <DeleteOutline sx={{ color: '#ef4444' }} />
+            <Typography variant="h6" sx={{ fontWeight: 600, color: '#1f2937' }}>
+              Eliminar Excepción
+            </Typography>
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" sx={{ color: '#374151' }}>
+            ¿Estás seguro de que deseas eliminar esta excepción? El día volverá a estar disponible según tus horarios habituales.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={() => setDeleteExceptionConfirmId(null)} sx={{ color: '#6b7280' }}>
+            Cancelar
+          </Button>
+          <Button
+            onClick={handleDeleteExceptionConfirm}
+            variant="contained"
+            color="error"
+            disabled={deleteExceptionMutation.isPending}
+            startIcon={deleteExceptionMutation.isPending ? <CircularProgress size={16} color="inherit" /> : undefined}
           >
             Eliminar
           </Button>

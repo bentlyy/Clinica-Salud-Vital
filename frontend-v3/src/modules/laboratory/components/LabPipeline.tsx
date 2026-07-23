@@ -11,10 +11,10 @@ interface LabPipelineProps {
 
 const PIPELINE_COLUMNS: { status: LabRequestStatus; key: LabRequestStatus }[] = [
   { status: 'pending', key: 'pending' },
+  { status: 'collected', key: 'collected' },
   { status: 'in_progress', key: 'in_progress' },
   { status: 'completed', key: 'completed' },
-  { status: 'validated', key: 'validated' },
-  { status: 'delivered', key: 'delivered' },
+  { status: 'cancelled', key: 'cancelled' },
 ];
 
 export function LabPipeline({ requests }: LabPipelineProps) {
@@ -119,7 +119,7 @@ export function LabPipeline({ requests }: LabPipelineProps) {
                             whiteSpace: 'nowrap',
                           }}
                         >
-                          {request.title}
+                          {request.request_number || `#${request.id}`}
                         </Typography>
                         {request.patient_name && (
                           <Typography variant="caption" sx={{ color: '#6b7280' }}>

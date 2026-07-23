@@ -89,7 +89,7 @@ export const getDoctorStats = async (doctor_id: number, tenantId: string) => {
   const [totalBookings, upcomingBookings, patientsServed, clinicalRecords] = await Promise.all([
     pool.query('SELECT COUNT(*) FROM bookings WHERE doctor_id = $1 AND status != $2 AND tenant_id = $3', [doctor_id, 'cancelled', tenantId]),
     pool.query('SELECT COUNT(*) FROM bookings WHERE doctor_id = $1 AND date >= CURRENT_DATE AND status != $2 AND tenant_id = $3', [doctor_id, 'cancelled', tenantId]),
-    pool.query('SELECT COUNT(DISTINCT COALESCE(user_id, guest_rut)) FROM bookings WHERE doctor_id = $1 AND status != $2 AND tenant_id = $3', [doctor_id, 'cancelled', tenantId]),
+    pool.query('SELECT COUNT(DISTINCT COALESCE(user_id::text, guest_rut)) FROM bookings WHERE doctor_id = $1 AND status != $2 AND tenant_id = $3', [doctor_id, 'cancelled', tenantId]),
     pool.query('SELECT COUNT(*) FROM clinical_records WHERE doctor_id = $1 AND tenant_id = $2', [doctor_id, tenantId]),
   ]);
 

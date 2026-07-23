@@ -148,7 +148,7 @@ export function useLabSSE() {
       eventsRef.current = [newEvent, ...eventsRef.current].slice(0, 50);
       setEvents([...eventsRef.current]);
 
-      if (event === 'lab_request_updated' || event === 'lab_request_created') {
+      if (event === 'status-change' || event === 'new-request' || event === 'metrics') {
         void queryClient.invalidateQueries({ queryKey: labKeys.all });
       }
     },

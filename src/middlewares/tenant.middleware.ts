@@ -19,6 +19,7 @@ const PUBLIC_PATHS = new Set([
   '/api/auth/register',
   '/api/auth/forgot-password',
   '/api/auth/reset-password',
+  '/api/auth/refresh',
   '/api/bookings/available-slots',
   '/api/guest/booking',
   '/api/doctors/public',

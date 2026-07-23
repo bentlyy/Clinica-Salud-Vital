@@ -37,4 +37,18 @@ export const prescriptionService = {
   async remove(id: number): Promise<void> {
     await apiClient.delete(`/clinical-records/prescriptions/${id}`);
   },
+
+  async downloadPdf(id: number): Promise<void> {
+    const response = await apiClient.get(`/clinical-records/prescriptions/${id}/pdf`, {
+      responseType: 'blob',
+    });
+    const url = window.URL.createObjectURL(response.data as Blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `receta-${id}.pdf`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+  },
 };

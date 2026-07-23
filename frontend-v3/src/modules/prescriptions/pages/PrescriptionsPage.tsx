@@ -29,6 +29,7 @@ import MoreVert from '@mui/icons-material/MoreVert';
 import Visibility from '@mui/icons-material/Visibility';
 import Edit from '@mui/icons-material/Edit';
 import Delete from '@mui/icons-material/Delete';
+import PictureAsPdf from '@mui/icons-material/PictureAsPdf';
 import Assignment from '@mui/icons-material/Assignment';
 import Close from '@mui/icons-material/Close';
 import MedicationIcon from '@mui/icons-material/Medication';
@@ -46,6 +47,7 @@ import {
   useCreatePrescription,
   useUpdatePrescription,
   useDeletePrescription,
+  useDownloadPrescriptionPdf,
 } from '../hooks/usePrescriptions';
 import { PrescriptionFormDialog } from '../components/PrescriptionFormDialog';
 import type { Prescription, Medication, CreatePrescriptionInput } from '../types/prescription.types';
@@ -69,6 +71,7 @@ export default function PrescriptionsPage() {
   const createMutation = useCreatePrescription();
   const updateMutation = useUpdatePrescription();
   const deleteMutation = useDeletePrescription();
+  const downloadPdfMutation = useDownloadPrescriptionPdf();
 
   const prescriptions = data?.data ?? [];
   const total = data?.total ?? 0;
@@ -269,6 +272,10 @@ export default function PrescriptionsPage() {
         <MenuItem onClick={() => menuPrescription && handleViewDetail(menuPrescription)}>
           <ListItemIcon><Visibility fontSize="small" sx={{ color: '#6b7280' }} /></ListItemIcon>
           <ListItemText>Ver Detalle</ListItemText>
+        </MenuItem>
+        <MenuItem onClick={() => menuPrescription && downloadPdfMutation.mutate(menuPrescription.id)}>
+          <ListItemIcon><PictureAsPdf fontSize="small" sx={{ color: '#ef4444' }} /></ListItemIcon>
+          <ListItemText>Descargar PDF</ListItemText>
         </MenuItem>
         {canEdit && (
           <MenuItem onClick={() => menuPrescription && handleEdit(menuPrescription)}>

@@ -19,6 +19,17 @@ export const getMedicalHistory = asyncHandler(async (req: Request, res: Response
   res.json(records);
 });
 
+export const getMedicalHistoryByPatient = asyncHandler(async (req: Request, res: Response) => {
+  const tenantId = req.user!.role === 'superadmin' ? undefined : req.tenant_id;
+  const patientId = Number(req.params.patientId);
+
+  const records = await medicalHistoryService.getAllMedicalHistory(
+    { patient_id: patientId, limit: 200, offset: 0 },
+    tenantId!,
+  );
+  res.json(records);
+});
+
 export const createMedicalHistory = asyncHandler(async (req: Request, res: Response) => {
   const tenantId = req.user!.role === 'superadmin' ? 'default' : req.tenant_id;
   const record = await medicalHistoryService.createMedicalHistory(req.body, tenantId);

@@ -28,6 +28,7 @@ import { motion } from 'framer-motion';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { useGenerateReport, useReportDetail } from '../hooks/useReports';
+import { downloadReport } from '../utils/reportGenerator';
 import type { ReportType } from '../types/report.types';
 
 const REPORT_TYPE_CONFIG: Record<ReportType, { label: string; description: string; icon: React.ReactNode; color: string; bgColor: string }> = {
@@ -252,9 +253,14 @@ export default function ReportsPage() {
                       <Button
                         size="small"
                         startIcon={<Download />}
-                        href={pollingReport.result_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                        onClick={() =>
+                          downloadReport(
+                            pollingReport.type,
+                            pollingReport.result_url!,
+                            pollingReport.config.date_from,
+                            pollingReport.config.date_to,
+                          )
+                        }
                         sx={{ color: '#0d9488' }}
                       >
                         Descargar

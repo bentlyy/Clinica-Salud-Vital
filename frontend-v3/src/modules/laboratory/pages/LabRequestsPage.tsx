@@ -50,10 +50,9 @@ import {
 
 const createRequestSchema = z.object({
   patient_id: z.coerce.number().min(1, 'Paciente requerido'),
-  doctor_id: z.coerce.number().min(1, 'Doctor requerido'),
-  title: z.string().min(1, 'Título requerido').max(200, 'Máximo 200 caracteres'),
-  description: z.string().optional(),
-  priority: z.enum(['low', 'normal', 'high', 'urgent']),
+  priority: z.enum(['routine', 'urgent', 'emergency']),
+  notes: z.string().optional(),
+  test_ids: z.array(z.coerce.number().min(1)).min(1, 'Selecciona al menos una prueba'),
 });
 
 type CreateRequestForm = z.infer<typeof createRequestSchema>;
@@ -95,10 +94,9 @@ export default function LabRequestsPage() {
     resolver: zodResolver(createRequestSchema),
     defaultValues: {
       patient_id: 0,
-      doctor_id: 0,
-      title: '',
-      description: '',
-      priority: 'normal',
+      notes: '',
+      priority: 'routine',
+      test_ids: [],
     },
   });
 
@@ -218,8 +216,8 @@ export default function LabRequestsPage() {
           <Table>
             <TableHead>
               <TableRow>
+                <TableCell>Nro. Solicitud</TableCell>
                 <TableCell>Paciente</TableCell>
-                <TableCell>Título</TableCell>
                 <TableCell>Doctor</TableCell>
                 <TableCell>Estado</TableCell>
                 <TableCell>Prioridad</TableCell>
@@ -234,13 +232,13 @@ export default function LabRequestsPage() {
                 return (
                   <TableRow key={req.id} hover>
                     <TableCell>
-                      <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                        {req.patient_name || `Paciente #${req.patient_id}`}
+                      <Typography variant="body2" sx={{ fontWeight: 500, fontFamily: 'monospace' }}>
+                        {req.request_number || `#${req.id}`}
                       </Typography>
                     </TableCell>
                     <TableCell>
-                      <Typography variant="body2" sx={{ color: '#374151' }}>
-                        {req.title}
+                      <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                        {req.patient_name || `Paciente #${req.patient_id}`}
                       </Typography>
                     </TableCell>
                     <TableCell>
@@ -332,19 +330,6 @@ export default function LabRequestsPage() {
             sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}
           >
             <Controller
-              name="title"
-              control={control}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  label="Título"
-                  fullWidth
-                  error={!!errors.title}
-                  helperText={errors.title?.message}
-                />
-              )}
-            />
-            <Controller
               name="patient_id"
               control={control}
               render={({ field }) => (
@@ -355,33 +340,6 @@ export default function LabRequestsPage() {
                   fullWidth
                   error={!!errors.patient_id}
                   helperText={errors.patient_id?.message}
-                />
-              )}
-            />
-            <Controller
-              name="doctor_id"
-              control={control}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  label="ID del Doctor"
-                  type="number"
-                  fullWidth
-                  error={!!errors.doctor_id}
-                  helperText={errors.doctor_id?.message}
-                />
-              )}
-            />
-            <Controller
-              name="description"
-              control={control}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  label="Descripción (opcional)"
-                  fullWidth
-                  multiline
-                  rows={3}
                 />
               )}
             />
@@ -401,6 +359,38 @@ export default function LabRequestsPage() {
                     </MenuItem>
                   ))}
                 </TextField>
+              )}
+            />
+            <Controller
+              name="test_ids"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="IDs de Pruebas (separados por coma)"
+                  placeholder="ej: 1,2,3"
+                  fullWidth
+                  error={!!errors.test_ids}
+                  helperText={errors.test_ids?.message || 'Ingresa los IDs de las pruebas de laboratorio'}
+                  onChange={(e) => {
+                    const ids = e.target.value.split(',').map(s => parseInt(s.trim(), 10)).filter(n => !isNaN(n));
+                    field.onChange(ids);
+                  }}
+                  value={Array.isArray(field.value) ? field.value.join(',') : ''}
+                />
+              )}
+            />
+            <Controller
+              name="notes"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Notas (opcional)"
+                  fullWidth
+                  multiline
+                  rows={3}
+                />
               )}
             />
           </Box>
