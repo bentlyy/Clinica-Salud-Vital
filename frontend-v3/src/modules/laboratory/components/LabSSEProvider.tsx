@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, useCallback, useMemo, useRef, type ReactNode } from 'react';
-import { labService } from '../services/lab.service';
+import { subscribeToLabSSE } from '../services/lab.service';
 import type { LabSSEEvent } from '../hooks/useLab';
 
 interface LabSSEContextType {
@@ -26,11 +26,22 @@ export function LabSSEProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    const disconnect = labService.connectSSE(handleEvent);
+    const eventSource = subscribeToLabSSE((event: MessageEvent) => {
+      try {
+        const data = JSON.parse(event.data);
+        handleEvent(data.type || 'message', data);
+      } catch {
+        handleEvent('message', event.data);
+      }
+    });
     setIsConnected(true);
 
+    eventSource.onerror = () => {
+      setIsConnected(false);
+    };
+
     return () => {
-      disconnect();
+      eventSource.close();
       setIsConnected(false);
     };
   }, [handleEvent]);

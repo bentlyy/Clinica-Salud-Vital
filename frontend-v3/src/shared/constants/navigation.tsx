@@ -17,6 +17,8 @@ import AccountBalance from '@mui/icons-material/AccountBalance';
 import MedicalServices from '@mui/icons-material/MedicalServices';
 import PersonSearch from '@mui/icons-material/PersonSearch';
 import TrendingUp from '@mui/icons-material/TrendingUp';
+import Verified from '@mui/icons-material/Verified';
+import Analytics from '@mui/icons-material/Analytics';
 import type { UserRole } from '@/shared/types/api.types';
 
 interface NavItem {
@@ -24,6 +26,8 @@ interface NavItem {
   icon: React.ReactNode;
   path: string;
   roles: UserRole[];
+  featureKey?: string;
+  children?: { label: string; icon: React.ReactNode; path: string }[];
 }
 
 export const NAV_ITEMS: NavItem[] = [
@@ -62,7 +66,12 @@ export const NAV_ITEMS: NavItem[] = [
   { label: 'Historial Médico', icon: <History />, path: '/medical-history', roles: ['superadmin', 'admin', 'doctor', 'patient'] },
 
   // Laboratory
-  { label: 'Laboratorio', icon: <Science />, path: '/laboratory', roles: ['superadmin', 'admin', 'doctor', 'lab_technician'] },
+  { label: 'Laboratorio', icon: <Science />, path: '/laboratory', roles: ['superadmin', 'admin', 'doctor', 'lab_technician'], featureKey: 'laboratory', children: [
+    { label: 'Panel', path: '/laboratory', icon: <Dashboard /> },
+    { label: 'Solicitudes', path: '/laboratory/requests', icon: <Assignment /> },
+    { label: 'Control Calidad', path: '/laboratory/quality-control', icon: <Verified /> },
+    { label: 'Analitica', path: '/laboratory/analytics', icon: <Analytics /> },
+  ] },
 
   // Billing
   { label: 'Facturación', icon: <Receipt />, path: '/billing', roles: ['superadmin', 'admin'] },

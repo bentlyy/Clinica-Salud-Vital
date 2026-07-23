@@ -1,0 +1,814 @@
+/* ========================================================
+   DoctorDashboard.css — Teal Aqua Style (Option 7)
+   ======================================================== */
+
+/* ── CSS Variables ────────────────────────────────────── */
+:root {
+  --dd-teal-50: #f0fdfa;
+  --dd-teal-100: #ccfbf1;
+  --dd-teal-200: #99f6e4;
+  --dd-teal-400: #2dd4bf;
+  --dd-teal-500: #14b8a6;
+  --dd-teal-600: #0d9488;
+  --dd-teal-700: #0f766e;
+  --dd-teal-800: #115e59;
+  --dd-teal-900: #134e4a;
+
+  --dd-blue-50: #eff6ff;
+  --dd-blue-500: #3b82f6;
+  --dd-blue-600: #2563eb;
+  --dd-blue-700: #1d4ed8;
+
+  --dd-amber-50: #fffbeb;
+  --dd-amber-500: #f59e0b;
+  --dd-amber-600: #d97706;
+  --dd-amber-700: #b45309;
+
+  --dd-rose-50: #fff1f2;
+  --dd-rose-500: #f43f5e;
+  --dd-rose-600: #e11d48;
+
+  --dd-green-50: #f0fdf4;
+  --dd-green-100: #dcfce7;
+  --dd-green-500: #22c55e;
+  --dd-green-600: #16a34a;
+  --dd-green-700: #15803d;
+  --dd-green-800: #166534;
+
+  --dd-yellow-50: #fefce8;
+  --dd-yellow-100: #fef9c3;
+  --dd-yellow-500: #eab308;
+  --dd-yellow-600: #ca8a04;
+  --dd-yellow-700: #a16207;
+
+  --dd-gray-50: #f9fafb;
+  --dd-gray-100: #f3f4f6;
+  --dd-gray-200: #e5e7eb;
+  --dd-gray-300: #d1d5db;
+  --dd-gray-400: #9ca3af;
+  --dd-gray-500: #6b7280;
+  --dd-gray-600: #4b5563;
+  --dd-gray-700: #374151;
+  --dd-gray-800: #1f2937;
+  --dd-gray-900: #111827;
+
+  --dd-radius-sm: 8px;
+  --dd-radius-md: 12px;
+  --dd-radius-lg: 16px;
+  --dd-radius-xl: 20px;
+
+  --dd-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --dd-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+  --dd-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
+  --dd-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+
+  --dd-transition: all 0.2s ease;
+}
+
+/* ── Dashboard Container ──────────────────────────────── */
+.doctor-dashboard {
+  min-height: 100vh;
+  background: var(--dd-gray-50);
+  padding: 32px 40px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* ── Page Header ──────────────────────────────────────── */
+.dd-header {
+  margin-bottom: 32px;
+}
+
+.dd-header__title {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--dd-gray-900);
+  margin: 0 0 4px 0;
+  letter-spacing: -0.025em;
+}
+
+.dd-header__subtitle {
+  font-size: 16px;
+  color: var(--dd-gray-500);
+  margin: 0;
+  font-weight: 400;
+}
+
+.dd-header__subtitle span {
+  color: var(--dd-teal-600);
+  font-weight: 600;
+}
+
+/* ── Stats Grid ───────────────────────────────────────── */
+.dd-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+  margin-bottom: 32px;
+}
+
+.dd-stat-card {
+  background: #fff;
+  border-radius: var(--dd-radius-lg);
+  padding: 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: var(--dd-shadow-sm);
+  border: 1px solid var(--dd-gray-200);
+  transition: var(--dd-transition);
+}
+
+.dd-stat-card:hover {
+  box-shadow: var(--dd-shadow-md);
+  transform: translateY(-2px);
+}
+
+.dd-stat-card__icon {
+  width: 52px;
+  height: 52px;
+  border-radius: var(--dd-radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.dd-stat-card__icon--teal {
+  background: var(--dd-teal-100);
+}
+
+.dd-stat-card__icon--blue {
+  background: var(--dd-blue-50);
+}
+
+.dd-stat-card__icon--amber {
+  background: var(--dd-amber-50);
+}
+
+.dd-stat-card__icon--rose {
+  background: var(--dd-rose-50);
+}
+
+.dd-stat-card__info {
+  flex: 1;
+  min-width: 0;
+}
+
+.dd-stat-card__label {
+  font-size: 13px;
+  color: var(--dd-gray-500);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 0 0 4px 0;
+}
+
+.dd-stat-card__value {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--dd-gray-900);
+  margin: 0;
+  line-height: 1.2;
+}
+
+.dd-stat-card__value--teal { color: var(--dd-teal-700); }
+.dd-stat-card__value--blue { color: var(--dd-blue-700); }
+.dd-stat-card__value--amber { color: var(--dd-amber-700); }
+.dd-stat-card__value--rose { color: var(--dd-rose-600); }
+
+/* ── Main Content Layout ──────────────────────────────── */
+.dd-content {
+  display: grid;
+  grid-template-columns: 1fr 400px;
+  gap: 28px;
+  align-items: start;
+}
+
+/* ── Panel Base ───────────────────────────────────────── */
+.dd-panel {
+  background: #fff;
+  border-radius: var(--dd-radius-lg);
+  border: 1px solid var(--dd-gray-200);
+  box-shadow: var(--dd-shadow-sm);
+  overflow: hidden;
+}
+
+.dd-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--dd-gray-100);
+}
+
+.dd-panel__title {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--dd-gray-900);
+  margin: 0;
+}
+
+.dd-panel__date {
+  font-size: 13px;
+  color: var(--dd-gray-400);
+  font-weight: 500;
+}
+
+.dd-panel__body {
+  padding: 8px;
+}
+
+/* ── Patient List ─────────────────────────────────────── */
+.dd-patient-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  border-radius: var(--dd-radius-md);
+  transition: var(--dd-transition);
+  cursor: default;
+  border: 1px solid transparent;
+}
+
+.dd-patient-card:hover {
+  background: var(--dd-teal-50);
+  border-color: var(--dd-teal-200);
+}
+
+.dd-patient-card__time {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 64px;
+  flex-shrink: 0;
+}
+
+.dd-patient-card__time-badge {
+  background: var(--dd-teal-50);
+  color: var(--dd-teal-700);
+  font-size: 14px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+
+.dd-patient-card__duration {
+  font-size: 11px;
+  color: var(--dd-gray-400);
+  margin-top: 4px;
+}
+
+.dd-patient-card__divider {
+  width: 1px;
+  height: 48px;
+  background: var(--dd-gray-200);
+  flex-shrink: 0;
+}
+
+.dd-patient-card__info {
+  flex: 1;
+  min-width: 0;
+}
+
+.dd-patient-card__name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--dd-gray-900);
+  margin: 0 0 4px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dd-patient-card__type {
+  font-size: 13px;
+  color: var(--dd-gray-500);
+  margin: 0;
+}
+
+.dd-patient-card__actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+/* ── Status Badges ────────────────────────────────────── */
+.dd-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+
+.dd-status--confirmed {
+  background: var(--dd-green-50);
+  color: var(--dd-green-700);
+  border: 1px solid var(--dd-green-100);
+}
+
+.dd-status--pending {
+  background: var(--dd-yellow-50);
+  color: var(--dd-yellow-700);
+  border: 1px solid var(--dd-yellow-100);
+}
+
+.dd-status--completed {
+  background: var(--dd-blue-50);
+  color: var(--dd-blue-700);
+  border: 1px solid rgba(59, 130, 246, 0.15);
+}
+
+.dd-status--cancelled {
+  background: var(--dd-gray-100);
+  color: var(--dd-gray-600);
+  border: 1px solid var(--dd-gray-200);
+}
+
+.dd-status__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+/* ── Action Buttons ───────────────────────────────────── */
+.dd-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 7px 14px;
+  border-radius: var(--dd-radius-sm);
+  cursor: pointer;
+  transition: var(--dd-transition);
+  white-space: nowrap;
+  border: 1px solid transparent;
+  font-family: inherit;
+}
+
+.dd-btn--primary {
+  background: var(--dd-teal-600);
+  color: #fff;
+  border-color: var(--dd-teal-600);
+}
+
+.dd-btn--primary:hover {
+  background: var(--dd-teal-700);
+  border-color: var(--dd-teal-700);
+  box-shadow: 0 2px 8px rgba(13, 148, 136, 0.3);
+}
+
+.dd-btn--outline {
+  background: transparent;
+  color: var(--dd-gray-600);
+  border-color: var(--dd-gray-200);
+}
+
+.dd-btn--outline:hover {
+  background: var(--dd-gray-50);
+  color: var(--dd-gray-900);
+  border-color: var(--dd-gray-300);
+}
+
+.dd-btn--teal-outline {
+  background: transparent;
+  color: var(--dd-teal-700);
+  border-color: var(--dd-teal-200);
+}
+
+.dd-btn--teal-outline:hover {
+  background: var(--dd-teal-50);
+  border-color: var(--dd-teal-400);
+}
+
+.dd-btn--full {
+  width: 100%;
+}
+
+.dd-btn--lg {
+  padding: 10px 16px;
+  font-size: 14px;
+}
+
+/* ── Quick Actions ────────────────────────────────────── */
+.dd-quick-actions {
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.dd-quick-action {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border-radius: var(--dd-radius-md);
+  border: 1px solid var(--dd-gray-200);
+  background: #fff;
+  cursor: pointer;
+  transition: var(--dd-transition);
+  text-decoration: none;
+  color: inherit;
+  font-family: inherit;
+  width: 100%;
+  text-align: left;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--dd-gray-700);
+}
+
+.dd-quick-action:hover {
+  border-color: var(--dd-teal-400);
+  background: var(--dd-teal-50);
+  color: var(--dd-teal-700);
+  box-shadow: 0 2px 8px rgba(13, 148, 136, 0.12);
+}
+
+.dd-quick-action__icon {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--dd-radius-sm);
+  background: var(--dd-teal-100);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.dd-quick-action__text {
+  flex: 1;
+}
+
+.dd-quick-action__arrow {
+  color: var(--dd-gray-300);
+  transition: var(--dd-transition);
+  font-size: 12px;
+}
+
+.dd-quick-action:hover .dd-quick-action__arrow {
+  color: var(--dd-teal-500);
+  transform: translateX(3px);
+}
+
+/* ── Mini Calendar ────────────────────────────────────── */
+.dd-calendar {
+  padding: 20px 24px;
+}
+
+.dd-calendar__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.dd-calendar__month {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--dd-gray-800);
+}
+
+.dd-calendar__nav-btn {
+  background: none;
+  border: 1px solid var(--dd-gray-200);
+  border-radius: 6px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--dd-gray-500);
+  font-size: 12px;
+  transition: var(--dd-transition);
+}
+
+.dd-calendar__nav-btn:hover {
+  background: var(--dd-gray-100);
+  color: var(--dd-gray-700);
+}
+
+.dd-calendar__weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.dd-calendar__weekday {
+  text-align: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--dd-gray-400);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 4px 0;
+}
+
+.dd-calendar__days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.dd-calendar__day {
+  text-align: center;
+  padding: 6px 0;
+  font-size: 13px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: var(--dd-transition);
+  color: var(--dd-gray-600);
+  font-weight: 500;
+}
+
+.dd-calendar__day:hover {
+  background: var(--dd-gray-100);
+}
+
+.dd-calendar__day--today {
+  background: var(--dd-teal-600);
+  color: #fff;
+  font-weight: 700;
+}
+
+.dd-calendar__day--today:hover {
+  background: var(--dd-teal-700);
+}
+
+.dd-calendar__day--has-bookings {
+  position: relative;
+}
+
+.dd-calendar__day--has-bookings::after {
+  content: '';
+  position: absolute;
+  bottom: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--dd-teal-500);
+}
+
+.dd-calendar__day--today.dd-calendar__day--has-bookings::after {
+  background: #fff;
+}
+
+.dd-calendar__day--other-month {
+  color: var(--dd-gray-300);
+}
+
+.dd-calendar__day--empty {
+  cursor: default;
+}
+
+/* ── Reminders ────────────────────────────────────────── */
+.dd-reminders {
+  padding: 0 24px 20px;
+}
+
+.dd-reminders__title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--dd-gray-500);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0 0 12px 0;
+  padding-top: 16px;
+  border-top: 1px solid var(--dd-gray-100);
+}
+
+.dd-reminder-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px;
+  border-radius: var(--dd-radius-sm);
+  background: var(--dd-amber-50);
+  border: 1px solid rgba(245, 158, 11, 0.15);
+  margin-bottom: 8px;
+}
+
+.dd-reminder-card__icon {
+  font-size: 16px;
+  margin-top: 1px;
+  flex-shrink: 0;
+}
+
+.dd-reminder-card__content {
+  flex: 1;
+  min-width: 0;
+}
+
+.dd-reminder-card__text {
+  font-size: 13px;
+  color: var(--dd-gray-700);
+  margin: 0 0 2px 0;
+  font-weight: 500;
+}
+
+.dd-reminder-card__time {
+  font-size: 12px;
+  color: var(--dd-gray-400);
+  margin: 0;
+}
+
+/* ── Empty State ──────────────────────────────────────── */
+.dd-empty {
+  padding: 48px 24px;
+  text-align: center;
+}
+
+.dd-empty__icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+  opacity: 0.6;
+}
+
+.dd-empty__title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--dd-gray-700);
+  margin: 0 0 8px 0;
+}
+
+.dd-empty__text {
+  font-size: 14px;
+  color: var(--dd-gray-400);
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* ── Loading Skeleton ─────────────────────────────────── */
+@keyframes dd-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.dd-skeleton {
+  background: linear-gradient(90deg, var(--dd-gray-100) 25%, var(--dd-gray-200) 50%, var(--dd-gray-100) 75%);
+  background-size: 200% 100%;
+  animation: dd-pulse 1.5s ease-in-out infinite;
+  border-radius: var(--dd-radius-sm);
+}
+
+.dd-skeleton--stat {
+  height: 96px;
+  border-radius: var(--dd-radius-lg);
+}
+
+.dd-skeleton--card {
+  height: 76px;
+  border-radius: var(--dd-radius-md);
+  margin: 8px;
+}
+
+.dd-skeleton--header {
+  height: 20px;
+  width: 200px;
+  border-radius: 6px;
+  margin-bottom: 12px;
+}
+
+.dd-skeleton--title {
+  height: 28px;
+  width: 160px;
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
+
+.dd-skeleton--subtitle {
+  height: 16px;
+  width: 260px;
+  border-radius: 6px;
+}
+
+.dd-skeleton--sidebar {
+  height: 200px;
+  border-radius: var(--dd-radius-lg);
+}
+
+/* ── Error State ──────────────────────────────────────── */
+.dd-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  text-align: center;
+  padding: 40px;
+}
+
+.dd-error__icon {
+  font-size: 56px;
+  margin-bottom: 20px;
+  opacity: 0.7;
+}
+
+.dd-error__title {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--dd-gray-800);
+  margin: 0 0 8px 0;
+}
+
+.dd-error__text {
+  font-size: 14px;
+  color: var(--dd-gray-500);
+  margin: 0 0 24px 0;
+  max-width: 360px;
+  line-height: 1.5;
+}
+
+.dd-error__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 24px;
+  background: var(--dd-teal-600);
+  color: #fff;
+  border: none;
+  border-radius: var(--dd-radius-sm);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--dd-transition);
+  font-family: inherit;
+}
+
+.dd-error__btn:hover {
+  background: var(--dd-teal-700);
+  box-shadow: 0 4px 12px rgba(13, 148, 136, 0.3);
+}
+
+/* ── Responsive ───────────────────────────────────────── */
+@media (max-width: 1200px) {
+  .dd-content {
+    grid-template-columns: 1fr 340px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .dd-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .dd-content {
+    grid-template-columns: 1fr;
+  }
+
+  .doctor-dashboard {
+    padding: 24px 20px;
+  }
+}
+
+@media (max-width: 640px) {
+  .dd-stats {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .doctor-dashboard {
+    padding: 16px;
+  }
+
+  .dd-header__title {
+    font-size: 22px;
+  }
+
+  .dd-stat-card {
+    padding: 18px 20px;
+  }
+
+  .dd-stat-card__value {
+    font-size: 22px;
+  }
+
+  .dd-patient-card {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .dd-patient-card__divider {
+    display: none;
+  }
+
+  .dd-patient-card__actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}

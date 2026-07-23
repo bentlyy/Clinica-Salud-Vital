@@ -1,0 +1,30 @@
+/* ─── App Layout ─── */
+.app-layout {
+  display: flex;
+  min-height: 100vh;
+}
+
+.app-main {
+  flex: 1 1 auto;
+  margin-left: 260px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--gray-50, #f9fafb);
+}
+
+.app-content {
+  flex: 1 1 auto;
+  padding: 28px 32px;
+}
+
+/* ─── Responsive ─── */
+@media (max-width: 768px) {
+  .app-main {
+    margin-left: 0;
+  }
+
+  .app-content {
+    padding: 20px 16px;
+  }
+}
