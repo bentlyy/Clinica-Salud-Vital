@@ -29,7 +29,7 @@ export function PageHeader({ title, subtitle, action }: PageHeaderProps) {
           {title}
         </Typography>
         {subtitle && (
-          <Typography variant="body2" sx={{ color: '#6b7280', mt: 0.5 }}>
+          <Typography variant="body2" component="div" sx={{ color: '#6b7280', mt: 0.5 }}>
             {subtitle}
           </Typography>
         )}

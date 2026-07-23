@@ -8,12 +8,12 @@ const router = Router();
 
 router.use(authMiddleware);
 
-router.get('/', authorize('admin', 'doctor', 'user', 'patient'), getInvoices);
-router.get('/stats', authorize('admin', 'doctor'), getBillingStats);
-router.get('/:id', authorize('admin', 'doctor', 'user', 'patient'), validateZod(invoiceIdSchema, 'params'), getInvoiceById);
-router.post('/', authorize('admin', 'doctor'), validateZod(createInvoiceSchema), createInvoice);
-router.patch('/:id/status', authorize('admin'), validateZod(invoiceIdSchema, 'params'), validateZod(updateInvoiceStatusSchema), updateInvoiceStatus);
-router.delete('/:id', authorize('admin', 'doctor'), validateZod(invoiceIdSchema, 'params'), deleteInvoice);
+router.get('/', authorize('admin', 'superadmin', 'doctor', 'user', 'patient'), getInvoices);
+router.get('/stats', authorize('admin', 'superadmin', 'doctor'), getBillingStats);
+router.get('/:id', authorize('admin', 'superadmin', 'doctor', 'user', 'patient'), validateZod(invoiceIdSchema, 'params'), getInvoiceById);
+router.post('/', authorize('admin', 'superadmin', 'doctor'), validateZod(createInvoiceSchema), createInvoice);
+router.patch('/:id/status', authorize('admin', 'superadmin'), validateZod(invoiceIdSchema, 'params'), validateZod(updateInvoiceStatusSchema), updateInvoiceStatus);
+router.delete('/:id', authorize('admin', 'superadmin', 'doctor'), validateZod(invoiceIdSchema, 'params'), deleteInvoice);
 
 export default router;
 

@@ -4,11 +4,13 @@ import People from '@mui/icons-material/People';
 import Event from '@mui/icons-material/Event';
 import LocalHospital from '@mui/icons-material/LocalHospital';
 import Today from '@mui/icons-material/Today';
+import TrendingUp from '@mui/icons-material/TrendingUp';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { ErrorState } from '@/shared/components/ui/ErrorState';
-import { useAdminAnalytics } from '../hooks/useAnalytics';
+import { useAdminAnalytics, useMyDoctorStats, useBookingsByMonth, useStatusDistribution } from '../hooks/useAnalytics';
 import { BookingsByMonthChart } from '../components/BookingsByMonthChart';
 import { StatusPieChart } from '../components/StatusPieChart';
+import { useAuth } from '@/shared/providers/AuthProvider';
 
 function StatCard({ icon, label, value, color }: { icon: React.ReactNode; label: string; value: number | string; color: string }) {
   return (
@@ -24,7 +26,58 @@ function StatCard({ icon, label, value, color }: { icon: React.ReactNode; label:
   );
 }
 
-export default function AdminAnalyticsPage() {
+function DoctorAnalytics() {
+  const { data: myStats, isLoading: statsLoading, error: statsError, refetch: statsRefetch } = useMyDoctorStats();
+  const { data: monthData, isLoading: monthLoading } = useBookingsByMonth();
+  const { data: statusData, isLoading: statusLoading } = useStatusDistribution();
+
+  if (statsError) {
+    return <ErrorState error={statsError as Error} onRetry={statsRefetch} />;
+  }
+
+  return (
+    <Box>
+      <PageHeader
+        title="Mis Analíticas"
+        subtitle="Resumen de tu actividad como doctor"
+      />
+
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr 1fr', md: '1fr 1fr 1fr 1fr' }, gap: 2, mb: 3 }}>
+        <StatCard
+          icon={<Event sx={{ color: '#fff' }} />}
+          label="Mis Citas"
+          value={myStats?.total_bookings ?? '—'}
+          color="#8b5cf6"
+        />
+        <StatCard
+          icon={<People sx={{ color: '#fff' }} />}
+          label="Pacientes Atendidos"
+          value={myStats?.patients_served ?? '—'}
+          color="#0d9488"
+        />
+        <StatCard
+          icon={<Today sx={{ color: '#fff' }} />}
+          label="Próximas Citas"
+          value={myStats?.upcoming_bookings ?? '—'}
+          color="#f59e0b"
+        />
+        <StatCard
+          icon={<TrendingUp sx={{ color: '#fff' }} />}
+          label="Expedientes"
+          value={myStats?.clinical_records ?? '—'}
+          color="#2563eb"
+        />
+      </Box>
+
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '1fr 1fr' }, gap: 3 }}>
+        <BookingsByMonthChart data={monthData ?? []} isLoading={monthLoading} />
+        <StatusPieChart data={statusData ?? []} isLoading={statusLoading} />
+      </Box>
+    </Box>
+  );
+}
+
+function AdminAnalytics() {
   const { data: analytics, isLoading, error, refetch } = useAdminAnalytics();
 
   if (error) {
@@ -151,4 +204,14 @@ export default function AdminAnalyticsPage() {
       </Paper>
     </Box>
   );
+}
+
+export default function AdminAnalyticsPage() {
+  const { user } = useAuth();
+
+  if (user?.role === 'doctor') {
+    return <DoctorAnalytics />;
+  }
+
+  return <AdminAnalytics />;
 }
