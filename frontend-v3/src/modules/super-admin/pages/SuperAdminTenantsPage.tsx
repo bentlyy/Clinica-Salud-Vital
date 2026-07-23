@@ -23,8 +23,8 @@ import {
   Drawer,
   Divider,
   Avatar,
-  Grid,
 } from '@mui/material';
+import Grid from '@mui/material/Grid';
 import Add from '@mui/icons-material/Add';
 import Search from '@mui/icons-material/Search';
 import Edit from '@mui/icons-material/Edit';
@@ -32,7 +32,6 @@ import Delete from '@mui/icons-material/Delete';
 import Visibility from '@mui/icons-material/Visibility';
 import People from '@mui/icons-material/People';
 import CalendarMonth from '@mui/icons-material/CalendarMonth';
-import AttachMoney from '@mui/icons-material/AttachMoney';
 import LocalHospital from '@mui/icons-material/LocalHospital';
 import { MotionDiv } from '@/shared/utils/animations';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
@@ -57,7 +56,7 @@ export default function SuperAdminTenantsPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [editingTenant, setEditingTenant] = useState<Tenant | null>(null);
   const [deleteDialog, setDeleteDialog] = useState<Tenant | null>(null);
-  const [drawerTenantId, setDrawerTenantId] = useState<number | null>(null);
+  const [drawerTenantId, setDrawerTenantId] = useState<string | null>(null);
 
   const { data, isLoading, error, refetch } = useTenantList({
     page: page + 1,
@@ -65,8 +64,7 @@ export default function SuperAdminTenantsPage() {
     search: search || undefined,
   });
 
-  const { data: tenantDetail } = useTenantDetail(drawerTenantId ?? 0);
-  const tenantStats = { total_users: 0, total_patients: 0, total_doctors: 0, total_appointments: 0, monthly_revenue: 0 };
+  const { data: tenantDetail } = useTenantDetail(drawerTenantId ?? '');
   const createTenant = useCreateTenant();
   const updateTenant = useUpdateTenant();
   const deleteTenant = useDeleteTenant();
@@ -202,11 +200,11 @@ export default function SuperAdminTenantsPage() {
                       </TableCell>
                       <TableCell>
                         <Chip
-                          label={tenant.is_active ? 'Activa' : 'Inactiva'}
+                          label={tenant.active ? 'Activa' : 'Inactiva'}
                           size="small"
                           sx={{
-                            backgroundColor: tenant.is_active ? '#ecfdf5' : '#fef2f2',
-                            color: tenant.is_active ? '#059669' : '#dc2626',
+                            backgroundColor: tenant.active ? '#ecfdf5' : '#fef2f2',
+                            color: tenant.active ? '#059669' : '#dc2626',
                             fontWeight: 600,
                           }}
                         />
@@ -327,11 +325,11 @@ export default function SuperAdminTenantsPage() {
               <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                 <Typography variant="body2" sx={{ color: '#6b7280' }}>Estado</Typography>
                 <Chip
-                  label={tenantDetail.is_active ? 'Activa' : 'Inactiva'}
+                  label={tenantDetail.active ? 'Activa' : 'Inactiva'}
                   size="small"
                   sx={{
-                    backgroundColor: tenantDetail.is_active ? '#ecfdf5' : '#fef2f2',
-                    color: tenantDetail.is_active ? '#059669' : '#dc2626',
+                    backgroundColor: tenantDetail.active ? '#ecfdf5' : '#fef2f2',
+                    color: tenantDetail.active ? '#059669' : '#dc2626',
                     fontWeight: 600,
                   }}
                 />
@@ -344,20 +342,19 @@ export default function SuperAdminTenantsPage() {
               </Box>
             </Box>
 
-            {tenantStats && (
+            {tenantDetail && (
               <>
                 <Typography variant="subtitle2" sx={{ fontWeight: 600, color: '#6b7280', mb: 2 }}>
                   ESTADÍSTICAS
                 </Typography>
                 <Grid container spacing={2}>
                   {[
-                    { label: 'Usuarios', value: tenantStats.total_users, icon: <People sx={{ fontSize: 18 }} />, color: '#2563eb' },
-                    { label: 'Pacientes', value: tenantStats.total_patients, icon: <CalendarMonth sx={{ fontSize: 18 }} />, color: '#0d9488' },
-                    { label: 'Doctores', value: tenantStats.total_doctors, icon: <LocalHospital sx={{ fontSize: 18 }} />, color: '#7c3aed' },
-                    { label: 'Citas', value: tenantStats.total_appointments, icon: <CalendarMonth sx={{ fontSize: 18 }} />, color: '#d97706' },
-                    { label: 'Ingresos', value: `$${tenantStats.monthly_revenue.toLocaleString('es-CL')}`, icon: <AttachMoney sx={{ fontSize: 18 }} />, color: '#059669' },
+                    { label: 'Usuarios', value: tenantDetail.total_users || 0, icon: <People sx={{ fontSize: 18 }} />, color: '#2563eb' },
+                    { label: 'Pacientes', value: tenantDetail.total_patients || 0, icon: <CalendarMonth sx={{ fontSize: 18 }} />, color: '#0d9488' },
+                    { label: 'Doctores', value: tenantDetail.total_doctors || 0, icon: <LocalHospital sx={{ fontSize: 18 }} />, color: '#7c3aed' },
+                    { label: 'Citas', value: tenantDetail.total_bookings || 0, icon: <CalendarMonth sx={{ fontSize: 18 }} />, color: '#d97706' },
                   ].map((item) => (
-                    <Grid xs={6} key={item.label}>
+                    <Grid size={{ xs: 6 }} key={item.label}>
                       <Paper
                         sx={{
                           p: 2,

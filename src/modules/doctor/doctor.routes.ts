@@ -19,7 +19,7 @@ router.post('/register', authMiddleware, authorize('admin'), validateZod(registe
 
 router.post('/invite', authMiddleware, authorize('admin', 'superadmin'), validateZod(invitePersonSchema), invitePerson);
 
-router.get('/', authMiddleware, authorize('admin', 'superadmin'), getDoctors);
+router.get('/', authMiddleware, authorize('admin', 'superadmin', 'doctor'), getDoctors);
 
 router.get('/public', (req, res, next) => {
   res.set('Cache-Control', 'public, max-age=60');
@@ -30,7 +30,7 @@ router.post('/', authMiddleware, authorize('admin', 'superadmin'), validateZod(c
 
 router.get('/me', authMiddleware, authorize('doctor'), getMyDoctorProfile);
 
-router.get('/users', authMiddleware, authorize('admin', 'superadmin'), listUsers);
+router.get('/users', authMiddleware, authorize('admin', 'superadmin', 'doctor'), listUsers);
 router.patch('/users/:userId/active', authMiddleware, authorize('admin', 'superadmin'), toggleUserActive);
 
 export default router;

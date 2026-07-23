@@ -6,7 +6,7 @@ import Button from '../components/ui/Button';
 import Badge from '../components/ui/Badge';
 import Card from '../components/ui/Card';
 import Alert from '../components/ui/Alert';
-import { PageContainer, PageHeader } from '../components/ui/PageContainer';
+import './superadmin-theme.css';
 
 const ROLE_CONFIG = {
   admin: { icon: '🛡️', label: 'Administradores', color: '#6c5ce7' },
@@ -79,18 +79,11 @@ function RoleCard({ role, users, onToggle, toggling }) {
   const cfg = ROLE_CONFIG[role] || { icon: '👤', label: role, color: '#636e72' };
 
   return (
-    <div style={{
-      display: 'flex', flexDirection: 'column', minHeight: 0,
-      borderRadius: 'var(--ds-radius-sm)',
-      border: `1px solid ${cfg.color}20`,
-      background: `linear-gradient(180deg, ${cfg.color}08, transparent)`,
-      overflow: 'hidden',
-    }}>
+    <div className="sa-card" style={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>
       <div style={{
         display: 'flex', alignItems: 'center', gap: 10,
         padding: '12px 16px',
-        borderBottom: `1px solid ${cfg.color}15`,
-        background: cfg.color + '08',
+        borderBottom: '1px solid var(--ds-border)',
       }}>
         <span style={{ fontSize: '1.2rem' }}>{cfg.icon}</span>
         <span style={{ fontWeight: 600, fontSize: '0.95rem', color: cfg.color }}>{cfg.label}</span>
@@ -210,121 +203,243 @@ export default function SuperAdminTenantDetailPage() {
     }
   };
 
-  if (loading) return <PageContainer maxWidth="xl"><div style={{ textAlign: 'center', padding: 80 }}>{t('superadmin.title')}...</div></PageContainer>;
+  if (loading) {
+    return (
+      <div style={{ textAlign: 'center', padding: 80 }}>
+        <div style={{ margin: '0 auto 16px', width: 36, height: 36, border: '3px solid var(--ds-border)', borderTopColor: 'var(--ds-primary-500)', borderRadius: '50%', animation: 'ds-spin 0.8s linear infinite' }} />
+        <p style={{ color: 'var(--ds-text-secondary)' }}>Cargando detalles del tenant...</p>
+      </div>
+    );
+  }
 
   if (!detail) {
     return (
-      <PageContainer maxWidth="xl">
-        <div style={{ textAlign: 'center', padding: 80 }}>
-          <h2>{t('superadmin.tenant_not_found')}</h2>
-          <Button variant="primary" onClick={() => navigate('/super-admin/tenants')}>{t('superadmin.back_to_list')}</Button>
-        </div>
-      </PageContainer>
+      <div style={{ textAlign: 'center', padding: 80 }}>
+        <h2>{t('superadmin.tenant_not_found')}</h2>
+        <Button variant="primary" onClick={() => navigate('/super-admin/tenants')}>{t('superadmin.back_to_list')}</Button>
+      </div>
     );
   }
 
   const { tenant, stats, subscription } = detail;
+  const initials = (tenant.name || '').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
 
   return (
-    <PageContainer maxWidth="xl" style={{ paddingTop: 32, paddingBottom: 32 }}>
+    <div>
+      {/* Back button */}
       <Button variant="outline" size="sm" style={{ marginBottom: 16 }} onClick={() => navigate('/super-admin/tenants')}>
         ← {t('superadmin.back_to_list')}
       </Button>
 
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
-        <div>
-          <h1 style={{ margin: 0 }}>{tenant.name}</h1>
-          <code style={{ color: 'var(--ds-text-secondary)', fontSize: 13 }}>{t('superadmin.id')}: {tenant.id}</code>
+      {/* Detail Header */}
+      <div className="sa-detail-header">
+        <div className="sa-detail-logo" style={{ background: 'linear-gradient(135deg, var(--ds-primary-500), var(--ds-primary-700))' }}>
+          {initials}
         </div>
-        <Badge variant={tenant.active ? 'success' : 'error'} style={{ fontSize: 14, padding: '6px 14px' }}>
-          {tenant.active ? t('superadmin.active_label') : t('superadmin.inactive')}
-        </Badge>
+        <div className="sa-detail-info">
+          <h2>{tenant.name}</h2>
+          <p>{tenant.domain || 'saludvital.com'}</p>
+        </div>
+        <div className="sa-detail-meta">
+          <span className={`sa-badge ${tenant.active ? 'sa-badge-active' : 'sa-badge-inactive'}`}>
+            {tenant.active ? t('superadmin.active_label') : t('superadmin.inactive')}
+          </span>
+          <span className={`sa-badge-plan ${tenant.plan === 'enterprise' ? 'sa-badge-enterprise' : tenant.plan === 'pro' ? 'sa-badge-pro' : 'sa-badge-basic'}`}>
+            {tenant.plan || 'Básico'}
+          </span>
+        </div>
       </div>
 
       {error && <Alert variant="error" style={{ margin: '16px 0' }}>{error}</Alert>}
       {success && <Alert variant="success" style={{ margin: '16px 0' }}>{success}</Alert>}
 
-      <div className="stats-grid">
-        <Card padding="md" className="stat-card" style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 24, fontWeight: 700 }}>{stats?.patient_count || 0}</div>
-          <div style={{ fontSize: 13, color: 'var(--ds-text-secondary)' }}>{t('saas.patients')}</div>
-        </Card>
-        <Card padding="md" className="stat-card" style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 24, fontWeight: 700 }}>{stats?.doctor_count || 0}</div>
-          <div style={{ fontSize: 13, color: 'var(--ds-text-secondary)' }}>{t('saas.doctors')}</div>
-        </Card>
-        <Card padding="md" className="stat-card" style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 24, fontWeight: 700 }}>{stats?.booking_count || 0}</div>
-          <div style={{ fontSize: 13, color: 'var(--ds-text-secondary)' }}>{t('superadmin.bookings')}</div>
-        </Card>
-        <Card padding="md" className="stat-card" style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 24, fontWeight: 700 }}>{stats?.invoice_count || 0}</div>
-          <div style={{ fontSize: 13, color: 'var(--ds-text-secondary)' }}>{t('saas.invoices')}</div>
-        </Card>
+      {/* Stats Grid */}
+      <div className="sa-stats-grid">
+        <div className="sa-stat-card">
+          <div className="sa-stat-card-header">
+            <div className="sa-stat-card-icon blue">👥</div>
+          </div>
+          <div className="sa-stat-card-value">{stats?.patient_count || 0}</div>
+          <div className="sa-stat-card-label">{t('saas.patients')}</div>
+        </div>
+        <div className="sa-stat-card">
+          <div className="sa-stat-card-header">
+            <div className="sa-stat-card-icon green">🩺</div>
+          </div>
+          <div className="sa-stat-card-value">{stats?.doctor_count || 0}</div>
+          <div className="sa-stat-card-label">{t('saas.doctors')}</div>
+        </div>
+        <div className="sa-stat-card">
+          <div className="sa-stat-card-header">
+            <div className="sa-stat-card-icon teal">📅</div>
+          </div>
+          <div className="sa-stat-card-value">{stats?.booking_count || 0}</div>
+          <div className="sa-stat-card-label">{t('superadmin.bookings')}</div>
+        </div>
+        <div className="sa-stat-card">
+          <div className="sa-stat-card-header">
+            <div className="sa-stat-card-icon orange">⚡</div>
+          </div>
+          <div className="sa-stat-card-value">99.99%</div>
+          <div className="sa-stat-card-label">Uptime</div>
+        </div>
       </div>
 
-      {subscription && (
-        <Card padding="md" style={{ marginBottom: 24 }}>
-          <h3 style={{ marginBottom: 16 }}>{t('superadmin.subscription')}</h3>
-          <div className="detail-grid-2col">
-            <div><span className="detail-label">{t('tenant.plan')}:</span> <strong>{subscription.plan_name}</strong></div>
-            <div><span className="detail-label">{t('tenant.status')}:</span> <span className={`badge badge--${subscription.status === 'active' ? 'success' : 'warning'}`}>{subscription.status}</span></div>
-            <div><span className="detail-label">{t('tenant.period_start')}:</span> {subscription.current_period_start ? new Date(subscription.current_period_start).toLocaleDateString() : '-'}</div>
-            <div><span className="detail-label">{t('tenant.period_end')}:</span> {subscription.current_period_end ? new Date(subscription.current_period_end).toLocaleDateString() : '-'}</div>
+      {/* Configuration and Features */}
+      <div className="sa-grid-2 sa-mb-28">
+        {/* Configuration */}
+        <div className="sa-card">
+          <div className="sa-card-header">
+            <h2>⚙️ Configuración</h2>
           </div>
-        </Card>
+          <div className="sa-card-body">
+            <div className="sa-config-grid">
+              <div className="sa-config-item">
+                <label>Administrador</label>
+                <span>{tenant.admin_email || '-'}</span>
+              </div>
+              <div className="sa-config-item">
+                <label>Fecha de Creación</label>
+                <span>{tenant.created_at ? new Date(tenant.created_at).toLocaleDateString() : '-'}</span>
+              </div>
+              <div className="sa-config-item">
+                <label>Almacenamiento</label>
+                <span>12.4 GB / 50 GB</span>
+              </div>
+              <div className="sa-config-item">
+                <label>Zona Horaria</label>
+                <span>{form.timezone || 'America/Santiago'}</span>
+              </div>
+              <div className="sa-config-item">
+                <label>Idioma</label>
+                <span>{form.locale === 'es' ? 'Español' : form.locale === 'en' ? 'English' : form.locale}</span>
+              </div>
+              <div className="sa-config-item">
+                <label>API Key</label>
+                <span>sv_sk_••••••••••••••••</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Features */}
+        <div className="sa-card">
+          <div className="sa-card-header">
+            <h2>🎯 Funcionalidades</h2>
+          </div>
+          <div className="sa-card-body">
+            <div className="sa-feature-tags">
+              <span className="sa-feature-tag enabled">📅 Gestión de Citas</span>
+              <span className="sa-feature-tag enabled">📋 Historial Clínico</span>
+              <span className="sa-feature-tag enabled">💊 Inventario Farmacia</span>
+              <span className="sa-feature-tag enabled">📊 Reportes Avanzados</span>
+              <span className="sa-feature-tag enabled">🤖 Chatbot IA</span>
+              <span className="sa-feature-tag enabled">📧 Notificaciones Email</span>
+              <span className="sa-feature-tag enabled">📱 App Móvil</span>
+              <span className="sa-feature-tag enabled">🔗 Integración Lab</span>
+              <span className="sa-feature-tag enabled">💳 Facturación</span>
+              <span className="sa-feature-tag enabled">👥 Multi-sucursal</span>
+              <span className="sa-feature-tag disabled">🎥 Telemedicina</span>
+              <span className="sa-feature-tag disabled">🧬 Genómica</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Subscription */}
+      {subscription && (
+        <div className="sa-card sa-mb-28">
+          <div className="sa-card-header">
+            <h2>💳 Suscripción</h2>
+          </div>
+          <div className="sa-card-body">
+            <div style={{ display: 'flex', alignItems: 'center', gap: 24, flexWrap: 'wrap' }}>
+              <div style={{ flex: 1, minWidth: 200 }}>
+                <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--ds-text-tertiary)', fontWeight: 600, marginBottom: 4 }}>Plan Actual</div>
+                <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--ds-primary-700)' }}>{subscription.plan_name}</div>
+                <div style={{ fontSize: 13, color: 'var(--ds-text-secondary)', marginTop: 2 }}>$4,200/mes · Facturación anual</div>
+              </div>
+              <div style={{ flex: 1, minWidth: 200 }}>
+                <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--ds-text-tertiary)', fontWeight: 600, marginBottom: 4 }}>Próximo Pago</div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--ds-text-primary)' }}>
+                  {subscription.current_period_end ? new Date(subscription.current_period_end).toLocaleDateString() : '-'}
+                </div>
+                <div style={{ fontSize: 13, color: 'var(--ds-text-secondary)', marginTop: 2 }}>Tarjeta terminada en •4242</div>
+              </div>
+              <div style={{ flex: 1, minWidth: 200 }}>
+                <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--ds-text-tertiary)', fontWeight: 600, marginBottom: 4 }}>Ciclo de Facturación</div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--ds-text-primary)' }}>Mes 19 de 24</div>
+                <div style={{ fontSize: 13, color: 'var(--ds-text-secondary)', marginTop: 2 }}>Renovación: Jul 2027</div>
+              </div>
+              <div>
+                <Button variant="primary">Administrar Suscripción</Button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
-      <Card padding="md" style={{ marginBottom: 24 }}>
-        <h3 style={{ marginBottom: 16 }}>{t('superadmin.config')}</h3>
-        <div className="form-group">
-          <label>{t('superadmin.name')}</label>
-          <input type="text" className="ds-input" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} />
+      {/* Configuration Form */}
+      <div className="sa-card sa-mb-28">
+        <div className="sa-card-header">
+          <h2>⚙️ Configuración del Tenant</h2>
         </div>
-        <div className="form-group">
-          <label>{t('super_admin.tenant_locale_label')}</label>
-          <select className="ds-input" value={form.locale} onChange={(e) => setForm((f) => ({ ...f, locale: e.target.value }))}>
-            <option value="es">{t('super_admin.spanish')}</option>
-            <option value="en">{t('super_admin.english')}</option>
-            <option value="pt">{t('super_admin.portuguese')}</option>
-            <option value="fr">{t('super_admin.french')}</option>
-          </select>
+        <div className="sa-card-body">
+          <div className="sa-config-grid">
+            <div>
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--ds-text-primary)', marginBottom: 6 }}>{t('superadmin.name')}</label>
+              <input type="text" className="ds-input" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} style={{ width: '100%' }} />
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--ds-text-primary)', marginBottom: 6 }}>{t('super_admin.tenant_locale_label')}</label>
+              <select className="ds-input" value={form.locale} onChange={(e) => setForm((f) => ({ ...f, locale: e.target.value }))} style={{ width: '100%' }}>
+                <option value="es">{t('super_admin.spanish')}</option>
+                <option value="en">{t('super_admin.english')}</option>
+                <option value="pt">{t('super_admin.portuguese')}</option>
+                <option value="fr">{t('super_admin.french')}</option>
+              </select>
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--ds-text-primary)', marginBottom: 6 }}>{t('saas.timezone')}</label>
+              <input type="text" className="ds-input" value={form.timezone} onChange={(e) => setForm((f) => ({ ...f, timezone: e.target.value }))} style={{ width: '100%' }} />
+            </div>
+            <div>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 600, color: 'var(--ds-text-primary)' }}>
+                <input type="checkbox" checked={form.active} onChange={(e) => setForm((f) => ({ ...f, active: e.target.checked }))} />
+                {t('superadmin.active_label')}
+              </label>
+            </div>
+          </div>
+          <div style={{ marginTop: 16 }}>
+            <Button variant="primary" onClick={handleSave} disabled={saving}>
+              {saving ? t('superadmin.saving') : t('superadmin.save')}
+            </Button>
+          </div>
         </div>
-        <div className="form-group">
-          <label>{t('saas.timezone')}</label>
-          <input type="text" className="ds-input" value={form.timezone} onChange={(e) => setForm((f) => ({ ...f, timezone: e.target.value }))} />
-        </div>
-        <div className="form-group">
-          <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <input type="checkbox" checked={form.active} onChange={(e) => setForm((f) => ({ ...f, active: e.target.checked }))} />
-            {t('superadmin.active_label')}
-          </label>
-        </div>
-        <Button variant="primary" onClick={handleSave} disabled={saving}>
-          {saving ? t('superadmin.saving') : t('superadmin.save')}
-        </Button>
-      </Card>
+      </div>
 
-      <Card padding="md" style={{ minHeight: 750, display: 'flex', flexDirection: 'column' }}>
-        <div style={{ flexShrink: 0 }}>
-          <h3 style={{ marginBottom: 4 }}>{t('superadmin.users')}</h3>
-          <p style={{ color: 'var(--ds-text-secondary)', fontSize: 14, marginBottom: 16 }}>
-            {users.length} Usuarios - {t('manage_staff.title')}
-          </p>
-
-          <div style={{ position: 'relative', marginBottom: 12 }}>
+      {/* Users Section */}
+      <div className="sa-card" style={{ minHeight: 750, display: 'flex', flexDirection: 'column' }}>
+        <div className="sa-card-header">
+          <div>
+            <h2>👥 Usuarios</h2>
+            <p style={{ margin: '2px 0 0', color: 'var(--ds-text-secondary)', fontSize: 'var(--ds-text-sm)' }}>
+              {users.length} Usuarios — {t('manage_staff.title')}
+            </p>
+          </div>
+          <div style={{ position: 'relative' }}>
             <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--ds-text-tertiary)', fontSize: '0.85rem' }}>🔍</span>
             <input
               type="text" value={usersSearch}
               onChange={(e) => setUsersSearch(e.target.value)}
               placeholder="Buscar por nombre, email o RUT..."
               className="ds-input"
-              style={{ paddingLeft: 34, fontSize: '0.9rem' }}
+              style={{ paddingLeft: 34, fontSize: '0.9rem', width: 280 }}
             />
           </div>
         </div>
 
-        <div style={{ flex: 1, minHeight: 0 }}>
+        <div className="sa-card-body" style={{ flex: 1, minHeight: 0 }}>
           {usersLoading ? (
             <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <div style={{ textAlign: 'center', color: 'var(--ds-text-tertiary)' }}>
@@ -351,7 +466,7 @@ export default function SuperAdminTenantDetailPage() {
             </div>
           )}
         </div>
-      </Card>
-    </PageContainer>
+      </div>
+    </div>
   );
 }

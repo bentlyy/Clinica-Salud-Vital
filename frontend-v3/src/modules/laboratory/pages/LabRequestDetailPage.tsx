@@ -4,7 +4,6 @@ import {
   Box,
   Typography,
   Paper,
-  Grid,
   Chip,
   Button,
   Divider,
@@ -19,6 +18,7 @@ import {
   DialogContent,
   DialogActions,
 } from '@mui/material';
+import Grid from '@mui/material/Grid';
 import ArrowBack from '@mui/icons-material/ArrowBack';
 import CheckCircle from '@mui/icons-material/CheckCircle';
 import LocalShipping from '@mui/icons-material/LocalShipping';
@@ -32,11 +32,12 @@ import {
   useLabRequestDetail,
   useUpdateItemResult,
   useValidateItemTech,
+  useValidateItemDoctor,
   useDeliverItem,
 } from '../hooks/useLab';
 import { LabResultsForm } from '../components/LabResultsForm';
 import { LAB_STATUS_CONFIG, LAB_PRIORITY_CONFIG } from '../types/lab.types';
-import type { AddLabResultsInput, LabResult } from '../types/lab.types';
+import type { AddLabResultsInput } from '../types/lab.types';
 
 export default function LabRequestDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -54,8 +55,12 @@ export default function LabRequestDetailPage() {
   } = useLabRequestDetail(requestId);
 
   const addResultsMutation = useUpdateItemResult();
-  const validateMutation = useValidateItemTech();
+  const validateTechMutation = useValidateItemTech();
+  const validateDoctorMutation = useValidateItemDoctor();
   const deliverMutation = useDeliverItem();
+
+  const isDoctor = user?.role === 'doctor';
+  const validateMutation = isDoctor ? validateDoctorMutation : validateTechMutation;
 
   if (requestLoading) return <LoadingState message="Cargando solicitud..." />;
   if (requestError) return <ErrorState error={requestError as Error} onRetry={() => void refetchRequest()} />;
@@ -64,7 +69,7 @@ export default function LabRequestDetailPage() {
   const statusCfg = LAB_STATUS_CONFIG[request.status];
   const priorityCfg = LAB_PRIORITY_CONFIG[request.priority];
 
-  const canAddResults = user && (user.role === 'lab_technician' || user.role === 'admin' || user.role === 'superadmin');
+  const canAddResults = user && (user.role === 'doctor' || user.role === 'lab_technician' || user.role === 'admin' || user.role === 'superadmin');
   const canValidate = user && (user.role === 'doctor' || user.role === 'admin' || user.role === 'superadmin');
   const canDeliver = user && (user.role === 'lab_technician' || user.role === 'admin' || user.role === 'superadmin');
 
@@ -73,22 +78,22 @@ export default function LabRequestDetailPage() {
   };
 
   const handleValidate = () => {
-    if (request?.results?.[0]) {
-      validateMutation.mutate(request.results[0].id);
+    if (request?.items?.[0]) {
+      validateMutation.mutate(request.items[0].id);
     }
   };
 
   const handleDeliver = () => {
-    if (request?.results?.[0]) {
-      deliverMutation.mutate(request.results[0].id);
+    if (request?.items?.[0]) {
+      deliverMutation.mutate(request.items[0].id);
     }
   };
 
   return (
     <Box>
       <PageHeader
-        title={request.title}
-        subtitle={`Solicitud #${request.id}`}
+        title={request.request_number || `Solicitud #${request.id}`}
+        subtitle={`${request.patient_name || ''} — ${request.doctor_name || ''}`}
         action={
           <Button
             startIcon={<ArrowBack />}
@@ -102,13 +107,13 @@ export default function LabRequestDetailPage() {
 
       {/* Request Info */}
       <Grid container spacing={3} sx={{ mb: 3 }}>
-        <Grid xs={12} md={8}>
+        <Grid size={{ xs: 12, md: 8 }}>
           <Paper sx={{ p: 3, border: '1px solid #e5e7eb' }}>
             <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, color: '#1f2937' }}>
               Información de la Solicitud
             </Typography>
             <Grid container spacing={2}>
-              <Grid xs={12} sm={6}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <Typography variant="caption" sx={{ color: '#6b7280', textTransform: 'uppercase' }}>
                   Paciente
                 </Typography>
@@ -116,7 +121,7 @@ export default function LabRequestDetailPage() {
                   {request.patient_name || `Paciente #${request.patient_id}`}
                 </Typography>
               </Grid>
-              <Grid xs={12} sm={6}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <Typography variant="caption" sx={{ color: '#6b7280', textTransform: 'uppercase' }}>
                   Doctor
                 </Typography>
@@ -124,7 +129,7 @@ export default function LabRequestDetailPage() {
                   {request.doctor_name || `Doctor #${request.doctor_id}`}
                 </Typography>
               </Grid>
-              <Grid xs={12} sm={6}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <Typography variant="caption" sx={{ color: '#6b7280', textTransform: 'uppercase' }}>
                   Estado
                 </Typography>
@@ -139,7 +144,7 @@ export default function LabRequestDetailPage() {
                   />
                 </Box>
               </Grid>
-              <Grid xs={12} sm={6}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <Typography variant="caption" sx={{ color: '#6b7280', textTransform: 'uppercase' }}>
                   Prioridad
                 </Typography>
@@ -154,15 +159,15 @@ export default function LabRequestDetailPage() {
                   />
                 </Box>
               </Grid>
-              <Grid xs={12}>
+              <Grid size={{ xs: 12 }}>
                 <Typography variant="caption" sx={{ color: '#6b7280', textTransform: 'uppercase' }}>
-                  Descripción
+                  Notas
                 </Typography>
                 <Typography variant="body2" sx={{ color: '#374151', mt: 0.5 }}>
-                  {request.description || 'Sin descripción'}
+                  {request.notes || 'Sin notas'}
                 </Typography>
               </Grid>
-              <Grid xs={12} sm={6}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <Typography variant="caption" sx={{ color: '#6b7280', textTransform: 'uppercase' }}>
                   Fecha de Creación
                 </Typography>
@@ -170,7 +175,7 @@ export default function LabRequestDetailPage() {
                   {new Date(request.created_at).toLocaleString('es-CL')}
                 </Typography>
               </Grid>
-              <Grid xs={12} sm={6}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <Typography variant="caption" sx={{ color: '#6b7280', textTransform: 'uppercase' }}>
                   Última Actualización
                 </Typography>
@@ -183,13 +188,13 @@ export default function LabRequestDetailPage() {
         </Grid>
 
         {/* Actions */}
-        <Grid xs={12} md={4}>
+        <Grid size={{ xs: 12, md: 4 }}>
           <Paper sx={{ p: 3, border: '1px solid #e5e7eb' }}>
             <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, color: '#1f2937' }}>
               Acciones
             </Typography>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-              {canAddResults && request.status !== 'delivered' && (
+              {canAddResults && request.status !== 'cancelled' && (
                 <Button
                   variant="outlined"
                   fullWidth
@@ -212,7 +217,7 @@ export default function LabRequestDetailPage() {
                   {validateMutation.isPending ? 'Validando...' : 'Validar Resultados'}
                 </Button>
               )}
-              {canDeliver && request.status === 'validated' && (
+              {canDeliver && request.status === 'completed' && (
                 <Button
                   variant="contained"
                   fullWidth
@@ -242,7 +247,7 @@ export default function LabRequestDetailPage() {
         Resultados de Laboratorio
       </Typography>
 
-      {request.results && request.results.length > 0 ? (
+      {request.items && request.items.length > 0 ? (
         <TableContainer component={Paper} sx={{ border: '1px solid #e5e7eb' }}>
           <Table>
             <TableHead>
@@ -256,42 +261,42 @@ export default function LabRequestDetailPage() {
               </TableRow>
             </TableHead>
             <TableBody>
-              {request.results!.map((result: LabResult) => (
-                <TableRow key={result.id} hover>
+              {request.items.map((item: any) => (
+                <TableRow key={item.id} hover>
                   <TableCell>
                     <Typography variant="body2" sx={{ fontWeight: 500, color: '#1f2937' }}>
-                      {result.test_name}
+                      {item.test_name}
                     </Typography>
                   </TableCell>
                   <TableCell>
                     <Typography variant="body2" sx={{ fontWeight: 600, color: '#1f2937' }}>
-                      {result.value}
+                      {item.result_value || '—'}
                     </Typography>
                   </TableCell>
                   <TableCell>
                     <Typography variant="body2" sx={{ color: '#6b7280' }}>
-                      {result.unit || '—'}
+                      {item.unit || '—'}
                     </Typography>
                   </TableCell>
                   <TableCell>
                     <Typography variant="body2" sx={{ color: '#6b7280' }}>
-                      {result.reference_range || '—'}
+                      {item.reference_ranges ? (typeof item.reference_ranges === 'string' ? item.reference_ranges : JSON.stringify(item.reference_ranges)) : '—'}
                     </Typography>
                   </TableCell>
                   <TableCell>
                     <Chip
-                      label={result.is_normal ? 'Normal' : 'Anormal'}
+                      label={item.status || 'Pendiente'}
                       size="small"
                       sx={{
-                        backgroundColor: result.is_normal ? '#ecfdf5' : '#fef2f2',
-                        color: result.is_normal ? '#059669' : '#ef4444',
+                        backgroundColor: item.status === 'completed' ? '#ecfdf5' : '#fffbeb',
+                        color: item.status === 'completed' ? '#059669' : '#d97706',
                         fontWeight: 500,
                       }}
                     />
                   </TableCell>
                   <TableCell>
                     <Typography variant="body2" sx={{ color: '#6b7280' }}>
-                      {result.notes || '—'}
+                      {item.result_notes || '—'}
                     </Typography>
                   </TableCell>
                 </TableRow>
@@ -332,7 +337,7 @@ export default function LabRequestDetailPage() {
         fullWidth
       >
         <DialogTitle sx={{ fontWeight: 600 }}>
-          Agregar Resultados — {request.title}
+          Agregar Resultados — {request.request_number || `#${request.id}`}
         </DialogTitle>
         <DialogContent>
           <LabResultsForm

@@ -67,6 +67,12 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
 
 export const refresh = asyncHandler(async (req: Request, res: Response) => {
   const refresh_token = req.body.refresh_token || req.cookies?.refresh_token;
+  logger.info('[REFRESH] attempt', {
+    hasBodyToken: !!req.body?.refresh_token,
+    hasCookieToken: !!req.cookies?.refresh_token,
+    cookiesKeys: Object.keys(req.cookies || {}),
+    cookieHeader: req.headers.cookie ? 'present' : 'missing',
+  });
   if (!refresh_token) {
     throw new BadRequestError('Refresh token required');
   }

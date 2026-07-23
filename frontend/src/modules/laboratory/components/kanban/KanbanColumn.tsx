@@ -1,5 +1,3 @@
-import type { ReactNode } from 'react';
-
 import type { ReactNode, DragEvent } from 'react';
 
 interface KanbanColumnProps {

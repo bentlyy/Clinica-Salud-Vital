@@ -35,6 +35,7 @@ export const ROLE_PERMISSIONS = {
     scheduling: { view: true, create: true, edit: true, delete: true },
     availability: { view: true, create: true, delete: true },
     patients: { view: true },
+    medicalHistory: { view: true, create: true, edit: true },
     reports: { view: true },
     settings: { view: true, edit: true },
     notifications: { view: true },

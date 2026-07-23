@@ -5,7 +5,8 @@ import type {
   CreateTenantInput,
   UpdateTenantInput,
   TenantListParams,
-  TenantStats,
+  TenantDetail,
+  SaasDashboard,
 } from '../types/super-admin.types';
 
 export const superAdminService = {
@@ -14,18 +15,56 @@ export const superAdminService = {
     return data;
   },
 
-  async getDashboardData() {
-    const { data } = await apiClient.get('/super-admin/analytics/dashboard');
-    return data;
+  async getDashboardData(): Promise<SaasDashboard> {
+    const [dashRes, growthRes] = await Promise.all([
+      apiClient.get<{ data: Record<string, unknown> }>('/super-admin/analytics/dashboard'),
+      apiClient.get<{ data: Array<{ month: string; new_tenants: number }> }>('/super-admin/analytics/growth'),
+    ]);
+
+    const raw = dashRes.data.data;
+
+    const tenants_by_plan: SaasDashboard['tenants_by_plan'] = Array.isArray(raw.planDistribution)
+      ? raw.planDistribution.map((p: { plan: string; count: string | number }) => ({
+          plan: p.plan,
+          count: Number(p.count),
+        }))
+      : [];
+
+    const growthRaw = growthRes.data.data || [];
+    const growth_by_month: SaasDashboard['growth_by_month'] = growthRaw.map(
+      (g: { month: string; new_tenants: number }) => ({
+        month: g.month,
+        tenants: g.new_tenants || 0,
+        revenue: 0,
+      }),
+    );
+
+    return {
+      total_tenants: Number(raw.total_tenants || 0),
+      active_tenants: Number(raw.active_tenants || 0),
+      total_users: Number(raw.total_users || 0),
+      total_revenue: Number(raw.total_revenue || 0),
+      tenants_by_plan,
+      growth_by_month,
+    };
   },
 
   async listTenants(params: TenantListParams = {}): Promise<PaginatedResponse<Tenant>> {
-    const { data } = await apiClient.get<PaginatedResponse<Tenant>>('/super-admin/tenants', { params });
-    return data;
+    const { data } = await apiClient.get<{ data: Tenant[]; total: number; page: number; limit: number; totalPages: number }>(
+      '/super-admin/tenants',
+      { params },
+    );
+    return {
+      data: data.data || [],
+      total: data.total || 0,
+      page: data.page || 1,
+      limit: data.limit || 20,
+      totalPages: data.totalPages || 1,
+    };
   },
 
-  async getTenantById(id: number): Promise<Tenant> {
-    const { data } = await apiClient.get<Tenant>(`/super-admin/tenants/${id}`);
+  async getTenantById(id: string): Promise<TenantDetail> {
+    const { data } = await apiClient.get<TenantDetail>(`/super-admin/tenants/${id}`);
     return data;
   },
 
@@ -34,18 +73,18 @@ export const superAdminService = {
     return data;
   },
 
-  async updateTenant(id: number, input: UpdateTenantInput): Promise<Tenant> {
+  async updateTenant(id: string, input: UpdateTenantInput): Promise<Tenant> {
     const { data } = await apiClient.patch<Tenant>(`/super-admin/tenants/${id}`, input);
     return data;
   },
 
-  async deleteTenant(id: number): Promise<{ message: string }> {
+  async deleteTenant(id: string): Promise<{ message: string }> {
     const { data } = await apiClient.delete<{ message: string }>(`/super-admin/tenants/${id}`);
     return data;
   },
 
-  async getTenantStats(id: number): Promise<TenantStats> {
-    const { data } = await apiClient.get<TenantStats>(`/super-admin/tenants/${id}`);
+  async getTenantStats(id: string): Promise<TenantDetail> {
+    const { data } = await apiClient.get<TenantDetail>(`/super-admin/tenants/${id}`);
     return data;
   },
 };

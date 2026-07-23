@@ -8,6 +8,7 @@ import {
   type ReactNode,
 } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import { apiClient, setAccessToken, setUnauthorizedHandler } from '@/shared/services/api-client';
 import type { JwtUser, AuthResponse } from '@/shared/types/api.types';
 import { hasPermission } from '@/shared/utils/role.utils';
@@ -16,7 +17,7 @@ interface AuthContextType {
   user: JwtUser | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<AuthResponse>;
+  login: (email: string, password: string, totp_token?: string) => Promise<AuthResponse>;
   logout: () => Promise<void>;
   hasPermission: (module: string, action?: string) => boolean;
 }
@@ -29,34 +30,63 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
 
   useEffect(() => {
+    let cancelled = false;
+
     const restoreSession = async () => {
       try {
-        const { data } = await apiClient.post<AuthResponse>('/auth/refresh');
-        setAccessToken(data.access_token);
-        setUser(data.user);
+        const { data } = await axios.post<AuthResponse>(
+          '/api/auth/refresh',
+          {},
+          { withCredentials: true },
+        );
+        if (!cancelled) {
+          setAccessToken(data.access_token);
+          setUser(data.user);
+          localStorage.setItem('auth_user', JSON.stringify(data.user));
+        }
       } catch {
-        setAccessToken(null);
-        setUser(null);
+        if (!cancelled) {
+          setAccessToken(null);
+          const saved = localStorage.getItem('auth_user');
+          if (saved) {
+            try {
+              setUser(JSON.parse(saved));
+            } catch {
+              setUser(null);
+              localStorage.removeItem('auth_user');
+            }
+          } else {
+            setUser(null);
+          }
+        }
       } finally {
-        setIsLoading(false);
+        if (!cancelled) {
+          setIsLoading(false);
+        }
       }
     };
     restoreSession();
+
+    return () => { cancelled = true; };
   }, []);
 
   useEffect(() => {
     setUnauthorizedHandler(() => {
       setUser(null);
       setAccessToken(null);
-      navigate('/login');
+      localStorage.removeItem('auth_user');
+      if (!isLoading) {
+        navigate('/');
+      }
     });
-  }, [navigate]);
+  }, [navigate, isLoading]);
 
-  const login = useCallback(async (email: string, password: string) => {
-    const { data } = await apiClient.post<AuthResponse>('/auth/login', { email, password });
+  const login = useCallback(async (email: string, password: string, totp_token?: string) => {
+    const { data } = await apiClient.post<AuthResponse>('/auth/login', { email, password, totp_token });
     if (data.requires_2fa) return data;
     setAccessToken(data.access_token);
     setUser(data.user);
+    localStorage.setItem('auth_user', JSON.stringify(data.user));
     return data;
   }, []);
 
@@ -66,7 +96,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       setAccessToken(null);
       setUser(null);
-      navigate('/login');
+      localStorage.removeItem('auth_user');
+      navigate('/');
     }
   }, [navigate]);
 

@@ -2,8 +2,9 @@ export type MedicalHistoryStatus = 'active' | 'resolved' | 'chronic' | 'family';
 
 export interface MedicalHistoryEntry {
   id: number;
-  tenant_id: number;
+  tenant_id: string;
   patient_id: number;
+  patient_name?: string;
   condition: string;
   onset_date?: string;
   status: MedicalHistoryStatus;

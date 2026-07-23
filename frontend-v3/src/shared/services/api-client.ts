@@ -3,6 +3,8 @@ import toast from 'react-hot-toast';
 
 let accessToken: string | null = null;
 let onUnauthorized: (() => void) | null = null;
+let isRefreshing = false;
+let refreshSubscribers: ((token: string) => void)[] = [];
 
 export function setAccessToken(token: string | null) {
   accessToken = token;
@@ -36,8 +38,22 @@ apiClient.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config as { _retry?: boolean; headers?: Record<string, string> };
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    const isRefreshCall = error.config?.url?.includes('/auth/refresh');
+
+    if (error.response?.status === 401 && !originalRequest._retry && !isRefreshCall) {
+      if (isRefreshing) {
+        return new Promise((resolve) => {
+          refreshSubscribers.push((token: string) => {
+            if (originalRequest.headers) {
+              originalRequest.headers.Authorization = `Bearer ${token}`;
+            }
+            resolve(apiClient(originalRequest as any));
+          });
+        });
+      }
+
       originalRequest._retry = true;
+      isRefreshing = true;
 
       try {
         const { data } = await axios.post(
@@ -46,23 +62,24 @@ apiClient.interceptors.response.use(
           { withCredentials: true },
         );
         setAccessToken(data.access_token);
+        refreshSubscribers.forEach((cb) => cb(data.access_token));
+        refreshSubscribers = [];
         if (originalRequest.headers) {
           originalRequest.headers.Authorization = `Bearer ${data.access_token}`;
         }
         return apiClient(originalRequest as any);
       } catch {
         setAccessToken(null);
+        refreshSubscribers = [];
         onUnauthorized?.();
         return Promise.reject(error);
+      } finally {
+        isRefreshing = false;
       }
     }
 
     const status = error.response?.status as number | undefined;
     const message = (error.response?.data as { error?: string } | undefined)?.error;
-    const url = error.config?.url as string | undefined;
-
-    // Suppress error toasts for the initial refresh call (no token yet)
-    const isRefreshCall = url?.includes('/auth/refresh');
 
     switch (status) {
       case 400:
@@ -81,7 +98,7 @@ apiClient.interceptors.response.use(
         toast.error(message || 'Conflicto con datos existentes');
         break;
       case 429:
-        toast.error('Demasiadas solicitudes. Espera un momento.');
+        if (!isRefreshCall) toast.error('Demasiadas solicitudes. Espera un momento.');
         break;
       case 500:
         toast.error('Error del servidor. Intenta más tarde.');

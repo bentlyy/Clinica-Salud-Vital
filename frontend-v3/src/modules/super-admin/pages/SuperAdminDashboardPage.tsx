@@ -1,4 +1,5 @@
-import { Box, Paper, Typography, Grid, Avatar, Chip } from '@mui/material';
+import { Box, Paper, Typography, Avatar, Chip } from '@mui/material';
+import Grid from '@mui/material/Grid';
 import TrendingUp from '@mui/icons-material/TrendingUp';
 import AccountBalance from '@mui/icons-material/AccountBalance';
 import People from '@mui/icons-material/People';
@@ -58,9 +59,9 @@ export default function SuperAdminDashboardPage() {
       />
 
       {/* Stats Cards */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
+      <Grid size={{ xs: 12 }} container spacing={3} sx={{ mb: 4 }}>
         {statCards(dashboard).map((stat) => (
-          <Grid xs={12} sm={6} md={3} key={stat.label}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }} key={stat.label}>
             <Paper
               sx={{
                 p: 3,
@@ -95,9 +96,9 @@ export default function SuperAdminDashboardPage() {
       </Grid>
 
       {/* Charts Row */}
-      <Grid container spacing={3}>
+      <Grid size={{ xs: 12 }} container spacing={3}>
         {/* Pie Chart - Tenants by Plan */}
-        <Grid xs={12} md={5}>
+        <Grid size={{ xs: 12, md: 5 }}>
           <Paper sx={{ p: 3, border: '1px solid #e5e7eb', borderRadius: '14px' }}>
             <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, color: '#1f2937' }}>
               Clínicas por Plan
@@ -145,7 +146,7 @@ export default function SuperAdminDashboardPage() {
         </Grid>
 
         {/* Line Chart - Growth */}
-        <Grid xs={12} md={7}>
+        <Grid size={{ xs: 12, md: 7 }}>
           <Paper sx={{ p: 3, border: '1px solid #e5e7eb', borderRadius: '14px' }}>
             <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, color: '#1f2937' }}>
               Crecimiento Mensual
