@@ -46,18 +46,18 @@ const today = new Date();
 
 const ensureDoctorsExist = async (HASH: string): Promise<void> => {
   const doctorsData = [
-    { name: 'Dr. Juan Pérez', specialty: 'Cardiología', email: 'juan@clinic.com' },
-    { name: 'Dra. María López', specialty: 'Dermatología', email: 'maria@clinic.com' },
-    { name: 'Dr. Carlos Soto', specialty: 'Neurología', email: 'carlos@clinic.com' },
-    { name: 'Dra. Ana Torres', specialty: 'Pediatría', email: 'ana@clinic.com' },
-    { name: 'Dr. Pedro González', specialty: 'Medicina General', email: 'pedro@clinic.com' },
-    { name: 'Dra. Claudia Muñoz', specialty: 'Ginecología', email: 'claudia@clinic.com' },
-    { name: 'Dr. Ricardo Díaz', specialty: 'Traumatología', email: 'ricardo@clinic.com' },
-    { name: 'Dra. Patricia Vega', specialty: 'Oftalmología', email: 'patricia@clinic.com' },
-    { name: 'Dr. Mauricio Rojas', specialty: 'Psiquiatría', email: 'mauricio@clinic.com' },
-    { name: 'Dra. Carmen Flores', specialty: 'Endocrinología', email: 'carmen@clinic.com' },
-    { name: 'Dr. Francisco Mora', specialty: 'Urología', email: 'francisco@clinic.com' },
-    { name: 'Dra. Verónica Pizarro', specialty: 'Reumatología', email: 'veronica@clinic.com' },
+    { name: 'Juan Pérez', specialty: 'Cardiología', email: 'juan@clinic.com' },
+    { name: 'María López', specialty: 'Dermatología', email: 'maria@clinic.com' },
+    { name: 'Carlos Soto', specialty: 'Neurología', email: 'carlos@clinic.com' },
+    { name: 'Ana Torres', specialty: 'Pediatría', email: 'ana@clinic.com' },
+    { name: 'Pedro González', specialty: 'Medicina General', email: 'pedro@clinic.com' },
+    { name: 'Claudia Muñoz', specialty: 'Ginecología', email: 'claudia@clinic.com' },
+    { name: 'Ricardo Díaz', specialty: 'Traumatología', email: 'ricardo@clinic.com' },
+    { name: 'Patricia Vega', specialty: 'Oftalmología', email: 'patricia@clinic.com' },
+    { name: 'Mauricio Rojas', specialty: 'Psiquiatría', email: 'mauricio@clinic.com' },
+    { name: 'Carmen Flores', specialty: 'Endocrinología', email: 'carmen@clinic.com' },
+    { name: 'Francisco Mora', specialty: 'Urología', email: 'francisco@clinic.com' },
+    { name: 'Verónica Pizarro', specialty: 'Reumatología', email: 'veronica@clinic.com' },
   ];
   for (const doc of doctorsData) {
     const userResult = await pool.query(
@@ -159,18 +159,18 @@ export const seed = async (): Promise<void> => {
   // ==================== DOCTORS + AVAILABILITY (first run) ====================
 
   const doctorsData = [
-    { name: 'Dr. Juan Pérez', specialty: 'Cardiología', email: 'juan@clinic.com' },
-    { name: 'Dra. María López', specialty: 'Dermatología', email: 'maria@clinic.com' },
-    { name: 'Dr. Carlos Soto', specialty: 'Neurología', email: 'carlos@clinic.com' },
-    { name: 'Dra. Ana Torres', specialty: 'Pediatría', email: 'ana@clinic.com' },
-    { name: 'Dr. Pedro González', specialty: 'Medicina General', email: 'pedro@clinic.com' },
-    { name: 'Dra. Claudia Muñoz', specialty: 'Ginecología', email: 'claudia@clinic.com' },
-    { name: 'Dr. Ricardo Díaz', specialty: 'Traumatología', email: 'ricardo@clinic.com' },
-    { name: 'Dra. Patricia Vega', specialty: 'Oftalmología', email: 'patricia@clinic.com' },
-    { name: 'Dr. Mauricio Rojas', specialty: 'Psiquiatría', email: 'mauricio@clinic.com' },
-    { name: 'Dra. Carmen Flores', specialty: 'Endocrinología', email: 'carmen@clinic.com' },
-    { name: 'Dr. Francisco Mora', specialty: 'Urología', email: 'francisco@clinic.com' },
-    { name: 'Dra. Verónica Pizarro', specialty: 'Reumatología', email: 'veronica@clinic.com' },
+    { name: 'Juan Pérez', specialty: 'Cardiología', email: 'juan@clinic.com' },
+    { name: 'María López', specialty: 'Dermatología', email: 'maria@clinic.com' },
+    { name: 'Carlos Soto', specialty: 'Neurología', email: 'carlos@clinic.com' },
+    { name: 'Ana Torres', specialty: 'Pediatría', email: 'ana@clinic.com' },
+    { name: 'Pedro González', specialty: 'Medicina General', email: 'pedro@clinic.com' },
+    { name: 'Claudia Muñoz', specialty: 'Ginecología', email: 'claudia@clinic.com' },
+    { name: 'Ricardo Díaz', specialty: 'Traumatología', email: 'ricardo@clinic.com' },
+    { name: 'Patricia Vega', specialty: 'Oftalmología', email: 'patricia@clinic.com' },
+    { name: 'Mauricio Rojas', specialty: 'Psiquiatría', email: 'mauricio@clinic.com' },
+    { name: 'Carmen Flores', specialty: 'Endocrinología', email: 'carmen@clinic.com' },
+    { name: 'Francisco Mora', specialty: 'Urología', email: 'francisco@clinic.com' },
+    { name: 'Verónica Pizarro', specialty: 'Reumatología', email: 'veronica@clinic.com' },
   ];
 
   interface DoctorSeed {

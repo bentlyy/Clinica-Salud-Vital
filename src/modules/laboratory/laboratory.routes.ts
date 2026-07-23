@@ -80,8 +80,8 @@ router.post('/reagents', authorize('admin', 'superadmin'), createReagentCtrl);
 router.patch('/reagents/:id/stock', authorize('admin', 'superadmin'), updateReagentStockCtrl);
 
 // === Notifications ===
-router.get('/notifications', authorize('admin', 'superadmin', 'lab_technician'), getNotificationsCtrl);
-router.patch('/notifications/:id/ack', authorize('admin', 'superadmin', 'lab_technician'), acknowledgeNotificationCtrl);
+router.get('/notifications', authorize('admin', 'superadmin', 'lab_technician', 'doctor'), getNotificationsCtrl);
+router.patch('/notifications/:id/ack', authorize('admin', 'superadmin', 'lab_technician', 'doctor'), acknowledgeNotificationCtrl);
 
 // === Real-time Events (SSE) ===
 router.get('/events', authorize('admin', 'superadmin', 'lab_technician'), handleLabEvents);

@@ -40,6 +40,21 @@ export const analyticsService = {
     return data.data;
   },
 
+  getMyDoctorStats: async (): Promise<{
+    total_bookings: number;
+    upcoming_bookings: number;
+    patients_served: number;
+    clinical_records: number;
+  }> => {
+    const { data } = await apiClient.get<{ data: Record<string, unknown> }>('/analytics/my-stats');
+    return data.data as {
+      total_bookings: number;
+      upcoming_bookings: number;
+      patients_served: number;
+      clinical_records: number;
+    };
+  },
+
   getUpcomingBookings: async (): Promise<UpcomingBooking[]> => {
     const today = new Date().toISOString().split('T')[0];
     const { data } = await apiClient.get<{ data: Record<string, unknown>[] }>('/bookings/all', {
@@ -57,6 +72,30 @@ export const analyticsService = {
         duration: Number(b.duration) || 30,
         status: String(b.status),
         doctor_name: String(b.doctor_name || ''),
+        patient_name: b.patient_name ? String(b.patient_name) : null,
+        guest_name: b.guest_name ? String(b.guest_name) : null,
+      }))
+      .slice(0, 5);
+  },
+
+  getDoctorUpcomingBookings: async (): Promise<UpcomingBooking[]> => {
+    const today = new Date().toISOString().split('T')[0];
+    const { data } = await apiClient.get<{ data: Record<string, unknown>[]; total: number }>('/bookings/doctor', {
+      params: { page: 1, limit: 50 },
+    });
+    const rows = Array.isArray(data.data) ? data.data : [];
+    return rows
+      .filter((b) => {
+        const bDate = normalizeDate(b.date);
+        return bDate >= today;
+      })
+      .map((b) => ({
+        id: Number(b.id),
+        date: normalizeDate(b.date),
+        time: normalizeTime(b.time),
+        duration: Number(b.duration) || 30,
+        status: String(b.status),
+        doctor_name: '',
         patient_name: b.patient_name ? String(b.patient_name) : null,
         guest_name: b.guest_name ? String(b.guest_name) : null,
       }))

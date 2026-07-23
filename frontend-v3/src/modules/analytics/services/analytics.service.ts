@@ -1,29 +1,49 @@
 import { apiClient } from '@/shared/services/api-client';
-import type { AdminAnalytics, DoctorAnalyticsStats } from '../types/analytics.types';
+import type { AdminAnalytics, DoctorAnalyticsStats, BookingsByMonth, BookingsByStatus, TopDoctor, DashboardStats } from '../types/analytics.types';
+
+interface BackendResponse<T> {
+  data: T;
+}
 
 export const analyticsService = {
   async getDashboard(): Promise<AdminAnalytics> {
-    const { data } = await apiClient.get<AdminAnalytics>('/analytics/dashboard');
-    return data;
+    const [statsRes, monthRes, statusRes, topRes] = await Promise.all([
+      apiClient.get<BackendResponse<DashboardStats>>('/analytics/dashboard'),
+      apiClient.get<BackendResponse<BookingsByMonth[]>>('/analytics/bookings-by-month'),
+      apiClient.get<BackendResponse<BookingsByStatus[]>>('/analytics/status-distribution'),
+      apiClient.get<BackendResponse<TopDoctor[]>>('/analytics/top-doctors'),
+    ]);
+
+    const topDoctors = topRes.data.data.map((d) => ({
+      ...d,
+      appointments: d.total_bookings,
+    }));
+
+    return {
+      stats: statsRes.data.data,
+      bookings_by_month: monthRes.data.data,
+      bookings_by_status: statusRes.data.data,
+      top_doctors: topDoctors,
+    };
   },
 
-  async getBookingsByMonth(): Promise<{ bookings_by_month: AdminAnalytics['bookings_by_month'] }> {
-    const { data } = await apiClient.get<{ bookings_by_month: AdminAnalytics['bookings_by_month'] }>('/analytics/bookings-by-month');
-    return data;
+  async getBookingsByMonth(): Promise<BookingsByMonth[]> {
+    const { data } = await apiClient.get<BackendResponse<BookingsByMonth[]>>('/analytics/bookings-by-month');
+    return data.data;
   },
 
-  async getStatusDistribution(): Promise<{ status_distribution: { status: string; count: number }[] }> {
-    const { data } = await apiClient.get('/analytics/status-distribution');
-    return data;
+  async getStatusDistribution(): Promise<BookingsByStatus[]> {
+    const { data } = await apiClient.get<BackendResponse<BookingsByStatus[]>>('/analytics/status-distribution');
+    return data.data;
   },
 
-  async getTopDoctors(): Promise<{ top_doctors: AdminAnalytics['top_doctors'] }> {
-    const { data } = await apiClient.get<{ top_doctors: AdminAnalytics['top_doctors'] }>('/analytics/top-doctors');
-    return data;
+  async getTopDoctors(): Promise<TopDoctor[]> {
+    const { data } = await apiClient.get<BackendResponse<TopDoctor[]>>('/analytics/top-doctors');
+    return data.data;
   },
 
   async getMyStats(): Promise<DoctorAnalyticsStats> {
-    const { data } = await apiClient.get<DoctorAnalyticsStats>('/analytics/my-stats');
-    return data;
+    const { data } = await apiClient.get<BackendResponse<DoctorAnalyticsStats>>('/analytics/my-stats');
+    return data.data;
   },
 };

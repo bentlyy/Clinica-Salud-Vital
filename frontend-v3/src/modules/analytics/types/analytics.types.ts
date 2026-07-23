@@ -3,13 +3,6 @@ export interface BookingsByMonth {
   total: number;
   confirmed: number;
   cancelled: number;
-  completed: number;
-}
-
-export interface RevenueByMonth {
-  month: string;
-  revenue: number;
-  expenses: number;
 }
 
 export interface BookingsByStatus {
@@ -18,31 +11,32 @@ export interface BookingsByStatus {
 }
 
 export interface TopDoctor {
+  id: number;
   name: string;
+  specialty: string;
   appointments: number;
-  revenue: number;
+  confirmed_bookings: number;
 }
 
-export interface RecentActivity {
-  action: string;
-  user: string;
-  date: string;
+export interface DashboardStats {
+  total_patients: number;
+  total_doctors: number;
+  total_bookings: number;
+  today_bookings: number;
+  confirmed_bookings: number;
+  cancelled_bookings: number;
 }
 
 export interface AdminAnalytics {
+  stats: DashboardStats;
   bookings_by_month: BookingsByMonth[];
-  revenue_by_month: RevenueByMonth[];
   bookings_by_status: BookingsByStatus[];
   top_doctors: TopDoctor[];
-  recent_activity: RecentActivity[];
 }
 
 export interface DoctorAnalyticsStats {
-  total_patients: number;
-  total_appointments: number;
-  today_appointments: number;
-  completed_appointments: number;
-  monthly_revenue: number;
-  appointments_by_status: BookingsByStatus[];
-  patients_by_month: { month: string; count: number }[];
+  total_bookings: number;
+  upcoming_bookings: number;
+  patients_served: number;
+  clinical_records: number;
 }

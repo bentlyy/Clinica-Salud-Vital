@@ -1,6 +1,6 @@
 import type { PaginatedResponse } from '@/shared/types/api.types';
 
-export type BookingStatus = 'pending' | 'confirmed' | 'cancelled' | 'completed';
+export type BookingStatus = 'pending' | 'confirmed' | 'cancelled' | 'completed' | 'no_show';
 
 export interface Booking {
   id: number;
@@ -51,6 +51,7 @@ export const BOOKING_STATUS_CONFIG: Record<
   confirmed: { label: 'Confirmada', color: '#0d9488', bgColor: '#f0fdfa' },
   cancelled: { label: 'Cancelada', color: '#ef4444', bgColor: '#fef2f2' },
   completed: { label: 'Completada', color: '#2563eb', bgColor: '#eff6ff' },
+  no_show: { label: 'No asistió', color: '#6b7280', bgColor: '#f3f4f6' },
 };
 
 export const BOOKING_STATUS_OPTIONS: { value: BookingStatus | 'all'; label: string }[] = [
@@ -59,4 +60,5 @@ export const BOOKING_STATUS_OPTIONS: { value: BookingStatus | 'all'; label: stri
   { value: 'confirmed', label: 'Confirmadas' },
   { value: 'cancelled', label: 'Canceladas' },
   { value: 'completed', label: 'Completadas' },
+  { value: 'no_show', label: 'No asistió' },
 ];

@@ -15,22 +15,27 @@ import { useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import type { Tenant, CreateTenantInput } from '../types/super-admin.types';
+import type { Tenant, CreateTenantInput, UpdateTenantInput } from '../types/super-admin.types';
 
-const tenantSchema = z.object({
+const createTenantSchema = z.object({
   name: z.string().min(2, 'El nombre debe tener al menos 2 caracteres'),
-  slug: z.string().min(2, 'El slug debe tener al menos 2 caracteres').regex(/^[a-z0-9-]+$/, 'Solo minúsculas, números y guiones'),
   domain: z.string().optional(),
   plan: z.enum(['free', 'basic', 'pro', 'enterprise']),
 });
 
-type TenantFormData = z.infer<typeof tenantSchema>;
+const editTenantSchema = z.object({
+  name: z.string().min(2, 'El nombre debe tener al menos 2 caracteres'),
+  domain: z.string().optional(),
+});
+
+type CreateFormData = z.infer<typeof createTenantSchema>;
+type EditFormData = z.infer<typeof editTenantSchema>;
 
 interface TenantFormDialogProps {
   open: boolean;
   tenant: Tenant | null;
   onClose: () => void;
-  onSubmit: (input: CreateTenantInput) => void;
+  onSubmit: (input: CreateTenantInput | UpdateTenantInput) => void;
   isPending: boolean;
 }
 
@@ -42,52 +47,26 @@ export function TenantFormDialog({ open, tenant, onClose, onSubmit, isPending }:
     register,
     handleSubmit,
     reset,
-    watch,
-    setValue,
     formState: { errors },
-  } = useForm<TenantFormData>({
-    resolver: zodResolver(tenantSchema),
-    defaultValues: {
-      name: '',
-      slug: '',
-      domain: '',
-      plan: 'free',
-    },
+  } = useForm<CreateFormData | EditFormData>({
+    resolver: zodResolver(isEditing ? editTenantSchema : createTenantSchema),
+    defaultValues: isEditing
+      ? { name: tenant.name, domain: tenant.domain || '' }
+      : { name: '', domain: '', plan: 'free' },
   });
-
-  const nameValue = watch('name');
 
   useEffect(() => {
     if (open) {
       if (tenant) {
-        reset({
-          name: tenant.name,
-          slug: tenant.slug,
-          domain: tenant.domain || '',
-          plan: tenant.plan,
-        });
+        reset({ name: tenant.name, domain: tenant.domain || '' });
       } else {
-        reset({ name: '', slug: '', domain: '', plan: 'free' });
+        reset({ name: '', domain: '', plan: 'free' });
       }
     }
-  }, [open, tenant, reset]);
+  }, [open, tenant, reset, isEditing]);
 
-  // Auto-generate slug from name
-  useEffect(() => {
-    if (!isEditing && nameValue) {
-      const slug = nameValue
-        .toLowerCase()
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .replace(/[^a-z0-9\s-]/g, '')
-        .replace(/\s+/g, '-')
-        .replace(/-+/g, '-');
-      setValue('slug', slug);
-    }
-  }, [nameValue, isEditing, setValue]);
-
-  const handleFormSubmit = (data: TenantFormData) => {
-    onSubmit(data);
+  const handleFormSubmit = (data: CreateFormData | EditFormData) => {
+    onSubmit(data as CreateTenantInput | UpdateTenantInput);
   };
 
   return (
@@ -115,36 +94,29 @@ export function TenantFormDialog({ open, tenant, onClose, onSubmit, isPending }:
 
           <TextField
             fullWidth
-            label="Slug (identificador URL)"
-            {...register('slug')}
-            error={!!errors.slug}
-            helperText={errors.slug?.message || 'Se genera automáticamente desde el nombre'}
-            sx={{ mb: 2.5 }}
-          />
-
-          <TextField
-            fullWidth
             label="Dominio (opcional)"
             {...register('domain')}
             placeholder="ejemplo.com"
             sx={{ mb: 2.5 }}
           />
 
-          <Controller
-            name="plan"
-            control={control}
-            render={({ field }) => (
-              <FormControl fullWidth>
-                <InputLabel>Plan</InputLabel>
-                <Select {...field} label="Plan">
-                  <MenuItem value="free">Gratuito</MenuItem>
-                  <MenuItem value="basic">Básico</MenuItem>
-                  <MenuItem value="pro">Pro</MenuItem>
-                  <MenuItem value="enterprise">Enterprise</MenuItem>
-                </Select>
-              </FormControl>
-            )}
-          />
+          {!isEditing && (
+            <Controller
+              name="plan"
+              control={control}
+              render={({ field }) => (
+                <FormControl fullWidth>
+                  <InputLabel>Plan</InputLabel>
+                  <Select {...field} label="Plan">
+                    <MenuItem value="free">Gratuito</MenuItem>
+                    <MenuItem value="basic">Básico</MenuItem>
+                    <MenuItem value="pro">Pro</MenuItem>
+                    <MenuItem value="enterprise">Enterprise</MenuItem>
+                  </Select>
+                </FormControl>
+              )}
+            />
+          )}
         </Box>
       </DialogContent>
 

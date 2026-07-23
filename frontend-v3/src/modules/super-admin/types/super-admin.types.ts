@@ -1,27 +1,36 @@
 export interface Tenant {
-  id: number;
+  id: string;
   name: string;
   slug: string;
-  domain?: string;
-  logo_url?: string;
-  is_active: boolean;
-  plan: 'free' | 'basic' | 'pro' | 'enterprise';
+  domain: string;
+  active: boolean;
+  plan: string;
+  total_bookings: number;
+  total_users: number;
+  total_doctors: number;
   created_at: string;
+}
+
+export interface TenantDetail extends Tenant {
+  plan_name: string;
+  locale: string;
+  timezone: string;
+  total_patients: number;
+  confirmed_bookings: number;
+  invoice_count: number;
+  lab_request_count: number;
 }
 
 export interface CreateTenantInput {
   name: string;
-  slug: string;
   domain?: string;
-  plan?: Tenant['plan'];
+  plan?: string;
 }
 
 export interface UpdateTenantInput {
   name?: string;
-  slug?: string;
   domain?: string;
-  plan?: Tenant['plan'];
-  is_active?: boolean;
+  active?: boolean;
 }
 
 export interface TenantStats {
@@ -36,8 +45,8 @@ export interface TenantListParams {
   page?: number;
   limit?: number;
   search?: string;
-  plan?: Tenant['plan'];
-  is_active?: boolean;
+  plan?: string;
+  active?: boolean;
 }
 
 export interface SaasDashboard {
@@ -57,7 +66,7 @@ export interface FeatureFlag {
 }
 
 export const TENANT_PLAN_CONFIG: Record<
-  Tenant['plan'],
+  string,
   { label: string; color: string; bgColor: string }
 > = {
   free: { label: 'Gratuito', color: '#6b7280', bgColor: '#f3f4f6' },

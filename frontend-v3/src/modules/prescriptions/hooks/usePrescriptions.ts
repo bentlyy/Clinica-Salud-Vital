@@ -57,3 +57,12 @@ export function useDeletePrescription() {
     },
   });
 }
+
+export function useDownloadPrescriptionPdf() {
+  return useMutation({
+    mutationFn: (id: number) => prescriptionService.downloadPdf(id),
+    onError: () => {
+      toast.error('Error al descargar el PDF');
+    },
+  });
+}

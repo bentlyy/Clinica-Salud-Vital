@@ -62,7 +62,7 @@ services:
 
   frontend:
     build:
-      context: ./frontend
+      context: ./frontend-v3
       dockerfile: Dockerfile.dev
     container_name: clinic-frontend
     restart: unless-stopped
@@ -73,13 +73,14 @@ services:
     environment:
       VITE_API_URL: http://localhost:3000/api
     volumes:
-      - ./frontend:/app
-      - /app/node_modules
+      - ./frontend-v3:/app
+      - frontend_nm:/app/node_modules
     networks:
       - backend-net
 
 volumes:
   db_data:
+  frontend_nm:
 
 networks:
   backend-net:

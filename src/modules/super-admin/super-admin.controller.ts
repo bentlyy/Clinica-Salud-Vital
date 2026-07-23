@@ -28,9 +28,6 @@ export const updateTenant = asyncHandler(async (req: Request, res: Response) => 
 
 export const deleteTenant = asyncHandler(async (req: Request, res: Response) => {
   const id = String(req.params.id);
-  if (req.body.confirm !== true) {
-    throw new BadRequestError('Must set confirm=true to delete a tenant');
-  }
 
   logger.warn('SUPERADMIN DELETE TENANT', { tenantId: id, userId: req.user?.id, ip: req.ip });
 
