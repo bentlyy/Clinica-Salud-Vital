@@ -5,7 +5,7 @@ import { getAuditLogs } from './audit.controller.js';
 const router = Router();
 
 router.use(authMiddleware);
-router.use(authorize('admin'));
+router.use(authorize('admin', 'superadmin'));
 
 router.get('/', getAuditLogs);
 
