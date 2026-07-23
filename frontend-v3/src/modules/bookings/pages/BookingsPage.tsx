@@ -12,6 +12,7 @@ import { LoadingState } from '@/shared/components/ui/LoadingState';
 import { ErrorState } from '@/shared/components/ui/ErrorState';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { useMyBookings, useDoctorBookings, useAllBookings, useCancelBooking } from '../hooks/useBookings';
+import { useDoctorList } from '@/modules/doctors/hooks/useDoctors';
 import { BookingCalendar } from '../components/BookingCalendar';
 import { CreateBookingDialog } from '../components/CreateBookingDialog';
 import { BookingDetailDrawer } from '../components/BookingDetailDrawer';
@@ -34,6 +35,17 @@ export default function BookingsPage() {
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   const limit = 10;
+
+  // Fetch doctor list for CreateBookingDialog
+  const { data: doctorsData, isLoading: isLoadingDoctors } = useDoctorList({ page: 1, limit: 100 });
+  const doctors = useMemo(() => {
+    if (!doctorsData?.data) return [];
+    return doctorsData.data.map((d: { id: number; name: string; specialty?: string }) => ({
+      id: d.id,
+      name: d.name,
+      specialty: d.specialty,
+    }));
+  }, [doctorsData]);
 
   // Build query params
   const queryParams = useMemo<BookingListParams>(() => {
@@ -319,8 +331,8 @@ export default function BookingsPage() {
         onClose={() => setCreateDialogOpen(false)}
         onSubmit={handleCreateBooking}
         isSubmitting={createMutation.isPending}
-        doctors={[]}
-        isLoadingDoctors={false}
+        doctors={doctors}
+        isLoadingDoctors={isLoadingDoctors}
         isAuthenticated={!!user}
       />
 
@@ -346,8 +358,10 @@ interface BookingCardProps {
   onView: () => void;
 }
 
+const FALLBACK_STATUS = { label: 'Desconocido', color: '#6b7280', bgColor: '#f3f4f6' };
+
 function BookingCard({ booking, onView }: BookingCardProps) {
-  const statusConfig = BOOKING_STATUS_CONFIG[booking.status];
+  const statusConfig = BOOKING_STATUS_CONFIG[booking.status] ?? FALLBACK_STATUS;
   const patientLabel = booking.patient_name || booking.guest_name || 'Sin nombre';
 
   return (

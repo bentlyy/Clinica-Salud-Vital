@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   Box,
   Paper,
@@ -14,6 +14,7 @@ import {
   DialogActions,
   MenuItem,
   Divider,
+  Autocomplete,
 } from '@mui/material';
 import Search from '@mui/icons-material/Search';
 import Add from '@mui/icons-material/Add';
@@ -35,6 +36,7 @@ import { LoadingState } from '@/shared/components/ui/LoadingState';
 import { ErrorState } from '@/shared/components/ui/ErrorState';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { useAuth } from '@/shared/providers/AuthProvider';
+import { patientService } from '@/modules/patients/services/patient.service';
 import {
   useMedicalHistory,
   useCreateMedicalHistory,
@@ -78,26 +80,37 @@ const entrySchema = z.object({
   onset_date: z.string().optional(),
   status: z.enum(['active', 'resolved', 'chronic', 'family']),
   notes: z.string().optional(),
+  patient_id: z.number().min(1, 'Selecciona un paciente'),
 });
 
 type EntryFormData = z.infer<typeof entrySchema>;
 
+interface PatientOption {
+  id: number;
+  name: string;
+  email: string;
+}
+
 export default function MedicalHistoryPage() {
-  const { hasPermission } = useAuth();
+  const { user, hasPermission } = useAuth();
   const canCreate = hasPermission('medicalHistory', 'create');
   const canEdit = hasPermission('medicalHistory', 'edit');
+  const isPatient = user?.role === 'patient';
 
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<MedicalHistoryStatus | ''>('');
   const [formOpen, setFormOpen] = useState(false);
   const [editingEntry, setEditingEntry] = useState<MedicalHistoryEntry | null>(null);
+  const [patients, setPatients] = useState<PatientOption[]>([]);
+  const [patientsLoading, setPatientsLoading] = useState(false);
 
   const params = useMemo(
     () => ({
       search: search || undefined,
       status: (statusFilter || undefined) as MedicalHistoryStatus | undefined,
+      patient_id: isPatient ? user?.id : undefined,
     }),
-    [search, statusFilter],
+    [search, statusFilter, isPatient, user?.id],
   );
 
   const { data, isLoading, error, refetch } = useMedicalHistory(params);
@@ -110,6 +123,8 @@ export default function MedicalHistoryPage() {
     control,
     handleSubmit,
     reset,
+    watch,
+    setValue,
     formState: { errors },
   } = useForm<EntryFormData>({
     resolver: zodResolver(entrySchema),
@@ -118,8 +133,29 @@ export default function MedicalHistoryPage() {
       onset_date: '',
       status: 'active',
       notes: '',
+      patient_id: 0,
     },
   });
+
+  const selectedPatientId = watch('patient_id');
+
+  useEffect(() => {
+    if (formOpen && !isPatient && canCreate) {
+      setPatientsLoading(true);
+      patientService
+        .list({ page: 1, limit: 200 })
+        .then((res) => {
+          const list = (res.data || []).map((p: any) => ({
+            id: p.id,
+            name: p.name || p.user_name || `Paciente #${p.id}`,
+            email: p.email || '',
+          }));
+          setPatients(list);
+        })
+        .catch(() => setPatients([]))
+        .finally(() => setPatientsLoading(false));
+    }
+  }, [formOpen, isPatient, canCreate]);
 
   const handleOpenForm = (entry?: MedicalHistoryEntry) => {
     if (entry) {
@@ -129,10 +165,17 @@ export default function MedicalHistoryPage() {
         onset_date: entry.onset_date || '',
         status: entry.status,
         notes: entry.notes || '',
+        patient_id: entry.patient_id,
       });
     } else {
       setEditingEntry(null);
-      reset({ condition: '', onset_date: '', status: 'active', notes: '' });
+      reset({
+        condition: '',
+        onset_date: '',
+        status: 'active',
+        notes: '',
+        patient_id: isPatient ? (user?.id ?? 0) : 0,
+      });
     }
     setFormOpen(true);
   };
@@ -145,7 +188,7 @@ export default function MedicalHistoryPage() {
 
   const onSubmit = (formData: EntryFormData) => {
     const input: CreateMedicalHistoryInput = {
-      patient_id: 0, // Will be set from context or route param
+      patient_id: formData.patient_id,
       condition: formData.condition,
       onset_date: formData.onset_date || undefined,
       status: formData.status,
@@ -168,7 +211,7 @@ export default function MedicalHistoryPage() {
     <Box>
       <PageHeader
         title="Historial Médico"
-        subtitle={`Total: ${entries.length} entradas`}
+        subtitle={isPatient ? `Tu historial: ${entries.length} entradas` : `Total: ${entries.length} entradas`}
         action={
           canCreate ? (
             <Box
@@ -331,6 +374,12 @@ export default function MedicalHistoryPage() {
                           />
                         </Box>
 
+                        {!isPatient && (entry as any).patient_name && (
+                          <Typography variant="body2" sx={{ color: '#6b7280', mb: 0.5 }}>
+                            Paciente: {(entry as any).patient_name}
+                          </Typography>
+                        )}
+
                         {entry.onset_date && (
                           <Typography variant="body2" sx={{ color: '#9ca3af', mb: 0.5 }}>
                             Inicio: {format(new Date(entry.onset_date), 'dd MMM yyyy', { locale: es })}
@@ -385,6 +434,45 @@ export default function MedicalHistoryPage() {
         <Divider />
         <DialogContent sx={{ pt: 3 }}>
           <Box component="form" id="medical-history-form" onSubmit={handleSubmit(onSubmit)}>
+            {/* Patient selector — only for non-patient roles */}
+            {!isPatient && (
+              <Controller
+                name="patient_id"
+                control={control}
+                render={({ field }) => (
+                  <Autocomplete
+                    options={patients}
+                    getOptionLabel={(option) => option.name || `Paciente #${option.id}`}
+                    value={patients.find((p) => p.id === field.value) || null}
+                    onChange={(_, newValue) => {
+                      field.onChange(newValue?.id ?? 0);
+                    }}
+                    loading={patientsLoading}
+                    isOptionEqualToValue={(option, value) => option.id === value.id}
+                    renderOption={(props, option) => (
+                      <li {...props} key={option.id}>
+                        <Box>
+                          <Typography variant="body2" sx={{ fontWeight: 500 }}>{option.name}</Typography>
+                          <Typography variant="caption" sx={{ color: '#9ca3af' }}>{option.email}</Typography>
+                        </Box>
+                      </li>
+                    )}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label="Paciente"
+                        placeholder="Buscar paciente..."
+                        error={!!errors.patient_id}
+                        helperText={errors.patient_id?.message}
+                        fullWidth
+                      />
+                    )}
+                    sx={{ mb: 2 }}
+                  />
+                )}
+              />
+            )}
+
             <Controller
               name="condition"
               control={control}

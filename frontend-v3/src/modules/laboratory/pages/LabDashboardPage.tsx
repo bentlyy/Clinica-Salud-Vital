@@ -1,4 +1,5 @@
-import { Box, Typography, Paper, Grid, Avatar, Alert } from '@mui/material';
+import { Box, Typography, Paper, Avatar, Alert } from '@mui/material';
+import Grid from '@mui/material/Grid';
 import HourglassEmpty from '@mui/icons-material/HourglassEmpty';
 import Autorenew from '@mui/icons-material/Autorenew';
 import CheckCircleOutline from '@mui/icons-material/CheckCircleOutline';
@@ -6,6 +7,7 @@ import Verified from '@mui/icons-material/Verified';
 import AccessTime from '@mui/icons-material/AccessTime';
 import NotificationsActive from '@mui/icons-material/NotificationsActive';
 import Science from '@mui/icons-material/Science';
+import { Navigate } from 'react-router-dom';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { LoadingState } from '@/shared/components/ui/LoadingState';
 import { ErrorState } from '@/shared/components/ui/ErrorState';
@@ -98,7 +100,7 @@ function LabDashboardContent() {
       {/* Metrics Cards */}
       <Grid container spacing={3} sx={{ mb: 3 }}>
         {metricCards.map((stat) => (
-          <Grid xs={12} sm={6} md={3} key={stat.label}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }} key={stat.label}>
             <MotionDiv
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -188,7 +190,7 @@ function LabDashboardContent() {
         ) : equipment && equipment.length > 0 ? (
           <Grid container spacing={2}>
             {equipment.map((eq) => (
-              <Grid xs={12} sm={6} md={4} key={eq.id}>
+              <Grid size={{ xs: 12, sm: 6, md: 4 }} key={eq.id}>
                 <EquipmentCard equipment={eq} />
               </Grid>
             ))}
@@ -213,6 +215,10 @@ function LabDashboardContent() {
 }
 
 export default function LabDashboardPage() {
+  const { user } = useAuth();
+  if (user?.role === 'doctor') {
+    return <Navigate to="/laboratory/requests" replace />;
+  }
   return (
     <LabSSEProvider>
       <LabDashboardContent />

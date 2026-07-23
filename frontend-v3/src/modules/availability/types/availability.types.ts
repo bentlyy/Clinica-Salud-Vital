@@ -13,6 +13,23 @@ export interface CreateAvailabilityRuleInput {
   end_time: string;
 }
 
+export interface AvailabilityException {
+  id: number;
+  doctor_id: number;
+  date: string; // YYYY-MM-DD
+  start_time: string | null;
+  end_time: string | null;
+  reason: string;
+  created_at: string;
+}
+
+export interface CreateAvailabilityExceptionInput {
+  date: string;
+  start_time?: string | null;
+  end_time?: string | null;
+  reason: string;
+}
+
 export const DAY_NAMES = [
   'Domingo',
   'Lunes',

@@ -18,7 +18,7 @@ export const listTenants = async (
   page: number = 1,
   limit: number = 20,
   filters?: { active?: boolean; search?: string }
-): Promise<{ data: TenantRow[]; pagination: { page: number; limit: number; total: number; totalPages: number } }> => {
+): Promise<{ data: Record<string, unknown>[]; total: number; page: number; limit: number; totalPages: number }> => {
   const conditions: string[] = ['1=1'];
   const params: (string | number | boolean)[] = [];
   let paramIdx = 1;
@@ -47,10 +47,18 @@ export const listTenants = async (
 
   const result = await pool.query(
     `SELECT t.*,
+        p.name AS plan_name, p.code AS plan_code,
         (SELECT COUNT(*) FROM bookings b WHERE b.tenant_id = t.id)::int AS total_bookings,
         (SELECT COUNT(*) FROM users u WHERE u.tenant_id = t.id)::int AS total_users,
         (SELECT COUNT(*) FROM doctors d WHERE d.tenant_id = t.id)::int AS total_doctors
-     FROM tenants t WHERE ${whereClause}
+     FROM tenants t
+     LEFT JOIN LATERAL (
+       SELECT s.plan_id FROM subscriptions s
+       WHERE s.tenant_id = t.id AND s.status IN ('active', 'trialing')
+       ORDER BY s.current_period_start DESC LIMIT 1
+     ) sub ON true
+     LEFT JOIN plans p ON p.id = sub.plan_id
+     WHERE ${whereClause}
      ORDER BY t.created_at DESC LIMIT $${paramIdx} OFFSET $${paramIdx + 1}`,
     params
   );
@@ -58,32 +66,43 @@ export const listTenants = async (
   const totalPages = Math.ceil(total / limit);
 
   return {
-    data: result.rows,
-    pagination: { page, limit, total, totalPages },
+    data: result.rows.map((r: Record<string, unknown>) => ({
+      id: r.id,
+      name: r.name,
+      slug: r.id,
+      domain: r.domain,
+      active: r.active,
+      plan: r.plan_code || r.plan_name || 'free',
+      total_bookings: r.total_bookings,
+      total_users: r.total_users,
+      total_doctors: r.total_doctors,
+      created_at: r.created_at,
+    })),
+    total,
+    page,
+    limit,
+    totalPages,
   };
 };
 
-export const getTenantDetail = async (tenantId: string): Promise<{
-  tenant: TenantRow;
-  stats: Record<string, number>;
-  subscription: Record<string, unknown> | null;
-}> => {
+export const getTenantDetail = async (tenantId: string): Promise<Record<string, unknown>> => {
   const tenantResult = await pool.query<TenantRow>('SELECT * FROM tenants WHERE id = $1', [tenantId]);
   if (tenantResult.rows.length === 0) throw new NotFoundError('Tenant not found');
   const tenant = tenantResult.rows[0];
 
   const statsResult = await pool.query(`
     SELECT
-      (SELECT COUNT(*) FROM users WHERE tenant_id = $1 AND role IN ('user', 'patient')) as patient_count,
-      (SELECT COUNT(*) FROM doctors WHERE tenant_id = $1) as doctor_count,
-      (SELECT COUNT(*) FROM bookings WHERE tenant_id = $1) as booking_count,
-      (SELECT COUNT(*) FROM clinical_records WHERE tenant_id = $1) as clinical_record_count,
+      (SELECT COUNT(*) FROM users WHERE tenant_id = $1 AND role IN ('user', 'patient')) as total_patients,
+      (SELECT COUNT(*) FROM doctors WHERE tenant_id = $1) as total_doctors,
+      (SELECT COUNT(*) FROM users WHERE tenant_id = $1) as total_users,
+      (SELECT COUNT(*) FROM bookings WHERE tenant_id = $1) as total_bookings,
+      (SELECT COUNT(*) FROM bookings WHERE tenant_id = $1 AND status != 'cancelled') as confirmed_bookings,
       (SELECT COUNT(*) FROM invoices WHERE tenant_id = $1) as invoice_count,
       (SELECT COUNT(*) FROM lab_requests WHERE tenant_id = $1) as lab_request_count
   `, [tenantId]);
 
   const subResult = await pool.query(
-    `SELECT s.*, p.name as plan_name, p.code as plan_code
+    `SELECT p.name AS plan_name, p.code AS plan_code
      FROM subscriptions s
      JOIN plans p ON p.id = s.plan_id
      WHERE s.tenant_id = $1 AND s.status IN ('active', 'trialing')
@@ -91,14 +110,32 @@ export const getTenantDetail = async (tenantId: string): Promise<{
     [tenantId]
   );
 
+  const planCode = subResult.rows[0]?.plan_code || 'free';
+  const planName = subResult.rows[0]?.plan_name || 'Gratuito';
+  const stats = statsResult.rows[0] || {};
+
   return {
-    tenant,
-    stats: statsResult.rows[0] || {},
-    subscription: subResult.rows[0] || null,
+    id: tenant.id,
+    name: tenant.name,
+    slug: tenant.id,
+    domain: tenant.domain,
+    active: tenant.active,
+    plan: planCode,
+    plan_name: planName,
+    locale: tenant.locale,
+    timezone: tenant.timezone,
+    total_patients: Number(stats.total_patients || 0),
+    total_doctors: Number(stats.total_doctors || 0),
+    total_users: Number(stats.total_users || 0),
+    total_bookings: Number(stats.total_bookings || 0),
+    confirmed_bookings: Number(stats.confirmed_bookings || 0),
+    invoice_count: Number(stats.invoice_count || 0),
+    lab_request_count: Number(stats.lab_request_count || 0),
+    created_at: tenant.created_at,
   };
 };
 
-const ALLOWED_TENANT_FIELDS = new Set(['name', 'locale', 'timezone', 'active', 'config']);
+const ALLOWED_TENANT_FIELDS = new Set(['name', 'domain', 'locale', 'timezone', 'active', 'config']);
 
 export const updateTenant = async (
   tenantId: string,
@@ -726,17 +763,28 @@ export const getAlerts = async (): Promise<Record<string, unknown>[]> => {
 };
 
 export const adminCreateTenant = async (data: {
-  id: string;
+  id?: string;
   name: string;
-  domain: string;
+  slug?: string;
+  domain?: string;
+  plan?: string;
+  planCode?: string;
   locale?: string;
   timezone?: string;
-  planCode?: string;
-  adminEmail: string;
-  adminPassword: string;
+  adminEmail?: string;
+  adminPassword?: string;
 }): Promise<{ tenantId: string }> => {
   const { tenantService } = await import('../../shared/multi-tenant.service.js');
   const saasService = await import('../saas/saas.service.js');
+
+  const tenantId = data.id || data.slug || data.name.toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+
+  const domain = data.domain || `${tenantId}.clinic.app`;
+  const adminEmail = data.adminEmail || `admin@${tenantId}.clinic.app`;
+  const adminPassword = data.adminPassword || 'Admin123!@#';
+  const planCode = data.planCode || data.plan || 'free';
 
   const client = await pool.connect();
   try {
@@ -744,18 +792,19 @@ export const adminCreateTenant = async (data: {
 
     await client.query(
       `INSERT INTO tenants (id, name, domain, locale, timezone, config, active)
-       VALUES ($1, $2, $3, $4, $5, $6, true)`,
+       VALUES ($1, $2, $3, $4, $5, $6, true)
+       ON CONFLICT (id) DO UPDATE SET name = $2, domain = $3`,
       [
-        data.id,
+        tenantId,
         data.name,
-        data.domain,
+        domain,
         data.locale || process.env.APP_LOCALE || 'es',
         data.timezone || 'America/Santiago',
         JSON.stringify({ company: data.name }),
       ]
     );
 
-    if (data.planCode) {
+    if (planCode) {
       const plan = await saasService.getPlanByCode();
       const now = new Date();
       const periodEnd = new Date(now);
@@ -764,24 +813,25 @@ export const adminCreateTenant = async (data: {
       await client.query(
         `INSERT INTO subscriptions (tenant_id, plan_id, status, current_period_start, current_period_end)
          VALUES ($1, $2, 'active', $3, $4)`,
-        [data.id, plan.id, now, periodEnd]
+        [tenantId, plan.id, now, periodEnd]
       );
     }
 
     const bcrypt = await import('bcrypt');
-    const hash = await bcrypt.hash(data.adminPassword, 12);
+    const hash = await bcrypt.hash(adminPassword, 12);
 
     await client.query(
       `INSERT INTO users (email, password, name, role, tenant_id, password_changed)
-       VALUES ($1, $2, $3, 'admin', $4, true)`,
-      [data.adminEmail, hash, `Admin ${data.name}`, data.id]
+       VALUES ($1, $2, $3, 'admin', $4, true)
+       ON CONFLICT (tenant_id, email) DO NOTHING`,
+      [adminEmail, hash, `Admin ${data.name}`, tenantId]
     );
 
     await client.query('COMMIT');
 
     await tenantService.loadFromDB();
 
-    return { tenantId: data.id };
+    return { tenantId };
   } catch (error) {
     await client.query('ROLLBACK');
     throw error;

@@ -198,7 +198,7 @@ app.use(`${API_PREFIX}/auth`, authRoutes);
 app.use(`${API_PREFIX}/doctors`, doctorRoutes);
 app.use(`${API_PREFIX}/bookings`, bookingRoutes);
 app.use(`${API_PREFIX}/availability`, availabilityRouter);
-app.use(`${API_PREFIX}/exceptions`, exceptionRouter);
+app.use(`${API_PREFIX}/availability-exceptions`, exceptionRouter);
 app.use(`${API_PREFIX}/guest`, guestRoutes);
 
 app.use(`${API_PREFIX}/clinical-records`, phiWriteLimiter);

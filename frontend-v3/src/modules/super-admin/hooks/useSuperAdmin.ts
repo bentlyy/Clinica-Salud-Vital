@@ -11,7 +11,7 @@ export const superAdminKeys = {
   stats: ['super-admin', 'stats'] as const,
   tenants: ['super-admin', 'tenants'] as const,
   tenantList: (params?: TenantListParams) => ['super-admin', 'tenants', params] as const,
-  tenantDetail: (id: number) => ['super-admin', 'tenants', id] as const,
+  tenantDetail: (id: string) => ['super-admin', 'tenants', id] as const,
 };
 
 export function useSuperAdminStats() {
@@ -36,11 +36,11 @@ export function useTenantList(params?: TenantListParams) {
   });
 }
 
-export function useTenantDetail(id: number) {
+export function useTenantDetail(id: string) {
   return useQuery({
     queryKey: superAdminKeys.tenantDetail(id),
     queryFn: () => superAdminService.getTenantById(id),
-    enabled: id > 0,
+    enabled: !!id,
   });
 }
 
@@ -60,7 +60,7 @@ export function useUpdateTenant() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, input }: { id: number; input: UpdateTenantInput }) =>
+    mutationFn: ({ id, input }: { id: string; input: UpdateTenantInput }) =>
       superAdminService.updateTenant(id, input),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: superAdminKeys.tenants });
@@ -74,7 +74,7 @@ export function useDeleteTenant() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: number) => superAdminService.deleteTenant(id),
+    mutationFn: (id: string) => superAdminService.deleteTenant(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: superAdminKeys.tenants });
       toast.success('Clínica eliminada exitosamente');

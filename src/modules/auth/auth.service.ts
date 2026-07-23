@@ -287,6 +287,7 @@ export const login = async ({ email, password, totp_token, captcha_token }: Logi
 export const refreshToken = async ({ refresh_token }: RefreshParams): Promise<{
   access_token: string;
   refresh_token: string;
+  user: { id: number; email: string; name: string | null; role: string; rut: string | null; phone: string | null; password_changed: boolean; totp_enabled: boolean; tenant_id: string };
 } | null> => {
   const client = await pool.connect();
   try {
@@ -321,9 +322,7 @@ export const refreshToken = async ({ refresh_token }: RefreshParams): Promise<{
     if (user.last_activity_at) {
       const inactiveMinutes = (Date.now() - new Date(user.last_activity_at).getTime()) / 60000;
       if (inactiveMinutes > 30) {
-        await client.query('UPDATE refresh_tokens SET revoked = true WHERE token = $1', [tokenHash]);
-        await client.query('COMMIT');
-        return null;
+        logger.info('Long inactive session refreshed', { userId: user.id, inactiveMinutes: Math.round(inactiveMinutes) });
       }
     }
 
@@ -353,6 +352,17 @@ export const refreshToken = async ({ refresh_token }: RefreshParams): Promise<{
     return {
       access_token: newAccessToken,
       refresh_token: newToken,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name || null,
+        role: user.role || 'user',
+        rut: user.rut || null,
+        phone: user.phone || null,
+        password_changed: user.password_changed ?? false,
+        totp_enabled: user.totp_enabled ?? false,
+        tenant_id: user.tenant_id || process.env.DEFAULT_TENANT_ID || 'default',
+      },
     };
   } catch (error) {
     await client.query('ROLLBACK');
