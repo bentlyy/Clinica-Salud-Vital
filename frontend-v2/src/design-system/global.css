@@ -1,0 +1,227 @@
+/* ==========================================================================
+   Global Styles — Reset + Base
+   ========================================================================== */
+
+@import './tokens.css';
+
+/* =========================================================================
+   CSS RESET
+   ========================================================================= */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  -moz-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-family);
+  font-size: var(--text-body);
+  font-weight: var(--weight-regular);
+  line-height: var(--leading-normal);
+  color: var(--text-primary);
+  background-color: var(--surface-primary);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* =========================================================================
+   TYPOGRAPHY RESET
+   ========================================================================= */
+
+h1, h2, h3, h4, h5, h6 {
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-tight);
+  color: var(--text-primary);
+}
+
+p {
+  line-height: var(--leading-relaxed);
+}
+
+a {
+  color: var(--text-link);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+a:hover {
+  color: var(--interactive-primary-hover);
+}
+
+strong, b {
+  font-weight: var(--weight-semibold);
+}
+
+small {
+  font-size: var(--text-caption);
+}
+
+/* =========================================================================
+   LISTS
+   ========================================================================= */
+
+ul, ol {
+  list-style: none;
+}
+
+/* =========================================================================
+   MEDIA
+   ========================================================================= */
+
+img, picture, video, canvas, svg {
+  display: block;
+  max-width: 100%;
+}
+
+img {
+  height: auto;
+}
+
+/* =========================================================================
+   FORMS
+   ========================================================================= */
+
+input, button, textarea, select {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  outline: none;
+}
+
+button {
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--text-tertiary);
+}
+
+fieldset {
+  border: none;
+}
+
+legend {
+  padding: 0;
+}
+
+/* =========================================================================
+   TABLE
+   ========================================================================= */
+
+table {
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+
+/* =========================================================================
+   ACCESSIBILITY — Focus Visible
+   ========================================================================= */
+
+:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* =========================================================================
+   SCROLLBAR STYLING
+   ========================================================================= */
+
+/* Webkit (Chrome, Safari, Edge) */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--gray-300);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--gray-400);
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--gray-300) transparent;
+}
+
+/* =========================================================================
+   SELECTION
+   ========================================================================= */
+
+::selection {
+  background-color: var(--teal-200);
+  color: var(--teal-900);
+}
+
+[data-theme="dark"] ::selection {
+  background-color: var(--teal-800);
+  color: var(--teal-100);
+}
+
+/* =========================================================================
+   UTILITY CLASSES
+   ========================================================================= */
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Print */
+@media print {
+  body {
+    background: #fff;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+}

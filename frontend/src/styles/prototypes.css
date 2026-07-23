@@ -11,11 +11,38 @@
 
 /* =============================  SIDEBAR  ================================= */
 
+.ds-sidebar-toggle {
+  position: fixed; left: 0; bottom: 24px;
+  z-index: calc(var(--ds-z-navbar, 300) + 1);
+  width: 40px; height: 40px;
+  background: var(--ds-teal-600, #0d9488); color: white;
+  border: none; border-radius: 0 10px 10px 0;
+  cursor: pointer; font-size: 16px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s;
+  box-shadow: 2px 0 8px rgba(0,0,0,0.12);
+}
+.ds-sidebar-toggle:hover {
+  background: var(--ds-teal-700, #0f766e);
+  width: 28px;
+}
+
 .ds-sidebar {
   position: fixed; top: 0; left: 0; bottom: 0; width: var(--ds-sidebar-w, 260px);
   background: var(--ds-surface, #fff);
   border-right: 1px solid var(--ds-border, #E2E8F0);
   display: flex; flex-direction: column; z-index: var(--ds-z-navbar, 300);
+  transition: width 0.25s ease, transform 0.25s ease;
+}
+.ds-sidebar.collapsed {
+  width: 60px;
+}
+.ds-sidebar.collapsed .ds-sidebar-brand { justify-content: center; padding: 20px 0; }
+.ds-sidebar.collapsed .ds-nav-item { justify-content: center; padding: 10px; }
+.ds-sidebar.collapsed .ds-nav-icon { width: auto; }
+
+.ds-sidebar-collapsed .ds-layout-main {
+  margin-left: 60px;
 }
 .ds-sidebar-brand {
   padding: 20px 24px; display: flex; align-items: center; gap: 12px;
@@ -530,8 +557,10 @@ select.ds-form-input {
 /* =======================  RESPONSIVE  ===================================== */
 
 @media (max-width: 768px) {
-  .ds-sidebar { transform: translateX(-100%); }
+  .ds-sidebar { transform: translateX(-100%); width: var(--ds-sidebar-w, 260px); }
   .ds-sidebar.open { transform: translateX(0); }
+  .ds-sidebar.collapsed { width: var(--ds-sidebar-w, 260px); }
+  .ds-sidebar-toggle { display: none; }
   .ds-main { margin-left: 0; }
   .ds-stats-grid { grid-template-columns: repeat(2, 1fr); }
   .ds-two-col, .ds-two-col-equal { grid-template-columns: 1fr; }
@@ -549,6 +578,12 @@ select.ds-form-input {
 [data-theme="dark"] .ds-sidebar {
   background: var(--ds-surface, #1E293B);
   border-right-color: var(--ds-border, #334155);
+}
+[data-theme="dark"] .ds-sidebar-toggle {
+  background: var(--ds-teal-700, #0f766e);
+}
+[data-theme="dark"] .ds-sidebar-toggle:hover {
+  background: var(--ds-teal-600, #0d9488);
 }
 [data-theme="dark"] .ds-sidebar-brand-text { color: var(--ds-teal-300, #5eead4); }
 [data-theme="dark"] .ds-sidebar-brand { border-bottom-color: var(--ds-border, #334155); }

@@ -450,11 +450,373 @@
    -------------------------------------------------------------------------- */
 
 .lp-footer {
-  padding: 40px;
+  padding: 60px 40px 30px;
   background: #0a2e2a;
   color: rgba(255,255,255,0.5);
-  text-align: center;
   font-size: 13px;
+}
+
+.lp-footer-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 40px;
+  max-width: 1100px;
+  margin: 0 auto 40px;
+}
+
+.lp-footer-brand {
+  font-size: 18px;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 12px;
+}
+
+.lp-footer-brand-desc {
+  font-size: 14px;
+  color: rgba(255,255,255,0.5);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.lp-footer-col-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.8);
+  margin-bottom: 16px;
+}
+
+.lp-footer-links {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.lp-footer-links li {
+  margin-bottom: 10px;
+}
+
+.lp-footer-links a {
+  color: rgba(255,255,255,0.5);
+  text-decoration: none;
+  font-size: 13px;
+  transition: color 0.2s;
+}
+
+.lp-footer-links a:hover {
+  color: #2ad4bf;
+}
+
+.lp-footer-bottom {
+  text-align: center;
+  padding-top: 24px;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  font-size: 13px;
+}
+
+/* --------------------------------------------------------------------------
+   Landing Page — How It Works
+   -------------------------------------------------------------------------- */
+
+.lp-steps {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 32px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.lp-step {
+  text-align: center;
+  padding: 32px 24px;
+}
+
+.lp-step-num {
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #2ad4bf, #218c90);
+  color: #ffffff;
+  font-size: 22px;
+  font-weight: 800;
+  border-radius: 16px;
+}
+
+.lp-step-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #0d3d38;
+  margin-bottom: 10px;
+}
+
+.lp-step-desc {
+  font-size: 14px;
+  color: #6b7280;
+  line-height: 1.6;
+}
+
+/* --------------------------------------------------------------------------
+   Landing Page — Pricing
+   -------------------------------------------------------------------------- */
+
+.lp-pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  max-width: 1000px;
+  margin: 0 auto;
+  align-items: start;
+}
+
+.lp-pricing-card {
+  background: #ffffff;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 20px;
+  padding: 36px 28px;
+  position: relative;
+  transition: all 0.25s;
+}
+
+.lp-pricing-card:hover {
+  border-color: #d1d5db;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.06);
+}
+
+.lp-pricing-popular {
+  border-color: #218c90;
+  box-shadow: 0 8px 40px rgba(33,140,144,0.15);
+  transform: scale(1.03);
+}
+
+.lp-pricing-popular:hover {
+  border-color: #218c90;
+}
+
+.lp-pricing-badge {
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, #2ad4bf, #218c90);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 16px;
+  border-radius: 100px;
+}
+
+.lp-pricing-name {
+  font-size: 20px;
+  font-weight: 700;
+  color: #0d3d38;
+  margin-bottom: 4px;
+}
+
+.lp-pricing-desc {
+  font-size: 14px;
+  color: #6b7280;
+  margin-bottom: 20px;
+}
+
+.lp-pricing-price {
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+  margin-bottom: 24px;
+}
+
+.lp-pricing-currency {
+  font-size: 20px;
+  font-weight: 700;
+  color: #0d3d38;
+}
+
+.lp-pricing-amount {
+  font-size: 42px;
+  font-weight: 800;
+  color: #0d3d38;
+  line-height: 1;
+}
+
+.lp-pricing-period {
+  font-size: 14px;
+  color: #6b7280;
+  margin-left: 4px;
+}
+
+.lp-pricing-features {
+  list-style: none;
+  margin: 0 0 28px;
+  padding: 0;
+}
+
+.lp-pricing-features li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  font-size: 14px;
+  color: #374151;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.lp-pricing-features li:last-child {
+  border-bottom: none;
+}
+
+.lp-pricing-feature-disabled {
+  color: #d1d5db !important;
+}
+
+.lp-pricing-check {
+  color: #10b981;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.lp-pricing-x {
+  color: #d1d5db;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+/* --------------------------------------------------------------------------
+   Landing Page — Testimonials
+   -------------------------------------------------------------------------- */
+
+.lp-testimonials-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.lp-testimonial-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 28px;
+  transition: all 0.25s;
+}
+
+.lp-testimonial-card:hover {
+  border-color: #2ad4bf;
+  box-shadow: 0 8px 32px rgba(33,140,144,0.08);
+}
+
+.lp-testimonial-stars {
+  font-size: 14px;
+  margin-bottom: 16px;
+}
+
+.lp-testimonial-text {
+  font-size: 14px;
+  color: #374151;
+  line-height: 1.7;
+  margin-bottom: 20px;
+  font-style: italic;
+}
+
+.lp-testimonial-author {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.lp-testimonial-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.lp-testimonial-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.lp-testimonial-role {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+/* --------------------------------------------------------------------------
+   Landing Page — FAQ
+   -------------------------------------------------------------------------- */
+
+.lp-faq-list {
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.lp-faq-item {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  margin-bottom: 12px;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+
+.lp-faq-item.lp-faq-open {
+  border-color: #2ad4bf;
+}
+
+.lp-faq-q {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px;
+  background: #ffffff;
+  border: none;
+  font-size: 15px;
+  font-weight: 600;
+  color: #1f2937;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  transition: background 0.2s;
+}
+
+.lp-faq-q:hover {
+  background: #f9fafb;
+}
+
+.lp-faq-arrow {
+  font-size: 14px;
+  color: #9ca3af;
+  transition: transform 0.2s;
+}
+
+.lp-faq-open .lp-faq-arrow {
+  transform: rotate(180deg);
+}
+
+.lp-faq-a {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease, padding 0.3s ease;
+}
+
+.lp-faq-open .lp-faq-a {
+  max-height: 200px;
+  padding: 0 20px 18px;
+}
+
+.lp-faq-a p {
+  margin: 0;
+  font-size: 14px;
+  color: #6b7280;
+  line-height: 1.7;
 }
 
 /* --------------------------------------------------------------------------
@@ -987,6 +1349,25 @@
   .lp-hero-title {
     font-size: 38px;
   }
+  .lp-steps {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .lp-pricing-grid {
+    grid-template-columns: 1fr;
+    max-width: 400px;
+  }
+  .lp-pricing-popular {
+    transform: none;
+  }
+  .lp-testimonials-grid {
+    grid-template-columns: 1fr;
+    max-width: 500px;
+  }
+  .lp-footer-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+  }
 }
 
 @media (max-width: 600px) {
@@ -1018,6 +1399,10 @@
   }
   .lp-hero-actions {
     flex-direction: column;
+  }
+  .lp-footer-grid {
+    grid-template-columns: 1fr;
+    gap: 24px;
   }
 }
 

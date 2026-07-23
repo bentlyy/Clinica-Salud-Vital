@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import {
   Box,
   Paper,
@@ -50,14 +50,14 @@ import {
 
 const createRequestSchema = z.object({
   patient_id: z.coerce.number().min(1, 'Paciente requerido'),
-  priority: z.enum(['routine', 'urgent', 'emergency']),
+  priority: z.enum(['routine', 'urgent', 'emergency']).or(z.string().min(1)),
   notes: z.string().optional(),
   test_ids: z.array(z.coerce.number().min(1)).min(1, 'Selecciona al menos una prueba'),
 });
 
 type CreateRequestForm = z.infer<typeof createRequestSchema>;
 
-export default function LabRequestsPage() {
+function LabRequestsPageInner() {
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -230,7 +230,12 @@ export default function LabRequestsPage() {
                 const statusCfg = LAB_STATUS_CONFIG[req.status];
                 const priorityCfg = LAB_PRIORITY_CONFIG[req.priority];
                 return (
-                  <TableRow key={req.id} hover>
+                  <TableRow
+                    key={req.id}
+                    hover
+                    onClick={() => navigate(`/laboratory/requests/${req.id}`)}
+                    sx={{ cursor: 'pointer' }}
+                  >
                     <TableCell>
                       <Typography variant="body2" sx={{ fontWeight: 500, fontFamily: 'monospace' }}>
                         {req.request_number || `#${req.id}`}
@@ -276,7 +281,10 @@ export default function LabRequestsPage() {
                     <TableCell align="right">
                       <IconButton
                         size="small"
-                        onClick={() => navigate(`/laboratory/${req.id}`)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/laboratory/requests/${req.id}`);
+                        }}
                         sx={{ color: '#6b7280' }}
                       >
                         <Visibility fontSize="small" />
@@ -284,7 +292,10 @@ export default function LabRequestsPage() {
                       {(user?.role === 'admin' || user?.role === 'superadmin' || user?.role === 'lab_technician') && (
                         <IconButton
                           size="small"
-                          onClick={() => navigate(`/laboratory/${req.id}`)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/laboratory/requests/${req.id}`);
+                          }}
                           sx={{ color: '#0d9488' }}
                         >
                           <Edit fontSize="small" />
@@ -412,3 +423,6 @@ export default function LabRequestsPage() {
     </Box>
   );
 }
+
+const LabRequestsPage = memo(LabRequestsPageInner);
+export default LabRequestsPage;

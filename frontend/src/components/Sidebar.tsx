@@ -68,7 +68,12 @@ const sections: Record<string, { label: string; items: NavItem[] }> = {
   },
 };
 
-export default function Sidebar() {
+interface SidebarProps {
+  collapsed?: boolean;
+  onToggle?: () => void;
+}
+
+export default function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
   const { user, logout } = useAuth();
   const { t } = useI18n();
   const navigate = useNavigate();
@@ -82,44 +87,58 @@ export default function Sidebar() {
   const initials = getInitials(userName);
 
   return (
-    <aside className="ds-sidebar">
-      <div className="ds-sidebar-brand">
-        <div className="ds-sidebar-brand-icon">+</div>
-        <div>
-          <div className="ds-sidebar-brand-text">{t('app.name')}</div>
-          <div className="ds-sidebar-brand-role">{t('app.subtitle')}</div>
+    <>
+      <button
+        className="ds-sidebar-toggle"
+        onClick={onToggle}
+        aria-label={collapsed ? 'Expandir barra lateral' : 'Colapsar barra lateral'}
+      >
+        {collapsed ? '»' : '«'}
+      </button>
+      <aside className={`ds-sidebar${collapsed ? ' collapsed' : ''}`}>
+        <div className="ds-sidebar-brand">
+          <div className="ds-sidebar-brand-icon">+</div>
+          {!collapsed && (
+            <div>
+              <div className="ds-sidebar-brand-text">{t('app.name')}</div>
+              <div className="ds-sidebar-brand-role">{t('app.subtitle')}</div>
+            </div>
+          )}
         </div>
-      </div>
 
-      <nav className="ds-sidebar-nav">
-        <div className="ds-nav-section">
-          <div className="ds-nav-section-label">{roleSections.label}</div>
-          {roleSections.items.map((item) => (
-            <a
-              key={item.path}
-              className={`ds-nav-item${location.pathname === item.path || (item.path !== '/' && location.pathname.startsWith(item.path)) ? ' active' : ''}`}
-              onClick={() => navigate(item.path)}
-            >
-              <span className="ds-nav-icon">{item.icon}</span>
-              {item.label}
-              {item.badge && <span className="ds-nav-badge">{item.badge}</span>}
-            </a>
-          ))}
-        </div>
-      </nav>
-
-      <div className="ds-sidebar-footer">
-        <div
-          className="ds-sidebar-user"
-          onClick={async () => { await logout(); navigate('/'); }}
-        >
-          <div className="ds-sidebar-avatar">{initials}</div>
-          <div>
-            <div className="ds-sidebar-user-name">{userName}</div>
-            <div className="ds-sidebar-user-role">{role}</div>
+        <nav className="ds-sidebar-nav">
+          <div className="ds-nav-section">
+            {!collapsed && <div className="ds-nav-section-label">{roleSections.label}</div>}
+            {roleSections.items.map((item) => (
+              <a
+                key={item.path}
+                className={`ds-nav-item${location.pathname === item.path || (item.path !== '/' && location.pathname.startsWith(item.path)) ? ' active' : ''}`}
+                onClick={() => navigate(item.path)}
+                title={collapsed ? item.label : undefined}
+              >
+                <span className="ds-nav-icon">{item.icon}</span>
+                {!collapsed && item.label}
+                {!collapsed && item.badge && <span className="ds-nav-badge">{item.badge}</span>}
+              </a>
+            ))}
           </div>
-        </div>
-      </div>
-    </aside>
+        </nav>
+
+        {!collapsed && (
+          <div className="ds-sidebar-footer">
+            <div
+              className="ds-sidebar-user"
+              onClick={async () => { await logout(); navigate('/'); }}
+            >
+              <div className="ds-sidebar-avatar">{initials}</div>
+              <div>
+                <div className="ds-sidebar-user-name">{userName}</div>
+                <div className="ds-sidebar-user-role">{role}</div>
+              </div>
+            </div>
+          </div>
+        )}
+      </aside>
+    </>
   );
 }
