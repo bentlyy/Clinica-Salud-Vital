@@ -200,8 +200,8 @@ export default function PrescriptionsPage() {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {prescriptions.map((prescription: Prescription) => (
-                  <TableRow key={prescription.id} hover sx={{ '&:last-child td': { borderBottom: 0 } }}>
+                {prescriptions.map((prescription: Prescription, idx: number) => (
+                  <TableRow key={prescription.id ?? idx} hover sx={{ '&:last-child td': { borderBottom: 0 } }}>
                     <TableCell>
                       <Typography variant="body2" sx={{ fontWeight: 600, color: '#1f2937' }}>
                         {prescription.patient_name || `Paciente #${prescription.patient_id}`}
