@@ -17,7 +17,7 @@ interface AuthContextType {
   user: JwtUser | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (email: string, password: string, totp_token?: string) => Promise<AuthResponse>;
+  login: (email: string, password: string, totp_token?: string, captcha_token?: string) => Promise<AuthResponse>;
   logout: () => Promise<void>;
   hasPermission: (module: string, action?: string) => boolean;
 }
@@ -81,8 +81,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
   }, [navigate, isLoading]);
 
-  const login = useCallback(async (email: string, password: string, totp_token?: string) => {
-    const { data } = await apiClient.post<AuthResponse>('/auth/login', { email, password, totp_token });
+  const login = useCallback(async (email: string, password: string, totp_token?: string, captcha_token?: string) => {
+    const { data } = await apiClient.post<AuthResponse>('/auth/login', { email, password, totp_token, captcha_token });
     if (data.requires_2fa) return data;
     setAccessToken(data.access_token);
     setUser(data.user);

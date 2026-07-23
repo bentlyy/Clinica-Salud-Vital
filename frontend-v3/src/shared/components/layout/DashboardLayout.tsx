@@ -20,10 +20,12 @@ import Settings from '@mui/icons-material/Settings';
 import Logout from '@mui/icons-material/Logout';
 import Person from '@mui/icons-material/Person';
 import { useAuth } from '@/shared/providers/AuthProvider';
+import { useFeature } from '@/shared/hooks/useFeature';
 import { getRoleLabel, getRoleColor } from '@/shared/utils/role.utils';
 import { getNavItems } from '@/shared/constants/navigation';
 import { SidebarItem } from './SidebarItem';
 import { NotificationBell } from '@/modules/notifications/components/NotificationBell';
+import { LanguageSwitcher } from '@/shared/components/LanguageSwitcher';
 
 const SIDEBAR_WIDTH = 260;
 const SIDEBAR_COLLAPSED = 72;
@@ -31,6 +33,7 @@ const TOPBAR_HEIGHT = 64;
 
 export function DashboardLayout() {
   const { user, logout } = useAuth();
+  const { hasFeature } = useFeature();
   const navigate = useNavigate();
   const location = useLocation();
   const theme = useTheme();
@@ -152,6 +155,8 @@ export function DashboardLayout() {
                 active={location.pathname === item.path || location.pathname.startsWith(item.path + '/')}
                 collapsed={!sidebarOpen}
                 onClick={handleNavClick}
+                subItems={item.children}
+                locked={item.featureKey ? !hasFeature(item.featureKey) : false}
               />
             ))}
           </Box>
@@ -221,6 +226,8 @@ export function DashboardLayout() {
             {/* Topbar actions */}
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
               <NotificationBell />
+
+              <LanguageSwitcher />
 
               <Tooltip title="Configuración">
                 <IconButton

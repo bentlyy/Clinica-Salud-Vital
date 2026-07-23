@@ -1,0 +1,381 @@
+import { memo, useState, useCallback } from 'react';
+import {
+  Box,
+  Typography,
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Button,
+  Chip,
+  Collapse,
+  TextField,
+  MenuItem,
+  IconButton,
+  CircularProgress,
+} from '@mui/material';
+import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import ExpandLessIcon from '@mui/icons-material/ExpandLess';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import type { LabRequestItem } from '../../types/lab.types';
+import {
+  SAMPLE_TYPE_OPTIONS,
+  CONTAINER_TYPE_OPTIONS,
+  LAB_STATUS_LABELS,
+  LAB_STATUS_COLORS,
+} from '../../types/lab.types';
+
+// ── Schema ──────────────────────────────────────────────────────────────────
+
+const receptionSchema = z.object({
+  sample_type: z.string().min(1, 'Tipo de muestra requerido'),
+  container_type: z.string().min(1, 'Tipo de contenedor requerido'),
+  volume: z.number().min(0.1, 'Volumen debe ser mayor a 0').optional(),
+  notes: z.string().optional(),
+});
+
+type ReceptionFormValues = z.infer<typeof receptionSchema>;
+
+// ── Props ───────────────────────────────────────────────────────────────────
+
+interface SampleReceptionProps {
+  requestId?: number;
+  items?: LabRequestItem[];
+  onReceiveSample: (data: {
+    lab_request_item_id: number;
+    sample_type: string;
+    container_type: string;
+    volume?: number;
+    notes?: string;
+  }) => void;
+  isLoading?: boolean;
+}
+
+// ── Component ───────────────────────────────────────────────────────────────
+
+export const SampleReception = memo(function SampleReception({
+  requestId,
+  items = [],
+  onReceiveSample,
+  isLoading = false,
+}: SampleReceptionProps) {
+  const [expandedRow, setExpandedRow] = useState<number | null>(null);
+
+  const handleToggleRow = useCallback((itemId: number) => {
+    setExpandedRow((prev) => (prev === itemId ? null : itemId));
+  }, []);
+
+  const isReceived = (item: LabRequestItem) =>
+    item.status === 'received' || item.status === 'verified' || item.status === 'assigned' ||
+    item.status === 'processing' || item.status === 'qc_review' || item.status === 'result_entered' ||
+    item.status === 'validated_tech' || item.status === 'validated_doctor' || item.status === 'signed' ||
+    item.status === 'delivered';
+
+  const pendingItems = items.filter((item) => !isReceived(item));
+  const receivedItems = items.filter((item) => isReceived(item));
+
+  return (
+    <Paper
+      elevation={0}
+      sx={{
+        p: 3,
+        borderRadius: '14px',
+        border: '1px solid #e5e7eb',
+      }}
+    >
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2.5 }}>
+        <Typography variant="h5" sx={{ fontWeight: 700, color: '#1f2937' }}>
+          Recepción de Muestras
+        </Typography>
+        {requestId && (
+          <Chip
+            label={`Solicitud #${requestId}`}
+            size="small"
+            sx={{
+              backgroundColor: '#f0fdfa',
+              color: '#0d9488',
+              fontWeight: 600,
+            }}
+          />
+        )}
+      </Box>
+
+      {items.length === 0 ? (
+        <Typography variant="body2" sx={{ color: '#9ca3af', textAlign: 'center', py: 4 }}>
+          No hay ítems en esta solicitud
+        </Typography>
+      ) : (
+        <TableContainer>
+          <Table size="small">
+            <TableHead>
+              <TableRow>
+                <TableCell>Test</TableCell>
+                <TableCell>Tipo Muestra</TableCell>
+                <TableCell>Volumen</TableCell>
+                <TableCell>Estado</TableCell>
+                <TableCell align="right">Acciones</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {[...pendingItems, ...receivedItems].map((item) => (
+                <SampleReceptionRow
+                  key={item.id}
+                  item={item}
+                  expanded={expandedRow === item.id}
+                  onToggle={handleToggleRow}
+                  onSubmit={onReceiveSample}
+                  isLoading={isLoading}
+                  alreadyReceived={isReceived(item)}
+                />
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      )}
+    </Paper>
+  );
+});
+
+// ── Row Sub-Component ───────────────────────────────────────────────────────
+
+interface SampleReceptionRowProps {
+  item: LabRequestItem;
+  expanded: boolean;
+  onToggle: (id: number) => void;
+  onSubmit: SampleReceptionProps['onReceiveSample'];
+  isLoading: boolean;
+  alreadyReceived: boolean;
+}
+
+const SampleReceptionRow = memo(function SampleReceptionRow({
+  item,
+  expanded,
+  onToggle,
+  onSubmit,
+  isLoading,
+  alreadyReceived,
+}: SampleReceptionRowProps) {
+  const {
+    control,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<ReceptionFormValues>({
+    resolver: zodResolver(receptionSchema),
+    defaultValues: {
+      sample_type: item.test?.sample_type ?? '',
+      container_type: item.test?.container_type ?? '',
+      volume: item.test?.volume_ml ?? undefined,
+      notes: '',
+    },
+  });
+
+  const handleFormSubmit = (data: ReceptionFormValues) => {
+    onSubmit({
+      lab_request_item_id: item.id,
+      sample_type: data.sample_type,
+      container_type: data.container_type,
+      volume: data.volume,
+      notes: data.notes,
+    });
+    reset();
+  };
+
+  const handleCancel = () => {
+    reset();
+    onToggle(item.id);
+  };
+
+  return (
+    <>
+      <TableRow
+        sx={{
+          backgroundColor: alreadyReceived ? '#f0fdfa' : 'transparent',
+          '&:hover': { backgroundColor: alreadyReceived ? '#ccfbf1' : '#f9fafb' },
+        }}
+      >
+        <TableCell>
+          <Typography variant="body2" sx={{ fontWeight: 600, color: '#1f2937' }}>
+            {item.test_name ?? `Test #${item.lab_test_id}`}
+          </Typography>
+        </TableCell>
+        <TableCell>
+          <Typography variant="body2" sx={{ color: '#6b7280' }}>
+            {item.test?.sample_type
+              ? SAMPLE_TYPE_OPTIONS.find((o) => o.value === item.test?.sample_type)?.label ?? item.test.sample_type
+              : '—'}
+          </Typography>
+        </TableCell>
+        <TableCell>
+          <Typography variant="body2" sx={{ color: '#6b7280' }}>
+            {item.test?.volume_ml ? `${item.test.volume_ml} ml` : '—'}
+          </Typography>
+        </TableCell>
+        <TableCell>
+          <Chip
+            label={LAB_STATUS_LABELS[item.status] ?? item.status}
+            size="small"
+            sx={{
+              backgroundColor: `${LAB_STATUS_COLORS[item.status] ?? '#6b7280'}15`,
+              color: LAB_STATUS_COLORS[item.status] ?? '#6b7280',
+              fontWeight: 500,
+              fontSize: '0.7rem',
+            }}
+          />
+        </TableCell>
+        <TableCell align="right">
+          {alreadyReceived ? (
+            <Chip
+              icon={<CheckCircleIcon sx={{ fontSize: 14 }} />}
+              label="Recibida"
+              size="small"
+              sx={{
+                backgroundColor: '#dcfce7',
+                color: '#16a34a',
+                fontWeight: 500,
+                fontSize: '0.7rem',
+              }}
+            />
+          ) : (
+            <IconButton
+              size="small"
+              onClick={() => onToggle(item.id)}
+              sx={{
+                color: '#0d9488',
+                '&:hover': { backgroundColor: '#f0fdfa' },
+              }}
+            >
+              {expanded ? <ExpandLessIcon /> : <AddCircleOutlineIcon />}
+            </IconButton>
+          )}
+        </TableCell>
+      </TableRow>
+
+      <TableRow>
+        <TableCell colSpan={5} sx={{ p: 0, border: 'none' }}>
+          <Collapse in={expanded} timeout="auto" unmountOnExit>
+            <Box
+              component="form"
+              onSubmit={handleSubmit(handleFormSubmit)}
+              sx={{
+                p: 2.5,
+                mx: 1,
+                mb: 1.5,
+                backgroundColor: '#f9fafb',
+                borderRadius: '10px',
+                border: '1px solid #e5e7eb',
+              }}
+            >
+              <Typography variant="body2" sx={{ fontWeight: 600, color: '#374151', mb: 2 }}>
+                Registrar Muestra — {item.test_name ?? `Test #${item.lab_test_id}`}
+              </Typography>
+
+              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 1.5, mb: 2 }}>
+                <Controller
+                  name="sample_type"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      select
+                      label="Tipo de Muestra"
+                      size="small"
+                      error={!!errors.sample_type}
+                      helperText={errors.sample_type?.message}
+                    >
+                      {SAMPLE_TYPE_OPTIONS.map((opt) => (
+                        <MenuItem key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </MenuItem>
+                      ))}
+                    </TextField>
+                  )}
+                />
+
+                <Controller
+                  name="container_type"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      select
+                      label="Tipo de Contenedor"
+                      size="small"
+                      error={!!errors.container_type}
+                      helperText={errors.container_type?.message}
+                    >
+                      {CONTAINER_TYPE_OPTIONS.map((opt) => (
+                        <MenuItem key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </MenuItem>
+                      ))}
+                    </TextField>
+                  )}
+                />
+
+                <Controller
+                  name="volume"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      label="Volumen (ml)"
+                      type="number"
+                      size="small"
+                      value={field.value ?? ''}
+                      onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
+                      error={!!errors.volume}
+                      helperText={errors.volume?.message}
+                    />
+                  )}
+                />
+
+                <Controller
+                  name="notes"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      label="Notas"
+                      size="small"
+                      multiline
+                      rows={2}
+                    />
+                  )}
+                />
+              </Box>
+
+              <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
+                <Button
+                  variant="text"
+                  size="small"
+                  onClick={handleCancel}
+                  disabled={isLoading}
+                  sx={{ color: '#6b7280' }}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  type="submit"
+                  variant="contained"
+                  size="small"
+                  disabled={isLoading}
+                  startIcon={isLoading ? <CircularProgress size={14} color="inherit" /> : undefined}
+                >
+                  Registrar
+                </Button>
+              </Box>
+            </Box>
+          </Collapse>
+        </TableCell>
+      </TableRow>
+    </>
+  );
+});

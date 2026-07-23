@@ -1,9 +1,11 @@
 import { Suspense, lazy } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '@/shared/providers/AuthProvider';
+import { useFeature } from '@/shared/hooks/useFeature';
 import { DashboardLayout } from '@/shared/components/layout/DashboardLayout';
 import { PatientLayout } from '@/shared/components/layout/PatientLayout';
 import { LoadingState } from '@/shared/components/ui/LoadingState';
+import { PremiumLocked } from '@/shared/components/PremiumLocked';
 import type { ReactNode } from 'react';
 
 // Lazy loaded pages
@@ -27,6 +29,9 @@ const MedicalHistoryPage = lazy(() => import('@/modules/medical-history/pages/Me
 const LabDashboardPage = lazy(() => import('@/modules/laboratory/pages/LabDashboardPage'));
 const LabRequestsPage = lazy(() => import('@/modules/laboratory/pages/LabRequestsPage'));
 const LabRequestDetailPage = lazy(() => import('@/modules/laboratory/pages/LabRequestDetailPage'));
+const LabAreaDashboardPage = lazy(() => import('@/modules/laboratory/pages/LabAreaDashboardPage'));
+const LabAnalyticsPage = lazy(() => import('@/modules/laboratory/pages/LabAnalyticsPage'));
+const LabQualityControlPage = lazy(() => import('@/modules/laboratory/pages/LabQualityControlPage'));
 
 // Audit module
 const AuditPage = lazy(() => import('@/modules/audit/pages/AuditPage'));
@@ -62,6 +67,15 @@ function ProtectedRoute({ children, allowedRoles }: { children: ReactNode; allow
   return <>{children}</>;
 }
 
+function FeatureRoute({ featureKey, featureName }: { featureKey: string; featureName?: string }) {
+  const { hasFeature, loading } = useFeature();
+
+  if (loading) return <LoadingState />;
+  if (!hasFeature(featureKey)) return <PremiumLocked featureName={featureName} />;
+
+  return <Outlet />;
+}
+
 export function AppRouter() {
   return (
     <Suspense fallback={<LoadingState />}>
@@ -84,9 +98,14 @@ export function AppRouter() {
           <Route path="/clinical-records/:id" element={<ClinicalRecordDetailPage />} />
           <Route path="/prescriptions" element={<PrescriptionsPage />} />
           <Route path="/medical-history" element={<MedicalHistoryPage />} />
-          <Route path="/laboratory" element={<LabDashboardPage />} />
-          <Route path="/laboratory/requests" element={<LabRequestsPage />} />
-          <Route path="/laboratory/:id" element={<LabRequestDetailPage />} />
+          <Route path="/laboratory" element={<FeatureRoute featureKey="laboratory" featureName="Laboratorio" />}>
+            <Route index element={<LabDashboardPage />} />
+            <Route path="requests" element={<LabRequestsPage />} />
+            <Route path="requests/:id" element={<LabRequestDetailPage />} />
+            <Route path="area/:areaId" element={<LabAreaDashboardPage />} />
+            <Route path="analytics" element={<LabAnalyticsPage />} />
+            <Route path="quality-control" element={<LabQualityControlPage />} />
+          </Route>
           <Route path="/billing" element={<BillingPage />} />
           <Route path="/analytics" element={<AdminAnalyticsPage />} />
           <Route path="/reports" element={<ReportsPage />} />

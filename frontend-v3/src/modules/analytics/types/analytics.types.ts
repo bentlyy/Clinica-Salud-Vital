@@ -40,3 +40,40 @@ export interface DoctorAnalyticsStats {
   patients_served: number;
   clinical_records: number;
 }
+
+export interface NoShowRecord {
+  doctor: string;
+  total: number;
+  noShows: number;
+}
+
+export interface DiagnosisRecord {
+  diagnosis: string;
+  count: number;
+  cie10?: string;
+}
+
+export interface DemandRecord {
+  date: string;
+  bookings: number;
+  predicted?: number;
+}
+
+export interface ScheduleRecord {
+  day: string;
+  bestTime: string;
+  occupancy: number;
+  hours?: { time: string; score: number }[];
+}
+
+export interface VitalsRecord {
+  patientId: string;
+  date: string;
+  pressure: string;
+  heartRate: number;
+  temperature: number;
+  anomaly: boolean;
+  pressureAnomaly?: boolean;
+  heartRateAnomaly?: boolean;
+  tempAnomaly?: boolean;
+}

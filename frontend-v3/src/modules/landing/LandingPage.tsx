@@ -1,8 +1,12 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import ReCAPTCHA from 'react-google-recaptcha';
 import { useAuth } from '@/shared/providers/AuthProvider';
 import { getRedirectPath } from '@/shared/utils/role.utils';
 import './LandingPage.css';
+
+const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
+const hasCaptcha = Boolean(RECAPTCHA_SITE_KEY);
 
 const FEATURES = [
   { icon: '📅', title: 'Gestión de Citas', desc: 'Agenda y administra citas con recordatorios automáticos y calendario inteligente.' },
@@ -24,8 +28,83 @@ const CLIENTS = [
   { name: 'MediCenter', color: '#dbeafe', emoji: '🩺' },
 ];
 
+const PRICING_PLANS = [
+  {
+    name: 'Básico', desc: 'Para clínicas pequeñas', price: '299', popular: false,
+    features: [
+      { text: 'Hasta 5 doctores', included: true },
+      { text: '200 pacientes', included: true },
+      { text: 'Gestión de citas', included: true },
+      { text: 'Historial clínico digital', included: true },
+      { text: 'Soporte por email', included: true },
+      { text: 'Laboratorio', included: false },
+      { text: 'Analytics IA', included: false },
+    ],
+  },
+  {
+    name: 'Profesional', desc: 'Para clínicas en crecimiento', price: '599', popular: true,
+    features: [
+      { text: 'Hasta 20 doctores', included: true },
+      { text: '1,000 pacientes', included: true },
+      { text: 'Todo lo del plan Básico', included: true },
+      { text: 'Laboratorio integrado', included: true },
+      { text: 'Analytics con IA', included: true },
+      { text: 'Multi-idioma (ES/EN/PT/FR)', included: true },
+      { text: 'Soporte prioritario', included: true },
+    ],
+  },
+  {
+    name: 'Enterprise', desc: 'Para redes de clínicas', price: '1,299', popular: false,
+    features: [
+      { text: 'Doctores ilimitados', included: true },
+      { text: 'Pacientes ilimitados', included: true },
+      { text: 'Todo lo del plan Pro', included: true },
+      { text: 'Multi-tenant', included: true },
+      { text: 'API REST completa', included: true },
+      { text: 'SLA 99.97% uptime', included: true },
+      { text: 'Soporte dedicado 24/7', included: true },
+    ],
+  },
+];
+
+const STEPS = [
+  { num: 1, title: 'Crea tu cuenta', desc: 'Regístrate gratis en 30 segundos. Sin tarjeta de crédito. Configura tu clínica básica.' },
+  { num: 2, title: 'Configura tu equipo', desc: 'Invita doctores, personal de laboratorio y admin. Asigna especialidades y horarios.' },
+  { num: 3, title: '¡Listo!', desc: 'Comienza a agendar citas, gestionar pacientes y monitorear todo desde el dashboard.' },
+];
+
+const TESTIMONIALS = [
+  {
+    stars: '⭐⭐⭐⭐⭐',
+    text: '"Reducimos los no-shows en un 40% con los recordatorios automáticos. La gestión de laboratorio integrada nos ahorró 3 horas diarias."',
+    name: 'Dr. Manuel García', role: 'Director, Clínica Norte',
+    initials: 'MG', gradient: 'linear-gradient(135deg,#2dd4bf,#0d9488)',
+  },
+  {
+    stars: '⭐⭐⭐⭐⭐',
+    text: '"El panel de analytics predictivo nos ayudó a optimizar horarios y aumentar la capacidad un 25%. Increíble."',
+    name: 'Dra. Sofía Rodríguez', role: 'Admin, Hospital Central',
+    initials: 'SR', gradient: 'linear-gradient(135deg,#60a5fa,#3b82f6)',
+  },
+  {
+    stars: '⭐⭐⭐⭐⭐',
+    text: '"Migramos de un sistema legacy en 2 semanas. El soporte fue excepcional. Ahora todo funciona desde el celular."',
+    name: 'Dr. Andrés López', role: 'Socio Fundador, Médica Sur',
+    initials: 'AL', gradient: 'linear-gradient(135deg,#fbbf24,#f59e0b)',
+  },
+];
+
+const FAQS = [
+  { q: '¿Necesito tarjeta de crédito para empezar?', a: 'No. El plan de prueba de 14 días es completamente gratuito y no requiere tarjeta de crédito. Si decides quedarte, elegís el plan que mejor se adapte a tu clínica.' },
+  { q: '¿Puedo migrar datos de otro sistema?', a: 'Sí. Ofrecemos migración gratuita de datos para planes Profesional y Enterprise. Nuestro equipo se encarga del proceso completo sin interrumpir tus operaciones.' },
+  { q: '¿Cumple con HIPAA y regulaciones de salud?', a: 'Sí. Cumple con HIPAA, ISO 27001 y todas las regulaciones de protección de datos de salud. Ofrecemos encriptación end-to-end y auditoría completa.' },
+  { q: '¿Cuántos usuarios puedo tener?', a: 'Depende del plan. El plan Básico permite hasta 5 doctores, Profesional hasta 20, y Enterprise es ilimitado. Todos los planes incluyen usuarios de laboratorio y admin.' },
+  { q: '¿Ofrecen soporte en español?', a: 'Sí. Todo nuestro soporte está en español. Los planes Profesional y Enterprise incluyen soporte prioritario con tiempo de respuesta garantizado.' },
+];
+
 function LandingPage() {
   const [loginOpen, setLoginOpen] = useState(false);
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
   const openLogin = useCallback(() => setLoginOpen(true), []);
   const closeLogin = useCallback(() => setLoginOpen(false), []);
 
@@ -39,8 +118,10 @@ function LandingPage() {
         </a>
         <ul className="lp-nav-links">
           <li><a href="#features">Funcionalidades</a></li>
-          <li><a href="#clients">Clientes</a></li>
-          <li><a href="#cta">Precios</a></li>
+          <li><a href="#how">Cómo funciona</a></li>
+          <li><a href="#pricing">Precios</a></li>
+          <li><a href="#testimonials">Testimonios</a></li>
+          <li><a href="#faq">FAQ</a></li>
         </ul>
         <div className="lp-nav-actions">
           <button className="lp-nav-btn lp-nav-btn-ghost" onClick={openLogin}>Iniciar sesion</button>
@@ -129,6 +210,109 @@ function LandingPage() {
         </div>
       </section>
 
+      {/* ---------- HOW IT WORKS ---------- */}
+      <section id="how" className="lp-section">
+        <div className="lp-section-header">
+          <div className="lp-section-label">Cómo funciona</div>
+          <h2 className="lp-section-title">En 3 pasos estás operando</h2>
+          <p className="lp-section-desc">Configura tu clínica en minutos, no en semanas.</p>
+        </div>
+        <div className="lp-steps">
+          {STEPS.map((s) => (
+            <div key={s.num} className="lp-step">
+              <div className="lp-step-num">{s.num}</div>
+              <div className="lp-step-title">{s.title}</div>
+              <div className="lp-step-desc">{s.desc}</div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ---------- PRICING ---------- */}
+      <section id="pricing" className="lp-section lp-section-alt">
+        <div className="lp-section-header">
+          <div className="lp-section-label">Precios</div>
+          <h2 className="lp-section-title">Planes para cada clínica</h2>
+          <p className="lp-section-desc">Precios transparentes. Sin costos ocultos. Cancela cuando quieras.</p>
+        </div>
+        <div className="lp-pricing-grid">
+          {PRICING_PLANS.map((plan) => (
+            <div key={plan.name} className={`lp-pricing-card ${plan.popular ? 'lp-pricing-popular' : ''}`}>
+              {plan.popular && <div className="lp-pricing-badge">Más Popular</div>}
+              <div className="lp-pricing-name">{plan.name}</div>
+              <div className="lp-pricing-desc">{plan.desc}</div>
+              <div className="lp-pricing-price">
+                <span className="lp-pricing-currency">$</span>
+                <span className="lp-pricing-amount">{plan.price}</span>
+                <span className="lp-pricing-period">/mes</span>
+              </div>
+              <ul className="lp-pricing-features">
+                {plan.features.map((f, j) => (
+                  <li key={j} className={f.included ? '' : 'lp-pricing-feature-disabled'}>
+                    <span className={f.included ? 'lp-pricing-check' : 'lp-pricing-x'}>
+                      {f.included ? '✓' : '✗'}
+                    </span>
+                    {f.text}
+                  </li>
+                ))}
+              </ul>
+              <button
+                className={`lp-hero-btn ${plan.popular ? 'lp-hero-btn-primary' : 'lp-hero-btn-secondary'}`}
+                style={{ width: '100%', justifyContent: 'center' }}
+                onClick={openLogin}
+              >
+                Empezar Gratis
+              </button>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ---------- TESTIMONIALS ---------- */}
+      <section id="testimonials" className="lp-section">
+        <div className="lp-section-header">
+          <div className="lp-section-label">Testimonios</div>
+          <h2 className="lp-section-title">Lo que dicen nuestros clientes</h2>
+          <p className="lp-section-desc">Más de 2,400 profesionales médicos ya confían en nosotros.</p>
+        </div>
+        <div className="lp-testimonials-grid">
+          {TESTIMONIALS.map((t, i) => (
+            <div key={i} className="lp-testimonial-card">
+              <div className="lp-testimonial-stars">{t.stars}</div>
+              <div className="lp-testimonial-text">{t.text}</div>
+              <div className="lp-testimonial-author">
+                <div className="lp-testimonial-avatar" style={{ background: t.gradient }}>{t.initials}</div>
+                <div>
+                  <div className="lp-testimonial-name">{t.name}</div>
+                  <div className="lp-testimonial-role">{t.role}</div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ---------- FAQ ---------- */}
+      <section id="faq" className="lp-section lp-section-alt">
+        <div className="lp-section-header">
+          <div className="lp-section-label">Preguntas Frecuentes</div>
+          <h2 className="lp-section-title">¿Tenés dudas?</h2>
+        </div>
+        <div className="lp-faq-list">
+          {FAQS.map((faq, i) => (
+            <div key={i} className={`lp-faq-item ${openFaq === i ? 'lp-faq-open' : ''}`}>
+              <button className="lp-faq-q" onClick={() => setOpenFaq(openFaq === i ? null : i)}>
+                {faq.q}
+                <span className="lp-faq-arrow">▾</span>
+              </button>
+              <div className="lp-faq-a">
+                <p>{faq.a}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
       {/* ---------- CTA ---------- */}
       <section id="cta" className="lp-cta-section">
         <h2 className="lp-cta-title">Empieza a gestionar tu clinica hoy</h2>
@@ -143,7 +327,42 @@ function LandingPage() {
 
       {/* ---------- FOOTER ---------- */}
       <footer className="lp-footer">
-        &copy; {new Date().getFullYear()} Clinica Salud Vital. Todos los derechos reservados.
+        <div className="lp-footer-grid">
+          <div>
+            <div className="lp-footer-brand">💚 Clinica Salud Vital</div>
+            <p className="lp-footer-brand-desc">La plataforma SaaS líder en gestión médica para centros de salud en Latinoamérica.</p>
+          </div>
+          <div>
+            <div className="lp-footer-col-title">Producto</div>
+            <ul className="lp-footer-links">
+              <li><a href="#features">Funcionalidades</a></li>
+              <li><a href="#pricing">Precios</a></li>
+              <li><a href="#">API Docs</a></li>
+              <li><a href="#">Changelog</a></li>
+            </ul>
+          </div>
+          <div>
+            <div className="lp-footer-col-title">Empresa</div>
+            <ul className="lp-footer-links">
+              <li><a href="#">Sobre Nosotros</a></li>
+              <li><a href="#">Blog</a></li>
+              <li><a href="#">Careers</a></li>
+              <li><a href="#">Contacto</a></li>
+            </ul>
+          </div>
+          <div>
+            <div className="lp-footer-col-title">Legal</div>
+            <ul className="lp-footer-links">
+              <li><a href="#">Privacidad</a></li>
+              <li><a href="#">Términos</a></li>
+              <li><a href="#">HIPAA</a></li>
+              <li><a href="#">Cookies</a></li>
+            </ul>
+          </div>
+        </div>
+        <div className="lp-footer-bottom">
+          <span>© {new Date().getFullYear()} Clinica Salud Vital. Todos los derechos reservados.</span>
+        </div>
       </footer>
 
       {/* ---------- LOGIN MODAL ---------- */}
@@ -159,6 +378,7 @@ function LandingPage() {
 function LoginModal({ onClose }: { onClose: () => void }) {
   const { login } = useAuth();
   const navigate = useNavigate();
+  const recaptchaRef = useRef<ReCAPTCHA | null>(null);
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -178,10 +398,12 @@ function LoginModal({ onClose }: { onClose: () => void }) {
 
     if (step === '2fa') {
       if (totp.length < 6) { setError('Ingresa el codigo de 6 digitos'); return; }
+      const captcha_token = hasCaptcha ? recaptchaRef.current?.getValue() : undefined;
+      if (hasCaptcha && !captcha_token) { setError('Completa el captcha'); return; }
       setLoading(true);
       setError('');
       try {
-        const res = await login(pendingEmail, pendingPassword, totp);
+        const res = await login(pendingEmail, pendingPassword, totp, captcha_token);
         if (res.requires_2fa) { setError('Codigo incorrecto. Intenta de nuevo.'); setLoading(false); return; }
         if (rememberMe) localStorage.setItem('rememberedEmail', pendingEmail);
         navigate(getRedirectPath(res.user.role), { replace: true });
@@ -195,10 +417,12 @@ function LoginModal({ onClose }: { onClose: () => void }) {
     }
 
     if (!email.trim() || !password.trim()) { setError('Ingresa tu email y contrasena'); return; }
+    const captcha_token = hasCaptcha ? recaptchaRef.current?.getValue() : undefined;
+    if (hasCaptcha && !captcha_token) { setError('Completa el captcha'); return; }
     setLoading(true);
     setError('');
     try {
-      const res = await login(email, password);
+      const res = await login(email, password, undefined, captcha_token);
       if (res.requires_2fa) {
         setPendingEmail(email);
         setPendingPassword(password);
@@ -211,6 +435,7 @@ function LoginModal({ onClose }: { onClose: () => void }) {
     } catch (err: any) {
       const msg = err?.response?.data?.error || 'Credenciales incorrectas';
       setError(msg);
+      recaptchaRef.current?.reset();
     } finally {
       setLoading(false);
     }
@@ -329,6 +554,12 @@ function LoginModal({ onClose }: { onClose: () => void }) {
                   </div>
                 </div>
               </>
+            )}
+
+            {step === 'login' && hasCaptcha && (
+              <div className="lm-field" style={{ display: 'flex', justifyContent: 'center' }}>
+                <ReCAPTCHA ref={recaptchaRef} sitekey={RECAPTCHA_SITE_KEY!} />
+              </div>
             )}
 
             {step === 'login' && (
