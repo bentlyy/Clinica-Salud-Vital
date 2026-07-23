@@ -1045,6 +1045,222 @@ export const seed = async (): Promise<void> => {
 
 const pickOne = <T>(arr: T[]): T => arr[randomInt(0, arr.length - 1)];
 
+export const backfillMedicalHistory = async (): Promise<void> => {
+  const { rows: existing } = await pool.query('SELECT COUNT(*) AS cnt FROM medical_history');
+  if (Number(existing[0].cnt) > 0) return;
+
+  const { rows: patients } = await pool.query(
+    `SELECT id, name FROM users WHERE role = 'user' AND tenant_id = $1 ORDER BY id`,
+    [DEFAULT_TENANT_ID]
+  );
+  if (patients.length === 0) return;
+
+  const historyEntries: Array<{ patientName: string; condition: string; onsetYear: number; status: string; notes: string }> = [
+    { patientName: 'Luis Ramírez', condition: 'Hipertensión arterial esencial', onsetYear: 2022, status: 'chronic', notes: 'Diagnosticada hace 3 años. Controlada con medicación. PA objetivo <140/90.' },
+    { patientName: 'Luis Ramírez', condition: 'Dislipidemia mixta', onsetYear: 2023, status: 'chronic', notes: 'Colesterol total elevado. En tratamiento con estatina. Perfil lipídico controlado.' },
+    { patientName: 'Marta Sepúlveda', condition: 'Hipotiroidismo', onsetYear: 2020, status: 'chronic', notes: 'Tiroiditis de Hashimoto. En tratamiento con levotiroxina 50mcg/día. TSH controlada.' },
+    { patientName: 'Marta Sepúlveda', condition: 'Artritis reumatoide', onsetYear: 2023, status: 'chronic', notes: 'AR seropositiva. En tratamiento con metotrexato. Control hematológico mensual.' },
+    { patientName: 'Jorge Castillo', condition: 'Asma bronquial', onsetYear: 2005, status: 'chronic', notes: 'Asma moderada persistente desde la infancia. Controlada con corticoide inhalado. Sin hospitalizaciones recientes.' },
+    { patientName: 'Rosa Herrera', condition: 'Colecistitis crónica', onsetYear: 2024, status: 'active', notes: 'Litiasis vesicular sintomática. Programada colecistectomía laparoscópica.' },
+    { patientName: 'Alberto Contreras', condition: 'Lumbago crónico', onsetYear: 2021, status: 'chronic', notes: 'Dolor lumbar crónico por desgaste discal. Manejo con fisioterapia y analgesia intermitente.' },
+    { patientName: 'Silvia Medina', condition: 'Trastorno de ansiedad generalizada', onsetYear: 2019, status: 'chronic', notes: 'TAG diagnosticado. En tratamiento con sertralina. Terapia cognitivo-conductual. Estable.' },
+    { patientName: 'Raúl Valenzuela', condition: 'Diabetes mellitus tipo 2', onsetYear: 2019, status: 'chronic', notes: 'DM2 con hiperlipidemia. Metformina + atorvastatina. HbA1c último control: 7.8%. Cuidado de pies anual.' },
+    { patientName: 'Raúl Valenzuela', condition: 'Hipertensión arterial esencial', onsetYear: 2020, status: 'chronic', notes: 'HTA asociada a DM2. Enalapril 10mg. PA controlada en consultorio.' },
+    { patientName: 'Nancy Campos', condition: 'Migraña con aura', onsetYear: 2018, status: 'chronic', notes: 'Migraña episódica con aura visual. Profilaxis con propranolol. Diario de cefaleas mantenido.' },
+    { patientName: 'Héctor Vega', condition: 'EPOC GOLD II', onsetYear: 2022, status: 'chronic', notes: 'Ex fumador (30 paq-año). Tiotropio diario. Rehabilitación pulmonar. Vacunas al día.' },
+    { patientName: 'Diana Paredes', condition: 'ITU recurrente', onsetYear: 2024, status: 'active', notes: 'Episodios recurrentes de cistitis. Cultivos positivos para E. coli. Evaluación urológica pendiente.' },
+    { patientName: 'Oscar Fuentes', condition: 'Insuficiencia cardíaca crónica', onsetYear: 2020, status: 'chronic', notes: 'ICC NYHA II. Post IAM 2020. Triple terapia: IECA + betabloqueador + diurético. Control mensual.' },
+    { patientName: 'Paola Figueroa', condition: 'Dermatitis atópica', onsetYear: 2008, status: 'chronic', notes: 'DA desde la infancia. Brotes en flexuras. Manejo con emolientes y corticoide tópico intermitente.' },
+    { patientName: 'Fernando Rivas', condition: 'Colelitiasis', onsetYear: 2024, status: 'active', notes: 'Litiasis vesicular múltiple sintomática. Colecistectomía laparoscópica programada.' },
+    { patientName: 'Cristián Guzmán', condition: 'Hernia inguinal derecha', onsetYear: 2024, status: 'active', notes: 'Hernia inguinal indirecta. Hernioplastía con malla programada.' },
+    { patientName: 'Teresa Delgado', condition: 'Control ginecológico', onsetYear: 2024, status: 'active', notes: 'Papanicolaou de rutina. evaluación mamaria. Sin hallazgos patológicos.' },
+    { patientName: 'Gabriela Acosta', condition: 'Rinitis alérgica', onsetYear: 2020, status: 'chronic', notes: 'Rinitis alérgica estacional. Manejo con antihistamínico oral y corticoide nasal.' },
+    { patientName: 'Pablo Navarro', condition: 'Gastritis crónica', onsetYear: 2023, status: 'resolved', notes: 'Gastritis por H. pylori tratada satisfactoriamente. Erradicación confirmada por urea breath test.' },
+  ];
+
+  let count = 0;
+  for (const entry of historyEntries) {
+    const patient = patients.find(p => p.name === entry.patientName);
+    if (!patient) continue;
+    try {
+      await pool.query(
+        `INSERT INTO medical_history (patient_id, condition, onset_date, status, notes, tenant_id)
+         VALUES ($1, $2, $3, $4, $5, $6)`,
+        [patient.id, entry.condition, `${entry.onsetYear}-01-15`, entry.status, entry.notes, DEFAULT_TENANT_ID]
+      );
+      count++;
+    } catch {}
+  }
+
+  if (count > 0) logger.info(`Medical history backfilled: ${count} entries`);
+};
+
+export const backfillLabRequests = async (): Promise<void> => {
+  const { rows: existing } = await pool.query('SELECT COUNT(*) AS cnt FROM lab_requests WHERE tenant_id = $1', [DEFAULT_TENANT_ID]);
+  if (Number(existing[0].cnt) >= 35) return;
+
+  const { rows: doctors } = await pool.query(
+    'SELECT id, user_id FROM doctors WHERE tenant_id = $1', [DEFAULT_TENANT_ID]
+  );
+  const { rows: patients } = await pool.query(
+    'SELECT id FROM users WHERE role = $1 AND tenant_id = $2', ['user', DEFAULT_TENANT_ID]
+  );
+  if (doctors.length === 0 || patients.length === 0) return;
+
+  const labResultTemplates: Record<number, () => object> = {
+    1: () => ({ hemoglobin: (13 + Math.random() * 3).toFixed(1), hematocrit: Math.round(38 + Math.random() * 10), wbc: (5 + Math.random() * 5).toFixed(1), platelets: Math.round(200 + Math.random() * 150) }),
+    2: () => ({ glucose: Math.round(75 + Math.random() * 25), unit: 'mg/dL' }),
+    3: () => ({ cholesterol: Math.round(150 + Math.random() * 50), triglycerides: Math.round(80 + Math.random() * 70), hdl: Math.round(35 + Math.random() * 20), ldl: Math.round(80 + Math.random() * 40) }),
+    4: () => ({ creatinine: (0.7 + Math.random() * 0.5).toFixed(2), unit: 'mg/dL' }),
+    5: () => ({ tsh: (0.8 + Math.random() * 3.2).toFixed(2), unit: 'mIU/L' }),
+    6: () => ({ bacteria: Math.random() > 0.3 ? 'Negativo' : 'Positivo', culture: Math.random() > 0.3 ? 'Sin desarrollo bacteriano' : 'E. coli >100,000 UFC/mL' }),
+    7: () => ({ hba1c: (4.5 + Math.random() * 3.5).toFixed(1), unit: '%' }),
+    8: () => ({ pcr: (0.5 + Math.random() * 15).toFixed(1), unit: 'mg/L' }),
+    9: () => ({ alt: Math.round(10 + Math.random() * 30), ast: Math.round(10 + Math.random() * 25), unit: 'U/L' }),
+  };
+
+  const testGroups = [
+    [1, 2], [1, 8], [2, 3, 7], [4, 5], [1, 6, 8], [1, 3, 4], [5], [1], [2, 7], [1, 3, 8],
+  ];
+  const priorities = ['routine', 'routine', 'routine', 'urgent'];
+  const statuses = ['pending', 'in_progress', 'completed', 'completed', 'completed'];
+
+  const maxReqResult = await pool.query(
+    `SELECT COALESCE(MAX(REGEXP_REPLACE(request_number, '^LAB-[0-9]+-', ''))::INTEGER, 0) AS seq FROM lab_requests WHERE request_number ~ '^LAB-'`
+  );
+  let nextReqSeq = (maxReqResult.rows[0]?.seq ?? 0) + 1;
+
+  let requestCount = 0;
+  const targetRequests = 40;
+
+  for (let i = 0; i < targetRequests; i++) {
+    const doctor = pickOne(doctors);
+    const patient = pickOne(patients);
+    const testIds = pickOne(testGroups);
+    const status = pickOne(statuses);
+
+    try {
+      const lrResult = await pool.query(
+        `INSERT INTO lab_requests (request_number, patient_id, doctor_id, priority, status, notes, tenant_id)
+         VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
+        [
+          'LAB-' + today.getFullYear() + '-' + String(nextReqSeq++).padStart(6, '0'),
+          patient.id, doctor.id,
+          pickOne(priorities), status,
+          'Exámenes de laboratorio solicitados', DEFAULT_TENANT_ID,
+        ]
+      );
+      const lrId = lrResult.rows[0].id;
+
+      for (const testId of testIds) {
+        const itemStatus = status === 'completed' ? 'completed' : pickOne(['pending', 'in_progress']);
+        const results = itemStatus === 'completed' ? JSON.stringify(labResultTemplates[testId]()) : null;
+        await pool.query(
+          `INSERT INTO lab_request_items (lab_request_id, lab_test_id, priority, status, results, tenant_id)
+           VALUES ($1, $2, $3, $4, $5, $6)`,
+          [lrId, testId, pickOne(['low', 'normal', 'normal', 'urgent']), itemStatus, results, DEFAULT_TENANT_ID]
+        );
+      }
+      requestCount++;
+    } catch {}
+  }
+
+  if (requestCount > 0) logger.info(`Lab requests backfilled: ${requestCount}`);
+};
+
+export const backfillLabNotifications = async (): Promise<void> => {
+  const { rows: existing } = await pool.query('SELECT COUNT(*) AS cnt FROM lab_notifications WHERE tenant_id = $1', [DEFAULT_TENANT_ID]);
+  if (Number(existing[0].cnt) >= 15) return;
+
+  const { rows: urgentItems } = await pool.query(
+    `SELECT lri.id AS item_id, lr.id AS request_id, lr.patient_id, lr.doctor_id,
+            lt.name AS test_name, lri.results
+     FROM lab_request_items lri
+     JOIN lab_requests lr ON lr.id = lri.lab_request_id
+     JOIN lab_tests lt ON lt.id = lri.lab_test_id
+     WHERE lr.tenant_id = $1 AND lri.priority = 'urgent' AND lri.status = 'completed'
+     LIMIT 10`,
+    [DEFAULT_TENANT_ID]
+  );
+
+  const { rows: slaBreaches } = await pool.query(
+    `SELECT lr.id AS request_id, lr.patient_id, lr.doctor_id, lr.request_number
+     FROM lab_requests lr
+     WHERE lr.tenant_id = $1 AND lr.status IN ('pending', 'in_progress')
+       AND lr.created_at < NOW() - INTERVAL '3 days'
+     LIMIT 10`,
+    [DEFAULT_TENANT_ID]
+  );
+
+  const { rows: failedQc } = await pool.query(
+    `SELECT lr.id AS request_id, lr.patient_id, lr.doctor_id
+     FROM lab_requests lr
+     WHERE lr.tenant_id = $1 AND lr.status = 'completed'
+     ORDER BY lr.created_at DESC
+     LIMIT 5`,
+    [DEFAULT_TENANT_ID]
+  );
+
+  let count = 0;
+
+  for (const item of urgentItems) {
+    try {
+      await pool.query(
+        `INSERT INTO lab_notifications (type, title, message, severity, lab_request_item_id, lab_request_id, tenant_id)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+        [
+          'critical_result',
+          `Resultado crítico: ${item.test_name}`,
+          `El resultado de ${item.test_name} para la solicitud del paciente ID ${item.patient_id} presenta valores críticos que requieren revisión inmediata.`,
+          'critical',
+          item.item_id,
+          item.request_id,
+          DEFAULT_TENANT_ID,
+        ]
+      );
+      count++;
+    } catch {}
+  }
+
+  for (const breach of slaBreaches) {
+    try {
+      await pool.query(
+        `INSERT INTO lab_notifications (type, title, message, severity, lab_request_id, tenant_id)
+         VALUES ($1, $2, $3, $4, $5, $6)`,
+        [
+          'sla_breach',
+          `SLA vencido: ${breach.request_number}`,
+          `La solicitud ${breach.request_number} lleva más de 3 días sin completarse. Se requiere atención.`,
+          'warning',
+          breach.request_id,
+          DEFAULT_TENANT_ID,
+        ]
+      );
+      count++;
+    } catch {}
+  }
+
+  for (const qc of failedQc) {
+    try {
+      await pool.query(
+        `INSERT INTO lab_notifications (type, title, message, severity, lab_request_id, tenant_id)
+         VALUES ($1, $2, $3, $4, $5, $6)`,
+        [
+          'qc_failure',
+          'Control de calidad requiere revisión',
+          `Se requiere verificación de calidad para la solicitud del paciente ID ${qc.patient_id}.`,
+          'info',
+          qc.request_id,
+          DEFAULT_TENANT_ID,
+        ]
+      );
+      count++;
+    } catch {}
+  }
+
+  if (count > 0) logger.info(`Lab notifications backfilled: ${count}`);
+};
+
 export const backfillInvoices = async (): Promise<void> => {
   const concepts = ['Consulta médica', 'Procedimiento', 'Urgencia', 'Control', 'Cirugía menor'];
 
