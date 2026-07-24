@@ -6,7 +6,6 @@ import type {
   LabRequestListParams,
   LabFilterState,
   CreateLabRequestInput,
-  LabSSEEvent,
 } from '../types/lab.types';
 import { DEFAULT_FILTER_STATE } from '../types/lab.types';
 
@@ -623,7 +622,6 @@ export function useAcknowledgeAllNotifications() {
 
 export function useLabFilters() {
   const [filters, setFilters] = useState<LabFilterState>(DEFAULT_FILTER_STATE);
-  const queryClient = useQueryClient();
 
   const updateFilter = useCallback(
     <K extends keyof LabFilterState>(key: K, value: LabFilterState[K]) => {
@@ -658,8 +656,8 @@ export function useLabSSE() {
   const eventsRef = useRef<LabSSEEvent[]>([]);
 
   const handleEvent = useCallback(
-    (_event: string, data: unknown) => {
-      const newEvent = { type: (_event as MessageEvent).type || 'message', payload: data };
+    (event: MessageEvent) => {
+      const newEvent: LabSSEEvent = { type: event.type || 'message', payload: event.data };
       eventsRef.current = [newEvent, ...eventsRef.current].slice(0, 50);
       setEvents([...eventsRef.current]);
 

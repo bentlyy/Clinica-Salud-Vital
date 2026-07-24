@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Box, Paper, Typography, Avatar, Chip } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import TrendingUp from '@mui/icons-material/TrendingUp';
@@ -13,55 +14,32 @@ import { useSuperAdminDashboard } from '../hooks/useSuperAdmin';
 
 const PLAN_COLORS = ['#6b7280', '#2563eb', '#0d9488', '#7c3aed'];
 
-const statCards = (dashboard: { total_tenants: number; active_tenants: number; total_users: number; total_revenue: number }) => [
-  {
-    label: 'Total Clínicas',
-    value: dashboard.total_tenants.toString(),
-    icon: <AccountBalance />,
-    color: '#0d9488',
-    bgColor: '#f0fdfa',
-  },
-  {
-    label: 'Clínicas Activas',
-    value: dashboard.active_tenants.toString(),
-    icon: <TrendingUp />,
-    color: '#059669',
-    bgColor: '#ecfdf5',
-  },
-  {
-    label: 'Total Usuarios',
-    value: dashboard.total_users.toString(),
-    icon: <People />,
-    color: '#2563eb',
-    bgColor: '#eff6ff',
-  },
-  {
-    label: 'Ingresos Totales',
-    value: `$${dashboard.total_revenue.toLocaleString('es-CL')}`,
-    icon: <AttachMoney />,
-    color: '#7c3aed',
-    bgColor: '#f5f3ff',
-  },
+const statCardConfigs = [
+  { key: 'total_clinics', icon: <AccountBalance />, color: '#0d9488', bgColor: '#f0fdfa', getValue: (d: { total_tenants: number }) => d.total_tenants.toString() },
+  { key: 'active_clinics', icon: <TrendingUp />, color: '#059669', bgColor: '#ecfdf5', getValue: (d: { active_tenants: number }) => d.active_tenants.toString() },
+  { key: 'total_users', icon: <People />, color: '#2563eb', bgColor: '#eff6ff', getValue: (d: { total_users: number }) => d.total_users.toString() },
+  { key: 'total_revenue', icon: <AttachMoney />, color: '#7c3aed', bgColor: '#f5f3ff', getValue: (d: { total_revenue: number }) => `$${d.total_revenue.toLocaleString('es-CL')}` },
 ];
 
 export default function SuperAdminDashboardPage() {
+  const { t } = useTranslation('super_admin_dashboard');
   const { data: dashboard, isLoading, error, refetch } = useSuperAdminDashboard();
 
-  if (isLoading) return <LoadingState message="Cargando panel de administración..." />;
+  if (isLoading) return <LoadingState message={t('loading')} />;
   if (error) return <ErrorState error={error as never} onRetry={refetch} />;
   if (!dashboard) return null;
 
   return (
     <MotionDiv initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
       <PageHeader
-        title="Panel de Super Admin"
-        subtitle="Vista general de la plataforma SaaS"
+        title={t('title')}
+        subtitle={t('subtitle')}
       />
 
       {/* Stats Cards */}
-      <Grid size={{ xs: 12 }} container spacing={3} sx={{ mb: 4 }}>
-        {statCards(dashboard).map((stat) => (
-          <Grid size={{ xs: 12, sm: 6, md: 3 }} key={stat.label}>
+      <Grid container spacing={3} sx={{ mb: 4 }}>
+        {statCardConfigs.map((stat) => (
+          <Grid xs={12} sm={6} md={3} key={stat.key}>
             <Paper
               sx={{
                 p: 3,
@@ -84,10 +62,10 @@ export default function SuperAdminDashboardPage() {
               </Avatar>
               <Box>
                 <Typography variant="h4" sx={{ fontWeight: 700, color: '#1f2937' }}>
-                  {stat.value}
+                  {stat.getValue(dashboard)}
                 </Typography>
                 <Typography variant="body2" sx={{ color: '#6b7280' }}>
-                  {stat.label}
+                  {t(stat.key)}
                 </Typography>
               </Box>
             </Paper>
@@ -96,12 +74,12 @@ export default function SuperAdminDashboardPage() {
       </Grid>
 
       {/* Charts Row */}
-      <Grid size={{ xs: 12 }} container spacing={3}>
+      <Grid container spacing={3}>
         {/* Pie Chart - Tenants by Plan */}
-        <Grid size={{ xs: 12, md: 5 }}>
+        <Grid xs={12} md={5}>
           <Paper sx={{ p: 3, border: '1px solid #e5e7eb', borderRadius: '14px' }}>
             <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, color: '#1f2937' }}>
-              Clínicas por Plan
+              {t('clinics_by_plan')}
             </Typography>
             <Box sx={{ height: 280 }}>
               <ResponsiveContainer width="100%" height="100%">
@@ -146,10 +124,10 @@ export default function SuperAdminDashboardPage() {
         </Grid>
 
         {/* Line Chart - Growth */}
-        <Grid size={{ xs: 12, md: 7 }}>
+        <Grid xs={12} md={7}>
           <Paper sx={{ p: 3, border: '1px solid #e5e7eb', borderRadius: '14px' }}>
             <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, color: '#1f2937' }}>
-              Crecimiento Mensual
+              {t('monthly_growth')}
             </Typography>
             <Box sx={{ height: 320 }}>
               <ResponsiveContainer width="100%" height="100%">
@@ -170,7 +148,7 @@ export default function SuperAdminDashboardPage() {
                     yAxisId="left"
                     type="monotone"
                     dataKey="tenants"
-                    name="Clínicas"
+                    name={t('clinics_label')}
                     stroke="#0d9488"
                     strokeWidth={2}
                     dot={{ fill: '#0d9488', r: 4 }}
@@ -180,7 +158,7 @@ export default function SuperAdminDashboardPage() {
                     yAxisId="right"
                     type="monotone"
                     dataKey="revenue"
-                    name="Ingresos ($)"
+                    name={t('revenue_label')}
                     stroke="#7c3aed"
                     strokeWidth={2}
                     dot={{ fill: '#7c3aed', r: 4 }}

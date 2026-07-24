@@ -87,4 +87,20 @@ export const superAdminService = {
     const { data } = await apiClient.get<TenantDetail>(`/super-admin/tenants/${id}`);
     return data;
   },
+
+  async listUsers(params: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    role?: string;
+    tenantId?: string;
+  } = {}): Promise<{ data: Array<{ id: number; name: string; email: string; role: string; tenant_id: string | null; active: boolean }>; pagination: { total: number; page: number; limit: number } }> {
+    const { data } = await apiClient.get('/super-admin/users', { params });
+    return data;
+  },
+
+  async toggleUserActive(userId: number, active: boolean): Promise<{ message: string }> {
+    const { data } = await apiClient.patch(`/super-admin/users/${userId}/toggle-active`, { active });
+    return data;
+  },
 };

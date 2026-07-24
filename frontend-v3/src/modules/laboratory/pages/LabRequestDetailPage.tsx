@@ -1,5 +1,7 @@
 import { useState, memo, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { useTheme } from '@mui/material/styles';
 import {
   Box,
   Typography,
@@ -23,7 +25,6 @@ import {
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import ArrowBack from '@mui/icons-material/ArrowBack';
-import CheckCircle from '@mui/icons-material/CheckCircle';
 import LocalShipping from '@mui/icons-material/LocalShipping';
 import Science from '@mui/icons-material/Science';
 import Edit from '@mui/icons-material/Edit';
@@ -49,7 +50,9 @@ import type { AddLabResultsInput, LabRequestItem, LabSample } from '../types/lab
 function LabRequestDetailPageInner() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { t } = useTranslation('lab_request_detail');
   const { user } = useAuth();
+  const theme = useTheme();
   const requestId = Number(id);
 
   const [resultsDialogOpen, setResultsDialogOpen] = useState(false);
@@ -68,8 +71,6 @@ function LabRequestDetailPageInner() {
   const validateTechMutation = useValidateTech();
   const validateDoctorMutation = useValidateDoctor();
   const deliverMutation = useDeliverResult();
-
-  const isDoctor = user?.role === 'doctor';
 
   const handleAddResults = useCallback((_data: AddLabResultsInput) => {
     setResultsDialogOpen(false);
@@ -96,7 +97,7 @@ function LabRequestDetailPageInner() {
     [deliverMutation, requestId],
   );
 
-  if (requestLoading) return <LoadingState message="Cargando solicitud..." />;
+  if (requestLoading) return <LoadingState message={t('loading')} />;
   if (requestError) return <ErrorState error={requestError as Error} onRetry={() => void refetchRequest()} />;
   if (!request) return <ErrorState variant="notFound" />;
 
@@ -117,21 +118,21 @@ function LabRequestDetailPageInner() {
   return (
     <Box>
       <PageHeader
-        title={request.request_number || `Solicitud #${request.id}`}
+        title={request.request_number || t('request_number', { id: request.id })}
         subtitle={`${request.patient_name || ''} — ${request.doctor_name || ''}`}
         action={
           <Button
             startIcon={<ArrowBack />}
             onClick={() => navigate('/laboratory/requests')}
-            sx={{ color: '#6b7280' }}
+            sx={{ color: theme.palette.text.secondary }}
           >
-            Volver
+            {t('back')}
           </Button>
         }
       />
 
       {/* Status Timeline */}
-      <Paper sx={{ p: 3, mb: 3, border: '1px solid #e5e7eb', overflowX: 'auto' }}>
+      <Paper sx={{ p: 3, mb: 3, border: `1px solid ${theme.palette.divider}`, overflowX: 'auto' }}>
         <Stepper
           activeStep={currentStepIndex >= 0 ? currentStepIndex : 0}
           alternativeLabel
@@ -139,23 +140,23 @@ function LabRequestDetailPageInner() {
             '& .MuiStepLabel-label': {
               fontSize: '0.7rem',
               fontWeight: 500,
-              color: '#6b7280',
+              color: theme.palette.text.secondary,
             },
             '& .MuiStepLabel-label.Mui-active': {
-              color: '#0d9488',
+              color: theme.palette.primary.main,
               fontWeight: 700,
             },
             '& .MuiStepLabel-label.Mui-completed': {
-              color: '#059669',
+              color: theme.palette.custom.status.success.text,
             },
             '& .MuiStepIcon-root': {
-              color: '#e5e7eb',
+              color: theme.palette.divider,
             },
             '& .MuiStepIcon-root.Mui-active': {
-              color: '#0d9488',
+              color: theme.palette.primary.main,
             },
             '& .MuiStepIcon-root.Mui-completed': {
-              color: '#059669',
+              color: theme.palette.custom.status.success.text,
             },
           }}
         >
@@ -169,31 +170,31 @@ function LabRequestDetailPageInner() {
 
       {/* Request Info + Actions */}
       <Grid container spacing={3} sx={{ mb: 3 }}>
-        <Grid size={{ xs: 12, md: 8 }}>
-          <Paper sx={{ p: 3, border: '1px solid #e5e7eb' }}>
-            <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, color: '#1f2937' }}>
-              Informacion de la Solicitud
+        <Grid xs={12} md={8}>
+          <Paper sx={{ p: 3, border: `1px solid ${theme.palette.divider}` }}>
+            <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, color: theme.palette.text.primary }}>
+              {t('info_title')}
             </Typography>
             <Grid container spacing={2}>
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <Typography variant="caption" sx={{ color: '#6b7280', textTransform: 'uppercase' }}>
-                  Paciente
+              <Grid xs={12} sm={6}>
+                <Typography variant="caption" sx={{ color: theme.palette.text.secondary, textTransform: 'uppercase' }}>
+                  {t('patient')}
                 </Typography>
-                <Typography variant="body2" sx={{ fontWeight: 500, color: '#1f2937' }}>
-                  {request.patient_name || `Paciente #${request.patient_id}`}
-                </Typography>
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <Typography variant="caption" sx={{ color: '#6b7280', textTransform: 'uppercase' }}>
-                  Doctor
-                </Typography>
-                <Typography variant="body2" sx={{ fontWeight: 500, color: '#1f2937' }}>
-                  {request.doctor_name || `Doctor #${request.doctor_id}`}
+                <Typography variant="body2" sx={{ fontWeight: 500, color: theme.palette.text.primary }}>
+                  {request.patient_name || t('patient_fallback', { id: request.patient_id })}
                 </Typography>
               </Grid>
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <Typography variant="caption" sx={{ color: '#6b7280', textTransform: 'uppercase' }}>
-                  Estado
+              <Grid xs={12} sm={6}>
+                <Typography variant="caption" sx={{ color: theme.palette.text.secondary, textTransform: 'uppercase' }}>
+                  {t('doctor')}
+                </Typography>
+                <Typography variant="body2" sx={{ fontWeight: 500, color: theme.palette.text.primary }}>
+                  {request.doctor_name || t('doctor_fallback', { id: request.doctor_id })}
+                </Typography>
+              </Grid>
+              <Grid xs={12} sm={6}>
+                <Typography variant="caption" sx={{ color: theme.palette.text.secondary, textTransform: 'uppercase' }}>
+                  {t('status')}
                 </Typography>
                 <Box sx={{ mt: 0.5 }}>
                   <Chip
@@ -206,9 +207,9 @@ function LabRequestDetailPageInner() {
                   />
                 </Box>
               </Grid>
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <Typography variant="caption" sx={{ color: '#6b7280', textTransform: 'uppercase' }}>
-                  Prioridad
+              <Grid xs={12} sm={6}>
+                <Typography variant="caption" sx={{ color: theme.palette.text.secondary, textTransform: 'uppercase' }}>
+                  {t('priority')}
                 </Typography>
                 <Box sx={{ mt: 0.5 }}>
                   <Chip
@@ -221,27 +222,27 @@ function LabRequestDetailPageInner() {
                   />
                 </Box>
               </Grid>
-              <Grid size={{ xs: 12 }}>
-                <Typography variant="caption" sx={{ color: '#6b7280', textTransform: 'uppercase' }}>
-                  Notas
+              <Grid xs={12}>
+                <Typography variant="caption" sx={{ color: theme.palette.text.secondary, textTransform: 'uppercase' }}>
+                  {t('notes')}
                 </Typography>
-                <Typography variant="body2" sx={{ color: '#374151', mt: 0.5 }}>
-                  {request.notes || 'Sin notas'}
+                <Typography variant="body2" sx={{ color: theme.palette.text.primary, mt: 0.5 }}>
+                  {request.notes || t('no_notes')}
                 </Typography>
               </Grid>
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <Typography variant="caption" sx={{ color: '#6b7280', textTransform: 'uppercase' }}>
-                  Fecha de Creacion
+              <Grid xs={12} sm={6}>
+                <Typography variant="caption" sx={{ color: theme.palette.text.secondary, textTransform: 'uppercase' }}>
+                  {t('created_at')}
                 </Typography>
-                <Typography variant="body2" sx={{ color: '#374151' }}>
+                <Typography variant="body2" sx={{ color: theme.palette.text.primary }}>
                   {new Date(request.created_at).toLocaleString('es-CL')}
                 </Typography>
               </Grid>
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <Typography variant="caption" sx={{ color: '#6b7280', textTransform: 'uppercase' }}>
-                  Ultima Actualizacion
+              <Grid xs={12} sm={6}>
+                <Typography variant="caption" sx={{ color: theme.palette.text.secondary, textTransform: 'uppercase' }}>
+                  {t('updated_at')}
                 </Typography>
-                <Typography variant="body2" sx={{ color: '#374151' }}>
+                <Typography variant="body2" sx={{ color: theme.palette.text.primary }}>
                   {new Date(request.updated_at).toLocaleString('es-CL')}
                 </Typography>
               </Grid>
@@ -250,10 +251,10 @@ function LabRequestDetailPageInner() {
         </Grid>
 
         {/* Actions */}
-        <Grid size={{ xs: 12, md: 4 }}>
-          <Paper sx={{ p: 3, border: '1px solid #e5e7eb' }}>
-            <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, color: '#1f2937' }}>
-              Acciones
+        <Grid xs={12} md={4}>
+          <Paper sx={{ p: 3, border: `1px solid ${theme.palette.divider}` }}>
+            <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, color: theme.palette.text.primary }}>
+              {t('actions')}
             </Typography>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
               {canAddResults && request.status !== 'cancelled' && (
@@ -264,7 +265,7 @@ function LabRequestDetailPageInner() {
                   onClick={() => setResultsDialogOpen(true)}
                   sx={{ justifyContent: 'flex-start' }}
                 >
-                  Agregar Resultados
+                  {t('add_results')}
                 </Button>
               )}
               {canValidateTech && activeItems.some((i) => i.status === 'result_entered') && (
@@ -279,7 +280,7 @@ function LabRequestDetailPageInner() {
                   disabled={validateTechMutation.isPending}
                   sx={{ justifyContent: 'flex-start' }}
                 >
-                  {validateTechMutation.isPending ? 'Validando...' : 'Validar Tecnico'}
+                  {validateTechMutation.isPending ? t('validating') : t('validate_tech')}
                 </Button>
               )}
               {canValidateDoctor && activeItems.some((i) => i.status === 'validated_tech') && (
@@ -292,9 +293,9 @@ function LabRequestDetailPageInner() {
                     if (item) handleValidateDoctor(item.id);
                   }}
                   disabled={validateDoctorMutation.isPending}
-                  sx={{ justifyContent: 'flex-start', background: 'linear-gradient(135deg, #0f766e 0%, #115e59 100%)', '&:hover': { background: 'linear-gradient(135deg, #115e59 0%, #134e4a 100%)' } }}
+                  sx={{ justifyContent: 'flex-start', background: `linear-gradient(135deg, ${theme.palette.primary.dark} 0%, ${theme.palette.custom.brand.darker} 100%)`, '&:hover': { background: `linear-gradient(135deg, ${theme.palette.custom.brand.darker} 0%, ${theme.palette.custom.brand.darker} 100%)` } }}
                 >
-                  {validateDoctorMutation.isPending ? 'Validando...' : 'Validar Medico'}
+                  {validateDoctorMutation.isPending ? t('validating') : t('validate_doctor')}
                 </Button>
               )}
               {canDeliver && activeItems.some((i) => i.status === 'validated_doctor' || i.status === 'signed') && (
@@ -309,13 +310,13 @@ function LabRequestDetailPageInner() {
                   disabled={deliverMutation.isPending}
                   sx={{
                     justifyContent: 'flex-start',
-                    background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
+                    background: `linear-gradient(135deg, ${theme.palette.custom.status.success.text} 0%, ${theme.palette.success.dark} 100%)`,
                     '&:hover': {
-                      background: 'linear-gradient(135deg, #047857 0%, #065f46 100%)',
+                      background: `linear-gradient(135deg, ${theme.palette.success.dark} 0%, ${theme.palette.custom.status.success.text} 100%)`,
                     },
                   }}
                 >
-                  {deliverMutation.isPending ? 'Entregando...' : 'Marcar como Entregado'}
+                  {deliverMutation.isPending ? t('delivering') : t('mark_delivered')}
                 </Button>
               )}
             </Box>
@@ -324,22 +325,22 @@ function LabRequestDetailPageInner() {
       </Grid>
 
       {/* Sample Management */}
-      <Paper sx={{ p: 3, mb: 3, border: '1px solid #e5e7eb' }}>
-        <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, color: '#1f2937' }}>
-          Muestras
+      <Paper sx={{ p: 3, mb: 3, border: `1px solid ${theme.palette.divider}` }}>
+        <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, color: theme.palette.text.primary }}>
+          {t('samples')}
         </Typography>
         {samplesLoading ? (
-          <LoadingState message="Cargando muestras..." />
+          <LoadingState message={t('loading_samples')} />
         ) : activeSamples.length > 0 ? (
           <TableContainer>
             <Table size="small">
               <TableHead>
                 <TableRow>
-                  <TableCell>Codigo</TableCell>
-                  <TableCell>Tipo</TableCell>
-                  <TableCell>Estado</TableCell>
-                  <TableCell>Recepcion</TableCell>
-                  <TableCell>Ubicacion</TableCell>
+                  <TableCell>{t('col_code')}</TableCell>
+                  <TableCell>{t('col_type')}</TableCell>
+                  <TableCell>{t('col_status')}</TableCell>
+                  <TableCell>{t('col_reception')}</TableCell>
+                  <TableCell>{t('col_location')}</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -351,7 +352,7 @@ function LabRequestDetailPageInner() {
                       </Typography>
                     </TableCell>
                     <TableCell>
-                      <Typography variant="body2" sx={{ color: '#374151' }}>
+                      <Typography variant="body2" sx={{ color: theme.palette.text.primary }}>
                         {sample.sample_type}
                       </Typography>
                     </TableCell>
@@ -363,20 +364,20 @@ function LabRequestDetailPageInner() {
                           height: 22,
                           fontSize: '0.7rem',
                           fontWeight: 600,
-                          backgroundColor: sample.status === 'completed' ? '#ecfdf5' : '#eff6ff',
-                          color: sample.status === 'completed' ? '#059669' : '#2563eb',
+                          backgroundColor: sample.status === 'completed' ? theme.palette.custom.status.success.bg : theme.palette.custom.status.info.bg,
+                          color: sample.status === 'completed' ? theme.palette.custom.status.success.text : theme.palette.info.dark,
                         }}
                       />
                     </TableCell>
                     <TableCell>
-                      <Typography variant="body2" sx={{ color: '#6b7280' }}>
+                      <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
                         {sample.reception_time
                           ? new Date(sample.reception_time).toLocaleString('es-CL')
                           : '—'}
                       </Typography>
                     </TableCell>
                     <TableCell>
-                      <Typography variant="body2" sx={{ color: '#6b7280' }}>
+                      <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
                         {sample.storage_location || '—'}
                       </Typography>
                     </TableCell>
@@ -386,10 +387,10 @@ function LabRequestDetailPageInner() {
             </Table>
           </TableContainer>
         ) : (
-          <Box sx={{ textAlign: 'center', py: 3, border: '2px dashed #e5e7eb', borderRadius: '14px' }}>
-            <Science sx={{ fontSize: 32, color: '#d1d5db', mb: 1 }} />
-            <Typography variant="body2" sx={{ color: '#6b7280' }}>
-              No hay muestras registradas para esta solicitud
+          <Box sx={{ textAlign: 'center', py: 3, border: `2px dashed ${theme.palette.divider}`, borderRadius: '14px' }}>
+            <Science sx={{ fontSize: 32, color: theme.palette.divider, mb: 1 }} />
+            <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
+              {t('no_samples')}
             </Typography>
           </Box>
         )}
@@ -398,56 +399,56 @@ function LabRequestDetailPageInner() {
       <Divider sx={{ my: 3 }} />
 
       {/* Results Table */}
-      <Typography variant="h6" sx={{ fontWeight: 600, color: '#1f2937', mb: 2 }}>
-        Resultados de Laboratorio
+      <Typography variant="h6" sx={{ fontWeight: 600, color: theme.palette.text.primary, mb: 2 }}>
+        {t('results_title')}
       </Typography>
 
       {itemsLoading ? (
-        <LoadingState message="Cargando items..." />
+        <LoadingState message={t('loading_items')} />
       ) : activeItems && activeItems.length > 0 ? (
-        <TableContainer component={Paper} sx={{ border: '1px solid #e5e7eb' }}>
+        <TableContainer component={Paper} sx={{ border: `1px solid ${theme.palette.divider}` }}>
           <Table>
             <TableHead>
               <TableRow>
-                <TableCell>Test</TableCell>
-                <TableCell>Valor</TableCell>
-                <TableCell>Unidad</TableCell>
-                <TableCell>Rango Ref.</TableCell>
-                <TableCell>Estado</TableCell>
-                <TableCell>Validacion</TableCell>
-                <TableCell>Notas</TableCell>
+                <TableCell>{t('col_test')}</TableCell>
+                <TableCell>{t('col_value')}</TableCell>
+                <TableCell>{t('col_unit')}</TableCell>
+                <TableCell>{t('col_reference')}</TableCell>
+                <TableCell>{t('col_status')}</TableCell>
+                <TableCell>{t('col_validation')}</TableCell>
+                <TableCell>{t('col_notes')}</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {activeItems.map((item: LabRequestItem) => (
                 <TableRow key={item.id} hover>
                   <TableCell>
-                    <Typography variant="body2" sx={{ fontWeight: 500, color: '#1f2937' }}>
+                    <Typography variant="body2" sx={{ fontWeight: 500, color: theme.palette.text.primary }}>
                       {item.test_name || item.test?.name || `Test #${item.lab_test_id}`}
                     </Typography>
                   </TableCell>
                   <TableCell>
-                    <Typography variant="body2" sx={{ fontWeight: 600, color: '#1f2937' }}>
+                    <Typography variant="body2" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
                       {item.result_value || '—'}
                     </Typography>
                   </TableCell>
                   <TableCell>
-                    <Typography variant="body2" sx={{ color: '#6b7280' }}>
+                    <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
                       {item.unit || item.test?.unit || '—'}
                     </Typography>
                   </TableCell>
                   <TableCell>
-                    <Typography variant="body2" sx={{ color: '#6b7280' }}>
+                    <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
                       {item.reference_range || item.test?.reference_min != null ? `${item.test?.reference_min ?? ''}–${item.test?.reference_max ?? ''}` : '—'}
                     </Typography>
                   </TableCell>
                   <TableCell>
                     <Chip
-                      label={LAB_STATUS_LABELS[item.status] || item.status || 'Pendiente'}
+                      label={LAB_STATUS_LABELS[item.status] || item.status || t('pending')}
                       size="small"
                       sx={{
-                        backgroundColor: item.status === 'validated_doctor' || item.status === 'delivered' ? '#ecfdf5' : item.status === 'result_entered' ? '#eff6ff' : '#fffbeb',
-                        color: item.status === 'validated_doctor' || item.status === 'delivered' ? '#059669' : item.status === 'result_entered' ? '#2563eb' : '#d97706',
+                        backgroundColor: item.status === 'validated_doctor' || item.status === 'delivered' ? theme.palette.custom.status.success.bg : item.status === 'result_entered' ? theme.palette.custom.status.info.bg : theme.palette.custom.status.warning.bg,
+                        color: item.status === 'validated_doctor' || item.status === 'delivered' ? theme.palette.custom.status.success.text : item.status === 'result_entered' ? theme.palette.info.dark : theme.palette.warning.dark,
                         fontWeight: 500,
                       }}
                     />
@@ -456,36 +457,36 @@ function LabRequestDetailPageInner() {
                     <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
                       {item.validated_at_tech && (
                         <Chip
-                          label="Tecnico"
+                          label={t('validated_tech')}
                           size="small"
                           icon={<Verified sx={{ fontSize: 14 }} />}
                           sx={{
                             height: 20,
                             fontSize: '0.65rem',
                             fontWeight: 600,
-                            backgroundColor: '#ecfdf5',
-                            color: '#059669',
+                            backgroundColor: theme.palette.custom.status.success.bg,
+                            color: theme.palette.custom.status.success.text,
                           }}
                         />
                       )}
                       {item.validated_at_doctor && (
                         <Chip
-                          label="Medico"
+                          label={t('validated_doctor')}
                           size="small"
                           icon={<Medication sx={{ fontSize: 14 }} />}
                           sx={{
                             height: 20,
                             fontSize: '0.65rem',
                             fontWeight: 600,
-                            backgroundColor: '#eff6ff',
-                            color: '#2563eb',
+                            backgroundColor: theme.palette.custom.status.info.bg,
+                            color: theme.palette.info.dark,
                           }}
                         />
                       )}
                     </Box>
                   </TableCell>
                   <TableCell>
-                    <Typography variant="body2" sx={{ color: '#6b7280' }}>
+                    <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
                       {item.result_notes || item.notes || '—'}
                     </Typography>
                   </TableCell>
@@ -499,12 +500,12 @@ function LabRequestDetailPageInner() {
           sx={{
             p: 4,
             textAlign: 'center',
-            border: '2px dashed #e5e7eb',
+            border: `2px dashed ${theme.palette.divider}`,
           }}
         >
-          <Science sx={{ fontSize: 40, color: '#d1d5db', mb: 1 }} />
-          <Typography variant="body2" sx={{ color: '#6b7280' }}>
-            No hay resultados registrados para esta solicitud
+          <Science sx={{ fontSize: 40, color: theme.palette.divider, mb: 1 }} />
+          <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
+            {t('no_results')}
           </Typography>
           {canAddResults && (
             <Button
@@ -513,7 +514,7 @@ function LabRequestDetailPageInner() {
               onClick={() => setResultsDialogOpen(true)}
               sx={{ mt: 2 }}
             >
-              Agregar Resultados
+              {t('add_results')}
             </Button>
           )}
         </Paper>
@@ -527,7 +528,7 @@ function LabRequestDetailPageInner() {
         fullWidth
       >
         <DialogTitle sx={{ fontWeight: 600 }}>
-          Agregar Resultados — {request.request_number || `#${request.id}`}
+          {t('dialog_title', { number: request.request_number || `#${request.id}` })}
         </DialogTitle>
         <DialogContent>
           <LabResultsForm
@@ -536,8 +537,8 @@ function LabRequestDetailPageInner() {
           />
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={() => setResultsDialogOpen(false)} sx={{ color: '#6b7280' }}>
-            Cancelar
+          <Button onClick={() => setResultsDialogOpen(false)} sx={{ color: theme.palette.text.secondary }}>
+            {t('cancel')}
           </Button>
         </DialogActions>
       </Dialog>

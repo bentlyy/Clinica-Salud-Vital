@@ -44,7 +44,7 @@ export const MetricCard = memo(function MetricCard({
         position: 'relative',
         overflow: 'hidden',
         borderRadius: '14px',
-        border: '1px solid #e5e7eb',
+        border: `1px solid ${theme.palette.divider}`,
         cursor: onClick ? 'pointer' : 'default',
         transition: 'all 0.2s ease',
         '&:hover': onClick
@@ -154,12 +154,13 @@ export const MetricCard = memo(function MetricCard({
 });
 
 export const MetricCardSkeleton = memo(function MetricCardSkeleton({ bgColor }: MetricCardSkeletonProps) {
+  const theme = useTheme();
   return (
     <Paper
       elevation={0}
       sx={{
         borderRadius: '14px',
-        border: '1px solid #e5e7eb',
+        border: `1px solid ${theme.palette.divider}`,
         backgroundColor: bgColor || 'transparent',
         overflow: 'hidden',
       }}

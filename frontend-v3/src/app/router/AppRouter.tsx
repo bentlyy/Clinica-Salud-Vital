@@ -45,12 +45,57 @@ const NotificationsPage = lazy(() => import('@/modules/notifications/pages/Notif
 // Super Admin module
 const SuperAdminDashboardPage = lazy(() => import('@/modules/super-admin/pages/SuperAdminDashboardPage'));
 const SuperAdminTenantsPage = lazy(() => import('@/modules/super-admin/pages/SuperAdminTenantsPage'));
+const SuperAdminTenantDetailPage = lazy(() => import('@/modules/super-admin/pages/SuperAdminTenantDetailPage'));
+const SuperAdminUsersPage = lazy(() => import('@/modules/super-admin/pages/SuperAdminUsersPage'));
 
 // Specialties module
 const SpecialtiesPage = lazy(() => import('@/modules/specialties/pages/SpecialtiesPage'));
 
 // Patients module
 const PatientsPage = lazy(() => import('@/modules/patients/pages/PatientsPage'));
+
+// Doctor Calendar
+const DoctorCalendarPage = lazy(() => import('@/modules/availability/pages/DoctorCalendarPage'));
+
+// Guest Booking
+const GuestBookingPage = lazy(() => import('@/modules/bookings/pages/GuestBookingPage'));
+
+// Auth module
+const TwoFAPage = lazy(() => import('@/modules/2fa/pages/TwoFAPage'));
+const ForgotPasswordPage = lazy(() => import('@/modules/auth/pages/ForgotPasswordPage'));
+
+// Bookings confirmation
+const ConfirmPage = lazy(() => import('@/modules/bookings/pages/ConfirmPage'));
+
+// Patient lab results
+const PatientLabResultsPage = lazy(() => import('@/modules/laboratory/pages/PatientLabResultsPage'));
+
+// Admin demo data
+const AdminDemoDataPage = lazy(() => import('@/modules/admin/pages/AdminDemoDataPage'));
+
+// Super Admin demo data
+const SuperAdminDemoDataPage = lazy(() => import('@/modules/super-admin/pages/SuperAdminDemoDataPage'));
+
+// Doctor Panel & Patient History
+const DoctorPanel = lazy(() => import('@/modules/doctors/pages/DoctorPanel'));
+const DoctorPatientHistoryPage = lazy(() => import('@/modules/doctors/pages/DoctorPatientHistoryPage'));
+const DoctorLabResultsPage = lazy(() => import('@/modules/doctors/pages/DoctorLabResultsPage'));
+
+// Lab Tests Catalog
+const LabTestsCatalogPage = lazy(() => import('@/modules/laboratory/pages/LabTestsCatalogPage'));
+
+// Lab Result Detail (shared doctor/patient)
+const LabResultDetailPage = lazy(() => import('@/modules/laboratory/pages/LabResultDetailPage'));
+
+// Admin pages
+const AdminLabRequestsPage = lazy(() => import('@/modules/laboratory/pages/AdminLabRequestsPage'));
+const AdminMedicalHistoryPage = lazy(() => import('@/modules/clinical-records/pages/AdminMedicalHistoryPage'));
+
+// Patient medical history detail
+const MyMedicalHistoryDetailPage = lazy(() => import('@/modules/medical-history/pages/MyMedicalHistoryDetailPage'));
+
+// Not Found
+const NotFoundPage = lazy(() => import('@/modules/auth/pages/NotFoundPage'));
 
 // Placeholder pages
 const PlaceholderPage = lazy(() => import('@/shared/components/ui/PlaceholderPage'));
@@ -90,10 +135,17 @@ export function AppRouter() {
         >
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/tenants" element={<SuperAdminTenantsPage />} />
+          <Route path="/tenants/:id" element={<SuperAdminTenantDetailPage />} />
+          <Route path="/super-admin/users" element={
+            <ProtectedRoute allowedRoles={['superadmin']}>
+              <SuperAdminUsersPage />
+            </ProtectedRoute>
+          } />
           <Route path="/users" element={<UsersPage />} />
           <Route path="/doctors" element={<DoctorsPage />} />
           <Route path="/bookings" element={<BookingsPage />} />
           <Route path="/availability" element={<AvailabilityPage />} />
+          <Route path="/calendar" element={<DoctorCalendarPage />} />
           <Route path="/clinical-records" element={<ClinicalRecordsPage />} />
           <Route path="/clinical-records/:id" element={<ClinicalRecordDetailPage />} />
           <Route path="/prescriptions" element={<PrescriptionsPage />} />
@@ -105,7 +157,19 @@ export function AppRouter() {
             <Route path="area/:areaId" element={<LabAreaDashboardPage />} />
             <Route path="analytics" element={<LabAnalyticsPage />} />
             <Route path="quality-control" element={<LabQualityControlPage />} />
+            <Route path="catalog" element={<LabTestsCatalogPage />} />
+            <Route path="lab-results/:id" element={<LabResultDetailPage />} />
           </Route>
+          <Route path="/admin/lab-requests" element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <AdminLabRequestsPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/medical-history" element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <AdminMedicalHistoryPage />
+            </ProtectedRoute>
+          } />
           <Route path="/billing" element={<BillingPage />} />
           <Route path="/analytics" element={<AdminAnalyticsPage />} />
           <Route path="/reports" element={<ReportsPage />} />
@@ -114,7 +178,24 @@ export function AppRouter() {
           <Route path="/notifications" element={<NotificationsPage />} />
           <Route path="/saas" element={<SuperAdminDashboardPage />} />
           <Route path="/specialties" element={<SpecialtiesPage />} />
+          <Route path="/panel" element={<DoctorPanel />} />
+          <Route path="/doctor/lab-results" element={
+            <ProtectedRoute allowedRoles={['doctor']}>
+              <DoctorLabResultsPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/patient-history" element={<DoctorPatientHistoryPage />} />
           <Route path="/patients" element={<PatientsPage />} />
+          <Route path="/admin/demo-data" element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <AdminDemoDataPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/super-admin/demo-data" element={
+            <ProtectedRoute allowedRoles={['superadmin']}>
+              <SuperAdminDemoDataPage />
+            </ProtectedRoute>
+          } />
         </Route>
 
         {/* Patient routes (no sidebar, topbar only) */}
@@ -131,15 +212,23 @@ export function AppRouter() {
           <Route path="/patient/clinical-records/:id" element={<ClinicalRecordDetailPage />} />
           <Route path="/patient/prescriptions" element={<PrescriptionsPage />} />
           <Route path="/patient/medical-history" element={<MedicalHistoryPage />} />
-          <Route path="/patient/laboratory" element={<PlaceholderPage title="Mis Resultados" />} />
+          <Route path="/patient/medical-history/:id" element={<MyMedicalHistoryDetailPage />} />
+          <Route path="/patient/laboratory" element={<PatientLabResultsPage />} />
+          <Route path="/patient/laboratory/:id" element={<LabResultDetailPage />} />
           <Route path="/patient/settings" element={<SettingsPage />} />
         </Route>
 
         {/* Public landing page */}
         <Route path="/" element={<LandingPage />} />
 
-        {/* Catch-all: go to landing */}
-        <Route path="*" element={<Navigate to="/" replace />} />
+        {/* Public routes */}
+        <Route path="/2fa" element={<TwoFAPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/confirm/:token" element={<ConfirmPage />} />
+        <Route path="/booking" element={<GuestBookingPage />} />
+
+        {/* Catch-all: 404 page */}
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </Suspense>
   );

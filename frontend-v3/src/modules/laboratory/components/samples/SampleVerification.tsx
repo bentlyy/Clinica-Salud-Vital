@@ -19,6 +19,7 @@ import {
   TextField,
   CircularProgress,
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
 import VerifiedIcon from '@mui/icons-material/Verified';
@@ -47,6 +48,7 @@ interface StatsBarProps {
 }
 
 const StatsBar = memo(function StatsBar({ total, verified, pending }: StatsBarProps) {
+  const theme = useTheme();
   return (
     <Box sx={{ display: 'flex', gap: 2, mb: 2.5 }}>
       {[
@@ -54,22 +56,22 @@ const StatsBar = memo(function StatsBar({ total, verified, pending }: StatsBarPr
           icon: <BiotechIcon sx={{ fontSize: 20 }} />,
           label: 'Total',
           value: total,
-          bg: '#f0fdfa',
-          color: '#0d9488',
+          bg: theme.palette.custom.brand.lightest,
+          color: theme.palette.primary.main,
         },
         {
           icon: <VerifiedIcon sx={{ fontSize: 20 }} />,
           label: 'Verificadas',
           value: verified,
-          bg: '#dcfce7',
-          color: '#16a34a',
+          bg: theme.palette.custom.status.success.bg,
+          color: theme.palette.success.main,
         },
         {
           icon: <HourglassEmptyIcon sx={{ fontSize: 20 }} />,
           label: 'Pendientes',
           value: pending,
-          bg: '#fef3c7',
-          color: '#d97706',
+          bg: theme.palette.custom.status.warning.bg,
+          color: theme.palette.warning.dark,
         },
       ].map((stat) => (
         <Paper
@@ -131,6 +133,7 @@ export const SampleVerification = memo(function SampleVerification({
   onReject,
   isLoading = false,
 }: SampleVerificationProps) {
+  const theme = useTheme();
   const [rejectDialog, setRejectDialog] = useState<{ open: boolean; sampleId: number | null }>({
     open: false,
     sampleId: null,
@@ -179,14 +182,14 @@ export const SampleVerification = memo(function SampleVerification({
         sx={{
           p: 3,
           borderRadius: '14px',
-          border: '1px solid #e5e7eb',
+          border: `1px solid ${theme.palette.divider}`,
         }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2.5 }}>
-          <Typography variant="h5" sx={{ fontWeight: 700, color: '#1f2937' }}>
+          <Typography variant="h5" sx={{ fontWeight: 700, color: theme.palette.text.primary }}>
             Verificación de Muestras
           </Typography>
-          {isLoading && <CircularProgress size={20} sx={{ color: '#0d9488' }} />}
+          {isLoading && <CircularProgress size={20} sx={{ color: theme.palette.primary.main }} />}
         </Box>
 
         <StatsBar total={samples.length} verified={verifiedSamples.length} pending={pendingCount} />
@@ -196,13 +199,13 @@ export const SampleVerification = memo(function SampleVerification({
             sx={{
               textAlign: 'center',
               py: 5,
-              backgroundColor: '#f9fafb',
+              backgroundColor: theme.palette.custom.surface.muted,
               borderRadius: '10px',
-              border: '1px dashed #e5e7eb',
+              border: `1px dashed ${theme.palette.divider}`,
             }}
           >
-            <CheckCircleIcon sx={{ fontSize: 40, color: '#d1d5db', mb: 1 }} />
-            <Typography variant="body2" sx={{ color: '#9ca3af' }}>
+            <CheckCircleIcon sx={{ fontSize: 40, color: theme.palette.divider, mb: 1 }} />
+            <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
               No hay muestras pendientes de verificación
             </Typography>
           </Box>
@@ -223,25 +226,25 @@ export const SampleVerification = memo(function SampleVerification({
                 {receivedSamples.map((sample) => (
                   <TableRow
                     key={sample.id}
-                    sx={{ '&:hover': { backgroundColor: '#f9fafb' } }}
+                    sx={{ '&:hover': { backgroundColor: theme.palette.custom.surface.muted } }}
                   >
                     <TableCell>
-                      <Typography variant="body2" sx={{ fontWeight: 600, color: '#1f2937', fontFamily: 'monospace' }}>
+                      <Typography variant="body2" sx={{ fontWeight: 600, color: theme.palette.text.primary, fontFamily: 'monospace' }}>
                         {sample.sample_code}
                       </Typography>
                     </TableCell>
                     <TableCell>
-                      <Typography variant="body2" sx={{ color: '#6b7280' }}>
+                      <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
                         {getSampleTypeLabel(sample.sample_type)}
                       </Typography>
                     </TableCell>
                     <TableCell>
-                      <Typography variant="body2" sx={{ color: '#6b7280' }}>
+                      <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
                         {getContainerTypeLabel(sample.container_type)}
                       </Typography>
                     </TableCell>
                     <TableCell>
-                      <Typography variant="body2" sx={{ color: '#6b7280' }}>
+                      <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
                         {sample.volume ? `${sample.volume} ml` : '—'}
                       </Typography>
                     </TableCell>
@@ -250,8 +253,8 @@ export const SampleVerification = memo(function SampleVerification({
                         label="Recibida"
                         size="small"
                         sx={{
-                          backgroundColor: '#dbeafe',
-                          color: '#2563eb',
+                          backgroundColor: theme.palette.custom.status.info.bg,
+                          color: theme.palette.info.dark,
                           fontWeight: 500,
                           fontSize: '0.7rem',
                         }}
@@ -264,8 +267,8 @@ export const SampleVerification = memo(function SampleVerification({
                           onClick={() => onVerify(sample.id)}
                           disabled={isLoading}
                           sx={{
-                            color: '#16a34a',
-                            '&:hover': { backgroundColor: '#dcfce7' },
+                            color: theme.palette.success.main,
+                            '&:hover': { backgroundColor: theme.palette.custom.status.success.bg },
                           }}
                           title="Verificar"
                         >
@@ -276,8 +279,8 @@ export const SampleVerification = memo(function SampleVerification({
                           onClick={() => handleOpenReject(sample.id)}
                           disabled={isLoading}
                           sx={{
-                            color: '#ef4444',
-                            '&:hover': { backgroundColor: '#fef2f2' },
+                            color: theme.palette.error.main,
+                            '&:hover': { backgroundColor: theme.palette.custom.status.error.bg },
                           }}
                           title="Rechazar"
                         >
@@ -304,11 +307,11 @@ export const SampleVerification = memo(function SampleVerification({
         }}
       >
         <Box component="form" onSubmit={handleSubmit(handleRejectSubmit)}>
-          <DialogTitle sx={{ fontWeight: 700, color: '#1f2937' }}>
+          <DialogTitle sx={{ fontWeight: 700, color: theme.palette.text.primary }}>
             Rechazar Muestra
           </DialogTitle>
           <DialogContent>
-            <Typography variant="body2" sx={{ color: '#6b7280', mb: 2 }}>
+            <Typography variant="body2" sx={{ color: theme.palette.text.secondary, mb: 2 }}>
               Ingrese el motivo del rechazo. Esta acción no se puede deshacer.
             </Typography>
             <Controller
@@ -332,7 +335,7 @@ export const SampleVerification = memo(function SampleVerification({
             <Button
               onClick={handleCloseReject}
               variant="text"
-              sx={{ color: '#6b7280' }}
+              sx={{ color: theme.palette.text.secondary }}
             >
               Cancelar
             </Button>
@@ -342,9 +345,9 @@ export const SampleVerification = memo(function SampleVerification({
               disabled={isLoading}
               startIcon={isLoading ? <CircularProgress size={14} color="inherit" /> : undefined}
               sx={{
-                background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                background: `linear-gradient(135deg, ${theme.palette.error.main} 0%, ${theme.palette.error.dark} 100%)`,
                 '&:hover': {
-                  background: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)',
+                  background: `linear-gradient(135deg, ${theme.palette.error.dark} 0%, ${theme.palette.custom.status.error.text} 100%)`,
                 },
               }}
             >

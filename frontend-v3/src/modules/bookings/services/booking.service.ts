@@ -1,19 +1,19 @@
 import { apiClient } from '@/shared/services/api-client';
-import type { Booking, BookingListParams, BookingStatus } from '../types/booking.types';
+import type { Booking, BookingListParams } from '../types/booking.types';
 import type { PaginatedResponse } from '@/shared/types/api.types';
 
 function normalizeDate(raw: unknown): string {
   if (!raw) return '';
   const s = String(raw);
   const match = s.match(/^(\d{4}-\d{2}-\d{2})/);
-  return match ? match[1] : s.split('T')[0] ?? s;
+  return match?.[1] ?? s.split('T')[0] ?? s;
 }
 
 function normalizeTime(raw: unknown): string {
   if (!raw) return '';
   const s = String(raw);
   const match = s.match(/^(\d{2}:\d{2})/);
-  return match ? match[1] : s.slice(0, 5);
+  return match?.[1] ?? s.slice(0, 5);
 }
 
 function normalizeBooking(raw: Record<string, unknown>): Booking {

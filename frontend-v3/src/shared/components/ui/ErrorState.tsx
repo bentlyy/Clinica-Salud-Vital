@@ -1,4 +1,5 @@
 import { Box, Typography, Button } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import ErrorOutline from '@mui/icons-material/ErrorOutline';
 import Refresh from '@mui/icons-material/Refresh';
 import type { AxiosError } from 'axios';
@@ -10,19 +11,21 @@ interface ErrorStateProps {
 }
 
 export function ErrorState({ error, onRetry, variant = 'default' }: ErrorStateProps) {
+  const theme = useTheme();
+
   const config = {
     default: {
-      icon: <ErrorOutline sx={{ fontSize: 48, color: '#ef4444' }} />,
+      icon: <ErrorOutline sx={{ fontSize: 48, color: theme.palette.error.main }} />,
       title: 'Algo salió mal',
       message: error?.message || 'Ocurrió un error inesperado. Intenta de nuevo.',
     },
     forbidden: {
-      icon: <ErrorOutline sx={{ fontSize: 48, color: '#f59e0b' }} />,
+      icon: <ErrorOutline sx={{ fontSize: 48, color: theme.palette.warning.main }} />,
       title: 'Acceso denegado',
       message: 'No tienes permisos para acceder a este recurso.',
     },
     notFound: {
-      icon: <ErrorOutline sx={{ fontSize: 48, color: '#6b7280' }} />,
+      icon: <ErrorOutline sx={{ fontSize: 48, color: theme.palette.text.secondary }} />,
       title: 'No encontrado',
       message: 'El recurso que buscas no existe o fue eliminado.',
     },
@@ -43,10 +46,10 @@ export function ErrorState({ error, onRetry, variant = 'default' }: ErrorStatePr
       }}
     >
       {icon}
-      <Typography variant="h5" sx={{ fontWeight: 600, color: '#1f2937' }}>
+      <Typography variant="h5" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
         {title}
       </Typography>
-      <Typography variant="body2" sx={{ color: '#6b7280', maxWidth: 400 }}>
+      <Typography variant="body2" sx={{ color: theme.palette.text.secondary, maxWidth: 400 }}>
         {message}
       </Typography>
       {onRetry && (

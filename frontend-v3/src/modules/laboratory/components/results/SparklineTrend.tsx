@@ -1,5 +1,6 @@
 import { memo, useMemo } from 'react';
 import Box from '@mui/material/Box';
+import { useTheme } from '@mui/material/styles';
 
 // ── Props ────────────────────────────────────────────────────────────────────
 
@@ -24,16 +25,16 @@ function catmullRomToBezier(
 ): string {
   if (points.length < 2) return '';
   if (points.length === 2) {
-    return `M ${points[0].x} ${points[0].y} L ${points[1].x} ${points[1].y}`;
+    return `M ${points[0]!.x} ${points[0]!.y} L ${points[1]!.x} ${points[1]!.y}`;
   }
 
-  let d = `M ${points[0].x} ${points[0].y}`;
+  let d = `M ${points[0]!.x} ${points[0]!.y}`;
 
   for (let i = 0; i < points.length - 1; i++) {
-    const p0 = points[Math.max(0, i - 1)];
-    const p1 = points[i];
-    const p2 = points[i + 1];
-    const p3 = points[Math.min(points.length - 1, i + 2)];
+    const p0 = points[Math.max(0, i - 1)]!;
+    const p1 = points[i]!;
+    const p2 = points[i + 1]!;
+    const p3 = points[Math.min(points.length - 1, i + 2)]!;
 
     const cp1x = p1.x + ((p2.x - p0.x) * tension) / 3;
     const cp1y = p1.y + ((p2.y - p0.y) * tension) / 3;
@@ -55,6 +56,7 @@ export const SparklineTrend = memo(function SparklineTrend({
   height = 28,
   showArea = false,
 }: SparklineTrendProps) {
+  const theme = useTheme();
   const { linePath, areaPath } = useMemo(() => {
     if (!data || data.length === 0) {
       return { linePath: '', areaPath: '' };
@@ -95,8 +97,8 @@ export const SparklineTrend = memo(function SparklineTrend({
 
     let area = '';
     if (showArea) {
-      const lastPoint = points[points.length - 1];
-      const firstPoint = points[0];
+      const lastPoint = points[points.length - 1]!;
+      const firstPoint = points[0]!;
       area = `${line} L ${lastPoint.x} ${height - paddingY} L ${firstPoint.x} ${height - paddingY} Z`;
     }
 
@@ -119,7 +121,7 @@ export const SparklineTrend = memo(function SparklineTrend({
             width: 4,
             height: 4,
             borderRadius: '50%',
-            backgroundColor: '#d1d5db',
+            backgroundColor: theme.palette.text.disabled,
           }}
         />
       </Box>
@@ -185,7 +187,7 @@ export const SparklineTrend = memo(function SparklineTrend({
               const dataMin = Math.min(...validData);
               const dataMax = Math.max(...validData);
               const dataRange = dataMax - dataMin || 1;
-              const lastVal = validData[validData.length - 1];
+              const lastVal = validData[validData.length - 1]!;
               return 2 + (height - 4) - ((lastVal - dataMin) / dataRange) * (height - 4);
             })()}
             r={2}

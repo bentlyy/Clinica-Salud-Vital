@@ -1,4 +1,5 @@
 import { useParams, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Box, Paper, Typography, Button, Divider, Chip } from '@mui/material';
 import ArrowBack from '@mui/icons-material/ArrowBack';
 import Edit from '@mui/icons-material/Edit';
@@ -15,6 +16,7 @@ import { useClinicalRecordDetail } from '../hooks/useClinicalRecords';
 import { VitalsDisplay } from '../components/VitalsDisplay';
 
 export default function ClinicalRecordDetailPage() {
+  const { t } = useTranslation('clinical_record_detail');
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { hasPermission } = useAuth();
@@ -27,15 +29,15 @@ export default function ClinicalRecordDetailPage() {
     window.print();
   };
 
-  if (isLoading) return <LoadingState message="Cargando expediente..." />;
+  if (isLoading) return <LoadingState message={t('loading_record')} />;
   if (error) return <ErrorState error={error as never} onRetry={refetch} />;
   if (!record) return <ErrorState variant="notFound" />;
 
   return (
     <Box>
       <PageHeader
-        title={`Expediente #${record.id}`}
-        subtitle={record.patient_name || `Paciente #${record.patient_id}`}
+        title={t('record_title', { id: record.id })}
+        subtitle={record.patient_name || t('patient_fallback', { id: record.patient_id })}
         action={
           <Box sx={{ display: 'flex', gap: 1 }}>
             <Button
@@ -44,7 +46,7 @@ export default function ClinicalRecordDetailPage() {
               onClick={() => navigate(-1)}
               sx={{ textTransform: 'none' }}
             >
-              Volver
+              {t('back_button')}
             </Button>
             {canEdit && (
               <Button
@@ -53,7 +55,7 @@ export default function ClinicalRecordDetailPage() {
                 onClick={() => navigate(`/clinical-records/${record.id}/edit`)}
                 sx={{ textTransform: 'none' }}
               >
-                Editar
+                {t('edit_button')}
               </Button>
             )}
             <Button
@@ -62,7 +64,7 @@ export default function ClinicalRecordDetailPage() {
               onClick={handlePrint}
               sx={{ textTransform: 'none' }}
             >
-              Imprimir
+              {t('print_button')}
             </Button>
           </Box>
         }
@@ -72,10 +74,10 @@ export default function ClinicalRecordDetailPage() {
         {/* Patient & Doctor Info */}
         <Paper sx={{ p: 3, mb: 3, border: '1px solid #e5e7eb', boxShadow: 'none' }}>
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr 1fr' }, gap: 3 }}>
-            <InfoBlock label="Paciente" value={record.patient_name || `Paciente #${record.patient_id}`} />
-            <InfoBlock label="Doctor" value={record.doctor_name || `Doctor #${record.doctor_id}`} />
+            <InfoBlock label={t('label_patient')} value={record.patient_name || t('patient_fallback', { id: record.patient_id })} />
+            <InfoBlock label={t('label_doctor')} value={record.doctor_name || t('doctor_fallback', { id: record.doctor_id })} />
             <InfoBlock
-              label="Fecha de Creación"
+              label={t('label_created_at')}
               value={format(new Date(record.created_at), "dd 'de' MMMM 'de' yyyy", { locale: es })}
               icon={<CalendarToday sx={{ fontSize: 14 }} />}
             />
@@ -86,7 +88,7 @@ export default function ClinicalRecordDetailPage() {
         {record.vitals && Object.keys(record.vitals).length > 0 && (
           <Paper sx={{ p: 3, mb: 3, border: '1px solid #e5e7eb', boxShadow: 'none' }}>
             <Typography variant="h6" sx={{ fontWeight: 600, color: '#1f2937', mb: 2 }}>
-              Signos Vitales
+              {t('section_vitals')}
             </Typography>
             <VitalsDisplay vitals={record.vitals} />
           </Paper>
@@ -94,15 +96,15 @@ export default function ClinicalRecordDetailPage() {
 
         {/* Clinical Content */}
         <Paper sx={{ p: 3, mb: 3, border: '1px solid #e5e7eb', boxShadow: 'none' }}>
-          <ClinicalSection title="Consulta Principal" content={record.chief_complaint} />
+          <ClinicalSection title={t('section_chief_complaint')} content={record.chief_complaint} />
           <Divider sx={{ my: 2 }} />
-          <ClinicalSection title="Diagnóstico" content={record.diagnosis} />
+          <ClinicalSection title={t('section_diagnosis')} content={record.diagnosis} />
           <Divider sx={{ my: 2 }} />
-          <ClinicalSection title="Tratamiento" content={record.treatment} />
+          <ClinicalSection title={t('section_treatment')} content={record.treatment} />
           {record.notes && (
             <>
               <Divider sx={{ my: 2 }} />
-              <ClinicalSection title="Notas Adicionales" content={record.notes} />
+              <ClinicalSection title={t('section_additional_notes')} content={record.notes} />
             </>
           )}
         </Paper>
@@ -111,7 +113,7 @@ export default function ClinicalRecordDetailPage() {
         {record.attachments && record.attachments.length > 0 && (
           <Paper sx={{ p: 3, border: '1px solid #e5e7eb', boxShadow: 'none' }}>
             <Typography variant="h6" sx={{ fontWeight: 600, color: '#1f2937', mb: 2 }}>
-              Adjuntos
+              {t('section_attachments')}
             </Typography>
             <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
               {record.attachments.map((attachment, i) => (

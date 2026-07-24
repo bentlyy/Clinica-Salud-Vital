@@ -76,13 +76,13 @@ function WorkQueueBase({ requests, onSelectRequest, selectedId, isLoading }: Wor
   const [tabValue, setTabValue] = useState(0);
 
   const filteredRequests = useMemo(
-    () => filterRequests(requests, TAB_FILTERS[tabValue].value),
+    () => filterRequests(requests ?? [], TAB_FILTERS[tabValue]?.value ?? 'all'),
     [requests, tabValue],
   );
 
   if (isLoading) {
     return (
-      <Paper elevation={0} sx={{ border: '1px solid #e5e7eb', borderRadius: '14px', overflow: 'hidden' }}>
+      <Paper elevation={0} sx={{ border: `1px solid ${theme.palette.divider}`, borderRadius: '14px', overflow: 'hidden' }}>
         <Box sx={{ px: 2, pt: 1 }}>
           <Skeleton variant="text" width={200} height={36} />
         </Box>
@@ -113,14 +113,14 @@ function WorkQueueBase({ requests, onSelectRequest, selectedId, isLoading }: Wor
   }
 
   return (
-    <Paper elevation={0} sx={{ border: '1px solid #e5e7eb', borderRadius: '14px', overflow: 'hidden' }}>
+    <Paper elevation={0} sx={{ border: `1px solid ${theme.palette.divider}`, borderRadius: '14px', overflow: 'hidden' }}>
       <Tabs
         value={tabValue}
         onChange={(_, v) => setTabValue(v)}
         sx={{
           px: 2,
           pt: 0.5,
-          borderBottom: '1px solid #e5e7eb',
+          borderBottom: `1px solid ${theme.palette.divider}`,
           '& .MuiTab-root': {
             minHeight: 44,
             fontWeight: 500,
@@ -128,7 +128,7 @@ function WorkQueueBase({ requests, onSelectRequest, selectedId, isLoading }: Wor
             textTransform: 'none',
           },
           '& .MuiTabs-indicator': {
-            backgroundColor: '#0d9488',
+            backgroundColor: theme.palette.primary.main,
             height: 2.5,
           },
         }}
@@ -149,8 +149,8 @@ function WorkQueueBase({ requests, onSelectRequest, selectedId, isLoading }: Wor
             gap: 1.5,
           }}
         >
-          <InboxOutlinedIcon sx={{ fontSize: 40, color: '#d1d5db' }} />
-          <Typography variant="body2" sx={{ color: '#6b7280' }}>
+          <InboxOutlinedIcon sx={{ fontSize: 40, color: theme.palette.divider }} />
+          <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
             No hay solicitudes en esta cola
           </Typography>
         </Box>
@@ -185,7 +185,7 @@ function WorkQueueBase({ requests, onSelectRequest, selectedId, isLoading }: Wor
                       '&:hover': {
                         backgroundColor: isSelected
                           ? `${theme.palette.primary.main}12`
-                          : `${theme.palette.action?.hover ?? '#f5f5f5'}`,
+                          : `${theme.palette.action?.hover ?? theme.palette.custom.surface.sunken}`,
                       },
                       ...(isSelected && {
                         borderLeft: `3px solid ${theme.palette.primary.main}`,
@@ -193,12 +193,12 @@ function WorkQueueBase({ requests, onSelectRequest, selectedId, isLoading }: Wor
                     }}
                   >
                     <TableCell>
-                      <Typography variant="body2" sx={{ fontWeight: 600, color: '#0d9488' }}>
+                      <Typography variant="body2" sx={{ fontWeight: 600, color: theme.palette.primary.main }}>
                         {request.request_number || `#${request.id}`}
                       </Typography>
                     </TableCell>
                     <TableCell>
-                      <Typography variant="body2" sx={{ fontWeight: 500, color: '#1f2937' }}>
+                      <Typography variant="body2" sx={{ fontWeight: 500, color: theme.palette.text.primary }}>
                         {request.patient_name ?? '—'}
                       </Typography>
                     </TableCell>
@@ -209,7 +209,7 @@ function WorkQueueBase({ requests, onSelectRequest, selectedId, isLoading }: Wor
                       <StatusBadge status={request.status} />
                     </TableCell>
                     <TableCell>
-                      <Typography variant="body2" sx={{ color: '#6b7280', fontSize: '0.75rem' }}>
+                      <Typography variant="body2" sx={{ color: theme.palette.text.secondary, fontSize: '0.75rem' }}>
                         {formatDate(request.requested_at)}
                       </Typography>
                     </TableCell>
@@ -221,7 +221,7 @@ function WorkQueueBase({ requests, onSelectRequest, selectedId, isLoading }: Wor
                             e.stopPropagation();
                             onSelectRequest(request.id);
                           }}
-                          sx={{ color: '#0d9488' }}
+                          sx={{ color: theme.palette.primary.main }}
                         >
                           <VisibilityIcon fontSize="small" />
                         </IconButton>

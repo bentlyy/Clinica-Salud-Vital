@@ -1,18 +1,22 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
+import type { Resource } from 'i18next';
 
 import es from './locales/es.json';
 import en from './locales/en.json';
 import pt from './locales/pt.json';
 import fr from './locales/fr.json';
 
-const resources = {
-  es: { translation: es },
-  en: { translation: en },
-  pt: { translation: pt },
-  fr: { translation: fr },
-};
+const locales = { es, en, pt, fr } as const;
+const resources: Resource = {};
+
+for (const [lang, data] of Object.entries(locales)) {
+  resources[lang] = {};
+  for (const [namespace, value] of Object.entries(data)) {
+    (resources[lang] as Record<string, unknown>)[namespace] = value;
+  }
+}
 
 i18n
   .use(LanguageDetector)
@@ -20,6 +24,8 @@ i18n
   .init({
     resources,
     fallbackLng: 'es',
+    ns: [...Object.keys(es)],
+    defaultNS: 'common',
     interpolation: {
       escapeValue: false,
     },

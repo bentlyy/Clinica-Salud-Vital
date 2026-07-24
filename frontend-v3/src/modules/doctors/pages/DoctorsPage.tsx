@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Box,
   Paper,
@@ -65,6 +66,7 @@ function getInitials(name: string): string {
 }
 
 export default function DoctorsPage() {
+  const { t } = useTranslation('doctors');
   const { hasPermission } = useAuth();
   const canCreate = hasPermission('doctors', 'create');
   const canEdit = hasPermission('doctors', 'edit');
@@ -144,14 +146,14 @@ export default function DoctorsPage() {
     void doctor;
   };
 
-  if (isLoading) return <LoadingState message="Cargando doctores..." />;
+  if (isLoading) return <LoadingState message={t('loading_doctors')} />;
   if (error) return <ErrorState error={error as Error} onRetry={refetch} />;
 
   return (
     <Box component={motion.div} {...pageVariants}>
       <PageHeader
-        title="Gestión de Doctores"
-        subtitle={`${total} doctores registrados`}
+        title={t('listTitle')}
+        subtitle={t('resultsCount', { total })}
         action={
           <Box sx={{ display: 'flex', gap: 1 }}>
             {canInvite && (
@@ -173,7 +175,7 @@ export default function DoctorsPage() {
                   },
                 }}
               >
-                Invitar Doctor
+                {t('inviteDoctor')}
               </Button>
             )}
             {canCreate && (
@@ -188,7 +190,7 @@ export default function DoctorsPage() {
                   },
                 }}
               >
-                Nuevo Doctor
+                {t('newDoctorButton')}
               </Button>
             )}
           </Box>
@@ -210,7 +212,7 @@ export default function DoctorsPage() {
       >
         <TextField
           size="small"
-          placeholder="Buscar por nombre, email o especialidad..."
+          placeholder={t('searchPlaceholderFull')}
           value={search}
           onChange={(e) => handleSearchChange(e.target.value)}
           sx={{ minWidth: { md: 320 } }}
@@ -254,9 +256,9 @@ export default function DoctorsPage() {
       {/* Content */}
       {doctors.length === 0 ? (
         <EmptyState
-          title="No se encontraron doctores"
-          message="Intenta ajustar los filtros o registra un nuevo doctor."
-          action={canCreate ? { label: 'Nuevo Doctor', onClick: openCreateDialog } : undefined}
+          title={t('noDoctorsTitle')}
+          message={t('noDoctorsMessage')}
+          action={canCreate ? { label: t('newDoctorButton'), onClick: openCreateDialog } : undefined}
         />
       ) : viewMode === 'grid' ? (
         /* Grid View */
@@ -291,11 +293,11 @@ export default function DoctorsPage() {
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>Doctor</TableCell>
-                  <TableCell>Email</TableCell>
-                  <TableCell>Especialidad</TableCell>
-                  <TableCell>Licencia</TableCell>
-                  <TableCell align="right">Acciones</TableCell>
+                  <TableCell>{t('name')}</TableCell>
+                  <TableCell>{t('emailLabel')}</TableCell>
+                  <TableCell>{t('specialtyLabel')}</TableCell>
+                  <TableCell>{t('licenseNumber')}</TableCell>
+                  <TableCell align="right">{t('actionsLabel')}</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -351,7 +353,7 @@ export default function DoctorsPage() {
                     <TableCell align="right">
                       <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 0.5 }}>
                         {canEdit && (
-                          <Tooltip title="Editar">
+                          <Tooltip title={t('editDoctorLabel', { name: doctor.name })}>
                             <IconButton
                               size="small"
                               onClick={() => openEditDialog(doctor)}
@@ -361,7 +363,7 @@ export default function DoctorsPage() {
                             </IconButton>
                           </Tooltip>
                         )}
-                        <Tooltip title="Ver horarios">
+                        <Tooltip title={t('doctorSchedule')}>
                           <IconButton
                             size="small"
                             onClick={() => openSchedule(doctor)}
@@ -371,7 +373,7 @@ export default function DoctorsPage() {
                           </IconButton>
                         </Tooltip>
                         {canInvite && !doctor.user_id && (
-                          <Tooltip title="Enviar invitación">
+                          <Tooltip title={t('inviteDoctor')}>
                             <IconButton
                               size="small"
                               onClick={() => openInviteDialog(doctor)}
@@ -400,9 +402,11 @@ export default function DoctorsPage() {
               setPage(0);
             }}
             rowsPerPageOptions={[6, 12, 24, 48]}
-            labelRowsPerPage="Filas por página"
+            labelRowsPerPage={t('rows_per_page', 'Filas por página')}
             labelDisplayedRows={({ from, to, count }) =>
-              `${from}–${to} de ${count !== -1 ? count : `más de ${to}`}`
+              count !== -1
+                ? t('labelDisplayedRows', { from, to, count })
+                : t('labelDisplayedRowsMore', { to })
             }
           />
         </Paper>
@@ -424,13 +428,12 @@ export default function DoctorsPage() {
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <People sx={{ fontSize: 20, color: '#0d9488' }} />
             <Typography variant="body2" sx={{ color: '#6b7280' }}>
-              <strong style={{ color: '#1f2937' }}>{total}</strong> doctores en total
+              <strong style={{ color: '#1f2937' }}>{total}</strong> {t('totalDoctors', 'doctores en total')}
             </Typography>
           </Box>
           <Typography variant="body2" sx={{ color: '#d1d5db' }}>|</Typography>
           <Typography variant="body2" sx={{ color: '#6b7280' }}>
-            Página <strong style={{ color: '#1f2937' }}>{page + 1}</strong> de{' '}
-            <strong style={{ color: '#1f2937' }}>{Math.max(1, Math.ceil(total / rowsPerPage))}</strong>
+            {t('page_of', { page: page + 1, total: Math.max(1, Math.ceil(total / rowsPerPage)) })}
           </Typography>
         </Paper>
       )}

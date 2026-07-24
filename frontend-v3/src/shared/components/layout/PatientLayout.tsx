@@ -23,8 +23,12 @@ import Settings from '@mui/icons-material/Settings';
 import Notifications from '@mui/icons-material/Notifications';
 import Logout from '@mui/icons-material/Logout';
 import Home from '@mui/icons-material/Home';
+import DarkMode from '@mui/icons-material/DarkMode';
+import LightMode from '@mui/icons-material/LightMode';
 import { useAuth } from '@/shared/providers/AuthProvider';
+import { useThemeMode } from '@/shared/providers/ThemeProvider';
 import { getRoleColor } from '@/shared/utils/role.utils';
+import { LanguageSwitcher } from '@/shared/components/LanguageSwitcher';
 
 const TOPBAR_HEIGHT = 64;
 
@@ -41,6 +45,7 @@ export function PatientLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const theme = useTheme();
+  const { mode, toggleTheme } = useThemeMode();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -55,9 +60,9 @@ export function PatientLayout() {
         position="sticky"
         elevation={0}
         sx={{
-          backgroundColor: '#ffffff',
-          borderBottom: '1px solid #f3f4f6',
-          color: '#1f2937',
+          backgroundColor: theme.palette.background.paper,
+          borderBottom: `1px solid ${theme.palette.divider}`,
+          color: 'text.primary',
         }}
       >
         <Toolbar sx={{ height: TOPBAR_HEIGHT, px: 2 }}>
@@ -78,7 +83,7 @@ export function PatientLayout() {
             >
               C
             </Box>
-            <Typography variant="h6" sx={{ fontWeight: 700, color: '#1f2937', fontSize: '1rem' }}>
+            <Typography variant="h6" sx={{ fontWeight: 700, color: 'text.primary', fontSize: '1rem' }}>
               Mi Portal
             </Typography>
           </Box>
@@ -86,10 +91,16 @@ export function PatientLayout() {
           <Box sx={{ flex: 1 }} />
 
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-            <IconButton size="small" sx={{ color: '#6b7280' }}>
+            <IconButton size="small" sx={{ color: 'text.secondary' }}>
               <Badge badgeContent={3} color="error" variant="dot">
                 <Notifications fontSize="small" />
               </Badge>
+            </IconButton>
+
+            <LanguageSwitcher />
+
+            <IconButton size="small" sx={{ color: 'text.secondary' }} onClick={toggleTheme}>
+              {mode === 'dark' ? <LightMode fontSize="small" /> : <DarkMode fontSize="small" />}
             </IconButton>
 
             <IconButton onClick={(e) => setAnchorEl(e.currentTarget)} size="small" sx={{ ml: 0.5 }}>
@@ -112,10 +123,10 @@ export function PatientLayout() {
             onClose={() => setAnchorEl(null)}
             transformOrigin={{ horizontal: 'right', vertical: 'top' }}
             anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
-            slotProps={{ paper: { sx: { mt: 1, minWidth: 180, borderRadius: 2, border: '1px solid #e5e7eb' } } }}
+            slotProps={{ paper: { sx: { mt: 1, minWidth: 180, borderRadius: 2, border: `1px solid ${theme.palette.divider}` } } }}
           >
             <MenuItem onClick={() => { setAnchorEl(null); navigate('/patient/settings'); }}>
-              <Settings sx={{ mr: 1.5, fontSize: 18, color: '#6b7280' }} />
+              <Settings sx={{ mr: 1.5, fontSize: 18, color: 'text.secondary' }} />
               Configuración
             </MenuItem>
             <MenuItem onClick={() => { setAnchorEl(null); logout(); }} sx={{ color: '#ef4444' }}>
@@ -132,7 +143,7 @@ export function PatientLayout() {
         sx={{
           flex: 1,
           overflowY: 'auto',
-          backgroundColor: '#f9fafb',
+          backgroundColor: theme.palette.background.default,
           p: { xs: 2, md: 3 },
           pb: { xs: 10, md: 3 },
         }}
@@ -148,7 +159,8 @@ export function PatientLayout() {
             navigate(patientNavItems[newValue]!.path);
           }}
           sx={{
-            borderTop: '1px solid #f3f4f6',
+            borderTop: `1px solid ${theme.palette.divider}`,
+            backgroundColor: theme.palette.background.paper,
             '& .MuiBottomNavigationAction-root': {
               minWidth: 'auto',
               '&.Mui-selected': { color: '#0d9488' },

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Box,
   Paper,
@@ -19,6 +20,7 @@ import {
   Select,
   MenuItem,
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import Search from '@mui/icons-material/Search';
 import People from '@mui/icons-material/People';
 import { MotionDiv } from '@/shared/utils/animations';
@@ -29,6 +31,8 @@ import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { usePatientList } from '../hooks/usePatients';
 
 export default function PatientsPage() {
+  const theme = useTheme();
+  const { t } = useTranslation('patients');
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [search, setSearch] = useState('');
@@ -44,22 +48,22 @@ export default function PatientsPage() {
   const patients = data?.data ?? [];
   const total = data?.total ?? 0;
 
-  if (isLoading) return <LoadingState message="Cargando pacientes..." />;
+  if (isLoading) return <LoadingState message={t('loading_patients')} />;
   if (error) return <ErrorState error={error as never} onRetry={refetch} />;
 
   return (
     <MotionDiv initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
       <PageHeader
-        title="Pacientes"
-        subtitle={`${total} pacientes registrados`}
+        title={t('title')}
+        subtitle={t('resultsCount', { total })}
       />
 
       {/* Filters */}
-      <Paper sx={{ p: 2, mb: 3, border: '1px solid #e5e7eb', borderRadius: '14px' }}>
+      <Paper sx={{ p: 2, mb: 3, border: `1px solid ${theme.palette.divider}`, borderRadius: '14px' }}>
         <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
           <TextField
             size="small"
-            placeholder="Buscar por nombre, email..."
+            placeholder={t('searchPlaceholder', 'Buscar por nombre, email...')}
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(0); }}
             sx={{ flex: 1, minWidth: 250 }}
@@ -67,23 +71,23 @@ export default function PatientsPage() {
               input: {
                 startAdornment: (
                   <InputAdornment position="start">
-                    <Search sx={{ color: '#9ca3af', fontSize: 20 }} />
+                    <Search sx={{ color: theme.palette.text.secondary, fontSize: 20 }} />
                   </InputAdornment>
                 ),
               },
             }}
           />
           <FormControl size="small" sx={{ minWidth: 150 }}>
-            <InputLabel>Género</InputLabel>
+            <InputLabel>{t('gender')}</InputLabel>
             <Select
               value={genderFilter}
-              label="Género"
+              label={t('gender')}
               onChange={(e) => { setGenderFilter(e.target.value); setPage(0); }}
             >
-              <MenuItem value="">Todos</MenuItem>
-              <MenuItem value="male">Masculino</MenuItem>
-              <MenuItem value="female">Femenino</MenuItem>
-              <MenuItem value="other">Otro</MenuItem>
+              <MenuItem value="">{t('genderFilters.all')}</MenuItem>
+              <MenuItem value="male">{t('genderFilters.male')}</MenuItem>
+              <MenuItem value="female">{t('genderFilters.female')}</MenuItem>
+              <MenuItem value="other">{t('genderFilters.other')}</MenuItem>
             </Select>
           </FormControl>
         </Box>
@@ -91,22 +95,22 @@ export default function PatientsPage() {
 
       {patients.length === 0 ? (
         <EmptyState
-          icon={<People sx={{ fontSize: 48, color: '#d1d5db' }} />}
-          title="No se encontraron pacientes"
-          message={search || genderFilter ? 'Intenta con otros filtros de búsqueda.' : 'Aún no hay pacientes registrados.'}
+          icon={<People sx={{ fontSize: 48, color: theme.palette.divider }} />}
+          title={t('noPatients', 'No se encontraron pacientes')}
+          message={search || genderFilter ? t('noPatientsFiltered') : t('noPatientsEmpty', 'Aún no hay pacientes registrados.')}
         />
       ) : (
-        <Paper sx={{ borderRadius: '14px', border: '1px solid #e5e7eb', overflow: 'hidden' }}>
+        <Paper sx={{ borderRadius: '14px', border: `1px solid ${theme.palette.divider}`, overflow: 'hidden' }}>
           <TableContainer>
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>Paciente</TableCell>
-                  <TableCell>Email</TableCell>
-                  <TableCell>Teléfono</TableCell>
-                  <TableCell>Género</TableCell>
-                  <TableCell>Estado</TableCell>
-                  <TableCell>Registro</TableCell>
+                  <TableCell>{t('name')}</TableCell>
+                  <TableCell>{t('emailLabel')}</TableCell>
+                  <TableCell>{t('phoneLabel')}</TableCell>
+                  <TableCell>{t('gender')}</TableCell>
+                  <TableCell>{t('statusLabel')}</TableCell>
+                  <TableCell>{t('colDate', 'Registro')}</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -119,49 +123,49 @@ export default function PatientsPage() {
                           sx={{
                             width: 36,
                             height: 36,
-                            backgroundColor: '#0d9488',
+                            backgroundColor: theme.palette.primary.main,
                             fontSize: '0.8rem',
                           }}
                         >
                           {patient.name.charAt(0).toUpperCase()}
                         </Avatar>
-                        <Typography variant="body2" sx={{ fontWeight: 600, color: '#1f2937' }}>
+                        <Typography variant="body2" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
                           {patient.name}
                         </Typography>
                       </Box>
                     </TableCell>
                     <TableCell>
-                      <Typography variant="body2" sx={{ color: '#6b7280' }}>
+                      <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
                         {patient.email}
                       </Typography>
                     </TableCell>
                     <TableCell>
-                      <Typography variant="body2" sx={{ color: '#6b7280' }}>
+                      <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
                         {patient.phone || '—'}
                       </Typography>
                     </TableCell>
                     <TableCell>
-                      <Typography variant="body2" sx={{ color: '#6b7280' }}>
+                      <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
                         {patient.gender === 'male'
-                          ? 'Masculino'
+                          ? t('genderFilters.male')
                           : patient.gender === 'female'
-                          ? 'Femenino'
+                          ? t('genderFilters.female')
                           : patient.gender || '—'}
                       </Typography>
                     </TableCell>
                     <TableCell>
                       <Chip
-                        label={patient.is_active ? 'Activo' : 'Inactivo'}
+                        label={patient.is_active ? t('active') : t('inactive')}
                         size="small"
                         sx={{
-                          backgroundColor: patient.is_active ? '#ecfdf5' : '#fef2f2',
-                          color: patient.is_active ? '#059669' : '#dc2626',
+                          backgroundColor: patient.is_active ? theme.palette.custom.status.success.bg : theme.palette.custom.status.error.bg,
+                          color: patient.is_active ? theme.palette.custom.status.success.text : theme.palette.custom.status.error.text,
                           fontWeight: 600,
                         }}
                       />
                     </TableCell>
                     <TableCell>
-                      <Typography variant="body2" sx={{ color: '#6b7280' }}>
+                      <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
                         {new Date(patient.created_at).toLocaleDateString('es-CL')}
                       </Typography>
                     </TableCell>
@@ -179,7 +183,7 @@ export default function PatientsPage() {
             rowsPerPage={rowsPerPage}
             onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value)); setPage(0); }}
             rowsPerPageOptions={[5, 10, 25]}
-            labelRowsPerPage="Filas por página"
+            labelRowsPerPage={t('rows_per_page', 'Filas por página')}
           />
         </Paper>
       )}
