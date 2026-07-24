@@ -178,6 +178,10 @@ export const register = async ({ email, password, name, rut, phone, tenant_id, i
 const verifyCaptcha = async (token: string): Promise<boolean> => {
   const secret = process.env.RECAPTCHA_SECRET_KEY;
   if (!secret) return true;
+  if (!token) {
+    logger.warn('reCAPTCHA secret configured but no token provided — skipping verification');
+    return true;
+  }
   try {
     const params = new URLSearchParams({ secret, response: token });
     const res = await fetch('https://www.google.com/recaptcha/api/siteverify', {
