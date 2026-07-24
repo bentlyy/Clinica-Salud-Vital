@@ -63,7 +63,7 @@ services:
     env: static
     region: oregon
     plan: free
-    buildCommand: cd frontend-v3 && npm install && npm run build
+    buildCommand: cd frontend-v3 && npm install --include=dev && npm run build
     staticPublishPath: ./frontend-v3/dist
     routes:
       - type: rewrite
@@ -72,3 +72,5 @@ services:
     envVars:
       - key: VITE_API_URL
         value: /api
+      - key: VITE_RECAPTCHA_SITE_KEY
+        sync: false
