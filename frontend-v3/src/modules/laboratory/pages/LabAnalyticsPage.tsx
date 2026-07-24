@@ -1,10 +1,10 @@
 import { memo, useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Box,
   Typography,
   Paper,
   TextField,
-  Skeleton,
   Table,
   TableBody,
   TableCell,
@@ -26,27 +26,43 @@ import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { LoadingState } from '@/shared/components/ui/LoadingState';
 import { ErrorState } from '@/shared/components/ui/ErrorState';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
-import { useLabAnalytics, useLabAreas } from '../hooks/useLab';
+import { useLabAnalytics } from '../hooks/useLab';
 
 interface DateRangeForm {
   dateFrom: string;
   dateTo: string;
 }
 
-const SUMMARY_METRICS = [
-  { key: 'total', label: 'Total Pruebas', icon: ScienceIcon, color: '#0d9488', bgColor: '#f0fdfa' },
-  { key: 'avg_time', label: 'Tiempo Promedio', icon: AccessTimeIcon, color: '#2563eb', bgColor: '#eff6ff' },
-  { key: 'repeat_rate', label: 'Tasa Repetición', icon: RepeatIcon, color: '#d97706', bgColor: '#fffbeb' },
-  { key: 'error_rate', label: 'Tasa Error', icon: ErrorIcon, color: '#ef4444', bgColor: '#fef2f2' },
-  { key: 'sla', label: 'Cumplimiento SLA', icon: SpeedIcon, color: '#059669', bgColor: '#ecfdf5' },
-  { key: 'revenue', label: 'Ingresos', icon: AttachMoneyIcon, color: '#7c3aed', bgColor: '#f5f3ff' },
+const SUMMARY_METRIC_KEYS = [
+  { key: 'total', i18nKey: 'total_tests', icon: ScienceIcon, colorKey: 'primary.main' as const, bgColorKey: 'custom.brand.lightest' as const },
+  { key: 'avg_time', i18nKey: 'avg_time', icon: AccessTimeIcon, colorKey: 'info.dark' as const, bgColorKey: 'custom.status.info.bg' as const },
+  { key: 'repeat_rate', i18nKey: 'repeat_rate', icon: RepeatIcon, colorKey: 'warning.dark' as const, bgColorKey: 'custom.status.warning.bg' as const },
+  { key: 'error_rate', i18nKey: 'error_rate', icon: ErrorIcon, colorKey: 'error.main' as const, bgColorKey: 'custom.status.error.bg' as const },
+  { key: 'sla', i18nKey: 'sla_compliance', icon: SpeedIcon, colorKey: 'success.dark' as const, bgColorKey: 'custom.status.success.bg' as const },
+  { key: 'revenue', i18nKey: 'revenue', icon: AttachMoneyIcon, colorKey: 'secondary.main' as const, bgColorKey: 'custom.surface.muted' as const },
 ] as const;
+
+import type { Theme } from '@mui/material/styles';
+
+function getNestedColor(palette: Theme['palette'], path: string): string {
+  const parts = path.split('.');
+  let current: Record<string, unknown> = palette as unknown as Record<string, unknown>;
+  for (const part of parts) {
+    if (current && typeof current === 'object' && part in current) {
+      current = current[part] as Record<string, unknown>;
+    } else {
+      return path;
+    }
+  }
+  return typeof current === 'string' ? current : path;
+}
 
 function formatCurrency(value: number): string {
   return new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(value);
 }
 
 function LabAnalyticsPage() {
+  const { t } = useTranslation('lab_analytics');
   const theme = useTheme();
   const [dateRange, setDateRange] = useState<{ dateFrom: string; dateTo: string }>({
     dateFrom: '',
@@ -73,9 +89,9 @@ function LabAnalyticsPage() {
 
   const dailyData = useMemo(() => analytics?.daily ?? [], [analytics]);
 
-  if (isLoading) return <LoadingState message="Cargando analitica..." />;
+  if (isLoading) return <LoadingState message={t('loading')} />;
   if (error) return <ErrorState error={error as Error} onRetry={() => void refetch()} />;
-  if (!analytics) return <EmptyState title="Sin datos" message="No hay datos de analitica disponibles." />;
+  if (!analytics) return <EmptyState title={t('no_data_title')} message={t('no_data_message')} />;
 
   const summaryValues: Record<string, string | number> = {
     total: dailyData.reduce((sum, d) => sum + d.count, 0),
@@ -101,11 +117,18 @@ function LabAnalyticsPage() {
   const AREA_PADDING = { top: 20, right: 80, bottom: 20, left: 140 };
   const areaMaxCount = Math.max(...(analytics.by_area?.map((a) => a.count) ?? [1]), 1);
 
+  const priorityColorMap: Record<string, { lightKey: string; colorKey: string }> = {
+    low: { lightKey: 'custom.surface.sunken', colorKey: 'text.secondary' },
+    normal: { lightKey: 'custom.status.info.bg', colorKey: 'info.main' },
+    urgent: { lightKey: 'custom.status.warning.bg', colorKey: 'warning.main' },
+    emergency: { lightKey: 'custom.status.error.bg', colorKey: 'error.main' },
+  };
+
   return (
     <Box>
       <PageHeader
-        title="Analitica de Laboratorio"
-        subtitle="Metricas, volumen y tendencias"
+        title={t('title')}
+        subtitle={t('subtitle')}
         action={
           <Box
             component="form"
@@ -120,7 +143,7 @@ function LabAnalyticsPage() {
                   {...field}
                   size="small"
                   type="date"
-                  label="Desde"
+                  label={t('date_from')}
                   slotProps={{ inputLabel: { shrink: true } }}
                   sx={{ minWidth: 140, '& .MuiOutlinedInput-root': { borderRadius: '10px' } }}
                 />
@@ -134,7 +157,7 @@ function LabAnalyticsPage() {
                   {...field}
                   size="small"
                   type="date"
-                  label="Hasta"
+                  label={t('date_to')}
                   slotProps={{ inputLabel: { shrink: true } }}
                   sx={{ minWidth: 140, '& .MuiOutlinedInput-root': { borderRadius: '10px' } }}
                 />
@@ -147,8 +170,8 @@ function LabAnalyticsPage() {
 
       {/* Summary Metrics */}
       <Grid container spacing={2} sx={{ mb: 3 }}>
-        {SUMMARY_METRICS.map((m) => (
-          <Grid size={{ xs: 6, sm: 4, md: 2 }} key={m.key}>
+        {SUMMARY_METRIC_KEYS.map((m) => (
+          <Grid xs={6} sm={4} md={2} key={m.key}>
             <Paper
               elevation={0}
               sx={{
@@ -156,7 +179,7 @@ function LabAnalyticsPage() {
                 display: 'flex',
                 alignItems: 'center',
                 gap: 1.5,
-                border: '1px solid #e5e7eb',
+                border: `1px solid ${theme.palette.divider}`,
                 borderRadius: '14px',
               }}
             >
@@ -168,17 +191,17 @@ function LabAnalyticsPage() {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  backgroundColor: m.bgColor,
-                  color: m.color,
+                  backgroundColor: getNestedColor(theme.palette, m.bgColorKey),
+                  color: getNestedColor(theme.palette, m.colorKey),
                 }}
               >
                 <m.icon sx={{ fontSize: 20 }} />
               </Box>
               <Box>
-                <Typography variant="caption" sx={{ color: '#6b7280', fontWeight: 500 }}>
-                  {m.label}
+                <Typography variant="caption" sx={{ color: theme.palette.text.secondary, fontWeight: 500 }}>
+                  {t(m.i18nKey)}
                 </Typography>
-                <Typography variant="h5" sx={{ fontWeight: 700, color: '#1f2937', lineHeight: 1.2 }}>
+                <Typography variant="h5" sx={{ fontWeight: 700, color: theme.palette.text.primary, lineHeight: 1.2 }}>
                   {summaryValues[m.key]}
                 </Typography>
               </Box>
@@ -189,15 +212,15 @@ function LabAnalyticsPage() {
 
       <Grid container spacing={3}>
         {/* Daily Volume Bar Chart */}
-        <Grid size={{ xs: 12, md: 8 }}>
-          <Paper elevation={0} sx={{ p: 3, border: '1px solid #e5e7eb', borderRadius: '14px' }}>
-            <Typography variant="h6" sx={{ fontWeight: 600, color: '#1f2937', mb: 2 }}>
-              Volumen Diario
+        <Grid xs={12} md={8}>
+          <Paper elevation={0} sx={{ p: 3, border: `1px solid ${theme.palette.divider}`, borderRadius: '14px' }}>
+            <Typography variant="h6" sx={{ fontWeight: 600, color: theme.palette.text.primary, mb: 2 }}>
+              {t('daily_volume')}
             </Typography>
             {dailyData.length === 0 ? (
               <Box sx={{ textAlign: 'center', py: 4 }}>
-                <Typography variant="body2" sx={{ color: '#6b7280' }}>
-                  Sin datos para el rango seleccionado
+                <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
+                {t('no_data_for_range')}
                 </Typography>
               </Box>
             ) : (
@@ -208,8 +231,8 @@ function LabAnalyticsPage() {
                     const y = BAR_PADDING.top + BAR_PLOT_H * (1 - pct);
                     return (
                       <g key={`y-${pct}`}>
-                        <line x1={BAR_PADDING.left} y1={y} x2={BAR_PADDING.left + BAR_PLOT_W} y2={y} stroke="#f3f4f6" strokeWidth={1} />
-                        <text x={BAR_PADDING.left - 8} y={y + 4} textAnchor="end" fontSize={10} fill="#9ca3af" fontFamily={theme.typography.fontFamily}>
+                        <line x1={BAR_PADDING.left} y1={y} x2={BAR_PADDING.left + BAR_PLOT_W} y2={y} stroke={theme.palette.custom.surface.sunken} strokeWidth={1} />
+                        <text x={BAR_PADDING.left - 8} y={y + 4} textAnchor="end" fontSize={10} fill={theme.palette.text.secondary} fontFamily={theme.typography.fontFamily}>
                           {Math.round(barMaxCount * pct)}
                         </text>
                       </g>
@@ -224,12 +247,12 @@ function LabAnalyticsPage() {
                     const y = BAR_PADDING.top + BAR_PLOT_H - barH;
                     return (
                       <g key={d.date}>
-                        <rect x={x} y={y} width={w} height={barH} rx={4} fill="#0d9488" opacity={0.85} />
-                        <text x={x + w / 2} y={y - 4} textAnchor="middle" fontSize={9} fill="#374151" fontFamily={theme.typography.fontFamily}>
+                        <rect x={x} y={y} width={w} height={barH} rx={4} fill={theme.palette.primary.main} opacity={0.85} />
+                        <text x={x + w / 2} y={y - 4} textAnchor="middle" fontSize={9} fill={theme.palette.text.primary} fontFamily={theme.typography.fontFamily}>
                           {d.count}
                         </text>
                         {i % Math.max(1, Math.floor(dailyData.length / 8)) === 0 && (
-                          <text x={x + w / 2} y={BAR_HEIGHT - 8} textAnchor="middle" fontSize={9} fill="#9ca3af" fontFamily={theme.typography.fontFamily}>
+                          <text x={x + w / 2} y={BAR_HEIGHT - 8} textAnchor="middle" fontSize={9} fill={theme.palette.text.secondary} fontFamily={theme.typography.fontFamily}>
                             {d.date.slice(5)}
                           </text>
                         )}
@@ -243,10 +266,10 @@ function LabAnalyticsPage() {
         </Grid>
 
         {/* Tests by Area — Horizontal Bar */}
-        <Grid size={{ xs: 12, md: 4 }}>
-          <Paper elevation={0} sx={{ p: 3, border: '1px solid #e5e7eb', borderRadius: '14px' }}>
-            <Typography variant="h6" sx={{ fontWeight: 600, color: '#1f2937', mb: 2 }}>
-              Pruebas por Area
+        <Grid xs={12} md={4}>
+          <Paper elevation={0} sx={{ p: 3, border: `1px solid ${theme.palette.divider}`, borderRadius: '14px' }}>
+            <Typography variant="h6" sx={{ fontWeight: 600, color: theme.palette.text.primary, mb: 2 }}>
+              {t('tests_by_area')}
             </Typography>
             {analytics.by_area && analytics.by_area.length > 0 ? (
               <Box sx={{ overflowX: 'auto' }}>
@@ -256,11 +279,11 @@ function LabAnalyticsPage() {
                     const barW = (a.count / areaMaxCount) * (AREA_CHART_W - AREA_PADDING.left - AREA_PADDING.right);
                     return (
                       <g key={a.area_name}>
-                        <text x={AREA_PADDING.left - 8} y={y + 14} textAnchor="end" fontSize={11} fill="#374151" fontFamily={theme.typography.fontFamily}>
+                        <text x={AREA_PADDING.left - 8} y={y + 14} textAnchor="end" fontSize={11} fill={theme.palette.text.primary} fontFamily={theme.typography.fontFamily}>
                           {a.area_name}
                         </text>
-                        <rect x={AREA_PADDING.left} y={y} width={barW} height={24} rx={6} fill="#0d9488" opacity={0.8} />
-                        <text x={AREA_PADDING.left + barW + 6} y={y + 16} fontSize={10} fill="#6b7280" fontFamily={theme.typography.fontFamily}>
+                        <rect x={AREA_PADDING.left} y={y} width={barW} height={24} rx={6} fill={theme.palette.primary.main} opacity={0.8} />
+                        <text x={AREA_PADDING.left + barW + 6} y={y + 16} fontSize={10} fill={theme.palette.text.secondary} fontFamily={theme.typography.fontFamily}>
                           {a.count}
                         </text>
                       </g>
@@ -269,18 +292,18 @@ function LabAnalyticsPage() {
                 </svg>
               </Box>
             ) : (
-              <Typography variant="body2" sx={{ color: '#6b7280', textAlign: 'center', py: 4 }}>
-                Sin datos
+              <Typography variant="body2" sx={{ color: theme.palette.text.secondary, textAlign: 'center', py: 4 }}>
+                {t('no_data')}
               </Typography>
             )}
           </Paper>
         </Grid>
 
         {/* Top 5 Tests */}
-        <Grid size={{ xs: 12, md: 6 }}>
-          <Paper elevation={0} sx={{ p: 3, border: '1px solid #e5e7eb', borderRadius: '14px' }}>
-            <Typography variant="h6" sx={{ fontWeight: 600, color: '#1f2937', mb: 2 }}>
-              Top 5 Pruebas Mas Solicitadas
+        <Grid xs={12} md={6}>
+          <Paper elevation={0} sx={{ p: 3, border: `1px solid ${theme.palette.divider}`, borderRadius: '14px' }}>
+            <Typography variant="h6" sx={{ fontWeight: 600, color: theme.palette.text.primary, mb: 2 }}>
+              {t('top_5_tests')}
             </Typography>
             {analytics.top_tests && analytics.top_tests.length > 0 ? (
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
@@ -290,43 +313,38 @@ function LabAnalyticsPage() {
                   return (
                     <Box key={t.test_name}>
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-                        <Typography variant="body2" sx={{ fontWeight: 500, color: '#1f2937' }}>
+                        <Typography variant="body2" sx={{ fontWeight: 500, color: theme.palette.text.primary }}>
                           {i + 1}. {t.test_name}
                         </Typography>
-                        <Typography variant="caption" sx={{ color: '#6b7280' }}>
+                        <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
                           {t.count}
                         </Typography>
                       </Box>
-                      <Box sx={{ height: 6, borderRadius: 3, backgroundColor: '#f3f4f6', overflow: 'hidden' }}>
-                        <Box sx={{ height: '100%', width: `${pct}%`, borderRadius: 3, backgroundColor: '#0d9488', transition: 'width 0.3s' }} />
+                      <Box sx={{ height: 6, borderRadius: 3, backgroundColor: theme.palette.custom.surface.sunken, overflow: 'hidden' }}>
+                        <Box sx={{ height: '100%', width: `${pct}%`, borderRadius: 3, backgroundColor: theme.palette.primary.main, transition: 'width 0.3s' }} />
                       </Box>
                     </Box>
                   );
                 })}
               </Box>
             ) : (
-              <Typography variant="body2" sx={{ color: '#6b7280', textAlign: 'center', py: 3 }}>Sin datos</Typography>
+              <Typography variant="body2" sx={{ color: theme.palette.text.secondary, textAlign: 'center', py: 3 }}>{t('no_data')}</Typography>
             )}
           </Paper>
         </Grid>
 
         {/* Priority Distribution */}
-        <Grid size={{ xs: 12, md: 6 }}>
-          <Paper elevation={0} sx={{ p: 3, border: '1px solid #e5e7eb', borderRadius: '14px' }}>
-            <Typography variant="h6" sx={{ fontWeight: 600, color: '#1f2937', mb: 2 }}>
-              Distribucion por Prioridad
+        <Grid xs={12} md={6}>
+          <Paper elevation={0} sx={{ p: 3, border: `1px solid ${theme.palette.divider}`, borderRadius: '14px' }}>
+            <Typography variant="h6" sx={{ fontWeight: 600, color: theme.palette.text.primary, mb: 2 }}>
+              {t('priority_distribution')}
             </Typography>
             {analytics.by_priority && analytics.by_priority.length > 0 ? (
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
                 {analytics.by_priority.map((p) => {
                   const total = analytics.by_priority.reduce((s, x) => s + x.count, 0);
                   const pct = total > 0 ? (p.count / total) * 100 : 0;
-                  const colors: Record<string, string> = {
-                    low: '#6b7280',
-                    normal: '#3b82f6',
-                    urgent: '#f59e0b',
-                    emergency: '#ef4444',
-                  };
+                  const pColors = priorityColorMap[p.priority] ?? priorityColorMap.low ?? { lightKey: 'custom.surface.muted', colorKey: 'text.secondary' };
                   return (
                     <Box key={p.priority}>
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
@@ -337,21 +355,21 @@ function LabAnalyticsPage() {
                             height: 22,
                             fontSize: '0.7rem',
                             fontWeight: 600,
-                            backgroundColor: `${colors[p.priority] ?? '#6b7280'}15`,
-                            color: colors[p.priority] ?? '#6b7280',
+                            backgroundColor: getNestedColor(theme.palette, pColors.lightKey),
+                            color: getNestedColor(theme.palette, pColors.colorKey),
                           }}
                         />
-                        <Typography variant="caption" sx={{ color: '#6b7280' }}>
+                        <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
                           {p.count} ({pct.toFixed(1)}%)
                         </Typography>
                       </Box>
-                      <Box sx={{ height: 8, borderRadius: 4, backgroundColor: '#f3f4f6', overflow: 'hidden' }}>
+                      <Box sx={{ height: 8, borderRadius: 4, backgroundColor: theme.palette.custom.surface.sunken, overflow: 'hidden' }}>
                         <Box
                           sx={{
                             height: '100%',
                             width: `${pct}%`,
                             borderRadius: 4,
-                            backgroundColor: colors[p.priority] ?? '#6b7280',
+                            backgroundColor: getNestedColor(theme.palette, pColors.colorKey),
                             transition: 'width 0.3s',
                           }}
                         />
@@ -361,42 +379,42 @@ function LabAnalyticsPage() {
                 })}
               </Box>
             ) : (
-              <Typography variant="body2" sx={{ color: '#6b7280', textAlign: 'center', py: 3 }}>Sin datos</Typography>
+              <Typography variant="body2" sx={{ color: theme.palette.text.secondary, textAlign: 'center', py: 3 }}>{t('no_data')}</Typography>
             )}
           </Paper>
         </Grid>
 
         {/* Requests by Doctor Table */}
-        <Grid size={{ xs: 12 }}>
-          <Paper elevation={0} sx={{ p: 3, border: '1px solid #e5e7eb', borderRadius: '14px' }}>
-            <Typography variant="h6" sx={{ fontWeight: 600, color: '#1f2937', mb: 2 }}>
-              Solicitudes por Doctor
+        <Grid xs={12}>
+          <Paper elevation={0} sx={{ p: 3, border: `1px solid ${theme.palette.divider}`, borderRadius: '14px' }}>
+            <Typography variant="h6" sx={{ fontWeight: 600, color: theme.palette.text.primary, mb: 2 }}>
+              {t('requests_by_doctor')}
             </Typography>
             {analytics.by_doctor && analytics.by_doctor.length > 0 ? (
               <TableContainer>
                 <Table size="small">
                   <TableHead>
                     <TableRow>
-                      <TableCell>Doctor</TableCell>
-                      <TableCell align="right">Solicitudes</TableCell>
-                      <TableCell align="right">Tiempo Prom.</TableCell>
+                      <TableCell>{t('col_doctor')}</TableCell>
+                      <TableCell align="right">{t('col_requests')}</TableCell>
+                      <TableCell align="right">{t('col_avg_time')}</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
                     {analytics.by_doctor.map((d) => (
                       <TableRow key={d.doctor_name} hover>
                         <TableCell>
-                          <Typography variant="body2" sx={{ fontWeight: 500, color: '#1f2937' }}>
+                          <Typography variant="body2" sx={{ fontWeight: 500, color: theme.palette.text.primary }}>
                             {d.doctor_name}
                           </Typography>
                         </TableCell>
                         <TableCell align="right">
-                          <Typography variant="body2" sx={{ fontWeight: 600, color: '#1f2937' }}>
+                          <Typography variant="body2" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
                             {d.count}
                           </Typography>
                         </TableCell>
                         <TableCell align="right">
-                          <Typography variant="body2" sx={{ color: '#6b7280' }}>
+                          <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
                             {(d as { avg_time_min?: number }).avg_time_min?.toFixed(1) ?? '—'} min
                           </Typography>
                         </TableCell>
@@ -406,8 +424,8 @@ function LabAnalyticsPage() {
                 </Table>
               </TableContainer>
             ) : (
-              <Typography variant="body2" sx={{ color: '#6b7280', textAlign: 'center', py: 3 }}>
-                Sin datos de doctores
+              <Typography variant="body2" sx={{ color: theme.palette.text.secondary, textAlign: 'center', py: 3 }}>
+                {t('no_doctor_data')}
               </Typography>
             )}
           </Paper>

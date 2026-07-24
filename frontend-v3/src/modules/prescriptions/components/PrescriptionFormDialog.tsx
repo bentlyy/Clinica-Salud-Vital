@@ -11,6 +11,7 @@ import {
   IconButton,
   Divider,
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import Close from '@mui/icons-material/Close';
 import Add from '@mui/icons-material/Add';
 import Remove from '@mui/icons-material/Remove';
@@ -55,6 +56,7 @@ export function PrescriptionFormDialog({
   patientId,
   patientName,
 }: PrescriptionFormDialogProps) {
+  const theme = useTheme();
   const isEditing = !!prescription;
 
   const {
@@ -129,7 +131,7 @@ export function PrescriptionFormDialog({
       maxWidth="md"
       fullWidth
       PaperProps={{
-        sx: { borderRadius: '16px', border: '1px solid #e5e7eb' },
+        sx: { borderRadius: '16px', border: `1px solid ${theme.palette.divider}` },
       }}
     >
       <DialogTitle
@@ -140,10 +142,10 @@ export function PrescriptionFormDialog({
           pb: 1,
         }}
       >
-        <Typography variant="h5" sx={{ fontWeight: 700, color: '#1f2937' }}>
+        <Typography variant="h5" sx={{ fontWeight: 700, color: theme.palette.text.primary }}>
           {isEditing ? 'Editar Receta' : 'Nueva Receta'}
         </Typography>
-        <IconButton onClick={onClose} size="small" sx={{ color: '#6b7280' }}>
+        <IconButton onClick={onClose} size="small" sx={{ color: theme.palette.text.secondary }}>
           <Close fontSize="small" />
         </IconButton>
       </DialogTitle>
@@ -180,21 +182,21 @@ export function PrescriptionFormDialog({
 
           {/* Medications */}
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-            <Typography variant="h6" sx={{ fontWeight: 600, color: '#1f2937' }}>
+            <Typography variant="h6" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
               Medicamentos
             </Typography>
             <Button
               size="small"
               startIcon={<Add />}
               onClick={() => append({ name: '', dosage: '', frequency: '', duration: '', instructions: '' })}
-              sx={{ color: '#0d9488', fontWeight: 600 }}
+              sx={{ color: theme.palette.primary.main, fontWeight: 600 }}
             >
               Agregar
             </Button>
           </Box>
 
           {errors.medications?.message && (
-            <Typography variant="caption" sx={{ color: '#ef4444', mb: 1, display: 'block' }}>
+            <Typography variant="caption" sx={{ color: theme.palette.error.main, mb: 1, display: 'block' }}>
               {errors.medications.message}
             </Typography>
           )}
@@ -205,21 +207,21 @@ export function PrescriptionFormDialog({
                 key={field.id}
                 sx={{
                   p: 2,
-                  backgroundColor: '#f9fafb',
+                  backgroundColor: theme.palette.custom.surface.muted,
                   borderRadius: '10px',
-                  border: '1px solid #f3f4f6',
+                  border: `1px solid ${theme.palette.divider}`,
                   position: 'relative',
                 }}
               >
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}>
-                  <Typography variant="body2" sx={{ fontWeight: 600, color: '#6b7280' }}>
+                  <Typography variant="body2" sx={{ fontWeight: 600, color: theme.palette.text.secondary }}>
                     Medicamento {index + 1}
                   </Typography>
                   {fields.length > 1 && (
                     <IconButton
                       size="small"
                       onClick={() => remove(index)}
-                      sx={{ color: '#ef4444', '&:hover': { backgroundColor: '#fef2f2' } }}
+                      sx={{ color: theme.palette.error.main, '&:hover': { backgroundColor: theme.palette.custom.status.error.bg } }}
                     >
                       <Remove fontSize="small" />
                     </IconButton>
@@ -323,7 +325,7 @@ export function PrescriptionFormDialog({
         </Box>
       </DialogContent>
 
-      <DialogActions sx={{ px: 3, py: 2, borderTop: '1px solid #f3f4f6' }}>
+      <DialogActions sx={{ px: 3, py: 2, borderTop: `1px solid ${theme.palette.divider}` }}>
         <Button onClick={onClose} variant="outlined" sx={{ mr: 1 }}>
           Cancelar
         </Button>

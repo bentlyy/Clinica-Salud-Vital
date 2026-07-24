@@ -16,6 +16,7 @@ const STATUS_COLORS: Record<BookingStatus, string> = {
   pending: '#d97706',
   cancelled: '#ef4444',
   completed: '#2563eb',
+  no_show: '#6b7280',
 };
 
 interface CalendarEvent {

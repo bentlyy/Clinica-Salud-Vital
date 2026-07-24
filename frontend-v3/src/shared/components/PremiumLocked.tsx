@@ -1,9 +1,11 @@
 import { useNavigate } from 'react-router-dom';
 import { Box, Typography, Button } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import LockIcon from '@mui/icons-material/Lock';
 
 export function PremiumLocked({ featureName }: { featureName?: string }) {
   const navigate = useNavigate();
+  const theme = useTheme();
 
   return (
     <Box
@@ -22,18 +24,18 @@ export function PremiumLocked({ featureName }: { featureName?: string }) {
           width: 64,
           height: 64,
           borderRadius: '16px',
-          backgroundColor: '#fef3c7',
+          backgroundColor: theme.palette.warning.light,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
         }}
       >
-        <LockIcon sx={{ fontSize: 32, color: '#d97706' }} />
+        <LockIcon sx={{ fontSize: 32, color: theme.palette.warning.dark }} />
       </Box>
-      <Typography variant="h5" sx={{ fontWeight: 700, color: '#1f2937' }}>
+      <Typography variant="h5" sx={{ fontWeight: 700, color: theme.palette.text.primary }}>
         {featureName || 'Funcionalidad premium'}
       </Typography>
-      <Typography variant="body1" sx={{ color: '#6b7280', maxWidth: 400 }}>
+      <Typography variant="body1" sx={{ color: theme.palette.text.secondary, maxWidth: 400 }}>
         Esta funcionalidad no está disponible en tu plan actual. Actualiza tu plan para desbloquearla.
       </Typography>
       <Button
@@ -41,8 +43,8 @@ export function PremiumLocked({ featureName }: { featureName?: string }) {
         onClick={() => navigate('/saas')}
         sx={{
           mt: 1,
-          backgroundColor: '#0d9488',
-          '&:hover': { backgroundColor: '#0f766e' },
+          backgroundColor: theme.palette.primary.main,
+          '&:hover': { backgroundColor: theme.palette.primary.dark },
           borderRadius: 2,
           textTransform: 'none',
           fontWeight: 600,

@@ -33,23 +33,24 @@ function computeDeltaPercentage(
 function getDeltaColor(
   status?: string,
   deltaPct?: number | null,
+  theme?: any,
 ): { main: string; bg: string; text: string } {
   if (status === 'critical') {
-    return { main: '#ef4444', bg: '#fef2f2', text: '#991b1b' };
+    return { main: theme?.palette.error.main ?? '#ef4444', bg: theme?.palette.error.light ?? '#fef2f2', text: theme?.palette.error.dark ?? '#991b1b' };
   }
   if (status === 'warning') {
-    return { main: '#f59e0b', bg: '#fffbeb', text: '#92400e' };
+    return { main: theme?.palette.warning.main ?? '#f59e0b', bg: theme?.palette.warning.light ?? '#fffbeb', text: theme?.palette.warning.dark ?? '#92400e' };
   }
   if (deltaPct !== null && deltaPct !== undefined) {
     const absDelta = Math.abs(deltaPct);
     if (absDelta > 30) {
-      return { main: '#ef4444', bg: '#fef2f2', text: '#991b1b' };
+      return { main: theme?.palette.error.main ?? '#ef4444', bg: theme?.palette.error.light ?? '#fef2f2', text: theme?.palette.error.dark ?? '#991b1b' };
     }
     if (absDelta > 15) {
-      return { main: '#f59e0b', bg: '#fffbeb', text: '#92400e' };
+      return { main: theme?.palette.warning.main ?? '#f59e0b', bg: theme?.palette.warning.light ?? '#fffbeb', text: theme?.palette.warning.dark ?? '#92400e' };
     }
   }
-  return { main: '#10b981', bg: '#ecfdf5', text: '#065f46' };
+  return { main: theme?.palette.success.main ?? '#10b981', bg: theme?.palette.success.light ?? '#ecfdf5', text: theme?.palette.success.dark ?? '#065f46' };
 }
 
 function getStatusLabel(status?: string): string {
@@ -98,8 +99,8 @@ export const DeltaCheck = memo(function DeltaCheck({
   );
 
   const colors = useMemo(
-    () => getDeltaColor(deltaCheckStatus, deltaPct),
-    [deltaCheckStatus, deltaPct],
+    () => getDeltaColor(deltaCheckStatus, deltaPct, theme),
+    [deltaCheckStatus, deltaPct, theme],
   );
 
   const direction =
@@ -115,14 +116,14 @@ export const DeltaCheck = memo(function DeltaCheck({
           variant="h4"
           sx={{
             fontWeight: 700,
-            color: '#1f2937',
+            color: theme.palette.text.primary,
             lineHeight: 1.2,
           }}
         >
           {currentValue}
         </Typography>
         {unit && (
-          <Typography variant="caption" sx={{ color: '#9ca3af', fontWeight: 500 }}>
+          <Typography variant="caption" sx={{ color: theme.palette.text.secondary, fontWeight: 500 }}>
             {unit}
           </Typography>
         )}
@@ -133,7 +134,7 @@ export const DeltaCheck = memo(function DeltaCheck({
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
           <Typography
             variant="body2"
-            sx={{ color: '#9ca3af', fontWeight: 400 }}
+            sx={{ color: theme.palette.text.secondary, fontWeight: 400 }}
           >
             Anterior: {previousValue}
           </Typography>
@@ -187,7 +188,7 @@ export const DeltaCheck = memo(function DeltaCheck({
       ) : (
         <Typography
           variant="body2"
-          sx={{ color: '#d1d5db', fontStyle: 'italic' }}
+          sx={{ color: theme.palette.text.disabled, fontStyle: 'italic' }}
         >
           Sin valor previo
         </Typography>
@@ -195,14 +196,14 @@ export const DeltaCheck = memo(function DeltaCheck({
 
       {/* Reference Range */}
       {referenceRange && (
-        <Typography variant="caption" sx={{ color: '#9ca3af' }}>
+        <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
           Rango de ref: {referenceRange}
         </Typography>
       )}
 
       {/* Timestamp */}
       {timestamp && (
-        <Typography variant="caption" sx={{ color: '#d1d5db' }}>
+        <Typography variant="caption" sx={{ color: theme.palette.text.disabled }}>
           {new Date(timestamp).toLocaleString('es-CL', {
             day: '2-digit',
             month: 'short',

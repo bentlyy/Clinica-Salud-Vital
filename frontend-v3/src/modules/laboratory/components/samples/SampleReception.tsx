@@ -17,9 +17,9 @@ import {
   IconButton,
   CircularProgress,
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -66,6 +66,7 @@ export const SampleReception = memo(function SampleReception({
   onReceiveSample,
   isLoading = false,
 }: SampleReceptionProps) {
+  const theme = useTheme();
   const [expandedRow, setExpandedRow] = useState<number | null>(null);
 
   const handleToggleRow = useCallback((itemId: number) => {
@@ -87,11 +88,11 @@ export const SampleReception = memo(function SampleReception({
       sx={{
         p: 3,
         borderRadius: '14px',
-        border: '1px solid #e5e7eb',
+        border: `1px solid ${theme.palette.divider}`,
       }}
     >
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2.5 }}>
-        <Typography variant="h5" sx={{ fontWeight: 700, color: '#1f2937' }}>
+        <Typography variant="h5" sx={{ fontWeight: 700, color: theme.palette.text.primary }}>
           Recepción de Muestras
         </Typography>
         {requestId && (
@@ -99,8 +100,8 @@ export const SampleReception = memo(function SampleReception({
             label={`Solicitud #${requestId}`}
             size="small"
             sx={{
-              backgroundColor: '#f0fdfa',
-              color: '#0d9488',
+              backgroundColor: theme.palette.custom.brand.lightest,
+              color: theme.palette.primary.main,
               fontWeight: 600,
             }}
           />
@@ -108,7 +109,7 @@ export const SampleReception = memo(function SampleReception({
       </Box>
 
       {items.length === 0 ? (
-        <Typography variant="body2" sx={{ color: '#9ca3af', textAlign: 'center', py: 4 }}>
+        <Typography variant="body2" sx={{ color: theme.palette.text.secondary, textAlign: 'center', py: 4 }}>
           No hay ítems en esta solicitud
         </Typography>
       ) : (
@@ -162,6 +163,7 @@ const SampleReceptionRow = memo(function SampleReceptionRow({
   isLoading,
   alreadyReceived,
 }: SampleReceptionRowProps) {
+  const theme = useTheme();
   const {
     control,
     handleSubmit,
@@ -197,24 +199,24 @@ const SampleReceptionRow = memo(function SampleReceptionRow({
     <>
       <TableRow
         sx={{
-          backgroundColor: alreadyReceived ? '#f0fdfa' : 'transparent',
-          '&:hover': { backgroundColor: alreadyReceived ? '#ccfbf1' : '#f9fafb' },
+          backgroundColor: alreadyReceived ? theme.palette.custom.brand.lightest : 'transparent',
+          '&:hover': { backgroundColor: alreadyReceived ? theme.palette.custom.brand.lighter : theme.palette.custom.surface.muted },
         }}
       >
         <TableCell>
-          <Typography variant="body2" sx={{ fontWeight: 600, color: '#1f2937' }}>
+          <Typography variant="body2" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
             {item.test_name ?? `Test #${item.lab_test_id}`}
           </Typography>
         </TableCell>
         <TableCell>
-          <Typography variant="body2" sx={{ color: '#6b7280' }}>
+          <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
             {item.test?.sample_type
               ? SAMPLE_TYPE_OPTIONS.find((o) => o.value === item.test?.sample_type)?.label ?? item.test.sample_type
               : '—'}
           </Typography>
         </TableCell>
         <TableCell>
-          <Typography variant="body2" sx={{ color: '#6b7280' }}>
+          <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
             {item.test?.volume_ml ? `${item.test.volume_ml} ml` : '—'}
           </Typography>
         </TableCell>
@@ -223,8 +225,8 @@ const SampleReceptionRow = memo(function SampleReceptionRow({
             label={LAB_STATUS_LABELS[item.status] ?? item.status}
             size="small"
             sx={{
-              backgroundColor: `${LAB_STATUS_COLORS[item.status] ?? '#6b7280'}15`,
-              color: LAB_STATUS_COLORS[item.status] ?? '#6b7280',
+              backgroundColor: `${LAB_STATUS_COLORS[item.status] ?? theme.palette.text.secondary}15`,
+              color: LAB_STATUS_COLORS[item.status] ?? theme.palette.text.secondary,
               fontWeight: 500,
               fontSize: '0.7rem',
             }}
@@ -237,8 +239,8 @@ const SampleReceptionRow = memo(function SampleReceptionRow({
               label="Recibida"
               size="small"
               sx={{
-                backgroundColor: '#dcfce7',
-                color: '#16a34a',
+                backgroundColor: theme.palette.custom.status.success.bg,
+                color: theme.palette.success.main,
                 fontWeight: 500,
                 fontSize: '0.7rem',
               }}
@@ -248,8 +250,8 @@ const SampleReceptionRow = memo(function SampleReceptionRow({
               size="small"
               onClick={() => onToggle(item.id)}
               sx={{
-                color: '#0d9488',
-                '&:hover': { backgroundColor: '#f0fdfa' },
+                color: theme.palette.primary.main,
+                '&:hover': { backgroundColor: theme.palette.custom.brand.lightest },
               }}
             >
               {expanded ? <ExpandLessIcon /> : <AddCircleOutlineIcon />}
@@ -268,12 +270,12 @@ const SampleReceptionRow = memo(function SampleReceptionRow({
                 p: 2.5,
                 mx: 1,
                 mb: 1.5,
-                backgroundColor: '#f9fafb',
+                backgroundColor: theme.palette.custom.surface.muted,
                 borderRadius: '10px',
-                border: '1px solid #e5e7eb',
+                border: `1px solid ${theme.palette.divider}`,
               }}
             >
-              <Typography variant="body2" sx={{ fontWeight: 600, color: '#374151', mb: 2 }}>
+              <Typography variant="body2" sx={{ fontWeight: 600, color: theme.palette.text.primary, mb: 2 }}>
                 Registrar Muestra — {item.test_name ?? `Test #${item.lab_test_id}`}
               </Typography>
 
@@ -358,7 +360,7 @@ const SampleReceptionRow = memo(function SampleReceptionRow({
                   size="small"
                   onClick={handleCancel}
                   disabled={isLoading}
-                  sx={{ color: '#6b7280' }}
+                  sx={{ color: theme.palette.text.secondary }}
                 >
                   Cancelar
                 </Button>

@@ -535,9 +535,10 @@ export const LAB_PRIORITY_OPTIONS: { value: LabPriority | 'all'; label: string }
 ];
 
 export const LAB_EQUIPMENT_STATUS_CONFIG: Record<LabEquipment['status'], StatusConfig> = {
-  operational:    { label: 'Operativo',     color: '#059669', bgColor: '#ecfdf5' },
-  maintenance:    { label: 'Mantenimiento', color: '#d97706', bgColor: '#fffbeb' },
-  out_of_service: { label: 'Fuera de Servicio', color: '#ef4444', bgColor: '#fef2f2' },
+  online:       { label: 'En Linea',       color: '#059669', bgColor: '#ecfdf5' },
+  offline:      { label: 'Fuera de Linea', color: '#ef4444', bgColor: '#fef2f2' },
+  maintenance:  { label: 'Mantenimiento',  color: '#d97706', bgColor: '#fffbeb' },
+  calibration:  { label: 'Calibracion',    color: '#3b82f6', bgColor: '#eff6ff' },
 };
 
 // ── Input Types (missing) ────────────────────────────────────────────────────

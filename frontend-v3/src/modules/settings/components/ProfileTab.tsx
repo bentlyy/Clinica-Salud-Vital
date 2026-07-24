@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Box, Avatar, Typography, Divider, Tabs, Tab, TextField, Button, Alert } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import LockReset from '@mui/icons-material/LockReset';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -19,6 +20,7 @@ const passwordSchema = z.object({
 type PasswordFormData = z.infer<typeof passwordSchema>;
 
 export function ProfileTab() {
+  const theme = useTheme();
   const [tab, setTab] = useState(0);
   const { data: profile, isLoading, error, refetch } = useProfile();
   const changePassword = useChangePassword();
@@ -50,21 +52,21 @@ export function ProfileTab() {
             width: 96,
             height: 96,
             fontSize: '2rem',
-            backgroundColor: '#0d9488',
-            border: '3px solid #f0fdfa',
+            backgroundColor: theme.palette.primary.main,
+            border: `3px solid ${theme.palette.custom.brand.lightest}`,
           }}
         >
           {profile?.name?.charAt(0)?.toUpperCase()}
         </Avatar>
         <Box>
-          <Typography variant="h6" sx={{ fontWeight: 600, color: '#1f2937' }}>
+          <Typography variant="h6" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
             {profile?.name}
           </Typography>
-          <Typography variant="body2" sx={{ color: '#6b7280' }}>
+          <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
             {profile?.email}
           </Typography>
           {profile?.role && (
-            <Typography variant="caption" sx={{ color: '#9ca3af' }}>
+            <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
               Rol: {profile.role}
             </Typography>
           )}

@@ -30,11 +30,34 @@ apiClient.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+
+  const tenantId = localStorage.getItem('tenant_id');
+  if (tenantId) {
+    config.headers['X-Tenant-Id'] = tenantId;
+  }
+
+  if (config.method && !['get', 'head', 'options'].includes(config.method)) {
+    const csrfToken = localStorage.getItem('csrf_token');
+    if (csrfToken) {
+      config.headers['X-CSRF-Token'] = csrfToken;
+    }
+  }
+
   return config;
 });
 
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    const csrfHeader = response.headers['x-csrf-token'];
+    if (csrfHeader) {
+      localStorage.setItem('csrf_token', csrfHeader as string);
+    }
+    const tenantHeader = response.headers['x-tenant-id'];
+    if (tenantHeader) {
+      localStorage.setItem('tenant_id', tenantHeader as string);
+    }
+    return response;
+  },
   async (error) => {
     const originalRequest = error.config as { _retry?: boolean; headers?: Record<string, string> };
 

@@ -122,15 +122,15 @@ export const ResultEntryForm = memo(function ResultEntryForm({
           icon={<WarningAmberIcon />}
           sx={{
             borderRadius: '10px',
-            border: '1px solid #fecaca',
-            backgroundColor: '#fef2f2',
+            border: `1px solid ${theme.palette.custom.status.error.border}`,
+            backgroundColor: theme.palette.error.light,
             '& .MuiAlert-message': { width: '100%' },
           }}
         >
-          <Typography variant="body2" sx={{ fontWeight: 600, color: '#991b1b' }}>
+          <Typography variant="body2" sx={{ fontWeight: 600, color: theme.palette.error.dark }}>
             Resultado fuera de rango crítico
           </Typography>
-          <Typography variant="caption" sx={{ color: '#b91c1c' }}>
+          <Typography variant="caption" sx={{ color: theme.palette.error.dark }}>
             El valor {watchedValue} está por fuera de los límites críticos del test.
             Revise antes de guardar.
           </Typography>
@@ -142,9 +142,9 @@ export const ResultEntryForm = memo(function ResultEntryForm({
         elevation={0}
         sx={{
           p: 2.5,
-          border: '1px solid #e5e7eb',
+          border: `1px solid ${theme.palette.divider}`,
           borderRadius: '12px',
-          backgroundColor: '#f9fafb',
+          backgroundColor: theme.palette.action.hover,
         }}
       >
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
@@ -152,14 +152,14 @@ export const ResultEntryForm = memo(function ResultEntryForm({
             <Typography
               variant="caption"
               sx={{
-                color: '#6b7280',
+                color: theme.palette.text.secondary,
                 textTransform: 'uppercase',
                 letterSpacing: '0.05em',
               }}
             >
               Nombre del Test
             </Typography>
-            <Typography variant="body2" sx={{ fontWeight: 600, color: '#1f2937' }}>
+            <Typography variant="body2" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
               {displayTestName}
             </Typography>
           </Box>
@@ -168,14 +168,14 @@ export const ResultEntryForm = memo(function ResultEntryForm({
             <Typography
               variant="caption"
               sx={{
-                color: '#6b7280',
+                color: theme.palette.text.secondary,
                 textTransform: 'uppercase',
                 letterSpacing: '0.05em',
               }}
             >
               Rango de Referencia
             </Typography>
-            <Typography variant="body2" sx={{ fontWeight: 500, color: '#374151' }}>
+            <Typography variant="body2" sx={{ fontWeight: 500, color: theme.palette.text.primary }}>
               {displayRange}
             </Typography>
           </Box>
@@ -185,14 +185,14 @@ export const ResultEntryForm = memo(function ResultEntryForm({
               <Typography
                 variant="caption"
                 sx={{
-                  color: '#6b7280',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
-                }}
-              >
-                Tipo de Muestra
-              </Typography>
-              <Typography variant="body2" sx={{ fontWeight: 500, color: '#374151' }}>
+                color: theme.palette.text.secondary,
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+              }}
+            >
+              Tipo de Muestra
+            </Typography>
+            <Typography variant="body2" sx={{ fontWeight: 500, color: theme.palette.text.primary }}>
                 {item.test.sample_type}
               </Typography>
             </Box>
@@ -216,7 +216,7 @@ export const ResultEntryForm = memo(function ResultEntryForm({
             InputProps={{
               endAdornment: defaultUnit ? (
                 <InputAdornment position="end">
-                  <Typography variant="caption" sx={{ color: '#6b7280', fontWeight: 500 }}>
+                  <Typography variant="caption" sx={{ color: theme.palette.text.secondary, fontWeight: 500 }}>
                     {defaultUnit}
                   </Typography>
                 </InputAdornment>
@@ -279,9 +279,9 @@ export const ResultEntryForm = memo(function ResultEntryForm({
             onClick={onCancel}
             disabled={disabled || isSubmitting}
             sx={{
-              color: '#6b7280',
+              color: theme.palette.text.secondary,
               fontWeight: 600,
-              '&:hover': { backgroundColor: '#f3f4f6' },
+              '&:hover': { backgroundColor: theme.palette.action.hover },
             }}
           >
             Cancelar
@@ -292,11 +292,11 @@ export const ResultEntryForm = memo(function ResultEntryForm({
           variant="contained"
           disabled={disabled || isSubmitting}
           sx={{
-            background: 'linear-gradient(135deg, #0d9488 0%, #0f766e 100%)',
+            background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
             fontWeight: 600,
             px: 3,
             '&:hover': {
-              background: 'linear-gradient(135deg, #0f766e 0%, #115e59 100%)',
+              background: `linear-gradient(135deg, ${theme.palette.primary.dark} 0%, ${theme.palette.custom.brand.darker} 100%)`,
             },
           }}
         >

@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { Box, Typography, IconButton, Tooltip } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import DeleteOutline from '@mui/icons-material/DeleteOutline';
 import type { AvailabilityRule } from '../types/availability.types';
 import { DAY_NAMES, WEEK_DAYS_ORDER } from '../types/availability.types';
@@ -25,6 +26,7 @@ function timeToMinutes(time: string): number {
 const HOURS = Array.from({ length: 17 }, (_, i) => i + 6); // 06:00 to 22:00
 
 export function AvailabilityGrid({ rules, onDelete }: AvailabilityGridProps) {
+  const theme = useTheme();
   const rulesByDay = useMemo(() => {
     const grouped: Record<number, TimeBlock[]> = {};
     for (const rule of rules) {
@@ -41,10 +43,10 @@ export function AvailabilityGrid({ rules, onDelete }: AvailabilityGridProps) {
   if (rules.length === 0) {
     return (
       <Box sx={{ textAlign: 'center', py: 6 }}>
-        <Typography variant="body1" sx={{ color: '#6b7280' }}>
+        <Typography variant="body1" sx={{ color: theme.palette.text.secondary }}>
           No hay reglas de disponibilidad configuradas.
         </Typography>
-        <Typography variant="body2" sx={{ color: '#9ca3af', mt: 1 }}>
+        <Typography variant="body2" sx={{ color: theme.palette.text.secondary, mt: 1 }}>
           Agrega horarios para que los pacientes puedan agendar citas.
         </Typography>
       </Box>
@@ -63,12 +65,12 @@ export function AvailabilityGrid({ rules, onDelete }: AvailabilityGridProps) {
               textAlign: 'center',
               py: 1,
               borderRadius: '8px',
-              backgroundColor: '#f9fafb',
+              backgroundColor: theme.palette.custom.surface.muted,
             }}
           >
             <Typography
               variant="subtitle2"
-              sx={{ fontWeight: 600, color: '#374151', fontSize: '0.8125rem' }}
+              sx={{ fontWeight: 600, color: theme.palette.text.primary, fontSize: '0.8125rem' }}
             >
               {DAY_NAMES[dayIndex]}
             </Typography>
@@ -89,7 +91,7 @@ export function AvailabilityGrid({ rules, onDelete }: AvailabilityGridProps) {
                 pr: 1,
               }}
             >
-              <Typography variant="caption" sx={{ color: '#9ca3af', fontWeight: 500 }}>
+              <Typography variant="caption" sx={{ color: theme.palette.text.secondary, fontWeight: 500 }}>
                 {String(hour).padStart(2, '0')}:00
               </Typography>
             </Box>
@@ -109,15 +111,15 @@ export function AvailabilityGrid({ rules, onDelete }: AvailabilityGridProps) {
                     minHeight: 36,
                     borderRadius: '6px',
                     border: '1px solid',
-                    borderColor: activeBlock ? '#0d9488' : '#f3f4f6',
-                    backgroundColor: activeBlock ? '#f0fdfa' : '#fff',
+                    borderColor: activeBlock ? theme.palette.primary.main : theme.palette.custom.surface.sunken,
+                    backgroundColor: activeBlock ? theme.palette.custom.brand.lightest : theme.palette.background.paper,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     position: 'relative',
                     transition: 'all 0.15s',
                     '&:hover': {
-                      borderColor: activeBlock ? '#0f766e' : '#d1d5db',
+                      borderColor: activeBlock ? theme.palette.primary.dark : theme.palette.divider,
                     },
                   }}
                 >
@@ -140,7 +142,7 @@ export function AvailabilityGrid({ rules, onDelete }: AvailabilityGridProps) {
                             width: 6,
                             height: 6,
                             borderRadius: '50%',
-                            backgroundColor: '#0d9488',
+                            backgroundColor: theme.palette.primary.main,
                           }}
                         />
                         {onDelete && hour === Math.floor(activeBlock.startMinutes / 60) && (
@@ -156,8 +158,8 @@ export function AvailabilityGrid({ rules, onDelete }: AvailabilityGridProps) {
                                 top: 2,
                                 right: 2,
                                 p: 0.25,
-                                color: '#ef4444',
-                                '&:hover': { backgroundColor: '#fef2f2' },
+                                color: theme.palette.error.main,
+                                '&:hover': { backgroundColor: theme.palette.custom.status.error.bg },
                               }}
                             >
                               <DeleteOutline sx={{ fontSize: 14 }} />
@@ -177,12 +179,12 @@ export function AvailabilityGrid({ rules, onDelete }: AvailabilityGridProps) {
       {/* Legend */}
       <Box sx={{ display: 'flex', gap: 3, mt: 3, justifyContent: 'center' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Box sx={{ width: 12, height: 12, borderRadius: '3px', backgroundColor: '#f0fdfa', border: '1px solid #0d9488' }} />
-          <Typography variant="caption" sx={{ color: '#6b7280' }}>Horario disponible</Typography>
+          <Box sx={{ width: 12, height: 12, borderRadius: '3px', backgroundColor: theme.palette.custom.brand.lightest, border: `1px solid ${theme.palette.primary.main}` }} />
+          <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>Horario disponible</Typography>
         </Box>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Box sx={{ width: 12, height: 12, borderRadius: '3px', backgroundColor: '#fff', border: '1px solid #f3f4f6' }} />
-          <Typography variant="caption" sx={{ color: '#6b7280' }}>Sin disponibilidad</Typography>
+          <Box sx={{ width: 12, height: 12, borderRadius: '3px', backgroundColor: theme.palette.background.paper, border: `1px solid ${theme.palette.custom.surface.sunken}` }} />
+          <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>Sin disponibilidad</Typography>
         </Box>
       </Box>
     </Box>

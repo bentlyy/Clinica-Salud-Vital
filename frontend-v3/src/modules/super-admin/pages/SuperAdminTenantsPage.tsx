@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Box,
   Paper,
@@ -47,9 +48,10 @@ import {
 } from '../hooks/useSuperAdmin';
 import { TenantFormDialog } from '../components/TenantFormDialog';
 import { TENANT_PLAN_CONFIG } from '../types/super-admin.types';
-import type { Tenant, CreateTenantInput } from '../types/super-admin.types';
+import type { Tenant, CreateTenantInput, UpdateTenantInput } from '../types/super-admin.types';
 
 export default function SuperAdminTenantsPage() {
+  const { t } = useTranslation('super_admin_tenants');
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [search, setSearch] = useState('');
@@ -72,16 +74,16 @@ export default function SuperAdminTenantsPage() {
   const tenants = data?.data ?? [];
   const total = data?.total ?? 0;
 
-  const handleCreate = (input: CreateTenantInput) => {
-    createTenant.mutate(input, {
+  const handleCreate = (input: CreateTenantInput | UpdateTenantInput) => {
+    createTenant.mutate(input as CreateTenantInput, {
       onSuccess: () => setFormOpen(false),
     });
   };
 
-  const handleUpdate = (input: CreateTenantInput) => {
+  const handleUpdate = (input: CreateTenantInput | UpdateTenantInput) => {
     if (editingTenant) {
       updateTenant.mutate(
-        { id: editingTenant.id, input },
+        { id: editingTenant.id, input: input as UpdateTenantInput },
         { onSuccess: () => { setFormOpen(false); setEditingTenant(null); } },
       );
     }
@@ -105,17 +107,17 @@ export default function SuperAdminTenantsPage() {
     setFormOpen(true);
   };
 
-  if (isLoading) return <LoadingState message="Cargando clínicas..." />;
+  if (isLoading) return <LoadingState message={t('loading')} />;
   if (error) return <ErrorState error={error as never} onRetry={refetch} />;
 
   return (
     <MotionDiv initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
       <PageHeader
-        title="Gestión de Clínicas"
-        subtitle={`${total} clínicas registradas`}
+        title={t('title')}
+        subtitle={t('total_registered', { count: total })}
         action={
           <Button variant="contained" startIcon={<Add />} onClick={openCreateDialog}>
-            Nueva Clínica
+            {t('new_clinic')}
           </Button>
         }
       />
@@ -125,7 +127,7 @@ export default function SuperAdminTenantsPage() {
         <TextField
           fullWidth
           size="small"
-          placeholder="Buscar clínicas..."
+          placeholder={t('search_placeholder')}
           value={search}
           onChange={(e) => { setSearch(e.target.value); setPage(0); }}
           slotProps={{
@@ -142,9 +144,9 @@ export default function SuperAdminTenantsPage() {
 
       {tenants.length === 0 ? (
         <EmptyState
-          title="No se encontraron clínicas"
-          message={search ? 'Intenta con otros términos de búsqueda.' : 'Crea tu primera clínica para comenzar.'}
-          action={!search ? { label: 'Nueva Clínica', onClick: openCreateDialog } : undefined}
+          title={t('empty_title')}
+          message={search ? t('empty_search') : t('empty_create')}
+          action={!search ? { label: t('new_clinic'), onClick: openCreateDialog } : undefined}
         />
       ) : (
         <Paper sx={{ borderRadius: '14px', border: '1px solid #e5e7eb', overflow: 'hidden' }}>
@@ -152,16 +154,16 @@ export default function SuperAdminTenantsPage() {
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>Nombre</TableCell>
-                  <TableCell>Slug</TableCell>
-                  <TableCell>Plan</TableCell>
-                  <TableCell>Estado</TableCell>
-                  <TableCell align="right">Acciones</TableCell>
+                  <TableCell>{t('col_name')}</TableCell>
+                  <TableCell>{t('col_slug')}</TableCell>
+                  <TableCell>{t('col_plan')}</TableCell>
+                  <TableCell>{t('col_status')}</TableCell>
+                  <TableCell align="right">{t('col_actions')}</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {tenants.map((tenant) => {
-                  const planConfig = TENANT_PLAN_CONFIG[tenant.plan];
+                  const planConfig = TENANT_PLAN_CONFIG[tenant.plan] ?? TENANT_PLAN_CONFIG.free!;
                   return (
                     <TableRow key={tenant.id} hover>
                       <TableCell>
@@ -200,7 +202,7 @@ export default function SuperAdminTenantsPage() {
                       </TableCell>
                       <TableCell>
                         <Chip
-                          label={tenant.active ? 'Activa' : 'Inactiva'}
+                          label={tenant.active ? t('active') : t('inactive')}
                           size="small"
                           sx={{
                             backgroundColor: tenant.active ? '#ecfdf5' : '#fef2f2',
@@ -235,7 +237,7 @@ export default function SuperAdminTenantsPage() {
             rowsPerPage={rowsPerPage}
             onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value)); setPage(0); }}
             rowsPerPageOptions={[5, 10, 25]}
-            labelRowsPerPage="Filas por página"
+            labelRowsPerPage={t('rows_per_page')}
           />
         </Paper>
       )}
@@ -251,22 +253,22 @@ export default function SuperAdminTenantsPage() {
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={!!deleteDialog} onClose={() => setDeleteDialog(null)}>
-        <DialogTitle sx={{ fontWeight: 600 }}>Eliminar Clínica</DialogTitle>
+        <DialogTitle sx={{ fontWeight: 600 }}>{t('delete_title')}</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            ¿Estás seguro de que deseas eliminar <strong>{deleteDialog?.name}</strong>?
-            Esta acción no se puede deshacer.
+            {t('delete_confirm', { name: deleteDialog?.name })}<br />
+            {t('delete_warning')}
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDeleteDialog(null)}>Cancelar</Button>
+          <Button onClick={() => setDeleteDialog(null)}>{t('cancel')}</Button>
           <Button
             variant="contained"
             color="error"
             onClick={handleDelete}
             disabled={deleteTenant.isPending}
           >
-            {deleteTenant.isPending ? 'Eliminando...' : 'Eliminar'}
+            {deleteTenant.isPending ? t('deleting') : t('delete_button')}
           </Button>
         </DialogActions>
       </Dialog>
@@ -300,32 +302,32 @@ export default function SuperAdminTenantsPage() {
             <Divider sx={{ mb: 3 }} />
 
             <Typography variant="subtitle2" sx={{ fontWeight: 600, color: '#6b7280', mb: 2 }}>
-              DETALLES
+              {t('details_section')}
             </Typography>
 
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mb: 3 }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                <Typography variant="body2" sx={{ color: '#6b7280' }}>Dominio</Typography>
+                <Typography variant="body2" sx={{ color: '#6b7280' }}>{t('domain')}</Typography>
                 <Typography variant="body2" sx={{ fontWeight: 600, color: '#1f2937' }}>
                   {tenantDetail.domain || '—'}
                 </Typography>
               </Box>
               <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                <Typography variant="body2" sx={{ color: '#6b7280' }}>Plan</Typography>
+                <Typography variant="body2" sx={{ color: '#6b7280' }}>{t('plan')}</Typography>
                 <Chip
-                  label={TENANT_PLAN_CONFIG[tenantDetail.plan].label}
+                  label={(TENANT_PLAN_CONFIG[tenantDetail.plan] ?? TENANT_PLAN_CONFIG.free!).label}
                   size="small"
                   sx={{
-                    backgroundColor: TENANT_PLAN_CONFIG[tenantDetail.plan].bgColor,
-                    color: TENANT_PLAN_CONFIG[tenantDetail.plan].color,
+                    backgroundColor: (TENANT_PLAN_CONFIG[tenantDetail.plan] ?? TENANT_PLAN_CONFIG.free!).bgColor,
+                    color: (TENANT_PLAN_CONFIG[tenantDetail.plan] ?? TENANT_PLAN_CONFIG.free!).color,
                     fontWeight: 600,
                   }}
                 />
               </Box>
               <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                <Typography variant="body2" sx={{ color: '#6b7280' }}>Estado</Typography>
+                <Typography variant="body2" sx={{ color: '#6b7280' }}>{t('status')}</Typography>
                 <Chip
-                  label={tenantDetail.active ? 'Activa' : 'Inactiva'}
+                  label={tenantDetail.active ? t('active') : t('inactive')}
                   size="small"
                   sx={{
                     backgroundColor: tenantDetail.active ? '#ecfdf5' : '#fef2f2',
@@ -335,7 +337,7 @@ export default function SuperAdminTenantsPage() {
                 />
               </Box>
               <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                <Typography variant="body2" sx={{ color: '#6b7280' }}>Creada</Typography>
+                <Typography variant="body2" sx={{ color: '#6b7280' }}>{t('created')}</Typography>
                 <Typography variant="body2" sx={{ fontWeight: 600, color: '#1f2937' }}>
                   {new Date(tenantDetail.created_at).toLocaleDateString('es-CL')}
                 </Typography>
@@ -345,16 +347,16 @@ export default function SuperAdminTenantsPage() {
             {tenantDetail && (
               <>
                 <Typography variant="subtitle2" sx={{ fontWeight: 600, color: '#6b7280', mb: 2 }}>
-                  ESTADÍSTICAS
+                  {t('stats_section')}
                 </Typography>
                 <Grid container spacing={2}>
                   {[
-                    { label: 'Usuarios', value: tenantDetail.total_users || 0, icon: <People sx={{ fontSize: 18 }} />, color: '#2563eb' },
-                    { label: 'Pacientes', value: tenantDetail.total_patients || 0, icon: <CalendarMonth sx={{ fontSize: 18 }} />, color: '#0d9488' },
-                    { label: 'Doctores', value: tenantDetail.total_doctors || 0, icon: <LocalHospital sx={{ fontSize: 18 }} />, color: '#7c3aed' },
-                    { label: 'Citas', value: tenantDetail.total_bookings || 0, icon: <CalendarMonth sx={{ fontSize: 18 }} />, color: '#d97706' },
+                    { label: t('users'), value: tenantDetail.total_users || 0, icon: <People sx={{ fontSize: 18 }} />, color: '#2563eb' },
+                    { label: t('patients'), value: tenantDetail.total_patients || 0, icon: <CalendarMonth sx={{ fontSize: 18 }} />, color: '#0d9488' },
+                    { label: t('doctors'), value: tenantDetail.total_doctors || 0, icon: <LocalHospital sx={{ fontSize: 18 }} />, color: '#7c3aed' },
+                    { label: t('bookings'), value: tenantDetail.total_bookings || 0, icon: <CalendarMonth sx={{ fontSize: 18 }} />, color: '#d97706' },
                   ].map((item) => (
-                    <Grid size={{ xs: 6 }} key={item.label}>
+                    <Grid xs={6} key={item.label}>
                       <Paper
                         sx={{
                           p: 2,

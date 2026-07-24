@@ -1,4 +1,5 @@
-import { ListItemButton, ListItemIcon, ListItemText, Tooltip, Collapse, Box, Badge } from '@mui/material';
+import { ListItemButton, ListItemIcon, ListItemText, Tooltip, Collapse, Box } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import LockIcon from '@mui/icons-material/Lock';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import ChevronRight from '@mui/icons-material/ChevronRight';
@@ -22,6 +23,7 @@ interface SidebarItemProps {
 }
 
 export function SidebarItem({ icon, label, path, active, collapsed, onClick, subItems, locked }: SidebarItemProps) {
+  const theme = useTheme();
   const hasChildren = Boolean(subItems && subItems.length > 0);
   const [expanded, setExpanded] = useState(false);
 
@@ -48,13 +50,13 @@ export function SidebarItem({ icon, label, path, active, collapsed, onClick, sub
         px: collapsed ? 0 : 1.5,
         justifyContent: collapsed ? 'center' : 'initial',
         '&.Mui-selected': {
-          backgroundColor: '#f0fdfa',
-          color: '#0d9488',
-          '& .MuiListItemIcon-root': { color: '#0d9488' },
-          '&:hover': { backgroundColor: '#ccfbf1' },
+          backgroundColor: theme.palette.custom?.brand?.lightest || theme.palette.action.selected,
+          color: theme.palette.primary.main,
+          '& .MuiListItemIcon-root': { color: theme.palette.primary.main },
+          '&:hover': { backgroundColor: theme.palette.custom?.brand?.lighter || theme.palette.action.selected },
         },
         '&:hover': {
-          backgroundColor: '#f9fafb',
+          backgroundColor: theme.palette.custom?.surface?.muted || theme.palette.action.hover,
         },
       }}
     >
@@ -63,7 +65,7 @@ export function SidebarItem({ icon, label, path, active, collapsed, onClick, sub
           minWidth: 0,
           mr: collapsed ? 0 : 1.5,
           justifyContent: 'center',
-          color: parentActive ? '#0d9488' : '#6b7280',
+          color: parentActive ? theme.palette.primary.main : theme.palette.text.secondary,
         }}
       >
         {icon}
@@ -75,12 +77,12 @@ export function SidebarItem({ icon, label, path, active, collapsed, onClick, sub
             primaryTypographyProps={{
               fontSize: '0.8125rem',
               fontWeight: parentActive ? 600 : 500,
-              color: locked ? '#9ca3af' : parentActive ? '#0d9488' : '#374151',
+              color: locked ? theme.palette.text.secondary : parentActive ? theme.palette.primary.main : theme.palette.text.primary,
             }}
           />
-          {locked && <LockIcon sx={{ fontSize: 14, color: '#d97706', ml: 0.5 }} />}
+          {locked && <LockIcon sx={{ fontSize: 14, color: theme.palette.warning.dark, ml: 0.5 }} />}
           {hasChildren && (
-            <Box component="span" sx={{ ml: 'auto', display: 'flex', alignItems: 'center', color: '#9ca3af' }}>
+            <Box component="span" sx={{ ml: 'auto', display: 'flex', alignItems: 'center', color: theme.palette.text.secondary }}>
               {showExpanded ? <ExpandMore sx={{ fontSize: '1.1rem' }} /> : <ChevronRight sx={{ fontSize: '1.1rem' }} />}
             </Box>
           )}
@@ -110,15 +112,15 @@ export function SidebarItem({ icon, label, path, active, collapsed, onClick, sub
                     justifyContent: 'center',
                     pl: 2.5,
                     '&.Mui-selected': {
-                      backgroundColor: '#f0fdfa',
-                      color: '#0d9488',
-                      '& .MuiListItemIcon-root': { color: '#0d9488' },
-                      '&:hover': { backgroundColor: '#ccfbf1' },
+                      backgroundColor: theme.palette.custom?.brand?.lightest || theme.palette.action.selected,
+                      color: theme.palette.primary.main,
+                      '& .MuiListItemIcon-root': { color: theme.palette.primary.main },
+                      '&:hover': { backgroundColor: theme.palette.custom?.brand?.lighter || theme.palette.action.selected },
                     },
-                    '&:hover': { backgroundColor: '#f9fafb' },
+                    '&:hover': { backgroundColor: theme.palette.custom?.surface?.muted || theme.palette.action.hover },
                   }}
                 >
-                  <ListItemIcon sx={{ minWidth: 0, mr: 0, justifyContent: 'center', color: childIsActive ? '#0d9488' : '#6b7280' }}>
+                  <ListItemIcon sx={{ minWidth: 0, mr: 0, justifyContent: 'center', color: childIsActive ? theme.palette.primary.main : theme.palette.text.secondary }}>
                     {child.icon}
                   </ListItemIcon>
                 </ListItemButton>
@@ -137,12 +139,12 @@ export function SidebarItem({ icon, label, path, active, collapsed, onClick, sub
                 my: 0.15,
                 pl: 5,
                 '&.Mui-selected': {
-                  backgroundColor: '#f0fdfa',
-                  color: '#0d9488',
-                  '& .MuiListItemIcon-root': { color: '#0d9488' },
-                  '&:hover': { backgroundColor: '#ccfbf1' },
+                  backgroundColor: theme.palette.custom?.brand?.lightest || theme.palette.action.selected,
+                  color: theme.palette.primary.main,
+                  '& .MuiListItemIcon-root': { color: theme.palette.primary.main },
+                  '&:hover': { backgroundColor: theme.palette.custom?.brand?.lighter || theme.palette.action.selected },
                 },
-                '&:hover': { backgroundColor: '#f9fafb' },
+                '&:hover': { backgroundColor: theme.palette.custom?.surface?.muted || theme.palette.action.hover },
               }}
             >
               <ListItemIcon
@@ -150,7 +152,7 @@ export function SidebarItem({ icon, label, path, active, collapsed, onClick, sub
                   minWidth: 0,
                   mr: 1.5,
                   justifyContent: 'center',
-                  color: childIsActive ? '#0d9488' : '#6b7280',
+                  color: childIsActive ? theme.palette.primary.main : theme.palette.text.secondary,
                 }}
               >
                 {child.icon}
@@ -160,7 +162,7 @@ export function SidebarItem({ icon, label, path, active, collapsed, onClick, sub
                 primaryTypographyProps={{
                   fontSize: '0.78rem',
                   fontWeight: childIsActive ? 600 : 400,
-                  color: childIsActive ? '#0d9488' : '#6b7280',
+                  color: childIsActive ? theme.palette.primary.main : theme.palette.text.secondary,
                 }}
               />
             </ListItemButton>

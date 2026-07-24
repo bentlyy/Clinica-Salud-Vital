@@ -6,44 +6,51 @@ import Science from '@mui/icons-material/Science';
 import TrendingUp from '@mui/icons-material/TrendingUp';
 import EventBusy from '@mui/icons-material/EventBusy';
 import Assignment from '@mui/icons-material/Assignment';
-import LocalHospital from '@mui/icons-material/LocalHospital';
+import { useTranslation } from 'react-i18next';
+import { useTheme } from '@mui/material/styles';
 import { useAuth } from '@/shared/providers/AuthProvider';
 import { getRoleLabel } from '@/shared/utils/role.utils';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { LoadingState } from '@/shared/components/ui/LoadingState';
 import { useDashboardStats, useUpcomingBookings, useMyDoctorStats, useDoctorUpcomingBookings } from '../hooks/useAnalytics';
 
-const STATUS_MAP: Record<string, { label: string; color: string; bg: string }> = {
-  pending: { label: 'Pendiente', color: '#d97706', bg: '#fffbeb' },
-  confirmed: { label: 'Confirmada', color: '#0d9488', bg: '#f0fdfa' },
-  cancelled: { label: 'Cancelada', color: '#ef4444', bg: '#fef2f2' },
-  completed: { label: 'Completada', color: '#2563eb', bg: '#eff6ff' },
-};
+function getStatusMap(isDark: boolean) {
+  return {
+    pending: { key: 'pending', color: isDark ? '#fbbf24' : '#d97706', bg: isDark ? '#422006' : '#fffbeb' },
+    confirmed: { key: 'confirmed', color: isDark ? '#2dd4bf' : '#0d9488', bg: isDark ? '#042f2e' : '#f0fdfa' },
+    cancelled: { key: 'cancelled', color: isDark ? '#f87171' : '#ef4444', bg: isDark ? '#450a0a' : '#fef2f2' },
+    completed: { key: 'completed', color: isDark ? '#60a5fa' : '#2563eb', bg: isDark ? '#1e3a5f' : '#eff6ff' },
+  };
+}
 
 function DoctorDashboard() {
+  const { t } = useTranslation('dashboard');
   const { user } = useAuth();
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
+  const statusMap = getStatusMap(isDark);
   const { data: stats, isLoading: statsLoading } = useMyDoctorStats();
   const { data: upcoming, isLoading: bookingsLoading } = useDoctorUpcomingBookings();
 
-  if (statsLoading || bookingsLoading) return <LoadingState message="Cargando dashboard..." />;
+  if (statsLoading || bookingsLoading) return <LoadingState message={t('loading')} />;
 
   const statCards = [
-    { label: 'Citas Proximas', value: stats?.upcoming_bookings ?? 0, icon: <CalendarMonth />, color: '#0d9488', bgColor: '#f0fdfa' },
-    { label: 'Pacientes Atendidos', value: stats?.patients_served ?? 0, icon: <People />, color: '#2563eb', bgColor: '#eff6ff' },
-    { label: 'Total Citas', value: stats?.total_bookings ?? 0, icon: <Science />, color: '#d97706', bg: '#fffbeb', bgColor: '#fffbeb' },
-    { label: 'Expedientes', value: stats?.clinical_records ?? 0, icon: <Assignment />, color: '#7c3aed', bgColor: '#f5f3ff' },
+    { label: t('upcomingAppointments'), value: stats?.upcoming_bookings ?? 0, icon: <CalendarMonth />, color: isDark ? '#2dd4bf' : '#0d9488', bgColor: isDark ? '#042f2e' : '#f0fdfa' },
+    { label: t('patientsAttended'), value: stats?.patients_served ?? 0, icon: <People />, color: isDark ? '#60a5fa' : '#2563eb', bgColor: isDark ? '#1e3a5f' : '#eff6ff' },
+    { label: t('totalAppointments'), value: stats?.total_bookings ?? 0, icon: <Science />, color: isDark ? '#fbbf24' : '#d97706', bgColor: isDark ? '#422006' : '#fffbeb' },
+    { label: t('clinicalRecords'), value: stats?.clinical_records ?? 0, icon: <Assignment />, color: isDark ? '#a78bfa' : '#7c3aed', bgColor: isDark ? '#2e1065' : '#f5f3ff' },
   ];
 
   return (
     <Box>
       <PageHeader
-        title={`Bienvenido, Dr. ${user?.name || ''}`}
-        subtitle={`Rol: ${user ? getRoleLabel(user.role) : ''} | ${user?.tenant_name || ''}`}
+        title={t('welcome_doctor', { name: user?.name || '' })}
+        subtitle={t('role_subtitle', { role: user ? getRoleLabel(user.role) : '', tenant: user?.tenant_name || '' })}
       />
 
       <Grid container spacing={3}>
         {statCards.map((stat) => (
-          <Grid size={{ xs: 12, sm: 6, md: 3 }} key={stat.label}>
+          <Grid xs={12} sm={6} md={3} key={stat.label}>
             <Paper
               sx={{
                 p: 3,
@@ -58,10 +65,10 @@ function DoctorDashboard() {
                 {stat.icon}
               </Avatar>
               <Box>
-                <Typography variant="h4" sx={{ fontWeight: 700, color: '#1f2937' }}>
+                <Typography variant="h4" sx={{ fontWeight: 700, color: 'text.primary' }}>
                   {stat.value}
                 </Typography>
-                <Typography variant="body2" sx={{ color: '#6b7280' }}>
+                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                   {stat.label}
                 </Typography>
               </Box>
@@ -70,15 +77,15 @@ function DoctorDashboard() {
         ))}
       </Grid>
 
-      <Paper sx={{ mt: 3, p: 4, border: '1px solid #e5e7eb' }}>
-        <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, color: '#1f2937' }}>
-          Proximas Citas
+      <Paper sx={{ mt: 3, p: 4, border: `1px solid ${theme.palette.divider}` }}>
+        <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, color: 'text.primary' }}>
+          {t('upcoming_appointments_section')}
         </Typography>
         {upcoming && upcoming.length > 0 ? (
           <List disablePadding>
             {upcoming.map((b, i) => {
-              const st = STATUS_MAP[b.status] ?? STATUS_MAP.pending;
-              const label = b.patient_name || b.guest_name || 'Sin nombre';
+              const st = statusMap[b.status as keyof typeof statusMap] ?? statusMap.pending;
+              const label = b.patient_name || b.guest_name || t('no_name');
               const d = new Date(`${b.date}T00:00:00`);
               return (
                 <Box key={b.id}>
@@ -92,14 +99,14 @@ function DoctorDashboard() {
                     <ListItemText
                       primary={
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <Typography variant="body2" sx={{ fontWeight: 600, color: '#1f2937' }}>
+                          <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary' }}>
                             {label}
                           </Typography>
-                          <Chip label={st.label} size="small" sx={{ height: 20, fontSize: '0.7rem', fontWeight: 600, backgroundColor: st.bg, color: st.color }} />
+                          <Chip label={t(`status.${st.key}`)} size="small" sx={{ height: 20, fontSize: '0.7rem', fontWeight: 600, backgroundColor: st.bg, color: st.color }} />
                         </Box>
                       }
                       secondary={
-                        <Typography variant="caption" sx={{ color: '#6b7280' }}>
+                        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
                           {d.toLocaleDateString('es-CL', { weekday: 'short', day: 'numeric', month: 'short' })} &middot; {b.time}
                         </Typography>
                       }
@@ -111,9 +118,9 @@ function DoctorDashboard() {
           </List>
         ) : (
           <Box sx={{ textAlign: 'center', py: 4 }}>
-            <EventBusy sx={{ fontSize: 40, color: '#d1d5db', mb: 1 }} />
-            <Typography variant="body2" sx={{ color: '#6b7280' }}>
-              No hay proximas citas programadas.
+            <EventBusy sx={{ fontSize: 40, color: 'text.secondary', mb: 1, opacity: 0.4 }} />
+            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+              {t('no_upcoming_appointments')}
             </Typography>
           </Box>
         )}
@@ -123,27 +130,31 @@ function DoctorDashboard() {
 }
 
 function AdminDashboard() {
+  const { t } = useTranslation('dashboard');
   const { user } = useAuth();
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
+  const statusMap = getStatusMap(isDark);
   const { data: stats } = useDashboardStats();
   const { data: upcoming } = useUpcomingBookings();
 
   const statCards = [
-    { label: 'Citas Hoy', value: stats?.today_bookings ?? 0, icon: <CalendarMonth />, color: '#0d9488', bgColor: '#f0fdfa' },
-    { label: 'Pacientes', value: stats?.total_patients ?? 0, icon: <People />, color: '#2563eb', bgColor: '#eff6ff' },
-    { label: 'Total Citas', value: stats?.total_bookings ?? 0, icon: <Science />, color: '#d97706', bgColor: '#fffbeb' },
-    { label: 'Confirmadas', value: stats?.confirmed_bookings ?? 0, icon: <TrendingUp />, color: '#059669', bgColor: '#ecfdf5' },
+    { label: t('todaysAppointments'), value: stats?.today_bookings ?? 0, icon: <CalendarMonth />, color: isDark ? '#2dd4bf' : '#0d9488', bgColor: isDark ? '#042f2e' : '#f0fdfa' },
+    { label: t('totalPatients'), value: stats?.total_patients ?? 0, icon: <People />, color: isDark ? '#60a5fa' : '#2563eb', bgColor: isDark ? '#1e3a5f' : '#eff6ff' },
+    { label: t('totalAppointments'), value: stats?.total_bookings ?? 0, icon: <Science />, color: isDark ? '#fbbf24' : '#d97706', bgColor: isDark ? '#422006' : '#fffbeb' },
+    { label: t('confirmed'), value: stats?.confirmed_bookings ?? 0, icon: <TrendingUp />, color: isDark ? '#34d399' : '#059669', bgColor: isDark ? '#022c22' : '#ecfdf5' },
   ];
 
   return (
     <Box>
       <PageHeader
-        title={`Bienvenido, ${user?.name || 'Usuario'}`}
-        subtitle={`Rol: ${user ? getRoleLabel(user.role) : ''} | ${user?.tenant_name || ''}`}
+        title={t('welcome_user', { name: user?.name || t('default_user') })}
+        subtitle={t('role_subtitle', { role: user ? getRoleLabel(user.role) : '', tenant: user?.tenant_name || '' })}
       />
 
       <Grid container spacing={3}>
         {statCards.map((stat) => (
-          <Grid size={{ xs: 12, sm: 6, md: 3 }} key={stat.label}>
+          <Grid xs={12} sm={6} md={3} key={stat.label}>
             <Paper
               sx={{
                 p: 3,
@@ -158,10 +169,10 @@ function AdminDashboard() {
                 {stat.icon}
               </Avatar>
               <Box>
-                <Typography variant="h4" sx={{ fontWeight: 700, color: '#1f2937' }}>
+                <Typography variant="h4" sx={{ fontWeight: 700, color: 'text.primary' }}>
                   {stat.value}
                 </Typography>
-                <Typography variant="body2" sx={{ color: '#6b7280' }}>
+                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                   {stat.label}
                 </Typography>
               </Box>
@@ -170,15 +181,15 @@ function AdminDashboard() {
         ))}
       </Grid>
 
-      <Paper sx={{ mt: 3, p: 4, border: '1px solid #e5e7eb' }}>
-        <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, color: '#1f2937' }}>
-          Proximas Citas
+      <Paper sx={{ mt: 3, p: 4, border: `1px solid ${theme.palette.divider}` }}>
+        <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, color: 'text.primary' }}>
+          {t('upcoming_appointments_section')}
         </Typography>
         {upcoming && upcoming.length > 0 ? (
           <List disablePadding>
             {upcoming.map((b, i) => {
-              const st = STATUS_MAP[b.status] ?? STATUS_MAP.pending;
-              const label = b.patient_name || b.guest_name || 'Sin nombre';
+              const st = statusMap[b.status as keyof typeof statusMap] ?? statusMap.pending;
+              const label = b.patient_name || b.guest_name || t('no_name');
               const d = new Date(`${b.date}T00:00:00`);
               return (
                 <Box key={b.id}>
@@ -192,15 +203,15 @@ function AdminDashboard() {
                     <ListItemText
                       primary={
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <Typography variant="body2" sx={{ fontWeight: 600, color: '#1f2937' }}>
+                          <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary' }}>
                             {label}
                           </Typography>
-                          <Chip label={st.label} size="small" sx={{ height: 20, fontSize: '0.7rem', fontWeight: 600, backgroundColor: st.bg, color: st.color }} />
+                          <Chip label={t(`status.${st.key}`)} size="small" sx={{ height: 20, fontSize: '0.7rem', fontWeight: 600, backgroundColor: st.bg, color: st.color }} />
                         </Box>
                       }
                       secondary={
-                        <Typography variant="caption" sx={{ color: '#6b7280' }}>
-                          {d.toLocaleDateString('es-CL', { weekday: 'short', day: 'numeric', month: 'short' })} &middot; {b.time} &middot; {b.doctor_name || 'Doctor'}
+                        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                          {d.toLocaleDateString('es-CL', { weekday: 'short', day: 'numeric', month: 'short' })} &middot; {b.time} &middot; {b.doctor_name || t('doctor')}
                         </Typography>
                       }
                     />
@@ -211,9 +222,9 @@ function AdminDashboard() {
           </List>
         ) : (
           <Box sx={{ textAlign: 'center', py: 4 }}>
-            <EventBusy sx={{ fontSize: 40, color: '#d1d5db', mb: 1 }} />
-            <Typography variant="body2" sx={{ color: '#6b7280' }}>
-              No hay proximas citas programadas.
+            <EventBusy sx={{ fontSize: 40, color: 'text.secondary', mb: 1, opacity: 0.4 }} />
+            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+              {t('no_upcoming_appointments')}
             </Typography>
           </Box>
         )}

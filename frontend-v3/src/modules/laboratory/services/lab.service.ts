@@ -15,7 +15,6 @@ import type {
   LabAnalyticsData,
   LabNotification,
   CreateLabRequestInput,
-  LabFilterState,
   PaginatedResponse,
 } from '../types/lab.types';
 
@@ -371,7 +370,7 @@ export async function acknowledgeAllNotifications(): Promise<void> {
 
 export function subscribeToLabSSE(onMessage: (event: MessageEvent) => void): EventSource {
   const token = localStorage.getItem('access_token');
-  const url = `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}${BASE}/notifications/stream${token ? `?token=${token}` : ''}`;
+  const url = `${import.meta.env.VITE_API_URL || '/api'}${BASE}/notifications/stream${token ? `?token=${token}` : ''}`;
   const eventSource = new EventSource(url);
   eventSource.onmessage = onMessage;
   return eventSource;

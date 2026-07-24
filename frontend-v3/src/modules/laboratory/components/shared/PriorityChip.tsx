@@ -27,8 +27,7 @@ export const PriorityChip = memo(function PriorityChip({
   showIcon = false,
 }: PriorityChipProps) {
   const theme = useTheme();
-
-  const chipColor = LAB_PRIORITY_COLORS[priority as LabPriority] ?? '#6b7280';
+  const chipColor = LAB_PRIORITY_COLORS[priority as LabPriority] ?? theme.palette.text.secondary;
   const displayLabel = LAB_PRIORITY_LABELS[priority as LabPriority] ?? priority;
   const muiColor = PRIORITY_MUI_COLOR_MAP[priority] ?? 'default';
   const isEmergency = priority === 'emergency';

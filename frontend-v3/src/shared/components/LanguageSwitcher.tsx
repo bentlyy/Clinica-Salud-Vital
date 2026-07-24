@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { IconButton, Menu, MenuItem, Tooltip, Box, Typography } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import LanguageIcon from '@mui/icons-material/Language';
 
 const LANGUAGES = [
@@ -11,6 +12,7 @@ const LANGUAGES = [
 ] as const;
 
 export function LanguageSwitcher() {
+  const theme = useTheme();
   const { i18n } = useTranslation();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
@@ -27,7 +29,7 @@ export function LanguageSwitcher() {
       <Tooltip title="Idioma">
         <IconButton
           size="small"
-          sx={{ color: '#6b7280', gap: 0.5 }}
+          sx={{ color: theme.palette.text.secondary, gap: 0.5 }}
           onClick={(e) => setAnchorEl(e.currentTarget)}
         >
           <Typography component="span" sx={{ fontSize: '1rem', lineHeight: 1 }}>
@@ -42,7 +44,7 @@ export function LanguageSwitcher() {
         onClose={() => setAnchorEl(null)}
         transformOrigin={{ horizontal: 'right', vertical: 'top' }}
         anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
-        slotProps={{ paper: { sx: { mt: 1, minWidth: 160, borderRadius: 2, border: '1px solid #e5e7eb' } } }}
+        slotProps={{ paper: { sx: { mt: 1, minWidth: 160, borderRadius: 2, border: `1px solid ${theme.palette.divider}` } } }}
       >
         {LANGUAGES.map((lang) => (
           <MenuItem

@@ -9,6 +9,7 @@ import {
   Paper,
   Divider,
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import Add from '@mui/icons-material/Add';
 import Delete from '@mui/icons-material/Delete';
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
@@ -46,6 +47,7 @@ const defaultRow = {
 };
 
 export function LabResultsForm({ onSubmit, isLoading }: LabResultsFormProps) {
+  const theme = useTheme();
   const {
     control,
     handleSubmit,
@@ -69,7 +71,7 @@ export function LabResultsForm({ onSubmit, isLoading }: LabResultsFormProps) {
   return (
     <Box component="form" onSubmit={handleSubmit(onFormSubmit)}>
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-        <Typography variant="h6" sx={{ fontWeight: 600, color: '#1f2937' }}>
+        <Typography variant="h6" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
           Resultados de Laboratorio
         </Typography>
         <Button
@@ -77,14 +79,14 @@ export function LabResultsForm({ onSubmit, isLoading }: LabResultsFormProps) {
           size="small"
           startIcon={<Add />}
           onClick={() => append({ ...defaultRow })}
-          sx={{ borderColor: '#e5e7eb', color: '#374151' }}
+          sx={{ borderColor: theme.palette.divider, color: theme.palette.text.primary }}
         >
           Agregar Resultado
         </Button>
       </Box>
 
       {errors.results && (
-        <Typography variant="body2" sx={{ color: '#ef4444', mb: 1 }}>
+        <Typography variant="body2" sx={{ color: theme.palette.error.main, mb: 1 }}>
           {errors.results.message}
         </Typography>
       )}
@@ -96,20 +98,20 @@ export function LabResultsForm({ onSubmit, isLoading }: LabResultsFormProps) {
             elevation={0}
             sx={{
               p: 2,
-              border: '1px solid #e5e7eb',
+              border: `1px solid ${theme.palette.divider}`,
               borderRadius: '10px',
-              backgroundColor: '#fafafa',
+              backgroundColor: theme.palette.custom.surface.muted,
             }}
           >
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}>
-              <Typography variant="body2" sx={{ fontWeight: 600, color: '#374151' }}>
+              <Typography variant="body2" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
                 Test #{index + 1}
               </Typography>
               {fields.length > 1 && (
                 <IconButton
                   size="small"
                   onClick={() => remove(index)}
-                  sx={{ color: '#ef4444' }}
+                  sx={{ color: theme.palette.error.main }}
                 >
                   <Delete fontSize="small" />
                 </IconButton>
@@ -174,7 +176,7 @@ export function LabResultsForm({ onSubmit, isLoading }: LabResultsFormProps) {
                       />
                     }
                     label={
-                      <Typography variant="caption" sx={{ color: f.value ? '#059669' : '#ef4444', fontWeight: 500 }}>
+                      <Typography variant="caption" sx={{ color: f.value ? theme.palette.success.dark : theme.palette.error.main, fontWeight: 500 }}>
                         {f.value ? 'Normal' : 'Anormal'}
                       </Typography>
                     }

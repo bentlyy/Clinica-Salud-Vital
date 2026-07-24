@@ -16,6 +16,7 @@ import {
   Divider,
   Autocomplete,
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import Search from '@mui/icons-material/Search';
 import Add from '@mui/icons-material/Add';
 import Close from '@mui/icons-material/Close';
@@ -30,6 +31,7 @@ import { es } from 'date-fns/locale';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { useTranslation } from 'react-i18next';
 import { MotionDiv } from '@/shared/utils/animations';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { LoadingState } from '@/shared/components/ui/LoadingState';
@@ -48,42 +50,48 @@ import type {
   CreateMedicalHistoryInput,
 } from '../types/medical-history.types';
 
-const STATUS_CONFIG: Record<MedicalHistoryStatus, { label: string; color: string; bgColor: string; icon: React.ReactNode }> = {
-  active: {
-    label: 'Activa',
-    color: '#ef4444',
-    bgColor: '#fef2f2',
-    icon: <LocalHospital sx={{ fontSize: 16 }} />,
-  },
-  resolved: {
-    label: 'Resuelta',
-    color: '#059669',
-    bgColor: '#ecfdf5',
-    icon: <CheckCircle sx={{ fontSize: 16 }} />,
-  },
-  chronic: {
-    label: 'Crónica',
-    color: '#d97706',
-    bgColor: '#fffbeb',
-    icon: <Chronic sx={{ fontSize: 16 }} />,
-  },
-  family: {
-    label: 'Familiar',
-    color: '#6366f1',
-    bgColor: '#f5f3ff',
-    icon: <FamilyRestroom sx={{ fontSize: 16 }} />,
-  },
-};
+import type { Theme } from '@mui/material/styles';
 
-const entrySchema = z.object({
-  condition: z.string().min(1, 'La condición es requerida'),
-  onset_date: z.string().optional(),
-  status: z.enum(['active', 'resolved', 'chronic', 'family']),
-  notes: z.string().optional(),
-  patient_id: z.number().min(1, 'Selecciona un paciente'),
-});
+function createStatusConfig(t: (key: string) => string, theme: Theme): Record<MedicalHistoryStatus, { label: string; color: string; bgColor: string; icon: React.ReactNode }> {
+  return {
+    active: {
+      label: t('medical_history.status_active'),
+      color: theme.palette.error.dark,
+      bgColor: theme.palette.custom.status.error.bg,
+      icon: <LocalHospital sx={{ fontSize: 16 }} />,
+    },
+    resolved: {
+      label: t('medical_history.status_resolved'),
+      color: theme.palette.success.dark,
+      bgColor: theme.palette.custom.status.success.bg,
+      icon: <CheckCircle sx={{ fontSize: 16 }} />,
+    },
+    chronic: {
+      label: t('medical_history.status_chronic'),
+      color: theme.palette.warning.dark,
+      bgColor: theme.palette.custom.status.warning.bg,
+      icon: <Chronic sx={{ fontSize: 16 }} />,
+    },
+    family: {
+      label: t('medical_history.status_family'),
+      color: theme.palette.secondary.main,
+      bgColor: theme.palette.custom.status.info.bg,
+      icon: <FamilyRestroom sx={{ fontSize: 16 }} />,
+    },
+  };
+}
 
-type EntryFormData = z.infer<typeof entrySchema>;
+function createEntrySchema(t: (key: string) => string) {
+  return z.object({
+    condition: z.string().min(1, t('medical_history.condition_required')),
+    onset_date: z.string().optional(),
+    status: z.enum(['active', 'resolved', 'chronic', 'family']),
+    notes: z.string().optional(),
+    patient_id: z.number().min(1, t('medical_history.select_patient')),
+  });
+}
+
+type EntryFormData = z.infer<ReturnType<typeof createEntrySchema>>;
 
 interface PatientOption {
   id: number;
@@ -92,10 +100,15 @@ interface PatientOption {
 }
 
 export default function MedicalHistoryPage() {
+  const { t } = useTranslation('medical_history');
+  const theme = useTheme();
   const { user, hasPermission } = useAuth();
   const canCreate = hasPermission('medicalHistory', 'create');
   const canEdit = hasPermission('medicalHistory', 'edit');
   const isPatient = user?.role === 'patient';
+
+  const STATUS_CONFIG = useMemo(() => createStatusConfig(t, theme), [t, theme]);
+  const entrySchema = useMemo(() => createEntrySchema(t), [t]);
 
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<MedicalHistoryStatus | ''>('');
@@ -123,8 +136,6 @@ export default function MedicalHistoryPage() {
     control,
     handleSubmit,
     reset,
-    watch,
-    setValue,
     formState: { errors },
   } = useForm<EntryFormData>({
     resolver: zodResolver(entrySchema),
@@ -136,8 +147,6 @@ export default function MedicalHistoryPage() {
       patient_id: 0,
     },
   });
-
-  const selectedPatientId = watch('patient_id');
 
   useEffect(() => {
     if (formOpen && !isPatient && canCreate) {
@@ -204,14 +213,14 @@ export default function MedicalHistoryPage() {
 
   const isSaving = createMutation.isPending || updateMutation.isPending;
 
-  if (isLoading) return <LoadingState message="Cargando historial médico..." />;
+  if (isLoading) return <LoadingState message={t('medical_history.loading')} />;
   if (error) return <ErrorState error={error as never} onRetry={refetch} />;
 
   return (
     <Box>
       <PageHeader
-        title="Historial Médico"
-        subtitle={isPatient ? `Tu historial: ${entries.length} entradas` : `Total: ${entries.length} entradas`}
+        title={t('medical_history.title')}
+        subtitle={isPatient ? t('medical_history.patient_entries', { count: entries.length }) : t('medical_history.total_entries', { count: entries.length })}
         action={
           canCreate ? (
             <Box
@@ -224,18 +233,18 @@ export default function MedicalHistoryPage() {
                 px: 2,
                 py: 1.2,
                 borderRadius: '10px',
-                backgroundColor: '#0d9488',
-                color: '#fff',
+                backgroundColor: theme.palette.primary.main,
+                color: theme.palette.background.paper,
                 fontWeight: 600,
                 fontSize: '0.875rem',
                 border: 'none',
                 cursor: 'pointer',
                 fontFamily: 'inherit',
-                '&:hover': { backgroundColor: '#0f766e' },
+                '&:hover': { backgroundColor: theme.palette.primary.dark },
               }}
             >
               <Add sx={{ fontSize: 20 }} />
-              Nueva Entrada
+              {t('medical_history.new_entry')}
             </Box>
           ) : undefined
         }
@@ -243,11 +252,11 @@ export default function MedicalHistoryPage() {
 
       {/* Filters */}
       <MotionDiv initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
-        <Paper sx={{ p: 2, mb: 3, border: '1px solid #e5e7eb', boxShadow: 'none' }}>
+        <Paper sx={{ p: 2, mb: 3, border: `1px solid ${theme.palette.divider}`, boxShadow: 'none' }}>
           <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
             <TextField
               size="small"
-              placeholder="Buscar por condición..."
+              placeholder={t('medical_history.search_placeholder')}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               sx={{ flex: 1, minWidth: 200 }}
@@ -255,7 +264,7 @@ export default function MedicalHistoryPage() {
                 input: {
                   startAdornment: (
                     <InputAdornment position="start">
-                      <Search sx={{ color: '#9ca3af', fontSize: 20 }} />
+                      <Search sx={{ color: theme.palette.text.secondary, fontSize: 20 }} />
                     </InputAdornment>
                   ),
                 },
@@ -267,7 +276,7 @@ export default function MedicalHistoryPage() {
                 return (
                   <Chip
                     key={status}
-                    label={config ? config.label : 'Todas'}
+                    label={config ? config.label : t('medical_history.all_statuses')}
                     onClick={() => setStatusFilter(status as MedicalHistoryStatus | '')}
                     variant={statusFilter === status ? 'filled' : 'outlined'}
                     sx={{
@@ -283,7 +292,7 @@ export default function MedicalHistoryPage() {
                       '&:hover': {
                         backgroundColor: status
                           ? STATUS_CONFIG[status]?.bgColor
-                          : '#f3f4f6',
+                          : theme.palette.custom.surface.sunken,
                       },
                     }}
                   />
@@ -297,10 +306,10 @@ export default function MedicalHistoryPage() {
       {/* Timeline */}
       {entries.length === 0 ? (
         <EmptyState
-          icon={<LocalHospital sx={{ fontSize: 48, color: '#d1d5db' }} />}
-          title="No hay entradas"
-          message="No se encontraron entradas en el historial médico."
-          action={canCreate ? { label: 'Crear Entrada', onClick: () => handleOpenForm() } : undefined}
+          icon={<LocalHospital sx={{ fontSize: 48, color: theme.palette.divider }} />}
+          title={t('medical_history.no_entries')}
+          message={t('medical_history.no_entries_message')}
+          action={canCreate ? { label: t('medical_history.create_entry'), onClick: () => handleOpenForm() } : undefined}
         />
       ) : (
         <Box sx={{ position: 'relative', pl: 4 }}>
@@ -312,7 +321,7 @@ export default function MedicalHistoryPage() {
               top: 0,
               bottom: 0,
               width: 2,
-              backgroundColor: '#e5e7eb',
+              backgroundColor: theme.palette.divider,
             }}
           />
 
@@ -338,7 +347,7 @@ export default function MedicalHistoryPage() {
                       height: 12,
                       borderRadius: '50%',
                       backgroundColor: config.color,
-                      border: '2px solid #ffffff',
+                      border: `2px solid ${theme.palette.background.paper}`,
                       boxShadow: `0 0 0 2px ${config.color}30`,
                       zIndex: 1,
                     }}
@@ -347,7 +356,7 @@ export default function MedicalHistoryPage() {
                   <Paper
                     sx={{
                       p: 2.5,
-                      border: '1px solid #e5e7eb',
+                      border: `1px solid ${theme.palette.divider}`,
                       boxShadow: 'none',
                       '&:hover': { boxShadow: '0 2px 8px rgba(0,0,0,0.06)' },
                       transition: 'box-shadow 0.2s',
@@ -356,7 +365,7 @@ export default function MedicalHistoryPage() {
                     <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', mb: 1 }}>
                       <Box sx={{ flex: 1 }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-                          <Typography variant="h6" sx={{ fontWeight: 600, color: '#1f2937' }}>
+                          <Typography variant="h6" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
                             {entry.condition}
                           </Typography>
                           <Chip
@@ -375,19 +384,19 @@ export default function MedicalHistoryPage() {
                         </Box>
 
                         {!isPatient && (entry as any).patient_name && (
-                          <Typography variant="body2" sx={{ color: '#6b7280', mb: 0.5 }}>
-                            Paciente: {(entry as any).patient_name}
+                          <Typography variant="body2" sx={{ color: theme.palette.text.secondary, mb: 0.5 }}>
+                            {t('medical_history.patient_label')}: {(entry as any).patient_name}
                           </Typography>
                         )}
 
                         {entry.onset_date && (
-                          <Typography variant="body2" sx={{ color: '#9ca3af', mb: 0.5 }}>
-                            Inicio: {format(new Date(entry.onset_date), 'dd MMM yyyy', { locale: es })}
+                          <Typography variant="body2" sx={{ color: theme.palette.text.secondary, mb: 0.5 }}>
+                            {t('medical_history.onset_date_label')}: {format(new Date(entry.onset_date), 'dd MMM yyyy', { locale: es })}
                           </Typography>
                         )}
 
                         {entry.notes && (
-                          <Typography variant="body2" sx={{ color: '#6b7280', mt: 0.5 }}>
+                          <Typography variant="body2" sx={{ color: theme.palette.text.secondary, mt: 0.5 }}>
                             {entry.notes}
                           </Typography>
                         )}
@@ -397,14 +406,14 @@ export default function MedicalHistoryPage() {
                         <IconButton
                           size="small"
                           onClick={() => handleOpenForm(entry)}
-                          sx={{ color: '#9ca3af', '&:hover': { color: '#0d9488' } }}
+                          sx={{ color: theme.palette.text.secondary, '&:hover': { color: theme.palette.primary.main } }}
                         >
                           <Edit fontSize="small" />
                         </IconButton>
                       )}
                     </Box>
 
-                    <Typography variant="caption" sx={{ color: '#d1d5db' }}>
+                    <Typography variant="caption" sx={{ color: theme.palette.divider }}>
                       {format(new Date(entry.created_at), "dd 'de' MMMM 'de' yyyy, HH:mm", { locale: es })}
                     </Typography>
                   </Paper>
@@ -421,13 +430,13 @@ export default function MedicalHistoryPage() {
         onClose={handleFormClose}
         maxWidth="sm"
         fullWidth
-        PaperProps={{ sx: { borderRadius: '16px', border: '1px solid #e5e7eb' } }}
+        PaperProps={{ sx: { borderRadius: '16px', border: `1px solid ${theme.palette.divider}` } }}
       >
         <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', pb: 1 }}>
-          <Typography variant="h5" sx={{ fontWeight: 700, color: '#1f2937' }}>
-            {editingEntry ? 'Editar Entrada' : 'Nueva Entrada del Historial'}
+          <Typography variant="h5" sx={{ fontWeight: 700, color: theme.palette.text.primary }}>
+            {editingEntry ? t('medical_history.edit_entry') : t('medical_history.new_entry_title')}
           </Typography>
-          <IconButton onClick={handleFormClose} size="small" sx={{ color: '#6b7280' }}>
+          <IconButton onClick={handleFormClose} size="small" sx={{ color: theme.palette.text.secondary }}>
             <Close fontSize="small" />
           </IconButton>
         </DialogTitle>
@@ -453,15 +462,15 @@ export default function MedicalHistoryPage() {
                       <li {...props} key={option.id}>
                         <Box>
                           <Typography variant="body2" sx={{ fontWeight: 500 }}>{option.name}</Typography>
-                          <Typography variant="caption" sx={{ color: '#9ca3af' }}>{option.email}</Typography>
+                          <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>{option.email}</Typography>
                         </Box>
                       </li>
                     )}
                     renderInput={(params) => (
                       <TextField
                         {...params}
-                        label="Paciente"
-                        placeholder="Buscar paciente..."
+                        label={t('medical_history.patient_label')}
+                        placeholder={t('medical_history.search_patient')}
                         error={!!errors.patient_id}
                         helperText={errors.patient_id?.message}
                         fullWidth
@@ -479,7 +488,7 @@ export default function MedicalHistoryPage() {
               render={({ field }) => (
                 <TextField
                   {...field}
-                  label="Condición / Enfermedad"
+                  label={t('medical_history.condition_label')}
                   error={!!errors.condition}
                   helperText={errors.condition?.message}
                   fullWidth
@@ -494,7 +503,7 @@ export default function MedicalHistoryPage() {
               render={({ field }) => (
                 <TextField
                   {...field}
-                  label="Fecha de Inicio (opcional)"
+                  label={t('medical_history.onset_date_label_optional')}
                   type="date"
                   fullWidth
                   slotProps={{ inputLabel: { shrink: true } }}
@@ -510,7 +519,7 @@ export default function MedicalHistoryPage() {
                 <TextField
                   {...field}
                   select
-                  label="Estado"
+                  label={t('medical_history.status_label')}
                   fullWidth
                   sx={{ mb: 2 }}
                 >
@@ -532,22 +541,22 @@ export default function MedicalHistoryPage() {
               render={({ field }) => (
                 <TextField
                   {...field}
-                  label="Notas (opcional)"
+                  label={t('medical_history.notes_label')}
                   fullWidth
                   multiline
                   rows={3}
-                  placeholder="Detalles adicionales sobre la condición..."
+                  placeholder={t('medical_history.notes_placeholder')}
                 />
               )}
             />
           </Box>
         </DialogContent>
-        <DialogActions sx={{ px: 3, py: 2, borderTop: '1px solid #f3f4f6' }}>
+        <DialogActions sx={{ px: 3, py: 2, borderTop: `1px solid ${theme.palette.custom.surface.sunken}` }}>
           <Button onClick={handleFormClose} variant="outlined" sx={{ mr: 1 }}>
-            Cancelar
+            {t('medical_history.cancel')}
           </Button>
           <Button type="submit" form="medical-history-form" variant="contained" disabled={isSaving}>
-            {isSaving ? 'Guardando...' : editingEntry ? 'Actualizar' : 'Crear Entrada'}
+            {isSaving ? t('medical_history.saving') : editingEntry ? t('medical_history.update') : t('medical_history.create')}
           </Button>
         </DialogActions>
       </Dialog>

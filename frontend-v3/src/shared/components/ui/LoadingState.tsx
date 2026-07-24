@@ -1,10 +1,13 @@
 import { Box, CircularProgress, Typography } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 
 interface LoadingStateProps {
   message?: string;
 }
 
 export function LoadingState({ message = 'Cargando...' }: LoadingStateProps) {
+  const theme = useTheme();
+
   return (
     <Box
       sx={{
@@ -16,8 +19,8 @@ export function LoadingState({ message = 'Cargando...' }: LoadingStateProps) {
         gap: 2,
       }}
     >
-      <CircularProgress size={40} sx={{ color: '#0d9488' }} />
-      <Typography variant="body2" sx={{ color: '#6b7280' }}>
+      <CircularProgress size={40} sx={{ color: theme.palette.primary.main }} />
+      <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
         {message}
       </Typography>
     </Box>

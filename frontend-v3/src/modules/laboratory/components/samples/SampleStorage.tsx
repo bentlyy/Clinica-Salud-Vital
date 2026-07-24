@@ -16,6 +16,7 @@ import {
   CircularProgress,
   Divider,
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import SaveIcon from '@mui/icons-material/Save';
 import EditIcon from '@mui/icons-material/Edit';
 import WarehouseIcon from '@mui/icons-material/Warehouse';
@@ -51,6 +52,7 @@ export const SampleStorage = memo(function SampleStorage({
   onUpdateStorage,
   isLoading = false,
 }: SampleStorageProps) {
+  const theme = useTheme();
   const [editingId, setEditingId] = useState<number | null>(null);
 
   const unlocatedSamples = useMemo(
@@ -76,33 +78,33 @@ export const SampleStorage = memo(function SampleStorage({
       sx={{
         p: 3,
         borderRadius: '14px',
-        border: '1px solid #e5e7eb',
+        border: `1px solid ${theme.palette.divider}`,
       }}
     >
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2.5 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-          <Typography variant="h5" sx={{ fontWeight: 700, color: '#1f2937' }}>
+          <Typography variant="h5" sx={{ fontWeight: 700, color: theme.palette.text.primary }}>
             Almacenamiento de Muestras
           </Typography>
           <Chip
             label={`${unlocatedSamples.length} sin ubicación`}
             size="small"
             sx={{
-              backgroundColor: unlocatedSamples.length > 0 ? '#fef3c7' : '#dcfce7',
-              color: unlocatedSamples.length > 0 ? '#d97706' : '#16a34a',
+              backgroundColor: unlocatedSamples.length > 0 ? theme.palette.custom.status.warning.bg : theme.palette.custom.status.success.bg,
+              color: unlocatedSamples.length > 0 ? theme.palette.warning.dark : theme.palette.success.main,
               fontWeight: 500,
               fontSize: '0.7rem',
             }}
           />
         </Box>
-        {isLoading && <CircularProgress size={20} sx={{ color: '#0d9488' }} />}
+        {isLoading && <CircularProgress size={20} sx={{ color: theme.palette.primary.main }} />}
       </Box>
 
       {/* ── Section: Sin Ubicación ───────────────────────────────────────── */}
       <Box sx={{ mb: 3 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
-          <ScienceIcon sx={{ fontSize: 18, color: '#f59e0b' }} />
-          <Typography variant="h6" sx={{ fontWeight: 600, color: '#d97706' }}>
+          <ScienceIcon sx={{ fontSize: 18, color: theme.palette.warning.main }} />
+          <Typography variant="h6" sx={{ fontWeight: 600, color: theme.palette.warning.dark }}>
             Sin Ubicación
           </Typography>
           <Chip
@@ -112,8 +114,8 @@ export const SampleStorage = memo(function SampleStorage({
               height: 20,
               fontSize: '0.7rem',
               fontWeight: 600,
-              backgroundColor: '#fef3c7',
-              color: '#d97706',
+              backgroundColor: theme.palette.custom.status.warning.bg,
+              color: theme.palette.warning.dark,
             }}
           />
         </Box>
@@ -123,13 +125,13 @@ export const SampleStorage = memo(function SampleStorage({
             sx={{
               textAlign: 'center',
               py: 3,
-              backgroundColor: '#f9fafb',
+              backgroundColor: theme.palette.custom.surface.muted,
               borderRadius: '10px',
-              border: '1px dashed #e5e7eb',
+              border: `1px dashed ${theme.palette.divider}`,
             }}
           >
-            <WarehouseIcon sx={{ fontSize: 32, color: '#d1d5db', mb: 0.5 }} />
-            <Typography variant="body2" sx={{ color: '#9ca3af', fontSize: '0.75rem' }}>
+            <WarehouseIcon sx={{ fontSize: 32, color: theme.palette.divider, mb: 0.5 }} />
+            <Typography variant="body2" sx={{ color: theme.palette.text.secondary, fontSize: '0.75rem' }}>
               Todas las muestras tienen ubicación asignada
             </Typography>
           </Box>
@@ -167,8 +169,8 @@ export const SampleStorage = memo(function SampleStorage({
       {/* ── Section: Almacenadas ─────────────────────────────────────────── */}
       <Box>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
-          <WarehouseIcon sx={{ fontSize: 18, color: '#0d9488' }} />
-          <Typography variant="h6" sx={{ fontWeight: 600, color: '#0d9488' }}>
+          <WarehouseIcon sx={{ fontSize: 18, color: theme.palette.primary.main }} />
+          <Typography variant="h6" sx={{ fontWeight: 600, color: theme.palette.primary.main }}>
             Almacenadas
           </Typography>
           <Chip
@@ -178,14 +180,14 @@ export const SampleStorage = memo(function SampleStorage({
               height: 20,
               fontSize: '0.7rem',
               fontWeight: 600,
-              backgroundColor: '#f0fdfa',
-              color: '#0d9488',
+              backgroundColor: theme.palette.custom.brand.lightest,
+              color: theme.palette.primary.main,
             }}
           />
         </Box>
 
         {locatedSamples.length === 0 ? (
-          <Typography variant="body2" sx={{ color: '#9ca3af', textAlign: 'center', py: 3 }}>
+          <Typography variant="body2" sx={{ color: theme.palette.text.secondary, textAlign: 'center', py: 3 }}>
             No hay muestras almacenadas
           </Typography>
         ) : (
@@ -241,6 +243,7 @@ const UnlocatedRow = memo(function UnlocatedRow({
   isLoading,
   getSampleTypeLabel,
 }: RowProps) {
+  const theme = useTheme();
   const {
     control,
     handleSubmit,
@@ -256,19 +259,19 @@ const UnlocatedRow = memo(function UnlocatedRow({
 
   return (
     <>
-      <TableRow sx={{ '&:hover': { backgroundColor: '#fffbeb' } }}>
+      <TableRow sx={{ '&:hover': { backgroundColor: theme.palette.custom.status.warning.bg } }}>
         <TableCell>
-          <Typography variant="body2" sx={{ fontWeight: 600, color: '#1f2937', fontFamily: 'monospace' }}>
+          <Typography variant="body2" sx={{ fontWeight: 600, color: theme.palette.text.primary, fontFamily: 'monospace' }}>
             {sample.sample_code}
           </Typography>
         </TableCell>
         <TableCell>
-          <Typography variant="body2" sx={{ color: '#6b7280' }}>
+          <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
             {getSampleTypeLabel(sample.sample_type)}
           </Typography>
         </TableCell>
         <TableCell>
-          <Typography variant="body2" sx={{ color: '#6b7280' }}>
+          <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
             {sample.reception_time
               ? new Date(sample.reception_time).toLocaleDateString('es-CL')
               : '—'}
@@ -280,8 +283,8 @@ const UnlocatedRow = memo(function UnlocatedRow({
             onClick={() => onEdit(sample.id)}
             disabled={isLoading}
             sx={{
-              color: '#0d9488',
-              '&:hover': { backgroundColor: '#f0fdfa' },
+              color: theme.palette.primary.main,
+              '&:hover': { backgroundColor: theme.palette.custom.brand.lightest },
             }}
             title="Asignar ubicación"
           >
@@ -300,9 +303,9 @@ const UnlocatedRow = memo(function UnlocatedRow({
                 p: 2,
                 mx: 1,
                 mb: 1,
-                backgroundColor: '#f9fafb',
+                backgroundColor: theme.palette.custom.surface.muted,
                 borderRadius: '10px',
-                border: '1px solid #e5e7eb',
+                border: `1px solid ${theme.palette.divider}`,
                 display: 'flex',
                 gap: 1.5,
                 alignItems: 'flex-end',
@@ -350,6 +353,7 @@ const LocatedRow = memo(function LocatedRow({
   isLoading,
   getSampleTypeLabel,
 }: RowProps) {
+  const theme = useTheme();
   const {
     control,
     handleSubmit,
@@ -370,14 +374,14 @@ const LocatedRow = memo(function LocatedRow({
 
   return (
     <>
-      <TableRow sx={{ '&:hover': { backgroundColor: '#f0fdfa' } }}>
+      <TableRow sx={{ '&:hover': { backgroundColor: theme.palette.custom.brand.lightest } }}>
         <TableCell>
-          <Typography variant="body2" sx={{ fontWeight: 600, color: '#1f2937', fontFamily: 'monospace' }}>
+          <Typography variant="body2" sx={{ fontWeight: 600, color: theme.palette.text.primary, fontFamily: 'monospace' }}>
             {sample.sample_code}
           </Typography>
         </TableCell>
         <TableCell>
-          <Typography variant="body2" sx={{ color: '#6b7280' }}>
+          <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
             {getSampleTypeLabel(sample.sample_type)}
           </Typography>
         </TableCell>
@@ -387,8 +391,8 @@ const LocatedRow = memo(function LocatedRow({
             label={sample.storage_location}
             size="small"
             sx={{
-              backgroundColor: '#f0fdfa',
-              color: '#0d9488',
+              backgroundColor: theme.palette.custom.brand.lightest,
+              color: theme.palette.primary.main,
               fontWeight: 500,
               fontSize: '0.7rem',
             }}
@@ -400,15 +404,15 @@ const LocatedRow = memo(function LocatedRow({
             label={isColdStorage ? '2-8 °C' : 'Ambiente'}
             size="small"
             sx={{
-              backgroundColor: isColdStorage ? '#dbeafe' : '#dcfce7',
-              color: isColdStorage ? '#2563eb' : '#16a34a',
+              backgroundColor: isColdStorage ? theme.palette.custom.status.info.bg : theme.palette.custom.status.success.bg,
+              color: isColdStorage ? theme.palette.info.dark : theme.palette.success.main,
               fontWeight: 500,
               fontSize: '0.7rem',
             }}
           />
         </TableCell>
         <TableCell>
-          <Typography variant="body2" sx={{ color: '#6b7280', fontSize: '0.75rem' }}>
+          <Typography variant="body2" sx={{ color: theme.palette.text.secondary, fontSize: '0.75rem' }}>
             {sample.reception_time
               ? new Date(sample.reception_time).toLocaleDateString('es-CL')
               : '—'}
@@ -420,8 +424,8 @@ const LocatedRow = memo(function LocatedRow({
             onClick={() => onEdit(sample.id)}
             disabled={isLoading}
             sx={{
-              color: '#0d9488',
-              '&:hover': { backgroundColor: '#f0fdfa' },
+              color: theme.palette.primary.main,
+              '&:hover': { backgroundColor: theme.palette.custom.brand.lightest },
             }}
             title="Editar ubicación"
           >
@@ -440,9 +444,9 @@ const LocatedRow = memo(function LocatedRow({
                 p: 2,
                 mx: 1,
                 mb: 1,
-                backgroundColor: '#f9fafb',
+                backgroundColor: theme.palette.custom.surface.muted,
                 borderRadius: '10px',
-                border: '1px solid #e5e7eb',
+                border: `1px solid ${theme.palette.divider}`,
                 display: 'flex',
                 gap: 1.5,
                 alignItems: 'flex-end',

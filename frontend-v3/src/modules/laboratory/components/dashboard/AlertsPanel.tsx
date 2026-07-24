@@ -8,6 +8,7 @@ import {
   Skeleton,
   Chip,
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import InfoIcon from '@mui/icons-material/Info';
 import WarningIcon from '@mui/icons-material/Warning';
 import ErrorIcon from '@mui/icons-material/Error';
@@ -28,23 +29,28 @@ const SEVERITY_ORDER: Record<string, number> = {
   info: 2,
 };
 
-const SEVERITY_CONFIG: Record<string, { icon: React.ReactNode; color: string; bgColor: string }> = {
-  info: {
-    icon: <InfoIcon sx={{ fontSize: 18 }} />,
-    color: '#3b82f6',
-    bgColor: '#eff6ff',
-  },
-  warning: {
-    icon: <WarningIcon sx={{ fontSize: 18 }} />,
-    color: '#d97706',
-    bgColor: '#fffbeb',
-  },
-  critical: {
-    icon: <ErrorIcon sx={{ fontSize: 18 }} />,
-    color: '#dc2626',
-    bgColor: '#fef2f2',
-  },
-};
+import type { Theme } from '@mui/material/styles';
+
+function getSeverityConfig(theme: Theme, severity: string) {
+  const configs: Record<string, { icon: React.ReactNode; color: string; bgColor: string }> = {
+    info: {
+      icon: <InfoIcon sx={{ fontSize: 18 }} />,
+      color: theme.palette.info.main,
+      bgColor: theme.palette.custom.status.info.bg,
+    },
+    warning: {
+      icon: <WarningIcon sx={{ fontSize: 18 }} />,
+      color: theme.palette.warning.dark,
+      bgColor: theme.palette.custom.status.warning.bg,
+    },
+    critical: {
+      icon: <ErrorIcon sx={{ fontSize: 18 }} />,
+      color: theme.palette.error.dark,
+      bgColor: theme.palette.custom.status.error.bg,
+    },
+  };
+  return configs[severity] ?? configs.info ?? { icon: <InfoIcon sx={{ fontSize: 18 }} />, color: theme.palette.info.main, bgColor: theme.palette.custom.status.info.bg };
+}
 
 function formatRelativeTime(dateStr: string): string {
   try {
@@ -64,6 +70,7 @@ function formatRelativeTime(dateStr: string): string {
 }
 
 function AlertsPanelBase({ notifications = [], isLoading, onAcknowledge }: AlertsPanelProps) {
+  const theme = useTheme();
   const sortedNotifications = useMemo(() => {
     return [...notifications]
       .filter((n) => !n.acknowledged)
@@ -76,7 +83,7 @@ function AlertsPanelBase({ notifications = [], isLoading, onAcknowledge }: Alert
 
   if (isLoading) {
     return (
-      <Paper elevation={0} sx={{ border: '1px solid #e5e7eb', borderRadius: '14px', p: 2 }}>
+      <Paper elevation={0} sx={{ border: `1px solid ${theme.palette.divider}`, borderRadius: '14px', p: 2 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
           <Skeleton variant="circular" width={24} height={24} />
           <Skeleton variant="text" width={160} height={24} />
@@ -93,7 +100,7 @@ function AlertsPanelBase({ notifications = [], isLoading, onAcknowledge }: Alert
   return (
     <Paper
       elevation={0}
-      sx={{ border: '1px solid #e5e7eb', borderRadius: '14px', overflow: 'hidden' }}
+      sx={{ border: `1px solid ${theme.palette.divider}`, borderRadius: '14px', overflow: 'hidden' }}
     >
       <Box
         sx={{
@@ -102,12 +109,12 @@ function AlertsPanelBase({ notifications = [], isLoading, onAcknowledge }: Alert
           justifyContent: 'space-between',
           px: 2,
           py: 1.5,
-          borderBottom: '1px solid #e5e7eb',
+          borderBottom: `1px solid ${theme.palette.divider}`,
         }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <NotificationsNoneIcon sx={{ fontSize: 20, color: '#0d9488' }} />
-          <Typography variant="body2" sx={{ fontWeight: 600, color: '#1f2937' }}>
+          <NotificationsNoneIcon sx={{ fontSize: 20, color: theme.palette.primary.main }} />
+          <Typography variant="body2" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
             Alertas Activas
           </Typography>
           {sortedNotifications.length > 0 && (
@@ -118,8 +125,8 @@ function AlertsPanelBase({ notifications = [], isLoading, onAcknowledge }: Alert
                 height: 20,
                 fontSize: '0.7rem',
                 fontWeight: 600,
-                backgroundColor: '#fef2f2',
-                color: '#dc2626',
+                backgroundColor: theme.palette.custom.status.error.bg,
+                color: theme.palette.error.dark,
               }}
             />
           )}
@@ -131,7 +138,7 @@ function AlertsPanelBase({ notifications = [], isLoading, onAcknowledge }: Alert
           maxHeight: 400,
           overflow: 'auto',
           '&::-webkit-scrollbar': { width: 6 },
-          '&::-webkit-scrollbar-thumb': { backgroundColor: '#d1d5db', borderRadius: 3 },
+          '&::-webkit-scrollbar-thumb': { backgroundColor: theme.palette.divider, borderRadius: 3 },
         }}
       >
         {sortedNotifications.length === 0 ? (
@@ -145,15 +152,15 @@ function AlertsPanelBase({ notifications = [], isLoading, onAcknowledge }: Alert
               gap: 1.5,
             }}
           >
-            <NotificationsNoneIcon sx={{ fontSize: 40, color: '#d1d5db' }} />
-            <Typography variant="body2" sx={{ color: '#6b7280' }}>
+            <NotificationsNoneIcon sx={{ fontSize: 40, color: theme.palette.divider }} />
+            <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
               No hay alertas activas
             </Typography>
           </Box>
         ) : (
           <Box sx={{ display: 'flex', flexDirection: 'column' }}>
             {sortedNotifications.map((notification) => {
-              const sevConfig = SEVERITY_CONFIG[notification.severity] ?? SEVERITY_CONFIG.info;
+              const sevConfig = getSeverityConfig(theme, notification.severity);
               const typeLabel =
                 LAB_NOTIFICATION_TYPE_LABELS[notification.type] ?? notification.type;
 
@@ -166,10 +173,10 @@ function AlertsPanelBase({ notifications = [], isLoading, onAcknowledge }: Alert
                     gap: 1.5,
                     px: 2,
                     py: 1.5,
-                    borderBottom: '1px solid #f3f4f6',
+                    borderBottom: `1px solid ${theme.palette.custom.surface.sunken}`,
                     transition: 'background-color 0.15s',
                     '&:hover': {
-                      backgroundColor: '#fafafa',
+                      backgroundColor: theme.palette.custom.surface.muted,
                     },
                   }}
                 >
@@ -194,7 +201,7 @@ function AlertsPanelBase({ notifications = [], isLoading, onAcknowledge }: Alert
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
                       <Typography
                         variant="body2"
-                        sx={{ fontWeight: 600, color: '#1f2937' }}
+                        sx={{ fontWeight: 600, color: theme.palette.text.primary }}
                       >
                         {notification.title}
                       </Typography>
@@ -205,17 +212,17 @@ function AlertsPanelBase({ notifications = [], isLoading, onAcknowledge }: Alert
                           height: 18,
                           fontSize: '0.65rem',
                           fontWeight: 500,
-                          backgroundColor: '#f3f4f6',
-                          color: '#6b7280',
+                          backgroundColor: theme.palette.custom.surface.sunken,
+                          color: theme.palette.text.secondary,
                         }}
                       />
                     </Box>
-                    <Typography variant="caption" sx={{ color: '#6b7280', display: 'block', lineHeight: 1.5 }}>
+                    <Typography variant="caption" sx={{ color: theme.palette.text.secondary, display: 'block', lineHeight: 1.5 }}>
                       {notification.message}
                     </Typography>
                     <Typography
                       variant="caption"
-                      sx={{ color: '#9ca3af', display: 'block', mt: 0.5, fontSize: '0.7rem' }}
+                      sx={{ color: theme.palette.text.secondary, display: 'block', mt: 0.5, fontSize: '0.7rem', opacity: 0.7 }}
                     >
                       {formatRelativeTime(notification.created_at)}
                     </Typography>
@@ -227,10 +234,10 @@ function AlertsPanelBase({ notifications = [], isLoading, onAcknowledge }: Alert
                         size="small"
                         onClick={() => onAcknowledge(notification.id)}
                         sx={{
-                          color: '#10b981',
+                          color: theme.palette.success.main,
                           mt: 0.25,
                           '&:hover': {
-                            backgroundColor: '#ecfdf5',
+                            backgroundColor: theme.palette.custom.status.success.bg,
                           },
                         }}
                       >

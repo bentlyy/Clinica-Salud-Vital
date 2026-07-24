@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import {
   Box,
   Button,
@@ -17,8 +17,8 @@ import {
   ListItemText,
   OutlinedInput,
   Chip,
-  Divider,
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import Add from '@mui/icons-material/Add';
 import DeleteOutline from '@mui/icons-material/DeleteOutline';
 import Schedule from '@mui/icons-material/Schedule';
@@ -27,6 +27,7 @@ import { motion } from 'framer-motion';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { useTranslation } from 'react-i18next';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { LoadingState } from '@/shared/components/ui/LoadingState';
 import { ErrorState } from '@/shared/components/ui/ErrorState';
@@ -44,32 +45,36 @@ import { DAY_NAMES, WEEK_DAYS_ORDER } from '../types/availability.types';
 
 const MotionBox = motion(Box);
 
-const ruleSchema = z
-  .object({
-    day_of_week: z
-      .array(z.number().min(0).max(6))
-      .min(1, 'Selecciona al menos un día'),
-    start_time: z.string().min(1, 'Selecciona hora de inicio'),
-    end_time: z.string().min(1, 'Selecciona hora de fin'),
-  })
-  .refine(
-    (data) => {
-      if (!data.start_time || !data.end_time) return true;
-      return data.start_time < data.end_time;
-    },
-    {
-      message: 'La hora de fin debe ser posterior a la hora de inicio',
-      path: ['end_time'],
-    },
-  );
+function createRuleSchema(t: (key: string) => string) {
+  return z
+    .object({
+      day_of_week: z
+        .array(z.number().min(0).max(6))
+        .min(1, t('availability.select_at_least_one_day')),
+      start_time: z.string().min(1, t('availability.select_start_time')),
+      end_time: z.string().min(1, t('availability.select_end_time')),
+    })
+    .refine(
+      (data) => {
+        if (!data.start_time || !data.end_time) return true;
+        return data.start_time < data.end_time;
+      },
+      {
+        message: t('availability.end_time_after_start'),
+        path: ['end_time'],
+      },
+    );
+}
 
-const exceptionSchema = z.object({
-  date: z.string().min(1, 'Selecciona una fecha'),
-  reason: z.string().min(1, 'Ingresa un motivo'),
-});
+function createExceptionSchema(t: (key: string) => string) {
+  return z.object({
+    date: z.string().min(1, t('availability.select_date')),
+    reason: z.string().min(1, t('availability.enter_reason')),
+  });
+}
 
-type RuleFormData = z.infer<typeof ruleSchema>;
-type ExceptionFormData = z.infer<typeof exceptionSchema>;
+type RuleFormData = z.infer<ReturnType<typeof createRuleSchema>>;
+type ExceptionFormData = z.infer<ReturnType<typeof createExceptionSchema>>;
 
 const TIME_OPTIONS = Array.from({ length: 48 }, (_, i) => {
   const h = Math.floor(i / 2);
@@ -78,6 +83,8 @@ const TIME_OPTIONS = Array.from({ length: 48 }, (_, i) => {
 });
 
 export default function AvailabilityPage() {
+  const { t } = useTranslation('availability');
+  const theme = useTheme();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [exceptionDialogOpen, setExceptionDialogOpen] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
@@ -90,6 +97,9 @@ export default function AvailabilityPage() {
   const { data: exceptions, isLoading: isLoadingExceptions } = useAvailabilityExceptions();
   const createExceptionMutation = useCreateAvailabilityException();
   const deleteExceptionMutation = useDeleteAvailabilityException();
+
+  const ruleSchema = useMemo(() => createRuleSchema(t), [t]);
+  const exceptionSchema = useMemo(() => createExceptionSchema(t), [t]);
 
   const {
     control,
@@ -180,7 +190,7 @@ export default function AvailabilityPage() {
     }
   }, [deleteExceptionConfirmId, deleteExceptionMutation]);
 
-  if (isLoading) return <LoadingState message="Cargando horarios..." />;
+  if (isLoading) return <LoadingState message={t('availability.loading_schedules')} />;
   if (isError) return <ErrorState error={error as Error} onRetry={refetch} />;
 
   const rulesList = rules ?? [];
@@ -192,17 +202,17 @@ export default function AvailabilityPage() {
       transition={{ duration: 0.3 }}
     >
       <PageHeader
-        title="Mis Horarios"
-        subtitle="Configura tu disponibilidad semanal para citas"
+        title={t('availability.my_schedules')}
+        subtitle={t('availability.config_subtitle')}
         action={
           <Button
             variant="contained"
             startIcon={<Add />}
             onClick={handleOpenDialog}
             sx={{
-              background: 'linear-gradient(135deg, #0d9488 0%, #0f766e 100%)',
+              background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
               '&:hover': {
-                background: 'linear-gradient(135deg, #0f766e 0%, #115e59 100%)',
+                background: `linear-gradient(135deg, ${theme.palette.primary.dark} 0%, ${theme.palette.custom.brand.darker} 100%)`,
               },
               px: 3,
               py: 1,
@@ -210,18 +220,18 @@ export default function AvailabilityPage() {
               textTransform: 'none',
             }}
           >
-            Agregar Horario
+            {t('availability.add_schedule')}
           </Button>
         }
       />
 
       {rulesList.length === 0 ? (
         <EmptyState
-          icon={<Schedule sx={{ fontSize: 48, color: '#d1d5db' }} />}
-          title="Sin horarios configurados"
-          message="Agrega tus horarios de disponibilidad para que los pacientes puedan agendar citas contigo."
+          icon={<Schedule sx={{ fontSize: 48, color: theme.palette.divider }} />}
+          title={t('availability.empty_title')}
+          message={t('availability.empty_message')}
           action={{
-            label: 'Agregar Horario',
+            label: t('availability.add_schedule'),
             onClick: handleOpenDialog,
           }}
         />
@@ -229,9 +239,9 @@ export default function AvailabilityPage() {
         <Box
           sx={{
             p: 3,
-            border: '1px solid #e5e7eb',
+            border: `1px solid ${theme.palette.divider}`,
             borderRadius: '12px',
-            backgroundColor: '#fff',
+            backgroundColor: theme.palette.background.paper,
           }}
         >
           <AvailabilityGrid rules={rulesList} onDelete={(id) => setDeleteConfirmId(id)} />
@@ -241,8 +251,8 @@ export default function AvailabilityPage() {
       {/* Exceptions section */}
       <Box sx={{ mt: 4 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-          <Typography variant="h6" sx={{ fontWeight: 600, color: '#1f2937' }}>
-            Excepciones (días libre)
+          <Typography variant="h6" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
+            {t('availability.exceptions_title')}
           </Typography>
           <Button
             variant="outlined"
@@ -251,14 +261,14 @@ export default function AvailabilityPage() {
               resetException({ date: '', reason: '' });
               setExceptionDialogOpen(true);
             }}
-            sx={{ borderColor: '#d1d5db', color: '#374151', textTransform: 'none' }}
+            sx={{ borderColor: theme.palette.divider, color: theme.palette.text.primary, textTransform: 'none' }}
           >
-            Agregar Excepción
+            {t('availability.add_exception')}
           </Button>
         </Box>
 
         {isLoadingExceptions ? (
-          <LoadingState message="Cargando excepciones..." />
+          <LoadingState message={t('availability.loading_exceptions')} />
         ) : exceptions && exceptions.length > 0 ? (
           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5 }}>
             {exceptions.map((ex) => (
@@ -268,16 +278,16 @@ export default function AvailabilityPage() {
                 label={`${new Date(ex.date + 'T00:00:00').toLocaleDateString('es-CL', { weekday: 'short', day: 'numeric', month: 'short' })} — ${ex.reason}`}
                 onDelete={() => setDeleteExceptionConfirmId(ex.id)}
                 sx={{
-                  backgroundColor: '#fef2f2',
-                  color: '#991b1b',
-                  '& .MuiChip-deleteIcon': { color: '#ef4444' },
+                  backgroundColor: theme.palette.custom.status.error.bg,
+                  color: theme.palette.error.dark,
+                  '& .MuiChip-deleteIcon': { color: theme.palette.error.main },
                 }}
               />
             ))}
           </Box>
         ) : (
-          <Typography variant="body2" sx={{ color: '#6b7280', fontStyle: 'italic' }}>
-            No tienes excepciones registradas. Las excepciones permiten bloquear días completos en tu agenda.
+          <Typography variant="body2" sx={{ color: theme.palette.text.secondary, fontStyle: 'italic' }}>
+            {t('availability.no_exceptions')}
           </Typography>
         )}
       </Box>
@@ -288,11 +298,11 @@ export default function AvailabilityPage() {
         onClose={handleCloseDialog}
         maxWidth="sm"
         fullWidth
-        PaperProps={{ sx: { borderRadius: '16px', border: '1px solid #e5e7eb' } }}
+        PaperProps={{ sx: { borderRadius: '16px', border: `1px solid ${theme.palette.divider}` } }}
       >
         <DialogTitle>
-          <Typography variant="h5" sx={{ fontWeight: 700, color: '#1f2937' }}>
-            Nuevo Horario
+          <Typography variant="h5" sx={{ fontWeight: 700, color: theme.palette.text.primary }}>
+            {t('availability.new_schedule')}
           </Typography>
         </DialogTitle>
 
@@ -305,7 +315,7 @@ export default function AvailabilityPage() {
                 control={control}
                 render={({ field }) => (
                   <FormControl fullWidth error={!!errors.day_of_week}>
-                    <InputLabel>Días de la semana</InputLabel>
+                    <InputLabel>{t('availability.days_of_week')}</InputLabel>
                     <Select
                       multiple
                       value={field.value}
@@ -313,7 +323,7 @@ export default function AvailabilityPage() {
                         const value = e.target.value;
                         field.onChange(typeof value === 'string' ? value.split(',').map(Number) : value);
                       }}
-                      input={<OutlinedInput label="Días de la semana" />}
+                      input={<OutlinedInput label={t('availability.days_of_week')} />}
                       renderValue={(selected) =>
                         (selected as number[])
                           .map((d) => DAY_NAMES[d])
@@ -324,14 +334,14 @@ export default function AvailabilityPage() {
                         <MenuItem key={dayIndex} value={dayIndex}>
                           <Checkbox
                             checked={field.value.includes(dayIndex)}
-                            sx={{ color: '#d1d5db', '&.Mui-checked': { color: '#0d9488' } }}
+                            sx={{ color: theme.palette.divider, '&.Mui-checked': { color: theme.palette.primary.main } }}
                           />
                           <ListItemText primary={DAY_NAMES[dayIndex]} />
                         </MenuItem>
                       ))}
                     </Select>
                     {errors.day_of_week && (
-                      <Typography variant="caption" sx={{ color: '#ef4444', mt: 0.5 }}>
+                      <Typography variant="caption" sx={{ color: theme.palette.error.main, mt: 0.5 }}>
                         {errors.day_of_week.message}
                       </Typography>
                     )}
@@ -347,7 +357,7 @@ export default function AvailabilityPage() {
                   <TextField
                     select
                     fullWidth
-                    label="Hora de inicio"
+                    label={t('availability.start_time_label')}
                     value={field.value}
                     onChange={field.onChange}
                     error={!!errors.start_time}
@@ -370,7 +380,7 @@ export default function AvailabilityPage() {
                   <TextField
                     select
                     fullWidth
-                    label="Hora de fin"
+                    label={t('availability.end_time_label')}
                     value={field.value}
                     onChange={field.onChange}
                     error={!!errors.end_time}
@@ -391,18 +401,18 @@ export default function AvailabilityPage() {
             <Button
               onClick={handleCloseDialog}
               variant="outlined"
-              sx={{ borderColor: '#d1d5db', color: '#374151', '&:hover': { borderColor: '#9ca3af' } }}
+              sx={{ borderColor: theme.palette.divider, color: theme.palette.text.primary, '&:hover': { borderColor: theme.palette.text.secondary } }}
             >
-              Cancelar
+              {t('availability.cancel')}
             </Button>
             <Button
               type="submit"
               variant="contained"
               disabled={createMutation.isPending}
               sx={{
-                background: 'linear-gradient(135deg, #0d9488 0%, #0f766e 100%)',
+                background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
                 '&:hover': {
-                  background: 'linear-gradient(135deg, #0f766e 0%, #115e59 100%)',
+                  background: `linear-gradient(135deg, ${theme.palette.primary.dark} 0%, ${theme.palette.custom.brand.darker} 100%)`,
                 },
                 px: 4,
               }}
@@ -410,7 +420,7 @@ export default function AvailabilityPage() {
               {createMutation.isPending ? (
                 <CircularProgress size={20} color="inherit" />
               ) : (
-                'Guardar'
+                t('availability.save')
               )}
             </Button>
           </DialogActions>
@@ -421,23 +431,23 @@ export default function AvailabilityPage() {
       <Dialog
         open={deleteConfirmId !== null}
         onClose={() => setDeleteConfirmId(null)}
-        PaperProps={{ sx: { borderRadius: '16px', border: '1px solid #e5e7eb' } }}
+        PaperProps={{ sx: { borderRadius: '16px', border: `1px solid ${theme.palette.divider}` } }}
       >
         <DialogTitle>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <DeleteOutline sx={{ color: '#ef4444' }} />
-            <Typography variant="h6" sx={{ fontWeight: 600, color: '#1f2937' }}>
-              Eliminar Horario
+            <DeleteOutline sx={{ color: theme.palette.error.main }} />
+            <Typography variant="h6" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
+              {t('availability.delete_schedule')}
             </Typography>
           </Box>
         </DialogTitle>
         <DialogContent>
-          <Typography variant="body2" sx={{ color: '#374151' }}>
-            ¿Estás seguro de que deseas eliminar este horario de disponibilidad? Los pacientes no podrán agendar citas en este horario.
+          <Typography variant="body2" sx={{ color: theme.palette.text.primary }}>
+            {t('availability.delete_schedule_confirm')}
           </Typography>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={() => setDeleteConfirmId(null)} sx={{ color: '#6b7280' }}>
+          <Button onClick={() => setDeleteConfirmId(null)} sx={{ color: theme.palette.text.secondary }}>
             Cancelar
           </Button>
           <Button
@@ -447,7 +457,7 @@ export default function AvailabilityPage() {
             disabled={deleteMutation.isPending}
             startIcon={deleteMutation.isPending ? <CircularProgress size={16} color="inherit" /> : undefined}
           >
-            Eliminar
+            {t('availability.delete')}
           </Button>
         </DialogActions>
       </Dialog>
@@ -458,11 +468,11 @@ export default function AvailabilityPage() {
         onClose={() => setExceptionDialogOpen(false)}
         maxWidth="sm"
         fullWidth
-        PaperProps={{ sx: { borderRadius: '16px', border: '1px solid #e5e7eb' } }}
+        PaperProps={{ sx: { borderRadius: '16px', border: `1px solid ${theme.palette.divider}` } }}
       >
         <DialogTitle>
-          <Typography variant="h5" sx={{ fontWeight: 700, color: '#1f2937' }}>
-            Nueva Excepción
+          <Typography variant="h5" sx={{ fontWeight: 700, color: theme.palette.text.primary }}>
+            {t('availability.new_exception')}
           </Typography>
         </DialogTitle>
         <Box component="form" onSubmit={handleExceptionSubmit(onSubmitException)}>
@@ -476,7 +486,7 @@ export default function AvailabilityPage() {
                     {...field}
                     type="date"
                     fullWidth
-                    label="Fecha"
+                    label={t('availability.date_label')}
                     slotProps={{ inputLabel: { shrink: true } }}
                     error={!!exceptionErrors.date}
                     helperText={exceptionErrors.date?.message}
@@ -490,8 +500,8 @@ export default function AvailabilityPage() {
                   <TextField
                     {...field}
                     fullWidth
-                    label="Motivo"
-                    placeholder="Ej: Vacaciones, capacitación, día personal..."
+                    label={t('availability.reason_label')}
+                    placeholder={t('availability.reason_placeholder')}
                     error={!!exceptionErrors.reason}
                     helperText={exceptionErrors.reason?.message}
                   />
@@ -503,18 +513,18 @@ export default function AvailabilityPage() {
             <Button
               onClick={() => setExceptionDialogOpen(false)}
               variant="outlined"
-              sx={{ borderColor: '#d1d5db', color: '#374151', '&:hover': { borderColor: '#9ca3af' } }}
+              sx={{ borderColor: theme.palette.divider, color: theme.palette.text.primary, '&:hover': { borderColor: theme.palette.text.secondary } }}
             >
-              Cancelar
+              {t('availability.cancel')}
             </Button>
             <Button
               type="submit"
               variant="contained"
               disabled={createExceptionMutation.isPending}
               sx={{
-                background: 'linear-gradient(135deg, #0d9488 0%, #0f766e 100%)',
+                background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
                 '&:hover': {
-                  background: 'linear-gradient(135deg, #0f766e 0%, #115e59 100%)',
+                  background: `linear-gradient(135deg, ${theme.palette.primary.dark} 0%, ${theme.palette.custom.brand.darker} 100%)`,
                 },
                 px: 4,
               }}
@@ -522,7 +532,7 @@ export default function AvailabilityPage() {
               {createExceptionMutation.isPending ? (
                 <CircularProgress size={20} color="inherit" />
               ) : (
-                'Guardar'
+                t('availability.save')
               )}
             </Button>
           </DialogActions>
@@ -533,23 +543,23 @@ export default function AvailabilityPage() {
       <Dialog
         open={deleteExceptionConfirmId !== null}
         onClose={() => setDeleteExceptionConfirmId(null)}
-        PaperProps={{ sx: { borderRadius: '16px', border: '1px solid #e5e7eb' } }}
+        PaperProps={{ sx: { borderRadius: '16px', border: `1px solid ${theme.palette.divider}` } }}
       >
         <DialogTitle>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <DeleteOutline sx={{ color: '#ef4444' }} />
-            <Typography variant="h6" sx={{ fontWeight: 600, color: '#1f2937' }}>
-              Eliminar Excepción
+            <DeleteOutline sx={{ color: theme.palette.error.main }} />
+            <Typography variant="h6" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
+              {t('availability.delete_exception')}
             </Typography>
           </Box>
         </DialogTitle>
         <DialogContent>
-          <Typography variant="body2" sx={{ color: '#374151' }}>
-            ¿Estás seguro de que deseas eliminar esta excepción? El día volverá a estar disponible según tus horarios habituales.
+          <Typography variant="body2" sx={{ color: theme.palette.text.primary }}>
+            {t('availability.delete_exception_confirm')}
           </Typography>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={() => setDeleteExceptionConfirmId(null)} sx={{ color: '#6b7280' }}>
+          <Button onClick={() => setDeleteExceptionConfirmId(null)} sx={{ color: theme.palette.text.secondary }}>
             Cancelar
           </Button>
           <Button
@@ -559,7 +569,7 @@ export default function AvailabilityPage() {
             disabled={deleteExceptionMutation.isPending}
             startIcon={deleteExceptionMutation.isPending ? <CircularProgress size={16} color="inherit" /> : undefined}
           >
-            Eliminar
+            {t('availability.delete')}
           </Button>
         </DialogActions>
       </Dialog>

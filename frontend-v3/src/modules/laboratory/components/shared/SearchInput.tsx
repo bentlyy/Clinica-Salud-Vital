@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef, memo } from 'react';
 import type { SxProps } from '@mui/material/styles';
+import { useTheme } from '@mui/material/styles';
 import TextField from '@mui/material/TextField';
 import InputAdornment from '@mui/material/InputAdornment';
 import IconButton from '@mui/material/IconButton';
@@ -21,6 +22,7 @@ export const SearchInput = memo(function SearchInput({
   debounceMs = 350,
   sx,
 }: SearchInputProps) {
+  const theme = useTheme();
   const [localValue, setLocalValue] = useState(value);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -73,7 +75,7 @@ export const SearchInput = memo(function SearchInput({
         input: {
           startAdornment: (
             <InputAdornment position="start">
-              <SearchIcon sx={{ fontSize: 18, color: '#9ca3af' }} />
+              <SearchIcon sx={{ fontSize: 18, color: theme.palette.text.secondary }} />
             </InputAdornment>
           ),
           endAdornment: localValue ? (
@@ -82,7 +84,7 @@ export const SearchInput = memo(function SearchInput({
                 size="small"
                 onClick={handleClear}
                 aria-label="Limpiar busqueda"
-                sx={{ color: '#9ca3af', p: 0.25 }}
+                sx={{ color: theme.palette.text.secondary, p: 0.25 }}
               >
                 <ClearIcon sx={{ fontSize: 16 }} />
               </IconButton>
@@ -95,10 +97,10 @@ export const SearchInput = memo(function SearchInput({
         '& .MuiOutlinedInput-root': {
           borderRadius: '10px',
           fontSize: '0.875rem',
-          backgroundColor: '#ffffff',
-          '& fieldset': { borderColor: '#e5e7eb' },
-          '&:hover fieldset': { borderColor: '#9ca3af' },
-          '&.Mui-focused fieldset': { borderColor: '#0d9488', borderWidth: 2 },
+          backgroundColor: theme.palette.background.paper,
+          '& fieldset': { borderColor: theme.palette.divider },
+          '&:hover fieldset': { borderColor: theme.palette.text.secondary },
+          '&.Mui-focused fieldset': { borderColor: theme.palette.primary.main, borderWidth: 2 },
         },
         ...sx,
       }}

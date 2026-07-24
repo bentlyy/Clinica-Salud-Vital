@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Box,
   Paper,
@@ -49,6 +50,7 @@ import { VitalsDisplay } from '../components/VitalsDisplay';
 import type { ClinicalRecord, CreateClinicalRecordInput } from '../types/clinical-record.types';
 
 export default function ClinicalRecordsPage() {
+  const { t } = useTranslation('clinical_records');
   const { hasPermission } = useAuth();
   const canCreate = hasPermission('clinicalRecords', 'create');
   const canEdit = hasPermission('clinicalRecords', 'edit');
@@ -102,7 +104,7 @@ export default function ClinicalRecordsPage() {
   };
 
   const handleDelete = (record: ClinicalRecord) => {
-    if (window.confirm('¿Estás seguro de eliminar este expediente?')) {
+    if (window.confirm(t('confirm_delete_title'))) {
       deleteMutation.mutate(record.id);
     }
     handleMenuClose();
@@ -123,14 +125,14 @@ export default function ClinicalRecordsPage() {
 
   const isSaving = createMutation.isPending || updateMutation.isPending;
 
-  if (isLoading) return <LoadingState message="Cargando expedientes..." />;
+  if (isLoading) return <LoadingState message={t('loading_records')} />;
   if (error) return <ErrorState error={error as never} onRetry={refetch} />;
 
   return (
     <Box>
       <PageHeader
-        title="Expedientes Clínicos"
-        subtitle={`Total: ${total} expedientes`}
+        title={t('title')}
+        subtitle={t('total_label', { count: total })}
         action={
           canCreate ? (
             <Box
@@ -154,7 +156,7 @@ export default function ClinicalRecordsPage() {
               }}
             >
               <Add sx={{ fontSize: 20 }} />
-              Nuevo Expediente
+              {t('new_record')}
             </Box>
           ) : undefined
         }
@@ -166,7 +168,7 @@ export default function ClinicalRecordsPage() {
           <TextField
             fullWidth
             size="small"
-            placeholder="Buscar por paciente, diagnóstico o queja principal..."
+            placeholder={t('search_placeholder')}
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(0); }}
             slotProps={{
@@ -186,9 +188,9 @@ export default function ClinicalRecordsPage() {
       {records.length === 0 ? (
         <EmptyState
           icon={<Description sx={{ fontSize: 48, color: '#d1d5db' }} />}
-          title="No hay expedientes"
-          message="No se encontraron expedientes clínicos con los filtros aplicados."
-          action={canCreate ? { label: 'Crear Expediente', onClick: () => { setEditingRecord(null); setFormOpen(true); } } : undefined}
+          title={t('no_records_title')}
+          message={t('no_records_message')}
+          action={canCreate ? { label: t('create_record'), onClick: () => { setEditingRecord(null); setFormOpen(true); } } : undefined}
         />
       ) : (
         <MotionDiv initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.1 }}>
@@ -196,12 +198,12 @@ export default function ClinicalRecordsPage() {
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>Paciente</TableCell>
-                  <TableCell>Doctor</TableCell>
-                  <TableCell>Consulta Principal</TableCell>
-                  <TableCell>Diagnóstico</TableCell>
-                  <TableCell>Fecha</TableCell>
-                  <TableCell align="right">Acciones</TableCell>
+                  <TableCell>{t('col_patient')}</TableCell>
+                  <TableCell>{t('col_doctor')}</TableCell>
+                  <TableCell>{t('col_chief_complaint')}</TableCell>
+                  <TableCell>{t('col_diagnosis')}</TableCell>
+                  <TableCell>{t('col_date')}</TableCell>
+                  <TableCell align="right">{t('col_actions')}</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -209,12 +211,12 @@ export default function ClinicalRecordsPage() {
                   <TableRow key={record.id} hover sx={{ '&:last-child td': { borderBottom: 0 } }}>
                     <TableCell>
                       <Typography variant="body2" sx={{ fontWeight: 600, color: '#1f2937' }}>
-                        {record.patient_name || `Paciente #${record.patient_id}`}
+                        {record.patient_name || t('patientFallback', { id: record.patient_id })}
                       </Typography>
                     </TableCell>
                     <TableCell>
                       <Typography variant="body2" sx={{ color: '#6b7280' }}>
-                        {record.doctor_name || `Doctor #${record.doctor_id}`}
+                        {record.doctor_name || t('doctorFallback', { id: record.doctor_id })}
                       </Typography>
                     </TableCell>
                     <TableCell>
@@ -254,8 +256,12 @@ export default function ClinicalRecordsPage() {
               onPageChange={(_, p) => setPage(p)}
               rowsPerPage={rowsPerPage}
               onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }}
-              labelRowsPerPage="Filas por página"
-              labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count !== -1 ? count : `más de ${to}`}`}
+              labelRowsPerPage={t('rows_per_page')}
+              labelDisplayedRows={({ from, to, count }) =>
+                count !== -1
+                  ? t('labelDisplayedRows', { from, to, count })
+                  : t('labelDisplayedRowsMore', { to })
+              }
             />
           </TableContainer>
         </MotionDiv>
@@ -272,18 +278,18 @@ export default function ClinicalRecordsPage() {
       >
         <MenuItem onClick={() => menuRecord && handleViewDetail(menuRecord)}>
           <ListItemIcon><Visibility fontSize="small" sx={{ color: '#6b7280' }} /></ListItemIcon>
-          <ListItemText>Ver Detalle</ListItemText>
+          <ListItemText>{t('view_detail')}</ListItemText>
         </MenuItem>
         {canEdit && (
           <MenuItem onClick={() => menuRecord && handleEdit(menuRecord)}>
             <ListItemIcon><Edit fontSize="small" sx={{ color: '#6b7280' }} /></ListItemIcon>
-            <ListItemText>Editar</ListItemText>
+            <ListItemText>{t('edit')}</ListItemText>
           </MenuItem>
         )}
         {canDelete && (
           <MenuItem onClick={() => menuRecord && handleDelete(menuRecord)} sx={{ color: '#ef4444' }}>
             <ListItemIcon><Delete fontSize="small" sx={{ color: '#ef4444' }} /></ListItemIcon>
-            <ListItemText>Eliminar</ListItemText>
+            <ListItemText>{t('delete')}</ListItemText>
           </MenuItem>
         )}
       </Menu>
@@ -309,7 +315,7 @@ export default function ClinicalRecordsPage() {
           <>
             <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', pb: 1 }}>
               <Typography variant="h5" sx={{ fontWeight: 700, color: '#1f2937' }}>
-                Expediente #{detailRecord.id}
+                {t('record_id_label', { id: detailRecord.id })}
               </Typography>
               <IconButton onClick={() => setDetailRecord(null)} size="small" sx={{ color: '#6b7280' }}>
                 <Close fontSize="small" />
@@ -317,29 +323,29 @@ export default function ClinicalRecordsPage() {
             </DialogTitle>
             <DialogContent sx={{ pt: 2 }}>
               <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2, mb: 3 }}>
-                <DetailField label="Paciente" value={detailRecord.patient_name || `Paciente #${detailRecord.patient_id}`} />
-                <DetailField label="Doctor" value={detailRecord.doctor_name || `Doctor #${detailRecord.doctor_id}`} />
+                <DetailField label={t('field_patient')} value={detailRecord.patient_name || t('patientFallback', { id: detailRecord.patient_id })} />
+                <DetailField label={t('field_doctor')} value={detailRecord.doctor_name || t('doctorFallback', { id: detailRecord.doctor_id })} />
                 <DetailField
-                  label="Fecha"
+                  label={t('field_date')}
                   value={format(new Date(detailRecord.created_at), "dd 'de' MMMM 'de' yyyy", { locale: es })}
                   icon={<CalendarToday sx={{ fontSize: 14, color: '#9ca3af' }} />}
                 />
               </Box>
 
-              <DetailSection title="Consulta Principal" content={detailRecord.chief_complaint} />
-              <DetailSection title="Diagnóstico" content={detailRecord.diagnosis} />
-              <DetailSection title="Tratamiento" content={detailRecord.treatment} />
+              <DetailSection title={t('section_chief_complaint')} content={detailRecord.chief_complaint} />
+              <DetailSection title={t('section_diagnosis')} content={detailRecord.diagnosis} />
+              <DetailSection title={t('section_treatment')} content={detailRecord.treatment} />
 
               {detailRecord.vitals && Object.keys(detailRecord.vitals).length > 0 && (
                 <Box sx={{ mb: 3 }}>
                   <Typography variant="h6" sx={{ fontWeight: 600, color: '#1f2937', mb: 1.5 }}>
-                    Signos Vitales
+                    {t('section_vitals')}
                   </Typography>
                   <VitalsDisplay vitals={detailRecord.vitals} />
                 </Box>
               )}
 
-              {detailRecord.notes && <DetailSection title="Notas" content={detailRecord.notes} />}
+              {detailRecord.notes && <DetailSection title={t('section_notes')} content={detailRecord.notes} />}
             </DialogContent>
           </>
         )}
