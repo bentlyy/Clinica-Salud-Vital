@@ -64,7 +64,7 @@ export const FiltersBar = memo(function FiltersBar({
       sx={{
         p: 2,
         mb: 3,
-        border: '1px solid #e5e7eb',
+        border: `1px solid ${theme.palette.divider}`,
         borderRadius: '14px',
         ...sx,
       }}

@@ -1,14 +1,14 @@
 import { memo, useState, useCallback, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useTheme } from '@mui/material/styles';
 import {
   Box,
-  Typography,
   Button,
   Tabs,
   Tab,
   MenuItem,
   TextField,
 } from '@mui/material';
-import { useTheme } from '@mui/material/styles';
 import AddIcon from '@mui/icons-material/Add';
 import ScienceIcon from '@mui/icons-material/Science';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
@@ -21,7 +21,6 @@ import {
   useLabAreas,
   useLabTests,
   useCreateQCRecord,
-  useApproveQCRecord,
 } from '../hooks/useLab';
 import { ValidationWorklist } from '../components/qc/ValidationWorklist';
 import { ControlChart } from '../components/qc/ControlChart';
@@ -32,6 +31,7 @@ import { useLabReagents } from '../hooks/useLab';
 import type { LabQCRecord } from '../types/lab.types';
 
 function LabQualityControlPage() {
+  const { t } = useTranslation('lab_qc');
   const theme = useTheme();
   const [tabValue, setTabValue] = useState(0);
   const [qcFormOpen, setQcFormOpen] = useState(false);
@@ -52,7 +52,6 @@ function LabQualityControlPage() {
   const { data: reagents, isLoading: reagentLoading } = useLabReagents();
 
   const createQcMutation = useCreateQCRecord();
-  const approveQcMutation = useApproveQCRecord();
 
   const chartRecords = useMemo(() => {
     if (!qcRecords) return [];
@@ -87,28 +86,21 @@ function LabQualityControlPage() {
     [createQcMutation],
   );
 
-  const handleApproveQc = useCallback(
-    (id: number) => {
-      approveQcMutation.mutate(id);
-    },
-    [approveQcMutation],
-  );
-
-  if (qcLoading) return <LoadingState message="Cargando control de calidad..." />;
+  if (qcLoading) return <LoadingState message={t('loading')} />;
   if (qcError) return <ErrorState error={qcError as Error} onRetry={() => void refetchQc()} />;
 
   return (
     <Box>
       <PageHeader
-        title="Control de Calidad"
-        subtitle="Registros, graficos e inventario"
+        title={t('title')}
+        subtitle={t('subtitle')}
         action={
           <Button
             variant="contained"
             startIcon={<AddIcon sx={{ fontSize: 18 }} />}
             onClick={() => setQcFormOpen(true)}
           >
-            Nuevo Registro
+            {t('new_record')}
           </Button>
         }
       />
@@ -119,7 +111,7 @@ function LabQualityControlPage() {
         onChange={(_, v) => setTabValue(v)}
         sx={{
           mb: 3,
-          borderBottom: '1px solid #e5e7eb',
+          borderBottom: `1px solid ${theme.palette.divider}`,
           '& .MuiTab-root': {
             textTransform: 'none',
             fontWeight: 600,
@@ -127,15 +119,15 @@ function LabQualityControlPage() {
             minHeight: 44,
           },
           '& .MuiTabs-indicator': {
-            backgroundColor: '#0d9488',
+            backgroundColor: theme.palette.primary.main,
             height: 3,
             borderRadius: '3px 3px 0 0',
           },
         }}
       >
-        <Tab label="Registros QC" />
-        <Tab label="Grafico de Control" />
-        <Tab label="Inventario" />
+        <Tab label={t('tab_records')} />
+        <Tab label={t('tab_chart')} />
+        <Tab label={t('tab_inventory')} />
       </Tabs>
 
       {/* Tab 0: QC Records */}
@@ -146,13 +138,13 @@ function LabQualityControlPage() {
             <TextField
               select
               size="small"
-              label="Area"
+              label={t('area_label')}
               value={areaFilter}
               onChange={(e) => setAreaFilter(e.target.value === '' ? '' : Number(e.target.value))}
               sx={{ minWidth: 160, '& .MuiOutlinedInput-root': { borderRadius: '10px' } }}
             >
               <MenuItem value="">
-                <em>Todas</em>
+                <em>{t('all')}</em>
               </MenuItem>
               {areas?.map((a) => (
                 <MenuItem key={a.id} value={a.id}>
@@ -163,18 +155,18 @@ function LabQualityControlPage() {
             <TextField
               select
               size="small"
-              label="Tipo QC"
+              label={t('type_label')}
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value)}
               sx={{ minWidth: 160, '& .MuiOutlinedInput-root': { borderRadius: '10px' } }}
             >
               <MenuItem value="">
-                <em>Todos</em>
+                <em>{t('all_types')}</em>
               </MenuItem>
-              <MenuItem value="internal">Control Interno</MenuItem>
-              <MenuItem value="external">Control Externo</MenuItem>
-              <MenuItem value="calibration">Calibracion</MenuItem>
-              <MenuItem value="proficiency">Proficiency</MenuItem>
+              <MenuItem value="internal">{t('internal_control')}</MenuItem>
+              <MenuItem value="external">{t('external_control')}</MenuItem>
+              <MenuItem value="calibration">{t('calibration')}</MenuItem>
+              <MenuItem value="proficiency">{t('proficiency')}</MenuItem>
             </TextField>
           </Box>
 
@@ -212,10 +204,10 @@ function LabQualityControlPage() {
             />
           ) : (
             <EmptyState
-              icon={<ScienceIcon sx={{ fontSize: 48, color: '#d1d5db' }} />}
-              title="Sin registros QC"
-              message="No hay registros de control de calidad con los filtros actuales."
-              action={{ label: 'Crear Registro', onClick: () => setQcFormOpen(true) }}
+              icon={<ScienceIcon sx={{ fontSize: 48, color: theme.palette.divider }} />}
+              title={t('no_records_title')}
+              message={t('no_records_message')}
+              action={{ label: t('create_record'), onClick: () => setQcFormOpen(true) }}
             />
           )}
         </Box>
@@ -228,7 +220,7 @@ function LabQualityControlPage() {
             <TextField
               select
               size="small"
-              label="Area"
+              label={t('area_label')}
               value={chartAreaId}
               onChange={(e) => {
                 const val = e.target.value === '' ? '' : Number(e.target.value);
@@ -238,7 +230,7 @@ function LabQualityControlPage() {
               sx={{ minWidth: 160, '& .MuiOutlinedInput-root': { borderRadius: '10px' } }}
             >
               <MenuItem value="">
-                <em>Todas</em>
+                <em>{t('all')}</em>
               </MenuItem>
               {areas?.map((a) => (
                 <MenuItem key={a.id} value={a.id}>
@@ -249,13 +241,13 @@ function LabQualityControlPage() {
             <TextField
               select
               size="small"
-              label="Test"
+              label={t('test_label')}
               value={chartTestId}
               onChange={(e) => setChartTestId(e.target.value === '' ? '' : Number(e.target.value))}
               sx={{ minWidth: 200, '& .MuiOutlinedInput-root': { borderRadius: '10px' } }}
             >
               <MenuItem value="">
-                <em>Seleccione un test</em>
+                <em>{t('select_test')}</em>
               </MenuItem>
               {tests?.map((t) => (
                 <MenuItem key={t.id} value={t.id}>
@@ -267,7 +259,7 @@ function LabQualityControlPage() {
 
           <ControlChart
             records={chartRecords}
-            testName={selectedTestName || 'Todos los tests'}
+            testName={selectedTestName || t('all_tests')}
             areaName={selectedAreaName}
             isLoading={qcLoading}
           />

@@ -4,7 +4,6 @@ import {
   Typography,
   Paper,
   Skeleton,
-  Tooltip,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import type { LabQCRecord } from '../../types/lab.types';
@@ -130,7 +129,7 @@ export const ControlChart = memo(function ControlChart({
     return sorted
       .map((_, i) => {
         const x = xScale(i);
-        const y = yScale(values[i]);
+        const y = yScale(values[i] ?? 0);
         return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
       })
       .join(' ');
@@ -151,7 +150,7 @@ export const ControlChart = memo(function ControlChart({
         sx={{
           p: 3,
           borderRadius: '14px',
-          border: '1px solid #e5e7eb',
+          border: `1px solid ${theme.palette.divider}`,
         }}
       >
         <Skeleton variant="text" width="60%" height={28} />
@@ -168,14 +167,14 @@ export const ControlChart = memo(function ControlChart({
         sx={{
           p: 3,
           borderRadius: '14px',
-          border: '1px solid #e5e7eb',
+          border: `1px solid ${theme.palette.divider}`,
         }}
       >
-        <Typography variant="h6" sx={{ fontWeight: 700, color: '#1f2937' }}>
+        <Typography variant="h6" sx={{ fontWeight: 700, color: theme.palette.text.primary }}>
           Gráfico de Control - {testName}
         </Typography>
         {areaName && (
-          <Typography variant="body2" sx={{ color: '#6b7280', mb: 3 }}>
+          <Typography variant="body2" sx={{ color: theme.palette.text.secondary, mb: 3 }}>
             {areaName}
           </Typography>
         )}
@@ -185,7 +184,7 @@ export const ControlChart = memo(function ControlChart({
             alignItems: 'center',
             justifyContent: 'center',
             height: CHART_HEIGHT,
-            color: '#9ca3af',
+            color: theme.palette.text.secondary,
           }}
         >
           <Typography variant="body2" sx={{ fontWeight: 500 }}>
@@ -204,15 +203,15 @@ export const ControlChart = memo(function ControlChart({
       sx={{
         p: 3,
         borderRadius: '14px',
-        border: '1px solid #e5e7eb',
+        border: `1px solid ${theme.palette.divider}`,
       }}
     >
       {/* Header */}
-      <Typography variant="h6" sx={{ fontWeight: 700, color: '#1f2937' }}>
+      <Typography variant="h6" sx={{ fontWeight: 700, color: theme.palette.text.primary }}>
         Gráfico de Control - {testName}
       </Typography>
       {areaName && (
-        <Typography variant="body2" sx={{ color: '#6b7280', mb: 2 }}>
+        <Typography variant="body2" sx={{ color: theme.palette.text.secondary, mb: 2 }}>
           {areaName}
         </Typography>
       )}
@@ -246,7 +245,7 @@ export const ControlChart = memo(function ControlChart({
                   y={y + 4}
                   textAnchor="end"
                   fontSize={11}
-                  fill="#9ca3af"
+                  fill={theme.palette.text.secondary}
                   fontFamily={theme.typography.fontFamily}
                 >
                   {val.toFixed(2)}
@@ -261,7 +260,7 @@ export const ControlChart = memo(function ControlChart({
             y1={PADDING.top + yScale(stats.ucl)}
             x2={PADDING.left + PLOT_WIDTH}
             y2={PADDING.top + yScale(stats.ucl)}
-            stroke="#f59e0b"
+            stroke={theme.palette.warning.main}
             strokeWidth={1.5}
             strokeDasharray="8 4"
             opacity={0.8}
@@ -270,7 +269,7 @@ export const ControlChart = memo(function ControlChart({
             x={PADDING.left + PLOT_WIDTH + 4}
             y={PADDING.top + yScale(stats.ucl) + 4}
             fontSize={10}
-            fill="#f59e0b"
+            fill={theme.palette.warning.main}
             fontFamily={theme.typography.fontFamily}
           >
             +2σ
@@ -282,7 +281,7 @@ export const ControlChart = memo(function ControlChart({
             y1={PADDING.top + yScale(stats.lcl)}
             x2={PADDING.left + PLOT_WIDTH}
             y2={PADDING.top + yScale(stats.lcl)}
-            stroke="#f59e0b"
+            stroke={theme.palette.warning.main}
             strokeWidth={1.5}
             strokeDasharray="8 4"
             opacity={0.8}
@@ -291,7 +290,7 @@ export const ControlChart = memo(function ControlChart({
             x={PADDING.left + PLOT_WIDTH + 4}
             y={PADDING.top + yScale(stats.lcl) + 4}
             fontSize={10}
-            fill="#f59e0b"
+            fill={theme.palette.warning.main}
             fontFamily={theme.typography.fontFamily}
           >
             -2σ
@@ -303,7 +302,7 @@ export const ControlChart = memo(function ControlChart({
             y1={PADDING.top + yScale(stats.uwl)}
             x2={PADDING.left + PLOT_WIDTH}
             y2={PADDING.top + yScale(stats.uwl)}
-            stroke="#eab308"
+            stroke={theme.palette.warning.dark}
             strokeWidth={1}
             strokeDasharray="3 3"
             opacity={0.6}
@@ -312,7 +311,7 @@ export const ControlChart = memo(function ControlChart({
             x={PADDING.left + PLOT_WIDTH + 4}
             y={PADDING.top + yScale(stats.uwl) + 4}
             fontSize={10}
-            fill="#eab308"
+            fill={theme.palette.warning.dark}
             fontFamily={theme.typography.fontFamily}
           >
             +1σ
@@ -324,7 +323,7 @@ export const ControlChart = memo(function ControlChart({
             y1={PADDING.top + yScale(stats.lwl)}
             x2={PADDING.left + PLOT_WIDTH}
             y2={PADDING.top + yScale(stats.lwl)}
-            stroke="#eab308"
+            stroke={theme.palette.warning.dark}
             strokeWidth={1}
             strokeDasharray="3 3"
             opacity={0.6}
@@ -333,7 +332,7 @@ export const ControlChart = memo(function ControlChart({
             x={PADDING.left + PLOT_WIDTH + 4}
             y={PADDING.top + yScale(stats.lwl) + 4}
             fontSize={10}
-            fill="#eab308"
+            fill={theme.palette.warning.dark}
             fontFamily={theme.typography.fontFamily}
           >
             -1σ
@@ -345,14 +344,14 @@ export const ControlChart = memo(function ControlChart({
             y1={PADDING.top + yScale(stats.mean)}
             x2={PADDING.left + PLOT_WIDTH}
             y2={PADDING.top + yScale(stats.mean)}
-            stroke="#0d9488"
+            stroke={theme.palette.primary.main}
             strokeWidth={2}
           />
           <text
             x={PADDING.left + PLOT_WIDTH + 4}
             y={PADDING.top + yScale(stats.mean) + 4}
             fontSize={10}
-            fill="#0d9488"
+            fill={theme.palette.primary.main}
             fontWeight={600}
             fontFamily={theme.typography.fontFamily}
           >
@@ -372,7 +371,7 @@ export const ControlChart = memo(function ControlChart({
                 y={CHART_HEIGHT - 8}
                 textAnchor="middle"
                 fontSize={10}
-                fill="#9ca3af"
+                fill={theme.palette.text.secondary}
                 fontFamily={theme.typography.fontFamily}
               >
                 {formatDate(record.performed_at)}
@@ -384,7 +383,7 @@ export const ControlChart = memo(function ControlChart({
           <path
             d={linePath}
             fill="none"
-            stroke="#94a3b8"
+            stroke={theme.palette.text.secondary}
             strokeWidth={1.5}
             strokeLinejoin="round"
             strokeLinecap="round"
@@ -416,7 +415,7 @@ export const ControlChart = memo(function ControlChart({
                   cy={cy}
                   r={isHovered ? 6 : 4}
                   fill={color}
-                  stroke="#ffffff"
+                  stroke={theme.palette.background.paper}
                   strokeWidth={2}
                   style={{ transition: 'r 0.15s ease', pointerEvents: 'none' }}
                 />
@@ -432,7 +431,7 @@ export const ControlChart = memo(function ControlChart({
                 y1={PADDING.top}
                 x2={PADDING.left + xScale(hoveredIndex)}
                 y2={PADDING.top + PLOT_HEIGHT}
-                stroke="#d1d5db"
+                stroke={theme.palette.divider}
                 strokeWidth={1}
                 strokeDasharray="4 2"
               />
@@ -447,22 +446,22 @@ export const ControlChart = memo(function ControlChart({
           sx={{
             mt: 1.5,
             p: 1.5,
-            border: '1px solid #e5e7eb',
+            border: `1px solid ${theme.palette.divider}`,
             borderRadius: '10px',
-            backgroundColor: '#f9fafb',
+            backgroundColor: theme.palette.custom.surface.muted,
           }}
         >
-          <Typography variant="caption" sx={{ fontWeight: 600, color: '#374151' }}>
+          <Typography variant="caption" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
             {formatDateTime(tooltipData.performed_at)}
           </Typography>
           <Box sx={{ display: 'flex', gap: 3, mt: 0.5 }}>
-            <Typography variant="caption" sx={{ color: '#6b7280' }}>
+            <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
               Valor: <strong style={{ color: getPointColor(tooltipData.measured_value) }}>{tooltipData.measured_value}</strong>
             </Typography>
-            <Typography variant="caption" sx={{ color: '#6b7280' }}>
+            <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
               Tipo: {tooltipData.qc_type}
             </Typography>
-            <Typography variant="caption" sx={{ color: '#6b7280' }}>
+            <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
               Control: {tooltipData.control_name}
             </Typography>
           </Box>
@@ -473,27 +472,27 @@ export const ControlChart = memo(function ControlChart({
       <Box sx={{ display: 'flex', gap: 3, mt: 2, justifyContent: 'center', flexWrap: 'wrap' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
           <Box sx={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: theme.palette.success.main }} />
-          <Typography variant="caption" sx={{ color: '#6b7280' }}>Pasó</Typography>
+          <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>Pasó</Typography>
         </Box>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
           <Box sx={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: theme.palette.warning.main }} />
-          <Typography variant="caption" sx={{ color: '#6b7280' }}>Advertencia</Typography>
+          <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>Advertencia</Typography>
         </Box>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
           <Box sx={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: theme.palette.error.main }} />
-          <Typography variant="caption" sx={{ color: '#6b7280' }}>Falló</Typography>
+          <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>Falló</Typography>
         </Box>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-          <Box sx={{ width: 20, height: 2, backgroundColor: '#0d9488' }} />
-          <Typography variant="caption" sx={{ color: '#6b7280' }}>Media</Typography>
+          <Box sx={{ width: 20, height: 2, backgroundColor: theme.palette.primary.main }} />
+          <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>Media</Typography>
         </Box>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-          <Box sx={{ width: 20, height: 0, borderTop: '2px dashed #f59e0b' }} />
-          <Typography variant="caption" sx={{ color: '#6b7280' }}>Límites Control (±2σ)</Typography>
+          <Box sx={{ width: 20, height: 0, borderTop: `2px dashed ${theme.palette.warning.main}` }} />
+          <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>Límites Control (±2σ)</Typography>
         </Box>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-          <Box sx={{ width: 20, height: 0, borderTop: '2px dotted #eab308' }} />
-          <Typography variant="caption" sx={{ color: '#6b7280' }}>Límites Advertencia (±1σ)</Typography>
+          <Box sx={{ width: 20, height: 0, borderTop: `2px dotted ${theme.palette.warning.dark}` }} />
+          <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>Límites Advertencia (±1σ)</Typography>
         </Box>
       </Box>
     </Paper>

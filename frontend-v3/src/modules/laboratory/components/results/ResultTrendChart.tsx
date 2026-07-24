@@ -44,10 +44,10 @@ export const ResultTrendChart = memo(function ResultTrendChart({
   const svgRef = useRef<SVGSVGElement>(null);
   const [tooltip, setTooltip] = useState<TooltipData | null>(null);
 
-  const TEAL = '#0d9488';
-  const RED = '#ef4444';
-  const GRAY = '#6b7280';
-  const LIGHT_GRAY = '#e5e7eb';
+  const TEAL = theme.palette.primary.main;
+  const RED = theme.palette.error.main;
+  const GRAY = theme.palette.text.secondary;
+  const LIGHT_GRAY = theme.palette.divider;
 
   const innerWidth = CHART_WIDTH - PADDING.left - PADDING.right;
   const innerHeight = CHART_HEIGHT - PADDING.top - PADDING.bottom;
@@ -134,7 +134,7 @@ export const ResultTrendChart = memo(function ResultTrendChart({
         elevation={0}
         sx={{
           p: 3,
-          border: '1px solid #e5e7eb',
+          border: `1px solid ${theme.palette.divider}`,
           borderRadius: '14px',
         }}
       >
@@ -157,15 +157,15 @@ export const ResultTrendChart = memo(function ResultTrendChart({
         elevation={0}
         sx={{
           p: 3,
-          border: '1px solid #e5e7eb',
+          border: `1px solid ${theme.palette.divider}`,
           borderRadius: '14px',
           textAlign: 'center',
         }}
       >
-        <Typography variant="h6" sx={{ fontWeight: 600, color: '#1f2937', mb: 0.5 }}>
+        <Typography variant="h6" sx={{ fontWeight: 600, color: theme.palette.text.primary, mb: 0.5 }}>
           Tendencia del Resultado
         </Typography>
-        <Typography variant="body2" sx={{ color: '#6b7280', py: 4 }}>
+        <Typography variant="body2" sx={{ color: theme.palette.text.secondary, py: 4 }}>
           No hay datos históricos disponibles.
         </Typography>
       </Paper>
@@ -178,11 +178,11 @@ export const ResultTrendChart = memo(function ResultTrendChart({
         elevation={0}
         sx={{
           p: 3,
-          border: '1px solid #e5e7eb',
+          border: `1px solid ${theme.palette.divider}`,
           borderRadius: '14px',
         }}
       >
-        <Typography variant="h6" sx={{ fontWeight: 600, color: '#1f2937', mb: 0.5 }}>
+        <Typography variant="h6" sx={{ fontWeight: 600, color: theme.palette.text.primary, mb: 0.5 }}>
           Tendencia del Resultado
         </Typography>
         <Box
@@ -194,10 +194,10 @@ export const ResultTrendChart = memo(function ResultTrendChart({
             py: 5,
           }}
         >
-          <Typography variant="body2" sx={{ color: '#9ca3af', fontStyle: 'italic' }}>
+          <Typography variant="body2" sx={{ color: theme.palette.text.secondary, fontStyle: 'italic' }}>
             Historial insuficiente
           </Typography>
-          <Typography variant="caption" sx={{ color: '#d1d5db', mt: 0.5 }}>
+          <Typography variant="caption" sx={{ color: theme.palette.text.disabled, mt: 0.5 }}>
             Se requieren al menos 2 resultados para mostrar la tendencia.
           </Typography>
         </Box>
@@ -213,7 +213,7 @@ export const ResultTrendChart = memo(function ResultTrendChart({
 
   const areaPath =
     chartPoints.points.length > 0
-      ? `${linePath} L ${chartPoints.points[chartPoints.points.length - 1].x} ${PADDING.top + innerHeight} L ${chartPoints.points[0].x} ${PADDING.top + innerHeight} Z`
+      ? `${linePath} L ${chartPoints.points[chartPoints.points.length - 1]!.x} ${PADDING.top + innerHeight} L ${chartPoints.points[0]!.x} ${PADDING.top + innerHeight} Z`
       : '';
 
   // Y-axis ticks
@@ -231,17 +231,17 @@ export const ResultTrendChart = memo(function ResultTrendChart({
       elevation={0}
       sx={{
         p: 3,
-        border: '1px solid #e5e7eb',
+        border: `1px solid ${theme.palette.divider}`,
         borderRadius: '14px',
       }}
     >
-      <Typography variant="h6" sx={{ fontWeight: 600, color: '#1f2937', mb: 1 }}>
+      <Typography variant="h6" sx={{ fontWeight: 600, color: theme.palette.text.primary, mb: 1 }}>
         Tendencia del Resultado
         {testUnit && (
           <Typography
             component="span"
             variant="caption"
-            sx={{ ml: 1, color: '#9ca3af', fontWeight: 400 }}
+            sx={{ ml: 1, color: theme.palette.text.secondary, fontWeight: 400 }}
           >
             ({testUnit})
           </Typography>
@@ -364,7 +364,7 @@ export const ResultTrendChart = memo(function ResultTrendChart({
                 cy={p.y}
                 r={5}
                 fill={p.isCritical ? RED : TEAL}
-                stroke="#ffffff"
+                stroke={theme.palette.background.paper}
                 strokeWidth={2}
                 style={{ pointerEvents: 'none' }}
               />
@@ -393,14 +393,14 @@ export const ResultTrendChart = memo(function ResultTrendChart({
                 width={120}
                 height={36}
                 rx={8}
-                fill="#1f2937"
+                fill={theme.palette.text.primary}
                 opacity={0.92}
               />
               <text
                 x={tooltip.x}
                 y={tooltip.y - 30}
                 textAnchor="middle"
-                fill="#ffffff"
+                fill={theme.palette.background.paper}
                 fontSize={12}
                 fontWeight={600}
                 fontFamily="inherit"
@@ -411,7 +411,7 @@ export const ResultTrendChart = memo(function ResultTrendChart({
                 x={tooltip.x}
                 y={tooltip.y - 16}
                 textAnchor="middle"
-                fill="#d1d5db"
+                fill={theme.palette.text.disabled}
                 fontSize={10}
                 fontFamily="inherit"
               >
@@ -433,7 +433,7 @@ export const ResultTrendChart = memo(function ResultTrendChart({
               backgroundColor: TEAL,
             }}
           />
-          <Typography variant="caption" sx={{ color: '#6b7280' }}>
+          <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
             Normal
           </Typography>
         </Box>
@@ -446,7 +446,7 @@ export const ResultTrendChart = memo(function ResultTrendChart({
               backgroundColor: RED,
             }}
           />
-          <Typography variant="caption" sx={{ color: '#6b7280' }}>
+          <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
             Crítico
           </Typography>
         </Box>

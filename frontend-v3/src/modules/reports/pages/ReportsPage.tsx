@@ -1,4 +1,6 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useTheme } from '@mui/material/styles';
 import {
   Box,
   Paper,
@@ -31,54 +33,47 @@ import { useGenerateReport, useReportDetail } from '../hooks/useReports';
 import { downloadReport } from '../utils/reportGenerator';
 import type { ReportType } from '../types/report.types';
 
-const REPORT_TYPE_CONFIG: Record<ReportType, { label: string; description: string; icon: React.ReactNode; color: string; bgColor: string }> = {
-  appointments: {
-    label: 'Citas',
-    description: 'Reporte de citas médicas del período seleccionado',
-    icon: <EventNote sx={{ fontSize: 32 }} />,
-    color: '#0d9488',
-    bgColor: '#f0fdfa',
-  },
-  revenue: {
-    label: 'Ingresos',
-    description: 'Reporte financiero detallado de ingresos y gastos',
-    icon: <AttachMoney sx={{ fontSize: 32 }} />,
-    color: '#3b82f6',
-    bgColor: '#eff6ff',
-  },
-  patients: {
-    label: 'Pacientes',
-    description: 'Estadísticas y listado de pacientes atendidos',
-    icon: <People sx={{ fontSize: 32 }} />,
-    color: '#8b5cf6',
-    bgColor: '#f5f3ff',
-  },
-  laboratory: {
-    label: 'Laboratorio',
-    description: 'Resultados de exámenes de laboratorio del período',
-    icon: <Science sx={{ fontSize: 32 }} />,
-    color: '#f59e0b',
-    bgColor: '#fffbeb',
-  },
-  custom: {
-    label: 'Personalizado',
-    description: 'Genera un reporte con filtros personalizados',
-    icon: <Description sx={{ fontSize: 32 }} />,
-    color: '#6b7280',
-    bgColor: '#f9fafb',
-  },
+const REPORT_ICONS: Record<ReportType, React.ReactNode> = {
+  appointments: <EventNote sx={{ fontSize: 32 }} />,
+  revenue: <AttachMoney sx={{ fontSize: 32 }} />,
+  patients: <People sx={{ fontSize: 32 }} />,
+  laboratory: <Science sx={{ fontSize: 32 }} />,
+  custom: <Description sx={{ fontSize: 32 }} />,
 };
 
-const REPORT_STATUS_CONFIG = {
-  generating: { label: 'Generando', icon: <HourglassEmpty sx={{ fontSize: 16 }} />, color: 'warning' as const },
-  completed: { label: 'Completado', icon: <CheckCircle sx={{ fontSize: 16 }} />, color: 'success' as const },
-  failed: { label: 'Error', icon: <Error sx={{ fontSize: 16 }} />, color: 'error' as const },
+import type { Theme } from '@mui/material/styles';
+
+function getReportColors(theme: Theme): Record<ReportType, { color: string; bgColor: string }> {
+  return {
+    appointments: { color: theme.palette.primary.main, bgColor: theme.palette.custom.brand.lightest },
+    revenue: { color: theme.palette.info.main, bgColor: theme.palette.custom.status.info.bg },
+    patients: { color: theme.palette.secondary.main, bgColor: theme.palette.custom.status.info.bg },
+    laboratory: { color: theme.palette.warning.main, bgColor: theme.palette.custom.status.warning.bg },
+    custom: { color: theme.palette.text.secondary, bgColor: theme.palette.custom.surface.muted },
+  };
+}
+
+const STATUS_ICONS: Record<string, React.ReactElement> = {
+  generating: <HourglassEmpty sx={{ fontSize: 16 }} />,
+  completed: <CheckCircle sx={{ fontSize: 16 }} />,
+  failed: <Error sx={{ fontSize: 16 }} />,
+};
+
+const STATUS_COLORS: Record<string, 'warning' | 'success' | 'error'> = {
+  generating: 'warning',
+  completed: 'success',
+  failed: 'error',
 };
 
 const formatDate = (date: string) =>
   new Date(date).toLocaleDateString('es-CL', { day: '2-digit', month: 'short', year: 'numeric' });
 
 export default function ReportsPage() {
+  const { t } = useTranslation('reports');
+  const { t: tc } = useTranslation('common');
+  const theme = useTheme();
+  const REPORT_COLORS = useMemo(() => getReportColors(theme), [theme]);
+
   const [selectedType, setSelectedType] = useState<ReportType | null>(null);
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
@@ -104,24 +99,23 @@ export default function ReportsPage() {
     );
   };
 
-  // Default report types if API doesn't return them
   const reportTypes: ReportType[] = ['appointments', 'revenue', 'patients', 'laboratory'];
 
   return (
     <Box>
       <PageHeader
-        title="Reportes"
-        subtitle="Genera reportes detallados de la clínica"
+        title={t('title')}
+        subtitle={t('subtitle')}
       />
 
       {/* Report Type Selector */}
-      <Typography variant="h6" sx={{ fontWeight: 600, color: '#1f2937', mb: 2 }}>
-        Tipo de Reporte
+      <Typography variant="h6" sx={{ fontWeight: 600, color: theme.palette.text.primary, mb: 2 }}>
+        {t('reportType')}
       </Typography>
 
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: 'repeat(4, 1fr)' }, gap: 2, mb: 4 }}>
         {reportTypes.map((type, index) => {
-          const config = REPORT_TYPE_CONFIG[type];
+          const colors = REPORT_COLORS[type];
           return (
             <Card
               key={type}
@@ -132,8 +126,8 @@ export default function ReportsPage() {
               onClick={() => setSelectedType(type)}
               sx={{
                 cursor: 'pointer',
-                border: selectedType === type ? `2px solid ${config.color}` : '1px solid #e5e7eb',
-                backgroundColor: selectedType === type ? config.bgColor : '#fff',
+                border: selectedType === type ? `2px solid ${colors.color}` : `1px solid ${theme.palette.divider}`,
+                backgroundColor: selectedType === type ? colors.bgColor : theme.palette.background.paper,
                 transition: 'all 0.2s',
                 '&:hover': {
                   boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
@@ -142,12 +136,12 @@ export default function ReportsPage() {
               }}
             >
               <CardContent sx={{ textAlign: 'center', py: 3 }}>
-                <Box sx={{ color: config.color, mb: 1.5 }}>{config.icon}</Box>
-                <Typography variant="h6" sx={{ fontWeight: 600, color: '#1f2937', fontSize: '0.9375rem' }}>
-                  {config.label}
+                <Box sx={{ color: colors.color, mb: 1.5 }}>{REPORT_ICONS[type]}</Box>
+                <Typography variant="h6" sx={{ fontWeight: 600, color: theme.palette.text.primary, fontSize: '0.9375rem' }}>
+                  {t(`reportTypeLabels.${type}`)}
                 </Typography>
-                <Typography variant="body2" sx={{ color: '#6b7280', mt: 0.5, fontSize: '0.75rem' }}>
-                  {config.description}
+                <Typography variant="body2" sx={{ color: theme.palette.text.secondary, mt: 0.5, fontSize: '0.75rem' }}>
+                  {t(`typeDescriptions.${type}`)}
                 </Typography>
               </CardContent>
             </Card>
@@ -161,17 +155,17 @@ export default function ReportsPage() {
           component={motion.div}
           initial={{ opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: 'auto' }}
-          sx={{ p: 3, mb: 3, border: '1px solid #e5e7eb' }}
+          sx={{ p: 3, mb: 3, border: `1px solid ${theme.palette.divider}` }}
         >
-          <Typography variant="h6" sx={{ fontWeight: 600, color: '#1f2937', mb: 2 }}>
-            Rango de Fechas
+          <Typography variant="h6" sx={{ fontWeight: 600, color: theme.palette.text.primary, mb: 2 }}>
+            {t('dateRange')}
           </Typography>
 
           <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-end', flexWrap: 'wrap' }}>
             <TextField
               fullWidth
               type="date"
-              label="Fecha Inicio"
+              label={t('dateFrom')}
               value={dateFrom}
               onChange={(e) => setDateFrom(e.target.value)}
               slotProps={{ inputLabel: { shrink: true } }}
@@ -180,7 +174,7 @@ export default function ReportsPage() {
             <TextField
               fullWidth
               type="date"
-              label="Fecha Fin"
+              label={t('dateTo')}
               value={dateTo}
               onChange={(e) => setDateTo(e.target.value)}
               slotProps={{ inputLabel: { shrink: true } }}
@@ -192,7 +186,7 @@ export default function ReportsPage() {
               disabled={!dateFrom || !dateTo || generateReport.isPending}
               sx={{ minWidth: 160 }}
             >
-              {generateReport.isPending ? 'Generando...' : 'Generar Reporte'}
+              {generateReport.isPending ? t('generating') : t('generateReport')}
             </Button>
           </Box>
         </Paper>
@@ -204,22 +198,22 @@ export default function ReportsPage() {
           component={motion.div}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          sx={{ p: 3, mb: 3, border: '1px solid #e5e7eb' }}
+          sx={{ p: 3, mb: 3, border: `1px solid ${theme.palette.divider}` }}
         >
-          <Typography variant="h6" sx={{ fontWeight: 600, color: '#1f2937', mb: 2 }}>
-            Estado del Reporte
+          <Typography variant="h6" sx={{ fontWeight: 600, color: theme.palette.text.primary, mb: 2 }}>
+            {t('reportStatus')}
           </Typography>
 
           <TableContainer>
             <Table size="small">
               <TableHead>
                 <TableRow>
-                  <TableCell>ID</TableCell>
-                  <TableCell>Tipo</TableCell>
-                  <TableCell>Período</TableCell>
-                  <TableCell>Estado</TableCell>
-                  <TableCell>Fecha</TableCell>
-                  <TableCell align="right">Acciones</TableCell>
+                  <TableCell>{t('columnId')}</TableCell>
+                  <TableCell>{t('columnType')}</TableCell>
+                  <TableCell>{t('columnPeriod')}</TableCell>
+                  <TableCell>{t('columnStatus')}</TableCell>
+                  <TableCell>{t('columnDate')}</TableCell>
+                  <TableCell align="right">{tc('actions')}</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -227,11 +221,11 @@ export default function ReportsPage() {
                   <TableCell>#{pollingReport.id}</TableCell>
                   <TableCell>
                     <Chip
-                      label={REPORT_TYPE_CONFIG[pollingReport.type]?.label || pollingReport.type}
+                      label={t(`reportTypeLabels.${pollingReport.type}`) || pollingReport.type}
                       size="small"
                       sx={{
-                        backgroundColor: REPORT_TYPE_CONFIG[pollingReport.type]?.bgColor,
-                        color: REPORT_TYPE_CONFIG[pollingReport.type]?.color,
+                        backgroundColor: REPORT_COLORS[pollingReport.type]?.bgColor,
+                        color: REPORT_COLORS[pollingReport.type]?.color,
                         fontWeight: 500,
                       }}
                     />
@@ -241,9 +235,9 @@ export default function ReportsPage() {
                   </TableCell>
                   <TableCell>
                     <Chip
-                      icon={REPORT_STATUS_CONFIG[pollingReport.status].icon}
-                      label={REPORT_STATUS_CONFIG[pollingReport.status].label}
-                      color={REPORT_STATUS_CONFIG[pollingReport.status].color}
+                      icon={STATUS_ICONS[pollingReport.status]}
+                      label={t(`statusLabels.${pollingReport.status}`)}
+                      color={STATUS_COLORS[pollingReport.status]}
                       size="small"
                     />
                   </TableCell>
@@ -261,9 +255,9 @@ export default function ReportsPage() {
                             pollingReport.config.date_to,
                           )
                         }
-                        sx={{ color: '#0d9488' }}
+                        sx={{ color: theme.palette.primary.main }}
                       >
-                        Descargar
+                        {t('download')}
                       </Button>
                     )}
                   </TableCell>
@@ -277,9 +271,9 @@ export default function ReportsPage() {
       {/* Empty state if no type selected */}
       {!selectedType && (
         <EmptyState
-          icon={<Description sx={{ fontSize: 48, color: '#d1d5db' }} />}
-          title="Selecciona un tipo de reporte"
-          message="Elige el tipo de reporte que deseas generar y selecciona el rango de fechas."
+          icon={<Description sx={{ fontSize: 48, color: theme.palette.divider }} />}
+          title={t('selectType')}
+          message={t('selectTypeMessage')}
         />
       )}
     </Box>

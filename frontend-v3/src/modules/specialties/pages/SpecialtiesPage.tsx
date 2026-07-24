@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Box,
   Paper,
@@ -40,14 +41,17 @@ import {
 } from '../hooks/useSpecialties';
 import type { Specialty } from '../types/specialty.types';
 
-const specialtySchema = z.object({
-  name: z.string().min(2, 'El nombre debe tener al menos 2 caracteres'),
-  description: z.string().optional(),
-});
-
-type SpecialtyFormData = z.infer<typeof specialtySchema>;
-
 export default function SpecialtiesPage() {
+  const { t } = useTranslation('specialties');
+  const { t: tc } = useTranslation('common');
+
+  const specialtySchema = z.object({
+    name: z.string().min(2, t('validation_min_name')),
+    description: z.string().optional(),
+  });
+
+  type SpecialtyFormData = z.infer<typeof specialtySchema>;
+
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [search, setSearch] = useState('');
@@ -110,17 +114,17 @@ export default function SpecialtiesPage() {
     }
   };
 
-  if (isLoading) return <LoadingState message="Cargando especialidades..." />;
+  if (isLoading) return <LoadingState message={t('loading')} />;
   if (error) return <ErrorState error={error as never} onRetry={refetch} />;
 
   return (
     <MotionDiv initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
       <PageHeader
-        title="Especialidades"
-        subtitle={`${total} especialidades registradas`}
+        title={t('title')}
+        subtitle={t('subtitle', { total })}
         action={
           <Button variant="contained" startIcon={<Add />} onClick={openCreate}>
-            Nueva Especialidad
+            {t('newSpecialty')}
           </Button>
         }
       />
@@ -130,7 +134,7 @@ export default function SpecialtiesPage() {
         <TextField
           fullWidth
           size="small"
-          placeholder="Buscar especialidades..."
+          placeholder={t('searchPlaceholder')}
           value={search}
           onChange={(e) => { setSearch(e.target.value); setPage(0); }}
           slotProps={{
@@ -148,9 +152,9 @@ export default function SpecialtiesPage() {
       {specialties.length === 0 ? (
         <EmptyState
           icon={<MedicalServices sx={{ fontSize: 48, color: '#d1d5db' }} />}
-          title="No se encontraron especialidades"
-          message={search ? 'Intenta con otros términos de búsqueda.' : 'Crea tu primera especialidad para comenzar.'}
-          action={!search ? { label: 'Nueva Especialidad', onClick: openCreate } : undefined}
+          title={t('notFound')}
+          message={search ? t('tryOtherTerms') : t('createFirst')}
+          action={!search ? { label: t('newSpecialty'), onClick: openCreate } : undefined}
         />
       ) : (
         <Paper sx={{ borderRadius: '14px', border: '1px solid #e5e7eb', overflow: 'hidden' }}>
@@ -158,10 +162,10 @@ export default function SpecialtiesPage() {
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>Nombre</TableCell>
-                  <TableCell>Descripción</TableCell>
-                  <TableCell>Fecha de Creación</TableCell>
-                  <TableCell align="right">Acciones</TableCell>
+                  <TableCell>{tc('name')}</TableCell>
+                  <TableCell>{tc('description')}</TableCell>
+                  <TableCell>{t('creationDate')}</TableCell>
+                  <TableCell align="right">{tc('actions')}</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -222,7 +226,7 @@ export default function SpecialtiesPage() {
               rowsPerPage={rowsPerPage}
               onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value)); setPage(0); }}
               rowsPerPageOptions={[5, 10, 25]}
-              labelRowsPerPage="Filas por página"
+              labelRowsPerPage={tc('rowsPerPage')}
             />
           )}
         </Paper>
@@ -237,13 +241,13 @@ export default function SpecialtiesPage() {
         PaperProps={{ sx: { borderRadius: '14px' } }}
       >
         <DialogTitle sx={{ fontWeight: 600 }}>
-          {editing ? 'Editar Especialidad' : 'Nueva Especialidad'}
+          {editing ? t('editSpecialty') : t('newSpecialty')}
         </DialogTitle>
         <DialogContent>
           <Box component="form" onSubmit={handleSubmit(onSubmit)} sx={{ pt: 1 }}>
             <TextField
               fullWidth
-              label="Nombre"
+              label={tc('name')}
               {...register('name')}
               error={!!errors.name}
               helperText={errors.name?.message}
@@ -251,7 +255,7 @@ export default function SpecialtiesPage() {
             />
             <TextField
               fullWidth
-              label="Descripción (opcional)"
+              label={t('descriptionOptional')}
               {...register('description')}
               multiline
               rows={3}
@@ -260,7 +264,7 @@ export default function SpecialtiesPage() {
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
           <Button onClick={() => { setDialogOpen(false); setEditing(null); }} variant="outlined">
-            Cancelar
+            {tc('cancel')}
           </Button>
           <Button
             variant="contained"
@@ -268,32 +272,33 @@ export default function SpecialtiesPage() {
             disabled={createSpecialty.isPending || updateSpecialty.isPending}
           >
             {createSpecialty.isPending || updateSpecialty.isPending
-              ? 'Guardando...'
+              ? t('saving')
               : editing
-              ? 'Actualizar'
-              : 'Crear'}
+              ? t('updating')
+              : tc('create')}
           </Button>
         </DialogActions>
       </Dialog>
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={!!deleting} onClose={() => setDeleting(null)}>
-        <DialogTitle sx={{ fontWeight: 600 }}>Eliminar Especialidad</DialogTitle>
+        <DialogTitle sx={{ fontWeight: 600 }}>{t('deleteTitle')}</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            ¿Estás seguro de que deseas eliminar <strong>{deleting?.name}</strong>?
-            Esta acción no se puede deshacer.
+            <span dangerouslySetInnerHTML={{ __html: t('confirmDeleteMessage', { name: deleting?.name ?? '' }) }} />
+            <br />
+            {tc('thisActionCannotBeUndone')}
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDeleting(null)}>Cancelar</Button>
+          <Button onClick={() => setDeleting(null)}>{tc('cancel')}</Button>
           <Button
             variant="contained"
             color="error"
             onClick={handleDelete}
             disabled={deleteSpecialty.isPending}
           >
-            {deleteSpecialty.isPending ? 'Eliminando...' : 'Eliminar'}
+            {deleteSpecialty.isPending ? t('deleting') : tc('delete')}
           </Button>
         </DialogActions>
       </Dialog>

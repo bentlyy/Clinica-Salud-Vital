@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { Box, Typography } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import { MotionDiv } from '@/shared/utils/animations';
 
 interface PageHeaderProps {
@@ -9,6 +10,8 @@ interface PageHeaderProps {
 }
 
 export function PageHeader({ title, subtitle, action }: PageHeaderProps) {
+  const theme = useTheme();
+
   return (
     <MotionDiv
       initial={{ opacity: 0, y: -10 }}
@@ -25,11 +28,11 @@ export function PageHeader({ title, subtitle, action }: PageHeaderProps) {
         }}
       >
       <Box>
-        <Typography variant="h4" sx={{ fontWeight: 700, color: '#1f2937' }}>
+        <Typography variant="h4" sx={{ fontWeight: 700, color: theme.palette.text.primary }}>
           {title}
         </Typography>
         {subtitle && (
-          <Typography variant="body2" component="div" sx={{ color: '#6b7280', mt: 0.5 }}>
+          <Typography variant="body2" component="div" sx={{ color: theme.palette.text.secondary, mt: 0.5 }}>
             {subtitle}
           </Typography>
         )}

@@ -71,13 +71,6 @@ const QC_TYPE_OPTIONS = [
   { value: 'proficiency' as const, label: 'Competencia / Proficiency' },
 ];
 
-const QC_TYPE_LABELS: Record<string, string> = {
-  internal: 'Control Interno',
-  external: 'Control Externo',
-  calibration: 'Calibración',
-  proficiency: 'Competencia / Proficiency',
-};
-
 // ── Component ────────────────────────────────────────────────────────────────
 
 export const QCForm = memo(function QCForm({
@@ -139,10 +132,10 @@ export const QCForm = memo(function QCForm({
   const autoStatus = useMemo(() => {
     if (!watchedMeasured || !watchedMin || !watchedMax) return null;
     if (watchedMeasured >= watchedMin && watchedMeasured <= watchedMax) {
-      return { label: 'Dentro de rango (Pasó)', color: '#059669', bgColor: '#ecfdf5' };
+      return { label: 'Dentro de rango (Pasó)', color: theme.palette.success.dark, bgColor: theme.palette.custom.status.success.bg };
     }
-    return { label: 'Fuera de rango (Falló)', color: '#dc2626', bgColor: '#fef2f2' };
-  }, [watchedMeasured, watchedMin, watchedMax]);
+    return { label: 'Fuera de rango (Falló)', color: theme.palette.error.dark, bgColor: theme.palette.custom.status.error.bg };
+  }, [watchedMeasured, watchedMin, watchedMax, theme]);
 
   const handleFormSubmit = (data: QCFormValues) => {
     onSubmit({
@@ -161,7 +154,7 @@ export const QCForm = memo(function QCForm({
         ? autoStatus.label.includes('Pasó')
           ? 'passed'
           : 'failed'
-        : 'pending',
+        : 'review',
     });
   };
 
@@ -172,7 +165,7 @@ export const QCForm = memo(function QCForm({
         sx={{
           p: 3,
           borderRadius: '14px',
-          border: '1px solid #e5e7eb',
+          border: `1px solid ${theme.palette.divider}`,
         }}
       >
         <Skeleton variant="text" width="40%" height={28} />
@@ -187,14 +180,14 @@ export const QCForm = memo(function QCForm({
       sx={{
         p: 3,
         borderRadius: '14px',
-        border: '1px solid #e5e7eb',
+        border: `1px solid ${theme.palette.divider}`,
       }}
     >
       {/* Header */}
-      <Typography variant="h6" sx={{ fontWeight: 700, color: '#1f2937', mb: 0.5 }}>
+      <Typography variant="h6" sx={{ fontWeight: 700, color: theme.palette.text.primary, mb: 0.5 }}>
         {isEditing ? 'Editar Registro QC' : 'Nuevo Registro QC'}
       </Typography>
-      <Typography variant="body2" sx={{ color: '#6b7280', mb: 3 }}>
+      <Typography variant="body2" sx={{ color: theme.palette.text.secondary, mb: 3 }}>
         {isEditing
           ? 'Modifique los datos del registro de control de calidad'
           : 'Complete los datos para registrar un nuevo control de calidad'}
@@ -207,7 +200,7 @@ export const QCForm = memo(function QCForm({
       >
         <Grid container spacing={2.5}>
           {/* Row 1: Area, Test, QC Type */}
-          <Grid size={{ xs: 12, sm: 4 }}>
+          <Grid xs={12} sm={4}>
             <Controller
               name="lab_area_id"
               control={control}
@@ -243,7 +236,7 @@ export const QCForm = memo(function QCForm({
             />
           </Grid>
 
-          <Grid size={{ xs: 12, sm: 4 }}>
+          <Grid xs={12} sm={4}>
             <Controller
               name="lab_test_id"
               control={control}
@@ -279,7 +272,7 @@ export const QCForm = memo(function QCForm({
             />
           </Grid>
 
-          <Grid size={{ xs: 12, sm: 4 }}>
+          <Grid xs={12} sm={4}>
             <Controller
               name="qc_type"
               control={control}
@@ -311,7 +304,7 @@ export const QCForm = memo(function QCForm({
           </Grid>
 
           {/* Row 2: Control Name, Lot Number, Expiration */}
-          <Grid size={{ xs: 12, sm: 4 }}>
+          <Grid xs={12} sm={4}>
             <Controller
               name="control_name"
               control={control}
@@ -332,7 +325,7 @@ export const QCForm = memo(function QCForm({
             />
           </Grid>
 
-          <Grid size={{ xs: 12, sm: 4 }}>
+          <Grid xs={12} sm={4}>
             <Controller
               name="lot_number"
               control={control}
@@ -353,7 +346,7 @@ export const QCForm = memo(function QCForm({
             />
           </Grid>
 
-          <Grid size={{ xs: 12, sm: 4 }}>
+          <Grid xs={12} sm={4}>
             <Controller
               name="expiration_date"
               control={control}
@@ -376,7 +369,7 @@ export const QCForm = memo(function QCForm({
           </Grid>
 
           {/* Row 3: Expected Min, Expected Max, Measured Value */}
-          <Grid size={{ xs: 12, sm: 4 }}>
+          <Grid xs={12} sm={4}>
             <Controller
               name="expected_min"
               control={control}
@@ -400,7 +393,7 @@ export const QCForm = memo(function QCForm({
             />
           </Grid>
 
-          <Grid size={{ xs: 12, sm: 4 }}>
+          <Grid xs={12} sm={4}>
             <Controller
               name="expected_max"
               control={control}
@@ -424,7 +417,7 @@ export const QCForm = memo(function QCForm({
             />
           </Grid>
 
-          <Grid size={{ xs: 12, sm: 4 }}>
+          <Grid xs={12} sm={4}>
             <Controller
               name="measured_value"
               control={control}
@@ -449,7 +442,7 @@ export const QCForm = memo(function QCForm({
           </Grid>
 
           {/* Row 4: Equipment, Notes */}
-          <Grid size={{ xs: 12, sm: 6 }}>
+          <Grid xs={12} sm={6}>
             <Controller
               name="equipment_id"
               control={control}
@@ -480,7 +473,7 @@ export const QCForm = memo(function QCForm({
             />
           </Grid>
 
-          <Grid size={{ xs: 12, sm: 6 }}>
+          <Grid xs={12} sm={6}>
             <Controller
               name="notes"
               control={control}
@@ -527,7 +520,7 @@ export const QCForm = memo(function QCForm({
             <Typography variant="body2" sx={{ fontWeight: 600, color: autoStatus.color }}>
               Auto-evaluación: {autoStatus.label}
             </Typography>
-            <Typography variant="caption" sx={{ color: '#6b7280', ml: 1 }}>
+            <Typography variant="caption" sx={{ color: theme.palette.text.secondary, ml: 1 }}>
               (Rango aceptable: {watchedMin} – {watchedMax})
             </Typography>
           </Box>
@@ -543,9 +536,9 @@ export const QCForm = memo(function QCForm({
               onClick={onCancel}
               disabled={isSubmitting}
               sx={{
-                color: '#6b7280',
+                color: theme.palette.text.secondary,
                 fontWeight: 600,
-                '&:hover': { backgroundColor: '#f3f4f6' },
+                '&:hover': { backgroundColor: theme.palette.custom.surface.sunken },
               }}
             >
               Cancelar
@@ -556,11 +549,11 @@ export const QCForm = memo(function QCForm({
             variant="contained"
             disabled={isSubmitting}
             sx={{
-              background: 'linear-gradient(135deg, #0d9488 0%, #0f766e 100%)',
+              background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
               fontWeight: 600,
               px: 3,
               '&:hover': {
-                background: 'linear-gradient(135deg, #0f766e 0%, #115e59 100%)',
+                background: `linear-gradient(135deg, ${theme.palette.primary.dark} 0%, ${theme.palette.custom.brand.darker} 100%)`,
               },
             }}
           >

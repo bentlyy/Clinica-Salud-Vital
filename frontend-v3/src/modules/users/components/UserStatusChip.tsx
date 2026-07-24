@@ -1,4 +1,5 @@
 import { Chip, Tooltip } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import CheckCircle from '@mui/icons-material/CheckCircle';
 import Cancel from '@mui/icons-material/Cancel';
 
@@ -9,6 +10,8 @@ interface UserStatusChipProps {
 }
 
 export function UserStatusChip({ isActive, onClick, size = 'small' }: UserStatusChipProps) {
+  const theme = useTheme();
+
   return (
     <Tooltip title={isActive ? 'Activo — Haz clic para desactivar' : 'Inactivo — Haz clic para activar'}>
       <Chip
@@ -20,16 +23,16 @@ export function UserStatusChip({ isActive, onClick, size = 'small' }: UserStatus
           fontWeight: 600,
           borderRadius: '8px',
           cursor: onClick ? 'pointer' : 'default',
-          backgroundColor: isActive ? '#ecfdf5' : '#fef2f2',
-          color: isActive ? '#059669' : '#dc2626',
-          border: `1px solid ${isActive ? '#a7f3d0' : '#fecaca'}`,
+          backgroundColor: isActive ? theme.palette.custom.status.success.bg : theme.palette.custom.status.error.bg,
+          color: isActive ? theme.palette.custom.status.success.text : theme.palette.custom.status.error.text,
+          border: `1px solid ${isActive ? theme.palette.custom.status.success.border : theme.palette.custom.status.error.border}`,
           '&:hover': onClick
             ? {
-                backgroundColor: isActive ? '#d1fae5' : '#fee2e2',
+                backgroundColor: isActive ? theme.palette.custom.status.success.bg : theme.palette.custom.status.error.bg,
               }
             : undefined,
           '& .MuiChip-icon': {
-            color: isActive ? '#059669' : '#dc2626',
+            color: isActive ? theme.palette.custom.status.success.text : theme.palette.custom.status.error.text,
           },
         }}
       />

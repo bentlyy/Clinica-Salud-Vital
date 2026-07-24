@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useTheme } from '@mui/material/styles';
 import {
   Box,
   Paper,
@@ -36,6 +38,10 @@ import {
 } from '../types/audit.types';
 
 export default function AuditPage() {
+  const { t } = useTranslation('audit');
+  const { t: tc } = useTranslation('common');
+  const theme = useTheme();
+
   const [page, setPage] = useState(0);
   const [limit] = useState(15);
   const [search, setSearch] = useState('');
@@ -69,10 +75,10 @@ export default function AuditPage() {
   };
 
   const handleExport = () => {
-    const headers = ['Fecha', 'Usuario', 'Acción', 'Entidad', 'ID Entidad', 'IP'];
+    const headers = [t('csvHeaders.date'), t('csvHeaders.user'), t('csvHeaders.action'), t('csvHeaders.entity'), t('csvHeaders.entityId'), t('csvHeaders.ip')];
     const rows = logs.map((log) => [
       new Date(log.created_at).toLocaleString('es-CL'),
-      log.user_name || `Usuario #${log.user_id}`,
+      log.user_name || t('userFallback', { id: log.user_id }),
       AUDIT_ACTION_LABELS[log.action] || log.action,
       AUDIT_ENTITY_LABELS[log.entity_type] || log.entity_type,
       log.entity_id?.toString() ?? '',
@@ -89,14 +95,14 @@ export default function AuditPage() {
     URL.revokeObjectURL(url);
   };
 
-  if (isLoading) return <LoadingState message="Cargando registros de auditoría..." />;
+  if (isLoading) return <LoadingState message={t('loading')} />;
   if (error) return <ErrorState error={error as Error} onRetry={() => void refetch()} />;
 
   return (
     <Box>
       <PageHeader
-        title="Auditoría"
-        subtitle="Registro de actividades y acciones del sistema"
+        title={t('title')}
+        subtitle={t('subtitle')}
         action={
           <Button
             variant="outlined"
@@ -104,17 +110,17 @@ export default function AuditPage() {
             onClick={handleExport}
             disabled={logs.length === 0}
           >
-            Exportar CSV
+            {t('exportCsv')}
           </Button>
         }
       />
 
       {/* Filters */}
-      <Paper sx={{ p: 2, mb: 3, border: '1px solid #e5e7eb' }}>
+      <Paper sx={{ p: 2, mb: 3, border: `1px solid ${theme.palette.divider}` }}>
         <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
           <TextField
             size="small"
-            placeholder="Buscar en auditoría..."
+            placeholder={t('searchPlaceholder')}
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
@@ -124,7 +130,7 @@ export default function AuditPage() {
               input: {
                 startAdornment: (
                   <InputAdornment position="start">
-                    <Search sx={{ fontSize: 18, color: '#9ca3af' }} />
+                    <Search sx={{ fontSize: 18, color: theme.palette.text.secondary }} />
                   </InputAdornment>
                 ),
               },
@@ -134,7 +140,7 @@ export default function AuditPage() {
           <TextField
             select
             size="small"
-            label="Acción"
+            label={t('actionLabel')}
             value={actionFilter}
             onChange={(e) => {
               setActionFilter(e.target.value);
@@ -151,7 +157,7 @@ export default function AuditPage() {
           <TextField
             select
             size="small"
-            label="Entidad"
+            label={t('entityLabel')}
             value={entityFilter}
             onChange={(e) => {
               setEntityFilter(e.target.value);
@@ -171,22 +177,22 @@ export default function AuditPage() {
       {/* Table */}
       {logs.length === 0 ? (
         <EmptyState
-          icon={<Security sx={{ fontSize: 48, color: '#d1d5db' }} />}
-          title="No hay registros de auditoría"
-          message="No se encontraron registros con los filtros seleccionados."
+          icon={<Security sx={{ fontSize: 48, color: theme.palette.divider }} />}
+          title={t('noAuditLogs')}
+          message={t('noResultsWithFilters')}
         />
       ) : (
-        <TableContainer component={Paper} sx={{ border: '1px solid #e5e7eb' }}>
+        <TableContainer component={Paper} sx={{ border: `1px solid ${theme.palette.divider}` }}>
           <Table>
             <TableHead>
               <TableRow>
-                <TableCell>Usuario</TableCell>
-                <TableCell>Acción</TableCell>
-                <TableCell>Entidad</TableCell>
-                <TableCell>Detalles</TableCell>
-                <TableCell>IP</TableCell>
-                <TableCell>Fecha</TableCell>
-                <TableCell align="right">Acciones</TableCell>
+                <TableCell>{t('user')}</TableCell>
+                <TableCell>{t('action')}</TableCell>
+                <TableCell>{t('entity')}</TableCell>
+                <TableCell>{t('details')}</TableCell>
+                <TableCell>{t('ip')}</TableCell>
+                <TableCell>{t('date')}</TableCell>
+                <TableCell align="right">{t('actions')}</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -202,17 +208,17 @@ export default function AuditPage() {
                             width: 32,
                             height: 32,
                             borderRadius: '50%',
-                            backgroundColor: '#f0fdfa',
+                            backgroundColor: theme.palette.custom.brand.lightest,
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
                           }}
                         >
-                          <Security sx={{ fontSize: 16, color: '#0d9488' }} />
+                          <Security sx={{ fontSize: 16, color: theme.palette.primary.main }} />
                         </Box>
                         <Box>
-                          <Box component="span" sx={{ fontWeight: 500, color: '#1f2937', fontSize: '0.875rem' }}>
-                            {log.user_name || `Usuario #${log.user_id}`}
+                          <Box component="span" sx={{ fontWeight: 500, color: theme.palette.text.primary, fontSize: '0.875rem' }}>
+                            {log.user_name || t('userFallback', { id: log.user_id })}
                           </Box>
                         </Box>
                       </Box>
@@ -222,8 +228,8 @@ export default function AuditPage() {
                         label={actionLabel}
                         size="small"
                         sx={{
-                          backgroundColor: '#f0fdfa',
-                          color: '#0d9488',
+                          backgroundColor: theme.palette.custom.brand.lightest,
+                          color: theme.palette.primary.main,
                           fontWeight: 500,
                         }}
                       />
@@ -233,24 +239,24 @@ export default function AuditPage() {
                         label={entityLabel}
                         size="small"
                         sx={{
-                          backgroundColor: '#eff6ff',
-                          color: '#2563eb',
+                          backgroundColor: theme.palette.custom.status.info.bg,
+                          color: theme.palette.info.dark,
                           fontWeight: 500,
                         }}
                       />
                     </TableCell>
                     <TableCell>
-                      <Box component="span" sx={{ color: '#6b7280', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block', fontSize: '0.875rem' }}>
+                      <Box component="span" sx={{ color: theme.palette.text.secondary, maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block', fontSize: '0.875rem' }}>
                         {log.entity_id ? `ID: ${log.entity_id}` : '—'}
                       </Box>
                     </TableCell>
                     <TableCell>
-                      <Box component="span" sx={{ color: '#6b7280', fontFamily: 'monospace', fontSize: '0.75rem' }}>
+                      <Box component="span" sx={{ color: theme.palette.text.secondary, fontFamily: 'monospace', fontSize: '0.75rem' }}>
                         {log.ip_address || '—'}
                       </Box>
                     </TableCell>
                     <TableCell>
-                      <Box component="span" sx={{ color: '#6b7280', fontSize: '0.875rem' }}>
+                      <Box component="span" sx={{ color: theme.palette.text.secondary, fontSize: '0.875rem' }}>
                         {new Date(log.created_at).toLocaleString('es-CL')}
                       </Box>
                     </TableCell>
@@ -259,7 +265,7 @@ export default function AuditPage() {
                         <IconButton
                           size="small"
                           onClick={() => handleViewDetail(log)}
-                          sx={{ color: '#0d9488' }}
+                          sx={{ color: theme.palette.primary.main }}
                         >
                           <Visibility fontSize="small" />
                         </IconButton>
@@ -276,9 +282,9 @@ export default function AuditPage() {
             page={page}
             onPageChange={handlePageChange}
             rowsPerPage={limit}
-            labelRowsPerPage="Filas:"
+            labelRowsPerPage={t('rowsLabel')}
             labelDisplayedRows={({ from, to, count }) =>
-              `${from}–${to} de ${count}`
+              `${from}–${to} ${tc('of')} ${count}`
             }
           />
         </TableContainer>

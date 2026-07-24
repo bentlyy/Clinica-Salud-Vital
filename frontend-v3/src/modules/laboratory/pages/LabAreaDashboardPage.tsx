@@ -1,5 +1,7 @@
 import { memo, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { useTheme } from '@mui/material/styles';
 import {
   Box,
   Typography,
@@ -9,7 +11,6 @@ import {
   Chip,
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
-import { useTheme } from '@mui/material/styles';
 import ArrowBack from '@mui/icons-material/ArrowBack';
 import ScienceIcon from '@mui/icons-material/Science';
 import InventoryIcon from '@mui/icons-material/Inventory';
@@ -30,8 +31,9 @@ import { EquipmentCard } from '../components/EquipmentCard';
 import type { LabRequest } from '../types/lab.types';
 
 function LabAreaDashboardPage() {
-  const theme = useTheme();
   const navigate = useNavigate();
+  const { t } = useTranslation('lab_area_dashboard');
+  const theme = useTheme();
   const { areaId } = useParams<{ areaId: string }>();
   const numericAreaId = Number(areaId);
 
@@ -58,7 +60,7 @@ function LabAreaDashboardPage() {
     [navigate],
   );
 
-  if (dashLoading) return <LoadingState message="Cargando area de laboratorio..." />;
+  if (dashLoading) return <LoadingState message={t('loading_area')} />;
   if (dashError) return <ErrorState error={dashError as Error} onRetry={() => void refetchDash()} />;
   if (!areaDashboard) return <ErrorState variant="notFound" />;
 
@@ -66,11 +68,11 @@ function LabAreaDashboardPage() {
   const metrics = areaDashboard.metrics;
 
   const metricCards = [
-    { label: 'Pendientes', value: metrics?.pending ?? 0, icon: <HourglassEmpty />, color: '#d97706', bgColor: '#fffbeb' },
-    { label: 'En Progreso', value: metrics?.in_progress ?? 0, icon: <Autorenew />, color: '#2563eb', bgColor: '#eff6ff' },
-    { label: 'Validados', value: metrics?.validated ?? 0, icon: <CheckCircleOutline />, color: '#0d9488', bgColor: '#f0fdfa' },
-    { label: 'Urgentes', value: metrics?.urgent ?? 0, icon: <PriorityHigh />, color: '#ef4444', bgColor: '#fef2f2' },
-    { label: 'SLA Vencido', value: metrics?.sla_breached ?? 0, icon: <TimerOff />, color: '#dc2626', bgColor: '#fef2f2' },
+    { label: t('pending'), value: metrics?.pending ?? 0, icon: <HourglassEmpty />, color: theme.palette.warning.dark, bgColor: theme.palette.custom.status.warning.bg },
+    { label: t('in_progress'), value: metrics?.in_progress ?? 0, icon: <Autorenew />, color: theme.palette.info.dark, bgColor: theme.palette.custom.status.info.bg },
+    { label: t('validated'), value: metrics?.validated ?? 0, icon: <CheckCircleOutline />, color: theme.palette.primary.main, bgColor: theme.palette.custom.brand.lightest },
+    { label: t('urgent'), value: metrics?.urgent ?? 0, icon: <PriorityHigh />, color: theme.palette.error.main, bgColor: theme.palette.custom.status.error.bg },
+    { label: t('sla_breached'), value: metrics?.sla_breached ?? 0, icon: <TimerOff />, color: theme.palette.error.dark, bgColor: theme.palette.custom.status.error.bg },
   ];
 
   const recentQc = qcRecords?.slice(0, 5) ?? [];
@@ -78,15 +80,15 @@ function LabAreaDashboardPage() {
   return (
     <Box>
       <PageHeader
-        title={area.name || `Area #${area.id}`}
-        subtitle={`${area.code} — Panel del area`}
+        title={area.name || t('area_label', { id: area.id })}
+        subtitle={t('area_panel', { code: area.code })}
         action={
           <Button
             startIcon={<ArrowBack />}
             onClick={() => navigate('/laboratory')}
-            sx={{ color: '#6b7280' }}
+            sx={{ color: theme.palette.text.secondary }}
           >
-            Volver
+            {t('back')}
           </Button>
         }
       />
@@ -94,7 +96,7 @@ function LabAreaDashboardPage() {
       {/* Metrics */}
       <Grid container spacing={2} sx={{ mb: 3 }}>
         {metricCards.map((stat) => (
-          <Grid size={{ xs: 6, sm: 4, md: 2.4 }} key={stat.label}>
+          <Grid xs={6} sm={4} md={2.4} key={stat.label}>
             <Paper
               elevation={0}
               sx={{
@@ -102,7 +104,7 @@ function LabAreaDashboardPage() {
                 display: 'flex',
                 alignItems: 'center',
                 gap: 1.5,
-                border: '1px solid #e5e7eb',
+                border: `1px solid ${theme.palette.divider}`,
                 borderRadius: '14px',
                 transition: 'box-shadow 0.2s',
                 '&:hover': { boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' },
@@ -112,10 +114,10 @@ function LabAreaDashboardPage() {
                 {stat.icon}
               </Avatar>
               <Box>
-                <Typography variant="h4" sx={{ fontWeight: 700, color: '#1f2937' }}>
+                <Typography variant="h4" sx={{ fontWeight: 700, color: theme.palette.text.primary }}>
                   {stat.value}
                 </Typography>
-                <Typography variant="body2" sx={{ color: '#6b7280', fontSize: '0.75rem' }}>
+                <Typography variant="body2" sx={{ color: theme.palette.text.secondary, fontSize: '0.75rem' }}>
                   {stat.label}
                 </Typography>
               </Box>
@@ -130,32 +132,32 @@ function LabAreaDashboardPage() {
           variant="outlined"
           startIcon={<AssignmentIcon sx={{ fontSize: 18 }} />}
           onClick={() => navigate('/laboratory/requests')}
-          sx={{ borderColor: '#e5e7eb', color: '#374151', '&:hover': { borderColor: '#0d9488', color: '#0d9488' } }}
+          sx={{ borderColor: theme.palette.divider, color: theme.palette.text.primary, '&:hover': { borderColor: theme.palette.primary.main, color: theme.palette.primary.main } }}
         >
-          Recepcion de Muestras
+          {t('sample_reception')}
         </Button>
         <Button
           variant="outlined"
           startIcon={<FactCheckIcon sx={{ fontSize: 18 }} />}
           onClick={() => navigate('/laboratory/quality-control')}
-          sx={{ borderColor: '#e5e7eb', color: '#374151', '&:hover': { borderColor: '#0d9488', color: '#0d9488' } }}
+          sx={{ borderColor: theme.palette.divider, color: theme.palette.text.primary, '&:hover': { borderColor: theme.palette.primary.main, color: theme.palette.primary.main } }}
         >
-          Control de Calidad
+          {t('quality_control')}
         </Button>
         <Button
           variant="outlined"
           startIcon={<InventoryIcon sx={{ fontSize: 18 }} />}
           onClick={() => navigate('/laboratory/quality-control')}
-          sx={{ borderColor: '#e5e7eb', color: '#374151', '&:hover': { borderColor: '#0d9488', color: '#0d9488' } }}
+          sx={{ borderColor: theme.palette.divider, color: theme.palette.text.primary, '&:hover': { borderColor: theme.palette.primary.main, color: theme.palette.primary.main } }}
         >
-          Inventario
+          {t('inventory')}
         </Button>
       </Box>
 
       {/* Two-column layout */}
       <Grid container spacing={3}>
         {/* Left: Work Queue + Result Entry */}
-        <Grid size={{ xs: 12, md: 8 }}>
+        <Grid xs={12} md={8}>
           <WorkQueue
             requests={queue}
             onSelectRequest={handleSelectRequest}
@@ -165,14 +167,14 @@ function LabAreaDashboardPage() {
         </Grid>
 
         {/* Right: Equipment + QC */}
-        <Grid size={{ xs: 12, md: 4 }}>
+        <Grid xs={12} md={4}>
           {/* Equipment Status */}
-          <Paper elevation={0} sx={{ p: 2.5, mb: 3, border: '1px solid #e5e7eb', borderRadius: '14px' }}>
-            <Typography variant="h6" sx={{ fontWeight: 600, color: '#1f2937', mb: 2 }}>
-              Equipamiento
+          <Paper elevation={0} sx={{ p: 2.5, mb: 3, border: `1px solid ${theme.palette.divider}`, borderRadius: '14px' }}>
+            <Typography variant="h6" sx={{ fontWeight: 600, color: theme.palette.text.primary, mb: 2 }}>
+              {t('equipment')}
             </Typography>
             {eqLoading ? (
-              <LoadingState message="Cargando equipos..." />
+              <LoadingState message={t('loading_equipment')} />
             ) : equipment && equipment.length > 0 ? (
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
                 {equipment.slice(0, 5).map((eq) => (
@@ -181,21 +183,21 @@ function LabAreaDashboardPage() {
               </Box>
             ) : (
               <Box sx={{ textAlign: 'center', py: 3 }}>
-                <ScienceIcon sx={{ fontSize: 32, color: '#d1d5db', mb: 1 }} />
-                <Typography variant="body2" sx={{ color: '#6b7280' }}>
-                  Sin equipamiento registrado
+                <ScienceIcon sx={{ fontSize: 32, color: theme.palette.divider, mb: 1 }} />
+                <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
+                  {t('no_equipment')}
                 </Typography>
               </Box>
             )}
           </Paper>
 
           {/* Recent QC Results */}
-          <Paper elevation={0} sx={{ p: 2.5, border: '1px solid #e5e7eb', borderRadius: '14px' }}>
-            <Typography variant="h6" sx={{ fontWeight: 600, color: '#1f2937', mb: 2 }}>
-              Resultados QC Recientes
+          <Paper elevation={0} sx={{ p: 2.5, border: `1px solid ${theme.palette.divider}`, borderRadius: '14px' }}>
+            <Typography variant="h6" sx={{ fontWeight: 600, color: theme.palette.text.primary, mb: 2 }}>
+              {t('recent_qc_results')}
             </Typography>
             {qcLoading ? (
-              <LoadingState message="Cargando QC..." />
+              <LoadingState message={t('loading_qc')} />
             ) : recentQc.length > 0 ? (
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                 {recentQc.map((qc) => (
@@ -207,33 +209,33 @@ function LabAreaDashboardPage() {
                       justifyContent: 'space-between',
                       p: 1.5,
                       borderRadius: '10px',
-                      border: '1px solid #f3f4f6',
-                      backgroundColor: '#fafafa',
+                      border: `1px solid ${theme.palette.custom.surface.sunken}`,
+                      backgroundColor: theme.palette.custom.surface.muted,
                     }}
                   >
                     <Box>
-                      <Typography variant="body2" sx={{ fontWeight: 500, color: '#1f2937' }}>
+                      <Typography variant="body2" sx={{ fontWeight: 500, color: theme.palette.text.primary }}>
                         {qc.control_name}
                       </Typography>
-                      <Typography variant="caption" sx={{ color: '#6b7280' }}>
-                        Lote: {qc.lot_number}
+                      <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
+                        {t('lot_label', { number: qc.lot_number })}
                       </Typography>
                     </Box>
                     <Chip
-                      label={qc.status === 'passed' ? 'Pasado' : qc.status === 'failed' ? 'Fallido' : qc.status === 'warning' ? 'Alerta' : 'Revision'}
+                      label={qc.status === 'passed' ? t('qc_passed') : qc.status === 'failed' ? t('qc_failed') : qc.status === 'warning' ? t('qc_warning') : t('qc_review')}
                       size="small"
                       sx={{
                         height: 22,
                         fontSize: '0.7rem',
                         fontWeight: 600,
                         backgroundColor:
-                          qc.status === 'passed' ? '#ecfdf5' :
-                          qc.status === 'failed' ? '#fef2f2' :
-                          '#fffbeb',
+                          qc.status === 'passed' ? theme.palette.custom.status.success.bg :
+                          qc.status === 'failed' ? theme.palette.custom.status.error.bg :
+                          theme.palette.custom.status.warning.bg,
                         color:
-                          qc.status === 'passed' ? '#059669' :
-                          qc.status === 'failed' ? '#dc2626' :
-                          '#d97706',
+                          qc.status === 'passed' ? theme.palette.custom.status.success.text :
+                          qc.status === 'failed' ? theme.palette.custom.status.error.text :
+                          theme.palette.warning.dark,
                       }}
                     />
                   </Box>
@@ -241,8 +243,8 @@ function LabAreaDashboardPage() {
               </Box>
             ) : (
               <EmptyState
-                title="Sin registros QC"
-                message="No hay registros de control de calidad recientes."
+                title={t('no_qc_records')}
+                message={t('no_qc_records_message')}
               />
             )}
           </Paper>

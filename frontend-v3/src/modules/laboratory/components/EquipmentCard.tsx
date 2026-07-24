@@ -1,4 +1,5 @@
 import { Box, Typography, Paper, Chip } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import PrecisionManufacturing from '@mui/icons-material/PrecisionManufacturing';
 import Build from '@mui/icons-material/Build';
 import CheckCircle from '@mui/icons-material/CheckCircle';
@@ -11,14 +12,16 @@ interface EquipmentCardProps {
   equipment: LabEquipment;
 }
 
-const STATUS_ICONS: Record<LabEquipment['status'], React.ReactNode> = {
-  operational: <CheckCircle sx={{ fontSize: 16, color: '#059669' }} />,
-  maintenance: <Build sx={{ fontSize: 16, color: '#d97706' }} />,
-  out_of_service: <Cancel sx={{ fontSize: 16, color: '#ef4444' }} />,
-};
-
 export function EquipmentCard({ equipment }: EquipmentCardProps) {
+  const theme = useTheme();
   const statusConfig = LAB_EQUIPMENT_STATUS_CONFIG[equipment.status];
+
+  const STATUS_ICONS: Record<LabEquipment['status'], React.ReactNode> = {
+    online: <CheckCircle sx={{ fontSize: 16, color: theme.palette.success.dark }} />,
+    offline: <Cancel sx={{ fontSize: 16, color: theme.palette.error.main }} />,
+    maintenance: <Build sx={{ fontSize: 16, color: theme.palette.warning.dark }} />,
+    calibration: <Build sx={{ fontSize: 16, color: theme.palette.info.dark }} />,
+  };
 
   return (
     <MotionDiv
@@ -31,7 +34,7 @@ export function EquipmentCard({ equipment }: EquipmentCardProps) {
         sx={{
           p: 2,
           borderRadius: '12px',
-          border: '1px solid #e5e7eb',
+          border: `1px solid ${theme.palette.divider}`,
           transition: 'all 0.2s',
           '&:hover': {
             boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
@@ -57,7 +60,7 @@ export function EquipmentCard({ equipment }: EquipmentCardProps) {
               variant="body2"
               sx={{
                 fontWeight: 600,
-                color: '#1f2937',
+                color: theme.palette.text.primary,
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
                 whiteSpace: 'nowrap',
@@ -65,8 +68,8 @@ export function EquipmentCard({ equipment }: EquipmentCardProps) {
             >
               {equipment.name}
             </Typography>
-            <Typography variant="caption" sx={{ color: '#6b7280' }}>
-              {equipment.type}
+            <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
+              {equipment.connection_type}
             </Typography>
           </Box>
           <Chip
@@ -85,18 +88,18 @@ export function EquipmentCard({ equipment }: EquipmentCardProps) {
         </Box>
 
         {equipment.model && (
-          <Typography variant="caption" sx={{ color: '#6b7280', display: 'block', mb: 0.25 }}>
+          <Typography variant="caption" sx={{ color: theme.palette.text.secondary, display: 'block', mb: 0.25 }}>
             Modelo: {equipment.model}
           </Typography>
         )}
         {equipment.serial_number && (
-          <Typography variant="caption" sx={{ color: '#6b7280', display: 'block', mb: 0.25 }}>
+          <Typography variant="caption" sx={{ color: theme.palette.text.secondary, display: 'block', mb: 0.25 }}>
             Serial: {equipment.serial_number}
           </Typography>
         )}
-        {equipment.next_calibration && (
-          <Typography variant="caption" sx={{ color: '#d97706', display: 'block', mt: 0.5 }}>
-            Próxima calibración: {new Date(equipment.next_calibration).toLocaleDateString('es-CL')}
+        {equipment.last_calibration && (
+          <Typography variant="caption" sx={{ color: theme.palette.warning.dark, display: 'block', mt: 0.5 }}>
+            Última calibración: {new Date(equipment.last_calibration).toLocaleDateString('es-CL')}
           </Typography>
         )}
       </Paper>

@@ -20,9 +20,10 @@ import {
   Tooltip,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
+import type { Theme } from '@mui/material/styles';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
-import BuildIcon from '@mui/icons-material/Build';
+
 import PrecisionManufacturingIcon from '@mui/icons-material/PrecisionManufacturing';
 import InboxOutlinedIcon from '@mui/icons-material/InboxOutlined';
 import type { LabEquipment, LabArea } from '../../types/lab.types';
@@ -37,17 +38,17 @@ interface EquipmentInventoryProps {
   areas?: LabArea[];
 }
 
-// ── Constants ────────────────────────────────────────────────────────────────
+// ── Helpers ──────────────────────────────────────────────────────────────────
 
-const STATUS_CONFIG: Record<
-  LabEquipment['status'],
-  { label: string; color: string; bgColor: string }
-> = {
-  online: { label: 'Online', color: '#059669', bgColor: '#ecfdf5' },
-  offline: { label: 'Offline', color: '#dc2626', bgColor: '#fef2f2' },
-  maintenance: { label: 'Mantenimiento', color: '#d97706', bgColor: '#fffbeb' },
-  calibration: { label: 'Calibración', color: '#2563eb', bgColor: '#eff6ff' },
-};
+function getStatusConfig(theme: Theme, status: LabEquipment['status']) {
+  const configs: Record<LabEquipment['status'], { label: string; color: string; bgColor: string }> = {
+    online: { label: 'Online', color: theme.palette.success.dark, bgColor: theme.palette.custom.status.success.bg },
+    offline: { label: 'Offline', color: theme.palette.error.dark, bgColor: theme.palette.custom.status.error.bg },
+    maintenance: { label: 'Mantenimiento', color: theme.palette.warning.dark, bgColor: theme.palette.custom.status.warning.bg },
+    calibration: { label: 'Calibración', color: theme.palette.info.dark, bgColor: theme.palette.custom.status.info.bg },
+  };
+  return configs[status] ?? configs.offline;
+}
 
 const CONNECTION_LABELS: Record<LabEquipment['connection_type'], string> = {
   manual: 'Manual',
@@ -57,13 +58,11 @@ const CONNECTION_LABELS: Record<LabEquipment['connection_type'], string> = {
   file: 'Archivo',
 };
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
-
 function getMaintenanceColor(
   dateStr: string | null,
-  theme: ReturnType<typeof useTheme>,
+  theme: Theme,
 ): { color: string; label: string } {
-  if (!dateStr) return { color: '#9ca3af', label: '—' };
+  if (!dateStr) return { color: theme.palette.text.secondary, label: '—' };
 
   const date = new Date(dateStr);
   const now = new Date();
@@ -117,7 +116,7 @@ export const EquipmentInventory = memo(function EquipmentInventory({
         sx={{
           p: 3,
           borderRadius: '14px',
-          border: '1px solid #e5e7eb',
+          border: `1px solid ${theme.palette.divider}`,
         }}
       >
         <Skeleton variant="text" width="40%" height={28} />
@@ -133,12 +132,12 @@ export const EquipmentInventory = memo(function EquipmentInventory({
       sx={{
         p: 3,
         borderRadius: '14px',
-        border: '1px solid #e5e7eb',
+        border: `1px solid ${theme.palette.divider}`,
       }}
     >
       {/* Header */}
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-        <Typography variant="h6" sx={{ fontWeight: 700, color: '#1f2937' }}>
+        <Typography variant="h6" sx={{ fontWeight: 700, color: theme.palette.text.primary }}>
           Inventario de Equipos
         </Typography>
         {onAdd && (
@@ -147,9 +146,9 @@ export const EquipmentInventory = memo(function EquipmentInventory({
             startIcon={<AddIcon sx={{ fontSize: 18 }} />}
             onClick={onAdd}
             sx={{
-              background: 'linear-gradient(135deg, #0d9488 0%, #0f766e 100%)',
+              background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
               '&:hover': {
-                background: 'linear-gradient(135deg, #0f766e 0%, #115e59 100%)',
+                background: `linear-gradient(135deg, ${theme.palette.primary.dark} 0%, ${theme.palette.custom.brand.darker} 100%)`,
               },
             }}
           >
@@ -161,21 +160,21 @@ export const EquipmentInventory = memo(function EquipmentInventory({
       {/* Stats */}
       <Box sx={{ display: 'flex', gap: 2, mb: 2.5, flexWrap: 'wrap' }}>
         {[
-          { label: 'Total Equipos', value: stats.total, color: '#374151' },
-          { label: 'Online', value: stats.online, color: '#059669' },
-          { label: 'Mto. Próximo', value: stats.maintenanceNeeded, color: '#d97706' },
+          { label: 'Total Equipos', value: stats.total, color: theme.palette.text.primary },
+          { label: 'Online', value: stats.online, color: theme.palette.success.dark },
+          { label: 'Mto. Próximo', value: stats.maintenanceNeeded, color: theme.palette.warning.dark },
         ].map((stat) => (
           <Box
             key={stat.label}
             sx={{
               px: 2,
               py: 1,
-              border: '1px solid #f3f4f6',
+              border: `1px solid ${theme.palette.custom.surface.sunken}`,
               borderRadius: '10px',
-              backgroundColor: '#f9fafb',
+              backgroundColor: theme.palette.custom.surface.muted,
             }}
           >
-            <Typography variant="caption" sx={{ color: '#9ca3af', fontWeight: 500 }}>
+            <Typography variant="caption" sx={{ color: theme.palette.text.secondary, fontWeight: 500 }}>
               {stat.label}
             </Typography>
             <Typography variant="h6" sx={{ fontWeight: 700, color: stat.color, lineHeight: 1.2 }}>
@@ -220,15 +219,15 @@ export const EquipmentInventory = memo(function EquipmentInventory({
             gap: 1.5,
           }}
         >
-          <InboxOutlinedIcon sx={{ fontSize: 48, color: '#d1d5db' }} />
-          <Typography variant="body2" sx={{ color: '#9ca3af', fontWeight: 500 }}>
+          <InboxOutlinedIcon sx={{ fontSize: 48, color: theme.palette.divider }} />
+          <Typography variant="body2" sx={{ color: theme.palette.text.secondary, fontWeight: 500 }}>
             No hay equipos registrados
           </Typography>
         </Box>
       ) : (
         <TableContainer
           sx={{
-            border: '1px solid #f3f4f6',
+            border: `1px solid ${theme.palette.custom.surface.sunken}`,
             borderRadius: '10px',
             overflow: 'hidden',
           }}
@@ -253,31 +252,31 @@ export const EquipmentInventory = memo(function EquipmentInventory({
             </TableHead>
             <TableBody>
               {filtered.map((eq) => {
-                const statusCfg = STATUS_CONFIG[eq.status] ?? STATUS_CONFIG.offline;
+                const statusCfg = getStatusConfig(theme, eq.status);
                 const nextMaint = getMaintenanceColor(eq.next_maintenance, theme);
 
                 return (
                   <TableRow key={eq.id} hover sx={{ '&:last-child td': { borderBottom: 0 } }}>
                     <TableCell>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <PrecisionManufacturingIcon sx={{ fontSize: 18, color: '#6b7280' }} />
-                        <Typography variant="body2" sx={{ fontWeight: 600, color: '#1f2937' }}>
+                        <PrecisionManufacturingIcon sx={{ fontSize: 18, color: theme.palette.text.secondary }} />
+                        <Typography variant="body2" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
                           {eq.name}
                         </Typography>
                       </Box>
                     </TableCell>
                     <TableCell>
-                      <Typography variant="body2" sx={{ color: '#374151' }}>
+                      <Typography variant="body2" sx={{ color: theme.palette.text.primary }}>
                         {eq.model ?? '—'}
                       </Typography>
                     </TableCell>
                     <TableCell>
-                      <Typography variant="caption" sx={{ color: '#6b7280', fontFamily: 'monospace' }}>
+                      <Typography variant="caption" sx={{ color: theme.palette.text.secondary, fontFamily: 'monospace' }}>
                         {eq.serial_number ?? '—'}
                       </Typography>
                     </TableCell>
                     <TableCell>
-                      <Typography variant="body2" sx={{ color: '#374151' }}>
+                      <Typography variant="body2" sx={{ color: theme.palette.text.primary }}>
                         {eq.area?.name ?? '—'}
                       </Typography>
                     </TableCell>
@@ -305,13 +304,13 @@ export const EquipmentInventory = memo(function EquipmentInventory({
                           fontSize: '0.7rem',
                           fontWeight: 500,
                           borderRadius: '6px',
-                          borderColor: '#e5e7eb',
-                          color: '#6b7280',
+                          borderColor: theme.palette.divider,
+                          color: theme.palette.text.secondary,
                         }}
                       />
                     </TableCell>
                     <TableCell>
-                      <Typography variant="caption" sx={{ color: '#6b7280' }}>
+                      <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
                         {eq.last_maintenance
                           ? new Date(eq.last_maintenance).toLocaleDateString('es-CL')
                           : '—'}
@@ -334,10 +333,10 @@ export const EquipmentInventory = memo(function EquipmentInventory({
                             size="small"
                             onClick={() => onEdit(eq)}
                             sx={{
-                              color: '#6b7280',
+                              color: theme.palette.text.secondary,
                               '&:hover': {
-                                color: '#0d9488',
-                                backgroundColor: '#f0fdfa',
+                                color: theme.palette.primary.main,
+                                backgroundColor: theme.palette.custom.brand.lightest,
                               },
                             }}
                           >

@@ -8,11 +8,20 @@ export interface ClinicalRecord {
   chief_complaint: string;
   diagnosis: string;
   treatment: string;
+  treatment_plan?: string;
   notes?: string;
   vitals?: Record<string, string>;
+  vital_signs?: Record<string, string>;
+  anamnesis?: string;
+  physical_exam?: string;
+  cie10_codes?: string[];
+  status?: string;
   attachments?: string[];
   doctor_name?: string;
   patient_name?: string;
+  patient_rut?: string;
+  patient_email?: string;
+  specialty?: string;
   created_at: string;
   updated_at: string;
 }

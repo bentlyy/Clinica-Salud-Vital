@@ -398,7 +398,7 @@ function LoginModal({ onClose }: { onClose: () => void }) {
 
     if (step === '2fa') {
       if (totp.length < 6) { setError('Ingresa el codigo de 6 digitos'); return; }
-      const captcha_token = hasCaptcha ? recaptchaRef.current?.getValue() : undefined;
+      const captcha_token = hasCaptcha ? recaptchaRef.current?.getValue() ?? undefined : undefined;
       if (hasCaptcha && !captcha_token) { setError('Completa el captcha'); return; }
       setLoading(true);
       setError('');
@@ -417,7 +417,7 @@ function LoginModal({ onClose }: { onClose: () => void }) {
     }
 
     if (!email.trim() || !password.trim()) { setError('Ingresa tu email y contrasena'); return; }
-    const captcha_token = hasCaptcha ? recaptchaRef.current?.getValue() : undefined;
+    const captcha_token = hasCaptcha ? recaptchaRef.current?.getValue() ?? undefined : undefined;
     if (hasCaptcha && !captcha_token) { setError('Completa el captcha'); return; }
     setLoading(true);
     setError('');
@@ -442,6 +442,10 @@ function LoginModal({ onClose }: { onClose: () => void }) {
   }, [email, password, loading, step, totp, pendingEmail, pendingPassword, rememberMe, login, navigate]);
 
   const handleGuest = useCallback(() => {
+    navigate('/booking');
+  }, [navigate]);
+
+  const handleGuestDashboard = useCallback(() => {
     navigate('/dashboard', { replace: true });
   }, [navigate]);
 
@@ -569,7 +573,7 @@ function LoginModal({ onClose }: { onClose: () => void }) {
                   <span className="lm-checkbox-mark" />
                   <span className="lm-checkbox-text">Recordarme</span>
                 </label>
-                <a href="#" className="lm-forgot" onClick={(e) => e.preventDefault()}>Olvidaste tu contrasena?</a>
+                <a href="/forgot-password" className="lm-forgot">Olvidaste tu contrasena?</a>
               </div>
             )}
 
@@ -585,9 +589,14 @@ function LoginModal({ onClose }: { onClose: () => void }) {
             <span className="lm-divider-line" />
           </div>
 
-          <button className="lm-guest" type="button" onClick={handleGuest}>
+          <button className="lm-guest" type="button" onClick={handleGuestDashboard}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M13.8 12H3"/></svg>
             Entrar como invitado
+          </button>
+
+          <button className="lm-guest" type="button" onClick={handleGuest} style={{ marginTop: 8 }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+            Reservar como invitado
           </button>
 
           <p className="lm-signup">

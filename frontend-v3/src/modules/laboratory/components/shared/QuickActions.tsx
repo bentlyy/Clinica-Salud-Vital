@@ -111,9 +111,9 @@ function FabActions({
         color="primary"
         onClick={toggleOpen}
         sx={{
-          boxShadow: '0 4px 12px rgba(13, 148, 136, 0.3)',
+          boxShadow: `0 4px 12px ${theme.palette.custom.brand.alpha8}`,
           '&:hover': {
-            boxShadow: '0 6px 16px rgba(13, 148, 136, 0.4)',
+            boxShadow: `0 6px 16px ${theme.palette.custom.brand.alpha8}`,
           },
         }}
       >
@@ -174,8 +174,8 @@ function MenuActions({ actions }: { actions: QuickAction[] }) {
             sx: {
               mt: 1,
               borderRadius: '12px',
-              border: '1px solid #e5e7eb',
-              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)',
+              border: `1px solid ${theme.palette.divider}`,
+              boxShadow: `0 4px 12px ${theme.palette.custom.brand.alpha8}`,
               minWidth: 180,
             },
           },

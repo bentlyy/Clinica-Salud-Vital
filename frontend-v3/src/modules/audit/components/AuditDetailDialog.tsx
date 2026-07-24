@@ -1,3 +1,4 @@
+import { useTheme } from '@mui/material/styles';
 import {
   Dialog,
   DialogTitle,
@@ -23,6 +24,7 @@ interface AuditDetailDialogProps {
 }
 
 export function AuditDetailDialog({ open, onClose, log }: AuditDetailDialogProps) {
+  const theme = useTheme();
   if (!log) return null;
 
   const actionLabel = AUDIT_ACTION_LABELS[log.action] || log.action;
@@ -39,7 +41,7 @@ export function AuditDetailDialog({ open, onClose, log }: AuditDetailDialogProps
         }}
       >
         Detalle de Auditoría
-        <IconButton onClick={onClose} size="small" sx={{ color: '#6b7280' }}>
+        <IconButton onClick={onClose} size="small" sx={{ color: theme.palette.text.secondary }}>
           <Close fontSize="small" />
         </IconButton>
       </DialogTitle>
@@ -50,16 +52,16 @@ export function AuditDetailDialog({ open, onClose, log }: AuditDetailDialogProps
             <Chip
               label={actionLabel}
               sx={{
-                backgroundColor: '#f0fdfa',
-                color: '#0d9488',
+                backgroundColor: theme.palette.custom.brand.lightest,
+                color: theme.palette.primary.main,
                 fontWeight: 500,
               }}
             />
             <Chip
               label={entityLabel}
               sx={{
-                backgroundColor: '#eff6ff',
-                color: '#2563eb',
+                backgroundColor: theme.palette.custom.status.info.bg,
+                color: theme.palette.info.dark,
                 fontWeight: 500,
               }}
             />
@@ -75,7 +77,7 @@ export function AuditDetailDialog({ open, onClose, log }: AuditDetailDialogProps
           {/* Detail Table */}
           <TableContainer
             sx={{
-              border: '1px solid #e5e7eb',
+              border: `1px solid ${theme.palette.divider}`,
               borderRadius: '10px',
               overflow: 'hidden',
             }}
@@ -83,46 +85,46 @@ export function AuditDetailDialog({ open, onClose, log }: AuditDetailDialogProps
             <Table size="small">
               <TableBody>
                 <TableRow>
-                  <TableCell sx={{ fontWeight: 600, color: '#6b7280', width: 140 }}>
+                  <TableCell sx={{ fontWeight: 600, color: theme.palette.text.secondary, width: 140 }}>
                     Usuario
                   </TableCell>
-                  <TableCell sx={{ color: '#1f2937' }}>
+                  <TableCell sx={{ color: theme.palette.text.primary }}>
                     {log.user_name || `Usuario #${log.user_id}`}
                   </TableCell>
                 </TableRow>
                 <TableRow>
-                  <TableCell sx={{ fontWeight: 600, color: '#6b7280' }}>
+                  <TableCell sx={{ fontWeight: 600, color: theme.palette.text.secondary }}>
                     Acción
                   </TableCell>
-                  <TableCell sx={{ color: '#1f2937' }}>{actionLabel}</TableCell>
+                  <TableCell sx={{ color: theme.palette.text.primary }}>{actionLabel}</TableCell>
                 </TableRow>
                 <TableRow>
-                  <TableCell sx={{ fontWeight: 600, color: '#6b7280' }}>
+                  <TableCell sx={{ fontWeight: 600, color: theme.palette.text.secondary }}>
                     Entidad
                   </TableCell>
-                  <TableCell sx={{ color: '#1f2937' }}>{entityLabel}</TableCell>
+                  <TableCell sx={{ color: theme.palette.text.primary }}>{entityLabel}</TableCell>
                 </TableRow>
                 {log.entity_id && (
                   <TableRow>
-                    <TableCell sx={{ fontWeight: 600, color: '#6b7280' }}>
+                    <TableCell sx={{ fontWeight: 600, color: theme.palette.text.secondary }}>
                       ID Entidad
                     </TableCell>
-                    <TableCell sx={{ color: '#1f2937' }}>{log.entity_id}</TableCell>
+                    <TableCell sx={{ color: theme.palette.text.primary }}>{log.entity_id}</TableCell>
                   </TableRow>
                 )}
                 <TableRow>
-                  <TableCell sx={{ fontWeight: 600, color: '#6b7280' }}>
+                  <TableCell sx={{ fontWeight: 600, color: theme.palette.text.secondary }}>
                     Dirección IP
                   </TableCell>
-                  <TableCell sx={{ color: '#1f2937', fontFamily: 'monospace' }}>
+                  <TableCell sx={{ color: theme.palette.text.primary, fontFamily: 'monospace' }}>
                     {log.ip_address || '—'}
                   </TableCell>
                 </TableRow>
                 <TableRow>
-                  <TableCell sx={{ fontWeight: 600, color: '#6b7280' }}>
+                  <TableCell sx={{ fontWeight: 600, color: theme.palette.text.secondary }}>
                     Fecha/Hora
                   </TableCell>
-                  <TableCell sx={{ color: '#1f2937' }}>
+                  <TableCell sx={{ color: theme.palette.text.primary }}>
                     {new Date(log.created_at).toLocaleString('es-CL')}
                   </TableCell>
                 </TableRow>
@@ -133,19 +135,19 @@ export function AuditDetailDialog({ open, onClose, log }: AuditDetailDialogProps
           {/* Details JSON */}
           {log.details && Object.keys(log.details).length > 0 && (
             <Box sx={{ mt: 2 }}>
-              <Typography variant="caption" sx={{ color: '#6b7280', textTransform: 'uppercase', fontWeight: 600 }}>
+              <Typography variant="caption" sx={{ color: theme.palette.text.secondary, textTransform: 'uppercase', fontWeight: 600 }}>
                 Detalles Adicionales
               </Typography>
               <Box
                 sx={{
                   mt: 0.5,
                   p: 2,
-                  backgroundColor: '#f9fafb',
+                  backgroundColor: theme.palette.custom.surface.muted,
                   borderRadius: '8px',
-                  border: '1px solid #e5e7eb',
+                  border: `1px solid ${theme.palette.divider}`,
                   fontFamily: 'monospace',
                   fontSize: '0.75rem',
-                  color: '#374151',
+                  color: theme.palette.text.primary,
                   whiteSpace: 'pre-wrap',
                   wordBreak: 'break-all',
                   maxHeight: 200,

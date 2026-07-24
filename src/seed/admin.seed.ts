@@ -47,7 +47,9 @@ export const seedDefaultTenant = async (): Promise<void> => {
 export const seedSuperAdmin = async (): Promise<void> => {
   const exists = await pool.query('SELECT 1 FROM users WHERE role = $1 LIMIT 1', ['superadmin']);
   if (exists.rows.length > 0) {
-    logger.info('Superadmin already exists');
+    /* Ensure existing superadmin has NULL tenant_id for cross-clinic access */
+    await pool.query("UPDATE users SET tenant_id = NULL WHERE role = 'superadmin' AND tenant_id IS NOT NULL");
+    logger.info('Superadmin already exists — ensured cross-clinic tenant_id=NULL');
     return;
   }
 
@@ -55,11 +57,11 @@ export const seedSuperAdmin = async (): Promise<void> => {
   const hash = await bcrypt.hash(password, 12);
 
   await pool.query(
-    'INSERT INTO users (email, password, name, role, tenant_id) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (tenant_id, email) DO NOTHING',
-    [process.env.SUPERADMIN_EMAIL || 'superadmin@clinic.com', hash, 'Super Admin', 'superadmin', DEFAULT_TENANT_ID]
+    'INSERT INTO users (email, password, name, role, tenant_id) VALUES ($1, $2, $3, $4, NULL) ON CONFLICT DO NOTHING',
+    [process.env.SUPERADMIN_EMAIL || 'superadmin@clinic.com', hash, 'Super Admin', 'superadmin']
   );
 
-  logger.info('Superadmin created');
+  logger.info('Superadmin created with tenant_id=NULL (cross-clinic)');
 };
 
 const TEST_TENANTS = [

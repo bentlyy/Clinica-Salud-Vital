@@ -19,6 +19,7 @@ import InfoOutlined from '@mui/icons-material/InfoOutlined';
 import WarningAmber from '@mui/icons-material/WarningAmber';
 import ErrorOutline from '@mui/icons-material/ErrorOutline';
 import MarkEmailRead from '@mui/icons-material/MarkEmailRead';
+import { useTranslation } from 'react-i18next';
 import { MotionDiv } from '@/shared/utils/animations';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { LoadingState } from '@/shared/components/ui/LoadingState';
@@ -36,6 +37,7 @@ const TYPE_ICONS: Record<Notification['type'], React.ReactNode> = {
 };
 
 export default function NotificationsPage() {
+  const { t } = useTranslation('notifications');
   const navigate = useNavigate();
   const [page, setPage] = useState(1);
   const limit = 15;
@@ -60,14 +62,14 @@ export default function NotificationsPage() {
     const diffHours = Math.floor(diffMins / 60);
     const diffDays = Math.floor(diffHours / 24);
 
-    if (diffMins < 1) return 'Ahora mismo';
-    if (diffMins < 60) return `Hace ${diffMins} min`;
-    if (diffHours < 24) return `Hace ${diffHours}h`;
-    if (diffDays < 7) return `Hace ${diffDays}d`;
+    if (diffMins < 1) return t('justNow');
+    if (diffMins < 60) return t('minutesAgo', { count: diffMins });
+    if (diffHours < 24) return t('hoursAgo', { count: diffHours });
+    if (diffDays < 7) return t('daysAgo', { count: diffDays });
     return date.toLocaleDateString('es-CL');
   };
 
-  if (isLoading) return <LoadingState message="Cargando notificaciones..." />;
+  if (isLoading) return <LoadingState message={t('loading')} />;
   if (error) return <ErrorState error={error as never} onRetry={refetch} />;
 
   const notifications = data?.data ?? [];
@@ -76,8 +78,8 @@ export default function NotificationsPage() {
   return (
     <MotionDiv initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
       <PageHeader
-        title="Notificaciones"
-        subtitle={`${data?.total ?? 0} notificaciones en total`}
+        title={t('title')}
+        subtitle={t('total_notifications', { count: data?.total ?? 0 })}
       action={
         notifications.some((n: Notification) => !n.is_read) ? (
           <Button
@@ -85,7 +87,7 @@ export default function NotificationsPage() {
             startIcon={<MarkEmailRead />}
             disabled
           >
-            Marcar todas como leídas
+            {t('markAllRead')}
           </Button>
         ) : undefined
       }
@@ -94,8 +96,8 @@ export default function NotificationsPage() {
       {notifications.length === 0 ? (
         <EmptyState
           icon={<MarkEmailRead sx={{ fontSize: 48, color: '#d1d5db' }} />}
-          title="Sin notificaciones"
-          message="No tienes notificaciones nuevas."
+          title={t('noNotifications')}
+          message={t('no_new_notifications')}
         />
       ) : (
         <Paper sx={{ borderRadius: '14px', border: '1px solid #e5e7eb', overflow: 'hidden' }}>

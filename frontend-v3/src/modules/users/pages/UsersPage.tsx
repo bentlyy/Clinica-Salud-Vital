@@ -22,10 +22,12 @@ import {
   Button,
   Typography,
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import Add from '@mui/icons-material/Add';
 import Search from '@mui/icons-material/Search';
 import Edit from '@mui/icons-material/Edit';
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { LoadingState } from '@/shared/components/ui/LoadingState';
 import { ErrorState } from '@/shared/components/ui/ErrorState';
@@ -37,13 +39,13 @@ import { UserFormDialog } from '../components/UserFormDialog';
 import { UserStatusChip } from '../components/UserStatusChip';
 import type { User, UserRole, CreateUserInput } from '../types/user.types';
 
-const ROLE_FILTER_OPTIONS: Array<{ value: UserRole | ''; label: string }> = [
-  { value: '', label: 'Todos' },
-  { value: 'admin', label: 'Administrador' },
-  { value: 'doctor', label: 'Doctor' },
-  { value: 'lab_technician', label: 'Técnico Lab' },
-  { value: 'patient', label: 'Paciente' },
-  { value: 'user', label: 'Usuario' },
+const ROLE_FILTER_OPTIONS: Array<{ value: UserRole | ''; labelKey: string }> = [
+  { value: '', labelKey: 'roleLabels.all' },
+  { value: 'admin', labelKey: 'roleLabels.admin' },
+  { value: 'doctor', labelKey: 'roleLabels.doctor' },
+  { value: 'lab_technician', labelKey: 'roleLabels.lab_technician' },
+  { value: 'patient', labelKey: 'roleLabels.patient' },
+  { value: 'user', labelKey: 'roleLabels.user' },
 ];
 
 const pageVariants = {
@@ -53,6 +55,9 @@ const pageVariants = {
 };
 
 export default function UsersPage() {
+  const theme = useTheme();
+  const { t } = useTranslation('users');
+  const { t: tc } = useTranslation('common');
   const { hasPermission } = useAuth();
   const canEdit = hasPermission('users', 'edit');
   const canToggle = hasPermission('users', 'toggleActive');
@@ -67,10 +72,8 @@ export default function UsersPage() {
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [confirmToggle, setConfirmToggle] = useState<User | null>(null);
 
-  // Simple debounce via timeout ref stored in state
   const handleSearchChange = (value: string) => {
     setSearch(value);
-    // Inline debounce
     const timeoutId = setTimeout(() => setSearchDebounced(value), 400);
     return () => clearTimeout(timeoutId);
   };
@@ -122,14 +125,14 @@ export default function UsersPage() {
     setFormOpen(true);
   };
 
-  if (isLoading) return <LoadingState message="Cargando usuarios..." />;
+  if (isLoading) return <LoadingState message={t('loading')} />;
   if (error) return <ErrorState error={error as Error} onRetry={refetch} />;
 
   return (
     <Box component={motion.div} {...pageVariants}>
       <PageHeader
-        title="Gestión de Usuarios"
-        subtitle={`${total} usuarios registrados`}
+        title={t('page_title')}
+        subtitle={t('total_users', { count: total })}
         action={
           canEdit ? (
             <Button
@@ -137,13 +140,13 @@ export default function UsersPage() {
               startIcon={<Add />}
               onClick={openCreateDialog}
               sx={{
-                background: 'linear-gradient(135deg, #0d9488 0%, #0f766e 100%)',
+                background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
                 '&:hover': {
-                  background: 'linear-gradient(135deg, #0f766e 0%, #115e59 100%)',
+                  background: `linear-gradient(135deg, ${theme.palette.primary.dark} 0%, ${theme.palette.custom.brand.darker} 100%)`,
                 },
               }}
             >
-              Nuevo Usuario
+              {t('newUser')}
             </Button>
           ) : undefined
         }
@@ -158,12 +161,12 @@ export default function UsersPage() {
           flexDirection: { xs: 'column', md: 'row' },
           gap: 2,
           alignItems: { md: 'center' },
-          border: '1px solid #e5e7eb',
+          border: `1px solid ${theme.palette.divider}`,
         }}
       >
         <TextField
           size="small"
-          placeholder="Buscar por nombre o email..."
+          placeholder={t('searchPlaceholder')}
           value={search}
           onChange={(e) => handleSearchChange(e.target.value)}
           sx={{ minWidth: { md: 280 } }}
@@ -171,7 +174,7 @@ export default function UsersPage() {
             input: {
               startAdornment: (
                 <InputAdornment position="start">
-                  <Search sx={{ color: '#9ca3af', fontSize: 20 }} />
+                  <Search sx={{ color: theme.palette.text.secondary, fontSize: 20 }} />
                 </InputAdornment>
               ),
             },
@@ -182,7 +185,7 @@ export default function UsersPage() {
           {ROLE_FILTER_OPTIONS.map((opt) => (
             <Chip
               key={opt.value}
-              label={opt.label}
+              label={t(opt.labelKey)}
               onClick={() => { setRoleFilter(opt.value as UserRole | ''); setPage(0); }}
               variant={roleFilter === opt.value ? 'filled' : 'outlined'}
               sx={{
@@ -190,14 +193,14 @@ export default function UsersPage() {
                 borderRadius: '8px',
                 ...(roleFilter === opt.value
                   ? {
-                      backgroundColor: '#0d9488',
-                      color: '#fff',
-                      '&:hover': { backgroundColor: '#0f766e' },
+                      backgroundColor: theme.palette.primary.main,
+                      color: theme.palette.background.paper,
+                      '&:hover': { backgroundColor: theme.palette.primary.dark },
                     }
                   : {
-                      borderColor: '#e5e7eb',
-                      color: '#374151',
-                      '&:hover': { borderColor: '#0d9488', color: '#0d9488' },
+                      borderColor: theme.palette.divider,
+                      color: theme.palette.text.primary,
+                      '&:hover': { borderColor: theme.palette.primary.main, color: theme.palette.primary.main },
                     }),
               }}
             />
@@ -208,21 +211,21 @@ export default function UsersPage() {
       {/* Table */}
       {users.length === 0 ? (
         <EmptyState
-          title="No se encontraron usuarios"
-          message="Intenta ajustar los filtros o crea un nuevo usuario."
-          action={canEdit ? { label: 'Nuevo Usuario', onClick: openCreateDialog } : undefined}
+          title={t('noUsers')}
+          message={t('try_adjusting_filters')}
+          action={canEdit ? { label: t('newUser'), onClick: openCreateDialog } : undefined}
         />
       ) : (
-        <Paper sx={{ border: '1px solid #e5e7eb', overflow: 'hidden' }}>
+        <Paper sx={{ border: `1px solid ${theme.palette.divider}`, overflow: 'hidden' }}>
           <TableContainer>
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>Usuario</TableCell>
-                  <TableCell>Email</TableCell>
-                  <TableCell>Rol</TableCell>
-                  <TableCell align="center">Estado</TableCell>
-                  <TableCell align="right">Acciones</TableCell>
+                  <TableCell>{t('username')}</TableCell>
+                  <TableCell>{tc('email')}</TableCell>
+                  <TableCell>{t('role')}</TableCell>
+                  <TableCell align="center">{t('status')}</TableCell>
+                  <TableCell align="right">{tc('actions')}</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -243,11 +246,11 @@ export default function UsersPage() {
                           {user.name?.charAt(0)?.toUpperCase()}
                         </Avatar>
                         <Box>
-                          <Typography variant="body2" sx={{ fontWeight: 600, color: '#1f2937' }}>
+                          <Typography variant="body2" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
                             {user.name}
                           </Typography>
                           {user.phone && (
-                            <Typography variant="caption" sx={{ color: '#9ca3af' }}>
+                            <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
                               {user.phone}
                             </Typography>
                           )}
@@ -255,7 +258,7 @@ export default function UsersPage() {
                       </Box>
                     </TableCell>
                     <TableCell>
-                      <Typography variant="body2" sx={{ color: '#374151' }}>
+                      <Typography variant="body2" sx={{ color: theme.palette.text.primary }}>
                         {user.email}
                       </Typography>
                     </TableCell>
@@ -283,11 +286,11 @@ export default function UsersPage() {
                     </TableCell>
                     <TableCell align="right">
                       {canEdit && (
-                        <Tooltip title="Editar">
+                        <Tooltip title={tc('edit')}>
                           <IconButton
                             size="small"
                             onClick={() => openEditDialog(user)}
-                            sx={{ color: '#6b7280', '&:hover': { color: '#0d9488' } }}
+                            sx={{ color: theme.palette.text.secondary, '&:hover': { color: theme.palette.primary.main } }}
                           >
                             <Edit fontSize="small" />
                           </IconButton>
@@ -311,9 +314,9 @@ export default function UsersPage() {
               setPage(0);
             }}
             rowsPerPageOptions={[5, 10, 25, 50]}
-            labelRowsPerPage="Filas por página"
+            labelRowsPerPage={tc('rowsPerPage')}
             labelDisplayedRows={({ from, to, count }) =>
-              `${from}–${to} de ${count !== -1 ? count : `más de ${to}`}`
+              `${from}–${to} ${tc('of')} ${count !== -1 ? count : `${tc('moreThan')} ${to}`}`
             }
           />
         </Paper>
@@ -332,45 +335,47 @@ export default function UsersPage() {
       <Dialog
         open={!!confirmToggle}
         onClose={() => setConfirmToggle(null)}
-        PaperProps={{ sx: { borderRadius: '16px', border: '1px solid #e5e7eb', maxWidth: 400 } }}
+        PaperProps={{ sx: { borderRadius: '16px', border: `1px solid ${theme.palette.divider}`, maxWidth: 400 } }}
       >
         <DialogTitle sx={{ fontWeight: 700 }}>
-          {confirmToggle?.is_active ? 'Desactivar usuario' : 'Activar usuario'}
+          {confirmToggle?.is_active ? t('deactivate_user') : t('activate_user')}
         </DialogTitle>
         <DialogContent>
-          <Typography variant="body2" sx={{ color: '#6b7280' }}>
-            ¿Estás seguro de que deseas {confirmToggle?.is_active ? 'desactivar' : 'activar'} al
-            usuario <strong>{confirmToggle?.name}</strong>?
+          <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
+            {t('confirm_toggle', {
+              action: confirmToggle?.is_active ? t('deactivate').toLowerCase() : t('activate').toLowerCase(),
+              name: confirmToggle?.name,
+            })}
             {confirmToggle?.is_active && (
               <br />
             )}
             {confirmToggle?.is_active && (
-              <span style={{ color: '#dc2626' }}>
-                El usuario no podrá iniciar sesión mientras esté desactivado.
+              <span style={{ color: theme.palette.error.dark }}>
+                {t('deactivate_warning')}
               </span>
             )}
           </Typography>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>
           <Button onClick={() => setConfirmToggle(null)} variant="outlined" disabled={toggleActive.isPending}>
-            Cancelar
+            {tc('cancel')}
           </Button>
           <Button
             onClick={handleToggleActive}
             variant="contained"
             disabled={toggleActive.isPending}
             sx={{
-              backgroundColor: confirmToggle?.is_active ? '#dc2626' : '#0d9488',
+              backgroundColor: confirmToggle?.is_active ? theme.palette.error.dark : theme.palette.primary.main,
               '&:hover': {
-                backgroundColor: confirmToggle?.is_active ? '#b91c1c' : '#0f766e',
+                backgroundColor: confirmToggle?.is_active ? theme.palette.error.dark : theme.palette.primary.dark,
               },
             }}
           >
             {toggleActive.isPending
-              ? 'Procesando...'
+              ? t('processing')
               : confirmToggle?.is_active
-                ? 'Desactivar'
-                : 'Activar'}
+                ? t('deactivate')
+                : t('activate')}
           </Button>
         </DialogActions>
       </Dialog>

@@ -16,6 +16,7 @@ export interface TopDoctor {
   specialty: string;
   appointments: number;
   confirmed_bookings: number;
+  total_bookings: number;
 }
 
 export interface DashboardStats {

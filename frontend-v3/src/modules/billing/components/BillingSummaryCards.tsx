@@ -1,4 +1,5 @@
 import { Box, Paper, Typography, Avatar } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import AttachMoney from '@mui/icons-material/AttachMoney';
 import PendingActions from '@mui/icons-material/PendingActions';
 import WarningAmber from '@mui/icons-material/WarningAmber';
@@ -15,34 +16,36 @@ const formatCurrency = (amount: number) =>
   new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(amount);
 
 export function BillingSummaryCards({ stats, isLoading }: BillingSummaryCardsProps) {
+  const theme = useTheme();
+
   const cards = [
     {
       label: 'Ingresos Totales',
       value: stats?.total_revenue ?? 0,
       icon: <AttachMoney />,
-      color: '#0d9488',
-      bgColor: '#f0fdfa',
+      color: theme.palette.primary.main,
+      bgColor: theme.palette.custom.brand.lightest,
     },
     {
       label: 'Pendientes de Pago',
       value: stats?.pending_amount ?? 0,
       icon: <PendingActions />,
-      color: '#f59e0b',
-      bgColor: '#fffbeb',
+      color: theme.palette.warning.main,
+      bgColor: theme.palette.custom.status.warning.bg,
     },
     {
       label: 'Facturas Vencidas',
       value: stats?.overdue_amount ?? 0,
       icon: <WarningAmber />,
-      color: '#ef4444',
-      bgColor: '#fef2f2',
+      color: theme.palette.error.main,
+      bgColor: theme.palette.custom.status.error.bg,
     },
     {
       label: 'Facturas Últimos 30 días',
       value: stats?.invoices_last_30_days ?? 0,
       icon: <TrendingUp />,
-      color: '#3b82f6',
-      bgColor: '#eff6ff',
+      color: theme.palette.info.main,
+      bgColor: theme.palette.custom.status.info.bg,
       format: 'number' as const,
     },
   ];
@@ -79,10 +82,10 @@ export function BillingSummaryCards({ stats, isLoading }: BillingSummaryCardsPro
                 {card.icon}
               </Avatar>
               <Box>
-                <Typography variant="h4" sx={{ fontWeight: 700, color: '#1f2937' }}>
+                <Typography variant="h4" sx={{ fontWeight: 700, color: theme.palette.text.primary }}>
                   {isLoading ? '...' : card.format === 'number' ? card.value.toLocaleString('es-CL') : formatCurrency(card.value)}
                 </Typography>
-                <Typography variant="body2" sx={{ color: '#6b7280' }}>
+                <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
                   {card.label}
                 </Typography>
               </Box>

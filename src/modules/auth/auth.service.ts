@@ -206,7 +206,12 @@ export const login = async ({ email, password, totp_token, captcha_token }: Logi
 
   logger.debug('Login attempt', { email, tenantId });
 
-  const result = await pool.query<User>('SELECT id, email, name, rut, phone, role, password, password_changed, totp_enabled, totp_secret, tenant_id, active, last_activity_at, failed_attempts, locked_until, token_version FROM users WHERE email = $1 AND tenant_id = $2', [email, tenantId]);
+  const result = await pool.query<User>(
+    `SELECT id, email, name, rut, phone, role, password, password_changed, totp_enabled, totp_secret, tenant_id, active, last_activity_at, failed_attempts, locked_until, token_version
+     FROM users
+     WHERE email = $1 AND (tenant_id = $2 OR (role = 'superadmin' AND tenant_id IS NULL))`,
+    [email, tenantId]
+  );
   const user = result.rows[0];
 
   if (!user) {
@@ -391,7 +396,11 @@ export const logoutAll = async (userId: number): Promise<void> => {
 export const changePassword = async ({ userId, currentPassword, newPassword }: ChangePasswordParams, tenantId: string = 'default'): Promise<void> => {
   validatePassword(newPassword);
 
-  const userResult = await pool.query('SELECT password FROM users WHERE id = $1 AND tenant_id = $2', [userId, tenantId]);
+  const userResult = await pool.query(
+    `SELECT password FROM users
+     WHERE id = $1 AND (tenant_id = $2 OR (role = 'superadmin' AND tenant_id IS NULL))`,
+    [userId, tenantId]
+  );
   if (!userResult.rows[0]) throw new BadRequestError('User not found');
 
   const isValid = await bcrypt.compare(currentPassword, userResult.rows[0].password);
@@ -403,7 +412,8 @@ export const changePassword = async ({ userId, currentPassword, newPassword }: C
 
   const hashedPassword = await bcrypt.hash(newPassword, 12);
   await pool.query(
-    'UPDATE users SET password = $1, password_changed = true, token_version = COALESCE(token_version, 0) + 1 WHERE id = $2 AND tenant_id = $3',
+    `UPDATE users SET password = $1, password_changed = true, token_version = COALESCE(token_version, 0) + 1
+     WHERE id = $2 AND (tenant_id = $3 OR (role = 'superadmin' AND tenant_id IS NULL))`,
     [hashedPassword, userId, tenantId]
   );
 

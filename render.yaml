@@ -1,4 +1,5 @@
 services:
+  # ─── Backend API ───────────────────────────────────────────
   - type: web
     name: clinic-api
     env: node
@@ -53,3 +54,21 @@ services:
         sync: false
       - key: ALLOWED_DOMAINS
         sync: false
+      - key: DB_CA_CERT
+        sync: false
+
+  # ─── Frontend v3 (Static Site) ─────────────────────────────
+  - type: static_site
+    name: clinic-frontend
+    env: static
+    region: oregon
+    plan: free
+    buildCommand: cd frontend-v3 && npm install && npm run build
+    staticPublishPath: ./frontend-v3/dist
+    routes:
+      - type: rewrite
+        from: /*
+        to: /index.html
+    envVars:
+      - key: VITE_API_URL
+        value: /api

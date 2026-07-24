@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { Box, Tabs, Tab, Paper } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import PersonOutline from '@mui/icons-material/PersonOutline';
 import Security from '@mui/icons-material/Security';
 import NotificationsActive from '@mui/icons-material/NotificationsActive';
+import { useTranslation } from 'react-i18next';
 import { MotionDiv } from '@/shared/utils/animations';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { ProfileTab } from '../components/ProfileTab';
@@ -29,6 +31,8 @@ function TabPanel({ children, value, index }: TabPanelProps) {
 }
 
 export default function SettingsPage() {
+  const theme = useTheme();
+  const { t } = useTranslation('settings');
   const [activeTab, setActiveTab] = useState(0);
 
   const handleChange = (_event: React.SyntheticEvent, newValue: number) => {
@@ -38,16 +42,16 @@ export default function SettingsPage() {
   return (
     <MotionDiv initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
       <PageHeader
-        title="Configuración"
-        subtitle="Administra tu perfil, seguridad y notificaciones"
+        title={t('title')}
+        subtitle={t('subtitle')}
       />
 
-      <Paper sx={{ borderRadius: '14px', border: '1px solid #e5e7eb' }}>
+      <Paper sx={{ borderRadius: '14px', border: `1px solid ${theme.palette.divider}` }}>
         <Tabs
           value={activeTab}
           onChange={handleChange}
           sx={{
-            borderBottom: '1px solid #e5e7eb',
+            borderBottom: `1px solid ${theme.palette.divider}`,
             px: 3,
             '& .MuiTab-root': {
               textTransform: 'none',
@@ -56,7 +60,7 @@ export default function SettingsPage() {
               minHeight: 56,
             },
             '& .MuiTabs-indicator': {
-              backgroundColor: '#0d9488',
+              backgroundColor: theme.palette.primary.main,
               height: 3,
               borderRadius: '3px 3px 0 0',
             },
@@ -65,17 +69,17 @@ export default function SettingsPage() {
           <Tab
             icon={<PersonOutline sx={{ fontSize: 20 }} />}
             iconPosition="start"
-            label="Perfil"
+            label={t('tab_profile')}
           />
           <Tab
             icon={<Security sx={{ fontSize: 20 }} />}
             iconPosition="start"
-            label="Seguridad"
+            label={t('tab_security')}
           />
           <Tab
             icon={<NotificationsActive sx={{ fontSize: 20 }} />}
             iconPosition="start"
-            label="Notificaciones"
+            label={t('tab_notifications')}
           />
         </Tabs>
 

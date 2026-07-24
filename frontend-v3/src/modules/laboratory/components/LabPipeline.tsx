@@ -1,4 +1,5 @@
 import { Box, Typography, Paper, Chip, Avatar } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import Science from '@mui/icons-material/Science';
 import { useNavigate } from 'react-router-dom';
 import { MotionDiv } from '@/shared/utils/animations';
@@ -9,16 +10,17 @@ interface LabPipelineProps {
   requests: LabRequest[];
 }
 
-const PIPELINE_COLUMNS: { status: LabRequestStatus; key: LabRequestStatus }[] = [
-  { status: 'pending', key: 'pending' },
-  { status: 'collected', key: 'collected' },
-  { status: 'in_progress', key: 'in_progress' },
-  { status: 'completed', key: 'completed' },
-  { status: 'cancelled', key: 'cancelled' },
+const PIPELINE_COLUMNS: { status: LabRequestStatus; key: LabRequestStatus; label: string }[] = [
+  { status: 'pending', key: 'pending', label: 'Pendiente' },
+  { status: 'received', key: 'received', label: 'Recibido' },
+  { status: 'processing', key: 'processing', label: 'En Proceso' },
+  { status: 'delivered', key: 'delivered', label: 'Entregado' },
+  { status: 'cancelled', key: 'cancelled', label: 'Cancelado' },
 ];
 
 export function LabPipeline({ requests }: LabPipelineProps) {
   const navigate = useNavigate();
+  const theme = useTheme();
 
   const grouped = PIPELINE_COLUMNS.map((col) => ({
     ...col,
@@ -35,9 +37,9 @@ export function LabPipeline({ requests }: LabPipelineProps) {
             sx={{
               minWidth: 260,
               flex: 1,
-              backgroundColor: '#f9fafb',
+              backgroundColor: theme.palette.custom.surface.muted,
               borderRadius: '14px',
-              border: '1px solid #e5e7eb',
+              border: `1px solid ${theme.palette.divider}`,
               p: 1.5,
             }}
           >
@@ -50,7 +52,7 @@ export function LabPipeline({ requests }: LabPipelineProps) {
                   backgroundColor: config.color,
                 }}
               />
-              <Typography variant="body2" sx={{ fontWeight: 600, color: '#374151' }}>
+              <Typography variant="body2" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
                 {config.label}
               </Typography>
               <Chip
@@ -70,7 +72,7 @@ export function LabPipeline({ requests }: LabPipelineProps) {
               {col.items.length === 0 && (
                 <Typography
                   variant="body2"
-                  sx={{ color: '#9ca3af', textAlign: 'center', py: 3, fontSize: '0.75rem' }}
+                  sx={{ color: theme.palette.text.secondary, textAlign: 'center', py: 3, fontSize: '0.75rem' }}
                 >
                   Sin solicitudes
                 </Typography>
@@ -88,12 +90,12 @@ export function LabPipeline({ requests }: LabPipelineProps) {
                     sx={{
                       p: 1.5,
                       borderRadius: '10px',
-                      border: '1px solid #e5e7eb',
+                      border: `1px solid ${theme.palette.divider}`,
                       cursor: 'pointer',
                       transition: 'all 0.2s',
                       '&:hover': {
                         boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-                        borderColor: '#d1d5db',
+                        borderColor: theme.palette.divider,
                       },
                     }}
                   >
@@ -113,7 +115,7 @@ export function LabPipeline({ requests }: LabPipelineProps) {
                           variant="body2"
                           sx={{
                             fontWeight: 600,
-                            color: '#1f2937',
+                            color: theme.palette.text.primary,
                             overflow: 'hidden',
                             textOverflow: 'ellipsis',
                             whiteSpace: 'nowrap',
@@ -122,7 +124,7 @@ export function LabPipeline({ requests }: LabPipelineProps) {
                           {request.request_number || `#${request.id}`}
                         </Typography>
                         {request.patient_name && (
-                          <Typography variant="caption" sx={{ color: '#6b7280' }}>
+                          <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
                             {request.patient_name}
                           </Typography>
                         )}
@@ -142,7 +144,7 @@ export function LabPipeline({ requests }: LabPipelineProps) {
                         }}
                       />
                       {request.doctor_name && (
-                        <Typography variant="caption" sx={{ color: '#9ca3af', ml: 'auto' }}>
+                        <Typography variant="caption" sx={{ color: theme.palette.text.secondary, ml: 'auto' }}>
                           Dr. {request.doctor_name.split(' ').slice(-1)[0]}
                         </Typography>
                       )}
