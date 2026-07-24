@@ -6,30 +6,39 @@ import { UnauthorizedError } from '../utils/errors.js';
 
 const isProduction = process.env.NODE_ENV === 'production';
 
+const helmetDirectives = isProduction
+  ? {
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          scriptSrc: [
+            "'self'",
+            "'unsafe-eval'",
+            "https://www.google.com/recaptcha/",
+            "https://www.gstatic.com/recaptcha/",
+          ],
+          styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+          fontSrc: ["'self'", "data:", "https://fonts.gstatic.com"],
+          imgSrc: ["'self'", "data:", "https:"],
+          connectSrc: ["'self'", "https://www.google.com/recaptcha/", "https://www.gstatic.com/recaptcha/"],
+          frameSrc: ["'self'", "https://www.google.com/recaptcha/", "https://www.google.com/recaptcha/"],
+          workerSrc: ["'self'", "blob:", "https://www.google.com/recaptcha/", "https://www.gstatic.com/recaptcha/"],
+          frameAncestors: ["'none'"],
+          formAction: ["'self'"],
+          baseUri: ["'none'"],
+        },
+      },
+    }
+  : false;
+
 export const securityMiddleware = [
   helmet({
-    contentSecurityPolicy: {
-      directives: {
-        defaultSrc: ["'self'"],
-        scriptSrc: ["'self'", "https://www.google.com/recaptcha/", "https://www.gstatic.com/recaptcha/"],
-        styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-        fontSrc: ["'self'", "data:", "https://fonts.gstatic.com"],
-        imgSrc: ["'self'", "data:", "https:"],
-        connectSrc: ["'self'", "https://www.google.com/recaptcha/", "https://www.gstatic.com/recaptcha/"],
-        frameSrc: ["'self'", "https://www.google.com/recaptcha/"],
-        workerSrc: ["'self'", "https://www.google.com/recaptcha/", "https://www.gstatic.com/recaptcha/"],
-        frameAncestors: ["'none'"],
-        formAction: ["'self'"],
-        baseUri: ["'none'"],
-      },
-    },
-    crossOriginEmbedderPolicy: { policy: 'credentialless' },
+    ...(helmetDirectives || {}),
+    crossOriginEmbedderPolicy: false,
     crossOriginOpenerPolicy: { policy: 'same-origin' },
-    crossOriginResourcePolicy: { policy: 'same-origin' },
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
     dnsPrefetchControl: true,
-    frameguard: {
-      action: 'deny',
-    },
+    frameguard: { action: 'deny' },
     hsts: {
       maxAge: 31536000,
       includeSubDomains: true,
