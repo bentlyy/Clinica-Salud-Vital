@@ -836,6 +836,7 @@
   padding: 24px;
   opacity: 0;
   animation: lm-fadeIn 0.25s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
 @keyframes lm-fadeIn {
@@ -858,6 +859,24 @@
   opacity: 0;
   animation: lm-cardIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) 0.05s forwards;
   background: #ffffff;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  letter-spacing: normal;
+  color: #111827;
+}
+
+.lm-card h1,
+.lm-card h2,
+.lm-card h3,
+.lm-card p,
+.lm-card button,
+.lm-card input,
+.lm-card a,
+.lm-card span,
+.lm-card label {
+  font-family: inherit;
+  letter-spacing: normal;
 }
 
 @keyframes lm-cardIn {
