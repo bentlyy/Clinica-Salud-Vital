@@ -18,9 +18,9 @@ import {
   CircularProgress,
   LinearProgress,
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import ContentPasteIcon from '@mui/icons-material/ContentPaste';
 import AddIcon from '@mui/icons-material/Add';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -58,6 +58,7 @@ export const SampleAliquot = memo(function SampleAliquot({
   onAliquot,
   isLoading = false,
 }: SampleAliquotProps) {
+  const theme = useTheme();
   const [expandedRow, setExpandedRow] = useState<number | null>(null);
 
   const verifiedSamples = samples.filter(
@@ -77,26 +78,26 @@ export const SampleAliquot = memo(function SampleAliquot({
       sx={{
         p: 3,
         borderRadius: '14px',
-        border: '1px solid #e5e7eb',
+        border: `1px solid ${theme.palette.divider}`,
       }}
     >
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2.5 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-          <Typography variant="h5" sx={{ fontWeight: 700, color: '#1f2937' }}>
+          <Typography variant="h5" sx={{ fontWeight: 700, color: theme.palette.text.primary }}>
             Alicuotado
           </Typography>
           <Chip
             label={`${verifiedSamples.length} disponibles`}
             size="small"
             sx={{
-              backgroundColor: '#f0fdfa',
-              color: '#0d9488',
+              backgroundColor: theme.palette.custom.brand.light,
+              color: theme.palette.primary.main,
               fontWeight: 500,
               fontSize: '0.7rem',
             }}
           />
         </Box>
-        {isLoading && <CircularProgress size={20} sx={{ color: '#0d9488' }} />}
+        {isLoading && <CircularProgress size={20} sx={{ color: theme.palette.primary.main }} />}
       </Box>
 
       {verifiedSamples.length === 0 ? (
@@ -104,13 +105,13 @@ export const SampleAliquot = memo(function SampleAliquot({
           sx={{
             textAlign: 'center',
             py: 5,
-            backgroundColor: '#f9fafb',
+            backgroundColor: theme.palette.action.hover,
             borderRadius: '10px',
-            border: '1px dashed #e5e7eb',
+            border: `1px dashed ${theme.palette.divider}`,
           }}
         >
-          <ContentPasteIcon sx={{ fontSize: 40, color: '#d1d5db', mb: 1 }} />
-          <Typography variant="body2" sx={{ color: '#9ca3af' }}>
+          <ContentPasteIcon sx={{ fontSize: 40, color: theme.palette.text.disabled, mb: 1 }} />
+          <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
             No hay muestras verificadas disponibles para alicuotar
           </Typography>
         </Box>
@@ -174,6 +175,7 @@ const AliquotRow = memo(function AliquotRow({
   isLoading,
   getSampleTypeLabel,
 }: AliquotRowProps) {
+  const theme = useTheme();
   const {
     control,
     handleSubmit,
@@ -210,20 +212,20 @@ const AliquotRow = memo(function AliquotRow({
 
   return (
     <>
-      <TableRow sx={{ '&:hover': { backgroundColor: '#f9fafb' } }}>
+      <TableRow sx={{ '&:hover': { backgroundColor: theme.palette.action.hover } }}>
         <TableCell>
-          <Typography variant="body2" sx={{ fontWeight: 600, color: '#1f2937', fontFamily: 'monospace' }}>
+          <Typography variant="body2" sx={{ fontWeight: 600, color: theme.palette.text.primary, fontFamily: 'monospace' }}>
             {sample.sample_code}
           </Typography>
         </TableCell>
         <TableCell>
-          <Typography variant="body2" sx={{ color: '#6b7280' }}>
+          <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
             {getSampleTypeLabel(sample.sample_type)}
           </Typography>
         </TableCell>
         <TableCell>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Typography variant="body2" sx={{ fontWeight: 500, color: '#374151' }}>
+            <Typography variant="body2" sx={{ fontWeight: 500, color: theme.palette.text.primary }}>
               {sample.volume ? `${sample.volume} ml` : '—'}
             </Typography>
             {maxVolume > 0 && (
@@ -234,9 +236,9 @@ const AliquotRow = memo(function AliquotRow({
                   flex: 1,
                   height: 4,
                   borderRadius: 2,
-                  backgroundColor: '#e5e7eb',
+                  backgroundColor: theme.palette.divider,
                   '& .MuiLinearProgress-bar': {
-                    backgroundColor: volumePercent > 80 ? '#f59e0b' : '#0d9488',
+                    backgroundColor: volumePercent > 80 ? theme.palette.warning.main : theme.palette.primary.main,
                     borderRadius: 2,
                   },
                 }}
@@ -249,8 +251,8 @@ const AliquotRow = memo(function AliquotRow({
             label={aliquotCount}
             size="small"
             sx={{
-              backgroundColor: aliquotCount > 0 ? '#dcfce7' : '#f3f4f6',
-              color: aliquotCount > 0 ? '#16a34a' : '#6b7280',
+              backgroundColor: aliquotCount > 0 ? theme.palette.success.light : theme.palette.action.hover,
+              color: aliquotCount > 0 ? theme.palette.success.dark : theme.palette.text.secondary,
               fontWeight: 600,
               fontSize: '0.75rem',
               minWidth: 28,
@@ -263,8 +265,8 @@ const AliquotRow = memo(function AliquotRow({
             onClick={() => onToggle(sample.id)}
             disabled={isLoading}
             sx={{
-              color: '#0d9488',
-              '&:hover': { backgroundColor: '#f0fdfa' },
+              color: theme.palette.primary.main,
+              '&:hover': { backgroundColor: theme.palette.custom.brand.light },
             }}
           >
             {expanded ? <ExpandLessIcon /> : <AddIcon />}
@@ -282,15 +284,15 @@ const AliquotRow = memo(function AliquotRow({
                 p: 2.5,
                 mx: 1,
                 mb: 1.5,
-                backgroundColor: '#f9fafb',
+                backgroundColor: theme.palette.action.hover,
                 borderRadius: '10px',
-                border: '1px solid #e5e7eb',
+                border: `1px solid ${theme.palette.divider}`,
               }}
             >
-              <Typography variant="body2" sx={{ fontWeight: 600, color: '#374151', mb: 0.5 }}>
+              <Typography variant="body2" sx={{ fontWeight: 600, color: theme.palette.text.primary, mb: 0.5 }}>
                 Nueva Alicuota — {sample.sample_code}
               </Typography>
-              <Typography variant="caption" sx={{ color: '#9ca3af', display: 'block', mb: 2 }}>
+              <Typography variant="caption" sx={{ color: theme.palette.text.secondary, display: 'block', mb: 2 }}>
                 Volumen disponible: {maxVolume} ml
               </Typography>
 
@@ -356,7 +358,7 @@ const AliquotRow = memo(function AliquotRow({
                   size="small"
                   onClick={handleCancel}
                   disabled={isLoading}
-                  sx={{ color: '#6b7280' }}
+                  sx={{ color: theme.palette.text.secondary }}
                 >
                   Cancelar
                 </Button>

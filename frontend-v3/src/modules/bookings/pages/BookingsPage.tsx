@@ -1,4 +1,5 @@
 import { useState, useCallback, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Box, Button, Chip, Typography, Paper, IconButton, Tooltip } from '@mui/material';
 import Add from '@mui/icons-material/Add';
 import CalendarViewWeek from '@mui/icons-material/CalendarViewWeek';
@@ -23,6 +24,7 @@ import { useCreateBooking } from '../hooks/useBookings';
 const MotionBox = motion(Box);
 
 export default function BookingsPage() {
+  const { t } = useTranslation('bookings');
   const { user } = useAuth();
   const role = user?.role;
 
@@ -129,25 +131,24 @@ export default function BookingsPage() {
   const pageTitle = useMemo(() => {
     switch (role) {
       case 'patient':
-        return 'Mis Citas';
+        return t('my_appointments');
       case 'doctor':
-        return 'Gestión de Citas';
       case 'admin':
       case 'superadmin':
-        return 'Gestión de Citas';
+        return t('management_title');
       default:
-        return 'Citas';
+        return t('management_title');
     }
-  }, [role]);
+  }, [role, t]);
 
   const subtitle = useMemo(() => {
     if (!total) return undefined;
-    return `${total} cita${total !== 1 ? 's' : ''} encontrada${total !== 1 ? 's' : ''}`;
-  }, [total]);
+    return t('results_found', { total });
+  }, [total, t]);
 
   // Loading
   if (isLoading) {
-    return <LoadingState message="Cargando citas..." />;
+    return <LoadingState message={t('loading_bookings')} />;
   }
 
   // Error
@@ -169,7 +170,7 @@ export default function BookingsPage() {
             {/* View toggle (doctor only) */}
             {role === 'doctor' && (
               <Box sx={{ display: 'flex', border: '1px solid #e5e7eb', borderRadius: '8px', overflow: 'hidden' }}>
-                <Tooltip title="Vista lista">
+                <Tooltip title={t('list_view_tooltip')}>
                   <IconButton
                     size="small"
                     onClick={() => setViewMode('list')}
@@ -185,7 +186,7 @@ export default function BookingsPage() {
                     <ViewList fontSize="small" />
                   </IconButton>
                 </Tooltip>
-                <Tooltip title="Vista calendario">
+                <Tooltip title={t('calendar_view_tooltip')}>
                   <IconButton
                     size="small"
                     onClick={() => setViewMode('calendar')}
@@ -220,7 +221,7 @@ export default function BookingsPage() {
                 textTransform: 'none',
               }}
             >
-              Nueva Cita
+              {t('newAppointment', 'Nueva Cita')}
             </Button>
           </Box>
         }
@@ -262,14 +263,14 @@ export default function BookingsPage() {
       {bookings.length === 0 ? (
         <EmptyState
           icon={<EventBusy sx={{ fontSize: 48, color: '#d1d5db' }} />}
-          title="No hay citas"
+          title={t('no_appointments_title')}
           message={
             statusFilter !== 'all'
-              ? `No se encontraron citas con estado "${BOOKING_STATUS_CONFIG[statusFilter as BookingStatus]?.label}".`
-              : 'Aún no tienes citas registradas.'
+              ? t('no_appointments_filtered', { status: BOOKING_STATUS_CONFIG[statusFilter as BookingStatus]?.label })
+              : t('no_appointments_empty')
           }
           action={{
-            label: 'Agendar Cita',
+            label: t('schedule_appointment'),
             onClick: () => setCreateDialogOpen(true),
           }}
         />
@@ -291,6 +292,7 @@ export default function BookingsPage() {
               key={booking.id}
               booking={booking}
               onView={() => handleEventClick(booking)}
+              t={t}
             />
           ))}
 
@@ -304,11 +306,11 @@ export default function BookingsPage() {
                 onClick={() => setPage((p) => p - 1)}
                 sx={{ borderColor: '#d1d5db', color: '#374151', textTransform: 'none' }}
               >
-                Anterior
+                {t('previous_page')}
               </Button>
               <Box sx={{ display: 'flex', alignItems: 'center', px: 2 }}>
                 <Typography variant="body2" sx={{ color: '#6b7280' }}>
-                  Página {page} de {totalPages}
+                  {t('page_of', { page, total: totalPages })}
                 </Typography>
               </Box>
               <Button
@@ -318,7 +320,7 @@ export default function BookingsPage() {
                 onClick={() => setPage((p) => p + 1)}
                 sx={{ borderColor: '#d1d5db', color: '#374151', textTransform: 'none' }}
               >
-                Siguiente
+                {t('next_page')}
               </Button>
             </Box>
           )}
@@ -356,13 +358,14 @@ export default function BookingsPage() {
 interface BookingCardProps {
   booking: Booking;
   onView: () => void;
+  t: (key: string, options?: Record<string, unknown>) => string;
 }
 
 const FALLBACK_STATUS = { label: 'Desconocido', color: '#6b7280', bgColor: '#f3f4f6' };
 
-function BookingCard({ booking, onView }: BookingCardProps) {
-  const statusConfig = BOOKING_STATUS_CONFIG[booking.status] ?? FALLBACK_STATUS;
-  const patientLabel = booking.patient_name || booking.guest_name || 'Sin nombre';
+function BookingCard({ booking, onView, t }: BookingCardProps) {
+  const statusConfig = BOOKING_STATUS_CONFIG[booking.status] ?? { ...FALLBACK_STATUS, label: t('unknown_status') };
+  const patientLabel = booking.patient_name || booking.guest_name || t('without_name');
 
   return (
     <Paper
@@ -431,7 +434,7 @@ function BookingCard({ booking, onView }: BookingCardProps) {
             fontSize: '0.75rem',
           }}
         />
-        <Tooltip title="Ver detalle">
+        <Tooltip title={t('view_detail_tooltip')}>
           <IconButton
             size="small"
             onClick={onView}

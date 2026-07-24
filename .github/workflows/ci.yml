@@ -2,12 +2,13 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, develop]
   pull_request:
-    branches: [main]
+    branches: [main, develop]
 
 jobs:
-  build-and-test:
+  backend:
+    name: Backend Tests
     runs-on: ubuntu-latest
 
     services:
@@ -25,10 +26,6 @@ jobs:
           --health-timeout 5s
           --health-retries 10
 
-    strategy:
-      matrix:
-        node-version: [20]
-
     env:
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/clinic
       JWT_SECRET: ci-test-jwt-secret-at-least-32-characters-long
@@ -40,36 +37,50 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Use Node.js ${{ matrix.node-version }}
+      - name: Use Node.js 20
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: 20
           cache: 'npm'
 
-      - name: Install backend dependencies
+      - name: Install dependencies
         run: npm ci
-
-      - name: Install frontend dependencies
-        run: npm ci
-        working-directory: frontend
 
       - name: Typecheck
         run: npm run typecheck
 
-      - name: Lint frontend
-        run: npm run lint
-        working-directory: frontend
-
-      - name: Run backend tests
+      - name: Run tests
         run: npm test
 
-      - name: Run frontend tests
-        run: npm test
-        working-directory: frontend
-
-      - name: Build backend
+      - name: Build
         run: npm run build:backend
 
-      - name: Build frontend
+  frontend-v3:
+    name: Frontend v3 Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: frontend-v3/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: frontend-v3
+
+      - name: Typecheck
+        run: npm run type-check
+        working-directory: frontend-v3
+
+      - name: Run tests
+        run: npm test
+        working-directory: frontend-v3
+
+      - name: Build
         run: npm run build
-        working-directory: frontend
+        working-directory: frontend-v3

@@ -19,8 +19,11 @@ import ChevronLeft from '@mui/icons-material/ChevronLeft';
 import Settings from '@mui/icons-material/Settings';
 import Logout from '@mui/icons-material/Logout';
 import Person from '@mui/icons-material/Person';
+import DarkMode from '@mui/icons-material/DarkMode';
+import LightMode from '@mui/icons-material/LightMode';
 import { useAuth } from '@/shared/providers/AuthProvider';
 import { useFeature } from '@/shared/hooks/useFeature';
+import { useThemeMode } from '@/shared/providers/ThemeProvider';
 import { getRoleLabel, getRoleColor } from '@/shared/utils/role.utils';
 import { getNavItems } from '@/shared/constants/navigation';
 import { SidebarItem } from './SidebarItem';
@@ -37,6 +40,7 @@ export function DashboardLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const theme = useTheme();
+  const { mode, toggleTheme } = useThemeMode();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
@@ -94,8 +98,8 @@ export function DashboardLayout() {
             '& .MuiDrawer-paper': {
               width: sidebarWidth,
               boxSizing: 'border-box',
-              borderRight: '1px solid #f3f4f6',
-              backgroundColor: '#ffffff',
+              borderRight: `1px solid ${theme.palette.divider}`,
+              backgroundColor: theme.palette.background.paper,
               transition: 'width 0.2s ease-in-out',
               overflowX: 'hidden',
             },
@@ -130,7 +134,7 @@ export function DashboardLayout() {
                 >
                   C
                 </Box>
-                <Typography variant="h6" sx={{ fontWeight: 700, color: '#1f2937' }}>
+                <Typography variant="h6" sx={{ fontWeight: 700, color: 'text.primary' }}>
                   Clínica
                 </Typography>
               </Box>
@@ -166,7 +170,7 @@ export function DashboardLayout() {
             <Box
               sx={{
                 p: 2,
-                borderTop: '1px solid #f3f4f6',
+                borderTop: `1px solid ${theme.palette.divider}`,
                 display: 'flex',
                 alignItems: 'center',
                 gap: 1.5,
@@ -185,11 +189,11 @@ export function DashboardLayout() {
               <Box sx={{ flex: 1, minWidth: 0 }}>
                 <Typography
                   variant="body2"
-                  sx={{ fontWeight: 600, color: '#1f2937', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                  sx={{ fontWeight: 600, color: 'text.primary', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
                 >
                   {user.name}
                 </Typography>
-                <Typography variant="caption" sx={{ color: '#6b7280' }}>
+                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
                   {getRoleLabel(user.role)}
                 </Typography>
               </Box>
@@ -205,9 +209,9 @@ export function DashboardLayout() {
           position="sticky"
           elevation={0}
           sx={{
-            backgroundColor: '#ffffff',
-            borderBottom: '1px solid #f3f4f6',
-            color: '#1f2937',
+            backgroundColor: theme.palette.background.paper,
+            borderBottom: `1px solid ${theme.palette.divider}`,
+            color: 'text.primary',
           }}
         >
           <Toolbar sx={{ height: TOPBAR_HEIGHT, px: { xs: 2, md: 3 } }}>
@@ -215,7 +219,7 @@ export function DashboardLayout() {
               <IconButton
                 edge="start"
                 onClick={() => setSidebarOpen(true)}
-                sx={{ mr: 1, color: '#374151' }}
+                sx={{ mr: 1, color: 'text.primary' }}
               >
                 <MenuIcon />
               </IconButton>
@@ -229,10 +233,16 @@ export function DashboardLayout() {
 
               <LanguageSwitcher />
 
+              <Tooltip title={mode === 'dark' ? 'Modo claro' : 'Modo oscuro'}>
+                <IconButton size="small" sx={{ color: 'text.secondary' }} onClick={toggleTheme}>
+                  {mode === 'dark' ? <LightMode fontSize="small" /> : <DarkMode fontSize="small" />}
+                </IconButton>
+              </Tooltip>
+
               <Tooltip title="Configuración">
                 <IconButton
                   size="small"
-                  sx={{ color: '#6b7280' }}
+                  sx={{ color: 'text.secondary' }}
                   onClick={() => navigate('/settings')}
                 >
                   <Settings fontSize="small" />
@@ -262,7 +272,7 @@ export function DashboardLayout() {
               onClose={handleProfileMenuClose}
               transformOrigin={{ horizontal: 'right', vertical: 'top' }}
               anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
-              slotProps={{ paper: { sx: { mt: 1, minWidth: 180, borderRadius: 2, border: '1px solid #e5e7eb' } } }}
+              slotProps={{ paper: { sx: { mt: 1, minWidth: 180, borderRadius: 2, border: `1px solid ${theme.palette.divider}` } } }}
             >
               <MenuItem
                 onClick={() => {
@@ -270,7 +280,7 @@ export function DashboardLayout() {
                   navigate('/settings/profile');
                 }}
               >
-                <Person sx={{ mr: 1.5, fontSize: 18, color: '#6b7280' }} />
+                <Person sx={{ mr: 1.5, fontSize: 18, color: 'text.secondary' }} />
                 Mi Perfil
               </MenuItem>
               <MenuItem
@@ -279,7 +289,7 @@ export function DashboardLayout() {
                   navigate('/settings');
                 }}
               >
-                <Settings sx={{ mr: 1.5, fontSize: 18, color: '#6b7280' }} />
+                <Settings sx={{ mr: 1.5, fontSize: 18, color: 'text.secondary' }} />
                 Configuración
               </MenuItem>
               <MenuItem
@@ -302,7 +312,7 @@ export function DashboardLayout() {
           sx={{
             flex: 1,
             overflowY: 'auto',
-            backgroundColor: '#f9fafb',
+            backgroundColor: theme.palette.background.default,
             p: { xs: 2, md: 3 },
           }}
         >

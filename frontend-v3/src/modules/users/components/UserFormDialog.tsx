@@ -10,6 +10,7 @@ import {
   Box,
   Typography,
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -46,6 +47,7 @@ interface UserFormDialogProps {
 }
 
 export function UserFormDialog({ open, onClose, user, onSubmit, isPending }: UserFormDialogProps) {
+  const theme = useTheme();
   const isEdit = !!user;
 
   const {
@@ -101,7 +103,7 @@ export function UserFormDialog({ open, onClose, user, onSubmit, isPending }: Use
       PaperProps={{
         sx: {
           borderRadius: '16px',
-          border: '1px solid #e5e7eb',
+          border: `1px solid ${theme.palette.divider}`,
         },
       }}
     >
@@ -119,25 +121,25 @@ export function UserFormDialog({ open, onClose, user, onSubmit, isPending }: Use
               width: 40,
               height: 40,
               borderRadius: '10px',
-              background: 'linear-gradient(135deg, #0d9488 0%, #14b8a6 100%)',
+              background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.main} 100%)`,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#fff',
+              color: theme.palette.background.paper,
             }}
           >
             {isEdit ? <Save fontSize="small" /> : <PersonAdd fontSize="small" />}
           </Box>
           <Box>
-            <Typography variant="h5" sx={{ fontWeight: 700, color: '#1f2937' }}>
+            <Typography variant="h5" sx={{ fontWeight: 700, color: theme.palette.text.primary }}>
               {isEdit ? 'Editar Usuario' : 'Nuevo Usuario'}
             </Typography>
-            <Typography variant="caption" sx={{ color: '#6b7280' }}>
+            <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
               {isEdit ? 'Modifica la información del usuario' : 'Completa los datos para crear un usuario'}
             </Typography>
           </Box>
         </Box>
-        <Button onClick={onClose} sx={{ minWidth: 'auto', color: '#6b7280' }}>
+        <Button onClick={onClose} sx={{ minWidth: 'auto', color: theme.palette.text.secondary }}>
           <Close />
         </Button>
       </DialogTitle>
@@ -178,7 +180,7 @@ export function UserFormDialog({ open, onClose, user, onSubmit, isPending }: Use
                   }}
                   sx={{
                     '& .MuiInputBase-root.Mui-disabled': {
-                      backgroundColor: '#f9fafb',
+                      backgroundColor: theme.palette.custom.surface.muted,
                     },
                   }}
                 />
@@ -236,9 +238,9 @@ export function UserFormDialog({ open, onClose, user, onSubmit, isPending }: Use
             disabled={isPending}
             startIcon={isPending ? undefined : <Save />}
             sx={{
-              background: 'linear-gradient(135deg, #0d9488 0%, #0f766e 100%)',
+              background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
               '&:hover': {
-                background: 'linear-gradient(135deg, #0f766e 0%, #115e59 100%)',
+                background: `linear-gradient(135deg, ${theme.palette.primary.dark} 0%, ${theme.palette.custom.brand.darker} 100%)`,
               },
             }}
           >

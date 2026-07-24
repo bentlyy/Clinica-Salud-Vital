@@ -19,6 +19,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (email: string, password: string, totp_token?: string, captcha_token?: string) => Promise<AuthResponse>;
   logout: () => Promise<void>;
+  logoutAll: () => Promise<void>;
   hasPermission: (module: string, action?: string) => boolean;
 }
 
@@ -101,6 +102,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [navigate]);
 
+  const logoutAll = useCallback(async () => {
+    try {
+      await apiClient.post('/auth/logout-all');
+    } finally {
+      setAccessToken(null);
+      setUser(null);
+      localStorage.removeItem('auth_user');
+      navigate('/');
+    }
+  }, [navigate]);
+
   const checkPermission = useCallback(
     (module: string, action?: string) => {
       if (!user) return false;
@@ -116,9 +128,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isLoading,
       login,
       logout,
+      logoutAll,
       hasPermission: checkPermission,
     }),
-    [user, isLoading, login, logout, checkPermission],
+    [user, isLoading, login, logout, logoutAll, checkPermission],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

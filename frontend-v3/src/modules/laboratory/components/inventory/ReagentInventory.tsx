@@ -51,14 +51,14 @@ function getExpirationStatus(
   );
 
   if (diffDays < 0) {
-    return { color: '#dc2626', bgColor: '#fef2f2', label: 'Vencido' };
+    return { color: 'error.dark', bgColor: 'custom.status.error.bg', label: 'Vencido' };
   }
   if (diffDays <= 30) {
-    return { color: '#d97706', bgColor: '#fffbeb', label: `${diffDays}d` };
+    return { color: 'warning.dark', bgColor: 'custom.status.warning.bg', label: `${diffDays}d` };
   }
   return {
-    color: '#059669',
-    bgColor: '#ecfdf5',
+    color: 'success.dark',
+    bgColor: 'custom.status.success.bg',
     label: expDate.toLocaleDateString('es-CL'),
   };
 }
@@ -68,12 +68,12 @@ function getStockStatus(
   min: number,
 ): { color: string; bgColor: string; severity: 'error' | 'warning' | 'ok' } {
   if (current <= 0 || current < min * 0.5) {
-    return { color: '#dc2626', bgColor: '#fef2f2', severity: 'error' };
+    return { color: 'error.dark', bgColor: 'custom.status.error.bg', severity: 'error' };
   }
   if (current < min) {
-    return { color: '#d97706', bgColor: '#fffbeb', severity: 'warning' };
+    return { color: 'warning.dark', bgColor: 'custom.status.warning.bg', severity: 'warning' };
   }
-  return { color: '#059669', bgColor: '#ecfdf5', severity: 'ok' };
+  return { color: 'success.dark', bgColor: 'custom.status.success.bg', severity: 'ok' };
 }
 
 // ── Component ────────────────────────────────────────────────────────────────
@@ -87,6 +87,13 @@ export const ReagentInventory = memo(function ReagentInventory({
 }: ReagentInventoryProps) {
   const theme = useTheme();
   const [areaFilter, setAreaFilter] = useState<number | ''>('');
+
+  const resolveColor = (token: string) => {
+    const parts = token.split('.');
+    let obj: any = theme.palette;
+    for (const p of parts) obj = obj?.[p];
+    return typeof obj === 'string' ? obj : token;
+  };
 
   const filtered = useMemo(() => {
     if (areaFilter === '') return reagents;
@@ -116,7 +123,7 @@ export const ReagentInventory = memo(function ReagentInventory({
         sx={{
           p: 3,
           borderRadius: '14px',
-          border: '1px solid #e5e7eb',
+          border: `1px solid ${theme.palette.divider}`,
         }}
       >
         <Skeleton variant="text" width="45%" height={28} />
@@ -132,12 +139,12 @@ export const ReagentInventory = memo(function ReagentInventory({
       sx={{
         p: 3,
         borderRadius: '14px',
-        border: '1px solid #e5e7eb',
+        border: `1px solid ${theme.palette.divider}`,
       }}
     >
       {/* Header */}
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-        <Typography variant="h6" sx={{ fontWeight: 700, color: '#1f2937' }}>
+        <Typography variant="h6" sx={{ fontWeight: 700, color: theme.palette.text.primary }}>
           Inventario de Reactivos
         </Typography>
         {onAdd && (
@@ -146,9 +153,9 @@ export const ReagentInventory = memo(function ReagentInventory({
             startIcon={<AddIcon sx={{ fontSize: 18 }} />}
             onClick={onAdd}
             sx={{
-              background: 'linear-gradient(135deg, #0d9488 0%, #0f766e 100%)',
+              background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
               '&:hover': {
-                background: 'linear-gradient(135deg, #0f766e 0%, #115e59 100%)',
+                background: `linear-gradient(135deg, ${theme.palette.primary.dark} 0%, ${theme.palette.custom.brand.darker} 100%)`,
               },
             }}
           >
@@ -163,26 +170,26 @@ export const ReagentInventory = memo(function ReagentInventory({
           {
             label: 'Total Reactivos',
             value: stats.total,
-            color: '#374151',
-            icon: <ScienceIcon sx={{ fontSize: 18, color: '#6b7280' }} />,
+            color: theme.palette.text.primary,
+            icon: <ScienceIcon sx={{ fontSize: 18, color: theme.palette.text.secondary }} />,
           },
           {
             label: 'Stock Bajo',
             value: stats.lowStock,
-            color: stats.lowStock > 0 ? '#d97706' : '#059669',
-            icon: <WarningAmberIcon sx={{ fontSize: 18, color: stats.lowStock > 0 ? '#d97706' : '#059669' }} />,
+            color: stats.lowStock > 0 ? theme.palette.warning.dark : theme.palette.success.dark,
+            icon: <WarningAmberIcon sx={{ fontSize: 18, color: stats.lowStock > 0 ? theme.palette.warning.dark : theme.palette.success.dark }} />,
           },
           {
             label: 'Vencidos',
             value: stats.expired,
-            color: stats.expired > 0 ? '#dc2626' : '#059669',
-            icon: <WarningAmberIcon sx={{ fontSize: 18, color: stats.expired > 0 ? '#dc2626' : '#059669' }} />,
+            color: stats.expired > 0 ? theme.palette.error.dark : theme.palette.success.dark,
+            icon: <WarningAmberIcon sx={{ fontSize: 18, color: stats.expired > 0 ? theme.palette.error.dark : theme.palette.success.dark }} />,
           },
           {
             label: 'Por Vencer',
             value: stats.expiringSoon,
-            color: stats.expiringSoon > 0 ? '#d97706' : '#059669',
-            icon: <Inventory2Icon sx={{ fontSize: 18, color: '#6b7280' }} />,
+            color: stats.expiringSoon > 0 ? theme.palette.warning.dark : theme.palette.success.dark,
+            icon: <Inventory2Icon sx={{ fontSize: 18, color: theme.palette.text.secondary }} />,
           },
         ].map((stat) => (
           <Box
@@ -190,15 +197,15 @@ export const ReagentInventory = memo(function ReagentInventory({
             sx={{
               px: 2,
               py: 1,
-              border: '1px solid #f3f4f6',
+              border: `1px solid ${theme.palette.custom.surface.sunken}`,
               borderRadius: '10px',
-              backgroundColor: '#f9fafb',
+              backgroundColor: theme.palette.custom.surface.muted,
               minWidth: 120,
             }}
           >
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.25 }}>
               {stat.icon}
-              <Typography variant="caption" sx={{ color: '#9ca3af', fontWeight: 500 }}>
+              <Typography variant="caption" sx={{ color: theme.palette.text.secondary, fontWeight: 500 }}>
                 {stat.label}
               </Typography>
             </Box>
@@ -244,15 +251,15 @@ export const ReagentInventory = memo(function ReagentInventory({
             gap: 1.5,
           }}
         >
-          <InboxOutlinedIcon sx={{ fontSize: 48, color: '#d1d5db' }} />
-          <Typography variant="body2" sx={{ color: '#9ca3af', fontWeight: 500 }}>
+          <InboxOutlinedIcon sx={{ fontSize: 48, color: theme.palette.divider }} />
+          <Typography variant="body2" sx={{ color: theme.palette.text.secondary, fontWeight: 500 }}>
             No hay reactivos registrados
           </Typography>
         </Box>
       ) : (
         <TableContainer
           sx={{
-            border: '1px solid #f3f4f6',
+            border: `1px solid ${theme.palette.custom.surface.sunken}`,
             borderRadius: '10px',
             overflow: 'hidden',
           }}
@@ -295,19 +302,19 @@ export const ReagentInventory = memo(function ReagentInventory({
                   >
                     <TableCell>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <ScienceIcon sx={{ fontSize: 18, color: '#6b7280' }} />
-                        <Typography variant="body2" sx={{ fontWeight: 600, color: '#1f2937' }}>
+                        <ScienceIcon sx={{ fontSize: 18, color: theme.palette.text.secondary }} />
+                        <Typography variant="body2" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
                           {reagent.name}
                         </Typography>
                       </Box>
                     </TableCell>
                     <TableCell>
-                      <Typography variant="caption" sx={{ color: '#6b7280', fontFamily: 'monospace' }}>
+                      <Typography variant="caption" sx={{ color: theme.palette.text.secondary, fontFamily: 'monospace' }}>
                         {reagent.lot_number}
                       </Typography>
                     </TableCell>
                     <TableCell>
-                      <Typography variant="body2" sx={{ color: '#374151' }}>
+                      <Typography variant="body2" sx={{ color: theme.palette.text.primary }}>
                         {reagent.supplier ?? '—'}
                       </Typography>
                     </TableCell>
@@ -315,7 +322,7 @@ export const ReagentInventory = memo(function ReagentInventory({
                       <Box sx={{ minWidth: 80 }}>
                         <Typography
                           variant="body2"
-                          sx={{ fontWeight: 600, color: stockStatus.color }}
+                          sx={{ fontWeight: 600, color: resolveColor(stockStatus.color) }}
                         >
                           {reagent.current_stock} {reagent.unit}
                         </Typography>
@@ -326,9 +333,9 @@ export const ReagentInventory = memo(function ReagentInventory({
                             height: 4,
                             borderRadius: 2,
                             mt: 0.5,
-                            backgroundColor: '#f3f4f6',
+                            backgroundColor: theme.palette.custom.surface.sunken,
                             '& .MuiLinearProgress-bar': {
-                              backgroundColor: stockStatus.color,
+                              backgroundColor: resolveColor(stockStatus.color),
                               borderRadius: 2,
                             },
                           }}
@@ -336,7 +343,7 @@ export const ReagentInventory = memo(function ReagentInventory({
                       </Box>
                     </TableCell>
                     <TableCell>
-                      <Typography variant="caption" sx={{ color: '#6b7280' }}>
+                      <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
                         {reagent.min_stock} {reagent.unit}
                       </Typography>
                     </TableCell>
@@ -348,14 +355,14 @@ export const ReagentInventory = memo(function ReagentInventory({
                           height: 22,
                           fontSize: '0.7rem',
                           fontWeight: 600,
-                          backgroundColor: expirationStatus.bgColor,
-                          color: expirationStatus.color,
+                          backgroundColor: resolveColor(expirationStatus.bgColor),
+                          color: resolveColor(expirationStatus.color),
                           borderRadius: '6px',
                         }}
                       />
                     </TableCell>
                     <TableCell>
-                      <Typography variant="body2" sx={{ color: '#374151' }}>
+                      <Typography variant="body2" sx={{ color: theme.palette.text.primary }}>
                         {reagent.area?.name ?? '—'}
                       </Typography>
                     </TableCell>
@@ -367,8 +374,8 @@ export const ReagentInventory = memo(function ReagentInventory({
                           height: 22,
                           fontSize: '0.7rem',
                           fontWeight: 600,
-                          backgroundColor: reagent.active ? '#ecfdf5' : '#f3f4f6',
-                          color: reagent.active ? '#059669' : '#9ca3af',
+                          backgroundColor: reagent.active ? theme.palette.custom.status.success.bg : theme.palette.custom.surface.sunken,
+                          color: reagent.active ? theme.palette.success.dark : theme.palette.text.secondary,
                           borderRadius: '6px',
                         }}
                       />
@@ -380,10 +387,10 @@ export const ReagentInventory = memo(function ReagentInventory({
                             size="small"
                             onClick={() => onEdit(reagent)}
                             sx={{
-                              color: '#6b7280',
+                              color: theme.palette.text.secondary,
                               '&:hover': {
-                                color: '#0d9488',
-                                backgroundColor: '#f0fdfa',
+                                color: theme.palette.primary.main,
+                                backgroundColor: theme.palette.custom.brand.lightest,
                               },
                             }}
                           >

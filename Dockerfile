@@ -20,7 +20,7 @@ RUN npm ci --omit=dev && npm cache clean --force
 
 COPY --from=builder /app/dist/ dist/
 RUN mkdir -p frontend/dist
-COPY frontend/dist/ frontend/dist/ || true
+COPY frontend-v3/dist/ frontend/dist/ || true
 
 USER appuser
 

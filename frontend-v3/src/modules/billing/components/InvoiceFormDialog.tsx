@@ -12,6 +12,7 @@ import {
   Divider,
   MenuItem,
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import Add from '@mui/icons-material/Add';
 import Delete from '@mui/icons-material/Delete';
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
@@ -45,6 +46,7 @@ interface InvoiceFormDialogProps {
 }
 
 export function InvoiceFormDialog({ open, onClose, onSubmit, isLoading }: InvoiceFormDialogProps) {
+  const theme = useTheme();
   const [patients] = useState<{ id: number; name: string }[]>([]);
 
   const {
@@ -117,10 +119,10 @@ export function InvoiceFormDialog({ open, onClose, onSubmit, isLoading }: Invoic
       maxWidth="md"
       fullWidth
       PaperProps={{
-        sx: { borderRadius: '16px', border: '1px solid #e5e7eb' },
+        sx: { borderRadius: '16px', border: `1px solid ${theme.palette.divider}` },
       }}
     >
-      <DialogTitle sx={{ fontWeight: 700, color: '#1f2937', pb: 1 }}>
+      <DialogTitle sx={{ fontWeight: 700, color: theme.palette.text.primary, pb: 1 }}>
         Crear Nueva Factura
       </DialogTitle>
 
@@ -191,7 +193,7 @@ export function InvoiceFormDialog({ open, onClose, onSubmit, isLoading }: Invoic
           <Divider sx={{ mb: 2 }} />
 
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-            <Typography variant="h6" sx={{ fontWeight: 600, color: '#1f2937' }}>
+            <Typography variant="h6" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
               Servicios
             </Typography>
             <Button
@@ -277,7 +279,7 @@ export function InvoiceFormDialog({ open, onClose, onSubmit, isLoading }: Invoic
                   <IconButton
                     onClick={() => remove(index)}
                     disabled={fields.length <= 1}
-                    sx={{ color: '#ef4444', mt: 0.5 }}
+                    sx={{ color: theme.palette.error.main, mt: 0.5 }}
                   >
                     <Delete fontSize="small" />
                   </IconButton>
@@ -295,13 +297,13 @@ export function InvoiceFormDialog({ open, onClose, onSubmit, isLoading }: Invoic
           <Divider sx={{ my: 2 }} />
 
           <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 3, mb: 2 }}>
-            <Typography variant="body2" sx={{ color: '#6b7280' }}>
+            <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
               Subtotal: {new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(subtotal)}
             </Typography>
-            <Typography variant="body2" sx={{ color: '#6b7280' }}>
+            <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
               Impuesto ({watchedTax}%): {new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(taxAmount)}
             </Typography>
-            <Typography variant="h6" sx={{ fontWeight: 700, color: '#0d9488' }}>
+            <Typography variant="h6" sx={{ fontWeight: 700, color: theme.palette.primary.main }}>
               Total: {new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(grandTotal)}
             </Typography>
           </Box>

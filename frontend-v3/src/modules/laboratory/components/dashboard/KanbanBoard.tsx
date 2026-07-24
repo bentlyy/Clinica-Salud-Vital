@@ -79,7 +79,7 @@ function KanbanBoardBase({
     (e: React.MouseEvent, request: LabRequest) => {
       e.preventDefault();
       e.stopPropagation();
-      setCtxMenu({ anchorEl: e.currentTarget, request });
+      setCtxMenu({ anchorEl: e.currentTarget as HTMLElement, request });
     },
     [],
   );
@@ -112,7 +112,7 @@ function KanbanBoardBase({
     return statuses.map((status) => ({
       status,
       label: LAB_STATUS_LABELS[status] ?? status,
-      color: LAB_STATUS_COLORS[status] ?? '#6b7280',
+      color: LAB_STATUS_COLORS[status] ?? theme.palette.text.secondary,
       items: requests.filter((r) => r.status === status),
     }));
   }, [requests, statuses]);
@@ -161,8 +161,8 @@ function KanbanBoardBase({
             display: 'flex',
             flexDirection: 'column',
             borderRadius: '14px',
-            backgroundColor: '#f9fafb',
-            border: '1px solid #e5e7eb',
+            backgroundColor: theme.palette.custom.surface.muted,
+            border: `1px solid ${theme.palette.divider}`,
             overflow: 'hidden',
           }}
         >
@@ -191,7 +191,7 @@ function KanbanBoardBase({
                 variant="body2"
                 sx={{
                   fontWeight: 600,
-                  color: '#1f2937',
+                  color: theme.palette.text.primary,
                   fontSize: '0.8125rem',
                 }}
               >
@@ -207,7 +207,7 @@ function KanbanBoardBase({
                 fontSize: '0.7rem',
                 fontWeight: 600,
                 backgroundColor: column.color,
-                color: '#ffffff',
+                color: theme.palette.background.paper,
               }}
             />
           </Box>
@@ -225,7 +225,7 @@ function KanbanBoardBase({
               gap: 1,
               '&::-webkit-scrollbar': { width: 4 },
               '&::-webkit-scrollbar-thumb': {
-                backgroundColor: '#d1d5db',
+                  backgroundColor: theme.palette.divider,
                 borderRadius: 2,
               },
             }}
@@ -241,7 +241,7 @@ function KanbanBoardBase({
               >
                 <Typography
                   variant="caption"
-                  sx={{ color: '#9ca3af', fontStyle: 'italic' }}
+                  sx={{ color: theme.palette.text.secondary, fontStyle: 'italic' }}
                 >
                   Sin elementos
                 </Typography>
@@ -261,7 +261,7 @@ function KanbanBoardBase({
                     sx={{
                       p: 1.5,
                       borderRadius: '10px',
-                      border: '1px solid #e5e7eb',
+                      border: `1px solid ${theme.palette.divider}`,
                       cursor: 'pointer',
                       transition: 'all 0.2s',
                       borderLeft: isUrgent
@@ -282,7 +282,7 @@ function KanbanBoardBase({
                       variant="body2"
                       sx={{
                         fontWeight: 600,
-                        color: '#1f2937',
+                        color: theme.palette.text.primary,
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
                         whiteSpace: 'nowrap',
@@ -301,11 +301,11 @@ function KanbanBoardBase({
                         mb: 0.75,
                       }}
                     >
-                      <Typography variant="caption" sx={{ color: '#0d9488', fontWeight: 500 }}>
+                      <Typography variant="caption" sx={{ color: theme.palette.primary.main, fontWeight: 500 }}>
                         {request.request_number || `#${request.id}`}
                       </Typography>
                       {request.items && request.items.length > 0 && (
-                        <Typography variant="caption" sx={{ color: '#9ca3af' }}>
+                        <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
                           {request.items.length} test{request.items.length !== 1 ? 's' : ''}
                         </Typography>
                       )}
@@ -322,10 +322,10 @@ function KanbanBoardBase({
                     >
                       <PriorityChip priority={request.priority} />
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.25 }}>
-                        <AccessTimeIcon sx={{ fontSize: 12, color: '#9ca3af' }} />
+                        <AccessTimeIcon sx={{ fontSize: 12, color: theme.palette.text.secondary }} />
                         <Typography
                           variant="caption"
-                          sx={{ color: '#9ca3af', fontSize: '0.65rem' }}
+                          sx={{ color: theme.palette.text.secondary, fontSize: '0.65rem' }}
                         >
                           {elapsed}
                         </Typography>
@@ -350,7 +350,7 @@ function KanbanBoardBase({
           sx: {
             mt: 1,
             borderRadius: '12px',
-            border: '1px solid #e5e7eb',
+            border: `1px solid ${theme.palette.divider}`,
             boxShadow: '0 4px 12px rgba(0, 0, 0, 0.12)',
             minWidth: 200,
           },
@@ -363,7 +363,7 @@ function KanbanBoardBase({
         }
       >
         <ListItemIcon>
-          <VisibilityIcon fontSize="small" sx={{ color: '#0d9488' }} />
+          <VisibilityIcon fontSize="small" sx={{ color: theme.palette.primary.main }} />
         </ListItemIcon>
         <ListItemText
           primary="Ver detalle"
@@ -406,10 +406,10 @@ function KanbanBoardBase({
                   onCancelRequest(ctxMenu.request!.id),
                 )
               }
-              sx={{ color: '#ef4444' }}
+              sx={{ color: theme.palette.error.main }}
             >
               <ListItemIcon>
-                <CancelIcon fontSize="small" sx={{ color: '#ef4444' }} />
+                <CancelIcon fontSize="small" sx={{ color: theme.palette.error.main }} />
               </ListItemIcon>
               <ListItemText
                 primary="Cancelar solicitud"

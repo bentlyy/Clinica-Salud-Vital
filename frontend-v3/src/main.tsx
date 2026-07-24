@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from '@/shared/providers/AuthProvider';
 import { FeatureProvider } from '@/shared/providers/FeatureProvider';
+import { AppThemeProvider } from '@/shared/providers/ThemeProvider';
 import { AppRouter } from '@/app/router/AppRouter';
 import '@/app/config/global.css';
 import '@/i18n/i18n';
@@ -23,22 +24,24 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <AuthProvider>
-          <FeatureProvider>
-            <AppRouter />
-          </FeatureProvider>
-          <Toaster
-            position="top-right"
-            toastOptions={{
-              duration: 4000,
-              style: {
-                fontFamily: '"Plus Jakarta Sans", sans-serif',
-                borderRadius: '10px',
-                padding: '12px 16px',
-              },
-            }}
-          />
-        </AuthProvider>
+        <AppThemeProvider>
+          <AuthProvider>
+            <FeatureProvider>
+              <AppRouter />
+            </FeatureProvider>
+            <Toaster
+              position="top-right"
+              toastOptions={{
+                duration: 4000,
+                style: {
+                  fontFamily: '"Plus Jakarta Sans", sans-serif',
+                  borderRadius: '10px',
+                  padding: '12px 16px',
+                },
+              }}
+            />
+          </AuthProvider>
+        </AppThemeProvider>
       </BrowserRouter>
     </QueryClientProvider>
   </React.StrictMode>,

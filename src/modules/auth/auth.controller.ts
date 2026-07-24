@@ -5,7 +5,7 @@ import { pool } from '../../shared/db.js';
 import { verifyInviteToken } from '../doctor/doctor.service.js';
 import { waitForSeed } from '../../shared/seed-status.js';
 import { logger } from '../../utils/logger.js';
-import { BadRequestError, UnauthorizedError } from '../../utils/errors.js';
+import { BadRequestError, NotFoundError, UnauthorizedError } from '../../utils/errors.js';
 
 const ACCESS_COOKIE = 'access_token';
 const REFRESH_COOKIE = 'refresh_token';

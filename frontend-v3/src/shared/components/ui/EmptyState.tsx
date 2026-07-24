@@ -1,4 +1,5 @@
 import { Box, Typography, Button } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import InboxOutlinedIcon from '@mui/icons-material/InboxOutlined';
 import type { ReactNode } from 'react';
 
@@ -13,6 +14,8 @@ interface EmptyStateProps {
 }
 
 export function EmptyState({ icon, title, message, action }: EmptyStateProps) {
+  const theme = useTheme();
+
   return (
     <Box
       sx={{
@@ -25,12 +28,12 @@ export function EmptyState({ icon, title, message, action }: EmptyStateProps) {
         textAlign: 'center',
       }}
     >
-      {icon || <InboxOutlinedIcon sx={{ fontSize: 48, color: '#d1d5db' }} />}
-      <Typography variant="h6" sx={{ fontWeight: 600, color: '#374151' }}>
+      {icon || <InboxOutlinedIcon sx={{ fontSize: 48, color: theme.palette.divider }} />}
+      <Typography variant="h6" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
         {title}
       </Typography>
       {message && (
-        <Typography variant="body2" sx={{ color: '#6b7280', maxWidth: 400 }}>
+        <Typography variant="body2" sx={{ color: theme.palette.text.secondary, maxWidth: 400 }}>
           {message}
         </Typography>
       )}

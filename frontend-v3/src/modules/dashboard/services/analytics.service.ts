@@ -24,14 +24,14 @@ function normalizeDate(raw: unknown): string {
   if (!raw) return '';
   const s = String(raw);
   const match = s.match(/^(\d{4}-\d{2}-\d{2})/);
-  return match ? match[1] : s.split('T')[0] ?? s;
+  return match?.[1] ?? s.split('T')[0] ?? s;
 }
 
 function normalizeTime(raw: unknown): string {
   if (!raw) return '';
   const s = String(raw);
   const match = s.match(/^(\d{2}:\d{2})/);
-  return match ? match[1] : s.slice(0, 5);
+  return match?.[1] ?? s.slice(0, 5);
 }
 
 export const analyticsService = {
@@ -56,7 +56,7 @@ export const analyticsService = {
   },
 
   getUpcomingBookings: async (): Promise<UpcomingBooking[]> => {
-    const today = new Date().toISOString().split('T')[0];
+    const today = new Date().toISOString().split('T')[0] ?? '';
     const { data } = await apiClient.get<{ data: Record<string, unknown>[] }>('/bookings/all', {
       params: { page: 1, limit: 10 },
     });
@@ -79,7 +79,7 @@ export const analyticsService = {
   },
 
   getDoctorUpcomingBookings: async (): Promise<UpcomingBooking[]> => {
-    const today = new Date().toISOString().split('T')[0];
+    const today = new Date().toISOString().split('T')[0] ?? '';
     const { data } = await apiClient.get<{ data: Record<string, unknown>[]; total: number }>('/bookings/doctor', {
       params: { page: 1, limit: 50 },
     });

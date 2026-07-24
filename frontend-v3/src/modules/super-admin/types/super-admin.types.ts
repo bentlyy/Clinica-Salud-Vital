@@ -9,6 +9,7 @@ export interface Tenant {
   total_users: number;
   total_doctors: number;
   created_at: string;
+  logo_url?: string;
 }
 
 export interface TenantDetail extends Tenant {

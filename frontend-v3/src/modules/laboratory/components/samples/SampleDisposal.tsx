@@ -11,7 +11,6 @@ import {
   TableRow,
   Button,
   Chip,
-  IconButton,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -20,6 +19,7 @@ import {
   Divider,
   CircularProgress,
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import DeleteSweepIcon from '@mui/icons-material/DeleteSweep';
@@ -47,10 +47,10 @@ function daysStored(receptionTime: string | null): number {
   return Math.floor((now.getTime() - received.getTime()) / (1000 * 60 * 60 * 24));
 }
 
-function daysColor(days: number): { bg: string; text: string } {
-  if (days < 7) return { bg: '#dcfce7', text: '#16a34a' };
-  if (days <= 30) return { bg: '#fef3c7', text: '#d97706' };
-  return { bg: '#fef2f2', text: '#dc2626' };
+function getDaysColor(days: number, theme: any): { bg: string; text: string } {
+  if (days < 7) return { bg: theme.palette.success.light, text: theme.palette.success.dark };
+  if (days <= 30) return { bg: theme.palette.warning.light, text: theme.palette.warning.dark };
+  return { bg: theme.palette.error.light, text: theme.palette.error.dark };
 }
 
 // ── Stats ───────────────────────────────────────────────────────────────────
@@ -64,6 +64,8 @@ const DisposalStats = memo(function DisposalStats({
   disposedThisMonth,
   pendingCount,
 }: DisposalStatsProps) {
+  const theme = useTheme();
+
   return (
     <Box sx={{ display: 'flex', gap: 2, mb: 2.5 }}>
       <Paper
@@ -74,9 +76,9 @@ const DisposalStats = memo(function DisposalStats({
           alignItems: 'center',
           gap: 1.5,
           p: 2,
-          backgroundColor: '#f0fdfa',
+          backgroundColor: theme.palette.custom.brand.light,
           borderRadius: '10px',
-          border: '1px solid #0d948820',
+          border: `1px solid ${theme.palette.custom.brand.alpha8}`,
         }}
       >
         <Box
@@ -87,17 +89,17 @@ const DisposalStats = memo(function DisposalStats({
             width: 36,
             height: 36,
             borderRadius: '10px',
-            backgroundColor: '#0d948815',
-            color: '#0d9488',
+            backgroundColor: theme.palette.custom.brand.alpha12,
+            color: theme.palette.primary.main,
           }}
         >
           <DeleteSweepIcon sx={{ fontSize: 20 }} />
         </Box>
         <Box>
-          <Typography variant="h5" sx={{ fontWeight: 700, color: '#0d9488', lineHeight: 1.2 }}>
+          <Typography variant="h5" sx={{ fontWeight: 700, color: theme.palette.primary.main, lineHeight: 1.2 }}>
             {disposedThisMonth}
           </Typography>
-          <Typography variant="caption" sx={{ color: '#0d9488', opacity: 0.8 }}>
+          <Typography variant="caption" sx={{ color: theme.palette.primary.main, opacity: 0.8 }}>
             Dispuestas este mes
           </Typography>
         </Box>
@@ -111,9 +113,9 @@ const DisposalStats = memo(function DisposalStats({
           alignItems: 'center',
           gap: 1.5,
           p: 2,
-          backgroundColor: '#fef3c7',
+          backgroundColor: theme.palette.warning.light,
           borderRadius: '10px',
-          border: '1px solid #f59e0b20',
+          border: `1px solid ${theme.palette.custom.status.warning.border}`,
         }}
       >
         <Box
@@ -124,17 +126,17 @@ const DisposalStats = memo(function DisposalStats({
             width: 36,
             height: 36,
             borderRadius: '10px',
-            backgroundColor: '#f59e0b15',
-            color: '#f59e0b',
+            backgroundColor: theme.palette.custom.status.warning.bg,
+            color: theme.palette.warning.main,
           }}
         >
           <WarningAmberIcon sx={{ fontSize: 20 }} />
         </Box>
         <Box>
-          <Typography variant="h5" sx={{ fontWeight: 700, color: '#d97706', lineHeight: 1.2 }}>
+          <Typography variant="h5" sx={{ fontWeight: 700, color: theme.palette.warning.dark, lineHeight: 1.2 }}>
             {pendingCount}
           </Typography>
-          <Typography variant="caption" sx={{ color: '#d97706', opacity: 0.8 }}>
+          <Typography variant="caption" sx={{ color: theme.palette.warning.dark, opacity: 0.8 }}>
             Pendientes de disposición
           </Typography>
         </Box>
@@ -158,6 +160,7 @@ export const SampleDisposal = memo(function SampleDisposal({
   onDispose,
   isLoading = false,
 }: SampleDisposalProps) {
+  const theme = useTheme();
   const [disposalDialog, setDisposalDialog] = useState<{
     open: boolean;
     sample: LabSample | null;
@@ -220,14 +223,14 @@ export const SampleDisposal = memo(function SampleDisposal({
         sx={{
           p: 3,
           borderRadius: '14px',
-          border: '1px solid #e5e7eb',
+          border: `1px solid ${theme.palette.divider}`,
         }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2.5 }}>
-          <Typography variant="h5" sx={{ fontWeight: 700, color: '#1f2937' }}>
+          <Typography variant="h5" sx={{ fontWeight: 700, color: theme.palette.text.primary }}>
             Disposición de Muestras
           </Typography>
-          {isLoading && <CircularProgress size={20} sx={{ color: '#0d9488' }} />}
+          {isLoading && <CircularProgress size={20} sx={{ color: theme.palette.primary.main }} />}
         </Box>
 
         <DisposalStats disposedThisMonth={disposedThisMonth} pendingCount={pendingCount} />
@@ -237,13 +240,13 @@ export const SampleDisposal = memo(function SampleDisposal({
             sx={{
               textAlign: 'center',
               py: 5,
-              backgroundColor: '#f9fafb',
+              backgroundColor: theme.palette.action.hover,
               borderRadius: '10px',
-              border: '1px dashed #e5e7eb',
+              border: `1px dashed ${theme.palette.divider}`,
             }}
           >
-            <DeleteSweepIcon sx={{ fontSize: 40, color: '#d1d5db', mb: 1 }} />
-            <Typography variant="body2" sx={{ color: '#9ca3af' }}>
+            <DeleteSweepIcon sx={{ fontSize: 40, color: theme.palette.text.disabled, mb: 1 }} />
+            <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
               No hay muestras elegibles para disposición
             </Typography>
           </Box>
@@ -263,30 +266,30 @@ export const SampleDisposal = memo(function SampleDisposal({
               <TableBody>
                 {eligibleSamples.map((sample) => {
                   const days = daysStored(sample.reception_time);
-                  const colors = daysColor(days);
+                  const colors = getDaysColor(days, theme);
 
                   return (
                     <TableRow
                       key={sample.id}
                       sx={{
-                        '&:hover': { backgroundColor: '#f9fafb' },
+                        '&:hover': { backgroundColor: theme.palette.action.hover },
                       }}
                     >
                       <TableCell>
                         <Typography
                           variant="body2"
-                          sx={{ fontWeight: 600, color: '#1f2937', fontFamily: 'monospace' }}
+                          sx={{ fontWeight: 600, color: theme.palette.text.primary, fontFamily: 'monospace' }}
                         >
                           {sample.sample_code}
                         </Typography>
                       </TableCell>
                       <TableCell>
-                        <Typography variant="body2" sx={{ color: '#6b7280' }}>
+                        <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
                           {getSampleTypeLabel(sample.sample_type)}
                         </Typography>
                       </TableCell>
                       <TableCell>
-                        <Typography variant="body2" sx={{ color: '#6b7280' }}>
+                        <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
                           {sample.reception_time
                             ? new Date(sample.reception_time).toLocaleDateString('es-CL')
                             : '—'}
@@ -310,8 +313,8 @@ export const SampleDisposal = memo(function SampleDisposal({
                           label={sample.status}
                           size="small"
                           sx={{
-                            backgroundColor: '#f3f4f6',
-                            color: '#6b7280',
+                            backgroundColor: theme.palette.action.hover,
+                            color: theme.palette.text.secondary,
                             fontWeight: 500,
                             fontSize: '0.7rem',
                             textTransform: 'capitalize',
@@ -326,12 +329,12 @@ export const SampleDisposal = memo(function SampleDisposal({
                           onClick={() => handleOpenDialog(sample)}
                           disabled={isLoading}
                           sx={{
-                            borderColor: '#ef4444',
-                            color: '#ef4444',
+                            borderColor: theme.palette.error.main,
+                            color: theme.palette.error.main,
                             fontSize: '0.75rem',
                             '&:hover': {
-                              backgroundColor: '#fef2f2',
-                              borderColor: '#dc2626',
+                              backgroundColor: theme.palette.error.light,
+                              borderColor: theme.palette.error.dark,
                             },
                           }}
                         >
@@ -358,7 +361,7 @@ export const SampleDisposal = memo(function SampleDisposal({
         }}
       >
         <Box component="form" onSubmit={handleSubmit(handleDisposeSubmit)}>
-          <DialogTitle sx={{ fontWeight: 700, color: '#1f2937', pb: 1 }}>
+          <DialogTitle sx={{ fontWeight: 700, color: theme.palette.text.primary, pb: 1 }}>
             Confirmar Disposición de Muestra
           </DialogTitle>
 
@@ -370,50 +373,50 @@ export const SampleDisposal = memo(function SampleDisposal({
                   sx={{
                     p: 2,
                     mb: 2,
-                    backgroundColor: '#fef2f2',
+                    backgroundColor: theme.palette.error.light,
                     borderRadius: '10px',
-                    border: '1px solid #fecaca',
+                    border: `1px solid ${theme.palette.custom.status.error.border}`,
                   }}
                 >
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                    <WarningAmberIcon sx={{ fontSize: 18, color: '#dc2626' }} />
-                    <Typography variant="body2" sx={{ fontWeight: 600, color: '#dc2626' }}>
+                    <WarningAmberIcon sx={{ fontSize: 18, color: theme.palette.error.dark }} />
+                    <Typography variant="body2" sx={{ fontWeight: 600, color: theme.palette.error.dark }}>
                       Esta acción es irreversible
                     </Typography>
                   </Box>
                   <Divider sx={{ my: 1 }} />
                   <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1, mt: 1 }}>
                     <Box>
-                      <Typography variant="caption" sx={{ color: '#9ca3af' }}>
+                      <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
                         Código
                       </Typography>
-                      <Typography variant="body2" sx={{ fontWeight: 600, color: '#1f2937', fontFamily: 'monospace' }}>
+                      <Typography variant="body2" sx={{ fontWeight: 600, color: theme.palette.text.primary, fontFamily: 'monospace' }}>
                         {disposalDialog.sample.sample_code}
                       </Typography>
                     </Box>
                     <Box>
-                      <Typography variant="caption" sx={{ color: '#9ca3af' }}>
+                      <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
                         Tipo
                       </Typography>
-                      <Typography variant="body2" sx={{ fontWeight: 500, color: '#374151' }}>
+                      <Typography variant="body2" sx={{ fontWeight: 500, color: theme.palette.text.primary }}>
                         {getSampleTypeLabel(disposalDialog.sample.sample_type)}
                       </Typography>
                     </Box>
                     <Box>
-                      <Typography variant="caption" sx={{ color: '#9ca3af' }}>
+                      <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
                         Recibida
                       </Typography>
-                      <Typography variant="body2" sx={{ fontWeight: 500, color: '#374151' }}>
+                      <Typography variant="body2" sx={{ fontWeight: 500, color: theme.palette.text.primary }}>
                         {disposalDialog.sample.reception_time
                           ? new Date(disposalDialog.sample.reception_time).toLocaleDateString('es-CL')
                           : '—'}
                       </Typography>
                     </Box>
                     <Box>
-                      <Typography variant="caption" sx={{ color: '#9ca3af' }}>
+                      <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
                         Días Almacenada
                       </Typography>
-                      <Typography variant="body2" sx={{ fontWeight: 500, color: '#374151' }}>
+                      <Typography variant="body2" sx={{ fontWeight: 500, color: theme.palette.text.primary }}>
                         {daysStored(disposalDialog.sample.reception_time)} días
                       </Typography>
                     </Box>
@@ -444,7 +447,7 @@ export const SampleDisposal = memo(function SampleDisposal({
             <Button
               onClick={handleCloseDialog}
               variant="text"
-              sx={{ color: '#6b7280' }}
+              sx={{ color: theme.palette.text.secondary }}
             >
               Cancelar
             </Button>
@@ -454,9 +457,9 @@ export const SampleDisposal = memo(function SampleDisposal({
               disabled={isLoading}
               startIcon={isLoading ? <CircularProgress size={14} color="inherit" /> : <DeleteForeverIcon sx={{ fontSize: 16 }} />}
               sx={{
-                background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                background: `linear-gradient(135deg, ${theme.palette.error.main} 0%, ${theme.palette.error.dark} 100%)`,
                 '&:hover': {
-                  background: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)',
+                  background: `linear-gradient(135deg, ${theme.palette.error.dark} 0%, ${theme.palette.error.dark} 100%)`,
                 },
               }}
             >

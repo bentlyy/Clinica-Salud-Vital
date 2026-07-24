@@ -5,9 +5,9 @@ import {
   Button,
   Fade,
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import ErrorIcon from '@mui/icons-material/Error';
-import { useTheme } from '@mui/material/styles';
 
 // ── Props ────────────────────────────────────────────────────────────────────
 
@@ -33,7 +33,6 @@ export const DeltaAlert = memo(function DeltaAlert({
   onReview,
 }: DeltaAlertProps) {
   const theme = useTheme();
-
   const severity = status === 'critical' ? 'error' : 'warning';
 
   const bodyText =
@@ -66,8 +65,8 @@ export const DeltaAlert = memo(function DeltaAlert({
                 '&:hover': {
                   backgroundColor:
                     status === 'critical'
-                      ? 'rgba(239, 68, 68, 0.12)'
-                      : 'rgba(245, 158, 11, 0.12)',
+                      ? theme.palette.custom.status.error.bg
+                      : theme.palette.custom.status.warning.bg,
                 },
               }}
             >
@@ -78,15 +77,15 @@ export const DeltaAlert = memo(function DeltaAlert({
         sx={{
           borderRadius: '12px',
           border: `1px solid ${
-            status === 'critical' ? '#fecaca' : '#fde68a'
+            status === 'critical' ? theme.palette.custom.status.error.border : theme.palette.custom.status.warning.border
           }`,
           backgroundColor:
-            status === 'critical' ? '#fef2f2' : '#fffbeb',
+            status === 'critical' ? theme.palette.error.light : theme.palette.warning.light,
           '& .MuiAlert-message': {
             width: '100%',
           },
           '& .MuiAlert-icon': {
-            color: status === 'critical' ? '#dc2626' : '#d97706',
+            color: status === 'critical' ? theme.palette.error.dark : theme.palette.warning.dark,
           },
         }}
       >
@@ -94,7 +93,7 @@ export const DeltaAlert = memo(function DeltaAlert({
           sx={{
             fontWeight: 700,
             fontSize: '0.875rem',
-            color: status === 'critical' ? '#991b1b' : '#92400e',
+            color: status === 'critical' ? theme.palette.error.dark : theme.palette.warning.dark,
             mb: 0.25,
           }}
         >
@@ -104,7 +103,7 @@ export const DeltaAlert = memo(function DeltaAlert({
           style={{
             fontSize: '0.8125rem',
             lineHeight: 1.5,
-            color: status === 'critical' ? '#b91c1c' : '#a16207',
+            color: status === 'critical' ? theme.palette.error.dark : theme.palette.warning.dark,
           }}
         >
           {bodyText}

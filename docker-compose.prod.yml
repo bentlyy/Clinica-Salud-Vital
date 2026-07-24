@@ -1,0 +1,60 @@
+# ─────────────────────────────────────────────────────────────
+#  Docker Compose — PRODUCTION
+#  Usage: docker compose -f docker-compose.prod.yml up -d
+# ─────────────────────────────────────────────────────────────
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: clinic-backend
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3000:3000"
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: ${DATABASE_URL}
+      JWT_SECRET: ${JWT_SECRET}
+      APP_LOCALE: es
+      DEFAULT_TENANT_ID: default
+      SMS_PROVIDER: log
+      TOTP_ISSUER: ClinicApp
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
+      PHI_MASTER_KEY: ${PHI_MASTER_KEY}
+      AUDIT_HMAC_SECRET: ${AUDIT_HMAC_SECRET}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+      INVITE_JWT_SECRET: ${INVITE_JWT_SECRET}
+      LOG_LEVEL: info
+      LOG_DIR: logs
+      FRONTEND_URL: ${FRONTEND_URL:-https://yourdomain.com}
+      DB_CA_CERT: ${DB_CA_CERT}
+      RECAPTCHA_SECRET_KEY: ${RECAPTCHA_SECRET_KEY}
+      SUPERADMIN_PASSWORD: ${SUPERADMIN_PASSWORD}
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - backend-net
+
+  frontend:
+    build:
+      context: ./frontend-v3
+      dockerfile: Dockerfile
+    container_name: clinic-frontend
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:80:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - backend-net
+
+networks:
+  backend-net:
+    driver: bridge
+    internal: false

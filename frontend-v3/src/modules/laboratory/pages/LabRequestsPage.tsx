@@ -1,4 +1,6 @@
 import { useState, memo } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useTheme } from '@mui/material/styles';
 import {
   Box,
   Paper,
@@ -58,8 +60,10 @@ const createRequestSchema = z.object({
 type CreateRequestForm = z.infer<typeof createRequestSchema>;
 
 function LabRequestsPageInner() {
+  const { t } = useTranslation('lab_requests');
   const { user } = useAuth();
   const navigate = useNavigate();
+  const theme = useTheme();
 
   const [page, setPage] = useState(0);
   const [limit] = useState(10);
@@ -108,22 +112,25 @@ function LabRequestsPageInner() {
   };
 
   const handleCreate = (data: CreateRequestForm) => {
-    createMutation.mutate(data, {
-      onSuccess: () => {
-        setCreateDialogOpen(false);
-        reset();
+    createMutation.mutate(
+      { ...data, priority: data.priority as LabPriority },
+      {
+        onSuccess: () => {
+          setCreateDialogOpen(false);
+          reset();
+        },
       },
-    });
+    );
   };
 
-  if (isLoading) return <LoadingState message="Cargando solicitudes..." />;
+  if (isLoading) return <LoadingState message={t('loading')} />;
   if (error) return <ErrorState error={error as Error} onRetry={() => void refetch()} />;
 
   return (
     <Box>
       <PageHeader
-        title="Solicitudes de Laboratorio"
-        subtitle={`${total} solicitudes en total`}
+        title={t('title')}
+        subtitle={t('total_requests', { count: total })}
         action={
           canCreate ? (
             <Button
@@ -131,18 +138,18 @@ function LabRequestsPageInner() {
               startIcon={<Add />}
               onClick={() => setCreateDialogOpen(true)}
             >
-              Nueva Solicitud
+              {t('new_request')}
             </Button>
           ) : undefined
         }
       />
 
       {/* Filters */}
-      <Paper sx={{ p: 2, mb: 3, border: '1px solid #e5e7eb' }}>
+      <Paper sx={{ p: 2, mb: 3, border: `1px solid ${theme.palette.divider}` }}>
         <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
           <TextField
             size="small"
-            placeholder="Buscar solicitudes..."
+            placeholder={t('search_placeholder')}
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
@@ -152,7 +159,7 @@ function LabRequestsPageInner() {
               input: {
                 startAdornment: (
                   <InputAdornment position="start">
-                    <Search sx={{ fontSize: 18, color: '#9ca3af' }} />
+                    <Search sx={{ fontSize: 18, color: theme.palette.text.secondary }} />
                   </InputAdornment>
                 ),
               },
@@ -162,7 +169,7 @@ function LabRequestsPageInner() {
           <TextField
             select
             size="small"
-            label="Estado"
+            label={t('status_label')}
             value={statusFilter}
             onChange={(e) => {
               setStatusFilter(e.target.value as LabRequestStatus | 'all');
@@ -179,7 +186,7 @@ function LabRequestsPageInner() {
           <TextField
             select
             size="small"
-            label="Prioridad"
+            label={t('priority_label')}
             value={priorityFilter}
             onChange={(e) => {
               setPriorityFilter(e.target.value as LabPriority | 'all');
@@ -199,30 +206,30 @@ function LabRequestsPageInner() {
       {/* Table */}
       {requests.length === 0 ? (
         <EmptyState
-          icon={<Science sx={{ fontSize: 48, color: '#d1d5db' }} />}
-          title="No hay solicitudes"
-          message="No se encontraron solicitudes con los filtros seleccionados."
+          icon={<Science sx={{ fontSize: 48, color: theme.palette.divider }} />}
+          title={t('no_requests_title')}
+          message={t('no_requests_message')}
           action={
             canCreate
               ? {
-                  label: 'Crear Solicitud',
+                  label: t('create_request'),
                   onClick: () => setCreateDialogOpen(true),
                 }
               : undefined
           }
         />
       ) : (
-        <TableContainer component={Paper} sx={{ border: '1px solid #e5e7eb' }}>
+        <TableContainer component={Paper} sx={{ border: `1px solid ${theme.palette.divider}` }}>
           <Table>
             <TableHead>
               <TableRow>
-                <TableCell>Nro. Solicitud</TableCell>
-                <TableCell>Paciente</TableCell>
-                <TableCell>Doctor</TableCell>
-                <TableCell>Estado</TableCell>
-                <TableCell>Prioridad</TableCell>
-                <TableCell>Fecha</TableCell>
-                <TableCell align="right">Acciones</TableCell>
+                <TableCell>{t('col_request_number')}</TableCell>
+                <TableCell>{t('col_patient')}</TableCell>
+                <TableCell>{t('col_doctor')}</TableCell>
+                <TableCell>{t('col_status')}</TableCell>
+                <TableCell>{t('col_priority')}</TableCell>
+                <TableCell>{t('col_date')}</TableCell>
+                <TableCell align="right">{t('col_actions')}</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -243,12 +250,12 @@ function LabRequestsPageInner() {
                     </TableCell>
                     <TableCell>
                       <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                        {req.patient_name || `Paciente #${req.patient_id}`}
+                        {req.patient_name || t('patient_fallback', { id: req.patient_id })}
                       </Typography>
                     </TableCell>
                     <TableCell>
-                      <Typography variant="body2" sx={{ color: '#6b7280' }}>
-                        {req.doctor_name || `Dr. #${req.doctor_id}`}
+                      <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
+                        {req.doctor_name || t('doctor_fallback', { id: req.doctor_id })}
                       </Typography>
                     </TableCell>
                     <TableCell>
@@ -274,7 +281,7 @@ function LabRequestsPageInner() {
                       />
                     </TableCell>
                     <TableCell>
-                      <Typography variant="body2" sx={{ color: '#6b7280' }}>
+                      <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
                         {new Date(req.created_at).toLocaleDateString('es-CL')}
                       </Typography>
                     </TableCell>
@@ -285,7 +292,7 @@ function LabRequestsPageInner() {
                           e.stopPropagation();
                           navigate(`/laboratory/requests/${req.id}`);
                         }}
-                        sx={{ color: '#6b7280' }}
+                        sx={{ color: theme.palette.text.secondary }}
                       >
                         <Visibility fontSize="small" />
                       </IconButton>
@@ -296,7 +303,7 @@ function LabRequestsPageInner() {
                             e.stopPropagation();
                             navigate(`/laboratory/requests/${req.id}`);
                           }}
-                          sx={{ color: '#0d9488' }}
+                          sx={{ color: theme.palette.primary.main }}
                         >
                           <Edit fontSize="small" />
                         </IconButton>
@@ -313,7 +320,7 @@ function LabRequestsPageInner() {
             page={page}
             onPageChange={handlePageChange}
             rowsPerPage={limit}
-            labelRowsPerPage="Filas:"
+            labelRowsPerPage={t('rows_per_page')}
             labelDisplayedRows={({ from, to, count }) =>
               `${from}–${to} de ${count}`
             }
@@ -329,7 +336,7 @@ function LabRequestsPageInner() {
         fullWidth
       >
         <DialogTitle sx={{ fontWeight: 600 }}>
-          Nueva Solicitud de Laboratorio
+          {t('dialog_title')}
         </DialogTitle>
         <DialogContent>
           <Box
@@ -346,7 +353,7 @@ function LabRequestsPageInner() {
               render={({ field }) => (
                 <TextField
                   {...field}
-                  label="ID del Paciente"
+                  label={t('patient_id_label')}
                   type="number"
                   fullWidth
                   error={!!errors.patient_id}
@@ -361,7 +368,7 @@ function LabRequestsPageInner() {
                 <TextField
                   {...field}
                   select
-                  label="Prioridad"
+                  label={t('priority_label')}
                   fullWidth
                 >
                   {LAB_PRIORITY_OPTIONS.filter((o) => o.value !== 'all').map((opt) => (
@@ -378,11 +385,11 @@ function LabRequestsPageInner() {
               render={({ field }) => (
                 <TextField
                   {...field}
-                  label="IDs de Pruebas (separados por coma)"
-                  placeholder="ej: 1,2,3"
+                  label={t('test_ids_label')}
+                  placeholder={t('test_ids_placeholder')}
                   fullWidth
                   error={!!errors.test_ids}
-                  helperText={errors.test_ids?.message || 'Ingresa los IDs de las pruebas de laboratorio'}
+                  helperText={errors.test_ids?.message || t('test_ids_helper')}
                   onChange={(e) => {
                     const ids = e.target.value.split(',').map(s => parseInt(s.trim(), 10)).filter(n => !isNaN(n));
                     field.onChange(ids);
@@ -397,7 +404,7 @@ function LabRequestsPageInner() {
               render={({ field }) => (
                 <TextField
                   {...field}
-                  label="Notas (opcional)"
+                  label={t('notes_label')}
                   fullWidth
                   multiline
                   rows={3}
@@ -407,8 +414,8 @@ function LabRequestsPageInner() {
           </Box>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={() => setCreateDialogOpen(false)} sx={{ color: '#6b7280' }}>
-            Cancelar
+          <Button onClick={() => setCreateDialogOpen(false)} sx={{ color: theme.palette.text.secondary }}>
+            {t('cancel')}
           </Button>
           <Button
             type="submit"
@@ -416,7 +423,7 @@ function LabRequestsPageInner() {
             variant="contained"
             disabled={createMutation.isPending}
           >
-            {createMutation.isPending ? 'Creando...' : 'Crear Solicitud'}
+            {createMutation.isPending ? t('creating') : t('create_button')}
           </Button>
         </DialogActions>
       </Dialog>

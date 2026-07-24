@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -11,6 +11,7 @@ import {
   IconButton,
   CircularProgress,
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import Email from '@mui/icons-material/Email';
@@ -18,21 +19,28 @@ import Lock from '@mui/icons-material/Lock';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/shared/providers/AuthProvider';
 
-const loginSchema = z.object({
-  email: z.string().email('Ingresa un email válido'),
-  password: z.string().min(6, 'La contraseña debe tener al menos 6 caracteres'),
-});
+type LoginForm = z.infer<ReturnType<typeof createLoginSchema>>;
 
-type LoginForm = z.infer<typeof loginSchema>;
+function createLoginSchema(t: (key: string) => string) {
+  return z.object({
+    email: z.string().email(t('login.email_invalid')),
+    password: z.string().min(6, t('login.password_min_length')),
+  });
+}
 
 export default function LoginPage() {
+  const theme = useTheme();
+  const { t } = useTranslation('login');
   const { login } = useAuth();
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const loginSchema = useMemo(() => createLoginSchema(t), [t]);
 
   const {
     register,
@@ -54,7 +62,7 @@ export default function LoginPage() {
       }
     } catch (err: unknown) {
       const apiErr = err as { response?: { data?: { error?: string } } };
-      setError(apiErr.response?.data?.error || 'Error al iniciar sesión');
+      setError(apiErr.response?.data?.error || t('login.login_error'));
     } finally {
       setIsSubmitting(false);
     }
@@ -67,7 +75,7 @@ export default function LoginPage() {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: '#f9fafb',
+        backgroundColor: theme.palette.custom.surface.muted,
         p: 2,
       }}
     >
@@ -78,7 +86,7 @@ export default function LoginPage() {
           maxWidth: 420,
           p: 4,
           borderRadius: '16px',
-          border: '1px solid #e5e7eb',
+          border: `1px solid ${theme.palette.divider}`,
         }}
       >
         <Box sx={{ textAlign: 'center', mb: 4 }}>
@@ -87,11 +95,11 @@ export default function LoginPage() {
               width: 48,
               height: 48,
               borderRadius: '12px',
-              background: 'linear-gradient(135deg, #0d9488 0%, #14b8a6 100%)',
+              background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.main} 100%)`,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#fff',
+              color: theme.palette.background.paper,
               fontWeight: 700,
               fontSize: '1.25rem',
               mx: 'auto',
@@ -100,11 +108,11 @@ export default function LoginPage() {
           >
             C
           </Box>
-          <Typography variant="h4" sx={{ fontWeight: 700, color: '#1f2937' }}>
-            Iniciar Sesión
+          <Typography variant="h4" sx={{ fontWeight: 700, color: theme.palette.text.primary }}>
+            {t('login.title')}
           </Typography>
-          <Typography variant="body2" sx={{ color: '#6b7280', mt: 0.5 }}>
-            Accede a tu panel de clínica
+          <Typography variant="body2" sx={{ color: theme.palette.text.secondary, mt: 0.5 }}>
+            {t('login.subtitle')}
           </Typography>
         </Box>
 
@@ -118,7 +126,7 @@ export default function LoginPage() {
           <TextField
             {...register('email')}
             fullWidth
-            label="Email"
+            label={t('login.email_label')}
             type="email"
             error={!!errors.email}
             helperText={errors.email?.message}
@@ -126,7 +134,7 @@ export default function LoginPage() {
               input: {
                 startAdornment: (
                   <InputAdornment position="start">
-                    <Email sx={{ color: '#9ca3af', fontSize: 20 }} />
+                    <Email sx={{ color: theme.palette.text.secondary, fontSize: 20 }} />
                   </InputAdornment>
                 ),
               },
@@ -137,7 +145,7 @@ export default function LoginPage() {
           <TextField
             {...register('password')}
             fullWidth
-            label="Contraseña"
+            label={t('login.password_label')}
             type={showPassword ? 'text' : 'password'}
             error={!!errors.password}
             helperText={errors.password?.message}
@@ -145,7 +153,7 @@ export default function LoginPage() {
               input: {
                 startAdornment: (
                   <InputAdornment position="start">
-                    <Lock sx={{ color: '#9ca3af', fontSize: 20 }} />
+                    <Lock sx={{ color: theme.palette.text.secondary, fontSize: 20 }} />
                   </InputAdornment>
                 ),
                 endAdornment: (
@@ -174,13 +182,13 @@ export default function LoginPage() {
               py: 1.5,
               fontSize: '0.9375rem',
               fontWeight: 600,
-              background: 'linear-gradient(135deg, #0d9488 0%, #0f766e 100%)',
+              background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
               '&:hover': {
-                background: 'linear-gradient(135deg, #0f766e 0%, #115e59 100%)',
+                background: `linear-gradient(135deg, ${theme.palette.primary.dark} 0%, ${theme.palette.custom.brand.darker} 100%)`,
               },
             }}
           >
-            {isSubmitting ? <CircularProgress size={24} color="inherit" /> : 'Iniciar Sesión'}
+            {isSubmitting ? <CircularProgress size={24} color="inherit" /> : t('login.login_button')}
           </Button>
         </Box>
       </Paper>

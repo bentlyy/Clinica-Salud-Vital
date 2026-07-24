@@ -29,8 +29,7 @@ export const StatusBadge = memo(function StatusBadge({
   label,
 }: StatusBadgeProps) {
   const theme = useTheme();
-
-  const chipColor = LAB_STATUS_COLORS[status as LabRequestStatus] ?? '#6b7280';
+  const chipColor = LAB_STATUS_COLORS[status as LabRequestStatus] ?? theme.palette.text.secondary;
   const displayLabel = label ?? LAB_STATUS_LABELS[status as LabRequestStatus] ?? status;
   const muiColor = STATUS_MUI_COLOR_MAP[status] ?? 'default';
 

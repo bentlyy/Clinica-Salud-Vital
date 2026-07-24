@@ -1,7 +1,10 @@
 import { Outlet } from 'react-router-dom';
 import { Box } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 
 export function AuthLayout() {
+  const theme = useTheme();
+
   return (
     <Box
       sx={{
@@ -9,7 +12,7 @@ export function AuthLayout() {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: '#f9fafb',
+        backgroundColor: theme.palette.custom?.surface?.muted || theme.palette.background.default,
         p: 2,
       }}
     >
