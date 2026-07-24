@@ -101,7 +101,7 @@ const healthHandler = async (_req: Request, res: Response) => {
 app.get('/health', healthHandler);
 app.get('/api/health', healthHandler);
 
-app.use(securityMiddleware);
+app.use('/api', securityMiddleware);
 app.use(compression());
 
 const frontendUrl = process.env.FRONTEND_URL || process.env.RENDER_EXTERNAL_URL || 'http://localhost:5173';
