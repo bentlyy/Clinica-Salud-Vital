@@ -2,9 +2,15 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const mockSaasService = vi.hoisted(() => ({
   getPlans: vi.fn(),
+  getPlanByCode: vi.fn(),
+  getTenantSubscription: vi.fn(),
   getTenantPlan: vi.fn(),
+  createSubscription: vi.fn(),
   changePlan: vi.fn(),
   cancelSubscription: vi.fn(),
+  getTenantUsage: vi.fn(),
+  getUsageSummary: vi.fn(),
+  checkLimits: vi.fn(),
   onboardTenant: vi.fn(),
   getTenantFeatures: vi.fn(),
   updateTenantConfig: vi.fn(),
@@ -20,6 +26,10 @@ vi.mock('../../src/utils/errors.js', () => ({
   BadRequestError: class BadRequestError extends Error {
     constructor(msg) { super(msg); this.name = 'BadRequestError'; }
   },
+}));
+
+vi.mock('../../src/utils/logger.js', () => ({
+  logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 
 import * as saasController from '../../src/modules/saas/saas.controller.js';
@@ -49,28 +59,38 @@ describe('saasController.getPlans', () => {
 
 describe('saasController.getMySubscription', () => {
   it('returns subscription and plan', async () => {
-    mockSaasService.getTenantPlan.mockResolvedValue({ code: 'free', name: 'Free' });
+    mockSaasService.getTenantSubscription.mockResolvedValue({ id: 1, plan: { code: 'pro' } });
+    mockSaasService.getTenantPlan.mockResolvedValue({ code: 'pro', name: 'Pro' });
+    const req = { tenant_id: 'tenant-1' };
     const res = mockRes();
 
-    await saasController.getMySubscription({}, res);
+    await saasController.getMySubscription(req, res);
 
+    expect(mockSaasService.getTenantSubscription).toHaveBeenCalledWith('tenant-1');
+    expect(mockSaasService.getTenantPlan).toHaveBeenCalledWith('tenant-1');
     expect(res.json).toHaveBeenCalledWith({
-      subscription: null,
-      plan: { code: 'free', name: 'Free' },
+      subscription: { id: 1, plan: { code: 'pro' } },
+      plan: { code: 'pro', name: 'Pro' },
     });
   });
 });
 
 describe('saasController.createCheckout', () => {
-  it('returns checkout URL', async () => {
-    const res = mockRes();
+  it('creates subscription and returns checkout info', async () => {
+    mockSaasService.getPlanByCode.mockResolvedValue({ id: 1, code: 'pro' });
+    mockSaasService.createSubscription.mockResolvedValue({ id: 1, status: 'active', plan: { code: 'pro' } });
     const req = { body: { plan_code: 'pro' }, tenant_id: 'tenant-1' };
+    const res = mockRes();
 
     await saasController.createCheckout(req, res);
 
+    expect(mockSaasService.getPlanByCode).toHaveBeenCalledWith('pro');
+    expect(mockSaasService.createSubscription).toHaveBeenCalledWith('tenant-1', 'pro');
+    expect(res.status).toHaveBeenCalledWith(201);
     expect(res.json).toHaveBeenCalledWith({
+      subscription: { id: 1, status: 'active', plan: { code: 'pro' } },
       url: '/saas/success?plan=pro&tenant=tenant-1',
-      session_id: 'simulated',
+      message: "Subscription created for plan 'pro'",
     });
   });
 });
@@ -87,43 +107,59 @@ describe('saasController.stripeWebhook', () => {
 
 describe('saasController.changePlan', () => {
   it('changes plan', async () => {
-    mockSaasService.changePlan.mockResolvedValue({ plan_code: 'pro', message: 'Changed' });
+    mockSaasService.changePlan.mockResolvedValue({
+      subscription: { id: 1, plan: { code: 'enterprise' } },
+      message: "Plan changed from 'pro' to 'enterprise'",
+    });
+    const req = { body: { plan_code: 'enterprise' }, tenant_id: 'tenant-1' };
     const res = mockRes();
 
-    await saasController.changePlan({}, res);
+    await saasController.changePlan(req, res);
 
-    expect(res.json).toHaveBeenCalledWith({ plan_code: 'pro', message: 'Changed' });
+    expect(mockSaasService.changePlan).toHaveBeenCalledWith('tenant-1', 'enterprise');
+    expect(res.json).toHaveBeenCalledWith({
+      subscription: { id: 1, plan: { code: 'enterprise' } },
+      message: "Plan changed from 'pro' to 'enterprise'",
+    });
   });
 });
 
 describe('saasController.cancelSubscription', () => {
   it('cancels subscription', async () => {
-    mockSaasService.cancelSubscription.mockResolvedValue();
+    mockSaasService.cancelSubscription.mockResolvedValue({ message: 'Subscription canceled. Access continues until end of current period.' });
+    const req = { tenant_id: 'tenant-1' };
     const res = mockRes();
 
-    await saasController.cancelSubscription({}, res);
+    await saasController.cancelSubscription(req, res);
 
-    expect(res.json).toHaveBeenCalledWith({ message: 'Subscription canceled' });
+    expect(mockSaasService.cancelSubscription).toHaveBeenCalledWith('tenant-1');
+    expect(res.json).toHaveBeenCalledWith({ message: 'Subscription canceled. Access continues until end of current period.' });
   });
 });
 
 describe('saasController.getUsage', () => {
-  it('returns empty object', async () => {
+  it('returns tenant usage', async () => {
+    mockSaasService.getTenantUsage.mockResolvedValue([{ date: '2026-01-01', metric_key: 'doctors', value: 2 }]);
+    const req = { tenant_id: 'tenant-1' };
     const res = mockRes();
 
-    await saasController.getUsage({}, res);
+    await saasController.getUsage(req, res);
 
-    expect(res.json).toHaveBeenCalledWith({});
+    expect(mockSaasService.getTenantUsage).toHaveBeenCalledWith('tenant-1');
+    expect(res.json).toHaveBeenCalledWith({ usage: [{ date: '2026-01-01', metric_key: 'doctors', value: 2 }] });
   });
 });
 
 describe('saasController.getUsageSummary', () => {
-  it('returns empty object', async () => {
+  it('returns usage summary', async () => {
+    mockSaasService.getUsageSummary.mockResolvedValue({ doctors: 3, patients: 50 });
+    const req = { tenant_id: 'tenant-1' };
     const res = mockRes();
 
-    await saasController.getUsageSummary({}, res);
+    await saasController.getUsageSummary(req, res);
 
-    expect(res.json).toHaveBeenCalledWith({});
+    expect(mockSaasService.getUsageSummary).toHaveBeenCalledWith('tenant-1');
+    expect(res.json).toHaveBeenCalledWith({ summary: { doctors: 3, patients: 50 } });
   });
 });
 
@@ -143,14 +179,14 @@ describe('saasController.onboardTenant', () => {
   it('onboards a new tenant', async () => {
     const fetchMock = vi.fn().mockResolvedValue({ json: () => Promise.resolve({ success: true }) });
     vi.stubGlobal('fetch', fetchMock);
-    mockSaasService.onboardTenant.mockResolvedValue({ tenantId: 'new-clinic', message: 'Tenant created successfully.' });
+    mockSaasService.onboardTenant.mockResolvedValue({ tenantId: 'new-clinic', message: "Tenant created with plan 'pro'" });
     const req = { body: validBody };
     const res = mockRes();
 
     await saasController.onboardTenant(req, res);
 
     expect(res.status).toHaveBeenCalledWith(201);
-    expect(res.json).toHaveBeenCalledWith({ tenantId: 'new-clinic', message: 'Tenant created successfully.' });
+    expect(res.json).toHaveBeenCalledWith({ tenantId: 'new-clinic', message: "Tenant created with plan 'pro'" });
     expect(mockSaasService.onboardTenant).toHaveBeenCalledWith({
       tenantName: 'New Clinic',
       domain: 'new-clinic',
@@ -176,7 +212,7 @@ describe('saasController.onboardTenant', () => {
   it('skips CAPTCHA when RECAPTCHA_SECRET_KEY missing', async () => {
     vi.stubGlobal('fetch', vi.fn());
     delete process.env.RECAPTCHA_SECRET_KEY;
-    mockSaasService.onboardTenant.mockResolvedValue({ tenantId: 'new-clinic', message: 'Tenant created successfully.' });
+    mockSaasService.onboardTenant.mockResolvedValue({ tenantId: 'new-clinic', message: 'Tenant created (no plan assigned)' });
     const req = { body: validBody };
     const res = mockRes();
 
@@ -198,15 +234,21 @@ describe('saasController.onboardTenant', () => {
 });
 
 describe('saasController.getLimits', () => {
-  it('returns default limits', async () => {
+  it('returns real limits from service', async () => {
+    mockSaasService.checkLimits
+      .mockResolvedValueOnce({ allowed: true, current: 2, limit: 10 })
+      .mockResolvedValueOnce({ allowed: true, current: 50, limit: 200 })
+      .mockResolvedValueOnce({ allowed: true, current: 1, limit: 5 });
+    const req = { tenant_id: 'tenant-1' };
     const res = mockRes();
 
-    await saasController.getLimits({}, res);
+    await saasController.getLimits(req, res);
 
+    expect(mockSaasService.checkLimits).toHaveBeenCalledTimes(3);
     expect(res.json).toHaveBeenCalledWith({
-      doctors: { allowed: true, current: 0, limit: -1 },
-      patients: { allowed: true, current: 0, limit: -1 },
-      storage: { allowed: true, current: 0, limit: -1 },
+      doctors: { allowed: true, current: 2, limit: 10 },
+      patients: { allowed: true, current: 50, limit: 200 },
+      storage: { allowed: true, current: 1, limit: 5 },
     });
   });
 });
