@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { asyncHandler } from '../../middlewares/asyncHandler.middleware.js';
 import * as saasService from './saas.service.js';
 import { BadRequestError } from '../../utils/errors.js';
+import { logger } from '../../utils/logger.js';
 
 export const getPlans = asyncHandler(async (_req: Request, res: Response) => {
   const plans = await saasService.getPlans();
@@ -9,37 +10,56 @@ export const getPlans = asyncHandler(async (_req: Request, res: Response) => {
 });
 
 export const getMySubscription = asyncHandler(async (req: Request, res: Response) => {
-  res.json({ subscription: null, plan: await saasService.getTenantPlan() });
+  const subscription = await saasService.getTenantSubscription(req.tenant_id);
+  const plan = await saasService.getTenantPlan(req.tenant_id);
+  res.json({ subscription, plan });
 });
 
 export const createCheckout = asyncHandler(async (req: Request, res: Response) => {
   const { plan_code } = req.body;
-  res.json({
+  if (!plan_code) throw new BadRequestError('plan_code is required');
+
+  // Check plan exists
+  await saasService.getPlanByCode(plan_code);
+
+  // Create subscription directly (MVP: no Stripe)
+  const subscription = await saasService.createSubscription(req.tenant_id, plan_code);
+
+  res.status(201).json({
+    subscription,
     url: `/saas/success?plan=${plan_code}&tenant=${req.tenant_id}`,
-    session_id: 'simulated',
+    message: `Subscription created for plan '${plan_code}'`,
   });
 });
 
-export const stripeWebhook = asyncHandler(async (_req: Request, res: Response) => {
+export const stripeWebhook = asyncHandler(async (req: Request, res: Response) => {
+  // MVP: webhook stub — in production, verify Stripe signature and handle events
+  const event = req.body;
+  logger.info('[Stripe Webhook] Received event:', event?.type || 'unknown');
   res.json({ received: true });
 });
 
-export const changePlan = asyncHandler(async (_req: Request, res: Response) => {
-  const result = await saasService.changePlan();
+export const changePlan = asyncHandler(async (req: Request, res: Response) => {
+  const { plan_code } = req.body;
+  if (!plan_code) throw new BadRequestError('plan_code is required');
+
+  const result = await saasService.changePlan(req.tenant_id, plan_code);
   res.json(result);
 });
 
-export const cancelSubscription = asyncHandler(async (_req: Request, res: Response) => {
-  await saasService.cancelSubscription();
-  res.json({ message: 'Subscription canceled' });
+export const cancelSubscription = asyncHandler(async (req: Request, res: Response) => {
+  const result = await saasService.cancelSubscription(req.tenant_id);
+  res.json(result);
 });
 
-export const getUsage = asyncHandler(async (_req: Request, res: Response) => {
-  res.json({});
+export const getUsage = asyncHandler(async (req: Request, res: Response) => {
+  const usage = await saasService.getTenantUsage(req.tenant_id);
+  res.json({ usage });
 });
 
-export const getUsageSummary = asyncHandler(async (_req: Request, res: Response) => {
-  res.json({});
+export const getUsageSummary = asyncHandler(async (req: Request, res: Response) => {
+  const summary = await saasService.getUsageSummary(req.tenant_id);
+  res.json({ summary });
 });
 
 const verifyCaptchaOnboard = async (token: string): Promise<boolean> => {
@@ -77,8 +97,13 @@ export const onboardTenant = asyncHandler(async (req: Request, res: Response) =>
   res.status(201).json(result);
 });
 
-export const getLimits = asyncHandler(async (_req: Request, res: Response) => {
-  res.json({ doctors: { allowed: true, current: 0, limit: -1 }, patients: { allowed: true, current: 0, limit: -1 }, storage: { allowed: true, current: 0, limit: -1 } });
+export const getLimits = asyncHandler(async (req: Request, res: Response) => {
+  const [doctors, patients, storage] = await Promise.all([
+    saasService.checkLimits(req.tenant_id, 'doctors'),
+    saasService.checkLimits(req.tenant_id, 'patients'),
+    saasService.checkLimits(req.tenant_id, 'storage'),
+  ]);
+  res.json({ doctors, patients, storage });
 });
 
 export const getFeatures = asyncHandler(async (req: Request, res: Response) => {
