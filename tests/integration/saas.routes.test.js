@@ -60,26 +60,50 @@ app.use(errorHandler);
 beforeEach(() => {
   vi.clearAllMocks();
   mockQuery.mockReset();
-  mockQuery.mockResolvedValue({ rows: [{ token_version: 0 }] });
+  mockClient.query.mockReset();
+  mockClient.release.mockReset();
   mockConnect.mockReturnValue(mockClient);
-delete process.env.RECAPTCHA_SECRET_KEY;
+  delete process.env.RECAPTCHA_SECRET_KEY;
 });
 
+const AUTH_OK = { rows: [{ token_version: 0 }] };
+const FREE_PLAN_ROW = {
+  id: 1, name: 'Free', code: 'free', description: 'Free plan',
+  price_monthly: 0, price_yearly: 0, max_doctors: 1, max_patients: 50,
+  storage_gb: 1, features: { bookings: true }, active: true, sort_order: 0,
+};
+
 describe('GET /api/saas/plans (public)', () => {
-  it('returns plans without auth', async () => {
+  it('returns plans from database', async () => {
+    mockQuery.mockResolvedValueOnce({
+      rows: [
+        { id: 1, name: 'Free', code: 'free', price_monthly: 0, max_doctors: 1, features: { bookings: true } },
+        { id: 2, name: 'Basic', code: 'basic', price_monthly: 29, max_doctors: 3, features: {} },
+      ],
+    });
+
     const res = await request(app).get('/api/saas/plans');
 
     expect(res.status).toBe(200);
-    expect(res.body.data).toHaveLength(1);
-    expect(res.body.data[0].code).toBe('default');
+    expect(res.body.data).toHaveLength(2);
+    expect(res.body.data[0].code).toBe('free');
+  });
+
+  it('returns empty list when no plans', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] });
+
+    const res = await request(app).get('/api/saas/plans');
+
+    expect(res.status).toBe(200);
+    expect(res.body.data).toHaveLength(0);
   });
 });
 
 describe('GET /api/saas/features (public)', () => {
   it('returns features (requires auth)', async () => {
     mockQuery
-      .mockResolvedValueOnce({ rows: [{ token_version: 0 }] })
-      .mockResolvedValueOnce({ rows: [{ enabled: true }] });
+      .mockResolvedValueOnce(AUTH_OK)
+      .mockResolvedValue({ rows: [{ enabled: true }] });
 
     const res = await request(app)
       .get('/api/saas/features')
@@ -94,8 +118,8 @@ describe('POST /api/saas/onboard (public with rate limit)', () => {
   it('onboards a new tenant', async () => {
     mockClient.query
       .mockResolvedValueOnce({})  // BEGIN
-      .mockResolvedValueOnce({ rows: [] })  // check existing (none)
-      .mockResolvedValueOnce({ rows: [{ id: 1, name: 'Default', code: 'default' }] })  // INSERT tenant returning id
+      .mockResolvedValueOnce({ rows: [] })  // check existing
+      .mockResolvedValueOnce({})  // INSERT tenant
       .mockResolvedValueOnce({})  // INSERT user
       .mockResolvedValueOnce({});  // COMMIT
 
@@ -146,77 +170,123 @@ describe('GET /api/saas/subscription (authenticated)', () => {
     expect(res.status).toBe(403);
   });
 
-  it('returns subscription for admin', async () => {
+  it('returns subscription and plan for admin', async () => {
+    mockQuery
+      .mockResolvedValueOnce(AUTH_OK)                                          // auth
+      .mockResolvedValueOnce({ rows: [] })                                     // getTenantSubscription (no sub)
+      .mockResolvedValueOnce({ rows: [] })                                     // getTenantPlan → getTenantSubscription (no sub)
+      .mockResolvedValueOnce({ rows: [FREE_PLAN_ROW] });                      // getTenantPlan → getPlanByCode('free')
+
     const res = await request(app)
       .get('/api/saas/subscription')
       .set('Authorization', `Bearer ${adminToken}`);
 
     expect(res.status).toBe(200);
     expect(res.body).toHaveProperty('plan');
+    expect(res.body.plan.code).toBe('free');
   });
 });
 
 describe('POST /api/saas/checkout', () => {
-  it('returns checkout URL (plan_code not validated by Zod for checkout)', async () => {
+  it('creates subscription with valid plan_code', async () => {
+    const PLAN_ROW = { id: 2, code: 'pro', name: 'Pro', price_monthly: 79, max_doctors: 10, max_patients: -1, storage_gb: 20, features: {}, active: true, sort_order: 2 };
+
+    mockQuery
+      .mockResolvedValueOnce(AUTH_OK)                                         // auth
+      .mockResolvedValueOnce({ rows: [PLAN_ROW] })                           // getPlanByCode('pro') in controller
+      .mockResolvedValueOnce({ rows: [PLAN_ROW] });                          // getPlanByCode('pro') inside createSubscription
+
+    mockClient.query
+      .mockResolvedValueOnce({})                                              // BEGIN
+      .mockResolvedValueOnce({ rows: [] })                                   // check existing
+      .mockResolvedValueOnce({ rows: [{ id: 1, tenant_id: 'default', plan_id: 2, status: 'active' }] })  // INSERT sub
+      .mockResolvedValueOnce({})                                              // INSERT invoice
+      .mockResolvedValueOnce({});                                             // COMMIT
+
     const res = await request(app)
       .post('/api/saas/checkout')
       .set('Authorization', `Bearer ${adminToken}`)
       .send({ plan_code: 'pro' });
 
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(201);
+    expect(res.body).toHaveProperty('subscription');
     expect(res.body.url).toContain('/saas/success');
   });
 
-  it('returns checkout URL with valid plan', async () => {
+  it('returns 400 without plan_code', async () => {
+    mockQuery.mockResolvedValueOnce(AUTH_OK);
+
     const res = await request(app)
       .post('/api/saas/checkout')
       .set('Authorization', `Bearer ${adminToken}`)
-      .send({ plan_code: 'pro' });
+      .send({});
 
-    expect(res.status).toBe(200);
-    expect(res.body.url).toContain('/saas/success');
+    expect(res.status).toBe(400);
   });
 });
 
 describe('GET /api/saas/usage', () => {
   it('returns usage for admin', async () => {
+    mockQuery
+      .mockResolvedValueOnce(AUTH_OK)
+      .mockResolvedValueOnce({ rows: [] });
+
     const res = await request(app)
       .get('/api/saas/usage')
       .set('Authorization', `Bearer ${adminToken}`);
 
     expect(res.status).toBe(200);
+    expect(res.body).toHaveProperty('usage');
   });
 });
 
 describe('GET /api/saas/limits', () => {
   it('returns limits for admin', async () => {
+    // Promise.all runs 3 checkLimits concurrently, so queries interleave:
+    // 1 auth + 3 getTenantSub + 3 getPlanByCode + 3 usage = 10 total
+    mockQuery
+      .mockResolvedValueOnce(AUTH_OK)                                        // 1 - auth
+      .mockResolvedValueOnce({ rows: [] })                                   // 2 - getTenantSub (1st parallel)
+      .mockResolvedValueOnce({ rows: [] })                                   // 3 - getTenantSub (2nd parallel)
+      .mockResolvedValueOnce({ rows: [] })                                   // 4 - getTenantSub (3rd parallel)
+      .mockResolvedValueOnce({ rows: [FREE_PLAN_ROW] })                      // 5 - getPlanByCode (1st)
+      .mockResolvedValueOnce({ rows: [FREE_PLAN_ROW] })                      // 6 - getPlanByCode (2nd)
+      .mockResolvedValueOnce({ rows: [FREE_PLAN_ROW] })                      // 7 - getPlanByCode (3rd)
+      .mockResolvedValueOnce({ rows: [{ current: 0 }] })                    // 8 - usage (1st)
+      .mockResolvedValueOnce({ rows: [{ current: 0 }] })                    // 9 - usage (2nd)
+      .mockResolvedValueOnce({ rows: [{ current: 0 }] });                   // 10 - usage (3rd)
+
     const res = await request(app)
       .get('/api/saas/limits')
       .set('Authorization', `Bearer ${adminToken}`);
 
     expect(res.status).toBe(200);
     expect(res.body.doctors).toBeDefined();
+    expect(res.body.patients).toBeDefined();
+    expect(res.body.storage).toBeDefined();
   });
 });
 
 describe('POST /api/saas/change-plan', () => {
   it('changes plan with valid plan_code', async () => {
+    const mockPlan = { id: 2, name: 'Enterprise', code: 'enterprise', price_monthly: 199, max_doctors: -1, max_patients: -1, storage_gb: 100, features: {}, active: true, sort_order: 3 };
+    const mockSub = { id: 1, tenant_id: 'default', plan_id: 1, status: 'active', current_period_start: new Date(), current_period_end: new Date(), trial_end: null, canceled_at: null, metadata: '{}' };
+
     mockQuery
-      .mockResolvedValueOnce({ rows: [{ token_version: 0 }] })
-      .mockResolvedValueOnce({ rows: [] });
+      .mockResolvedValueOnce(AUTH_OK)                                        // auth
+      .mockResolvedValueOnce({ rows: [{ id: 2, code: 'enterprise' }] });    // getPlanByCode
 
-    const res = await request(app)
-      .post('/api/saas/change-plan')
-      .set('Authorization', `Bearer ${adminToken}`)
-      .send({});
+    mockClient.query
+      .mockResolvedValueOnce({})                                              // BEGIN
+      .mockResolvedValueOnce({ rows: [{ id: 1, plan_id: 1, old_plan_code: 'free', current_period_end: new Date() }] })  // get current sub FOR UPDATE
+      .mockResolvedValueOnce({})                                              // UPDATE plan_id
+      .mockResolvedValueOnce({})                                              // INSERT invoice
+      .mockResolvedValueOnce({});                                             // COMMIT
 
-    expect(res.status).toBe(200);
-  });
-
-  it('changes plan', async () => {
+    // After changePlan, getTenantSubscription is called again
     mockQuery
-      .mockResolvedValueOnce({ rows: [{ token_version: 0 }] })
-      .mockResolvedValueOnce({ rows: [] });
+      .mockResolvedValueOnce({ rows: [{ ...mockSub, plan: mockPlan }] })     // getTenantSubscription
+      .mockResolvedValueOnce({ rows: [mockPlan] });                          // getTenantPlan → getPlanByCode (fallback not needed since sub exists)
 
     const res = await request(app)
       .post('/api/saas/change-plan')
@@ -224,19 +294,37 @@ describe('POST /api/saas/change-plan', () => {
       .send({ plan_code: 'enterprise' });
 
     expect(res.status).toBe(200);
+    expect(res.body).toHaveProperty('subscription');
+    expect(res.body).toHaveProperty('message');
+  });
+
+  it('returns 400 without plan_code', async () => {
+    mockQuery.mockResolvedValueOnce(AUTH_OK);
+
+    const res = await request(app)
+      .post('/api/saas/change-plan')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({});
+
+    expect(res.status).toBe(400);
   });
 });
 
 describe('POST /api/saas/cancel', () => {
   it('cancels subscription', async () => {
     mockQuery
-      .mockResolvedValueOnce({ rows: [{ token_version: 0 }] })
-      .mockResolvedValueOnce({ rows: [] });
+      .mockResolvedValueOnce(AUTH_OK);                                       // auth
+
+    mockClient.query
+      .mockResolvedValueOnce({})                                              // BEGIN
+      .mockResolvedValueOnce({ rows: [{ id: 1 }] })                         // UPDATE cancel
+      .mockResolvedValueOnce({});                                             // COMMIT
 
     const res = await request(app)
       .post('/api/saas/cancel')
       .set('Authorization', `Bearer ${adminToken}`);
 
     expect(res.status).toBe(200);
+    expect(res.body).toHaveProperty('message');
   });
 });

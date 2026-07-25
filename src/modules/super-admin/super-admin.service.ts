@@ -805,7 +805,7 @@ export const adminCreateTenant = async (data: {
     );
 
     if (planCode) {
-      const plan = await saasService.getPlanByCode();
+      const plan = await saasService.getPlanByCode(planCode);
       const now = new Date();
       const periodEnd = new Date(now);
       periodEnd.setFullYear(periodEnd.getFullYear() + 1);
