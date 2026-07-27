@@ -60,14 +60,14 @@ describe('query helpers', () => {
       expect(tenantQuery.tag('test')).toBe('__tenant_id__test__tenant_id__');
     });
 
-    it('build throws deprecation error', async () => {
+    it('build was removed', async () => {
       const { tenantQuery } = await import('../../src/shared/query.js');
-      expect(() => tenantQuery.build('', '')).toThrow('deprecated');
+      expect(tenantQuery.build).toBeUndefined();
     });
 
-    it('where throws deprecation error', async () => {
+    it('where was removed', async () => {
       const { tenantQuery } = await import('../../src/shared/query.js');
-      expect(() => tenantQuery.where('test')).toThrow('deprecated');
+      expect(tenantQuery.where).toBeUndefined();
     });
 
     it('whereParam returns parameterized clause', async () => {
@@ -166,9 +166,9 @@ describe('query helpers', () => {
   });
 
   describe('buildTenantInsert', () => {
-    it('throws deprecation error', async () => {
+    it('was removed', async () => {
       const { buildTenantInsert } = await import('../../src/shared/query.js');
-      expect(() => buildTenantInsert('test', 'id')).toThrow('deprecated');
+      expect(buildTenantInsert).toBeUndefined();
     });
   });
 });

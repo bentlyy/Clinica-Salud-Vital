@@ -35,7 +35,21 @@ export function decrypt(encoded: string): string {
   return decrypted;
 }
 
+export function getAuditHmacSecret(): string {
+  const secret = process.env.AUDIT_HMAC_SECRET;
+  if (!secret) {
+    throw new Error('AUDIT_HMAC_SECRET environment variable is required for audit log integrity');
+  }
+  if (secret.length < 32) {
+    throw new Error('AUDIT_HMAC_SECRET must be at least 32 characters');
+  }
+  return secret;
+}
+
+export function computeHmac(data: string): string {
+  return crypto.createHmac('sha256', getAuditHmacSecret()).update(data).digest('hex');
+}
+
 export function hashToken(token: string): string {
-  const secret = process.env.AUDIT_HMAC_SECRET || 'default-hmac-secret-change-in-production';
-  return crypto.createHmac('sha256', secret).update(token).digest('hex');
+  return computeHmac(token);
 }

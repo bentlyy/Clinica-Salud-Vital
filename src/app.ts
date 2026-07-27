@@ -19,12 +19,13 @@ import { tenantMiddleware } from './middlewares/tenant.middleware.js';
 import { optionalAuth } from './middlewares/auth.middleware.js';
 import { validateEmailConfig } from './shared/email.service.js';
 import { requestLogger } from './middlewares/requestLogger.middleware.js';
+import { correlationIdMiddleware } from './middlewares/correlationId.middleware.js';
 import { errorHandler, notFoundHandler } from './middlewares/errorHandler.middleware.js';
-import { trackActivity } from './middlewares/sessionActivity.middleware.js';
+import { trackActivity, stopSessionCleanup } from './middlewares/sessionActivity.middleware.js';
 import { initSentry, setupExpressErrorHandler } from './shared/sentry.service.js';
 import { logger } from './utils/logger.js';
 import cron from 'node-cron';
-import { registerWorkers } from './shared/queue.service.js';
+import { registerWorkers, startQueueProcessor, stopQueueProcessor } from './shared/queue.service.js';
 import pkg from '../package.json';
 import type { QueryConfig } from 'pg';
 
@@ -138,12 +139,13 @@ if (process.env.NODE_ENV === 'production') {
   });
 }
 
-app.use(cookieParser());
+app.use(cookieParser(process.env.COOKIE_SECRET || process.env.JWT_SECRET));
 app.use(express.json({ limit: '100kb' }));
 app.use(optionalAuth);
 app.use(tenantMiddleware);
 app.use(trackActivity);
 
+app.use(correlationIdMiddleware);
 app.use(requestLogger);
 
 const globalLimiter = rateLimit({
@@ -337,6 +339,8 @@ const startServer = async (): Promise<void> => {
       await runMigration();
       step('registerWorkers');
       registerWorkers();
+      step('startQueueProcessor');
+      startQueueProcessor();
       step('loadFromDB');
       await tenantService.loadFromDB();
       step('SET SESSION tenant_id');
@@ -385,12 +389,16 @@ process.on('unhandledRejection', (reason) => {
 
 process.on('SIGTERM', () => {
   logger.info('SIGTERM received. Shutting down gracefully...');
+  stopSessionCleanup();
+  stopQueueProcessor();
   pool.end().catch((err: unknown) => logger.warn('Pool close error on SIGTERM', (err as Error).message));
   process.exit(0);
 });
 
 process.on('SIGINT', () => {
   logger.info('SIGINT received. Shutting down gracefully...');
+  stopSessionCleanup();
+  stopQueueProcessor();
   pool.end().catch((err: unknown) => logger.warn('Pool close error on SIGINT', (err as Error).message));
   process.exit(0);
 });

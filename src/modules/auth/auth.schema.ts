@@ -45,3 +45,8 @@ export const resetPasswordSchema = z.object({
   password: passwordSchema,
 }).strict();
 
+export const resetAdminSchema = z.object({
+  current_password: z.string().min(1, 'Current password is required'),
+  new_password: passwordSchema,
+}).strict();
+
