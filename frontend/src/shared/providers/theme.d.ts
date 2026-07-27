@@ -24,6 +24,12 @@ declare module '@mui/material/styles' {
         sunken: string;
         muted: string;
       };
+      purple: { main: string; light: string; bg: string; text: string };
+      orange: { main: string; light: string; dark: string; darker: string; bg: string; text: string };
+      cyan: { main: string; light: string; dark: string; bg: string; text: string };
+      pink: { main: string; light: string; bg: string; text: string };
+      lime: { main: string; light: string; bg: string; text: string };
+      rose: { main: string; light: string; bg: string; text: string };
     };
   }
   interface PaletteOptions {
@@ -49,6 +55,12 @@ declare module '@mui/material/styles' {
         sunken?: string;
         muted?: string;
       };
+      purple?: { main?: string; light?: string; bg?: string; text?: string };
+      orange?: { main?: string; light?: string; dark?: string; darker?: string; bg?: string; text?: string };
+      cyan?: { main?: string; light?: string; dark?: string; bg?: string; text?: string };
+      pink?: { main?: string; light?: string; bg?: string; text?: string };
+      lime?: { main?: string; light?: string; bg?: string; text?: string };
+      rose?: { main?: string; light?: string; bg?: string; text?: string };
     };
   }
 }

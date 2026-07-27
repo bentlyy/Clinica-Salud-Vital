@@ -54,7 +54,6 @@ export const SampleStorage = memo(function SampleStorage({
   isLoading = false,
 }: SampleStorageProps) {
   const theme = useTheme();
-  const { t } = useTranslation('lab');
   const [editingId, setEditingId] = useState<number | null>(null);
 
   const unlocatedSamples = useMemo(
@@ -246,6 +245,7 @@ const UnlocatedRow = memo(function UnlocatedRow({
   getSampleTypeLabel,
 }: RowProps) {
   const theme = useTheme();
+  const { t } = useTranslation('lab');
   const {
     control,
     handleSubmit,
@@ -356,6 +356,7 @@ const LocatedRow = memo(function LocatedRow({
   getSampleTypeLabel,
 }: RowProps) {
   const theme = useTheme();
+  const { t } = useTranslation('lab');
   const {
     control,
     handleSubmit,
