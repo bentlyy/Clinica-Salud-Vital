@@ -1,184 +1,438 @@
-import { useState, useEffect, useCallback } from 'react';
-import type { LabAnalyticsData } from '../types';
-import { getAnalyticsData } from '../api/laboratory.api';
-import { useLabKeyboard } from '../hooks/useLabKeyboard';
-import Button from '../../../components/ui/Button';
-import Card from '../../../components/ui/Card';
-import { PageContainer, PageHeader } from '../../../components/ui/PageContainer';
+import { memo, useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
+import {
+  Box,
+  Typography,
+  Paper,
+  TextField,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Chip,
+} from '@mui/material';
+import Grid from '@mui/material/Grid';
+import { useTheme } from '@mui/material/styles';
+import { useForm, Controller } from 'react-hook-form';
+import ScienceIcon from '@mui/icons-material/Science';
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import RepeatIcon from '@mui/icons-material/Repeat';
+import ErrorIcon from '@mui/icons-material/Error';
+import SpeedIcon from '@mui/icons-material/Speed';
+import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
+import { PageHeader } from '@/shared/components/ui/PageHeader';
+import { LoadingState } from '@/shared/components/ui/LoadingState';
+import { ErrorState } from '@/shared/components/ui/ErrorState';
+import { EmptyState } from '@/shared/components/ui/EmptyState';
+import { useLabAnalytics } from '../hooks/useLab';
 
-export default function LabAnalyticsPage() {
-  const [data, setData] = useState<LabAnalyticsData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [period, setPeriod] = useState<'daily' | 'weekly' | 'monthly'>('daily');
+interface DateRangeForm {
+  dateFrom: string;
+  dateTo: string;
+}
 
-  const fetch = useCallback(async () => {
-    setLoading(true);
-    try {
-      const result = await getAnalyticsData();
-      setData(result);
-    } catch { /* silent */ }
-    finally { setLoading(false); }
-  }, []);
+const SUMMARY_METRIC_KEYS = [
+  { key: 'total', i18nKey: 'total_tests', icon: ScienceIcon, colorKey: 'primary.main' as const, bgColorKey: 'custom.brand.lightest' as const },
+  { key: 'avg_time', i18nKey: 'avg_time', icon: AccessTimeIcon, colorKey: 'info.dark' as const, bgColorKey: 'custom.status.info.bg' as const },
+  { key: 'repeat_rate', i18nKey: 'repeat_rate', icon: RepeatIcon, colorKey: 'warning.dark' as const, bgColorKey: 'custom.status.warning.bg' as const },
+  { key: 'error_rate', i18nKey: 'error_rate', icon: ErrorIcon, colorKey: 'error.main' as const, bgColorKey: 'custom.status.error.bg' as const },
+  { key: 'sla', i18nKey: 'sla_compliance', icon: SpeedIcon, colorKey: 'success.dark' as const, bgColorKey: 'custom.status.success.bg' as const },
+  { key: 'revenue', i18nKey: 'revenue', icon: AttachMoneyIcon, colorKey: 'secondary.main' as const, bgColorKey: 'custom.surface.muted' as const },
+] as const;
 
-  useEffect(() => { fetch(); }, [fetch]);
+import type { Theme } from '@mui/material/styles';
 
-  useLabKeyboard([
-    { key: 'r', ctrl: true, handler: fetch, description: 'Refrescar' },
-  ]);
+function getNestedColor(palette: Theme['palette'], path: string): string {
+  const parts = path.split('.');
+  let current: Record<string, unknown> = palette as unknown as Record<string, unknown>;
+  for (const part of parts) {
+    if (current && typeof current === 'object' && part in current) {
+      current = current[part] as Record<string, unknown>;
+    } else {
+      return path;
+    }
+  }
+  return typeof current === 'string' ? current : path;
+}
 
-  if (loading) return <PageContainer maxWidth="xl"><p style={{ color: 'var(--ds-text-tertiary)' }}>Cargando analítica...</p></PageContainer>;
-  if (!data) return <PageContainer maxWidth="xl"><p>Error al cargar datos analíticos</p></PageContainer>;
+function formatCurrency(value: number): string {
+  return new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(value);
+}
 
-  const periodData = period === 'daily' ? data.daily : period === 'weekly' ? data.weekly : data.monthly;
+function LabAnalyticsPage() {
+  const { t } = useTranslation('lab_analytics');
+  const theme = useTheme();
+  const [dateRange, setDateRange] = useState<{ dateFrom: string; dateTo: string }>({
+    dateFrom: '',
+    dateTo: '',
+  });
+
+  const { control, handleSubmit } = useForm<DateRangeForm>({
+    defaultValues: { dateFrom: '', dateTo: '' },
+  });
+
+  const {
+    data: analytics,
+    isLoading,
+    error,
+    refetch,
+  } = useLabAnalytics({
+    dateFrom: dateRange.dateFrom || undefined,
+    dateTo: dateRange.dateTo || undefined,
+  });
+
+  const onSubmit = (data: DateRangeForm) => {
+    setDateRange({ dateFrom: data.dateFrom, dateTo: data.dateTo });
+  };
+
+  const dailyData = useMemo(() => analytics?.daily ?? [], [analytics]);
+
+  if (isLoading) return <LoadingState message={t('loading')} />;
+  if (error) return <ErrorState error={error as Error} onRetry={() => void refetch()} />;
+  if (!analytics) return <EmptyState title={t('no_data_title')} message={t('no_data_message')} />;
+
+  const summaryValues: Record<string, string | number> = {
+    total: dailyData.reduce((sum, d) => sum + d.count, 0),
+    avg_time: `${analytics.avg_processing_time?.toFixed(1) ?? 0} min`,
+    repeat_rate: `${analytics.repeat_rate?.toFixed(1) ?? 0}%`,
+    error_rate: `${analytics.error_rate?.toFixed(1) ?? 0}%`,
+    sla: `${analytics.sla_compliance?.toFixed(1) ?? 0}%`,
+    revenue: formatCurrency(analytics.total_revenue ?? 0),
+  };
+
+  // SVG Bar chart
+  const BAR_WIDTH = 800;
+  const BAR_HEIGHT = 260;
+  const BAR_PADDING = { top: 20, right: 20, bottom: 50, left: 60 };
+  const BAR_PLOT_W = BAR_WIDTH - BAR_PADDING.left - BAR_PADDING.right;
+  const BAR_PLOT_H = BAR_HEIGHT - BAR_PADDING.top - BAR_PADDING.bottom;
+  const barMaxCount = Math.max(...dailyData.map((d) => d.count), 1);
+  const barSlotWidth = dailyData.length > 0 ? BAR_PLOT_W / dailyData.length : BAR_PLOT_W;
+
+  // SVG Horizontal bar chart for areas
+  const AREA_CHART_W = 800;
+  const AREA_CHART_H = Math.max(200, (analytics.by_area?.length ?? 0) * 40 + 60);
+  const AREA_PADDING = { top: 20, right: 80, bottom: 20, left: 140 };
+  const areaMaxCount = Math.max(...(analytics.by_area?.map((a) => a.count) ?? [1]), 1);
+
+  const priorityColorMap: Record<string, { lightKey: string; colorKey: string }> = {
+    low: { lightKey: 'custom.surface.sunken', colorKey: 'text.secondary' },
+    normal: { lightKey: 'custom.status.info.bg', colorKey: 'info.main' },
+    urgent: { lightKey: 'custom.status.warning.bg', colorKey: 'warning.main' },
+    emergency: { lightKey: 'custom.status.error.bg', colorKey: 'error.main' },
+  };
 
   return (
-    <PageContainer maxWidth="xl">
+    <Box>
       <PageHeader
-        title="Analítica"
-        subtitle="Métricas y estadísticas del laboratorio"
-        actions={
-          <div style={{ display: 'flex', gap: 4 }}>
-            {(['daily', 'weekly', 'monthly'] as const).map((p) => (
-              <Button key={p} variant={period === p ? 'primary' : 'ghost'} size="sm" onClick={() => setPeriod(p)}>
-                {p === 'daily' ? 'Diario' : p === 'weekly' ? 'Semanal' : 'Mensual'}
-              </Button>
-            ))}
-          </div>
+        title={t('title')}
+        subtitle={t('subtitle')}
+        action={
+          <Box
+            component="form"
+            onSubmit={(e: React.FormEvent) => void handleSubmit(onSubmit)(e)}
+            sx={{ display: 'flex', gap: 1.5, alignItems: 'center' }}
+          >
+            <Controller
+              name="dateFrom"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  size="small"
+                  type="date"
+                  label={t('date_from')}
+                  slotProps={{ inputLabel: { shrink: true } }}
+                  sx={{ minWidth: 140, '& .MuiOutlinedInput-root': { borderRadius: '10px' } }}
+                />
+              )}
+            />
+            <Controller
+              name="dateTo"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  size="small"
+                  type="date"
+                  label={t('date_to')}
+                  slotProps={{ inputLabel: { shrink: true } }}
+                  sx={{ minWidth: 140, '& .MuiOutlinedInput-root': { borderRadius: '10px' } }}
+                />
+              )}
+            />
+            <Box component="button" type="submit" style={{ display: 'none' }} />
+          </Box>
         }
       />
 
-      <div className="grid grid-4" style={{ gap: 14, marginBottom: 24 }}>
-        <MetricCard label="Tiempo promedio" value={`${data.avg_processing_time} min`} color="#06b6d4" />
-        <MetricCard label="Tasa de repetición" value={`${(data.repeat_rate * 100).toFixed(1)}%`} color={data.repeat_rate > 0.05 ? '#f59e0b' : '#22c55e'} />
-        <MetricCard label="Cumplimiento SLA" value={`${(data.sla_compliance * 100).toFixed(0)}%`} color={data.sla_compliance > 0.95 ? '#22c55e' : '#ef4444'} />
-        <MetricCard label="Ingresos" value={`$${data.total_revenue.toLocaleString()}`} color="#22c55e" />
-      </div>
+      {/* Summary Metrics */}
+      <Grid container spacing={2} sx={{ mb: 3 }}>
+        {SUMMARY_METRIC_KEYS.map((m) => (
+          <Grid xs={6} sm={4} md={2} key={m.key}>
+            <Paper
+              elevation={0}
+              sx={{
+                p: 2,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1.5,
+                border: `1px solid ${theme.palette.divider}`,
+                borderRadius: '14px',
+              }}
+            >
+              <Box
+                sx={{
+                  width: 38,
+                  height: 38,
+                  borderRadius: '10px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: getNestedColor(theme.palette, m.bgColorKey),
+                  color: getNestedColor(theme.palette, m.colorKey),
+                }}
+              >
+                <m.icon sx={{ fontSize: 20 }} />
+              </Box>
+              <Box>
+                <Typography variant="caption" sx={{ color: theme.palette.text.secondary, fontWeight: 500 }}>
+                  {t(m.i18nKey)}
+                </Typography>
+                <Typography variant="h5" sx={{ fontWeight: 700, color: theme.palette.text.primary, lineHeight: 1.2 }}>
+                  {summaryValues[m.key]}
+                </Typography>
+              </Box>
+            </Paper>
+          </Grid>
+        ))}
+      </Grid>
 
-      <div className="grid grid-2" style={{ gap: 14, marginBottom: 24 }}>
-        <Card padding="md" style={{ marginBottom: 24 }}>
-          <h3 style={{ fontSize: 14, fontWeight: 600, marginBottom: 12 }}>
-            Exámenes por período ({period === 'daily' ? 'día' : period === 'weekly' ? 'semana' : 'mes'})
-          </h3>
-          {periodData.length === 0 ? (
-            <p style={{ fontSize: 12, color: 'var(--ds-text-tertiary)' }}>Sin datos</p>
-          ) : (
-            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 3, height: 120, padding: '8px 0' }}>
-              {periodData.slice(-14).map((d, i) => {
-                const maxCount = Math.max(...periodData.map(x => x.count), 1);
-                return (
-                  <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-                    <div style={{
-                      width: '100%', height: `${(d.count / maxCount) * 100}%`,
-                      background: `linear-gradient(180deg, #06b6d4, #0891b2)`,
-                      borderRadius: '3px 3px 0 0',
-                      minHeight: 4,
-                      opacity: d.completed / d.count,
-                    }} />
-                    <span style={{ fontSize: 8, color: 'var(--ds-text-tertiary)', transform: 'rotate(-45deg)', whiteSpace: 'nowrap' }}>
-                      {d.date?.slice(5, 10)}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </Card>
+      <Grid container spacing={3}>
+        {/* Daily Volume Bar Chart */}
+        <Grid xs={12} md={8}>
+          <Paper elevation={0} sx={{ p: 3, border: `1px solid ${theme.palette.divider}`, borderRadius: '14px' }}>
+            <Typography variant="h6" sx={{ fontWeight: 600, color: theme.palette.text.primary, mb: 2 }}>
+              {t('daily_volume')}
+            </Typography>
+            {dailyData.length === 0 ? (
+              <Box sx={{ textAlign: 'center', py: 4 }}>
+                <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
+                {t('no_data_for_range')}
+                </Typography>
+              </Box>
+            ) : (
+              <Box sx={{ overflowX: 'auto' }}>
+                <svg width={BAR_WIDTH} height={BAR_HEIGHT} viewBox={`0 0 ${BAR_WIDTH} ${BAR_HEIGHT}`} style={{ display: 'block' }}>
+                  {/* Y axis grid */}
+                  {[0, 0.25, 0.5, 0.75, 1].map((pct) => {
+                    const y = BAR_PADDING.top + BAR_PLOT_H * (1 - pct);
+                    return (
+                      <g key={`y-${pct}`}>
+                        <line x1={BAR_PADDING.left} y1={y} x2={BAR_PADDING.left + BAR_PLOT_W} y2={y} stroke={theme.palette.custom.surface.sunken} strokeWidth={1} />
+                        <text x={BAR_PADDING.left - 8} y={y + 4} textAnchor="end" fontSize={10} fill={theme.palette.text.secondary} fontFamily={theme.typography.fontFamily}>
+                          {Math.round(barMaxCount * pct)}
+                        </text>
+                      </g>
+                    );
+                  })}
 
-        <Card padding="md" style={{ marginBottom: 24 }}>
-          <h3 style={{ fontSize: 14, fontWeight: 600, marginBottom: 12 }}>Por médico solicitante</h3>
-          {data.by_doctor.length === 0 ? (
-            <p style={{ fontSize: 12, color: 'var(--ds-text-tertiary)' }}>Sin datos</p>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              {data.by_doctor.slice(0, 8).map((d, i) => {
-                const maxCount = Math.max(...data.by_doctor.map(x => x.count), 1);
-                return (
-                  <div key={i}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 2 }}>
-                      <span style={{ color: 'var(--ds-text-secondary)' }}>{d.doctor_name}</span>
-                      <span style={{ fontWeight: 600 }}>{d.count}</span>
-                    </div>
-                    <div style={{ height: 6, borderRadius: 3, background: '#e5e7eb', overflow: 'hidden' }}>
-                      <div style={{
-                        width: `${(d.count / maxCount) * 100}%`, height: '100%', borderRadius: 3,
-                        background: '#8b5cf6', transition: 'width 0.3s',
-                      }} />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </Card>
-      </div>
+                  {/* Bars */}
+                  {dailyData.map((d, i) => {
+                    const barH = (d.count / barMaxCount) * BAR_PLOT_H;
+                    const x = BAR_PADDING.left + i * barSlotWidth + barSlotWidth * 0.15;
+                    const w = barSlotWidth * 0.7;
+                    const y = BAR_PADDING.top + BAR_PLOT_H - barH;
+                    return (
+                      <g key={d.date}>
+                        <rect x={x} y={y} width={w} height={barH} rx={4} fill={theme.palette.primary.main} opacity={0.85} />
+                        <text x={x + w / 2} y={y - 4} textAnchor="middle" fontSize={9} fill={theme.palette.text.primary} fontFamily={theme.typography.fontFamily}>
+                          {d.count}
+                        </text>
+                        {i % Math.max(1, Math.floor(dailyData.length / 8)) === 0 && (
+                          <text x={x + w / 2} y={BAR_HEIGHT - 8} textAnchor="middle" fontSize={9} fill={theme.palette.text.secondary} fontFamily={theme.typography.fontFamily}>
+                            {d.date.slice(5)}
+                          </text>
+                        )}
+                      </g>
+                    );
+                  })}
+                </svg>
+              </Box>
+            )}
+          </Paper>
+        </Grid>
 
-      <div className="grid grid-2" style={{ gap: 14 }}>
-        <Card padding="md" style={{ marginBottom: 24 }}>
-          <h3 style={{ fontSize: 14, fontWeight: 600, marginBottom: 12 }}>⏱ Tiempo promedio por área</h3>
-          {data.by_area.length === 0 ? (
-            <p style={{ fontSize: 12, color: 'var(--ds-text-tertiary)' }}>Sin datos</p>
-          ) : (
-            <table style={{ width: '100%', fontSize: 13 }}>
-              <thead>
-                <tr style={{ borderBottom: '1px solid var(--ds-border)' }}>
-                  <th style={{ padding: '6px 10px', textAlign: 'left' }}>Área</th>
-                  <th style={{ padding: '6px 10px', textAlign: 'right' }}>Exámenes</th>
-                  <th style={{ padding: '6px 10px', textAlign: 'right' }}>Tiempo prom.</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.by_area.map((a, i) => (
-                  <tr key={i} style={{ borderBottom: '1px solid var(--ds-border)' }}>
-                    <td style={{ padding: '6px 10px' }}>{a.area_name}</td>
-                    <td style={{ padding: '6px 10px', textAlign: 'right' }}>{a.count}</td>
-                    <td style={{ padding: '6px 10px', textAlign: 'right', fontWeight: 600 }}>
-                      {Math.round(a.avg_time_min)} min
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </Card>
+        {/* Tests by Area — Horizontal Bar */}
+        <Grid xs={12} md={4}>
+          <Paper elevation={0} sx={{ p: 3, border: `1px solid ${theme.palette.divider}`, borderRadius: '14px' }}>
+            <Typography variant="h6" sx={{ fontWeight: 600, color: theme.palette.text.primary, mb: 2 }}>
+              {t('tests_by_area')}
+            </Typography>
+            {analytics.by_area && analytics.by_area.length > 0 ? (
+              <Box sx={{ overflowX: 'auto' }}>
+                <svg width="100%" height={AREA_CHART_H} viewBox={`0 0 ${AREA_CHART_W} ${AREA_CHART_H}`} style={{ display: 'block' }}>
+                  {analytics.by_area.map((a, i) => {
+                    const y = AREA_PADDING.top + i * 40;
+                    const barW = (a.count / areaMaxCount) * (AREA_CHART_W - AREA_PADDING.left - AREA_PADDING.right);
+                    return (
+                      <g key={a.area_name}>
+                        <text x={AREA_PADDING.left - 8} y={y + 14} textAnchor="end" fontSize={11} fill={theme.palette.text.primary} fontFamily={theme.typography.fontFamily}>
+                          {a.area_name}
+                        </text>
+                        <rect x={AREA_PADDING.left} y={y} width={barW} height={24} rx={6} fill={theme.palette.primary.main} opacity={0.8} />
+                        <text x={AREA_PADDING.left + barW + 6} y={y + 16} fontSize={10} fill={theme.palette.text.secondary} fontFamily={theme.typography.fontFamily}>
+                          {a.count}
+                        </text>
+                      </g>
+                    );
+                  })}
+                </svg>
+              </Box>
+            ) : (
+              <Typography variant="body2" sx={{ color: theme.palette.text.secondary, textAlign: 'center', py: 4 }}>
+                {t('no_data')}
+              </Typography>
+            )}
+          </Paper>
+        </Grid>
 
-        <Card padding="md" style={{ marginBottom: 24 }}>
-          <h3 style={{ fontSize: 14, fontWeight: 600, marginBottom: 12 }}>📈 Exámenes más solicitados</h3>
-          {data.top_tests.length === 0 ? (
-            <p style={{ fontSize: 12, color: 'var(--ds-text-tertiary)' }}>Sin datos</p>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              {data.top_tests.slice(0, 8).map((t, i) => {
-                const maxCount = Math.max(...data.top_tests.map(x => x.count), 1);
-                return (
-                  <div key={i}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 2 }}>
-                      <span style={{ color: 'var(--ds-text-secondary)' }}>{t.test_name}</span>
-                      <span style={{ fontWeight: 600 }}>{t.count}</span>
-                    </div>
-                    <div style={{ height: 6, borderRadius: 3, background: '#e5e7eb', overflow: 'hidden' }}>
-                      <div style={{
-                        width: `${(t.count / maxCount) * 100}%`, height: '100%', borderRadius: 3,
-                        background: '#06b6d4', transition: 'width 0.3s',
-                      }} />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </Card>
-      </div>
-    </PageContainer>
+        {/* Top 5 Tests */}
+        <Grid xs={12} md={6}>
+          <Paper elevation={0} sx={{ p: 3, border: `1px solid ${theme.palette.divider}`, borderRadius: '14px' }}>
+            <Typography variant="h6" sx={{ fontWeight: 600, color: theme.palette.text.primary, mb: 2 }}>
+              {t('top_5_tests')}
+            </Typography>
+            {analytics.top_tests && analytics.top_tests.length > 0 ? (
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                {analytics.top_tests.slice(0, 5).map((t, i) => {
+                  const maxCount = analytics.top_tests[0]?.count ?? 1;
+                  const pct = (t.count / maxCount) * 100;
+                  return (
+                    <Box key={t.test_name}>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                        <Typography variant="body2" sx={{ fontWeight: 500, color: theme.palette.text.primary }}>
+                          {i + 1}. {t.test_name}
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
+                          {t.count}
+                        </Typography>
+                      </Box>
+                      <Box sx={{ height: 6, borderRadius: 3, backgroundColor: theme.palette.custom.surface.sunken, overflow: 'hidden' }}>
+                        <Box sx={{ height: '100%', width: `${pct}%`, borderRadius: 3, backgroundColor: theme.palette.primary.main, transition: 'width 0.3s' }} />
+                      </Box>
+                    </Box>
+                  );
+                })}
+              </Box>
+            ) : (
+              <Typography variant="body2" sx={{ color: theme.palette.text.secondary, textAlign: 'center', py: 3 }}>{t('no_data')}</Typography>
+            )}
+          </Paper>
+        </Grid>
+
+        {/* Priority Distribution */}
+        <Grid xs={12} md={6}>
+          <Paper elevation={0} sx={{ p: 3, border: `1px solid ${theme.palette.divider}`, borderRadius: '14px' }}>
+            <Typography variant="h6" sx={{ fontWeight: 600, color: theme.palette.text.primary, mb: 2 }}>
+              {t('priority_distribution')}
+            </Typography>
+            {analytics.by_priority && analytics.by_priority.length > 0 ? (
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                {analytics.by_priority.map((p) => {
+                  const total = analytics.by_priority.reduce((s, x) => s + x.count, 0);
+                  const pct = total > 0 ? (p.count / total) * 100 : 0;
+                  const pColors = priorityColorMap[p.priority] ?? priorityColorMap.low ?? { lightKey: 'custom.surface.muted', colorKey: 'text.secondary' };
+                  return (
+                    <Box key={p.priority}>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                        <Chip
+                          label={p.priority}
+                          size="small"
+                          sx={{
+                            height: 22,
+                            fontSize: '0.7rem',
+                            fontWeight: 600,
+                            backgroundColor: getNestedColor(theme.palette, pColors.lightKey),
+                            color: getNestedColor(theme.palette, pColors.colorKey),
+                          }}
+                        />
+                        <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
+                          {p.count} ({pct.toFixed(1)}%)
+                        </Typography>
+                      </Box>
+                      <Box sx={{ height: 8, borderRadius: 4, backgroundColor: theme.palette.custom.surface.sunken, overflow: 'hidden' }}>
+                        <Box
+                          sx={{
+                            height: '100%',
+                            width: `${pct}%`,
+                            borderRadius: 4,
+                            backgroundColor: getNestedColor(theme.palette, pColors.colorKey),
+                            transition: 'width 0.3s',
+                          }}
+                        />
+                      </Box>
+                    </Box>
+                  );
+                })}
+              </Box>
+            ) : (
+              <Typography variant="body2" sx={{ color: theme.palette.text.secondary, textAlign: 'center', py: 3 }}>{t('no_data')}</Typography>
+            )}
+          </Paper>
+        </Grid>
+
+        {/* Requests by Doctor Table */}
+        <Grid xs={12}>
+          <Paper elevation={0} sx={{ p: 3, border: `1px solid ${theme.palette.divider}`, borderRadius: '14px' }}>
+            <Typography variant="h6" sx={{ fontWeight: 600, color: theme.palette.text.primary, mb: 2 }}>
+              {t('requests_by_doctor')}
+            </Typography>
+            {analytics.by_doctor && analytics.by_doctor.length > 0 ? (
+              <TableContainer>
+                <Table size="small">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>{t('col_doctor')}</TableCell>
+                      <TableCell align="right">{t('col_requests')}</TableCell>
+                      <TableCell align="right">{t('col_avg_time')}</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {analytics.by_doctor.map((d) => (
+                      <TableRow key={d.doctor_name} hover>
+                        <TableCell>
+                          <Typography variant="body2" sx={{ fontWeight: 500, color: theme.palette.text.primary }}>
+                            {d.doctor_name}
+                          </Typography>
+                        </TableCell>
+                        <TableCell align="right">
+                          <Typography variant="body2" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
+                            {d.count}
+                          </Typography>
+                        </TableCell>
+                        <TableCell align="right">
+                          <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
+                            {(d as { avg_time_min?: number }).avg_time_min?.toFixed(1) ?? '—'} min
+                          </Typography>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            ) : (
+              <Typography variant="body2" sx={{ color: theme.palette.text.secondary, textAlign: 'center', py: 3 }}>
+                {t('no_doctor_data')}
+              </Typography>
+            )}
+          </Paper>
+        </Grid>
+      </Grid>
+    </Box>
   );
 }
 
-function MetricCard({ label, value, color }: { label: string; value: string; color: string }) {
-  return (
-    <Card padding="md">
-      <p style={{ margin: 0, fontSize: 11, color: 'var(--ds-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 600 }}>
-        {label}
-      </p>
-      <p style={{ margin: '4px 0 0', fontSize: 24, fontWeight: 700, color }}>{value}</p>
-    </Card>
-  );
-}
+export default memo(LabAnalyticsPage);

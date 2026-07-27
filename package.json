@@ -10,7 +10,7 @@
     "dev": "tsx src/app.ts",
     "start": "node dist/app.js",
     "build:backend": "tsc",
-    "build:frontend": "cd frontend-v3 && npm install --include=dev && npm run build",
+    "build:frontend": "cd frontend && npm install --include=dev && npm run build",
     "build": "npm run build:backend && npm run build:frontend",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --coverage",

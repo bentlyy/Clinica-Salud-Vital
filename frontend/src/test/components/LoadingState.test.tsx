@@ -1,8 +1,18 @@
 import { render, screen } from '@testing-library/react';
-import LoadingState from '../../components/LoadingState';
+import { describe, it, expect, vi } from 'vitest';
+import { LoadingState } from '@/shared/components/ui/LoadingState';
 
-vi.mock('../../i18n/useI18n', () => ({
-  useI18n: () => ({ t: (key: string) => key === 'loading_state.message' ? 'Cargando...' : key }),
+vi.mock('react-i18next', () => ({
+  useTranslation: () => ({
+    t: (key: string, opts?: Record<string, unknown>) => {
+      const translations: Record<string, string> = {
+        loading: 'Cargando...',
+      };
+      if (opts?.message) return opts.message as string;
+      return translations[key] ?? key;
+    },
+    i18n: { language: 'es' },
+  }),
 }));
 
 describe('LoadingState', () => {
@@ -16,18 +26,9 @@ describe('LoadingState', () => {
     expect(screen.getByText('Cargando datos...')).toBeInTheDocument();
   });
 
-  it('applies fullPage class when fullPage is true', () => {
-    const { container } = render(<LoadingState fullPage />);
-    expect(container.firstChild).toHaveClass('loading-state-full');
-  });
-
-  it('does not apply fullPage class by default', () => {
+  it('renders a circular progress spinner', () => {
     const { container } = render(<LoadingState />);
-    expect(container.firstChild).not.toHaveClass('loading-state-full');
-  });
-
-  it('renders spinner div', () => {
-    const { container } = render(<LoadingState />);
-    expect(container.querySelector('.loading-spinner')).toBeInTheDocument();
+    const spinner = container.querySelector('.MuiCircularProgress-root');
+    expect(spinner).toBeInTheDocument();
   });
 });
