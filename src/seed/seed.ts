@@ -117,18 +117,22 @@ export const seed = async (): Promise<void> => {
   logger.info('Seed: admin in default tenant', { found: adminInTenant.rows.length > 0, id: adminInTenant.rows[0]?.id });
 
   // Reset passwords on every deploy so REPLACED_PASSWORD always works
-  const seedEmails = [
-    'admin@clinic.com',
-    'juan@clinic.com', 'maria@clinic.com', 'carlos@clinic.com', 'ana@clinic.com',
-    'pedro@clinic.com', 'claudia@clinic.com', 'ricardo@clinic.com', 'patricia@clinic.com',
-    'mauricio@clinic.com', 'carmen@clinic.com', 'francisco@clinic.com', 'veronica@clinic.com',
-    'user1@clinic.com', 'user2@clinic.com', 'user3@clinic.com',
-    'lab@clinic.com',
-  ];
-  const updateResult = await pool.query('UPDATE users SET password = $1 WHERE tenant_id = $2 AND email = ANY($3::text[])',
-    [HASH, DEFAULT_TENANT_ID, seedEmails]);
-  logger.info('Seed: password update result', { rowsAffected: updateResult.rowCount });
-  await pool.query('UPDATE users SET password = $1 WHERE role = $2', [HASH, 'superadmin']);
+  // Only when SEED_ON_STARTUP=true (default: true in dev, false in prod)
+  const seedOnStartup = process.env.SEED_ON_STARTUP !== 'false' && process.env.NODE_ENV !== 'production';
+  if (seedOnStartup) {
+    const seedEmails = [
+      'admin@clinic.com',
+      'juan@clinic.com', 'maria@clinic.com', 'carlos@clinic.com', 'ana@clinic.com',
+      'pedro@clinic.com', 'claudia@clinic.com', 'ricardo@clinic.com', 'patricia@clinic.com',
+      'mauricio@clinic.com', 'carmen@clinic.com', 'francisco@clinic.com', 'veronica@clinic.com',
+      'user1@clinic.com', 'user2@clinic.com', 'user3@clinic.com',
+      'lab@clinic.com',
+    ];
+    const updateResult = await pool.query('UPDATE users SET password = $1 WHERE tenant_id = $2 AND email = ANY($3::text[])',
+      [HASH, DEFAULT_TENANT_ID, seedEmails]);
+    logger.info('Seed: password update result', { rowsAffected: updateResult.rowCount });
+    await pool.query('UPDATE users SET password = $1 WHERE role = $2', [HASH, 'superadmin']);
+  }
 
   // Asegurar pacientes simples incluso si el seed ya se ejecutó
   const simplePatients = [
@@ -150,8 +154,12 @@ export const seed = async (): Promise<void> => {
   );
 
   // Si ya existe admin, solo resetea passwords y asegura doctores (sin duplicar bookings/records)
-  if (exists.rows.length > 0) {
-    logger.info('Seed passwords refreshed');
+  if (exists.rows.length > 0 || !seedOnStartup) {
+    if (!seedOnStartup) {
+      logger.info('[SEED SKIPPED] SEED_ON_STARTUP is disabled — skipping heavy seed data');
+    } else {
+      logger.info('Seed passwords refreshed');
+    }
     await ensureDoctorsExist(HASH);
     return;
   }
