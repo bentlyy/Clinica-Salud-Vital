@@ -1,44 +1,70 @@
 import { render, screen } from '@testing-library/react';
-import EmptyState from '../../components/EmptyState';
+import { describe, it, expect, vi } from 'vitest';
+import { EmptyState } from '@/shared/components/ui/EmptyState';
 
 describe('EmptyState', () => {
-  it('renders title when provided', () => {
+  it('renders title', () => {
     render(<EmptyState title="No data" />);
     expect(screen.getByText('No data')).toBeInTheDocument();
   });
 
   it('renders message when provided', () => {
-    render(<EmptyState message="Nothing here" />);
+    render(<EmptyState title="Empty" message="Nothing here" />);
     expect(screen.getByText('Nothing here')).toBeInTheDocument();
   });
 
-  it('renders icon when provided', () => {
-    render(<EmptyState icon="📦" title="Empty" />);
-    expect(screen.getByText('📦')).toBeInTheDocument();
+  it('does not render message when not provided', () => {
+    render(<EmptyState title="Empty" />);
+    expect(screen.queryByText('Nothing here')).not.toBeInTheDocument();
   });
 
-  it('renders action when provided', () => {
-    render(<EmptyState action={<button>Add Item</button>} />);
+  it('renders default icon when no icon prop', () => {
+    const { container } = render(<EmptyState title="Empty" />);
+    const icon = container.querySelector('.MuiSvgIcon-root');
+    expect(icon).toBeInTheDocument();
+  });
+
+  it('renders custom icon when provided', () => {
+    render(<EmptyState icon={<span data-testid="custom-icon">📦</span>} title="Empty" />);
+    expect(screen.getByTestId('custom-icon')).toBeInTheDocument();
+  });
+
+  it('renders action button when provided', () => {
+    const onClick = vi.fn();
+    render(
+      <EmptyState
+        title="Empty"
+        action={{ label: 'Add Item', onClick }}
+      />
+    );
     expect(screen.getByRole('button', { name: /add item/i })).toBeInTheDocument();
   });
 
-  it('renders nothing when no props provided', () => {
-    const { container } = render(<EmptyState />);
-    expect(container.querySelector('.empty-state')).toBeInTheDocument();
+  it('calls action.onClick when action button is clicked', () => {
+    const onClick = vi.fn();
+    render(
+      <EmptyState
+        title="Empty"
+        action={{ label: 'Add Item', onClick }}
+      />
+    );
+    screen.getByRole('button', { name: /add item/i }).click();
+    expect(onClick).toHaveBeenCalledTimes(1);
   });
 
   it('renders all props together', () => {
+    const onClick = vi.fn();
     render(
       <EmptyState
-        icon="📭"
+        icon={<span>📭</span>}
         title="No results"
         message="Try a different search"
-        action={<a href="/help">Help</a>}
+        action={{ label: 'Help', onClick }}
       />
     );
     expect(screen.getByText('📭')).toBeInTheDocument();
     expect(screen.getByText('No results')).toBeInTheDocument();
     expect(screen.getByText('Try a different search')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /help/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /help/i })).toBeInTheDocument();
   });
 });

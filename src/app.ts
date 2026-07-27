@@ -130,7 +130,7 @@ app.use(cors({
 }));
 
 if (process.env.NODE_ENV === 'production') {
-  const frontendPath = resolve(__dirname, '../frontend-v3/dist');
+  const frontendPath = resolve(__dirname, '../frontend/dist');
   const indexPath = resolve(frontendPath, 'index.html');
   app.use(express.static(frontendPath));
   app.get(/^\/(?!api\/)/, (_req, res) => {

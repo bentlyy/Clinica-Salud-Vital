@@ -6,35 +6,46 @@
 
 Archivo: `.github/workflows/ci.yml`
 
-### Jobs
+### Jobs Actuales
 
-```mermaid
-graph LR
-    A[Push master/main] --> B[TypeScript Check]
-    A --> C[Tests + Coverage]
-    B --> D[Build Backend]
-    B --> E[Build Frontend]
-    C --> D
-    D --> F[Deploy to Render]
-    E --> F
-```
+| Job | Trigger | Descripción |
+|-----|---------|-------------|
+| `backend` | push/PR a main, develop | Typecheck + Tests + Build backend |
+| `frontend` | push/PR a main, develop | Typecheck + Tests + Build frontend |
 
-### Detalle de Jobs
+### Backend Job
+1. PostgreSQL 15 service container
+2. `npm ci`
+3. `npm run typecheck`
+4. `npm test` (con cobertura)
+5. `npm run build:backend`
 
-| Job | Runner | Comando | Descripción |
-|-----|--------|---------|-------------|
-| `typecheck` | ubuntu-latest | `npm run typecheck` | Verificación de tipos TypeScript |
-| `test` | ubuntu-latest | `npm test` | Tests + cobertura, sube artifact |
-| `build-backend` | ubuntu-latest | `npm run build:backend` | Compilación TS |
-| `build-frontend` | ubuntu-latest | `npm run build` (frontend/) | Build Vite |
-| `deploy` | ubuntu-latest | curl + health check | Deploy a Render + verificación |
+### Frontend Job
+1. `npm ci` en `frontend/`
+2. `npm run type-check`
+3. `npm test`
+4. `npm run build`
 
-### Deploy
+### Estado Actual
 
-Solo en push a `master`. Post-deploy:
-1. Trigger webhook de Render
-2. Health check cada 10s (hasta 30 intentos)
-3. Verifica DB status en `/health`
+| Aspecto | Estado |
+|---------|--------|
+| Typecheck | ✅ Backend + Frontend |
+| Tests | ✅ Backend + Frontend |
+| Build | ✅ Backend + Frontend |
+| Lint (ESLint) | ❌ No implementado |
+| Security audit | ❌ No implementado |
+| Deploy automático | ❌ No implementado (solo testing) |
+| Migraciones en CI | ❌ No ejecutadas |
+| Coverage report | ❌ No sube a Codecov |
+
+### Pendiente (Mejoras)
+
+- [ ] Agregar job de lint (ESLint + Prettier)
+- [ ] Agregar security audit (npm audit)
+- [ ] Ejecutar migraciones en CI antes de tests
+- [ ] Deploy automático a Render via webhook
+- [ ] Sube coverage a Codecov/Coveralls
 
 ---
 
