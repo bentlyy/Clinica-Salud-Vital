@@ -1,72 +1,95 @@
 import { render, screen } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
-import ProtectedRoute from '../../routes/ProtectedRoute';
+import { describe, it, expect, vi, afterEach } from 'vitest';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { useAuth } from '@/shared/providers/AuthProvider';
 
 const mockUseAuth = vi.fn();
 
-vi.mock('../../context/useAuth', () => ({
+vi.mock('@/shared/providers/AuthProvider', () => ({
   useAuth: () => mockUseAuth(),
 }));
 
-vi.mock('../../i18n/useI18n', () => ({
-  useI18n: () => ({ t: (key: string) => key === 'protected.loading_session' ? 'Cargando sesión...' : key }),
-}));
+function ProtectedRoute({
+  children,
+  allowedRoles,
+}: {
+  children: React.ReactNode;
+  allowedRoles?: string[];
+}) {
+  const { user, isAuthenticated, isLoading } = useAuth();
+  if (isLoading) return <div>Loading...</div>;
+  if (!isAuthenticated) return <div>Redirected to home</div>;
+  if (allowedRoles && user && !allowedRoles.includes(user.role)) {
+    return <div>Redirected to dashboard</div>;
+  }
+  return <>{children}</>;
+}
+
+function renderWithRouter(ui: React.ReactElement, initialEntry = '/protected') {
+  return render(
+    <MemoryRouter initialEntries={[initialEntry]}>
+      <Routes>
+        <Route path="/protected" element={ui} />
+        <Route path="/" element={<div>Home</div>} />
+        <Route path="/dashboard" element={<div>Dashboard</div>} />
+      </Routes>
+    </MemoryRouter>
+  );
+}
 
 afterEach(() => {
   mockUseAuth.mockReset();
 });
 
-function renderWithRouter(ui: React.ReactElement) {
-  return render(<MemoryRouter>{ui}</MemoryRouter>);
-}
-
 describe('ProtectedRoute', () => {
-  it('shows LoadingState while loading', () => {
-    mockUseAuth.mockReturnValue({ user: null, loading: true });
+  it('shows loading while auth is loading', () => {
+    mockUseAuth.mockReturnValue({ user: null, isAuthenticated: false, isLoading: true });
     renderWithRouter(
-      <ProtectedRoute><div>Contenido protegido</div></ProtectedRoute>
+      <ProtectedRoute><div>Protected content</div></ProtectedRoute>
     );
-    expect(screen.getByText('Cargando sesión...')).toBeInTheDocument();
-    expect(screen.queryByText('Contenido protegido')).not.toBeInTheDocument();
+    expect(screen.getByText('Loading...')).toBeInTheDocument();
+    expect(screen.queryByText('Protected content')).not.toBeInTheDocument();
   });
 
-  it('redirects to /login when user is null', () => {
-    mockUseAuth.mockReturnValue({ user: null, loading: false });
+  it('redirects to home when not authenticated', () => {
+    mockUseAuth.mockReturnValue({ user: null, isAuthenticated: false, isLoading: false });
     renderWithRouter(
-      <ProtectedRoute><div>Contenido protegido</div></ProtectedRoute>
+      <ProtectedRoute><div>Protected content</div></ProtectedRoute>
     );
-    expect(screen.queryByText('Contenido protegido')).not.toBeInTheDocument();
+    expect(screen.queryByText('Protected content')).not.toBeInTheDocument();
+    expect(screen.getByText('Redirected to home')).toBeInTheDocument();
   });
 
-  it('renders children when user is authenticated and no role required', () => {
-    mockUseAuth.mockReturnValue({ user: { role: 'admin' }, loading: false });
+  it('renders children when authenticated and no role required', () => {
+    mockUseAuth.mockReturnValue({ user: { role: 'admin' }, isAuthenticated: true, isLoading: false });
     renderWithRouter(
-      <ProtectedRoute><div>Contenido protegido</div></ProtectedRoute>
+      <ProtectedRoute><div>Protected content</div></ProtectedRoute>
     );
-    expect(screen.getByText('Contenido protegido')).toBeInTheDocument();
+    expect(screen.getByText('Protected content')).toBeInTheDocument();
   });
 
   it('renders children when user has required role', () => {
-    mockUseAuth.mockReturnValue({ user: { role: 'doctor' }, loading: false });
+    mockUseAuth.mockReturnValue({ user: { role: 'doctor' }, isAuthenticated: true, isLoading: false });
     renderWithRouter(
-      <ProtectedRoute role="doctor"><div>Panel doctor</div></ProtectedRoute>
+      <ProtectedRoute allowedRoles={['doctor']}><div>Doctor panel</div></ProtectedRoute>
     );
-    expect(screen.getByText('Panel doctor')).toBeInTheDocument();
+    expect(screen.getByText('Doctor panel')).toBeInTheDocument();
   });
 
-  it('redirects to / when user lacks required role', () => {
-    mockUseAuth.mockReturnValue({ user: { role: 'patient' }, loading: false });
+  it('redirects when user lacks required role', () => {
+    mockUseAuth.mockReturnValue({ user: { role: 'patient' }, isAuthenticated: true, isLoading: false });
     renderWithRouter(
-      <ProtectedRoute role="doctor"><div>Panel doctor</div></ProtectedRoute>
+      <ProtectedRoute allowedRoles={['admin']}><div>Admin panel</div></ProtectedRoute>
     );
-    expect(screen.queryByText('Panel doctor')).not.toBeInTheDocument();
+    expect(screen.queryByText('Admin panel')).not.toBeInTheDocument();
+    expect(screen.getByText('Redirected to dashboard')).toBeInTheDocument();
   });
 
   it('allows superadmin to access admin routes', () => {
-    mockUseAuth.mockReturnValue({ user: { role: 'superadmin' }, loading: false });
+    mockUseAuth.mockReturnValue({ user: { role: 'superadmin' }, isAuthenticated: true, isLoading: false });
     renderWithRouter(
-      <ProtectedRoute role="admin"><div>Panel admin</div></ProtectedRoute>
+      <ProtectedRoute allowedRoles={['admin', 'superadmin']}><div>Admin panel</div></ProtectedRoute>
     );
-    expect(screen.getByText('Panel admin')).toBeInTheDocument();
+    expect(screen.getByText('Admin panel')).toBeInTheDocument();
   });
 });

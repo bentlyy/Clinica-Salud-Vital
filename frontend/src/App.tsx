@@ -1,12 +1,10 @@
-import AppRoutes from './routes/AppRoutes';
-import ErrorBoundary from './components/ErrorBoundary';
+import { ThemeProvider, CssBaseline } from '@mui/material';
+import { theme } from '@/app/config/theme.config';
 
-function App() {
+export function App() {
   return (
-    <ErrorBoundary>
-      <AppRoutes />
-    </ErrorBoundary>
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+    </ThemeProvider>
   );
 }
-
-export default App;

@@ -42,7 +42,7 @@ services:
 
   frontend:
     build:
-      context: ./frontend-v3
+      context: ./frontend
       dockerfile: Dockerfile
     container_name: clinic-frontend
     restart: unless-stopped

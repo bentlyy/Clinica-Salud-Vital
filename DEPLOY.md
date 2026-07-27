@@ -1,8 +1,6 @@
-# 🚀 Deployment Guide — Frontend v3
+# 🚀 Deployment Guide
 
 ## Overview
-
-The project has migrated from **frontend v1** (`frontend/`) to **frontend v3** (`frontend-v3/`).
 
 - **Backend**: Node.js + Express on Render (or Docker)
 - **Frontend**: React 19 + Vite + MUI on Render Static Site (or Docker + nginx)
@@ -140,25 +138,25 @@ Ensure your RDS security group allows:
 
 ## Frontend Build
 
-The frontend v3 uses Vite for building. The build output is in `frontend-v3/dist/`.
+The frontend uses Vite for building. The build output is in `frontend/dist/`.
 
 ### Build Commands
 
 ```bash
 # Local development
-cd frontend-v3 && npm run dev
+cd frontend && npm run dev
 
 # Production build
-cd frontend-v3 && npm run build
+cd frontend && npm run build
 
 # From root (used by Render)
-npm run build  # builds backend + frontend-v3
+npm run build  # builds backend + frontend
 ```
 
 ### Build Output
 
 ```
-frontend-v3/dist/
+frontend/dist/
 ├── index.html
 ├── assets/
 │   ├── index-[hash].js      # Main bundle
