@@ -1,7 +1,5 @@
-import crypto from 'crypto';
 import { pool } from '../../shared/db.js';
-
-const AUDIT_HMAC_SECRET = (): string => { const secret = process.env.AUDIT_HMAC_SECRET; if (!secret) throw new Error('AUDIT_HMAC_SECRET environment variable is required for audit log integrity'); return secret; };
+import { computeHmac } from '../../shared/crypto.service.js';
 
 const computeAuditHash = (previousHash: string | null, input: AuditLogInput): string => {
   const canonical = [
@@ -15,7 +13,7 @@ const computeAuditHash = (previousHash: string | null, input: AuditLogInput): st
     input.tenant_id || '',
     Date.now().toString(),
   ].join('|');
-  return crypto.createHmac('sha256', AUDIT_HMAC_SECRET()).update(canonical).digest('hex');
+  return computeHmac(canonical);
 };
 
 export interface AuditLogInput {

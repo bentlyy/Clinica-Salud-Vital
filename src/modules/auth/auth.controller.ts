@@ -87,9 +87,10 @@ export const refresh = asyncHandler(async (req: Request, res: Response) => {
 
 export const resetAdmin = asyncHandler(async (req: Request, res: Response) => {
   const tenantId = req.body.tenant_id || req.tenant_id;
-  const result = await authService.resetAdminPassword(tenantId);
-  logger.warn('Admin password reset endpoint called', { ip: req.ip });
-  res.json({ message: 'Admin password reset successfully', email: result.email });
+  const { current_password, new_password } = req.body;
+  await authService.resetAdminPassword(tenantId, current_password, new_password);
+  logger.warn('Admin password reset endpoint called', { ip: req.ip, tenantId });
+  res.json({ message: 'Admin password reset successfully' });
 });
 
 export const logout = asyncHandler(async (req: Request, res: Response) => {

@@ -5,6 +5,7 @@ const originalEnv = { ...process.env };
 beforeEach(() => {
   vi.restoreAllMocks();
   process.env.ENCRYPTION_KEY = 'test-encryption-key-32chars-for-crypto!';
+  process.env.AUDIT_HMAC_SECRET = 'dev-audit-secret-min-32-characters-long!!';
 });
 
 import { encrypt, decrypt, hashToken } from '../../src/shared/crypto.service.js';
@@ -93,5 +94,10 @@ describe('hashToken', () => {
   it('hashes empty string', () => {
     const hash = hashToken('');
     expect(hash).toMatch(/^[a-f0-9]{64}$/);
+  });
+
+  it('throws if AUDIT_HMAC_SECRET is missing', () => {
+    delete process.env.AUDIT_HMAC_SECRET;
+    expect(() => hashToken('token')).toThrow('AUDIT_HMAC_SECRET');
   });
 });

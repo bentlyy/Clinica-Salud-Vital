@@ -1,12 +1,6 @@
 import { pool } from '../shared/db.js';
-import crypto from 'crypto';
 import { logger } from '../utils/logger.js';
-
-const AUDIT_HMAC_SECRET = (): string => {
-  const secret = process.env.AUDIT_HMAC_SECRET;
-  if (!secret) throw new Error('AUDIT_HMAC_SECRET environment variable is required');
-  return secret;
-};
+import { computeHmac } from '../shared/crypto.service.js';
 
 export async function verifyAuditChain(tenantId?: string): Promise<{ valid: boolean; brokenLinks: number; checked: number }> {
   let sql = 'SELECT id, hash, previous_hash, action, tenant_id FROM audit_logs WHERE 1=1';
@@ -33,7 +27,7 @@ export async function verifyAuditChain(tenantId?: string): Promise<{ valid: bool
       row.action,
       row.tenant_id || '',
     ].join('|');
-    const expectedHash = crypto.createHmac('sha256', AUDIT_HMAC_SECRET()).update(canonical).digest('hex');
+    const expectedHash = computeHmac(canonical);
 
     if (expectedHash !== row.hash) {
       brokenLinks++;

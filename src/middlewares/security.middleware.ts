@@ -6,30 +6,28 @@ import { UnauthorizedError } from '../utils/errors.js';
 
 const isProduction = process.env.NODE_ENV === 'production';
 
-const helmetDirectives = isProduction
-  ? {
-      contentSecurityPolicy: {
-        directives: {
-          defaultSrc: ["'self'"],
-          scriptSrc: [
-            "'self'",
-            "'unsafe-eval'",
-            "https://www.google.com/recaptcha/",
-            "https://www.gstatic.com/recaptcha/",
-          ],
-          styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-          fontSrc: ["'self'", "data:", "https://fonts.gstatic.com"],
-          imgSrc: ["'self'", "data:", "https:"],
-          connectSrc: ["'self'", "https://www.google.com/recaptcha/", "https://www.gstatic.com/recaptcha/"],
-          frameSrc: ["'self'", "https://www.google.com/recaptcha/", "https://www.google.com/recaptcha/"],
-          workerSrc: ["'self'", "blob:", "https://www.google.com/recaptcha/", "https://www.gstatic.com/recaptcha/"],
-          frameAncestors: ["'none'"],
-          formAction: ["'self'"],
-          baseUri: ["'none'"],
-        },
-      },
-    }
-  : false;
+const helmetDirectives = {
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: [
+        "'self'",
+        ...(isProduction ? [] : ["'unsafe-eval'", "'unsafe-inline'"]),
+        "https://www.google.com/recaptcha/",
+        "https://www.gstatic.com/recaptcha/",
+      ],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      fontSrc: ["'self'", "data:", "https://fonts.gstatic.com"],
+      imgSrc: ["'self'", "data:", "https:"],
+      connectSrc: ["'self'", "https://www.google.com/recaptcha/", "https://www.gstatic.com/recaptcha/"],
+      frameSrc: ["'self'", "https://www.google.com/recaptcha/", "https://www.google.com/recaptcha/"],
+      workerSrc: ["'self'", "blob:", "https://www.google.com/recaptcha/", "https://www.gstatic.com/recaptcha/"],
+      frameAncestors: ["'none'"],
+      formAction: ["'self'"],
+      baseUri: ["'none'"],
+    },
+  },
+};
 
 export const securityMiddleware = [
   helmet({
@@ -101,6 +99,6 @@ export const validateEnvSecurity = (): void => {
   }
 
   if (!isProduction) {
-    logger.warn('⚠️ Ejecutando en modo desarrollo - algunas protecciones de seguridad están deshabilitadas');
+    logger.info('ℹ️ Ejecutando en modo desarrollo — CSP habilitado con relajaciones de dev');
   }
 };
