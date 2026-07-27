@@ -1,9 +1,8 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import ErrorBoundary from '../../components/ErrorBoundary';
-import { I18nContext } from '../../i18n/useI18n';
+import ErrorBoundary from '@/shared/components/ErrorBoundary';
 
-function ThrowError({ message = 'Test error' }) {
+function ThrowError({ message = 'Test error' }: { message?: string }): never {
   throw new Error(message);
 }
 
@@ -11,25 +10,8 @@ function SafeChild() {
   return <div>child content</div>;
 }
 
-function createI18nValue(translations) {
-  return {
-    t: (key) => translations[key] || key,
-    tAll: () => ({}),
-    locale: 'es',
-  };
-}
-
-function renderBoundary({ children, i18nValue } = {}) {
-  const contextValue = i18nValue || createI18nValue({});
-  return render(
-    <I18nContext.Provider value={contextValue}>
-      <ErrorBoundary>{children || <SafeChild />}</ErrorBoundary>
-    </I18nContext.Provider>
-  );
-}
-
-function renderBoundaryWithoutI18n({ children } = {}) {
-  return render(<ErrorBoundary>{children || <SafeChild />}</ErrorBoundary>);
+function renderBoundary(children: React.ReactNode = <SafeChild />) {
+  return render(<ErrorBoundary>{children}</ErrorBoundary>);
 }
 
 describe('ErrorBoundary', () => {
@@ -43,56 +25,36 @@ describe('ErrorBoundary', () => {
 
   describe('normal state', () => {
     it('renders children when no error', () => {
-      renderBoundary({ children: <SafeChild /> });
+      renderBoundary(<SafeChild />);
       expect(screen.getByText('child content')).toBeInTheDocument();
     });
 
-    it('does not show error UI buttons', () => {
-      renderBoundary({ children: <SafeChild /> });
+    it('does not show error UI when no error', () => {
+      renderBoundary(<SafeChild />);
       expect(screen.queryByRole('button')).not.toBeInTheDocument();
     });
   });
 
   describe('error state', () => {
     it('renders error UI when child throws', () => {
-      renderBoundary({ children: <ThrowError /> });
-      expect(screen.getByText('error_boundary.title')).toBeInTheDocument();
-      expect(screen.getByText('error_boundary.message')).toBeInTheDocument();
+      renderBoundary(<ThrowError />);
+      expect(screen.getByText(/Algo salió mal/i)).toBeInTheDocument();
+      expect(screen.getByText(/Ha ocurrido un error inesperado/i)).toBeInTheDocument();
     });
 
-    it('renders retry button with correct class', () => {
-      renderBoundary({ children: <ThrowError /> });
-      const retryBtn = screen.getByText('error_boundary.retry');
-      expect(retryBtn).toBeInTheDocument();
-      expect(retryBtn).toHaveClass('error-boundary__btn--retry');
+    it('renders error message from thrown error', () => {
+      renderBoundary(<ThrowError message="Custom error" />);
+      expect(screen.getByText('Custom error')).toBeInTheDocument();
+    });
+
+    it('renders retry button', () => {
+      renderBoundary(<ThrowError />);
+      expect(screen.getByRole('button', { name: /Reintentar/i })).toBeInTheDocument();
     });
 
     it('renders go home button', () => {
-      renderBoundary({ children: <ThrowError /> });
-      expect(screen.getByText('error_boundary.go_home')).toBeInTheDocument();
-    });
-  });
-
-  describe('i18n integration', () => {
-    const esTranslations = createI18nValue({
-      'error_boundary.title': 'Algo salió mal',
-      'error_boundary.message': 'Ocurrió un error inesperado',
-      'error_boundary.retry': 'Reintentar',
-      'error_boundary.go_home': 'Volver al inicio',
-    });
-
-    it('renders translated strings from context', () => {
-      renderBoundary({ children: <ThrowError />, i18nValue: esTranslations });
-      expect(screen.getByText('Algo salió mal')).toBeInTheDocument();
-      expect(screen.getByText('Ocurrió un error inesperado')).toBeInTheDocument();
-      expect(screen.getByText('Reintentar')).toBeInTheDocument();
-      expect(screen.getByText('Volver al inicio')).toBeInTheDocument();
-    });
-
-    it('falls back to key when context has no t function', () => {
-      renderBoundaryWithoutI18n({ children: <ThrowError /> });
-      expect(screen.getByText('error_boundary.title')).toBeInTheDocument();
-      expect(screen.getByText('error_boundary.message')).toBeInTheDocument();
+      renderBoundary(<ThrowError />);
+      expect(screen.getByRole('button', { name: /Ir al inicio/i })).toBeInTheDocument();
     });
   });
 
@@ -103,19 +65,19 @@ describe('ErrorBoundary', () => {
         if (shouldThrow) throw new Error('Oops');
         return <div>recovered</div>;
       }
-      renderBoundary({ children: <ConditionalThrow /> });
-      expect(screen.getByText('error_boundary.retry')).toBeInTheDocument();
+      renderBoundary(<ConditionalThrow />);
+      expect(screen.getByRole('button', { name: /Reintentar/i })).toBeInTheDocument();
       shouldThrow = false;
-      fireEvent.click(screen.getByText('error_boundary.retry'));
+      fireEvent.click(screen.getByRole('button', { name: /Reintentar/i }));
       expect(screen.getByText('recovered')).toBeInTheDocument();
     });
   });
 
   describe('goHome behavior', () => {
     it('navigates to root on go home click', () => {
-      renderBoundary({ children: <ThrowError /> });
-      fireEvent.click(screen.getByText('error_boundary.go_home'));
-      expect(window.location.href).toBe('http://localhost:3000/');
+      renderBoundary(<ThrowError />);
+      fireEvent.click(screen.getByRole('button', { name: /Ir al inicio/i }));
+      expect(window.location.pathname).toBe('/');
     });
   });
 });

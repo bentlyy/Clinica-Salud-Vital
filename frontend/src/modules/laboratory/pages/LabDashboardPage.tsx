@@ -1,248 +1,346 @@
-import { useState, useCallback } from 'react';
-import { LabDashboardProvider, useLabDashboardContext } from '../context/LabDashboardContext';
-import { LabFiltersProvider } from '../context/LabFiltersContext';
-import { useLabRequests } from '../hooks/useLabRequests';
-import { useLabKeyboard } from '../hooks/useLabKeyboard';
-import { useLabRealtime } from '../hooks/useLabRealtime';
-import DashboardLayout from '../components/dashboard/DashboardLayout';
-import DashboardMetricsBar from '../components/dashboard/DashboardMetricsBar';
-import DashboardAreaSelector from '../components/dashboard/DashboardAreaSelector';
-import DashboardWorkQueue from '../components/dashboard/DashboardWorkQueue';
-import DashboardAlertsPanel from '../components/dashboard/DashboardAlertsPanel';
-import DashboardSLAIndicator from '../components/dashboard/DashboardSLAIndicator';
-import KanbanBoard from '../components/kanban/KanbanBoard';
-import LabFiltersBar from '../components/shared/LabFiltersBar';
-import LabDetailPanel from '../components/shared/LabDetailPanel';
-import LabCard from '../components/shared/LabCard';
-import type { LabRequest, LabRequestStatus } from '../types';
+import { memo, useState, useCallback, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { useTheme } from '@mui/material/styles';
+import {
+  Box,
+  Typography,
+  ToggleButtonGroup,
+  ToggleButton,
+  Snackbar,
+  Alert,
+  Chip,
+} from '@mui/material';
+import ViewKanbanIcon from '@mui/icons-material/ViewKanban';
+import TableChartIcon from '@mui/icons-material/TableChart';
+import DashboardIcon from '@mui/icons-material/Dashboard';
+import ScienceIcon from '@mui/icons-material/Science';
+import toast from 'react-hot-toast';
+import { PageHeader } from '@/shared/components/ui/PageHeader';
+import { LoadingState } from '@/shared/components/ui/LoadingState';
+import { ErrorState } from '@/shared/components/ui/ErrorState';
+import { EmptyState } from '@/shared/components/ui/EmptyState';
+import { useLabDashboard, useLabRequests, useLabNotifications, useLabSSE, useLabFilters, useLabAreas, useUpdateLabRequestStatus } from '../hooks/useLab';
+import { useLabKeyboard, LAB_KEYBOARD_SHORTCUTS } from '../hooks/useLabKeyboard';
+import { DashboardMetricsBar } from '../components/dashboard/DashboardMetricsBar';
+import { AlertsPanel } from '../components/dashboard/AlertsPanel';
+import { KanbanBoard } from '../components/dashboard/KanbanBoard';
+import { WorkQueue } from '../components/dashboard/WorkQueue';
+import { FiltersBar } from '../components/shared/FiltersBar';
+import { LabSSEProvider } from '../components/LabSSEProvider';
+import type { LabRequest, LabRequestStatus, LabPriority } from '../types/lab.types';
 
-type ViewMode = 'dashboard' | 'kanban' | 'list';
+type ViewMode = 'kanban' | 'table' | 'metrics';
 
-function DashboardContent() {
-  const {
-    metrics, areas, selectedAreaId, notifications,
-    setSelectedAreaId, setFilters, refresh,
-    loading: dashboardLoading, error: dashboardError,
-  } = useLabDashboardContext();
-
-  const { requests, loading, refresh: refreshRequests, setRequests } = useLabRequests();
-  const [viewMode, setViewMode] = useState<ViewMode>('dashboard');
-  const [selectedRequest, setSelectedRequest] = useState<LabRequest | null>(null);
-  const [statusFilter, setStatusFilter] = useState<LabRequestStatus | ''>('');
-
-  const filteredRequests = statusFilter
-    ? requests.filter(r => r.status === statusFilter || (statusFilter === 'urgent' && (r.priority === 'urgent' || r.priority === 'emergency')) || (statusFilter === 'critical' && r.items?.some(i => i.is_critical)))
-    : requests;
-
-  const refreshAll = useCallback(() => {
-    refresh();
-    refreshRequests();
-  }, [refresh, refreshRequests]);
-
-  useLabKeyboard([
-    { key: 'r', ctrl: true, handler: refreshAll, description: 'Refrescar' },
-    { key: 'k', ctrl: true, shift: true, handler: () => setViewMode('kanban'), description: 'Kanban' },
-    { key: 'd', ctrl: true, shift: true, handler: () => setViewMode('dashboard'), description: 'Dashboard' },
-    { key: 'l', ctrl: true, shift: true, handler: () => setViewMode('list'), description: 'Lista' },
-  ]);
-
-  useLabRealtime({
-    onMetricsUpdate: () => refresh(),
-    onStatusChange: () => refreshRequests(),
-    onNotification: () => refresh(),
+function LabDashboardContent() {
+  const navigate = useNavigate();
+  const { t } = useTranslation('lab_dashboard');
+  const theme = useTheme();
+  const [viewMode, setViewMode] = useState<ViewMode>('kanban');
+  const [sseNotification, setSseNotification] = useState<{ open: boolean; message: string }>({
+    open: false,
+    message: '',
   });
 
-  const handleStatusChange = useCallback(async (requestId: number, newStatus: LabRequestStatus) => {
-    try {
-      const { updateLabRequestStatus } = await import('../api/laboratory.api');
-      await updateLabRequestStatus(requestId, newStatus);
-      setRequests(prev => prev.map(r => r.id === requestId ? { ...r, status: newStatus } : r));
-    } catch { /* silent */ }
-  }, [setRequests]);
+  const { events, isConnected } = useLabSSE();
+  const { filters, updateFilter, resetFilters, hasActiveFilters } = useLabFilters();
+  const { data: metrics, isLoading: metricsLoading, error: metricsError, refetch: refetchMetrics } = useLabDashboard();
+  const { data: requestsData, isLoading: requestsLoading, error: requestsError, refetch: refetchRequests } = useLabRequests({
+    limit: 100,
+    search: filters.search || undefined,
+    status: (filters.status || undefined) as LabRequestStatus | undefined,
+    priority: (filters.priority || undefined) as LabPriority | undefined,
+    area_id: typeof filters.areaId === 'number' ? filters.areaId : undefined,
+  });
+  const { data: notifications, isLoading: notifLoading } = useLabNotifications();
+  const { data: areas } = useLabAreas();
+  const updateStatus = useUpdateLabRequestStatus();
 
-  const handleFilterByStatus = useCallback((status: string) => {
-    setStatusFilter(status as LabRequestStatus);
-    setFilters({ status: status as LabRequestStatus });
-  }, [setFilters]);
+  const requests: LabRequest[] = requestsData?.data ?? [];
 
-  const handleAcknowledge = useCallback(async (id: number) => {
-    try {
-      const { acknowledgeNotification } = await import('../api/laboratory.api');
-      await acknowledgeNotification(id);
-      refresh();
-    } catch { /* silent */ }
-  }, [refresh]);
+  // ── Keyboard Shortcuts ────────────────────────────────────────────────────
+  const refreshAll = useCallback(() => {
+    void refetchMetrics();
+    void refetchRequests();
+  }, [refetchMetrics, refetchRequests]);
 
-  const handleAcknowledgeAll = useCallback(async () => {
-    try {
-      const acks = notifications.filter(n => !n.acknowledged).map(n =>
-        import('../api/laboratory.api').then(m => m.acknowledgeNotification(n.id))
+  useLabKeyboard([
+    { ...LAB_KEYBOARD_SHORTCUTS.refresh, handler: refreshAll },
+    { ...LAB_KEYBOARD_SHORTCUTS.kanban, handler: () => setViewMode('kanban') },
+    { ...LAB_KEYBOARD_SHORTCUTS.table, handler: () => setViewMode('table') },
+    { ...LAB_KEYBOARD_SHORTCUTS.metrics, handler: () => setViewMode('metrics') },
+  ]);
+
+  // ── Status Change ─────────────────────────────────────────────────────────
+  const handleStatusChange = useCallback(
+    (requestId: number, newStatus: LabRequestStatus) => {
+      updateStatus.mutate(
+        { id: requestId, status: newStatus },
+        {
+          onSuccess: () => {
+            toast.success(t('request_moved', { status: newStatus }));
+          },
+        },
       );
-      await Promise.all(acks);
-      refresh();
-    } catch { /* silent */ }
-  }, [notifications, refresh]);
+    },
+    [updateStatus],
+  );
 
-  const viewButtons = [
-    { key: 'dashboard', label: 'Dashboard', icon: '📊' },
-    { key: 'kanban', label: 'Kanban', icon: '📋' },
-    { key: 'list', label: 'Lista', icon: '📄' },
-  ] as const;
+  // SSE notifications
+  useEffect(() => {
+    if (events.length > 0) {
+      const latest = events[0];
+      if (!latest) return;
+      if (latest.type === 'critical_result') {
+        toast.error(t('critical_result', { detail: typeof latest.payload === 'object' ? JSON.stringify(latest.payload) : String(latest.payload) }));
+      } else {
+        setSseNotification({
+          open: true,
+          message: `${latest.type}: ${typeof latest.payload === 'object' ? JSON.stringify(latest.payload) : String(latest.payload)}`,
+        });
+      }
+    }
+  }, [events]);
 
-  return (
-    <DashboardLayout
-      title="Laboratorio Clínico"
-      subtitle="Panel de Control Operativo"
-      areaSelector={
-        <DashboardAreaSelector
-          areas={areas}
-          selectedAreaId={selectedAreaId}
-          onSelect={setSelectedAreaId}
-        />
-      }
-      viewSelector={
-        <div style={{ display: 'flex', gap: 4 }}>
-          {viewButtons.map(({ key, label, icon }) => (
-            <button
-              key={key}
-              onClick={() => setViewMode(key)}
-              className={`btn btn-sm ${viewMode === key ? 'btn-primary' : 'btn-ghost'}`}
-              style={{ fontSize: 12 }}
-            >
-              {icon} {label}
-            </button>
-          ))}
-        </div>
-      }
-      alertsPanel={
-        <DashboardAlertsPanel
-          notifications={notifications}
-          onAcknowledge={handleAcknowledge}
-          onAcknowledgeAll={handleAcknowledgeAll}
-        />
-      }
-      metricsBar={
-        metrics && (
-          <DashboardMetricsBar
-            metrics={metrics}
-            onFilterByStatus={handleFilterByStatus}
-          />
-        )
-      }
+  const handleViewChange = useCallback((_: React.MouseEvent<HTMLElement>, newMode: ViewMode | null) => {
+    if (newMode !== null) setViewMode(newMode);
+  }, []);
+
+  const handleSelectRequest = useCallback(
+    (id: number) => {
+      navigate(`/laboratory/requests/${id}`);
+    },
+    [navigate],
+  );
+
+  const handleNavigateToArea = useCallback(
+    (areaId: number) => {
+      navigate(`/laboratory/area/${areaId}`);
+    },
+    [navigate],
+  );
+
+  if (metricsLoading || requestsLoading) return <LoadingState message={t('loading_panel')} />;
+  if (metricsError) return <ErrorState error={metricsError as Error} onRetry={() => void refetchMetrics()} />;
+  if (requestsError) return <ErrorState error={requestsError as Error} onRetry={() => void refetchRequests()} />;
+
+  const viewModeButtons = (
+    <ToggleButtonGroup
+      value={viewMode}
+      exclusive
+      onChange={handleViewChange}
+      size="small"
+      sx={{
+        '& .MuiToggleButton-root': {
+          border: `1px solid ${theme.palette.divider}`,
+          px: 1.5,
+          py: 0.75,
+          '&.Mui-selected': {
+            backgroundColor: theme.palette.custom.brand.lightest,
+            color: theme.palette.primary.main,
+            '&:hover': { backgroundColor: theme.palette.custom.brand.lighter },
+          },
+        },
+      }}
     >
-      {dashboardError && (
-        <div className="alert alert-error" style={{ marginBottom: 16 }}>
-          {dashboardError}
-          <button onClick={refreshAll} className="btn btn-sm" style={{ marginLeft: 12 }}>
-            Reintentar
-          </button>
-        </div>
-      )}
-
-      <LabFiltersBar />
-
-      {metrics && (
-        <div className="grid grid-3" style={{ gap: 14, marginBottom: 24 }}>
-          <DashboardSLAIndicator
-            slaBreached={metrics.sla_breached}
-            slaAtRisk={metrics.sla_at_risk}
-            avgProcessingTime={metrics.average_processing_time_min}
-            samplesProcessedToday={metrics.samples_processed_today}
-            productivityPerHour={metrics.productivity_per_hour}
-          />
-          <div className="card" style={{ padding: '16px 20px' }}>
-            <h3 style={{ fontSize: 14, fontWeight: 600, marginBottom: 12 }}>📊 Productividad por hora</h3>
-            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 4, height: 80, padding: '8px 0' }}>
-              {[2, 5, 8, 12, 15, 18, 14, 10, 7, 3].map((h, i) => (
-                <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-                  <div style={{
-                    width: '100%', height: `${(h / 18) * 100}%`,
-                    background: `var(--primary-${Math.min(Math.floor(h / 3) + 1, 7)}00)`,
-                    borderRadius: '4px 4px 0 0',
-                    minHeight: 4,
-                    transition: 'height 0.3s',
-                  }} />
-                  <span style={{ fontSize: 9, color: 'var(--text-muted)' }}>{8 + i}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-          <div className="card" style={{ padding: '16px 20px' }}>
-            <h3 style={{ fontSize: 14, fontWeight: 600, marginBottom: 8 }}>🏥 Carga de trabajo</h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              {[
-                { label: 'Pendientes', value: metrics.pending, max: Math.max(metrics.pending, 10), color: '#f59e0b' },
-                { label: 'En proceso', value: metrics.in_progress, max: Math.max(metrics.in_progress, 10), color: '#f97316' },
-                { label: 'Validación', value: metrics.pending_validation, max: Math.max(metrics.pending_validation, 10), color: '#8b5cf6' },
-              ].map((item) => (
-                <div key={item.label}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 2 }}>
-                    <span style={{ color: 'var(--text-secondary)' }}>{item.label}</span>
-                    <span style={{ fontWeight: 600 }}>{item.value}</span>
-                  </div>
-                  <div style={{ height: 6, borderRadius: 3, background: '#e5e7eb', overflow: 'hidden' }}>
-                    <div style={{
-                      width: `${Math.min((item.value / item.max) * 100, 100)}%`,
-                      height: '100%', borderRadius: 3,
-                      background: item.color,
-                      transition: 'width 0.3s',
-                    }} />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {viewMode === 'dashboard' && (
-        <DashboardWorkQueue
-          requests={filteredRequests}
-          onSelectRequest={setSelectedRequest}
-          loading={loading || dashboardLoading}
-        />
-      )}
-
-      {viewMode === 'kanban' && (
-        <KanbanBoard
-          requests={filteredRequests}
-          onSelectRequest={setSelectedRequest}
-          onStatusChange={handleStatusChange}
-          loading={loading || dashboardLoading}
-        />
-      )}
-
-      {viewMode === 'list' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {loading ? (
-            <p style={{ color: 'var(--text-muted)' }}>Cargando...</p>
-          ) : filteredRequests.length === 0 ? (
-            <div className="empty-state">
-              <div className="empty-state-icon">🔬</div>
-              <h3>No hay solicitudes</h3>
-            </div>
-          ) : (
-            filteredRequests.map((r) => (
-              <LabCard
-                key={r.id}
-                request={r}
-                onClick={() => setSelectedRequest(r)}
-                selected={selectedRequest?.id === r.id}
-              />
-            ))
-          )}
-        </div>
-      )}
-    </DashboardLayout>
+      <ToggleButton value="kanban">
+        <ViewKanbanIcon sx={{ fontSize: 18 }} />
+      </ToggleButton>
+      <ToggleButton value="table">
+        <TableChartIcon sx={{ fontSize: 18 }} />
+      </ToggleButton>
+      <ToggleButton value="metrics">
+        <DashboardIcon sx={{ fontSize: 18 }} />
+      </ToggleButton>
+    </ToggleButtonGroup>
   );
-}
 
-export default function LabDashboardPage() {
   return (
-    <LabDashboardProvider>
-      <LabFiltersProvider>
-        <DashboardContent />
-      </LabFiltersProvider>
-    </LabDashboardProvider>
+    <Box>
+      <PageHeader
+        title={t('title')}
+        subtitle={
+          <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', gap: 1 }}>
+            {t('requests_in_queue', { count: requests.length })}
+            {isConnected && (
+              <Box
+                component="span"
+                sx={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 0.5,
+                  ml: 1,
+                  px: 1,
+                  py: 0.25,
+                  borderRadius: '12px',
+                  backgroundColor: theme.palette.custom.status.success.bg,
+                  border: `1px solid ${theme.palette.custom.status.success.border}`,
+                }}
+              >
+                <Box sx={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: theme.palette.success.main }} />
+                <Typography variant="caption" sx={{ color: theme.palette.custom.status.success.text, fontWeight: 500, lineHeight: 1 }}>
+                  {t('online')}
+                </Typography>
+              </Box>
+            )}
+          </Box>
+        }
+        action={viewModeButtons}
+      />
+
+      {/* Metrics Bar */}
+      <Box sx={{ mb: 3 }}>
+        <DashboardMetricsBar metrics={metrics} isLoading={metricsLoading} />
+      </Box>
+
+      {/* Filters */}
+      <FiltersBar
+        filters={filters}
+        onFilterChange={updateFilter}
+        onReset={resetFilters}
+        hasActiveFilters={hasActiveFilters}
+        areas={areas}
+      />
+
+      {/* Alerts Panel */}
+      {notifications && notifications.length > 0 && (
+        <Box sx={{ mb: 3 }}>
+          <AlertsPanel
+            notifications={notifications}
+            isLoading={notifLoading}
+          />
+        </Box>
+      )}
+
+      {/* Content */}
+      <Box sx={{ minHeight: 400 }}>
+        {requests.length === 0 ? (
+          <EmptyState
+            icon={<ScienceIcon sx={{ fontSize: 48, color: theme.palette.divider }} />}
+            title={t('no_requests_title')}
+            message={t('no_requests_message')}
+          />
+        ) : viewMode === 'kanban' ? (
+          <KanbanBoard
+            requests={requests}
+            onSelectRequest={handleSelectRequest}
+            onStatusChange={handleStatusChange}
+            isLoading={requestsLoading}
+          />
+        ) : viewMode === 'table' ? (
+          <WorkQueue
+            requests={requests}
+            onSelectRequest={handleSelectRequest}
+            isLoading={requestsLoading}
+          />
+        ) : (
+          /* Metrics View — area cards */
+          <Box>
+            <Typography variant="h6" sx={{ fontWeight: 600, color: theme.palette.text.primary, mb: 2 }}>
+              {t('metrics_by_area')}
+            </Typography>
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' }, gap: 2 }}>
+              {areas?.map((area) => {
+                const areaRequests = requests.filter((r) => r.lab_area_id === area.id);
+                return (
+                  <Box
+                    key={area.id}
+                    onClick={() => handleNavigateToArea(area.id)}
+                    sx={{
+                      p: 2.5,
+                      borderRadius: '14px',
+                      border: `1px solid ${theme.palette.divider}`,
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                      '&:hover': {
+                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+                        borderColor: `${area.color || theme.palette.primary.main}40`,
+                      },
+                    }}
+                  >
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
+                      <Box
+                        sx={{
+                          width: 36,
+                          height: 36,
+                          borderRadius: '10px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          backgroundColor: `${area.color || theme.palette.primary.main}15`,
+                          color: area.color || theme.palette.primary.main,
+                        }}
+                      >
+                        <ScienceIcon sx={{ fontSize: 20 }} />
+                      </Box>
+                      <Box>
+                        <Typography variant="body2" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
+                          {area.name}
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
+                          {area.code}
+                        </Typography>
+                      </Box>
+                    </Box>
+                    <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                      <Chip
+                        label={t('area_requests', { count: areaRequests.length })}
+                        size="small"
+                        sx={{
+                          height: 22,
+                          fontSize: '0.7rem',
+                          fontWeight: 500,
+                          backgroundColor: theme.palette.custom.surface.sunken,
+                          color: theme.palette.text.primary,
+                        }}
+                      />
+                      <Chip
+                        label={t('area_in_process', { count: areaRequests.filter((r) => r.status === 'processing').length })}
+                        size="small"
+                        sx={{
+                          height: 22,
+                          fontSize: '0.7rem',
+                          fontWeight: 500,
+                          backgroundColor: theme.palette.custom.status.info.bg,
+                          color: theme.palette.info.dark,
+                        }}
+                      />
+                    </Box>
+                  </Box>
+                );
+              })}
+            </Box>
+          </Box>
+        )}
+      </Box>
+
+      {/* SSE Notification Snackbar */}
+      <Snackbar
+        open={sseNotification.open}
+        autoHideDuration={6000}
+        onClose={() => setSseNotification({ open: false, message: '' })}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Alert
+          onClose={() => setSseNotification({ open: false, message: '' })}
+          severity="info"
+          sx={{ width: '100%' }}
+          variant="filled"
+        >
+          {sseNotification.message}
+        </Alert>
+      </Snackbar>
+    </Box>
   );
 }
+
+function LabDashboardPageInner() {
+  return (
+    <LabSSEProvider>
+      <LabDashboardContent />
+    </LabSSEProvider>
+  );
+}
+
+const LabDashboardPage = memo(LabDashboardPageInner);
+export default LabDashboardPage;

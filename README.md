@@ -19,7 +19,7 @@ Plataforma integral para administrar clínicas, pacientes, médicos, citas, hist
 [![CI](https://img.shields.io/github/actions/workflow/status/bentlyy/Clinica-Salud-Vital/ci.yml?branch=master&label=CI&logo=githubactions)](https://github.com/bentlyy/Clinica-Salud-Vital/actions)
 [![Tests](https://img.shields.io/badge/tests-1424%20passed-2ea043)](#-testing)
 [![Coverage](https://img.shields.io/badge/coverage-~89%25-2ea043)](#-testing)
-[![Audit](https://img.shields.io/badge/audit-17%20hallazgos-FF6B6B)](#-auditor%C3%ADa-y-mejora)
+[![Audit](https://img.shields.io/badge/audit-2026--07--27-FF6B6B)](#-auditor%C3%ADa-y-mejora)
 
 </div>
 
@@ -69,12 +69,14 @@ Base de datos compartida con columna `tenant_id` en todas las tablas. Resolució
 | **Guest** | Reserva sin login mediante RUT chileno |
 | **Clinical Records** | Historia clínica electrónica (SOAP), recetas/prescripciones, búsqueda CIE-10, descarga PDF |
 | **Billing** | Facturas, pagos, seguros, integración Stripe |
-| **Laboratory** | Catálogo de exámenes, solicitudes, resultados |
-| **Analytics** | Dashboard con KPIs, gráficos Recharts, pronóstico de demanda, tendencias, mapa geográfico |
+| **Laboratory** | Catálogo de exámenes, solicitudes, resultados, muestras, QC, equipos, reactivos |
+| **Analytics** | Dashboard con KPIs, gráficos Recharts, pronóstico de demanda, tendencias |
 | **Audit** | Logs de auditoría encadenados con verificación de integridad |
 | **Specialties** | Catálogo público de especialidades |
 | **SaaS** | Planes, onboarding multi-tenant, webhook Stripe, suscripción, uso, límites |
 | **Super Admin** | Panel global: gestión de tenants, usuarios, estadísticas del sistema |
+| **Medical History** | Historial clínico por paciente |
+| **Reports** | Generación de reportes (citas, revenue, pacientes, laboratorio) |
 
 </details>
 
@@ -171,23 +173,25 @@ El proyecto sigue un patrón **monolito modular**: un solo deploy con módulos d
 │   │   ├── specialties/           # Catálogo de especialidades
 │   │   ├── saas/                  # Planes, suscripciones, onboarding
 │   │   ├── super-admin/           # Panel global multi-tenant
-│   │   └── patient/               # (en desarrollo)
+│   │   ├── medical-history/       # Historial clínico por paciente
+│   │   └── reports/               # Generación de reportes
 │   ├── middlewares/               # auth, tenant, security, validate, errorHandler, etc.
 │   ├── shared/                    # DB pool, JWT, crypto, email, queue, i18n, RUT
 │   ├── jobs/                      # recordatorios (5min), auditoría (6h)
 │   ├── seed/                      # Seed datos de prueba
 │   └── types/                     # Definiciones globales TypeScript
-├── frontend/                      # Frontend React + Vite
+├── frontend/                      # Frontend React + Vite (consolidado)
 │   └── src/
-│       ├── pages/                 # 18 páginas (públicas, doctor, admin, superadmin)
-│       ├── components/            # Navbar, LoadingState, ErrorState, EmptyState, Combobox, etc.
-│       ├── context/               # AuthContext, ThemeContext
-│       ├── i18n/                  # Traducciones (es, en, pt, fr)
-│       ├── api/                   # Clientes Axios por módulo
-│       └── routes/                # AppRoutes + ProtectedRoute
+│       ├── modules/               # Módulos por dominio (auth, bookings, doctors, etc.)
+│       ├── shared/                # Componentes compartidos, providers, utils
+│       ├── test/                  # Tests frontend
+│       ├── i18n/                  # Traducciones (es, en)
+│       └── main.tsx               # Entry point
 ├── db/
-│   └── init.sql                   # Schema completo + índices + triggers + seed
-├── docker-compose.yml             # PostgreSQL 15
+│   ├── init.sql                   # Schema completo + índices + triggers + seed
+│   └── migrations/                # Migraciones SQL (8 archivos)
+├── docker-compose.yml             # PostgreSQL 15 + Backend + Frontend (dev)
+├── docker-compose.prod.yml        # Backend + Frontend (producción)
 ├── Dockerfile                     # Build + deploy backend
 ├── render.yaml                    # Config Render
 └── .env.example                   # Template variables de entorno
@@ -276,11 +280,11 @@ npm run test:coverage             # Reporte HTML
 | Métrica | Valor |
 |---------|-------|
 | **Framework** | Vitest 4 con pool forks |
-| **Tests backend** | 1130 passing — 81 de 81 archivos (15 pre-existentes) |
-| **Tests frontend** | 294 passing — 21 de 23 archivos (5 pre-existentes) |
+| **Tests backend** | 1130 passing — 85 archivos |
+| **Tests frontend** | 294 passing — 14 archivos |
 | **Cobertura** | ~89% lines (threshold: 70%) |
 | **Setup** | Mocks de DB, auth, email, JWT |
-| **CI** | GitHub Actions: typecheck → test → build → deploy |
+| **CI** | GitHub Actions: typecheck → test → build |
 
 ---
 
@@ -352,13 +356,14 @@ Los datos de prueba se generan automáticamente al iniciar la app en desarrollo.
 |---------|--------|
 | **Versión** | `1.0.0` — Producción |
 | **Backend** | 1130 passing tests — ~89% cobertura — typecheck sin errores |
-| **Frontend** | 294 passing tests — 18 páginas — lazy loading — tema claro/oscuro |
-| **CI/CD** | GitHub Actions + Render |
+| **Frontend** | 294 passing tests — 35 páginas — 28 componentes — lazy loading — tema claro/oscuro |
+| **CI/CD** | GitHub Actions (typecheck + test + build) |
 | **Seguridad** | Helmet, CORS, rate limiting, Zod, 2FA, auditoría HMAC |
 | **Multi-tenancy** | Implementado con planes SaaS auto-gestionables |
-| **i18n** | 🇪🇸 🇺🇸 🇧🇷 🇫🇷 completos — 811+ claves c/u — pt/fr activados |
-| **Auditoría** | Score 38→65 — 48 hallazgos — 8 archivos corregidos + 9 tests creados |
+| **i18n** | 🇪🇸 🇺🇸 completos — ~363 claves c/u — pt/fr deprecated |
+| **Auditoría** | 2026-07-27 — Score 62/100 — 31 hallazgos — Frontends antiguos eliminados |
 | **Documentación** | API docs, ADR (monolito modular), Wiki Obsidian |
+| **Frontend** | Consolidado en `frontend/` (v3) — eliminados v1, v2 y login-options |
 
 </div>
 

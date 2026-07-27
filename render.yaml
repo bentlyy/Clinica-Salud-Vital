@@ -6,7 +6,7 @@ services:
     region: oregon
     plan: free
     buildCommand: npm install && npm run build
-    preDeployCommand: node dist/scripts/migrate.js
+    preDeployCommand: npm run build
     startCommand: npm start
     healthCheckPath: /health
     envVars:
@@ -63,8 +63,8 @@ services:
     env: static
     region: oregon
     plan: free
-    buildCommand: cd frontend-v3 && npm install --include=dev && npm run build
-    staticPublishPath: ./frontend-v3/dist
+    buildCommand: cd frontend && npm install --include=dev && npm run build
+    staticPublishPath: ./frontend/dist
     routes:
       - type: rewrite
         from: /*
