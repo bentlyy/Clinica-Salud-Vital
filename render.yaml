@@ -57,7 +57,7 @@ services:
       - key: DB_CA_CERT
         sync: false
 
-  # ─── Frontend v3 (Static Site) ─────────────────────────────
+  # ─── Frontend (Static Site) ───────────────────────────────
   - type: static_site
     name: clinic-frontend
     env: static
