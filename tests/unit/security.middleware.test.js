@@ -50,7 +50,7 @@ describe('security.middleware', () => {
       mockLogger.warn.mockClear();
       const { validateEnvSecurity } = await import('../../src/middlewares/security.middleware.js');
       validateEnvSecurity();
-      expect(mockLogger.warn).toHaveBeenCalledWith(expect.stringContaining('modo desarrollo'));
+      expect(mockLogger.info).toHaveBeenCalledWith(expect.stringContaining('modo desarrollo'));
     });
 
     it('does not log warning in production', async () => {

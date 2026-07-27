@@ -662,23 +662,31 @@ export const resetPassword = async (token: string, email: string, newPassword: s
   }
 };
 
-export const resetAdminPassword = async (tenantId: string): Promise<{ email: string }> => {
+export const resetAdminPassword = async (
+  tenantId: string,
+  currentPassword: string,
+  newPassword: string,
+): Promise<void> => {
   const email = process.env.ADMIN_EMAIL || 'admin@clinic.com';
-  const password = process.env.SEED_PASSWORD ?? process.env.ADMIN_PASSWORD;
-  if (!password) throw new Error('SEED_PASSWORD or ADMIN_PASSWORD environment variable is required');
-  const hash = await bcrypt.hash(password, 12);
 
-  const result = await pool.query(
-    `INSERT INTO users (email, password, name, role, rut, tenant_id)
-     VALUES ($1, $2, $3, $4, $5, $6)
-     ON CONFLICT (tenant_id, email)
-     DO UPDATE SET password = EXCLUDED.password, failed_attempts = 0, locked_until = NULL
-     RETURNING id`,
-    [email, hash, 'Admin', 'admin', '20287886-5', tenantId]
+  const userResult = await pool.query(
+    'SELECT id, password FROM users WHERE email = $1 AND tenant_id = $2 LIMIT 1',
+    [email, tenantId],
+  );
+  if (userResult.rows.length === 0) throw new NotFoundError('Admin user not found');
+
+  const user = userResult.rows[0];
+  const valid = await bcrypt.compare(currentPassword, user.password);
+  if (!valid) throw new UnauthorizedError('Current password is incorrect');
+
+  const hash = await bcrypt.hash(newPassword, 12);
+
+  await pool.query(
+    `UPDATE users SET password = $1, failed_attempts = 0, locked_until = NULL WHERE id = $2`,
+    [hash, user.id],
   );
 
-  await pool.query('UPDATE refresh_tokens SET revoked = true WHERE user_id = $1', [result.rows[0].id]);
+  await pool.query('UPDATE refresh_tokens SET revoked = true WHERE user_id = $1', [user.id]);
 
-  logger.info('Admin password reset', { email, tenantId });
-  return { email };
+  logger.warn('Admin password reset', { userId: user.id, tenantId, requestedBy: 'superadmin' });
 };

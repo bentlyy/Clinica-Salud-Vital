@@ -1,69 +1,113 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
-let queueService;
+const mockQuery = vi.fn().mockResolvedValue({ rows: [] });
+vi.mock('../../src/shared/db.js', () => ({
+  pool: { query: mockQuery },
+}));
 
 beforeEach(() => {
   vi.resetModules();
+  mockQuery.mockReset();
+  mockQuery.mockResolvedValue({ rows: [] });
 });
 
 afterEach(() => {
-  queueService = undefined;
+  vi.restoreAllMocks();
 });
 
 describe('queue.service', () => {
-  it('adds and processes a job via memory queue (setImmediate)', async () => {
-    const mod = await import('../../src/shared/queue.service.js');
-    queueService = mod.queueService;
-    const handler = vi.fn(async () => {});
-    queueService.registerWorker('test:job', handler);
-    await queueService.addJob('test:job', { foo: 'bar' });
-    await new Promise(resolve => setImmediate(resolve));
-    expect(handler).toHaveBeenCalledWith({ type: 'test:job', data: { foo: 'bar' } });
-  });
-
-  it('exposes top-level enqueueJob and registerWorker', async () => {
+  it('exports enqueueJob and registerWorker as functions', async () => {
     const mod = await import('../../src/shared/queue.service.js');
     expect(typeof mod.enqueueJob).toBe('function');
     expect(typeof mod.registerWorker).toBe('function');
   });
 
-  it('processes multiple jobs in order', async () => {
+  it('addJob inserts a row into the jobs table', async () => {
     const mod = await import('../../src/shared/queue.service.js');
-    queueService = mod.queueService;
-    const order = [];
-    queueService.registerWorker('job:1', async (payload) => { order.push(payload.data.id); });
-    queueService.registerWorker('job:2', async (payload) => { order.push(payload.data.id); });
+    const handler = vi.fn(async () => {});
+    mod.registerWorker('test:job', handler);
+    await mod.enqueueJob('test:job', { foo: 'bar' });
 
-    await queueService.addJob('job:1', { id: 1 });
-    await queueService.addJob('job:2', { id: 2 });
-    await new Promise(resolve => setImmediate(resolve));
-
-    expect(order).toEqual([1, 2]);
+    expect(mockQuery).toHaveBeenCalledWith(
+      expect.stringContaining('INSERT INTO jobs'),
+      ['test:job', '{"foo":"bar"}'],
+    );
   });
 
-  it('handles handler errors without crashing', async () => {
+  it('registerWorker stores handler by type', async () => {
     const mod = await import('../../src/shared/queue.service.js');
-    queueService = mod.queueService;
-    const errorHandler = vi.fn(async () => { throw new Error('Handler crashed'); });
-    queueService.registerWorker('error:job', errorHandler);
-
-    await queueService.addJob('error:job', {});
-    await new Promise(resolve => setImmediate(resolve));
-
-    expect(errorHandler).toHaveBeenCalled();
+    const handler = vi.fn(async () => {});
+    mod.registerWorker('email:send', handler);
+    expect(() => mod.registerWorker('email:send', handler)).not.toThrow();
   });
 
-  it('calls worker with correct payload shape', async () => {
+  it('addJob warns if no handler registered and does not insert', async () => {
     const mod = await import('../../src/shared/queue.service.js');
-    queueService = mod.queueService;
-    const handler = vi.fn();
-    queueService.registerWorker('shape:job', handler);
-    await queueService.addJob('shape:job', { user: 'test', value: 42 });
-    await new Promise(resolve => setImmediate(resolve));
+    await mod.enqueueJob('unknown:type', { x: 1 });
+    expect(mockQuery).not.toHaveBeenCalled();
+  });
 
-    expect(handler).toHaveBeenCalledWith({
-      type: 'shape:job',
-      data: { user: 'test', value: 42 },
-    });
+  it('processRow runs handler and marks job completed', async () => {
+    mockQuery
+      .mockResolvedValueOnce({
+        rows: [{ id: 1, type: 'test:ok', data: { val: 42 }, attempts: 1 }],
+      })
+      .mockResolvedValueOnce({ rows: [] });
+
+    const mod = await import('../../src/shared/queue.service.js');
+    const handler = vi.fn(async () => {});
+    mod.registerWorker('test:ok', handler);
+
+    await mod.queueService.startProcessor();
+    await new Promise((r) => setTimeout(r, 100));
+    mod.queueService.stopProcessor();
+
+    expect(handler).toHaveBeenCalledWith({ type: 'test:ok', data: { val: 42 } });
+    expect(mockQuery).toHaveBeenCalledWith(
+      expect.stringContaining("status = 'completed'"),
+      [1],
+    );
+  });
+
+  it('processRow retries on failure and marks dead after max_attempts', async () => {
+    mockQuery
+      .mockResolvedValueOnce({
+        rows: [{ id: 5, type: 'test:fail', data: {}, attempts: 3 }],
+      })
+      .mockResolvedValueOnce({ rows: [] });
+
+    const mod = await import('../../src/shared/queue.service.js');
+    const handler = vi.fn(async () => { throw new Error('boom'); });
+    mod.registerWorker('test:fail', handler);
+
+    await mod.queueService.startProcessor();
+    await new Promise((r) => setTimeout(r, 100));
+    mod.queueService.stopProcessor();
+
+    expect(mockQuery).toHaveBeenCalledWith(
+      expect.stringContaining("status = 'dead'"),
+      expect.arrayContaining([expect.any(String), 5]),
+    );
+  });
+
+  it('processRow schedules retry on failure before max_attempts', async () => {
+    mockQuery
+      .mockResolvedValueOnce({
+        rows: [{ id: 3, type: 'test:retry', data: { a: 1 }, attempts: 1 }],
+      })
+      .mockResolvedValueOnce({ rows: [] });
+
+    const mod = await import('../../src/shared/queue.service.js');
+    const handler = vi.fn(async () => { throw new Error('transient'); });
+    mod.registerWorker('test:retry', handler);
+
+    await mod.queueService.startProcessor();
+    await new Promise((r) => setTimeout(r, 100));
+    mod.queueService.stopProcessor();
+
+    expect(mockQuery).toHaveBeenCalledWith(
+      expect.stringContaining("status = 'pending'"),
+      expect.arrayContaining([expect.any(String), '30000', 3]),
+    );
   });
 });

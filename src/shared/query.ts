@@ -26,25 +26,6 @@ export const tenantQuery = {
     return `${TAG_TENANT}${value}${TAG_TENANT}`;
   },
 
-  /**
-   * @deprecated SQL injection risk — use whereParam() instead.
-   */
-  build(_text: string, _tenantId: string): string {
-    throw new Error('tenantQuery.build() is deprecated due to SQL injection risk. Use whereParam() instead.');
-  },
-
-  /**
-   * @deprecated SQL injection risk — use whereParam() instead.
-   */
-  where(_tenantId: string, _tableAlias?: string): string {
-    throw new Error('tenantQuery.where() is deprecated due to SQL injection risk. Use whereParam() instead.');
-  },
-
-  /**
-   * Safe parameterized version — returns { sql, params }.
-   * @example const { sql, params } = tenantQuery.whereParam(tenantId, 'u');
-   * // sql: "u.tenant_id = $1", params: [tenantId]
-   */
   whereParam(tenantId: string, tableAlias?: string, paramIndex: number = 1): { sql: string; params: string[] } {
     const alias = tableAlias ? `${tableAlias}.` : '';
     return { sql: `${alias}tenant_id = $${paramIndex}`, params: [tenantId] };
@@ -81,13 +62,6 @@ export const tenantQuery = {
     }
     return [...params, tenantId].filter((p) => p !== undefined);
   },
-};
-
-/**
- * @deprecated SQL injection risk — use parameterized queries instead.
- */
-export const buildTenantInsert = (_text: string, _tenantId: string): string => {
-  throw new Error('buildTenantInsert() is deprecated due to SQL injection risk. Use parameterized queries with tenant_id as a parameter instead.');
 };
 
 export const getTenantIdsFromRaw = (params: QueryParams, idx: number, tenantId: string): QueryParams => {
