@@ -92,8 +92,8 @@ export const ReagentInventory = memo(function ReagentInventory({
 
   const resolveColor = (token: string) => {
     const parts = token.split('.');
-    let obj: any = theme.palette;
-    for (const p of parts) obj = obj?.[p];
+    let obj: Record<string, unknown> = theme.palette as unknown as Record<string, unknown>;
+    for (const p of parts) obj = (obj?.[p] ?? {}) as Record<string, unknown>;
     return typeof obj === 'string' ? obj : token;
   };
 

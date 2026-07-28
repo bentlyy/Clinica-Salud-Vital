@@ -1,5 +1,6 @@
 import { pool } from '../../shared/db.js';
 import { BadRequestError, NotFoundError } from '../../utils/errors.js';
+import { E } from '../../utils/error-codes.js';
 import { isValidDate, isValidTime } from '../../shared/date.js';
 
 interface AvailabilityInput {
@@ -29,16 +30,16 @@ export const getAvailabilityByDoctor = async (doctor_id: number, tenantId: strin
 
 export const createAvailability = async ({ doctor_id, day_of_week, start_time, end_time }: AvailabilityInput, tenantId: string): Promise<unknown> => {
   if (!doctor_id || day_of_week === undefined || !start_time || !end_time) {
-    throw new BadRequestError('Missing required fields');
+    throw new BadRequestError(E.AVAILABILITY_MISSING_FIELDS);
   }
   if (!Number.isInteger(day_of_week) || day_of_week < 0 || day_of_week > 6) {
-    throw new BadRequestError('day_of_week must be an integer between 0 and 6');
+    throw new BadRequestError(E.AVAILABILITY_INVALID_DAY);
   }
   if (!isValidTime(start_time) || !isValidTime(end_time)) {
-    throw new BadRequestError('Invalid time format, use HH:MM');
+    throw new BadRequestError(E.AVAILABILITY_INVALID_TIME);
   }
   if (start_time >= end_time) {
-    throw new BadRequestError('Invalid time range: start_time must be before end_time');
+    throw new BadRequestError(E.AVAILABILITY_TIME_BEFORE_END);
   }
 
   const overlap = await pool.query(
@@ -49,7 +50,7 @@ export const createAvailability = async ({ doctor_id, day_of_week, start_time, e
   );
 
   if (overlap.rows.length > 0) {
-    throw new BadRequestError('Time range overlaps with existing availability');
+    throw new BadRequestError(E.AVAILABILITY_OVERLAP);
   }
 
   const result = await pool.query(
@@ -63,7 +64,7 @@ export const createAvailability = async ({ doctor_id, day_of_week, start_time, e
 
 export const deleteAvailability = async (availability_id: number, doctor_id: number, tenantId: string): Promise<{ message: string }> => {
   if (!Number.isInteger(availability_id) || !Number.isInteger(doctor_id)) {
-    throw new BadRequestError('Invalid id');
+    throw new BadRequestError(E.AVAILABILITY_INVALID_ID);
   }
 
   const result = await pool.query(
@@ -71,7 +72,7 @@ export const deleteAvailability = async (availability_id: number, doctor_id: num
     [availability_id, doctor_id, tenantId]
   );
 
-  if (result.rows.length === 0) throw new NotFoundError('Availability not found or unauthorized');
+  if (result.rows.length === 0) throw new NotFoundError(E.AVAILABILITY_NOT_FOUND);
 
   return { message: 'Availability deleted' };
 };
@@ -85,13 +86,13 @@ export const getExceptionsByDoctor = async (doctor_id: number, tenantId: string)
 };
 
 export const createException = async ({ doctor_id, date, start_time, end_time, is_full_day = false }: ExceptionInput, tenantId: string): Promise<unknown> => {
-  if (!doctor_id || !date) throw new BadRequestError('doctor_id and date are required');
-  if (!isValidDate(date)) throw new BadRequestError('Invalid date format, use YYYY-MM-DD');
+  if (!doctor_id || !date) throw new BadRequestError(E.AVAILABILITY_MISSING_FIELDS);
+  if (!isValidDate(date)) throw new BadRequestError(E.AVAILABILITY_INVALID_TIME);
 
   if (!is_full_day) {
-    if (!start_time || !end_time) throw new BadRequestError('start_time and end_time required for partial blocks');
-    if (!isValidTime(start_time) || !isValidTime(end_time)) throw new BadRequestError('Invalid time format, use HH:MM');
-    if (start_time >= end_time) throw new BadRequestError('start_time must be before end_time');
+    if (!start_time || !end_time) throw new BadRequestError(E.AVAILABILITY_MISSING_FIELDS);
+    if (!isValidTime(start_time) || !isValidTime(end_time)) throw new BadRequestError(E.AVAILABILITY_INVALID_TIME);
+    if (start_time >= end_time) throw new BadRequestError(E.AVAILABILITY_TIME_BEFORE_END);
   }
 
   const result = await pool.query(
@@ -105,7 +106,7 @@ export const createException = async ({ doctor_id, date, start_time, end_time, i
 
 export const deleteException = async (exception_id: number, doctor_id: number, tenantId: string): Promise<{ message: string }> => {
   if (!Number.isInteger(exception_id) || !Number.isInteger(doctor_id)) {
-    throw new BadRequestError('Invalid id');
+    throw new BadRequestError(E.AVAILABILITY_INVALID_ID);
   }
 
   const result = await pool.query(
@@ -113,7 +114,7 @@ export const deleteException = async (exception_id: number, doctor_id: number, t
     [exception_id, doctor_id, tenantId]
   );
 
-  if (result.rows.length === 0) throw new NotFoundError('Exception not found or unauthorized');
+  if (result.rows.length === 0) throw new NotFoundError(E.AVAILABILITY_NOT_FOUND);
 
   return { message: 'Exception deleted' };
 };

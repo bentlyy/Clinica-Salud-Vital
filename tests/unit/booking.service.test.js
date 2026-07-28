@@ -195,8 +195,8 @@ describe('bookingService.cancelBooking', () => {
 
 describe('bookingService.getAvailableSlots', () => {
   it('throws if missing params', async () => {
-    await expect(bookingService.getAvailableSlots()).rejects.toThrow('doctor_id and date are required');
-    await expect(bookingService.getAvailableSlots(1)).rejects.toThrow('doctor_id and date are required');
+    await expect(bookingService.getAvailableSlots()).rejects.toThrow('Missing required fields');
+    await expect(bookingService.getAvailableSlots(1)).rejects.toThrow('Missing required fields');
   });
 
   it('throws if date format invalid', async () => {

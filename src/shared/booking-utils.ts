@@ -1,5 +1,6 @@
 import { pool } from './db.js';
 import { BadRequestError } from '../utils/errors.js';
+import { E } from '../utils/error-codes.js';
 import { getDayOfWeek } from './date.js';
 
 export interface TimeBlock {
@@ -95,7 +96,7 @@ export const checkSlotOverlap = async (
     [doctorId, date, time, duration, tenantId]
   );
 
-  if (overlap.rows.length > 0) throw new BadRequestError('This time slot is already booked');
+  if (overlap.rows.length > 0) throw new BadRequestError(E.BOOKING_SLOT_ALREADY_BOOKED);
 };
 
 export const validateBookingSlot = async (opts: SlotOverlapOptions): Promise<void> => {

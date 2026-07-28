@@ -1,10 +1,10 @@
 import { pool } from '../../shared/db.js';
 import * as doctorService from '../doctor/doctor.service.js';
-import { sendEmail } from '../../shared/email.service.js';
 import { bookingConfirmationTemplate } from './booking.email.js';
 import { enqueueJob } from '../../shared/queue.service.js';
 import { jwtManager } from '../../shared/jwt.service.js';
-import { BadRequestError, NotFoundError } from '../../utils/errors.js';
+import { BadRequestError, NotFoundError, toError } from '../../utils/errors.js';
+import { E } from '../../utils/error-codes.js';
 import { logger } from '../../utils/logger.js';
 import { isValidDate, isValidTime, getDayOfWeek } from '../../shared/date.js';
 import { validateBookingSlot } from '../../shared/booking-utils.js';
@@ -61,16 +61,16 @@ export const getAllBookings = async ({ page = 1, limit = 100 }: Partial<Paginati
 };
 
 export const createBooking = async ({ doctor_id, user_id, date, time, duration = 30 }: BookingInput, tenantId: string): Promise<unknown> => {
-  if (!doctor_id || !user_id || !date || !time) throw new BadRequestError('Missing required fields');
-  if (!isValidDate(date)) throw new BadRequestError('Invalid date format, use YYYY-MM-DD');
-  if (!isValidTime(time)) throw new BadRequestError('Invalid time format, use HH:MM');
-  if (duration <= 0 || duration > 480) throw new BadRequestError('Duration must be between 1 and 480 minutes');
-  if (duration % 5 !== 0) throw new BadRequestError('Duration must be a multiple of 5 minutes');
+  if (!doctor_id || !user_id || !date || !time) throw new BadRequestError(E.BOOKING_MISSING_FIELDS);
+  if (!isValidDate(date)) throw new BadRequestError(E.BOOKING_INVALID_DATE);
+  if (!isValidTime(time)) throw new BadRequestError(E.BOOKING_INVALID_TIME);
+  if (duration <= 0 || duration > 480) throw new BadRequestError(E.BOOKING_INVALID_DURATION);
+  if (duration % 5 !== 0) throw new BadRequestError(E.BOOKING_DURATION_NOT_MULTIPLE);
 
   const bookingDate = new Date(date);
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  if (bookingDate < today) throw new BadRequestError('Cannot book appointments in the past');
+  if (bookingDate < today) throw new BadRequestError(E.BOOKING_PAST_DATE);
 
   const client = await pool.connect();
 
@@ -83,21 +83,21 @@ export const createBooking = async ({ doctor_id, user_id, date, time, duration =
     );
 
     const doctor = await doctorService.getDoctorById(doctor_id, tenantId);
-    if (!doctor) throw new NotFoundError('Doctor not found');
+    if (!doctor) throw new NotFoundError(E.BOOKING_DOCTOR_NOT_FOUND);
 
     if (doctor.slot_duration && duration > doctor.slot_duration) {
-      throw new BadRequestError(`Duration cannot exceed doctor's slot duration of ${doctor.slot_duration} minutes`);
+      throw new BadRequestError(E.BOOKING_SLOT_EXCEEDS_DOCTOR, 'Duration cannot exceed doctor\'s slot duration of ' + doctor.slot_duration + ' minutes');
     }
 
     const userResult = await client.query(
       'SELECT email, rut, phone, blocked_until FROM users WHERE id = $1 AND tenant_id = $2',
       [user_id, tenantId]
     );
-    if (userResult.rows.length === 0) throw new NotFoundError('User not found');
+    if (userResult.rows.length === 0) throw new NotFoundError(E.BOOKING_USER_NOT_FOUND);
 
     const user = userResult.rows[0];
     if (user.blocked_until && new Date(user.blocked_until) > new Date()) {
-      throw new BadRequestError('Your account is blocked due to unconfirmed appointments. Please wait before booking again.');
+      throw new BadRequestError(E.BOOKING_USER_BLOCKED);
     }
 
     await validateBookingSlot({ doctorId: doctor_id, date, time, duration, client, tenantId });
@@ -129,7 +129,7 @@ export const createBooking = async ({ doctor_id, user_id, date, time, duration =
       }),
       tenantId,
     }).catch((err) => {
-      logger.error('Error encolando email de confirmación:', { to: user.email, error: (err as Error).message });
+      logger.error('Error encolando email de confirmación:', { to: user.email, error: toError(err).message });
     });
 
     return booking;
@@ -137,8 +137,8 @@ export const createBooking = async ({ doctor_id, user_id, date, time, duration =
   } catch (error: unknown) {
     await client.query('ROLLBACK');
     const pgError = error as { code?: string };
-    if (pgError.code === '23505') throw new BadRequestError('This time slot is already booked');
-    if (pgError.code === '23503') throw new BadRequestError('Invalid doctor or user');
+    if (pgError.code === '23505') throw new BadRequestError(E.BOOKING_SLOT_ALREADY_BOOKED);
+    if (pgError.code === '23503') throw new BadRequestError(E.BOOKING_INVALID_DOCTOR_USER);
     throw error;
   } finally {
     client.release();
@@ -177,7 +177,7 @@ export const getBookingsByUser = async (user_id: number, { page = 1, limit = 20 
 
 export const cancelBooking = async (booking_id: number, user_id: number, tenantId: string): Promise<{ message: string }> => {
   if (!Number.isInteger(booking_id) || !Number.isInteger(user_id)) {
-    throw new BadRequestError('Invalid booking id');
+    throw new BadRequestError(E.BOOKING_INVALID_ID);
   }
 
   const result = await pool.query(
@@ -187,14 +187,14 @@ export const cancelBooking = async (booking_id: number, user_id: number, tenantI
     [booking_id, user_id, tenantId]
   );
 
-  if (result.rows.length === 0) throw new NotFoundError('Booking not found or unauthorized');
+  if (result.rows.length === 0) throw new NotFoundError(E.BOOKING_NOT_FOUND);
 
   return { message: 'Booking cancelled successfully' };
 };
 
 export const getAvailableSlots = async (doctor_id: number, date: string, tenantId: string): Promise<string[]> => {
-  if (!doctor_id || !date) throw new BadRequestError('doctor_id and date are required');
-  if (!isValidDate(date)) throw new BadRequestError('Invalid date format, use YYYY-MM-DD');
+  if (!doctor_id || !date) throw new BadRequestError(E.BOOKING_MISSING_FIELDS);
+  if (!isValidDate(date)) throw new BadRequestError(E.BOOKING_INVALID_DATE);
 
   const day = getDayOfWeek(date);
 

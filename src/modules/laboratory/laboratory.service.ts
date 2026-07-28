@@ -1,5 +1,6 @@
 import { pool } from '../../shared/db.js';
 import { NotFoundError, BadRequestError } from '../../utils/errors.js';
+import { E } from '../../utils/error-codes.js';
 import crypto from 'crypto';
 
 const generateRequestNumber = () => {
@@ -60,7 +61,7 @@ export const getLabTests = async ({ category, active = true, areaId, limit = 50,
 
 export const createLabTest = async (data: { name: string; description?: string; code?: string; category?: string; unit?: string; reference_min?: number; reference_max?: number; price?: number; reference_ranges?: any }, tenantId: string) => {
   const { name, description, code, category, unit, reference_min, reference_max, price, reference_ranges } = data;
-  if (!name) throw new BadRequestError('Test name is required');
+  if (!name) throw new BadRequestError(E.LAB_TEST_NAME_REQUIRED);
 
   const result = await pool.query(
     `INSERT INTO lab_tests (name, description, code, category, unit, reference_min, reference_max, price, reference_ranges, tenant_id)
@@ -88,14 +89,14 @@ export const updateLabTest = async (id: number, data: Partial<{ name: string; de
     values.push(JSON.stringify(data.reference_ranges));
   }
 
-  if (fields.length === 0) throw new BadRequestError('No fields to update');
+  if (fields.length === 0) throw new BadRequestError(E.LAB_TEST_NO_FIELDS);
 
   values.push(id, tenantId);
   const result = await pool.query(
     `UPDATE lab_tests SET ${fields.join(', ')}, updated_at = NOW() WHERE id = $${paramCount++} AND tenant_id = $${paramCount} RETURNING *`,
     values
   );
-  if (result.rows.length === 0) throw new NotFoundError('Lab test not found');
+  if (result.rows.length === 0) throw new NotFoundError(E.LAB_TEST_NOT_FOUND);
   return result.rows[0];
 };
 
@@ -104,7 +105,7 @@ export const deleteLabTest = async (id: number, tenantId: string) => {
     `DELETE FROM lab_tests WHERE id = $1 AND tenant_id = $2`,
     [id, tenantId]
   );
-  if (result.rowCount === 0) throw new NotFoundError('Lab test not found');
+  if (result.rowCount === 0) throw new NotFoundError(E.LAB_TEST_NOT_FOUND);
 };
 
 export const createLabRequest = async (data: { patient_id: number; doctor_id?: number; clinical_record_id?: number; priority?: string; notes?: string; test_ids?: number[] }, tenantId: string) => {
@@ -146,7 +147,7 @@ export const createLabRequest = async (data: { patient_id: number; doctor_id?: n
       }
     }
 
-    if (!inserted) throw new BadRequestError('Could not generate unique request number');
+    if (!inserted) throw new BadRequestError(E.LAB_REQUEST_NUMBER_FAILED);
 
     if (test_ids && test_ids.length > 0) {
       const testResult = await client.query(
@@ -156,7 +157,7 @@ export const createLabRequest = async (data: { patient_id: number; doctor_id?: n
       if (testResult.rows.length !== test_ids.length) {
         const found = new Set(testResult.rows.map(r => r.id));
         const missing = test_ids.filter(id => !found.has(id));
-        throw new BadRequestError('Lab tests not found or inactive: ' + missing.join(', '));
+        throw new BadRequestError(E.LAB_TESTS_NOT_FOUND, 'Lab tests not found or inactive: ' + missing.join(', '));
       }
 
       const itemsColumns = ['lab_request_id', 'lab_test_id', 'tenant_id'];
@@ -247,7 +248,7 @@ export const updateLabRequestStatus = async (requestId: number | string, status:
     `UPDATE lab_requests SET status = $1, updated_at = NOW() WHERE id = $2 AND tenant_id = $3 RETURNING *`,
     [status, requestId, tenantId]
   );
-  if (result.rows.length === 0) throw new NotFoundError('Lab request not found');
+  if (result.rows.length === 0) throw new NotFoundError(E.LAB_REQUEST_NOT_FOUND);
   return result.rows[0];
 };
 
@@ -271,7 +272,7 @@ export const getLabRequestById = async (requestId: number | string, tenantId: st
     WHERE lr.id = $1 AND lr.tenant_id = $2
     GROUP BY lr.id, d.id, u.id
   `, [requestId, tenantId]);
-  if (result.rows.length === 0) throw new NotFoundError('Lab request not found');
+  if (result.rows.length === 0) throw new NotFoundError(E.LAB_REQUEST_NOT_FOUND);
   return result.rows[0];
 };
 
@@ -280,7 +281,7 @@ export const updateLabRequestItemResult = async (itemId: number | string, result
     `UPDATE lab_request_items SET result_value = $1, result_notes = $2, updated_at = NOW() WHERE id = $3 AND tenant_id = $4 RETURNING *`,
     [result_value, result_notes || null, itemId, tenantId]
   );
-  if (result.rows.length === 0) throw new NotFoundError('Lab request item not found');
+  if (result.rows.length === 0) throw new NotFoundError(E.LAB_REQUEST_ITEM_NOT_FOUND);
   return result.rows[0];
 };
 
@@ -321,19 +322,19 @@ export const updateLabRequestItemStatus = async (itemId: number | string, status
     `UPDATE lab_request_items SET status = $1, updated_at = NOW() WHERE id = $2 AND tenant_id = $3 RETURNING *`,
     [status, itemId, tenantId]
   );
-  if (result.rows.length === 0) throw new NotFoundError('Lab request item not found');
+  if (result.rows.length === 0) throw new NotFoundError(E.LAB_REQUEST_ITEM_NOT_FOUND);
   return result.rows[0];
 };
 
 export const setLabType = async (requestId: number | string, labType: string, tenantId: string) => {
   if (!['internal', 'external'].includes(labType)) {
-    throw new BadRequestError('lab_type debe ser "internal" o "external"');
+    throw new BadRequestError(E.LAB_INVALID_TYPE);
   }
   const result = await pool.query(
     `UPDATE lab_requests SET lab_type = $1, updated_at = NOW() WHERE id = $2 AND tenant_id = $3 RETURNING *`,
     [labType, requestId, tenantId]
   );
-  if (result.rows.length === 0) throw new NotFoundError('Lab request not found');
+  if (result.rows.length === 0) throw new NotFoundError(E.LAB_REQUEST_NOT_FOUND);
   return result.rows[0];
 };
 
@@ -341,7 +342,7 @@ export const cancelLabRequest = async (requestId: number | string, userId: numbe
   const request = await getLabRequestById(requestId, tenantId);
   
   if (userRole !== 'admin' && request.patient_id !== userId) {
-    throw new BadRequestError('Access denied');
+    throw new BadRequestError(E.LAB_ACCESS_DENIED);
   }
   
   return updateLabRequestStatus(requestId, 'cancelled', tenantId);
@@ -447,7 +448,7 @@ export const getAreaDashboard = async (tenantId: string, areaId: number) => {
     pool.query('SELECT * FROM lab_areas WHERE id = $1 AND tenant_id = $2', [areaId, tenantId]),
   ]);
 
-  if (area.rows.length === 0) throw new NotFoundError('Area not found');
+  if (area.rows.length === 0) throw new NotFoundError(E.LAB_AREA_NOT_FOUND);
 
   const recentItems = await pool.query(`
     SELECT lri.*, lt.name AS test_name
@@ -592,7 +593,7 @@ export const getSamples = async (tenantId: string, query: any = {}) => {
 
 export const getSampleById = async (id: number, tenantId: string) => {
   const result = await pool.query('SELECT * FROM lab_samples WHERE id = $1 AND tenant_id = $2', [id, tenantId]);
-  if (result.rows.length === 0) throw new NotFoundError('Sample not found');
+  if (result.rows.length === 0) throw new NotFoundError(E.LAB_SAMPLE_NOT_FOUND);
   return result.rows[0];
 };
 
@@ -621,7 +622,7 @@ export const receiveSample = async (id: number, userId: number, tenantId: string
      WHERE id = $3 AND tenant_id = $4 RETURNING *`,
     [data?.reception_time || new Date().toISOString(), userId, id, tenantId]
   );
-  if (result.rows.length === 0) throw new NotFoundError('Sample not found');
+  if (result.rows.length === 0) throw new NotFoundError(E.LAB_SAMPLE_NOT_FOUND);
   return result.rows[0];
 };
 
@@ -631,7 +632,7 @@ export const verifySample = async (id: number, userId: number, tenantId: string)
      WHERE id = $2 AND tenant_id = $3 RETURNING *`,
     [userId, id, tenantId]
   );
-  if (result.rows.length === 0) throw new NotFoundError('Sample not found');
+  if (result.rows.length === 0) throw new NotFoundError(E.LAB_SAMPLE_NOT_FOUND);
   return result.rows[0];
 };
 
@@ -641,7 +642,7 @@ export const assignSample = async (id: number, data: any, tenantId: string) => {
      WHERE id = $3 AND tenant_id = $4 RETURNING *`,
     [data.assigned_tech_id, data.assigned_equipment_id || null, id, tenantId]
   );
-  if (result.rows.length === 0) throw new NotFoundError('Sample not found');
+  if (result.rows.length === 0) throw new NotFoundError(E.LAB_SAMPLE_NOT_FOUND);
   return result.rows[0];
 };
 
@@ -651,7 +652,7 @@ export const recordSampleQC = async (id: number, data: any, tenantId: string) =>
      WHERE id = $3 AND tenant_id = $4 RETURNING *`,
     [data.qc_status, data.qc_notes || null, id, tenantId]
   );
-  if (result.rows.length === 0) throw new NotFoundError('Sample not found');
+  if (result.rows.length === 0) throw new NotFoundError(E.LAB_SAMPLE_NOT_FOUND);
 
   // Create QC notification if failed
   if (data.qc_status === 'failed') {
@@ -671,7 +672,7 @@ export const rejectSample = async (id: number, reason: string, tenantId: string)
      WHERE id = $2 AND tenant_id = $3 RETURNING *`,
     [reason, id, tenantId]
   );
-  if (result.rows.length === 0) throw new NotFoundError('Sample not found');
+  if (result.rows.length === 0) throw new NotFoundError(E.LAB_SAMPLE_NOT_FOUND);
   return result.rows[0];
 };
 
@@ -684,7 +685,7 @@ export const validateItemByTech = async (itemId: number, userId: number, tenantI
      WHERE id = $2 AND tenant_id = $3 AND status IN ('result_entered', 'processing') RETURNING *`,
     [userId, itemId, tenantId]
   );
-  if (item.rows.length === 0) throw new BadRequestError('Item not found or invalid status for tech validation');
+  if (item.rows.length === 0) throw new BadRequestError(E.LAB_ITEM_INVALID_STATUS);
   return item.rows[0];
 };
 
@@ -694,7 +695,7 @@ export const validateItemByDoctor = async (itemId: number, userId: number, tenan
      WHERE id = $2 AND tenant_id = $3 AND status = 'validated_tech' RETURNING *`,
     [userId, itemId, tenantId]
   );
-  if (item.rows.length === 0) throw new BadRequestError('Item not found or must be validated by tech first');
+  if (item.rows.length === 0) throw new BadRequestError(E.LAB_ITEM_MUST_TECH_FIRST);
   return item.rows[0];
 };
 
@@ -704,7 +705,7 @@ export const signItem = async (itemId: number, userId: number, tenantId: string)
      WHERE id = $2 AND tenant_id = $3 AND status = 'validated_doctor' RETURNING *`,
     [userId, itemId, tenantId]
   );
-  if (item.rows.length === 0) throw new BadRequestError('Item not found or must be validated by doctor first');
+  if (item.rows.length === 0) throw new BadRequestError(E.LAB_ITEM_MUST_DOCTOR_FIRST);
   return item.rows[0];
 };
 
@@ -714,7 +715,7 @@ export const deliverItem = async (itemId: number, tenantId: string, method?: str
      WHERE id = $2 AND tenant_id = $3 RETURNING *`,
     [method || null, itemId, tenantId]
   );
-  if (item.rows.length === 0) throw new NotFoundError('Item not found');
+  if (item.rows.length === 0) throw new NotFoundError(E.LAB_ITEM_NOT_FOUND);
 
   // Check if all items in request are delivered, update request status
   const requestId = item.rows[0].lab_request_id;
@@ -741,7 +742,7 @@ export const getItemHistory = async (itemId: number, tenantId: string) => {
      WHERE lri.id = $1 AND lr.tenant_id = $2`,
     [itemId, tenantId]
   );
-  if (item.rows.length === 0) throw new NotFoundError('Item not found');
+  if (item.rows.length === 0) throw new NotFoundError(E.LAB_ITEM_NOT_FOUND);
 
   const { lab_test_id, patient_id } = item.rows[0];
 
@@ -894,14 +895,14 @@ export const updateEquipment = async (id: number, data: any, tenantId: string) =
     }
   }
 
-  if (fields.length === 0) throw new BadRequestError('No fields to update');
+  if (fields.length === 0) throw new BadRequestError(E.LAB_TEST_NO_FIELDS);
   values.push(id, tenantId);
 
   const result = await pool.query(
     `UPDATE lab_equipment SET ${fields.join(', ')}, updated_at = NOW() WHERE id = $${count++} AND tenant_id = $${count} RETURNING *`,
     values
   );
-  if (result.rows.length === 0) throw new NotFoundError('Equipment not found');
+  if (result.rows.length === 0) throw new NotFoundError(E.LAB_EQUIPMENT_NOT_FOUND);
   return result.rows[0];
 };
 
@@ -939,7 +940,7 @@ export const updateReagentStock = async (id: number, quantity: number, tenantId:
     `UPDATE lab_reagents SET current_stock = $1, updated_at = NOW() WHERE id = $2 AND tenant_id = $3 RETURNING *`,
     [quantity, id, tenantId]
   );
-  if (result.rows.length === 0) throw new NotFoundError('Reagent not found');
+  if (result.rows.length === 0) throw new NotFoundError(E.LAB_REAGENT_NOT_FOUND);
 
   // Alert if stock is low
   const reagent = result.rows[0];
@@ -979,6 +980,6 @@ export const acknowledgeNotification = async (id: number, userId: number, tenant
      WHERE id = $2 AND tenant_id = $3 RETURNING *`,
     [userId, id, tenantId]
   );
-  if (result.rows.length === 0) throw new NotFoundError('Notification not found');
+  if (result.rows.length === 0) throw new NotFoundError(E.LAB_NOTIFICATION_NOT_FOUND);
   return result.rows[0];
 };

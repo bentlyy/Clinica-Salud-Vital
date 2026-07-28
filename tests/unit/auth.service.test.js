@@ -41,9 +41,9 @@ beforeEach(() => {
 
 describe('authService.register', () => {
   it('throws if email or password missing', async () => {
-    await expect(authService.register({})).rejects.toThrow('Email and password required');
-    await expect(authService.register({ email: 'test@test.com' })).rejects.toThrow('Email and password required');
-    await expect(authService.register({ password: validPassword })).rejects.toThrow('Email and password required');
+    await expect(authService.register({})).rejects.toThrow('Email and password are required');
+    await expect(authService.register({ email: 'test@test.com' })).rejects.toThrow('Email and password are required');
+    await expect(authService.register({ password: validPassword })).rejects.toThrow('Email and password are required');
   });
 
   it('throws if email format invalid', async () => {
@@ -78,7 +78,7 @@ describe('authService.register', () => {
 
   it('throws if RUT invalid', async () => {
     await expect(authService.register({ email: 'test@test.com', password: validPassword, rut: 'invalid' }))
-      .rejects.toThrow('RUT inválido');
+      .rejects.toThrow('Invalid RUT');
   });
 
   it('creates user successfully', async () => {
@@ -157,7 +157,7 @@ describe('authService.register', () => {
 
 describe('authService.login', () => {
   it('throws if email or password missing', async () => {
-    await expect(authService.login({})).rejects.toThrow('Email and password required');
+    await expect(authService.login({})).rejects.toThrow('Email and password are required');
   });
 
   it('throws if user not found', async () => {

@@ -2,7 +2,6 @@ import { Request, Response } from 'express';
 import { asyncHandler } from '../../middlewares/asyncHandler.middleware.js';
 import * as superAdminService from './super-admin.service.js';
 import { logger } from '../../utils/logger.js';
-import { BadRequestError } from '../../utils/errors.js';
 
 export const listTenants = asyncHandler(async (req: Request, res: Response) => {
   const page = parseInt(String(req.query.page || '1'), 10);

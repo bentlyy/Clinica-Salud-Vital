@@ -265,7 +265,6 @@ export const seedTestTenants = async (): Promise<void> => {
         const subId = subResult.rows[0].id;
         for (let m = 1; m <= 6; m++) {
           const paidAt = addDays(today, -(m * 30));
-          const periodStart = addDays(paidAt, -30);
           try {
             await pool.query(
               `INSERT INTO subscription_invoices (tenant_id, subscription_id, amount, currency, status, period_start, period_end, paid_at)

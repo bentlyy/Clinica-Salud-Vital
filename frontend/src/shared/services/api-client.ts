@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { type AxiosRequestConfig } from 'axios';
 import toast from 'react-hot-toast';
 
 let accessToken: string | null = null;
@@ -70,7 +70,7 @@ apiClient.interceptors.response.use(
             if (originalRequest.headers) {
               originalRequest.headers.Authorization = `Bearer ${token}`;
             }
-            resolve(apiClient(originalRequest as any));
+            resolve(apiClient(originalRequest as AxiosRequestConfig));
           });
         });
       }
@@ -90,7 +90,7 @@ apiClient.interceptors.response.use(
         if (originalRequest.headers) {
           originalRequest.headers.Authorization = `Bearer ${data.access_token}`;
         }
-        return apiClient(originalRequest as any);
+        return apiClient(originalRequest as AxiosRequestConfig);
       } catch {
         setAccessToken(null);
         refreshSubscribers = [];
