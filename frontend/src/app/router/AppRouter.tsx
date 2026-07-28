@@ -63,6 +63,7 @@ const GuestBookingPage = lazy(() => import('@/modules/bookings/pages/GuestBookin
 // Auth module
 const TwoFAPage = lazy(() => import('@/modules/2fa/pages/TwoFAPage'));
 const ForgotPasswordPage = lazy(() => import('@/modules/auth/pages/ForgotPasswordPage'));
+const RegisterPage = lazy(() => import('@/modules/auth/pages/RegisterPage'));
 
 // Bookings confirmation
 const ConfirmPage = lazy(() => import('@/modules/bookings/pages/ConfirmPage'));
@@ -119,7 +120,6 @@ function FeatureRoute({ featureKey, featureName }: { featureKey: string; feature
 }
 
 export function AppRouter() {
-  const { t } = useTranslation('common');
   return (
     <Suspense fallback={<LoadingState />}>
       <Routes>
@@ -205,6 +205,7 @@ export function AppRouter() {
         {/* Public routes */}
         <Route path="/2fa" element={<TwoFAPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/register" element={<RegisterPage />} />
         <Route path="/confirm/:token" element={<ConfirmPage />} />
         <Route path="/booking" element={<GuestBookingPage />} />
 

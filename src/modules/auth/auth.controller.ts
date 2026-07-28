@@ -48,7 +48,7 @@ export const inviteInfo = asyncHandler(async (req: Request, res: Response) => {
     throw new BadRequestError(E.AUTH_TOKEN_REQUIRED);
   }
   const data = verifyInviteToken(token);
-  res.json({ email: data.email, name: data.name, role: data.role, specialty: data.specialty });
+  res.json({ email: data.email, name: data.name, role: data.role, specialty: data.specialty, tenant_id: data.tenant_id });
 });
 
 export const register = asyncHandler(async (req: Request, res: Response) => {
