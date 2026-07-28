@@ -186,11 +186,10 @@ export const seedSuperAdmin = async (): Promise<void> => {
 // ─── Seed: Test tenants (comprehensive) ─────────────────────────────────────
 
 export const seedTestTenants = async (): Promise<void> => {
-  // TODO: restore after clinica-sur seed runs on Render
-  // if (process.env.NODE_ENV === 'production') {
-  //   logger.info('[SEED SKIPPED] No se ejecutan tenants de prueba en producción');
-  //   return;
-  // }
+  if (process.env.NODE_ENV === 'production') {
+    logger.info('[SEED SKIPPED] No se ejecutan tenants de prueba en producción');
+    return;
+  }
 
   await pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS idx_users_tenant_email ON users (tenant_id, email)`);
   const hash = await bcrypt.hash(process.env.SEED_PASSWORD || 'REPLACED_PASSWORD', 12);
