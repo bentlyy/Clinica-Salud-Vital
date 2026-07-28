@@ -5,15 +5,13 @@ import PendingActions from '@mui/icons-material/PendingActions';
 import WarningAmber from '@mui/icons-material/WarningAmber';
 import TrendingUp from '@mui/icons-material/TrendingUp';
 import { MotionDiv } from '@/shared/utils/animations';
+import { formatCurrency, formatNumber } from '@/shared/utils/localeUtils';
 import type { BillingStats } from '../types/billing.types';
 
 interface BillingSummaryCardsProps {
   stats: BillingStats | undefined;
   isLoading: boolean;
 }
-
-const formatCurrency = (amount: number) =>
-  new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(amount);
 
 export function BillingSummaryCards({ stats, isLoading }: BillingSummaryCardsProps) {
   const theme = useTheme();
@@ -83,7 +81,7 @@ export function BillingSummaryCards({ stats, isLoading }: BillingSummaryCardsPro
               </Avatar>
               <Box>
                 <Typography variant="h4" sx={{ fontWeight: 700, color: theme.palette.text.primary }}>
-                  {isLoading ? '...' : card.format === 'number' ? card.value.toLocaleString('es-CL') : formatCurrency(card.value)}
+                  {isLoading ? '...' : card.format === 'number' ? formatNumber(card.value) : formatCurrency(card.value)}
                 </Typography>
                 <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
                   {card.label}

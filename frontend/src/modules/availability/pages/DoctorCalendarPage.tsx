@@ -28,6 +28,7 @@ import EventAvailableIcon from '@mui/icons-material/EventAvailable';
 import EventBusyIcon from '@mui/icons-material/EventBusy';
 import { apiClient } from '@/shared/services/api-client';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
+import { getFullCalendarLocale } from '@/shared/utils/localeUtils';
 import { LoadingState } from '@/shared/components/ui/LoadingState';
 import { ErrorState } from '@/shared/components/ui/ErrorState';
 import { useAuth } from '@/shared/providers/AuthProvider';
@@ -140,13 +141,7 @@ export default function DoctorCalendarPage() {
 
   const [calendarHeight, setCalendarHeight] = useState(600);
 
-  const localeMap: Record<string, string> = {
-    pt: 'pt-br',
-    en: 'en',
-    fr: 'fr',
-    es: 'es',
-  };
-  const calLocale = localeMap[user?.tenant_slug ?? ''] ?? 'es';
+  const calLocale = getFullCalendarLocale();
 
   /* Dynamic height */
   useEffect(() => {

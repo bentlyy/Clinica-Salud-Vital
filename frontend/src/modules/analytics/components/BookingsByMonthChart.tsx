@@ -1,5 +1,6 @@
 import { Box, Paper, Typography } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
+import { useTranslation } from 'react-i18next';
 import {
   BarChart,
   Bar,
@@ -20,6 +21,7 @@ interface BookingsByMonthChartProps {
 
 export function BookingsByMonthChart({ data, isLoading }: BookingsByMonthChartProps) {
   const theme = useTheme();
+  const { t } = useTranslation('analytics');
   return (
     <Paper
       component={motion.div}
@@ -29,16 +31,16 @@ export function BookingsByMonthChart({ data, isLoading }: BookingsByMonthChartPr
       sx={{ p: 3, border: `1px solid ${theme.palette.divider}` }}
     >
       <Typography variant="h6" sx={{ fontWeight: 600, color: theme.palette.text.primary, mb: 3 }}>
-        Citas por Mes
+        {t('bookings_by_month')}
       </Typography>
 
       {isLoading ? (
         <Box sx={{ height: 400, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>Cargando datos...</Typography>
+          <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>{t('loading_data')}</Typography>
         </Box>
       ) : data.length === 0 ? (
         <Box sx={{ height: 400, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>No hay datos disponibles</Typography>
+          <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>{t('noData')}</Typography>
         </Box>
       ) : (
         <ResponsiveContainer width="100%" height={400}>
@@ -54,9 +56,9 @@ export function BookingsByMonthChart({ data, isLoading }: BookingsByMonthChartPr
               }}
             />
             <Legend />
-            <Bar dataKey="confirmed" name="Confirmadas" fill={theme.palette.primary.main} radius={[4, 4, 0, 0]} />
-            <Bar dataKey="cancelled" name="Canceladas" fill={theme.palette.error.main} radius={[4, 4, 0, 0]} />
-            <Bar dataKey="total" name="Total" fill={theme.palette.info.main} radius={[4, 4, 0, 0]} />
+            <Bar dataKey="confirmed" name={t('status_confirmed')} fill={theme.palette.primary.main} radius={[4, 4, 0, 0]} />
+            <Bar dataKey="cancelled" name={t('status_cancelled')} fill={theme.palette.error.main} radius={[4, 4, 0, 0]} />
+            <Bar dataKey="total" name={t('bookings')} fill={theme.palette.info.main} radius={[4, 4, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       )}

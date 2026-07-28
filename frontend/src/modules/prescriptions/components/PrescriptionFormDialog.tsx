@@ -145,7 +145,7 @@ export function PrescriptionFormDialog({
         }}
       >
         <Typography variant="h5" sx={{ fontWeight: 700, color: theme.palette.text.primary }}>
-          {isEditing ? 'Editar Receta' : 'Nueva Receta'}
+          {isEditing ? t('editPrescription', 'Editar Receta') : t('newPrescription', 'Nueva Receta')}
         </Typography>
         <IconButton onClick={onClose} size="small" sx={{ color: theme.palette.text.secondary }}>
           <Close fontSize="small" />
@@ -159,7 +159,7 @@ export function PrescriptionFormDialog({
           {/* Patient info */}
           {patientId ? (
             <TextField
-              label="Paciente"
+              label={t('patient', 'Paciente')}
               value={patientName || `Paciente #${patientId}`}
               disabled
               fullWidth
@@ -172,7 +172,7 @@ export function PrescriptionFormDialog({
               render={({ field }) => (
                 <TextField
                   {...field}
-                  label="Nombre del Paciente"
+                  label={t('patient_name_label', 'Nombre del Paciente')}
                   error={!!errors.patient_name}
                   helperText={errors.patient_name?.message}
                   fullWidth
@@ -185,7 +185,7 @@ export function PrescriptionFormDialog({
           {/* Medications */}
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
             <Typography variant="h6" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
-              Medicamentos
+              {t('medications', 'Medicamentos')}
             </Typography>
             <Button
               size="small"
@@ -193,7 +193,7 @@ export function PrescriptionFormDialog({
               onClick={() => append({ name: '', dosage: '', frequency: '', duration: '', instructions: '' })}
               sx={{ color: theme.palette.primary.main, fontWeight: 600 }}
             >
-              Agregar
+              {t('addMedication', 'Agregar')}
             </Button>
           </Box>
 
@@ -217,7 +217,7 @@ export function PrescriptionFormDialog({
               >
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}>
                   <Typography variant="body2" sx={{ fontWeight: 600, color: theme.palette.text.secondary }}>
-                    Medicamento {index + 1}
+                    {t('medication_number', 'Medicamento')} {index + 1}
                   </Typography>
                   {fields.length > 1 && (
                     <IconButton
@@ -237,7 +237,7 @@ export function PrescriptionFormDialog({
                     render={({ field: f }) => (
                       <TextField
                         {...f}
-                        label="Nombre"
+                        label={t('medicationName', 'Nombre')}
                         error={!!errors.medications?.[index]?.name}
                         helperText={errors.medications?.[index]?.name?.message}
                         fullWidth
@@ -251,8 +251,8 @@ export function PrescriptionFormDialog({
                     render={({ field: f }) => (
                       <TextField
                         {...f}
-                        label="Dosis"
-                        placeholder="ej. 500mg"
+                        label={t('dosage', 'Dosis')}
+                        placeholder={t('dosage_placeholder', 'ej. 500mg')}
                         error={!!errors.medications?.[index]?.dosage}
                         helperText={errors.medications?.[index]?.dosage?.message}
                         fullWidth
@@ -296,8 +296,8 @@ export function PrescriptionFormDialog({
                     render={({ field: f }) => (
                       <TextField
                         {...f}
-                        label="Instrucciones especiales"
-                        placeholder="ej. Tomar con alimentos"
+                        label={t('instructions_label', 'Instrucciones especiales')}
+                        placeholder={t('instructions_placeholder', 'ej. Tomar con alimentos')}
                         fullWidth
                         size="small"
                         sx={{ gridColumn: { xs: 'span 1', sm: 'span 2' } }}
@@ -316,11 +316,11 @@ export function PrescriptionFormDialog({
             render={({ field }) => (
               <TextField
                 {...field}
-                label="Notas Adicionales"
+                label={t('additional_notes', 'Notas Adicionales')}
                 fullWidth
                 multiline
                 rows={2}
-                placeholder="Observaciones generales de la receta..."
+                placeholder={t('generalNotes', 'Observaciones generales de la receta...')}
               />
             )}
           />
@@ -329,7 +329,7 @@ export function PrescriptionFormDialog({
 
       <DialogActions sx={{ px: 3, py: 2, borderTop: `1px solid ${theme.palette.divider}` }}>
         <Button onClick={onClose} variant="outlined" sx={{ mr: 1 }}>
-          Cancelar
+          {t('cancel', 'Cancelar')}
         </Button>
         <Button
           type="submit"
@@ -337,7 +337,7 @@ export function PrescriptionFormDialog({
           variant="contained"
           disabled={isSaving}
         >
-          {isSaving ? 'Guardando...' : isEditing ? 'Actualizar' : 'Crear Receta'}
+          {isSaving ? t('saving', 'Guardando...') : isEditing ? t('update_btn', 'Actualizar') : t('create_btn', 'Crear Receta')}
         </Button>
       </DialogActions>
     </Dialog>

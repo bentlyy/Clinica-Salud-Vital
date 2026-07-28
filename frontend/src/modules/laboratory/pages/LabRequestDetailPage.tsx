@@ -28,6 +28,7 @@ import ArrowBack from '@mui/icons-material/ArrowBack';
 import LocalShipping from '@mui/icons-material/LocalShipping';
 import Science from '@mui/icons-material/Science';
 import Edit from '@mui/icons-material/Edit';
+import { formatDateTime } from '@/shared/utils/localeUtils';
 import Verified from '@mui/icons-material/Verified';
 import Medication from '@mui/icons-material/Medication';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
@@ -235,7 +236,7 @@ function LabRequestDetailPageInner() {
                   {t('created_at')}
                 </Typography>
                 <Typography variant="body2" sx={{ color: theme.palette.text.primary }}>
-                  {new Date(request.created_at).toLocaleString('es-CL')}
+                  {formatDateTime(request.created_at)}
                 </Typography>
               </Grid>
               <Grid xs={12} sm={6}>
@@ -243,7 +244,7 @@ function LabRequestDetailPageInner() {
                   {t('updated_at')}
                 </Typography>
                 <Typography variant="body2" sx={{ color: theme.palette.text.primary }}>
-                  {new Date(request.updated_at).toLocaleString('es-CL')}
+                  {formatDateTime(request.updated_at)}
                 </Typography>
               </Grid>
             </Grid>
@@ -372,7 +373,7 @@ function LabRequestDetailPageInner() {
                     <TableCell>
                       <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
                         {sample.reception_time
-                          ? new Date(sample.reception_time).toLocaleString('es-CL')
+                          ? formatDateTime(sample.reception_time)
                           : '—'}
                       </Typography>
                     </TableCell>

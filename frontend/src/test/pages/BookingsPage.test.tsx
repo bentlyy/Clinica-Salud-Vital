@@ -34,6 +34,10 @@ vi.mock('framer-motion', () => {
   };
 });
 
+vi.mock('@/i18n/i18n', () => ({
+  default: { language: 'es', on: vi.fn() },
+}));
+
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (key: string, opts?: Record<string, unknown>) => {

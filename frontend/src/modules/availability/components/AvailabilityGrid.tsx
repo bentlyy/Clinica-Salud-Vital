@@ -48,8 +48,8 @@ export function AvailabilityGrid({ rules, onDelete }: AvailabilityGridProps) {
         <Typography variant="body1" sx={{ color: theme.palette.text.secondary }}>
           {t('no_rules_configured')}
         </Typography>
-        <Typography variant="body2" sx={{ color: theme.palette.text.secondary, mt: 1 }}>
-          Agrega horarios para que los pacientes puedan agendar citas.
+          <Typography variant="body2" sx={{ color: theme.palette.text.secondary, mt: 1 }}>
+          {t('empty_message')}
         </Typography>
       </Box>
     );
@@ -148,7 +148,7 @@ export function AvailabilityGrid({ rules, onDelete }: AvailabilityGridProps) {
                           }}
                         />
                         {onDelete && hour === Math.floor(activeBlock.startMinutes / 60) && (
-                          <Tooltip title="Eliminar regla">
+                          <Tooltip title={t('delete')}>
                             <IconButton
                               size="small"
                               onClick={(e) => {

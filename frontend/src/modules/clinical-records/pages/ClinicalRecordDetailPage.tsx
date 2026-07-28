@@ -1,4 +1,5 @@
 import { useParams, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Box, Paper, Typography, Button, Divider, Chip } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
@@ -7,12 +8,13 @@ import Edit from '@mui/icons-material/Edit';
 import Print from '@mui/icons-material/Print';
 import CalendarToday from '@mui/icons-material/CalendarToday';
 import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
+import type { Locale } from 'date-fns';
 import { MotionDiv } from '@/shared/utils/animations';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { LoadingState } from '@/shared/components/ui/LoadingState';
 import { ErrorState } from '@/shared/components/ui/ErrorState';
 import { useAuth } from '@/shared/providers/AuthProvider';
+import { getDateFnsLocale } from '@/shared/utils/localeUtils';
 import { useClinicalRecordDetail } from '../hooks/useClinicalRecords';
 import { VitalsDisplay } from '../components/VitalsDisplay';
 
@@ -23,6 +25,11 @@ export default function ClinicalRecordDetailPage() {
   const navigate = useNavigate();
   const { hasPermission } = useAuth();
   const canEdit = hasPermission('clinicalRecords', 'edit');
+  const [dateFnsLocale, setDateFnsLocale] = useState<Locale | undefined>(undefined);
+
+  useEffect(() => {
+    getDateFnsLocale().then(setDateFnsLocale);
+  }, []);
 
   const recordId = id ? parseInt(id, 10) : null;
   const { data: record, isLoading, error, refetch } = useClinicalRecordDetail(recordId);
@@ -80,7 +87,7 @@ export default function ClinicalRecordDetailPage() {
             <InfoBlock label={t('label_doctor')} value={record.doctor_name || t('doctor_fallback', { id: record.doctor_id })} />
             <InfoBlock
               label={t('label_created_at')}
-              value={format(new Date(record.created_at), "dd 'de' MMMM 'de' yyyy", { locale: es })}
+              value={format(new Date(record.created_at), "dd 'de' MMMM 'de' yyyy", { locale: dateFnsLocale })}
               icon={<CalendarToday sx={{ fontSize: 14 }} />}
             />
           </Box>

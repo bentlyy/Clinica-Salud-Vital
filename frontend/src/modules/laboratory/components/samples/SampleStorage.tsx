@@ -28,6 +28,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import type { LabSample } from '../../types/lab.types';
+import { formatDate } from '@/shared/utils/localeUtils';
 import { SAMPLE_TYPE_OPTIONS } from '../../types/lab.types';
 
 // ── Schema ──────────────────────────────────────────────────────────────────
@@ -54,6 +55,7 @@ export const SampleStorage = memo(function SampleStorage({
   isLoading = false,
 }: SampleStorageProps) {
   const theme = useTheme();
+  const { t } = useTranslation('lab');
   const [editingId, setEditingId] = useState<number | null>(null);
 
   const unlocatedSamples = useMemo(
@@ -85,10 +87,10 @@ export const SampleStorage = memo(function SampleStorage({
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2.5 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
           <Typography variant="h5" sx={{ fontWeight: 700, color: theme.palette.text.primary }}>
-            Almacenamiento de Muestras
+            {t('sampleStorage')}
           </Typography>
           <Chip
-            label={`${unlocatedSamples.length} sin ubicación`}
+            label={`${unlocatedSamples.length} ${t('withoutLocation')}`}
             size="small"
             sx={{
               backgroundColor: unlocatedSamples.length > 0 ? theme.palette.custom.status.warning.bg : theme.palette.custom.status.success.bg,
@@ -106,7 +108,7 @@ export const SampleStorage = memo(function SampleStorage({
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
           <ScienceIcon sx={{ fontSize: 18, color: theme.palette.warning.main }} />
           <Typography variant="h6" sx={{ fontWeight: 600, color: theme.palette.warning.dark }}>
-            Sin Ubicación
+            {t('noLocation')}
           </Typography>
           <Chip
             label={unlocatedSamples.length}
@@ -133,19 +135,19 @@ export const SampleStorage = memo(function SampleStorage({
           >
             <WarehouseIcon sx={{ fontSize: 32, color: theme.palette.divider, mb: 0.5 }} />
             <Typography variant="body2" sx={{ color: theme.palette.text.secondary, fontSize: '0.75rem' }}>
-              Todas las muestras tienen ubicación asignada
+              {t('allSamplesLocated')}
             </Typography>
           </Box>
         ) : (
           <TableContainer>
             <Table size="small">
               <TableHead>
-                <TableRow>
-                  <TableCell>Código</TableCell>
-                  <TableCell>Tipo</TableCell>
-                  <TableCell>Fecha Recibimiento</TableCell>
-                  <TableCell align="right">Acciones</TableCell>
-                </TableRow>
+              <TableRow>
+                <TableCell>{t('code')}</TableCell>
+                <TableCell>{t('type')}</TableCell>
+                <TableCell>{t('receivedDate')}</TableCell>
+                <TableCell align="right">{t('actionsLabel')}</TableCell>
+              </TableRow>
               </TableHead>
               <TableBody>
                 {unlocatedSamples.map((sample) => (
@@ -172,7 +174,7 @@ export const SampleStorage = memo(function SampleStorage({
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
           <WarehouseIcon sx={{ fontSize: 18, color: theme.palette.primary.main }} />
           <Typography variant="h6" sx={{ fontWeight: 600, color: theme.palette.primary.main }}>
-            Almacenadas
+            {t('stored')}
           </Typography>
           <Chip
             label={locatedSamples.length}
@@ -189,20 +191,20 @@ export const SampleStorage = memo(function SampleStorage({
 
         {locatedSamples.length === 0 ? (
           <Typography variant="body2" sx={{ color: theme.palette.text.secondary, textAlign: 'center', py: 3 }}>
-            No hay muestras almacenadas
+            {t('noStoredSamples')}
           </Typography>
         ) : (
           <TableContainer>
             <Table size="small">
               <TableHead>
-                <TableRow>
-                  <TableCell>Código</TableCell>
-                  <TableCell>Tipo</TableCell>
-                  <TableCell>Ubicación</TableCell>
-                  <TableCell>Temperatura</TableCell>
-                  <TableCell>Fecha</TableCell>
-                  <TableCell align="right">Acciones</TableCell>
-                </TableRow>
+              <TableRow>
+                <TableCell>{t('code')}</TableCell>
+                <TableCell>{t('type')}</TableCell>
+                <TableCell>{t('location')}</TableCell>
+                <TableCell>{t('temperature')}</TableCell>
+                <TableCell>{t('dateLabel')}</TableCell>
+                <TableCell align="right">{t('actionsLabel')}</TableCell>
+              </TableRow>
               </TableHead>
               <TableBody>
                 {locatedSamples.map((sample) => (
@@ -275,7 +277,7 @@ const UnlocatedRow = memo(function UnlocatedRow({
         <TableCell>
           <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
             {sample.reception_time
-              ? new Date(sample.reception_time).toLocaleDateString('es-CL')
+              ? formatDate(sample.reception_time)
               : '—'}
           </Typography>
         </TableCell>
@@ -334,9 +336,9 @@ const UnlocatedRow = memo(function UnlocatedRow({
                 size="small"
                 disabled={isLoading}
                 startIcon={<SaveIcon sx={{ fontSize: 14 }} />}
-              >
-                Guardar
-              </Button>
+                >
+                  {t('save')}
+                </Button>
             </Box>
           </TableCell>
         </TableRow>
@@ -404,7 +406,7 @@ const LocatedRow = memo(function LocatedRow({
         <TableCell>
           <Chip
             icon={isColdStorage ? <AcUnitIcon sx={{ fontSize: 12 }} /> : <ThermostatIcon sx={{ fontSize: 12 }} />}
-            label={isColdStorage ? '2-8 °C' : 'Ambiente'}
+            label={isColdStorage ? '2-8 °C' : t('ambient')}
             size="small"
             sx={{
               backgroundColor: isColdStorage ? theme.palette.custom.status.info.bg : theme.palette.custom.status.success.bg,
@@ -417,7 +419,7 @@ const LocatedRow = memo(function LocatedRow({
         <TableCell>
           <Typography variant="body2" sx={{ color: theme.palette.text.secondary, fontSize: '0.75rem' }}>
             {sample.reception_time
-              ? new Date(sample.reception_time).toLocaleDateString('es-CL')
+              ? formatDate(sample.reception_time)
               : '—'}
           </Typography>
         </TableCell>
@@ -475,9 +477,9 @@ const LocatedRow = memo(function LocatedRow({
                 size="small"
                 disabled={isLoading}
                 startIcon={<SaveIcon sx={{ fontSize: 14 }} />}
-              >
-                Actualizar
-              </Button>
+                >
+                  {t('update')}
+                </Button>
             </Box>
           </TableCell>
         </TableRow>

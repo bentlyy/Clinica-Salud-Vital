@@ -27,7 +27,7 @@ import CheckCircle from '@mui/icons-material/CheckCircle';
 import Chronic from '@mui/icons-material/HealthAndSafety';
 import Edit from '@mui/icons-material/Edit';
 import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
+import type { Locale } from 'date-fns';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -39,6 +39,7 @@ import { ErrorState } from '@/shared/components/ui/ErrorState';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { useAuth } from '@/shared/providers/AuthProvider';
 import { patientService } from '@/modules/patients/services/patient.service';
+import { getDateFnsLocale } from '@/shared/utils/localeUtils';
 import type { Patient } from '@/modules/patients/types/patient.types';
 import {
   useMedicalHistory,
@@ -117,6 +118,11 @@ export default function MedicalHistoryPage() {
   const [editingEntry, setEditingEntry] = useState<MedicalHistoryEntry | null>(null);
   const [patients, setPatients] = useState<PatientOption[]>([]);
   const [patientsLoading, setPatientsLoading] = useState(false);
+  const [dateFnsLocale, setDateFnsLocale] = useState<Locale | undefined>(undefined);
+
+  useEffect(() => {
+    getDateFnsLocale().then(setDateFnsLocale);
+  }, []);
 
   const params = useMemo(
     () => ({
@@ -157,7 +163,7 @@ export default function MedicalHistoryPage() {
         .then((res) => {
           const list = (res.data || []).map((p: Patient) => ({
             id: p.id,
-            name: p.name || p.user_name || `Paciente #${p.id}`,
+            name: p.name || `Paciente #${p.id}`,
             email: p.email || '',
           }));
           setPatients(list);
@@ -392,7 +398,7 @@ export default function MedicalHistoryPage() {
 
                         {entry.onset_date && (
                           <Typography variant="body2" sx={{ color: theme.palette.text.secondary, mb: 0.5 }}>
-                            {t('onset_date_label')}: {format(new Date(entry.onset_date), 'dd MMM yyyy', { locale: es })}
+                            {t('onset_date_label')}: {format(new Date(entry.onset_date), 'dd MMM yyyy', { locale: dateFnsLocale })}
                           </Typography>
                         )}
 
@@ -415,7 +421,7 @@ export default function MedicalHistoryPage() {
                     </Box>
 
                     <Typography variant="caption" sx={{ color: theme.palette.divider }}>
-                      {format(new Date(entry.created_at), "dd 'de' MMMM 'de' yyyy, HH:mm", { locale: es })}
+                      {format(new Date(entry.created_at), "dd 'de' MMMM 'de' yyyy, HH:mm", { locale: dateFnsLocale })}
                     </Typography>
                   </Paper>
                 </Box>

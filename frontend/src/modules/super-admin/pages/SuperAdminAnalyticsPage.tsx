@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   Box,
   Typography,
@@ -33,6 +33,7 @@ import { MotionDiv } from '@/shared/utils/animations';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { LoadingState } from '@/shared/components/ui/LoadingState';
 import { apiClient } from '@/shared/services/api-client';
+import { formatNumber } from '@/shared/utils/localeUtils';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -90,13 +91,22 @@ type TabKey = 'overview' | 'revenue' | 'growth' | 'operations' | 'comparison';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-const MONTH_LABELS = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+function useMonthLabels(): string[] {
+  const { t } = useTranslation('dates');
+  return [
+    t('january'), t('february'), t('march'), t('april'),
+    t('may'), t('june'), t('july'), t('august'),
+    t('september'), t('october'), t('november'), t('december'),
+  ];
+}
 
-function formatMonth(m: string): string {
-  if (!m) return m;
-  const parts = m.split('-');
-  const monthIndex = parseInt(parts[1] ?? '0', 10) - 1;
-  return MONTH_LABELS[monthIndex] ?? m;
+function formatMonthFactory(monthLabels: string[]) {
+  return function formatMonth(m: string): string {
+    if (!m) return m;
+    const parts = m.split('-');
+    const monthIndex = parseInt(parts[1] ?? '0', 10) - 1;
+    return monthLabels[monthIndex] ?? m;
+  };
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -134,7 +144,7 @@ interface KpiStat {
 // ── Main component ───────────────────────────────────────────────────────────
 
 export default function SuperAdminAnalyticsPage() {
-  const { t } = useTranslation();
+  const { t } = useTranslation('super_admin_analytics');
   const theme = useTheme();
   const [activeTab, setActiveTab] = useState<TabKey>('overview');
   const [loading, setLoading] = useState(true);
@@ -145,6 +155,9 @@ export default function SuperAdminAnalyticsPage() {
   const [comparison, setComparison] = useState<ComparisonData[]>([]);
   const [occupancy, setOccupancy] = useState<OccupancyData[]>([]);
   const [topTenants, setTopTenants] = useState<TopTenantData[]>([]);
+
+  const monthLabels = useMonthLabels();
+  const formatMonth = useMemo(() => formatMonthFactory(monthLabels), [monthLabels]);
 
   useEffect(() => {
     const load = async () => {
@@ -179,44 +192,44 @@ export default function SuperAdminAnalyticsPage() {
   const kpiStats: KpiStat[] = [
     {
       icon: '💰',
-      value: `$${Number(d.mrr ?? 0).toLocaleString()}`,
-      label: 'MRR (Ingresos Mensuales)',
+      value: `$${formatNumber(Number(d.mrr ?? 0))}`,
+      label: t('mrr', 'MRR (Ingresos Mensuales)'),
     },
     {
       icon: '📈',
-      value: `$${Number(d.arr ?? 0).toLocaleString()}`,
-      label: 'ARR (Ingresos Anuales)',
+      value: `$${formatNumber(Number(d.arr ?? 0))}`,
+      label: t('arr', 'ARR (Ingresos Anuales)'),
     },
     {
       icon: '📊',
       value: `${String(d.churn_rate ?? 0)}%`,
-      label: 'Churn mensual',
+      label: t('churn_rate', 'Churn mensual'),
       color: (d.churn_rate ?? 0) > 5 ? theme.palette.error.main : '#22c55e',
     },
     {
       icon: '🔄',
       value: `${String(d.annual_retention ?? 0)}%`,
-      label: 'Retención anual',
+      label: t('retention', 'Retención anual'),
     },
   ];
 
   const tabs: { key: TabKey; label: string }[] = [
-    { key: 'overview', label: t('analytics.tab_overview', 'Resumen') },
-    { key: 'revenue', label: t('analytics.tab_revenue', 'Ingresos') },
-    { key: 'growth', label: t('analytics.tab_growth', 'Crecimiento') },
-    { key: 'operations', label: t('analytics.tab_operations', 'Operación') },
-    { key: 'comparison', label: t('analytics.tab_comparison', 'Comparación') },
+    { key: 'overview', label: t('tab_overview', 'Resumen') },
+    { key: 'revenue', label: t('tab_revenue', 'Ingresos') },
+    { key: 'growth', label: t('tab_growth', 'Crecimiento') },
+    { key: 'operations', label: t('tab_operations', 'Operación') },
+    { key: 'comparison', label: t('tab_comparison', 'Comparación') },
   ];
 
   if (loading) {
-    return <LoadingState message={t('analytics.loading', 'Cargando analíticas...')} />;
+    return <LoadingState message={t('loading', 'Cargando analíticas...')} />;
   }
 
   return (
     <MotionDiv initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
       <PageHeader
-        title={t('analytics.title', 'Analíticas de la Plataforma')}
-        subtitle={t('analytics.subtitle', 'Métricas globales de todas las clínicas')}
+        title={t('analytics_title', 'Analíticas de la Plataforma')}
+        subtitle={t('analytics_subtitle', 'Métricas globales de todas las clínicas')}
       />
 
       {/* ── KPI Row ──────────────────────────────────────────────────── */}
@@ -327,6 +340,7 @@ interface OverviewTabProps {
 
 function OverviewTab({ revenue, growth, topTenants, formatMonth }: OverviewTabProps) {
   const theme = useTheme();
+  const { t } = useTranslation('super_admin_analytics');
   return (
     <>
       <Grid container spacing={2} sx={{ mb: 3 }}>
@@ -335,7 +349,7 @@ function OverviewTab({ revenue, growth, topTenants, formatMonth }: OverviewTabPr
           <Paper sx={{ p: 0, border: '1px solid #e5e7eb', borderRadius: '14px', overflow: 'hidden' }}>
             <Box sx={{ px: 2.5, py: 1.5, borderBottom: '1px solid #f3f4f6' }}>
               <Typography variant="subtitle1" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
-                Evolución MRR
+                {t('revenue_evolution', 'Evolución MRR')}
               </Typography>
             </Box>
             <Box sx={{ p: 2, height: 300 }}>
@@ -345,12 +359,12 @@ function OverviewTab({ revenue, growth, topTenants, formatMonth }: OverviewTabPr
                     <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
                     <XAxis dataKey="month" tick={{ fontSize: 11, fill: theme.palette.text.secondary }} tickFormatter={formatMonth} />
                     <YAxis tick={{ fontSize: 11, fill: theme.palette.text.secondary }} tickFormatter={(v: number) => `$${String(v)}`} />
-                    <Tooltip formatter={(value: number) => [`$${Number(value).toLocaleString()}`, 'Ingresos']} />
+                    <Tooltip formatter={(value: number) => [`$${formatNumber(Number(value))}`, t('income_tooltip', 'Ingresos')]} />
                     <Area type="monotone" dataKey="revenue" stroke="#22c55e" fill="#22c55e" fillOpacity={0.15} strokeWidth={2} />
                   </AreaChart>
                 </ResponsiveContainer>
               ) : (
-                <EmptyChart message="Sin datos" />
+                <EmptyChart message={t('no_data', 'Sin datos')} />
               )}
             </Box>
           </Paper>
@@ -361,7 +375,7 @@ function OverviewTab({ revenue, growth, topTenants, formatMonth }: OverviewTabPr
           <Paper sx={{ p: 0, border: '1px solid #e5e7eb', borderRadius: '14px', overflow: 'hidden' }}>
             <Box sx={{ px: 2.5, py: 1.5, borderBottom: '1px solid #f3f4f6' }}>
               <Typography variant="subtitle1" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
-                Crecimiento de Usuarios
+                {t('growth_chart', 'Crecimiento de Usuarios')}
               </Typography>
             </Box>
             <Box sx={{ p: 2, height: 300 }}>
@@ -372,12 +386,12 @@ function OverviewTab({ revenue, growth, topTenants, formatMonth }: OverviewTabPr
                     <XAxis dataKey="month" tick={{ fontSize: 11, fill: theme.palette.text.secondary }} tickFormatter={formatMonth} />
                     <YAxis tick={{ fontSize: 11, fill: theme.palette.text.secondary }} />
                     <Tooltip />
-                    <Bar dataKey="new_users" fill="#8b5cf6" name="Nuevos usuarios" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="new_tenants" fill="#3b82f6" name="Nuevos tenants" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="new_users" fill="#8b5cf6" name={t('new_users', 'Nuevos usuarios')} radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="new_tenants" fill="#3b82f6" name={t('new_tenants', 'Nuevos tenants')} radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               ) : (
-                <EmptyChart message="Sin datos" />
+                <EmptyChart message={t('no_data', 'Sin datos')} />
               )}
             </Box>
           </Paper>
@@ -388,7 +402,7 @@ function OverviewTab({ revenue, growth, topTenants, formatMonth }: OverviewTabPr
       <Paper sx={{ p: 0, border: '1px solid #e5e7eb', borderRadius: '14px', overflow: 'hidden' }}>
         <Box sx={{ px: 2.5, py: 1.5, borderBottom: '1px solid #f3f4f6' }}>
           <Typography variant="subtitle1" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
-            Top Clínicas por Citas
+            {t('top_clinics', 'Top Clínicas por Citas')}
           </Typography>
         </Box>
         <Box sx={{ p: 2, height: 320 }}>
@@ -399,7 +413,7 @@ function OverviewTab({ revenue, growth, topTenants, formatMonth }: OverviewTabPr
                 <XAxis dataKey="name" tick={{ fontSize: 11, fill: theme.palette.text.secondary }} />
                 <YAxis tick={{ fontSize: 11, fill: theme.palette.text.secondary }} />
                 <Tooltip />
-                <Bar dataKey="total_bookings" fill="#8b5cf6" name="Citas" radius={[4, 4, 0, 0]}>
+                <Bar dataKey="total_bookings" fill="#8b5cf6" name={t('bookings_header', 'Citas')} radius={[4, 4, 0, 0]}>
                   {topTenants.slice(0, 10).map((_, i) => (
                     <Cell key={`cell-${String(i)}`} fill={`hsl(${200 + i * 15}, 60%, ${55 - i * 2}%)`} />
                   ))}
@@ -407,7 +421,7 @@ function OverviewTab({ revenue, growth, topTenants, formatMonth }: OverviewTabPr
               </BarChart>
             </ResponsiveContainer>
           ) : (
-            <EmptyChart message="Sin datos" />
+            <EmptyChart message={t('no_data', 'Sin datos')} />
           )}
         </Box>
       </Paper>
@@ -425,6 +439,7 @@ interface RevenueTabProps {
 
 function RevenueTab({ revenue, churn, formatMonth }: RevenueTabProps) {
   const theme = useTheme();
+  const { t } = useTranslation('super_admin_analytics');
   const maxRev = Math.max(...revenue.map((r) => r.revenue), 0);
   const barColors = [theme.palette.info.main, '#7c3aed', theme.palette.warning.main];
 
@@ -434,7 +449,7 @@ function RevenueTab({ revenue, churn, formatMonth }: RevenueTabProps) {
       <Paper sx={{ p: 0, mb: 3, border: '1px solid #e5e7eb', borderRadius: '14px', overflow: 'hidden' }}>
         <Box sx={{ px: 2.5, py: 1.5, borderBottom: '1px solid #f3f4f6' }}>
           <Typography variant="subtitle1" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
-            Evolución de Ingresos — Últimos 12 meses
+            {t('revenue_last_12m', 'Evolución de Ingresos — Últimos 12 meses')}
           </Typography>
         </Box>
         <Box sx={{ p: 2, height: 370 }}>
@@ -444,12 +459,12 @@ function RevenueTab({ revenue, churn, formatMonth }: RevenueTabProps) {
                 <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
                 <XAxis dataKey="month" tick={{ fontSize: 11, fill: theme.palette.text.secondary }} tickFormatter={formatMonth} />
                 <YAxis tick={{ fontSize: 11, fill: theme.palette.text.secondary }} tickFormatter={(v: number) => `$${String(v)}`} />
-                <Tooltip formatter={(value: number) => [`$${Number(value).toLocaleString()}`, 'Ingresos']} />
+                <Tooltip formatter={(value: number) => [`$${formatNumber(Number(value))}`, t('income_tooltip', 'Ingresos')]} />
                 <Area type="monotone" dataKey="revenue" stroke="#22c55e" fill="#22c55e" fillOpacity={0.15} strokeWidth={2} />
               </AreaChart>
             </ResponsiveContainer>
           ) : (
-            <EmptyChart message="Sin datos de ingresos" />
+            <EmptyChart message={t('no_data_revenue', 'Sin datos de ingresos')} />
           )}
         </Box>
       </Paper>
@@ -457,10 +472,10 @@ function RevenueTab({ revenue, churn, formatMonth }: RevenueTabProps) {
       {/* Revenue KPIs */}
       <Grid container spacing={2} sx={{ mb: 3 }}>
         {[
-          { value: `$${Number(churn.mrr ?? 0).toLocaleString()}`, label: 'MRR Actual', textAlign: 'center' as const },
-          { value: `$${Number(churn.arr ?? 0).toLocaleString()}`, label: 'ARR Proyectado', color: '#3b82f6', textAlign: 'center' as const },
-          { value: `${String(churn.churn_rate ?? 0)}%`, label: 'Churn Rate', color: (churn.churn_rate ?? 0) > 5 ? theme.palette.error.main : '#22c55e', textAlign: 'center' as const },
-          { value: `${String(churn.annual_retention ?? 0)}%`, label: 'Retención Anual', color: '#8b5cf6', textAlign: 'center' as const },
+          { value: `$${formatNumber(Number(churn.mrr ?? 0))}`, label: t('mrr_current', 'MRR Actual'), textAlign: 'center' as const },
+          { value: `$${formatNumber(Number(churn.arr ?? 0))}`, label: t('arr_projected', 'ARR Proyectado'), color: '#3b82f6', textAlign: 'center' as const },
+          { value: `${String(churn.churn_rate ?? 0)}%`, label: t('churn_rate', 'Churn Rate'), color: (churn.churn_rate ?? 0) > 5 ? theme.palette.error.main : '#22c55e', textAlign: 'center' as const },
+          { value: `${String(churn.annual_retention ?? 0)}%`, label: t('retention_annual', 'Retención Anual'), color: '#8b5cf6', textAlign: 'center' as const },
         ].map((stat) => (
           <Grid key={stat.label} xs={12} sm={6} md={3}>
             <Paper sx={{ p: 2.5, border: '1px solid #e5e7eb', borderRadius: '12px', textAlign: stat.textAlign }}>
@@ -479,7 +494,7 @@ function RevenueTab({ revenue, churn, formatMonth }: RevenueTabProps) {
       <Paper sx={{ p: 0, border: '1px solid #e5e7eb', borderRadius: '14px', overflow: 'hidden' }}>
         <Box sx={{ px: 2.5, py: 1.5, borderBottom: '1px solid #f3f4f6' }}>
           <Typography variant="subtitle1" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
-            Ingresos por Mes
+            {t('revenue_detail', 'Ingresos por Mes')}
           </Typography>
         </Box>
         <Box sx={{ p: 2.5 }}>
@@ -494,7 +509,7 @@ function RevenueTab({ revenue, churn, formatMonth }: RevenueTabProps) {
                         {formatMonth(rev.month)}
                       </Typography>
                       <Typography variant="body2" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
-                        ${rev.revenue.toLocaleString()}
+                        ${formatNumber(rev.revenue)}
                       </Typography>
                     </Box>
                     <Box sx={{ height: 8, bgcolor: '#f3f4f6', borderRadius: 1, overflow: 'hidden' }}>
@@ -513,7 +528,7 @@ function RevenueTab({ revenue, churn, formatMonth }: RevenueTabProps) {
               })}
             </Box>
           ) : (
-            <EmptyChart message="Sin datos" />
+            <EmptyChart message={t('no_data', 'Sin datos')} />
           )}
         </Box>
       </Paper>
@@ -530,6 +545,7 @@ interface GrowthTabProps {
 
 function GrowthTab({ growth, formatMonth }: GrowthTabProps) {
   const theme = useTheme();
+  const { t } = useTranslation('super_admin_analytics');
   const last = growth.length > 0 ? growth[growth.length - 1] : null;
 
   return (
@@ -538,10 +554,10 @@ function GrowthTab({ growth, formatMonth }: GrowthTabProps) {
       <Paper sx={{ p: 0, mb: 3, border: '1px solid #e5e7eb', borderRadius: '14px', overflow: 'hidden' }}>
         <Box sx={{ px: 2.5, py: 1.5, borderBottom: '1px solid #f3f4f6' }}>
           <Typography variant="subtitle1" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
-            Crecimiento Mensual
+            {t('growth_detail', 'Crecimiento Mensual')}
           </Typography>
           <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
-            Nuevos tenants, usuarios y reservas
+            {t('growth_subtitle', 'Nuevos tenants, usuarios y reservas')}
           </Typography>
         </Box>
         <Box sx={{ p: 2, height: 370 }}>
@@ -553,13 +569,13 @@ function GrowthTab({ growth, formatMonth }: GrowthTabProps) {
                 <YAxis tick={{ fontSize: 11, fill: theme.palette.text.secondary }} />
                 <Tooltip />
                 <Legend />
-                <Bar dataKey="new_tenants" fill="#3b82f6" name="Nuevos tenants" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="new_users" fill="#8b5cf6" name="Nuevos usuarios" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="new_bookings" fill="#22c55e" name="Nuevas reservas" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="new_tenants" fill="#3b82f6" name={t('new_tenants', 'Nuevos tenants')} radius={[4, 4, 0, 0]} />
+                <Bar dataKey="new_users" fill="#8b5cf6" name={t('new_users', 'Nuevos usuarios')} radius={[4, 4, 0, 0]} />
+                <Bar dataKey="new_bookings" fill="#22c55e" name={t('new_bookings', 'Nuevas reservas')} radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           ) : (
-            <EmptyChart message="Sin datos de crecimiento" />
+            <EmptyChart message={t('no_data_growth', 'Sin datos de crecimiento')} />
           )}
         </Box>
       </Paper>
@@ -568,12 +584,12 @@ function GrowthTab({ growth, formatMonth }: GrowthTabProps) {
       {last && (
         <Grid container spacing={2}>
           {[
-            { value: last.new_tenants ?? 0, label: 'Nuevos tenants (mes actual)' },
-            { value: last.new_users ?? 0, label: 'Nuevos usuarios (mes actual)' },
-            { value: last.new_bookings ?? 0, label: 'Nuevas reservas (mes actual)' },
+            { value: last.new_tenants ?? 0, label: t('new_tenants_current', 'Nuevos tenants (mes actual)') },
+            { value: last.new_users ?? 0, label: t('new_users_current', 'Nuevos usuarios (mes actual)') },
+            { value: last.new_bookings ?? 0, label: t('new_bookings_current', 'Nuevas reservas (mes actual)') },
             {
               value: growth.reduce((sum, g) => sum + Number(g.new_tenants ?? 0), 0),
-              label: 'Total tenants (12 meses)',
+              label: t('total_tenants_12m', 'Total tenants (12 meses)'),
             },
           ].map((stat) => (
             <Grid key={stat.label} xs={12} sm={6} md={3}>
@@ -601,15 +617,16 @@ interface OperationsTabProps {
 
 function OperationsTab({ operations }: OperationsTabProps) {
   const theme = useTheme();
+  const { t } = useTranslation('super_admin_analytics');
   return (
     <>
       {/* Operations KPIs */}
       <Grid container spacing={2} sx={{ mb: 3 }}>
         {[
-          { value: `${String(operations.cancellation_rate ?? 0)}%`, label: 'Tasa cancelación', color: '#22c55e' },
-          { value: `${String(operations.no_show_rate ?? 0)}%`, label: 'No-show rate', color: '#8b5cf6' },
-          { value: String(operations.avg_lead_days ?? 0), label: 'Días prom. reserva→atención', color: '#3b82f6' },
-          { value: String(operations.total_bookings_period ?? 0), label: 'Citas (últimos 6m)', color: theme.palette.warning.main },
+          { value: `${String(operations.cancellation_rate ?? 0)}%`, label: t('cancellation_rate', 'Tasa cancelación'), color: '#22c55e' },
+          { value: `${String(operations.no_show_rate ?? 0)}%`, label: t('no_show_rate', 'No-show rate'), color: '#8b5cf6' },
+          { value: String(operations.avg_lead_days ?? 0), label: t('lead_days', 'Días prom. reserva→atención'), color: '#3b82f6' },
+          { value: String(operations.total_bookings_period ?? 0), label: t('total_bookings_6m', 'Citas (últimos 6m)'), color: theme.palette.warning.main },
         ].map((stat) => (
           <Grid key={stat.label} xs={12} sm={6} md={3}>
             <Paper sx={{ p: 2.5, border: '1px solid #e5e7eb', borderRadius: '12px', textAlign: 'center' }}>
@@ -631,7 +648,7 @@ function OperationsTab({ operations }: OperationsTabProps) {
           <Paper sx={{ p: 0, border: '1px solid #e5e7eb', borderRadius: '14px', overflow: 'hidden' }}>
             <Box sx={{ px: 2.5, py: 1.5, borderBottom: '1px solid #f3f4f6' }}>
               <Typography variant="subtitle1" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
-                Especialidades más usadas
+                {t('specialties_used', 'Especialidades más usadas')}
               </Typography>
             </Box>
             <Box sx={{ p: 2, height: 320 }}>
@@ -646,7 +663,7 @@ function OperationsTab({ operations }: OperationsTabProps) {
                   </BarChart>
                 </ResponsiveContainer>
               ) : (
-                <EmptyChart message="Sin datos" />
+                <EmptyChart message={t('no_data', 'Sin datos')} />
               )}
             </Box>
           </Paper>
@@ -657,7 +674,7 @@ function OperationsTab({ operations }: OperationsTabProps) {
           <Paper sx={{ p: 0, border: '1px solid #e5e7eb', borderRadius: '14px', overflow: 'hidden' }}>
             <Box sx={{ px: 2.5, py: 1.5, borderBottom: '1px solid #f3f4f6' }}>
               <Typography variant="subtitle1" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
-                Top 10 Médicos por citas
+                {t('top_doctors', 'Top 10 Médicos por citas')}
               </Typography>
             </Box>
             <Box sx={{ p: 2, height: 320 }}>
@@ -672,7 +689,7 @@ function OperationsTab({ operations }: OperationsTabProps) {
                   </BarChart>
                 </ResponsiveContainer>
               ) : (
-                <EmptyChart message="Sin datos" />
+                <EmptyChart message={t('no_data', 'Sin datos')} />
               )}
             </Box>
           </Paper>
@@ -684,7 +701,7 @@ function OperationsTab({ operations }: OperationsTabProps) {
         <Paper sx={{ p: 0, border: '1px solid #e5e7eb', borderRadius: '14px', overflow: 'hidden' }}>
           <Box sx={{ px: 2.5, py: 1.5, borderBottom: '1px solid #f3f4f6' }}>
             <Typography variant="subtitle1" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
-              Demanda por Hora del Día
+              {t('hourly_demand', 'Demanda por Hora del Día')}
             </Typography>
           </Box>
           <Box sx={{ p: 2, height: 270 }}>
@@ -713,6 +730,7 @@ interface ComparisonTabProps {
 
 function ComparisonTab({ comparison, occupancy }: ComparisonTabProps) {
   const theme = useTheme();
+  const { t } = useTranslation('super_admin_analytics');
   const getScoreColor = (score: number): string => {
     if (score >= 80) return '#22c55e';
     if (score >= 50) return '#fbbf24';
@@ -726,18 +744,18 @@ function ComparisonTab({ comparison, occupancy }: ComparisonTabProps) {
       {occupancy.length > 0 && (
         <Paper sx={{ p: 0, mb: 3, border: '1px solid #e5e7eb', borderRadius: '14px', overflow: 'hidden' }}>
           <Box sx={{ px: 2.5, py: 1.5, borderBottom: '1px solid #f3f4f6' }}>
-            <Typography variant="subtitle1" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
-              Ocupación de Doctores por Clínica
-            </Typography>
-          </Box>
-          <Box sx={{ p: 2, height: 320 }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={occupancy}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
-                <XAxis dataKey="tenant_name" tick={{ fontSize: 11, fill: theme.palette.text.secondary }} />
-                <YAxis tick={{ fontSize: 11, fill: theme.palette.text.secondary }} tickFormatter={(v: number) => `${String(v)}%`} />
-                <Tooltip formatter={(value: number) => [`${Number(value).toFixed(1)}%`, 'Ocupación']} />
-                <Bar dataKey="occupancy_rate" name="Tasa de ocupación" radius={[4, 4, 0, 0]}>
+              <Typography variant="subtitle1" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
+                {t('occupancy_chart', 'Ocupación de Doctores por Clínica')}
+              </Typography>
+            </Box>
+            <Box sx={{ p: 2, height: 320 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={occupancy}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+                  <XAxis dataKey="tenant_name" tick={{ fontSize: 11, fill: theme.palette.text.secondary }} />
+                  <YAxis tick={{ fontSize: 11, fill: theme.palette.text.secondary }} tickFormatter={(v: number) => `${String(v)}%`} />
+                  <Tooltip formatter={(value: number) => [`${Number(value).toFixed(1)}%`, t('occupancy', 'Ocupación')]} />
+                  <Bar dataKey="occupancy_rate" name={t('occupancy_name', 'Tasa de ocupación')} radius={[4, 4, 0, 0]}>
                   {occupancy.map((entry, i) => (
                     <Cell
                       key={`occ-${String(i)}`}
@@ -761,7 +779,7 @@ function ComparisonTab({ comparison, occupancy }: ComparisonTabProps) {
       <Paper sx={{ p: 0, border: '1px solid #e5e7eb', borderRadius: '14px', overflow: 'hidden' }}>
         <Box sx={{ px: 2.5, py: 1.5, borderBottom: '1px solid #f3f4f6' }}>
           <Typography variant="subtitle1" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
-            Comparativa Completa de Clínicas
+            {t('comparison_table', 'Comparativa Completa de Clínicas')}
           </Typography>
         </Box>
         {comparison.length > 0 ? (
@@ -769,12 +787,12 @@ function ComparisonTab({ comparison, occupancy }: ComparisonTabProps) {
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>Clínica</TableCell>
-                  <TableCell>Usuarios</TableCell>
-                  <TableCell>Doctores</TableCell>
-                  <TableCell>Citas</TableCell>
-                  <TableCell>Ingresos</TableCell>
-                  <TableCell>Salud</TableCell>
+                  <TableCell>{t('clinic', 'Clínica')}</TableCell>
+                  <TableCell>{t('users_header', 'Usuarios')}</TableCell>
+                  <TableCell>{t('doctors_header', 'Doctores')}</TableCell>
+                  <TableCell>{t('bookings_header', 'Citas')}</TableCell>
+                  <TableCell>{t('revenue_header', 'Ingresos')}</TableCell>
+                  <TableCell>{t('health_score', 'Salud')}</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -808,7 +826,7 @@ function ComparisonTab({ comparison, occupancy }: ComparisonTabProps) {
                             </Typography>
                             {!row.active && (
                               <Typography variant="caption" sx={{ color: theme.palette.error.main }}>
-                                (inactiva)
+                                {t('inactive_label', '(inactiva)')}
                               </Typography>
                             )}
                           </Box>
@@ -817,7 +835,7 @@ function ComparisonTab({ comparison, occupancy }: ComparisonTabProps) {
                       <TableCell>{row.total_users ?? 0}</TableCell>
                       <TableCell>{row.total_doctors ?? 0}</TableCell>
                       <TableCell>{row.total_bookings ?? 0}</TableCell>
-                      <TableCell>${Number(row.metric_value ?? 0).toLocaleString()}</TableCell>
+                      <TableCell>${formatNumber(Number(row.metric_value ?? 0))}</TableCell>
                       <TableCell>
                         <Typography sx={{ fontWeight: 700, color: getScoreColor(score) }}>
                           {score}
@@ -831,7 +849,7 @@ function ComparisonTab({ comparison, occupancy }: ComparisonTabProps) {
           </TableContainer>
         ) : (
           <Box sx={{ p: 4, textAlign: 'center' }}>
-            <EmptyChart message="Sin datos de comparación" />
+            <EmptyChart message={t('no_data_comparison', 'Sin datos de comparación')} />
           </Box>
         )}
       </Paper>

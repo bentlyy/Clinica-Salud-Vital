@@ -30,6 +30,7 @@ import { BillingSummaryCards } from '../components/BillingSummaryCards';
 import { InvoiceFormDialog } from '../components/InvoiceFormDialog';
 import { useInvoiceList, useBillingStats, useCreateInvoice, usePayInvoice, useDeleteInvoice } from '../hooks/useBilling';
 import type { InvoiceStatus, CreateInvoiceInput } from '../types/billing.types';
+import { formatDate, formatCurrency } from '@/shared/utils/localeUtils';
 
 const STATUS_CONFIG: Record<InvoiceStatus, { labelKey: string; color: 'success' | 'warning' | 'error' | 'default' }> = {
   pending: { labelKey: 'pending', color: 'warning' },
@@ -37,12 +38,6 @@ const STATUS_CONFIG: Record<InvoiceStatus, { labelKey: string; color: 'success' 
   overdue: { labelKey: 'overdue', color: 'error' },
   cancelled: { labelKey: 'cancelled', color: 'default' },
 };
-
-const formatCurrency = (amount: number) =>
-  new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(amount);
-
-const formatDate = (date: string) =>
-  new Date(date).toLocaleDateString('es-CL', { day: '2-digit', month: 'short', year: 'numeric' });
 
 export default function BillingPage() {
   const theme = useTheme();

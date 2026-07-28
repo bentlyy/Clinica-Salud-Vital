@@ -6,6 +6,7 @@ import {
   Skeleton,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
+import { formatDate, formatDateTime } from '@/shared/utils/localeUtils';
 import type { LabQCRecord } from '../../types/lab.types';
 
 // ── Props ────────────────────────────────────────────────────────────────────
@@ -39,22 +40,16 @@ function calcStdDev(values: number[], mean: number): number {
   return Math.sqrt(variance);
 }
 
-function formatDate(iso: string | null): string {
+function formatDateChart(iso: string | null): string {
   if (!iso) return '';
   const d = new Date(iso);
-  return d.toLocaleDateString('es-CL', { day: '2-digit', month: 'short' });
+  return formatDate(d, { day: '2-digit', month: 'short' });
 }
 
-function formatDateTime(iso: string | null): string {
+function formatDateTimeChart(iso: string | null): string {
   if (!iso) return 'Sin fecha';
   const d = new Date(iso);
-  return d.toLocaleString('es-CL', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+  return formatDateTime(d);
 }
 
 // ── Component ────────────────────────────────────────────────────────────────
@@ -374,7 +369,7 @@ export const ControlChart = memo(function ControlChart({
                 fill={theme.palette.text.secondary}
                 fontFamily={theme.typography.fontFamily}
               >
-                {formatDate(record.performed_at)}
+                {formatDateChart(record.performed_at)}
               </text>
             );
           })}
@@ -452,7 +447,7 @@ export const ControlChart = memo(function ControlChart({
           }}
         >
           <Typography variant="caption" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
-            {formatDateTime(tooltipData.performed_at)}
+            {formatDateTimeChart(tooltipData.performed_at)}
           </Typography>
           <Box sx={{ display: 'flex', gap: 3, mt: 0.5 }}>
             <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>

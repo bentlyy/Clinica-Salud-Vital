@@ -28,6 +28,7 @@ import {
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import Add from '@mui/icons-material/Add';
+import { formatDate } from '@/shared/utils/localeUtils';
 import Search from '@mui/icons-material/Search';
 import Edit from '@mui/icons-material/Edit';
 import Delete from '@mui/icons-material/Delete';
@@ -341,7 +342,7 @@ export default function SuperAdminTenantsPage() {
               <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                 <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>{t('created')}</Typography>
                 <Typography variant="body2" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
-                  {new Date(tenantDetail.created_at).toLocaleDateString('es-CL')}
+                  {formatDate(tenantDetail.created_at)}
                 </Typography>
               </Box>
             </Box>

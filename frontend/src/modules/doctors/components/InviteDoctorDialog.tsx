@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useTheme } from '@mui/material/styles';
+import { useTranslation } from 'react-i18next';
 import {
   Dialog,
   DialogTitle,
@@ -34,6 +35,7 @@ interface InviteDoctorDialogProps {
 
 export function InviteDoctorDialog({ open, onClose, doctor, onSubmit, isPending }: InviteDoctorDialogProps) {
   const theme = useTheme();
+  const { t } = useTranslation('doctors');
   const {
     register,
     handleSubmit,
@@ -92,10 +94,10 @@ export function InviteDoctorDialog({ open, onClose, doctor, onSubmit, isPending 
           </Box>
           <Box>
             <Typography variant="h5" sx={{ fontWeight: 700, color: theme.palette.text.primary }}>
-              Invitar Doctor
+              {t('inviteDoctor', 'Invitar Doctor')}
             </Typography>
             <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
-              Se enviará un enlace de invitación por email
+              {t('invite_subtitle', 'Se enviará un enlace de invitación por email')}
             </Typography>
           </Box>
         </Box>
@@ -129,22 +131,22 @@ export function InviteDoctorDialog({ open, onClose, doctor, onSubmit, isPending 
 
           <TextField
             {...register('email')}
-            label="Email del doctor"
+            label={t('doctor_email_label', 'Email del doctor')}
             type="email"
             fullWidth
             error={!!errors.email}
             helperText={errors.email?.message}
-            placeholder="doctor@ejemplo.com"
+            placeholder={t('email_placeholder', 'doctor@ejemplo.com')}
           />
 
           <Typography variant="caption" sx={{ color: theme.palette.text.secondary, mt: 1.5, display: 'block' }}>
-            El doctor recibirá un email con un enlace para crear su contraseña y activar su cuenta.
+            {t('invite_description', 'El doctor recibirá un email con un enlace para crear su contraseña y activar su cuenta.')}
           </Typography>
         </DialogContent>
 
         <DialogActions sx={{ px: 3, pb: 3, pt: 1, gap: 1 }}>
           <Button onClick={onClose} variant="outlined" disabled={isPending}>
-            Cancelar
+            {t('cancelButton', 'Cancelar')}
           </Button>
           <Button
             type="submit"
@@ -158,7 +160,7 @@ export function InviteDoctorDialog({ open, onClose, doctor, onSubmit, isPending 
               },
             }}
           >
-            {isPending ? 'Enviando...' : 'Enviar Invitación'}
+            {isPending ? t('sending', 'Enviando...') : t('send_invitation', 'Enviar Invitación')}
           </Button>
         </DialogActions>
       </Box>

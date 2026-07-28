@@ -16,6 +16,7 @@ import {
 import { useTheme } from '@mui/material/styles';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
+import { formatDate } from '@/shared/utils/localeUtils';
 import { clinicalRecordService } from '../../clinical-records/services/clinical-record.service';
 import type { ClinicalRecord } from '../../clinical-records/types/clinical-record.types';
 
@@ -89,7 +90,7 @@ export default function AdminMedicalHistoryPage() {
                       <TableRow key={r.id} hover>
                         <TableCell><Typography variant="body2" sx={{ fontWeight: 600 }}>{r.patient_name || `Paciente #${r.patient_id}`}</Typography></TableCell>
                         <TableCell><Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>{r.diagnosis || '—'}</Typography></TableCell>
-                        <TableCell><Typography variant="body2" sx={{ color: theme.palette.text.secondary, fontSize: 13 }}>{new Date(r.created_at).toLocaleDateString('es-CL')}</Typography></TableCell>
+                        <TableCell><Typography variant="body2" sx={{ color: theme.palette.text.secondary, fontSize: 13 }}>{formatDate(r.created_at)}</Typography></TableCell>
                         <TableCell><Chip label={st.label} size="small" sx={{ backgroundColor: st.bg, color: st.fg, fontSize: 11 }} /></TableCell>
                       </TableRow>
                     );

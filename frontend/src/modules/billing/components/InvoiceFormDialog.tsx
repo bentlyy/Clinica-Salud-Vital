@@ -21,6 +21,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { InvoiceItem, CreateInvoiceInput } from '../types/billing.types';
+import { formatCurrency } from '@/shared/utils/localeUtils';
 
 const invoiceItemSchema = z.object({
   description: z.string().min(1, 'La descripción es requerida'),
@@ -125,7 +126,7 @@ export function InvoiceFormDialog({ open, onClose, onSubmit, isLoading }: Invoic
       }}
     >
       <DialogTitle sx={{ fontWeight: 700, color: theme.palette.text.primary, pb: 1 }}>
-        Crear Nueva Factura
+        {t('newInvoice', 'Crear Nueva Factura')}
       </DialogTitle>
 
       <DialogContent sx={{ pt: '16px !important' }}>
@@ -138,7 +139,7 @@ export function InvoiceFormDialog({ open, onClose, onSubmit, isLoading }: Invoic
                 {...field}
                 select
                 fullWidth
-                label="Paciente"
+                label={t('patient', 'Paciente')}
                 value={field.value || ''}
                 onChange={(e) => field.onChange(Number(e.target.value))}
                 error={!!errors.patient_id}
@@ -146,7 +147,7 @@ export function InvoiceFormDialog({ open, onClose, onSubmit, isLoading }: Invoic
                 sx={{ mb: 2 }}
               >
                 <MenuItem value={0} disabled>
-                  Seleccionar paciente...
+                  {t('select_patient', 'Seleccionar paciente...')}
                 </MenuItem>
                 {patients.map((p) => (
                   <MenuItem key={p.id} value={p.id}>
@@ -165,7 +166,7 @@ export function InvoiceFormDialog({ open, onClose, onSubmit, isLoading }: Invoic
                 {...field}
                 fullWidth
                 type="date"
-                label="Fecha de vencimiento"
+                label={t('dueDate', 'Fecha de vencimiento')}
                 error={!!errors.due_date}
                 helperText={errors.due_date?.message}
                 slotProps={{ inputLabel: { shrink: true } }}
@@ -182,7 +183,7 @@ export function InvoiceFormDialog({ open, onClose, onSubmit, isLoading }: Invoic
                 {...field}
                 fullWidth
                 type="number"
-                label="Impuesto (%)"
+                label={t('taxPercent', 'Impuesto (%)')}
                 value={field.value ?? 0}
                 onChange={(e) => field.onChange(Number(e.target.value))}
                 error={!!errors.tax}
@@ -196,14 +197,14 @@ export function InvoiceFormDialog({ open, onClose, onSubmit, isLoading }: Invoic
 
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
             <Typography variant="h6" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
-              Servicios
+              {t('items', 'Servicios')}
             </Typography>
             <Button
               startIcon={<Add />}
               onClick={() => append({ description: '', quantity: 1, unit_price: 0, total: 0 })}
               size="small"
             >
-              Agregar
+              {t('addItem', 'Agregar')}
             </Button>
           </Box>
 
@@ -240,7 +241,7 @@ export function InvoiceFormDialog({ open, onClose, onSubmit, isLoading }: Invoic
                         {...itemField}
                         fullWidth
                         type="number"
-                        label="Cantidad"
+                        label={t('itemQuantity', 'Cantidad')}
                         size="small"
                         value={itemField.value ?? 1}
                         onChange={(e) => itemField.onChange(Number(e.target.value))}
@@ -257,7 +258,7 @@ export function InvoiceFormDialog({ open, onClose, onSubmit, isLoading }: Invoic
                         {...itemField}
                         fullWidth
                         type="number"
-                        label="Precio Unit."
+                        label={t('itemPrice', 'Precio Unit.')}
                         size="small"
                         value={itemField.value ?? 0}
                         onChange={(e) => itemField.onChange(Number(e.target.value))}
@@ -269,11 +270,11 @@ export function InvoiceFormDialog({ open, onClose, onSubmit, isLoading }: Invoic
                   <TextField
                     fullWidth
                     size="small"
-                    label="Total"
+                    label={t('total', 'Total')}
                     value={(() => {
                       const qty = Number(watchedItems[index]?.quantity) || 0;
                       const price = Number(watchedItems[index]?.unit_price) || 0;
-                      return new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(qty * price);
+                      return formatCurrency(qty * price);
                     })()}
                     slotProps={{ input: { readOnly: true } }}
                   />
@@ -300,13 +301,13 @@ export function InvoiceFormDialog({ open, onClose, onSubmit, isLoading }: Invoic
 
           <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 3, mb: 2 }}>
             <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
-              Subtotal: {new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(subtotal)}
+              Subtotal: {formatCurrency(subtotal)}
             </Typography>
             <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
-              Impuesto ({watchedTax}%): {new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(taxAmount)}
+              Impuesto ({watchedTax}%): {formatCurrency(taxAmount)}
             </Typography>
             <Typography variant="h6" sx={{ fontWeight: 700, color: theme.palette.primary.main }}>
-              Total: {new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(grandTotal)}
+              Total: {formatCurrency(grandTotal)}
             </Typography>
           </Box>
 
@@ -319,7 +320,7 @@ export function InvoiceFormDialog({ open, onClose, onSubmit, isLoading }: Invoic
                 fullWidth
                 multiline
                 rows={2}
-                label="Notas (opcional)"
+                label={t('notes_optional', 'Notas (opcional)')}
                 value={field.value ?? ''}
                 sx={{ mt: 1 }}
               />
@@ -330,10 +331,10 @@ export function InvoiceFormDialog({ open, onClose, onSubmit, isLoading }: Invoic
 
       <DialogActions sx={{ px: 3, pb: 3 }}>
         <Button onClick={onClose} variant="outlined">
-          Cancelar
+          {t('cancel', 'Cancelar')}
         </Button>
         <Button type="submit" form="invoice-form" variant="contained" disabled={isLoading}>
-          {isLoading ? 'Creando...' : 'Crear Factura'}
+          {isLoading ? t('creating', 'Creando...') : t('createInvoice', 'Crear Factura')}
         </Button>
       </DialogActions>
     </Dialog>
