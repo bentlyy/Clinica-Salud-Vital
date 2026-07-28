@@ -4,6 +4,125 @@ import { logger } from '../utils/logger.js';
 
 const DEFAULT_TENANT_ID = process.env.DEFAULT_TENANT_ID || 'default';
 
+// ─── Helpers ────────────────────────────────────────────────────────────────
+
+const addDays = (date: Date, days: number): Date => {
+  const d = new Date(date);
+  d.setDate(d.getDate() + days);
+  return d;
+};
+
+const formatDate = (d: Date): string => {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+};
+
+const randomInt = (min: number, max: number): number =>
+  Math.floor(Math.random() * (max - min + 1)) + min;
+
+const pick = <T>(arr: T[]): T => arr[randomInt(0, arr.length - 1)];
+
+// ─── Test data constants ────────────────────────────────────────────────────
+
+const TEST_TENANTS = [
+  {
+    id: 'clinica-norte',
+    name: 'Clínica del Norte',
+    domain: 'norte',
+    adminEmail: 'admin@norte.clinic.com',
+    adminRut: '11111111-1',
+    planCode: 'pro',
+    labTechnicianEmail: 'lab@norte.clinic.com',
+  },
+  {
+    id: 'clinica-sur',
+    name: 'Clínica del Sur',
+    domain: 'sur',
+    adminEmail: 'admin@sur.clinic.com',
+    adminRut: '22222222-2',
+    planCode: 'basic',
+    labTechnicianEmail: null as string | null,
+  },
+];
+
+const vitalPresets: Record<string, () => Record<string, unknown>> = {
+  hypertension: () => ({ blood_pressure: '148/94', heart_rate: 76, temperature: 36.5, respiratory_rate: 16, oxygen_saturation: 97, weight: 80, height: 170, bmi: 27.7 }),
+  diabetes: () => ({ blood_pressure: '135/85', heart_rate: 82, temperature: 36.4, respiratory_rate: 17, oxygen_saturation: 98, weight: 75, height: 168, bmi: 26.5 }),
+  normal: () => ({ blood_pressure: '120/80', heart_rate: 72, temperature: 36.6, respiratory_rate: 16, oxygen_saturation: 98, weight: 70, height: 170, bmi: 24.2 }),
+  asthma: () => ({ blood_pressure: '125/80', heart_rate: 88, temperature: 36.8, respiratory_rate: 22, oxygen_saturation: 95, weight: 70, height: 175, bmi: 22.9 }),
+  anxiety: () => ({ blood_pressure: '120/75', heart_rate: 95, temperature: 36.6, respiratory_rate: 20, oxygen_saturation: 99, weight: 65, height: 170, bmi: 22.5 }),
+};
+
+const diagnoses = [
+  { diagnosis: 'Hipertensión arterial esencial', cie10: 'I10', vitalKey: 'hypertension' },
+  { diagnosis: 'Diabetes mellitus tipo 2', cie10: 'E11', vitalKey: 'diabetes' },
+  { diagnosis: 'Asma bronquial', cie10: 'J45', vitalKey: 'asthma' },
+  { diagnosis: 'Gastritis crónica', cie10: 'K29', vitalKey: 'normal' },
+  { diagnosis: 'Lumbago crónico', cie10: 'M54.5', vitalKey: 'normal' },
+  { diagnosis: 'Trastorno de ansiedad generalizada', cie10: 'F41', vitalKey: 'anxiety' },
+  { diagnosis: 'Migraña con aura', cie10: 'G43', vitalKey: 'normal' },
+  { diagnosis: 'Infección del tracto urinario', cie10: 'N39.0', vitalKey: 'normal' },
+];
+
+const chiefComplaintsByDiag: Record<string, string[]> = {
+  'Hipertensión arterial esencial': ['Control de presión arterial', 'Cefalea occipital', 'Mareos frecuentes'],
+  'Diabetes mellitus tipo 2': ['Control de glicemia', 'Visión borrosa', 'Polidipsia'],
+  'Asma bronquial': ['Dificultad para respirar', 'Sibilancias nocturnas', 'Crisis de tos'],
+  'Gastritis crónica': ['Dolor epigástrico', 'Ardor estomacal', 'Náuseas'],
+  'Lumbago crónico': ['Dolor lumbar persistente', 'Lumbago agudo'],
+  'Trastorno de ansiedad generalizada': ['Nerviosismo constante', 'Dificultad para dormir', 'Palpitaciones'],
+  'Migraña con aura': ['Dolor de cabeza intenso', 'Migraña con visión borrosa'],
+  'Infección del tracto urinario': ['Ardor al orinar', 'Orina frecuente', 'Dolor lumbar bajo'],
+};
+
+const medications = [
+  { medication: 'Enalapril 10mg', dosage: '1 comprimido', frequency: 'cada 12 horas', duration: '30 días', instructions: 'Tomar con alimentos' },
+  { medication: 'Metformina 850mg', dosage: '1 comprimido', frequency: 'cada 12 horas', duration: '30 días', instructions: 'Tomar con alimentos' },
+  { medication: 'Salbutamol 100mcg', dosage: '2 inhalaciones', frequency: 'cada 8 horas si es necesario', duration: '10 días', instructions: 'Inhalar cuando presente síntomas' },
+  { medication: 'Omeprazol 20mg', dosage: '1 cápsula', frequency: 'cada 24 horas', duration: '14 días', instructions: 'Tomar en ayunas' },
+  { medication: 'Ibuprofeno 400mg', dosage: '1 comprimido', frequency: 'cada 8 horas', duration: '7 días', instructions: 'Tomar con alimentos' },
+  { medication: 'Sertralina 50mg', dosage: '1 comprimido', frequency: 'cada 24 horas', duration: '30 días', instructions: 'Tomar en la mañana con desayuno' },
+  { medication: 'Sumatriptán 50mg', dosage: '1 comprimido', frequency: 'cada 12 horas si es necesario', duration: '5 días', instructions: 'Tomar al inicio de la cefalea' },
+  { medication: 'Ciprofloxacino 500mg', dosage: '1 comprimido', frequency: 'cada 12 horas', duration: '7 días', instructions: 'Tomar con abundante agua' },
+];
+
+const auditActions = [
+  { action: 'user.login', resource_type: 'user', resource_id: 1 },
+  { action: 'user.logout', resource_type: 'user', resource_id: 1 },
+  { action: 'booking.created', resource_type: 'booking', resource_id: 1 },
+  { action: 'booking.confirmed', resource_type: 'booking', resource_id: 1 },
+  { action: 'booking.cancelled', resource_type: 'booking', resource_id: 1 },
+  { action: 'clinical_record.created', resource_type: 'clinical_record', resource_id: 1 },
+  { action: 'clinical_record.updated', resource_type: 'clinical_record', resource_id: 1 },
+  { action: 'invoice.created', resource_type: 'invoice', resource_id: 1 },
+  { action: 'invoice.paid', resource_type: 'invoice', resource_id: 1 },
+  { action: 'lab_request.created', resource_type: 'lab_request', resource_id: 1 },
+  { action: 'lab_request.completed', resource_type: 'lab_request', resource_id: 1 },
+  { action: 'patient.created', resource_type: 'user', resource_id: 1 },
+  { action: 'doctor.updated', resource_type: 'doctor', resource_id: 1 },
+  { action: 'subscription.renewed', resource_type: 'subscription', resource_id: 1 },
+  { action: 'settings.updated', resource_type: 'tenant', resource_id: 1 },
+];
+
+const medicalConditions = [
+  { condition: 'Hipertensión arterial', status: 'chronic', notes: 'Diagnosticada en 2018, controlada con medicación' },
+  { condition: 'Diabetes mellitus tipo 2', status: 'chronic', notes: 'En tratamiento con Metformina desde 2020' },
+  { condition: 'Asma bronquial leve', status: 'chronic', notes: 'Control con Salbutamol a demanda' },
+  { condition: 'Gastritis por H. pylori', status: 'resolved', notes: 'Eradicación completada en 2023' },
+  { condition: 'Hipercolesterolemia', status: 'chronic', notes: 'Tratamiento con estatinas' },
+  { condition: 'Ansiedad generalizada', status: 'active', notes: 'En tratamiento psiquiátrico' },
+  { condition: 'Migraña crónica', status: 'chronic', notes: 'Profilaxis con sumatriptán' },
+  { condition: 'ITU recurrente', status: 'chronic', notes: '3 episodios en el último año' },
+  { condition: 'Lumbago degenerativo', status: 'chronic', notes: 'Fisioterapia y analgesia' },
+  { condition: 'Reflujo gastroesofágico', status: 'active', notes: 'Tratamiento con Omeprazol' },
+  { condition: 'Alergia a penicilina', status: 'family', notes: 'Antecedente familiar relevante' },
+  { condition: 'Obesidad grado I', status: 'active', notes: 'IMC 30.2, plan de alimentación' },
+];
+
+// ─── Seed: Default tenant ───────────────────────────────────────────────────
+
 export const seedDefaultTenant = async (): Promise<void> => {
   const exists = await pool.query('SELECT 1 FROM tenants WHERE id = $1', [DEFAULT_TENANT_ID]);
   if (exists.rows.length > 0) {
@@ -26,7 +145,7 @@ export const seedDefaultTenant = async (): Promise<void> => {
     await pool.query(
       `INSERT INTO subscriptions (tenant_id, plan_id, status, current_period_start, current_period_end)
        SELECT $1, id, 'active', NOW(), NOW() + INTERVAL '1 year'
-       FROM plans WHERE code = 'enterprise'
+       FROM plans WHERE code = 'pro'
        ON CONFLICT DO NOTHING`,
       [DEFAULT_TENANT_ID]
     );
@@ -34,7 +153,6 @@ export const seedDefaultTenant = async (): Promise<void> => {
     logger.info(`Default tenant created: ${DEFAULT_TENANT_ID}`);
   }
 
-  /* Siempre actualizar usuarios legacy con tenant_id NULL */
   const nullTenantResult = await pool.query(
     'UPDATE users SET tenant_id = $1 WHERE tenant_id IS NULL',
     [DEFAULT_TENANT_ID]
@@ -44,10 +162,11 @@ export const seedDefaultTenant = async (): Promise<void> => {
   }
 };
 
+// ─── Seed: Super admin ──────────────────────────────────────────────────────
+
 export const seedSuperAdmin = async (): Promise<void> => {
   const exists = await pool.query('SELECT 1 FROM users WHERE role = $1 LIMIT 1', ['superadmin']);
   if (exists.rows.length > 0) {
-    /* Ensure existing superadmin has NULL tenant_id for cross-clinic access */
     await pool.query("UPDATE users SET tenant_id = NULL WHERE role = 'superadmin' AND tenant_id IS NOT NULL");
     logger.info('Superadmin already exists — ensured cross-clinic tenant_id=NULL');
     return;
@@ -64,40 +183,7 @@ export const seedSuperAdmin = async (): Promise<void> => {
   logger.info('Superadmin created with tenant_id=NULL (cross-clinic)');
 };
 
-const TEST_TENANTS = [
-  {
-    id: 'clinica-norte',
-    name: 'Clínica del Norte',
-    domain: 'norte',
-    adminEmail: 'admin@norte.clinic.com',
-    adminRut: '11111111-1',
-  },
-  {
-    id: 'clinica-sur',
-    name: 'Clínica del Sur',
-    domain: 'sur',
-    adminEmail: 'admin@sur.clinic.com',
-    adminRut: '22222222-2',
-  },
-];
-
-const addDays = (date: Date, days: number): Date => {
-  const d = new Date(date);
-  d.setDate(d.getDate() + days);
-  return d;
-};
-
-const formatDate = (d: Date): string => {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
-};
-
-const randomInt = (min: number, max: number): number =>
-  Math.floor(Math.random() * (max - min + 1)) + min;
-
-const pick = <T>(arr: T[]): T => arr[randomInt(0, arr.length - 1)];
+// ─── Seed: Test tenants (comprehensive) ─────────────────────────────────────
 
 export const seedTestTenants = async (): Promise<void> => {
   if (process.env.NODE_ENV === 'production') {
@@ -107,14 +193,17 @@ export const seedTestTenants = async (): Promise<void> => {
 
   await pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS idx_users_tenant_email ON users (tenant_id, email)`);
   const hash = await bcrypt.hash(process.env.SEED_PASSWORD || 'REPLACED_PASSWORD', 12);
-
   const today = new Date();
 
   for (const t of TEST_TENANTS) {
+    logger.info(`\n━━━ Seeding tenant: ${t.id} (${t.name}) ━━━`);
+
     const exists = await pool.query('SELECT 1 FROM tenants WHERE id = $1', [t.id]);
     if (exists.rows.length > 0) {
       logger.info(`Tenant ${t.id} already exists — ensuring data seed`);
     }
+
+    // ── Tenant + Subscription ──────────────────────────────────────────────
 
     await pool.query(
       `INSERT INTO tenants (id, name, domain, locale, timezone, config, active)
@@ -133,37 +222,55 @@ export const seedTestTenants = async (): Promise<void> => {
     await pool.query(
       `INSERT INTO subscriptions (tenant_id, plan_id, status, current_period_start, current_period_end)
        SELECT $1, id, 'active', NOW(), NOW() + INTERVAL '1 year'
-       FROM plans WHERE code = 'pro'
+       FROM plans WHERE code = $2
        ON CONFLICT DO NOTHING`,
-      [t.id]
+      [t.id, t.planCode]
     );
+
+    // ── Admin user ─────────────────────────────────────────────────────────
 
     await pool.query(
       'INSERT INTO users (email, password, name, role, rut, tenant_id) VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT (tenant_id, email) DO UPDATE SET name = EXCLUDED.name',
       [t.adminEmail, hash, t.name, 'admin', t.adminRut, t.id]
     );
 
-    const docRuts = [
-      { name: `Dr. ${t.name} Cardiología`, email: `cardio@${t.domain}.clinic.com`, rut: `${t.domain === 'norte' ? '333' : '444'}33333-3`, specialty: 'Cardiología' },
-      { name: `Dr. ${t.name} Pediatría`, email: `pediatria@${t.domain}.clinic.com`, rut: `${t.domain === 'norte' ? '555' : '666'}44444-4`, specialty: 'Pediatría' },
-    ];
+    // ── Doctors (5-6 per tenant, unique specialties) ───────────────────────
+
+    const tenantSpecialties =
+      t.id === 'clinica-norte'
+        ? [
+            { name: 'Dr. Andrés Medina', email: 'medina', rut: '33333333-3', specialty: 'Cardiología' },
+            { name: 'Dra. Carla Fuentes', email: 'fuentes', rut: '33344444-4', specialty: 'Dermatología' },
+            { name: 'Dr. Fernando Reyes', email: 'reyes', rut: '33355555-5', specialty: 'Medicina General' },
+            { name: 'Dra. Patricia Luna', email: 'luna', rut: '33366666-6', specialty: 'Pediatría' },
+            { name: 'Dr. Roberto Sáez', email: 'saez', rut: '33377777-7', specialty: 'Neurología' },
+          ]
+        : [
+            { name: 'Dra. Isabel Toro', email: 'toro', rut: '44433333-3', specialty: 'Ginecología' },
+            { name: 'Dr. Miguel Ortiz', email: 'ortiz', rut: '44444444-4', specialty: 'Traumatología' },
+            { name: 'Dra. Laura Campos', email: 'campos', rut: '44455555-5', specialty: 'Psiquiatría' },
+            { name: 'Dr. Diego Fuentes', email: 'fuentes', rut: '44466666-6', specialty: 'Medicina General' },
+            { name: 'Dra. Valeria Rojas', email: 'rojas', rut: '44477777-7', specialty: 'Endocrinología' },
+          ];
 
     const doctorIds: number[] = [];
 
-    for (const doc of docRuts) {
+    for (const doc of tenantSpecialties) {
+      const fullEmail = `${doc.email}@${t.domain}.clinic.com`;
       const userResult = await pool.query(
         'INSERT INTO users (email, password, name, role, rut, tenant_id) VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT (tenant_id, email) DO UPDATE SET name = EXCLUDED.name RETURNING id',
-        [doc.email, hash, doc.name, 'doctor', doc.rut, t.id]
+        [fullEmail, hash, doc.name, 'doctor', doc.rut, t.id]
       );
-      const userId = userResult.rows[0].id;
+      const userId: number = userResult.rows[0].id;
 
       const doctorResult = await pool.query(
         'INSERT INTO doctors (name, specialty, email, user_id, tenant_id) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (tenant_id, email) DO UPDATE SET name = EXCLUDED.name RETURNING id',
-        [doc.name, doc.specialty, doc.email, userId, t.id]
+        [doc.name, doc.specialty, fullEmail, userId, t.id]
       );
-      const doctorId = doctorResult.rows[0].id;
+      const doctorId: number = doctorResult.rows[0].id;
       doctorIds.push(doctorId);
 
+      // Mon-Fri availability: morning + afternoon
       for (let day = 1; day <= 5; day++) {
         await pool.query(
           'INSERT INTO doctor_availability (doctor_id, day_of_week, start_time, end_time, tenant_id) VALUES ($1, $2, $3, $4, $5) ON CONFLICT DO NOTHING',
@@ -175,52 +282,96 @@ export const seedTestTenants = async (): Promise<void> => {
         );
       }
     }
+    logger.info(`  Doctores: ${doctorIds.length}`);
 
-    // ===== PACIENTES =====
-    const patientNames = [
-      'Pedro Navarro', 'Sofía Rivas', 'Mateo Delgado', 'Valentina Castro', 'Santiago Peña',
-    ];
+    // ── Patients (8-10 per tenant) ─────────────────────────────────────────
+
+    const patientNames =
+      t.id === 'clinica-norte'
+        ? [
+            'Pedro Navarro', 'Sofía Rivas', 'Mateo Delgado', 'Valentina Castro', 'Santiago Peña',
+            'Camila Herrera', 'Nicolás Bravo', 'Isidora Muñoz', 'Joaquín Vargas', 'Fernanda Cortés',
+          ]
+        : [
+            'Gabriela Soto', 'Rodrigo Pinto', 'Constanza Díaz', 'Martín Contreras', 'Paula González',
+            'Sebastián Torres', 'Macarena Fernández', 'Felipe Álvarez', 'Daniela Reyes', 'Tomás Rojas',
+          ];
+
     const patientIds: number[] = [];
 
     for (const pName of patientNames) {
       const email = `${pName.toLowerCase().replace(/\s+/g, '.')}@${t.domain}.clinic.com`;
+      const rutSuffix = pick(['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'K']);
       const result = await pool.query(
         'INSERT INTO users (email, password, name, role, rut, phone, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (tenant_id, email) DO NOTHING RETURNING id',
-        [email, hash, pName, 'user', `${randomInt(10000000, 99999999)}-${pick(['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'K'])}`, `+569${randomInt(10000000, 99999999)}`, t.id]
+        [
+          email, hash, pName, 'user',
+          `${randomInt(10000000, 99999999)}-${rutSuffix}`,
+          `+569${randomInt(10000000, 99999999)}`,
+          t.id,
+        ]
       );
       if (result.rows.length > 0) patientIds.push(result.rows[0].id);
     }
+    logger.info(`  Pacientes: ${patientIds.length}`);
 
-    // ===== USUARIO COMPARTIDO (mismo email en ambas clínicas) =====
+    // ── Shared patient (same email in both clinics) ─────────────────────────
+
     for (const domain of ['norte', 'sur']) {
+      const tenantId = domain === 'norte' ? 'clinica-norte' : 'clinica-sur';
       await pool.query(
         'INSERT INTO users (email, password, name, role, rut, phone, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (tenant_id, email) DO NOTHING',
-        ['compartido@clinic.com', hash, 'Usuario Compartido', 'user', `${randomInt(10000000, 99999999)}-${pick(['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'K'])}`, `+569${randomInt(10000000, 99999999)}`, domain === 'norte' ? 'clinica-norte' : 'clinica-sur']
+        [
+          'compartido@clinic.com', hash, 'Usuario Compartido', 'user',
+          `${randomInt(10000000, 99999999)}-${pick(['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'K'])}`,
+          `+569${randomInt(10000000, 99999999)}`,
+          tenantId,
+        ]
       );
     }
 
-    // ===== RESERVAS (pasadas) =====
+    // ── Lab technician (pro plan only) ─────────────────────────────────────
+
+    if (t.labTechnicianEmail) {
+      await pool.query(
+        'INSERT INTO users (email, password, name, role, rut, tenant_id) VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT (tenant_id, email) DO UPDATE SET name = EXCLUDED.name',
+        [t.labTechnicianEmail, hash, 'Encargado de Laboratorio', 'lab_technician', `${randomInt(10000000, 99999999)}-K`, t.id]
+      );
+      logger.info(`  Lab technician: ${t.labTechnicianEmail}`);
+    }
+
+    // ── Bookings (past + future) ───────────────────────────────────────────
+
     const bookingCheck = await pool.query('SELECT COUNT(*) FROM bookings WHERE tenant_id = $1', [t.id]);
-    if (parseInt(bookingCheck.rows[0].count, 10) === 0 && patientIds.length > 0 && doctorIds.length > 0) {
+    const bookingCount = parseInt(bookingCheck.rows[0].count, 10);
+
+    if (bookingCount === 0 && patientIds.length > 0 && doctorIds.length > 0) {
       await pool.query('ALTER TABLE bookings DROP CONSTRAINT IF EXISTS check_future_date');
-      for (let i = 0; i < 15; i++) {
+
+      // Past bookings (15+ completed)
+      const pastBookingIds: number[] = [];
+      for (let i = 0; i < 18; i++) {
         const doctorId = pick(doctorIds);
         const patientId = pick(patientIds);
-        const daysAgo = randomInt(1, 90);
+        const daysAgo = randomInt(3, 120);
         const date = addDays(today, -daysAgo);
         const hour = randomInt(9, 16);
         const time = `${String(hour).padStart(2, '0')}:${pick(['00', '15', '30', '45'])}`;
-        const status = daysAgo <= 1 ? pick(['pending', 'confirmed']) : pick(['completed', 'completed', 'no_show', 'cancelled']);
+        const status = pick(['completed', 'completed', 'completed', 'no_show', 'cancelled']);
         try {
-          await pool.query(
+          const result = await pool.query(
             `INSERT INTO bookings (doctor_id, user_id, date, time, duration, status, confirmed, tenant_id, created_at)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-            [doctorId, patientId, formatDate(date), time, 30, status, status === 'confirmed' || status === 'completed', t.id, date]
+             VALUES ($1, $2, $3, $4, $5, $6, true, $7, $8)
+             ON CONFLICT (doctor_id, date, time) DO NOTHING
+             RETURNING id`,
+            [doctorId, patientId, formatDate(date), time, 30, status, t.id, date]
           );
-        } catch {}
+          if (result.rows.length > 0) pastBookingIds.push(result.rows[0].id);
+        } catch { /* skip on constraint violation */ }
       }
-      // Reservas futuras
-      for (let i = 0; i < 5; i++) {
+
+      // Future bookings (5+)
+      for (let i = 0; i < 7; i++) {
         const doctorId = pick(doctorIds);
         const patientId = pick(patientIds);
         const daysFromNow = randomInt(1, 30);
@@ -231,54 +382,321 @@ export const seedTestTenants = async (): Promise<void> => {
         try {
           await pool.query(
             `INSERT INTO bookings (doctor_id, user_id, date, time, duration, status, confirmed, tenant_id)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+             ON CONFLICT (doctor_id, date, time) DO NOTHING`,
             [doctorId, patientId, formatDate(date), time, 30, confirmed ? 'confirmed' : 'pending', confirmed, t.id]
           );
-        } catch {}
+        } catch { /* skip on constraint violation */ }
       }
-      await pool.query('ALTER TABLE bookings ADD CONSTRAINT check_future_date CHECK (date >= CURRENT_DATE) NOT VALID');
-    }
 
-    // ===== CLINICAL RECORDS =====
-    const crCheck = await pool.query('SELECT COUNT(*) FROM clinical_records WHERE tenant_id = $1', [t.id]);
-    if (parseInt(crCheck.rows[0].count, 10) === 0) {
+      await pool.query('ALTER TABLE bookings ADD CONSTRAINT check_future_date CHECK (date >= CURRENT_DATE - INTERVAL \'1 day\') NOT VALID');
+      logger.info(`  Bookings: ${pastBookingIds.length} pasadas + 7 futuras`);
+
+      // ── Clinical records (from ~65% of completed bookings) ───────────────
+
       const completedBookings = await pool.query(
-        'SELECT id, doctor_id, user_id FROM bookings WHERE tenant_id = $1 AND status = \'completed\' LIMIT 8',
-        [t.id]
+        'SELECT id, doctor_id, user_id FROM bookings WHERE tenant_id = $1 AND status = $2',
+        [t.id, 'completed']
       );
-      for (const b of completedBookings.rows) {
-        try {
-          await pool.query(
-            `INSERT INTO clinical_records (patient_id, doctor_id, booking_id, chief_complaint, anamnesis, diagnosis, treatment_plan, status, tenant_id)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, 'completed', $8)`,
-            [b.user_id, b.doctor_id, b.id, 'Consulta de control', 'Paciente acude a control programado', 'Control de rutina, sin hallazgos patológicos', 'Continuar tratamiento indicado. Próximo control en 3 meses.', t.id]
-          );
-        } catch {}
-      }
-    }
+      const crIds: number[] = [];
+      const targetCRs = Math.ceil(completedBookings.rows.length * 0.65);
 
-    // ===== FACTURAS DE SUSCRIPCIÓN (para revenue chart) =====
-    const invCheck = await pool.query('SELECT COUNT(*) FROM subscription_invoices WHERE tenant_id = $1', [t.id]);
-    if (parseInt(invCheck.rows[0].count, 10) === 0) {
-      const subResult = await pool.query('SELECT id FROM subscriptions WHERE tenant_id = $1 LIMIT 1', [t.id]);
-      if (subResult.rows.length > 0) {
-        const subId = subResult.rows[0].id;
-        for (let m = 1; m <= 6; m++) {
-          const paidAt = addDays(today, -(m * 30));
+      for (let i = 0; i < targetCRs && i < completedBookings.rows.length; i++) {
+        const b = completedBookings.rows[i];
+        const diag = pick(diagnoses);
+        const complaints = chiefComplaintsByDiag[diag.diagnosis];
+        const chiefComplaint = pick(complaints);
+        const vitals = vitalPresets[diag.vitalKey]();
+
+        const anamnesis = `Paciente de 45 años acude a consulta por ${chiefComplaint.toLowerCase()}. Antecedentes familiares de ${diag.diagnosis.toLowerCase()}. Sin alergias medicamentosas conocidas.`;
+        const physicalExam = `PA: ${vitals.blood_pressure} lpm. FC: ${vitals.heart_rate}. Temp: ${vitals.temperature}°C. FR: ${vitals.respiratory_rate} rpm. SatO2: ${vitals.oxygen_saturation}%. Peso: ${vitals.weight}kg. Talla: ${vitals.height}cm. IMC: ${vitals.bmi}.`;
+        const treatmentPlan = `Se indica control de ${diag.diagnosis.toLowerCase()}. Se entrega receta médica. Próximo control en ${pick(['1', '2', '3'])} meses.`;
+
+        try {
+          const result = await pool.query(
+            `INSERT INTO clinical_records (patient_id, doctor_id, booking_id, chief_complaint, anamnesis, vital_signs, physical_exam, diagnosis, cie10_codes, treatment_plan, notes, status, tenant_id)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'completed', $12)
+             ON CONFLICT DO NOTHING RETURNING id`,
+            [
+              b.user_id, b.doctor_id, b.id,
+              chiefComplaint, anamnesis,
+              JSON.stringify(vitals),
+              physicalExam,
+              diag.diagnosis,
+              `{${diag.cie10}}`,
+              treatmentPlan,
+              `Consulta de control. Evolución favorable.`,
+              t.id,
+            ]
+          );
+          if (result.rows.length > 0) crIds.push(result.rows[0].id);
+        } catch { /* skip */ }
+      }
+      logger.info(`  Clinical records: ${crIds.length}`);
+
+      // ── Prescriptions (from ~50% of clinical records) ────────────────────
+
+      let prescriptionCount = 0;
+      for (const crId of crIds) {
+        if (Math.random() > 0.5) continue;
+        const numMeds = randomInt(1, 3);
+        const pickedMeds = new Set<number>();
+        for (let m = 0; m < numMeds; m++) {
+          let medIdx: number;
+          do { medIdx = randomInt(0, medications.length - 1); } while (pickedMeds.has(medIdx) && pickedMeds.size < medications.length);
+          pickedMeds.add(medIdx);
+          const med = medications[medIdx];
           try {
             await pool.query(
-              `INSERT INTO subscription_invoices (tenant_id, subscription_id, amount, currency, status, period_start, period_end, paid_at)
-               VALUES ($1, $2, $3, 'USD', 'paid', $4, $5, $6)`,
-              [t.id, subId, t.id === 'clinica-norte' ? 79 : 79, addDays(paidAt, -1), paidAt, paidAt]
+              `INSERT INTO prescriptions (clinical_record_id, medication, dosage, frequency, duration, instructions, route, tenant_id)
+               VALUES ($1, $2, $3, $4, $5, $6, 'oral', $7)`,
+              [crId, med.medication, med.dosage, med.frequency, med.duration, med.instructions, t.id]
             );
-          } catch {}
+            prescriptionCount++;
+          } catch { /* skip */ }
         }
       }
-    }
+      logger.info(`  Prescriptions: ${prescriptionCount}`);
 
-    logger.info(`Tenant ${t.id} (${t.name}) — pacientes: ${patientIds.length}, doctores: ${doctorIds.length}`);
+      // ── Lab requests (pro plan only, from ~40% of clinical records) ──────
+
+      if (t.planCode === 'pro' && crIds.length > 0) {
+        const labTestIds = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+        const labResultSets: Record<number, Record<string, unknown>> = {
+          1: { hemoglobin: 14.2, hematocrit: 42, leukocytes: 7500, platelets: 250000, neutrophils: 65, lymphocytes: 28 },
+          2: { glucose_fasting: 95, unit: 'mg/dL' },
+          3: { total_cholesterol: 195, ldl: 120, hdl: 55, triglycerides: 130 },
+          4: { creatinine: 0.9, bun: 15, unit: 'mg/dL' },
+          5: { tsh: 2.5, ft4: 1.2, unit: 'mIU/L' },
+          6: { colony_count: 50000, organism: 'E. coli', sensitivity: 'Ciprofloxacino, Nitrofurantoin' },
+          7: { hba1c: 6.2, estimated_avg_glucose: 130, unit: '%' },
+          8: { pcr: 3.5, unit: 'mg/L' },
+          9: { alt: 28, ast: 22, alp: 65, ggt: 35, unit: 'U/L' },
+        };
+
+        let labRequestCount = 0;
+        for (let i = 0; i < crIds.length; i++) {
+          if (Math.random() > 0.4) continue;
+          const crId = crIds[i];
+          const crResult = await pool.query(
+            'SELECT patient_id, doctor_id FROM clinical_records WHERE id = $1',
+            [crId]
+          );
+          if (crResult.rows.length === 0) continue;
+          const cr = crResult.rows[0];
+
+          const requestNumber = `LAB-${t.domain.toUpperCase()}-${String(i + 1).padStart(4, '0')}`;
+          const priority = pick(['routine', 'routine', 'urgent']);
+          const labStatus = pick(['delivered', 'result_entered', 'validated_tech']);
+
+          const requestResult = await pool.query(
+            `INSERT INTO lab_requests (request_number, patient_id, doctor_id, clinical_record_id, priority, status, notes, requested_at, tenant_id, lab_type)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'internal')
+             ON CONFLICT (request_number) DO NOTHING RETURNING id`,
+            [
+              requestNumber, cr.patient_id, cr.doctor_id, crId,
+              priority, labStatus,
+              'Solicitud generada desde consulta clínica',
+              addDays(today, -randomInt(1, 30)),
+              t.id,
+            ]
+          );
+
+          if (requestResult.rows.length > 0) {
+            const requestId: number = requestResult.rows[0].id;
+            // 1-3 lab items per request
+            const numItems = randomInt(1, 3);
+            const usedTests = new Set<number>();
+            for (let item = 0; item < numItems; item++) {
+              let testId: number;
+              do { testId = pick(labTestIds); } while (usedTests.has(testId) && usedTests.size < labTestIds.length);
+              usedTests.add(testId);
+
+              const itemStatus = pick(['delivered', 'validated_tech', 'signed']);
+              const resultsJson = labResultSets[testId] || {};
+
+              try {
+                await pool.query(
+                  `INSERT INTO lab_request_items (lab_request_id, lab_test_id, priority, status, results, result_notes, notes, completed_at, tenant_id)
+                   VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+                  [
+                    requestId, testId, 'normal', itemStatus,
+                    JSON.stringify(resultsJson),
+                    `Resultado dentro de parámetros normales`,
+                    'Procesado automáticamente',
+                    addDays(today, -randomInt(0, 5)),
+                    t.id,
+                  ]
+                );
+              } catch { /* skip */ }
+            }
+            labRequestCount++;
+          }
+        }
+        logger.info(`  Lab requests: ${labRequestCount}`);
+
+        // ── Lab notifications (critical, SLA, QC) ──────────────────────────
+
+        const labNotifTypes = [
+          { type: 'critical_result', title: 'Resultado crítico: Glucosa', message: 'Paciente con glucosa en ayunas > 200 mg/dL. Requiere revisión inmediata.', severity: 'critical' },
+          { type: 'critical_result', title: 'Resultado crítico: PCR elevada', message: 'PCR > 50 mg/L detectado. Sugerir evaluación de proceso infeccioso.', severity: 'critical' },
+          { type: 'sla_breach', title: 'SLA vencido: Hemograma completo', message: 'El análisis de hemograma completo excedió el tiempo máximo de entrega (48h).', severity: 'warning' },
+          { type: 'sla_breach', title: 'SLA vencido: Perfil lipídico', message: 'El perfil lipídico no ha sido completado dentro del tiempo establecido.', severity: 'warning' },
+          { type: 'qc_failure', title: 'Control de calidad fallido', message: 'Nivel bajo del control interno de Bioquímica. Verificar reactivos.', severity: 'critical' },
+          { type: 'equipment_alert', title: 'Equipo en mantenimiento', message: 'Analizador Bioquímico requiere calibración programada.', severity: 'info' },
+        ];
+
+        let notifCount = 0;
+        for (const notif of labNotifTypes) {
+          try {
+            await pool.query(
+              `INSERT INTO lab_notifications (type, title, message, severity, tenant_id)
+               VALUES ($1, $2, $3, $4, $5)`,
+              [notif.type, notif.title, notif.message, notif.severity, t.id]
+            );
+            notifCount++;
+          } catch { /* skip */ }
+        }
+        logger.info(`  Lab notifications: ${notifCount}`);
+      }
+
+      // ── Invoices (from ~50% of past bookings) ────────────────────────────
+
+      const pastBookingsForInvoice = await pool.query(
+        'SELECT id, doctor_id, user_id, date FROM bookings WHERE tenant_id = $1 AND status = $2',
+        [t.id, 'completed']
+      );
+
+      let invoiceCount = 0;
+      const invoiceConcepts = ['Consulta médica general', 'Control de especialidad', 'Consulta de urgencia', 'Control preventivo'];
+      for (let i = 0; i < pastBookingsForInvoice.rows.length; i++) {
+        if (Math.random() > 0.5) continue;
+        const b = pastBookingsForInvoice.rows[i];
+        const amount = randomInt(35000, 95000);
+        const taxAmount = Math.round(amount * 0.19);
+        const totalAmount = amount + taxAmount;
+        const invoiceStatus = pick(['paid', 'paid', 'paid', 'pending', 'overdue']);
+        const invoiceNumber = `INV-${t.domain.toUpperCase()}-${String(i + 1).padStart(4, '0')}`;
+        const dueDate = addDays(b.date, 15);
+
+        try {
+          const invResult = await pool.query(
+            `INSERT INTO invoices (invoice_number, patient_id, doctor_id, booking_id, concept, description, amount, currency, tax_amount, total_amount, status, due_date, issued_at, paid_at, payment_method, tenant_id)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, 'CLP', $8, $9, $10, $11, $12, $13, $14, $15)
+             ON CONFLICT (invoice_number) DO NOTHING RETURNING id`,
+            [
+              invoiceNumber, b.user_id, b.doctor_id, b.id,
+              pick(invoiceConcepts),
+              `Factura por consulta médica del ${formatDate(b.date)}`,
+              amount, taxAmount, totalAmount, invoiceStatus,
+              formatDate(dueDate), b.date,
+              invoiceStatus === 'paid' ? addDays(b.date, randomInt(1, 10)) : null,
+              invoiceStatus === 'paid' ? pick(['efectivo', 'tarjeta_credito', 'tarjeta_debito', 'transferencia']) : null,
+              t.id,
+            ]
+          );
+          if (invResult.rows.length > 0) invoiceCount++;
+        } catch { /* skip */ }
+      }
+      logger.info(`  Invoices: ${invoiceCount}`);
+
+      // ── Subscription invoices (6 months) ─────────────────────────────────
+
+      const invCheck = await pool.query('SELECT COUNT(*) FROM subscription_invoices WHERE tenant_id = $1', [t.id]);
+      if (parseInt(invCheck.rows[0].count, 10) === 0) {
+        const subResult = await pool.query('SELECT id FROM subscriptions WHERE tenant_id = $1 LIMIT 1', [t.id]);
+        if (subResult.rows.length > 0) {
+          const subId = subResult.rows[0].id;
+          const planAmount = t.planCode === 'pro' ? 79 : 29;
+          for (let m = 1; m <= 6; m++) {
+            const paidAt = addDays(today, -(m * 30));
+            try {
+              await pool.query(
+                `INSERT INTO subscription_invoices (tenant_id, subscription_id, amount, currency, status, period_start, period_end, paid_at)
+                 VALUES ($1, $2, $3, 'USD', 'paid', $4, $5, $6)
+                 ON CONFLICT DO NOTHING`,
+                [t.id, subId, planAmount, addDays(paidAt, -1), paidAt, paidAt]
+              );
+            } catch { /* skip */ }
+          }
+        }
+      }
+
+      // ── Audit logs (30+) ─────────────────────────────────────────────────
+
+      const adminResult = await pool.query(
+        'SELECT id FROM users WHERE tenant_id = $1 AND role = $2 LIMIT 1',
+        [t.id, 'admin']
+      );
+      const adminUserId = adminResult.rows.length > 0 ? adminResult.rows[0].id : null;
+
+      let auditCount = 0;
+      for (let i = 0; i < 35; i++) {
+        const entry = pick(auditActions);
+        const daysAgo = randomInt(0, 60);
+        const ipOctet1 = randomInt(10, 192);
+        const ipOctet2 = randomInt(0, 255);
+        const ipOctet3 = randomInt(0, 255);
+        const ipOctet4 = randomInt(1, 254);
+
+        try {
+          await pool.query(
+            `INSERT INTO audit_logs (user_id, action, resource_type, resource_id, ip_address, user_agent, tenant_id, created_at)
+             VALUES ($1, $2, $3, $4, $5::inet, $6, $7, $8)`,
+            [
+              adminUserId || 1,
+              entry.action,
+              entry.resource_type,
+              entry.resource_id,
+              `${ipOctet1}.${ipOctet2}.${ipOctet3}.${ipOctet4}`,
+              'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+              t.id,
+              addDays(today, -daysAgo),
+            ]
+          );
+          auditCount++;
+        } catch { /* skip */ }
+      }
+      logger.info(`  Audit logs: ${auditCount}`);
+
+      // ── Medical history (10+ per tenant) ─────────────────────────────────
+
+      let medHistCount = 0;
+      for (let i = 0; i < Math.min(10, patientIds.length); i++) {
+        const patientId = patientIds[i];
+        const cond = medicalConditions[i % medicalConditions.length];
+        const onsetYear = randomInt(2015, 2024);
+        const onsetMonth = randomInt(1, 12);
+        const onsetDay = randomInt(1, 28);
+
+        try {
+          await pool.query(
+            `INSERT INTO medical_history (patient_id, condition, onset_date, status, notes, tenant_id)
+             VALUES ($1, $2, $3, $4, $5, $6)`,
+            [
+              patientId,
+              cond.condition,
+              `${onsetYear}-${String(onsetMonth).padStart(2, '0')}-${String(onsetDay).padStart(2, '0')}`,
+              cond.status,
+              cond.notes,
+              t.id,
+            ]
+          );
+          medHistCount++;
+        } catch { /* skip */ }
+      }
+      logger.info(`  Medical history: ${medHistCount}`);
+
+      // ── Summary ──────────────────────────────────────────────────────────
+
+      logger.info(`  ✓ Tenant ${t.id} completado`);
+    } else {
+      logger.info(`  Tenant ${t.id} ya tiene datos de bookings — saltando seed detallado`);
+    }
   }
 };
+
+// ─── Spread seed dates ──────────────────────────────────────────────────────
 
 export const spreadSeedDates = async (): Promise<void> => {
   if (process.env.NODE_ENV === 'production') return;
@@ -310,7 +728,7 @@ export const spreadSeedDates = async (): Promise<void> => {
     FROM date_spread ds
     WHERE b.id = ds.id
   `);
-  await pool.query('ALTER TABLE bookings ADD CONSTRAINT check_future_date CHECK (date >= CURRENT_DATE) NOT VALID');
+  await pool.query('ALTER TABLE bookings ADD CONSTRAINT check_future_date CHECK (date >= CURRENT_DATE - INTERVAL \'1 day\') NOT VALID');
   logger.info(`Seed dates spread for ${bResult.rowCount} bookings`);
 
   const crResult = await pool.query(`
@@ -326,69 +744,4 @@ export const spreadSeedDates = async (): Promise<void> => {
     WHERE cr.id = ds.id
   `);
   logger.info(`Seed dates spread for ${crResult.rowCount} clinical records`);
-};
-
-export const seedAdmin = async (): Promise<void> => {
-  const seedPassword = process.env.ADMIN_PASSWORD || process.env.SEED_PASSWORD || 'REPLACED_PASSWORD';
-
-  const exists = await pool.query('SELECT 1 FROM users WHERE role = $1 LIMIT 1', ['admin']);
-  if (exists.rows.length > 0) {
-    logger.info('Seed ya ejecutado');
-    return;
-  }
-
-  const hash = await bcrypt.hash(seedPassword, 12);
-
-  await pool.query(
-    'INSERT INTO users (email, password, role, rut, tenant_id) VALUES ($1, $2, $3, $4, $5)',
-    ['admin@clinic.com', hash, 'admin', '20287886-5', DEFAULT_TENANT_ID]
-  );
-
-  const doctorsData = [
-    { name: 'Juan Perez',   specialty: 'Cardiologia',  email: 'juan@clinic.com',   rut: '11222333-9' },
-    { name: 'Maria Lopez', specialty: 'Dermatologia', email: 'maria@clinic.com',  rut: '12333444-2' },
-    { name: 'Carlos Soto',  specialty: 'Neurologia',   email: 'carlos@clinic.com', rut: '13444555-6' },
-    { name: 'Ana Torres',  specialty: 'Pediatria',    email: 'ana@clinic.com',    rut: '14555666-K' },
-  ];
-
-  for (const doc of doctorsData) {
-    const userResult = await pool.query(
-      'INSERT INTO users (email, password, role, rut, tenant_id) VALUES ($1, $2, $3, $4, $5) RETURNING id',
-      [doc.email, hash, 'doctor', doc.rut, DEFAULT_TENANT_ID]
-    );
-    const userId = userResult.rows[0].id;
-
-    const doctorResult = await pool.query(
-      'INSERT INTO doctors (name, specialty, email, user_id, tenant_id) VALUES ($1, $2, $3, $4, $5) RETURNING id',
-      [doc.name, doc.specialty, doc.email, userId, DEFAULT_TENANT_ID]
-    );
-    const doctorId = doctorResult.rows[0].id;
-
-    for (let day = 1; day <= 5; day++) {
-      await pool.query(
-        'INSERT INTO doctor_availability (doctor_id, day_of_week, start_time, end_time, tenant_id) VALUES ($1, $2, $3, $4, $5)',
-        [doctorId, day, '09:00', '17:00', DEFAULT_TENANT_ID]
-      );
-    }
-  }
-
-  const usersData = [
-    { email: 'user1@clinic.com', rut: '15666777-3', phone: '+56911111111' },
-    { email: 'user2@clinic.com', rut: '16777888-7', phone: '+56922222222' },
-    { email: 'user3@clinic.com', rut: '17888999-0', phone: '+56933333333' },
-  ];
-
-  for (const u of usersData) {
-    await pool.query(
-      'INSERT INTO users (email, password, role, rut, phone, tenant_id) VALUES ($1, $2, $3, $4, $5, $6)',
-      [u.email, hash, 'patient', u.rut, u.phone, DEFAULT_TENANT_ID]
-    );
-  }
-
-  await pool.query(
-    'INSERT INTO users (email, password, name, role, rut, tenant_id) VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT (tenant_id, email) DO NOTHING',
-    ['lab@clinic.com', hash, 'Encargado de Laboratorio', 'lab_technician', '19333444-1', DEFAULT_TENANT_ID]
-  );
-
-  logger.info('Seed completo: admin, doctores (con disponibilidad), pacientes y laboratorio creados');
 };
