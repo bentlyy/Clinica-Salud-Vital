@@ -267,7 +267,7 @@ CREATE TABLE IF NOT EXISTS lab_tests (
   id SERIAL PRIMARY KEY,
   name VARCHAR(255) NOT NULL,
   description TEXT,
-  code VARCHAR(50) UNIQUE,
+  code VARCHAR(50),
   category VARCHAR(100),
   unit VARCHAR(50),
   reference_min NUMERIC(10, 2),
@@ -279,6 +279,7 @@ CREATE TABLE IF NOT EXISTS lab_tests (
   updated_at TIMESTAMP DEFAULT NOW(),
   tenant_id TEXT NOT NULL DEFAULT 'default'
 );
+CREATE UNIQUE INDEX IF NOT EXISTS lab_tests_tenant_code_unique ON lab_tests (tenant_id, code);
 
 CREATE TABLE IF NOT EXISTS lab_requests (
   id SERIAL PRIMARY KEY,
@@ -584,17 +585,17 @@ INSERT INTO cie10_catalog (code, description, category) VALUES
 ON CONFLICT (code) DO NOTHING;
 
 -- Lab tests
-INSERT INTO lab_tests (name, description, code, price, reference_ranges) VALUES
-  ('Hemograma completo', 'Conteo sanguíneo completo', 'HEM001', 25.00, '{"hemoglobin": {"min": 12, "max": 16}, "hematocrit": {"min": 36, "max": 48}}'),
-  ('Glucosa en ayunas', 'Nivel de glucosa', 'GLU001', 15.00, '{"glucose": {"min": 70, "max": 100}}'),
-  ('Perfil lipídico', 'Colesterol y triglicéridos', 'LIP001', 35.00, '{"cholesterol": {"min": 0, "max": 200}, "triglycerides": {"min": 0, "max": 150}}'),
-  ('Creatinina', 'Función renal', 'CRE001', 20.00, '{"creatinine": {"min": 0.6, "max": 1.2}}'),
-  ('TSH', 'Función tiroidea', 'TSH001', 30.00, '{"tsh": {"min": 0.4, "max": 4.0}}'),
-  ('Urocultivo', 'Cultivo de orina', 'URO001', 25.00, '{"bacteria": {"max": 10000}}'),
-  ('Hemoglobina glicosilada', 'Control de diabetes', 'HBA001', 35.00, '{"hba1c": {"min": 4, "max": 5.6}}'),
-  ('PCR', 'Proteína C reactiva', 'PCR001', 20.00, '{"pcr": {"min": 0, "max": 10}}'),
-  ('Transaminasas', 'Función hepática', 'ALT001', 25.00, '{"alt": {"min": 7, "max": 56}, "ast": {"min": 10, "max": 40}}')
-ON CONFLICT (code) DO NOTHING;
+INSERT INTO lab_tests (name, description, code, price, reference_ranges, tenant_id) VALUES
+  ('Hemograma completo', 'Conteo sanguíneo completo', 'HEM001', 25.00, '{"hemoglobin": {"min": 12, "max": 16}, "hematocrit": {"min": 36, "max": 48}}', 'default'),
+  ('Glucosa en ayunas', 'Nivel de glucosa', 'GLU001', 15.00, '{"glucose": {"min": 70, "max": 100}}', 'default'),
+  ('Perfil lipídico', 'Colesterol y triglicéridos', 'LIP001', 35.00, '{"cholesterol": {"min": 0, "max": 200}, "triglycerides": {"min": 0, "max": 150}}', 'default'),
+  ('Creatinina', 'Función renal', 'CRE001', 20.00, '{"creatinine": {"min": 0.6, "max": 1.2}}', 'default'),
+  ('TSH', 'Función tiroidea', 'TSH001', 30.00, '{"tsh": {"min": 0.4, "max": 4.0}}', 'default'),
+  ('Urocultivo', 'Cultivo de orina', 'URO001', 25.00, '{"bacteria": {"max": 10000}}', 'default'),
+  ('Hemoglobina glicosilada', 'Control de diabetes', 'HBA001', 35.00, '{"hba1c": {"min": 4, "max": 5.6}}', 'default'),
+  ('PCR', 'Proteína C reactiva', 'PCR001', 20.00, '{"pcr": {"min": 0, "max": 10}}', 'default'),
+  ('Transaminasas', 'Función hepática', 'ALT001', 25.00, '{"alt": {"min": 7, "max": 56}, "ast": {"min": 10, "max": 40}}', 'default')
+ON CONFLICT (tenant_id, code) DO NOTHING;
 
 -- Specialties
 INSERT INTO specialties (name, icon, description, department, procedures, color) VALUES
