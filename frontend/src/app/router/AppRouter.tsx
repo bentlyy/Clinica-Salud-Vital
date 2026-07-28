@@ -1,10 +1,9 @@
 import { Suspense, lazy } from 'react';
 import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/shared/providers/AuthProvider';
 import { useFeature } from '@/shared/hooks/useFeature';
 import { DashboardLayout } from '@/shared/components/layout/DashboardLayout';
-import { PatientLayout } from '@/shared/components/layout/PatientLayout';
+
 import { LoadingState } from '@/shared/components/ui/LoadingState';
 import { PremiumLocked } from '@/shared/components/PremiumLocked';
 import type { ReactNode } from 'react';
@@ -98,9 +97,6 @@ const MyMedicalHistoryDetailPage = lazy(() => import('@/modules/medical-history/
 // Not Found
 const NotFoundPage = lazy(() => import('@/modules/auth/pages/NotFoundPage'));
 
-// Placeholder pages
-const PlaceholderPage = lazy(() => import('@/shared/components/ui/PlaceholderPage'));
-
 function ProtectedRoute({ children, allowedRoles }: { children: ReactNode; allowedRoles?: string[] }) {
   const { user, isAuthenticated, isLoading } = useAuth();
 
@@ -127,10 +123,10 @@ export function AppRouter() {
   return (
     <Suspense fallback={<LoadingState />}>
       <Routes>
-        {/* Dashboard routes (admin, doctor, lab, superadmin) */}
+        {/* Dashboard routes (all roles with sidebar) */}
         <Route
           element={
-            <ProtectedRoute allowedRoles={['superadmin', 'admin', 'doctor', 'lab_technician']}>
+            <ProtectedRoute allowedRoles={['superadmin', 'admin', 'doctor', 'lab_technician', 'patient']}>
               <DashboardLayout />
             </ProtectedRoute>
           }
@@ -198,26 +194,9 @@ export function AppRouter() {
               <SuperAdminDemoDataPage />
             </ProtectedRoute>
           } />
-        </Route>
-
-        {/* Patient routes (no sidebar, topbar only) */}
-        <Route
-          element={
-            <ProtectedRoute allowedRoles={['patient']}>
-              <PatientLayout />
-            </ProtectedRoute>
-          }
-        >
-          <Route path="/patient" element={<PlaceholderPage title={t('my_portal')} />} />
-          <Route path="/patient/bookings" element={<BookingsPage />} />
-          <Route path="/patient/clinical-records" element={<ClinicalRecordsPage />} />
-          <Route path="/patient/clinical-records/:id" element={<ClinicalRecordDetailPage />} />
-          <Route path="/patient/prescriptions" element={<PrescriptionsPage />} />
-          <Route path="/patient/medical-history" element={<MedicalHistoryPage />} />
-          <Route path="/patient/medical-history/:id" element={<MyMedicalHistoryDetailPage />} />
-          <Route path="/patient/laboratory" element={<PatientLabResultsPage />} />
-          <Route path="/patient/laboratory/:id" element={<LabResultDetailPage />} />
-          <Route path="/patient/settings" element={<SettingsPage />} />
+          <Route path="/medical-history/:id" element={<MyMedicalHistoryDetailPage />} />
+          <Route path="/my-laboratory" element={<PatientLabResultsPage />} />
+          <Route path="/my-laboratory/:id" element={<LabResultDetailPage />} />
         </Route>
 
         {/* Public landing page */}
