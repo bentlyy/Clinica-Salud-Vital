@@ -29,6 +29,7 @@ import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import Inventory2Icon from '@mui/icons-material/Inventory2';
 import InboxOutlinedIcon from '@mui/icons-material/InboxOutlined';
 import type { LabReagent, LabArea } from '../../types/lab.types';
+import { formatDate } from '@/shared/utils/localeUtils';
 
 // ── Props ────────────────────────────────────────────────────────────────────
 
@@ -60,7 +61,7 @@ function getExpirationStatus(
   return {
     color: 'success.dark',
     bgColor: 'custom.status.success.bg',
-    label: expDate.toLocaleDateString('es-CL'),
+    label: formatDate(expDate),
   };
 }
 

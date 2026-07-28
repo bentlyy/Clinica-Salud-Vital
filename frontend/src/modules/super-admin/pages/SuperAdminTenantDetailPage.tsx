@@ -22,6 +22,7 @@ import { ErrorState } from '@/shared/components/ui/ErrorState';
 import { superAdminService } from '../services/super-admin.service';
 import { TENANT_PLAN_CONFIG } from '../types/super-admin.types';
 import type { TenantDetail } from '../types/super-admin.types';
+import { formatDate } from '@/shared/utils/localeUtils';
 
 export default function SuperAdminTenantDetailPage() {
   const { t } = useTranslation();
@@ -89,7 +90,7 @@ export default function SuperAdminTenantDetailPage() {
             { label: t('super_admin_tenant_detail.labelStatus'), value: <Chip label={tenant.active ? t('super_admin_tenant_detail.statusActive') : t('super_admin_tenant_detail.statusInactive')} size="small" sx={{ backgroundColor: tenant.active ? '#ecfdf5' : '#fef2f2', color: tenant.active ? theme.palette.success.main : '#dc2626', fontWeight: 600 }} /> },
             { label: t('super_admin_tenant_detail.labelLocale'), value: tenant.locale || '—' },
             { label: t('super_admin_tenant_detail.labelTimezone'), value: tenant.timezone || '—' },
-            { label: t('super_admin_tenant_detail.labelCreated'), value: new Date(tenant.created_at).toLocaleDateString('es-CL') },
+            { label: t('super_admin_tenant_detail.labelCreated'), value: formatDate(tenant.created_at) },
           ].map((item) => (
             <Box key={item.label} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>{item.label}</Typography>

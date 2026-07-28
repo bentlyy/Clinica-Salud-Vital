@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Box, Typography } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import FullCalendar from '@fullcalendar/react';
@@ -6,6 +7,7 @@ import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import type { Booking, BookingStatus } from '../types/booking.types';
+import { getFullCalendarLocale } from '@/shared/utils/localeUtils';
 
 interface BookingCalendarProps {
   bookings: Booking[];
@@ -26,6 +28,7 @@ interface CalendarEvent {
 
 export function BookingCalendar({ bookings, onEventClick }: BookingCalendarProps) {
   const theme = useTheme();
+  const { t } = useTranslation('bookings');
   const STATUS_COLORS: Record<BookingStatus, string> = useMemo(() => ({
     confirmed: theme.palette.primary.main,
     pending: theme.palette.warning.main,
@@ -41,7 +44,7 @@ export function BookingCalendar({ bookings, onEventClick }: BookingCalendarProps
         const startDate = new Date(`${booking.date}T${booking.time}:00`);
         const endDate = new Date(startDate.getTime() + booking.duration * 60 * 1000);
 
-        const patientLabel = booking.patient_name || booking.guest_name || 'Sin nombre';
+        const patientLabel = booking.patient_name || booking.guest_name || t('without_name', 'Sin nombre');
 
         return {
           id: String(booking.id),
@@ -67,7 +70,7 @@ export function BookingCalendar({ bookings, onEventClick }: BookingCalendarProps
     return (
       <Box sx={{ textAlign: 'center', py: 6 }}>
         <Typography variant="body1" sx={{ color: theme.palette.text.secondary }}>
-          No hay citas para mostrar en el calendario.
+          {t('no_bookings_calendar', 'No hay citas para mostrar en el calendario.')}
         </Typography>
       </Box>
     );
@@ -122,7 +125,7 @@ export function BookingCalendar({ bookings, onEventClick }: BookingCalendarProps
         }}
         events={events}
         eventClick={handleEventClick}
-        locale="es"
+        locale={getFullCalendarLocale()}
         slotMinTime="06:00:00"
         slotMaxTime="22:00:00"
         allDaySlot={false}

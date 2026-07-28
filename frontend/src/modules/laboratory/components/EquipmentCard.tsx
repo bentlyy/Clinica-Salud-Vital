@@ -1,10 +1,12 @@
 import { Box, Typography, Paper, Chip } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
+import { useTranslation } from 'react-i18next';
 import PrecisionManufacturing from '@mui/icons-material/PrecisionManufacturing';
 import Build from '@mui/icons-material/Build';
 import CheckCircle from '@mui/icons-material/CheckCircle';
 import Cancel from '@mui/icons-material/Cancel';
 import { MotionDiv } from '@/shared/utils/animations';
+import { formatDate } from '@/shared/utils/localeUtils';
 import type { LabEquipment } from '../types/lab.types';
 import { LAB_EQUIPMENT_STATUS_CONFIG } from '../types/lab.types';
 
@@ -14,6 +16,7 @@ interface EquipmentCardProps {
 
 export function EquipmentCard({ equipment }: EquipmentCardProps) {
   const theme = useTheme();
+  const { t } = useTranslation('lab');
   const statusConfig = LAB_EQUIPMENT_STATUS_CONFIG[equipment.status];
 
   const STATUS_ICONS: Record<LabEquipment['status'], React.ReactNode> = {
@@ -89,17 +92,17 @@ export function EquipmentCard({ equipment }: EquipmentCardProps) {
 
         {equipment.model && (
           <Typography variant="caption" sx={{ color: theme.palette.text.secondary, display: 'block', mb: 0.25 }}>
-            Modelo: {equipment.model}
+            {t('model')}: {equipment.model}
           </Typography>
         )}
         {equipment.serial_number && (
           <Typography variant="caption" sx={{ color: theme.palette.text.secondary, display: 'block', mb: 0.25 }}>
-            Serial: {equipment.serial_number}
+            {t('serial')}: {equipment.serial_number}
           </Typography>
         )}
         {equipment.last_calibration && (
           <Typography variant="caption" sx={{ color: theme.palette.warning.dark, display: 'block', mt: 0.5 }}>
-            Última calibración: {new Date(equipment.last_calibration).toLocaleDateString('es-CL')}
+            {t('lastCalibration')}: {formatDate(equipment.last_calibration)}
           </Typography>
         )}
       </Paper>

@@ -29,6 +29,7 @@ import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { useNotifications, useMarkAsRead } from '../hooks/useNotifications';
 import { NOTIFICATION_TYPE_CONFIG } from '../types/notification.types';
 import type { Notification } from '../types/notification.types';
+import { formatDate } from '@/shared/utils/localeUtils';
 
 const TYPE_ICONS: Record<Notification['type'], React.ReactNode> = {
   info: <InfoOutlined sx={{ fontSize: 20 }} />,
@@ -56,7 +57,7 @@ export default function NotificationsPage() {
     }
   };
 
-  const formatDate = (dateStr: string) => {
+  const formatRelativeDate = (dateStr: string) => {
     const date = new Date(dateStr);
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
@@ -68,7 +69,7 @@ export default function NotificationsPage() {
     if (diffMins < 60) return t('minutesAgo', { count: diffMins });
     if (diffHours < 24) return t('hoursAgo', { count: diffHours });
     if (diffDays < 7) return t('daysAgo', { count: diffDays });
-    return date.toLocaleDateString('es-CL');
+    return formatDate(date);
   };
 
   if (isLoading) return <LoadingState message={t('loading')} />;
@@ -179,7 +180,7 @@ export default function NotificationsPage() {
                           {notification.message}
                         </Typography>
                         <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
-                          {formatDate(notification.created_at)}
+                          {formatRelativeDate(notification.created_at)}
                         </Typography>
                       </Box>
                     }

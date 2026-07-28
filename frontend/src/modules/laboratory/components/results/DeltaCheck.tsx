@@ -8,6 +8,7 @@ import { useTheme, type Theme } from '@mui/material/styles';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import TrendingDownIcon from '@mui/icons-material/TrendingDown';
 import RemoveIcon from '@mui/icons-material/Remove';
+import { formatDateTime } from '@/shared/utils/localeUtils';
 
 // ── Props ────────────────────────────────────────────────────────────────────
 
@@ -204,13 +205,7 @@ export const DeltaCheck = memo(function DeltaCheck({
       {/* Timestamp */}
       {timestamp && (
         <Typography variant="caption" sx={{ color: theme.palette.text.disabled }}>
-          {new Date(timestamp).toLocaleString('es-CL', {
-            day: '2-digit',
-            month: 'short',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-          })}
+          {formatDateTime(new Date(timestamp))}
         </Typography>
       )}
     </Box>

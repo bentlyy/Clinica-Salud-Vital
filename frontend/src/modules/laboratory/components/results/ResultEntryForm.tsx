@@ -1,4 +1,5 @@
 import { memo, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Box,
   Typography,
@@ -71,6 +72,7 @@ export const ResultEntryForm = memo(function ResultEntryForm({
   disabled = false,
 }: ResultEntryFormProps) {
   const theme = useTheme();
+  const { t } = useTranslation('lab');
 
   const defaultUnit = item.unit || item.test?.unit || '';
 
@@ -128,11 +130,10 @@ export const ResultEntryForm = memo(function ResultEntryForm({
           }}
         >
           <Typography variant="body2" sx={{ fontWeight: 600, color: theme.palette.error.dark }}>
-            Resultado fuera de rango crítico
+            {t('criticalRange')}
           </Typography>
           <Typography variant="caption" sx={{ color: theme.palette.error.dark }}>
-            El valor {watchedValue} está por fuera de los límites críticos del test.
-            Revise antes de guardar.
+            {t('criticalRangeDetail', { value: watchedValue })}
           </Typography>
         </Alert>
       )}
@@ -157,7 +158,7 @@ export const ResultEntryForm = memo(function ResultEntryForm({
                 letterSpacing: '0.05em',
               }}
             >
-              Nombre del Test
+              {t('testNameLabel')}
             </Typography>
             <Typography variant="body2" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
               {displayTestName}
@@ -173,7 +174,7 @@ export const ResultEntryForm = memo(function ResultEntryForm({
                 letterSpacing: '0.05em',
               }}
             >
-              Rango de Referencia
+              {t('referenceRange')}
             </Typography>
             <Typography variant="body2" sx={{ fontWeight: 500, color: theme.palette.text.primary }}>
               {displayRange}
@@ -190,7 +191,7 @@ export const ResultEntryForm = memo(function ResultEntryForm({
                 letterSpacing: '0.05em',
               }}
             >
-              Tipo de Muestra
+              {t('sampleTypeLabel')}
             </Typography>
             <Typography variant="body2" sx={{ fontWeight: 500, color: theme.palette.text.primary }}>
                 {item.test.sample_type}
@@ -207,8 +208,8 @@ export const ResultEntryForm = memo(function ResultEntryForm({
         render={({ field }) => (
           <TextField
             {...field}
-            label="Valor del Resultado"
-            placeholder="Ingrese el valor"
+            label={t('resultValueLabel')}
+            placeholder={t('resultValuePlaceholder')}
             fullWidth
             disabled={disabled}
             error={!!errors.result_value}
@@ -243,7 +244,7 @@ export const ResultEntryForm = memo(function ResultEntryForm({
         render={({ field }) => (
           <TextField
             {...field}
-            label="Unidad (override)"
+            label={t('unitOverride')}
             placeholder={defaultUnit || 'Ej: mg/dL'}
             fullWidth
             disabled={disabled}
@@ -259,8 +260,8 @@ export const ResultEntryForm = memo(function ResultEntryForm({
         render={({ field }) => (
           <TextField
             {...field}
-            label="Notas / Observaciones"
-            placeholder="Observaciones adicionales sobre el resultado..."
+            label={t('notesLabel')}
+            placeholder={t('notesPlaceholder')}
             fullWidth
             multiline
             rows={3}
@@ -284,7 +285,7 @@ export const ResultEntryForm = memo(function ResultEntryForm({
               '&:hover': { backgroundColor: theme.palette.action.hover },
             }}
           >
-            Cancelar
+            {t('cancel')}
           </Button>
         )}
         <Button
@@ -301,10 +302,10 @@ export const ResultEntryForm = memo(function ResultEntryForm({
           }}
         >
           {isSubmitting
-            ? 'Guardando...'
+            ? t('saving')
             : isEditing
-              ? 'Actualizar Resultado'
-              : 'Guardar Resultado'}
+              ? t('updateResult')
+              : t('saveResult')}
         </Button>
       </Box>
     </Box>

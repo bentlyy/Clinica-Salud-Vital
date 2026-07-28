@@ -12,6 +12,7 @@ import {
   Box,
 } from '@mui/material';
 import { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -41,6 +42,7 @@ interface TenantFormDialogProps {
 
 export function TenantFormDialog({ open, tenant, onClose, onSubmit, isPending }: TenantFormDialogProps) {
   const isEditing = !!tenant;
+  const { t } = useTranslation('super_admin_tenants');
 
   const {
     control,
@@ -78,14 +80,14 @@ export function TenantFormDialog({ open, tenant, onClose, onSubmit, isPending }:
       PaperProps={{ sx: { borderRadius: '14px' } }}
     >
       <DialogTitle sx={{ fontWeight: 600 }}>
-        {isEditing ? 'Editar Clínica' : 'Nueva Clínica'}
+        {isEditing ? t('edit_clinic_dialog', 'Editar Clínica') : t('new_clinic_dialog', 'Nueva Clínica')}
       </DialogTitle>
 
       <DialogContent>
         <Box component="form" onSubmit={handleSubmit(handleFormSubmit)} sx={{ pt: 1 }}>
           <TextField
             fullWidth
-            label="Nombre"
+            label={t('name_label', 'Nombre')}
             {...register('name')}
             error={!!errors.name}
             helperText={errors.name?.message}
@@ -94,9 +96,9 @@ export function TenantFormDialog({ open, tenant, onClose, onSubmit, isPending }:
 
           <TextField
             fullWidth
-            label="Dominio (opcional)"
+            label={t('domain_optional', 'Dominio (opcional)')}
             {...register('domain')}
-            placeholder="ejemplo.com"
+            placeholder={t('domain_placeholder', 'ejemplo.com')}
             sx={{ mb: 2.5 }}
           />
 
@@ -106,8 +108,8 @@ export function TenantFormDialog({ open, tenant, onClose, onSubmit, isPending }:
               control={control}
               render={({ field }) => (
                 <FormControl fullWidth>
-                  <InputLabel>Plan</InputLabel>
-                  <Select {...field} label="Plan">
+                  <InputLabel>{t('plan_label', 'Plan')}</InputLabel>
+                  <Select {...field} label={t('plan_label', 'Plan')}>
                     <MenuItem value="free">Gratuito</MenuItem>
                     <MenuItem value="basic">Básico</MenuItem>
                     <MenuItem value="pro">Pro</MenuItem>
@@ -122,14 +124,14 @@ export function TenantFormDialog({ open, tenant, onClose, onSubmit, isPending }:
 
       <DialogActions sx={{ px: 3, pb: 2 }}>
         <Button onClick={onClose} variant="outlined">
-          Cancelar
+          {t('cancel', 'Cancelar')}
         </Button>
         <Button
           variant="contained"
           onClick={handleSubmit(handleFormSubmit)}
           disabled={isPending}
         >
-          {isPending ? 'Guardando...' : isEditing ? 'Actualizar' : 'Crear'}
+          {isPending ? t('saving', 'Guardando...') : isEditing ? t('update_btn', 'Actualizar') : t('create_btn', 'Crear')}
         </Button>
       </DialogActions>
     </Dialog>

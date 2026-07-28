@@ -16,6 +16,7 @@ import {
 import Close from '@mui/icons-material/Close';
 import type { AuditLog } from '../types/audit.types';
 import { AUDIT_ACTION_LABELS, AUDIT_ENTITY_LABELS } from '../types/audit.types';
+import { formatDateTime } from '@/shared/utils/localeUtils';
 
 interface AuditDetailDialogProps {
   open: boolean;
@@ -125,7 +126,7 @@ export function AuditDetailDialog({ open, onClose, log }: AuditDetailDialogProps
                     Fecha/Hora
                   </TableCell>
                   <TableCell sx={{ color: theme.palette.text.primary }}>
-                    {new Date(log.created_at).toLocaleString('es-CL')}
+                    {formatDateTime(log.created_at)}
                   </TableCell>
                 </TableRow>
               </TableBody>

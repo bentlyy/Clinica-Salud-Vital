@@ -27,6 +27,7 @@ import { LoadingState } from '@/shared/components/ui/LoadingState';
 import { ErrorState } from '@/shared/components/ui/ErrorState';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { useLabAnalytics } from '../hooks/useLab';
+import { formatCurrency } from '@/shared/utils/localeUtils';
 
 interface DateRangeForm {
   dateFrom: string;
@@ -55,10 +56,6 @@ function getNestedColor(palette: Theme['palette'], path: string): string {
     }
   }
   return typeof current === 'string' ? current : path;
-}
-
-function formatCurrency(value: number): string {
-  return new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(value);
 }
 
 function LabAnalyticsPage() {

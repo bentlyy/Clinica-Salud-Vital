@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '@mui/material/styles';
+import { formatDate } from '@/shared/utils/localeUtils';
 import {
   Box,
   Paper,
@@ -64,9 +65,6 @@ const STATUS_COLORS: Record<string, 'warning' | 'success' | 'error'> = {
   completed: 'success',
   failed: 'error',
 };
-
-const formatDate = (date: string) =>
-  new Date(date).toLocaleDateString('es-CL', { day: '2-digit', month: 'short', year: 'numeric' });
 
 export default function ReportsPage() {
   const { t } = useTranslation('reports');

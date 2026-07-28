@@ -12,6 +12,7 @@ import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { LoadingState } from '@/shared/components/ui/LoadingState';
 import { ErrorState } from '@/shared/components/ui/ErrorState';
 import { useSuperAdminDashboard } from '../hooks/useSuperAdmin';
+import { formatNumber } from '@/shared/utils/localeUtils';
 
 export default function SuperAdminDashboardPage() {
   const { t } = useTranslation('super_admin_dashboard');
@@ -29,7 +30,7 @@ export default function SuperAdminDashboardPage() {
     { key: 'total_clinics', icon: <AccountBalance />, color: theme.palette.primary.main, bgColor: '#f0fdfa', getValue: (d: { total_tenants: number }) => d.total_tenants.toString() },
     { key: 'active_clinics', icon: <TrendingUp />, color: theme.palette.success.main, bgColor: '#ecfdf5', getValue: (d: { active_tenants: number }) => d.active_tenants.toString() },
     { key: 'total_users', icon: <People />, color: theme.palette.info.main, bgColor: '#eff6ff', getValue: (d: { total_users: number }) => d.total_users.toString() },
-    { key: 'total_revenue', icon: <AttachMoney />, color: '#7c3aed', bgColor: '#f5f3ff', getValue: (d: { total_revenue: number }) => `$${d.total_revenue.toLocaleString('es-CL')}` },
+    { key: 'total_revenue', icon: <AttachMoney />, color: '#7c3aed', bgColor: '#f5f3ff', getValue: (d: { total_revenue: number }) => `$${formatNumber(d.total_revenue)}` },
   ];
 
   if (isLoading) return <LoadingState message={t('loading')} />;

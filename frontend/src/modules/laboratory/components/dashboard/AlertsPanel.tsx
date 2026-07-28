@@ -1,4 +1,5 @@
 import { memo, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Box,
   Typography,
@@ -52,18 +53,18 @@ function getSeverityConfig(theme: Theme, severity: string) {
   return configs[severity] ?? configs.info ?? { icon: <InfoIcon sx={{ fontSize: 18 }} />, color: theme.palette.info.main, bgColor: theme.palette.custom.status.info.bg };
 }
 
-function formatRelativeTime(dateStr: string): string {
+function formatRelativeTime(dateStr: string, t: (key: string, options?: Record<string, unknown>) => string): string {
   try {
     const now = new Date();
     const date = new Date(dateStr);
     const diffMs = now.getTime() - date.getTime();
     const diffMin = Math.floor(diffMs / 60000);
-    if (diffMin < 1) return 'Ahora mismo';
-    if (diffMin < 60) return `Hace ${diffMin}m`;
+    if (diffMin < 1) return t('justNow');
+    if (diffMin < 60) return t('minutesAgo', { count: diffMin });
     const diffH = Math.floor(diffMin / 60);
-    if (diffH < 24) return `Hace ${diffH}h`;
+    if (diffH < 24) return t('hoursAgo', { count: diffH });
     const diffD = Math.floor(diffH / 24);
-    return `Hace ${diffD}d`;
+    return t('daysAgoShort', { count: diffD });
   } catch {
     return dateStr;
   }
@@ -71,6 +72,7 @@ function formatRelativeTime(dateStr: string): string {
 
 function AlertsPanelBase({ notifications = [], isLoading, onAcknowledge }: AlertsPanelProps) {
   const theme = useTheme();
+  const { t } = useTranslation('lab');
   const sortedNotifications = useMemo(() => {
     return [...notifications]
       .filter((n) => !n.acknowledged)
@@ -115,7 +117,7 @@ function AlertsPanelBase({ notifications = [], isLoading, onAcknowledge }: Alert
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <NotificationsNoneIcon sx={{ fontSize: 20, color: theme.palette.primary.main }} />
           <Typography variant="body2" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
-            Alertas Activas
+            {t('activeAlerts')}
           </Typography>
           {sortedNotifications.length > 0 && (
             <Chip
@@ -154,7 +156,7 @@ function AlertsPanelBase({ notifications = [], isLoading, onAcknowledge }: Alert
           >
             <NotificationsNoneIcon sx={{ fontSize: 40, color: theme.palette.divider }} />
             <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
-              No hay alertas activas
+              {t('noActiveAlerts')}
             </Typography>
           </Box>
         ) : (
@@ -224,12 +226,12 @@ function AlertsPanelBase({ notifications = [], isLoading, onAcknowledge }: Alert
                       variant="caption"
                       sx={{ color: theme.palette.text.secondary, display: 'block', mt: 0.5, fontSize: '0.7rem', opacity: 0.7 }}
                     >
-                      {formatRelativeTime(notification.created_at)}
+                      {formatRelativeTime(notification.created_at, t)}
                     </Typography>
                   </Box>
 
                   {onAcknowledge && !notification.acknowledged && (
-                    <Tooltip title="Confirmar">
+                    <Tooltip title={t('confirm')}>
                       <IconButton
                         size="small"
                         onClick={() => onAcknowledge(notification.id)}
