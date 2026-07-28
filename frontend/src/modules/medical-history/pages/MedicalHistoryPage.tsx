@@ -39,6 +39,7 @@ import { ErrorState } from '@/shared/components/ui/ErrorState';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { useAuth } from '@/shared/providers/AuthProvider';
 import { patientService } from '@/modules/patients/services/patient.service';
+import type { Patient } from '@/modules/patients/types/patient.types';
 import {
   useMedicalHistory,
   useCreateMedicalHistory,
@@ -154,7 +155,7 @@ export default function MedicalHistoryPage() {
       patientService
         .list({ page: 1, limit: 200 })
         .then((res) => {
-          const list = (res.data || []).map((p: any) => ({
+          const list = (res.data || []).map((p: Patient) => ({
             id: p.id,
             name: p.name || p.user_name || `Paciente #${p.id}`,
             email: p.email || '',
@@ -383,9 +384,9 @@ export default function MedicalHistoryPage() {
                           />
                         </Box>
 
-                        {!isPatient && (entry as any).patient_name && (
+                        {!isPatient && entry.patient_name && (
                           <Typography variant="body2" sx={{ color: theme.palette.text.secondary, mb: 0.5 }}>
-                            {t('patient_label')}: {(entry as any).patient_name}
+                            {t('patient_label')}: {entry.patient_name}
                           </Typography>
                         )}
 

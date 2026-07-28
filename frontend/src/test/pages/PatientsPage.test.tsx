@@ -7,7 +7,7 @@ import PatientsPage from '@/modules/patients/pages/PatientsPage';
 // --- Hoisted mock values ---
 
 const mockHookReturn = vi.hoisted(() => ({
-  data: undefined as { data: any[]; total: number } | undefined,
+  data: undefined as { data: Record<string, unknown>[]; total: number } | undefined,
   isLoading: true,
   error: null as Error | null,
   refetch: vi.fn(),
@@ -16,7 +16,7 @@ const mockHookReturn = vi.hoisted(() => ({
 // --- Mocks ---
 
 vi.mock('framer-motion', () => {
-  const PassThrough = (props: any) => props.children ?? null;
+  const PassThrough = (props: { children?: React.ReactNode }) => props.children ?? null;
   return {
     motion: new Proxy(PassThrough, {
       apply: () => PassThrough,

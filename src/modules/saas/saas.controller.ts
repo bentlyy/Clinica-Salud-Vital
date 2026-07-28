@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { asyncHandler } from '../../middlewares/asyncHandler.middleware.js';
 import * as saasService from './saas.service.js';
 import { BadRequestError } from '../../utils/errors.js';
+import { E } from '../../utils/error-codes.js';
 import { logger } from '../../utils/logger.js';
 
 export const getPlans = asyncHandler(async (_req: Request, res: Response) => {
@@ -17,7 +18,7 @@ export const getMySubscription = asyncHandler(async (req: Request, res: Response
 
 export const createCheckout = asyncHandler(async (req: Request, res: Response) => {
   const { plan_code } = req.body;
-  if (!plan_code) throw new BadRequestError('plan_code is required');
+  if (!plan_code) throw new BadRequestError(E.SAAS_PLAN_REQUIRED);
 
   // Check plan exists
   await saasService.getPlanByCode(plan_code);
@@ -41,7 +42,7 @@ export const stripeWebhook = asyncHandler(async (req: Request, res: Response) =>
 
 export const changePlan = asyncHandler(async (req: Request, res: Response) => {
   const { plan_code } = req.body;
-  if (!plan_code) throw new BadRequestError('plan_code is required');
+  if (!plan_code) throw new BadRequestError(E.SAAS_PLAN_REQUIRED);
 
   const result = await saasService.changePlan(req.tenant_id, plan_code);
   res.json(result);
@@ -82,7 +83,7 @@ const verifyCaptchaOnboard = async (token: string): Promise<boolean> => {
 
 export const onboardTenant = asyncHandler(async (req: Request, res: Response) => {
   if (!(await verifyCaptchaOnboard(req.body.captcha_token || ''))) {
-    throw new BadRequestError('CAPTCHA verification failed');
+    throw new BadRequestError(E.SAAS_CAPTCHA_FAILED);
   }
   const result = await saasService.onboardTenant({
     tenantName: req.body.tenant_name,
@@ -118,7 +119,7 @@ export const updateTenantConfig = asyncHandler(async (req: Request, res: Respons
     if (req.body[key] !== undefined) updates[key] = req.body[key];
   }
   if (Object.keys(updates).length === 0) {
-    throw new BadRequestError('No valid fields to update');
+    throw new BadRequestError(E.SAAS_NO_FIELDS);
   }
   await saasService.updateTenantConfig(req.tenant_id, updates);
   res.json({ message: 'Configuration updated' });

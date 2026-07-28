@@ -5,6 +5,7 @@ import { sendEmail } from '../../shared/email.service.js';
 import { guestConfirmationEmail } from './guest.email.js';
 import { jwtManager } from '../../shared/jwt.service.js';
 import { BadRequestError, NotFoundError } from '../../utils/errors.js';
+import { E } from '../../utils/error-codes.js';
 import { logger } from '../../utils/logger.js';
 import { isValidDate, isValidTime } from '../../shared/date.js';
 import { validateBookingSlot } from '../../shared/booking-utils.js';
@@ -21,7 +22,7 @@ interface GuestBookingInput {
 }
 
 export const checkRutBlocked = async (rut: string, tenantId: string): Promise<boolean> => {
-  if (!tenantId) throw new BadRequestError('Tenant ID es requerido');
+  if (!tenantId) throw new BadRequestError(E.GUEST_TENANT_REQUIRED);
   const result = await pool.query(
     'SELECT blocked_until FROM users WHERE rut = $1 AND tenant_id = $2',
     [rut, tenantId]
@@ -32,19 +33,19 @@ export const checkRutBlocked = async (rut: string, tenantId: string): Promise<bo
 };
 
 export const createGuestBooking = async ({ doctor_id, date, time, duration = 30, rut, name, email, phone }: GuestBookingInput, tenantId: string): Promise<unknown> => {
-  if (!tenantId) throw new BadRequestError('Tenant ID es requerido');
+  if (!tenantId) throw new BadRequestError(E.GUEST_TENANT_REQUIRED);
   if (!doctor_id || !date || !time || !rut || !email) {
-    throw new BadRequestError('Missing required fields');
+    throw new BadRequestError(E.GUEST_MISSING_FIELDS);
   }
-  if (!validateRut(rut)) throw new BadRequestError('RUT inválido');
-  if (!isValidDate(date)) throw new BadRequestError('Formato de fecha inválido');
-  if (!isValidTime(time)) throw new BadRequestError('Formato de hora inválido');
+  if (!validateRut(rut)) throw new BadRequestError(E.GUEST_INVALID_RUT);
+  if (!isValidDate(date)) throw new BadRequestError(E.GUEST_INVALID_DATE);
+  if (!isValidTime(time)) throw new BadRequestError(E.GUEST_INVALID_TIME);
 
   const isBlocked = await checkRutBlocked(rut, tenantId);
   if (isBlocked) {
     const result = await pool.query('SELECT blocked_until FROM users WHERE rut = $1 AND tenant_id = $2', [rut, tenantId]);
     const blockedUntil = new Date(result.rows[0].blocked_until).toLocaleDateString('es-CL');
-    throw new BadRequestError(`Tu RUT está bloqueado hasta el ${blockedUntil} por inasistencia a citas anteriores.`);
+    throw new BadRequestError(E.GUEST_RUT_BLOCKED, `Tu RUT está bloqueado hasta el ${blockedUntil} por inasistencia a citas anteriores.`);
   }
 
   const client = await pool.connect();
@@ -58,7 +59,7 @@ export const createGuestBooking = async ({ doctor_id, date, time, duration = 30,
     );
 
     const doctor = await doctorService.getDoctorById(doctor_id, tenantId);
-    if (!doctor) throw new BadRequestError('Doctor no encontrado');
+    if (!doctor) throw new BadRequestError(E.GUEST_DOCTOR_NOT_FOUND);
 
     await validateBookingSlot({ doctorId: doctor_id, date, time, duration, client, tenantId });
 
@@ -97,7 +98,7 @@ export const createGuestBooking = async ({ doctor_id, date, time, duration = 30,
   } catch (error: unknown) {
     await client.query('ROLLBACK');
     const pgError = error as { code?: string };
-    if (pgError.code === '23505') throw new BadRequestError('Este horario ya está reservado');
+    if (pgError.code === '23505') throw new BadRequestError(E.GUEST_SLOT_BOOKED);
     throw error;
   } finally {
     client.release();
@@ -105,7 +106,7 @@ export const createGuestBooking = async ({ doctor_id, date, time, duration = 30,
 };
 
 export const getGuestBookingsByRut = async (rut: string, tenantId: string): Promise<unknown[]> => {
-  if (!tenantId) throw new BadRequestError('Tenant ID es requerido');
+  if (!tenantId) throw new BadRequestError(E.GUEST_TENANT_REQUIRED);
   const cleanedRut = rut.replace(/[^0-9kK]/g, '').toUpperCase();
   const result = await pool.query(`
     SELECT b.id, b.date, b.time, b.duration, b.status, b.confirmed,
@@ -126,7 +127,7 @@ export const getGuestBookingsByRut = async (rut: string, tenantId: string): Prom
 };
 
 export const cancelGuestBooking = async (bookingId: number, userIdOrRut?: number | string, userRole?: string, tenantId: string = '', confirmationToken?: string): Promise<{ message: string }> => {
-  if (!tenantId) throw new BadRequestError('Tenant ID es requerido');
+  if (!tenantId) throw new BadRequestError(E.GUEST_TENANT_REQUIRED);
   const canCancelAny = userRole === 'admin' || userRole === 'doctor';
   let result;
 
@@ -142,7 +143,7 @@ export const cancelGuestBooking = async (bookingId: number, userIdOrRut?: number
     );
   } else if (typeof userIdOrRut === 'string') {
     if (!confirmationToken) {
-      throw new BadRequestError('Confirmation token required to cancel guest booking');
+      throw new BadRequestError(E.GUEST_CONFIRM_TOKEN_REQUIRED);
     }
     const cleanedRut = userIdOrRut.replace(/[^0-9kK]/g, '').toUpperCase();
     result = await pool.query(
@@ -156,9 +157,9 @@ export const cancelGuestBooking = async (bookingId: number, userIdOrRut?: number
       [bookingId, cleanedRut, confirmationToken, tenantId]
     );
   } else {
-    throw new BadRequestError('Debe proporcionar autenticación o RUT para cancelar');
+    throw new BadRequestError(E.GUEST_AUTH_OR_RUT_REQUIRED);
   }
 
-  if (result.rows.length === 0) throw new NotFoundError('Reserva no encontrada');
+  if (result.rows.length === 0) throw new NotFoundError(E.GUEST_BOOKING_NOT_FOUND);
   return { message: 'Reserva cancelada correctamente' };
 };

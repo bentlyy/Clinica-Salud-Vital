@@ -3,6 +3,7 @@ import * as bookingService from './booking.service.js';
 import * as doctorService from '../doctor/doctor.service.js';
 import { asyncHandler } from '../../middlewares/asyncHandler.middleware.js';
 import { BadRequestError, NotFoundError } from '../../utils/errors.js';
+import { E } from '../../utils/error-codes.js';
 import { getQueryInt, getQueryString } from '../../shared/query.js';
 
 export const createBooking = asyncHandler(async (req: Request, res: Response) => {
@@ -38,12 +39,12 @@ export const getAvailableSlots = asyncHandler(async (req: Request, res: Response
 
 export const getDailyDensity = asyncHandler(async (req: Request, res: Response) => {
   const doctor = await doctorService.getDoctorByUserId(req.user!.id, req.tenant_id);
-  if (!doctor) throw new NotFoundError('Doctor profile not found');
+  if (!doctor) throw new NotFoundError(E.DOCTOR_PROFILE_NOT_FOUND);
 
   const start = getQueryString(req.query, 'start', '');
   const end = getQueryString(req.query, 'end', '');
   if (!start || !end) {
-    throw new BadRequestError('start and end query params are required (YYYY-MM-DD)');
+    throw new BadRequestError(E.BOOKING_MISSING_FIELDS);
   }
 
   const data = await bookingService.getDailyBookingDensity(doctor.id, start, end, req.tenant_id);
@@ -62,7 +63,7 @@ export const getDoctorBookings = asyncHandler(async (req: Request, res: Response
   const doctor = await doctorService.getDoctorByUserId(req.user!.id, req.tenant_id);
 
   if (!doctor) {
-    throw new NotFoundError('Doctor profile not found');
+    throw new NotFoundError(E.DOCTOR_PROFILE_NOT_FOUND);
   }
 
   const page = getQueryInt(req.query, 'page', 1);

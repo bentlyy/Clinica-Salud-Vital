@@ -1,6 +1,7 @@
 import * as doctorService from './doctor.service.js';
 import { asyncHandler } from '../../middlewares/asyncHandler.middleware.js';
 import { NotFoundError } from '../../utils/errors.js';
+import { E } from '../../utils/error-codes.js';
 
 export const getDoctors = asyncHandler(async (req, res) => {
   const doctors = await doctorService.getAllDoctors(req.tenant_id);
@@ -39,7 +40,7 @@ export const invitePerson = asyncHandler(async (req, res) => {
 
 export const getMyDoctorProfile = asyncHandler(async (req, res) => {
   const doctor = await doctorService.getDoctorByUserId(req.user!.id, req.tenant_id);
-  if (!doctor) throw new NotFoundError('Doctor profile not found');
+  if (!doctor) throw new NotFoundError(E.DOCTOR_PROFILE_NOT_FOUND);
 
   res.json(doctor);
 });

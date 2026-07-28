@@ -59,20 +59,20 @@ describe('doctorService.getAllDoctors', () => {
 
 describe('doctorService.registerDoctor', () => {
   it('throws if missing required fields', async () => {
-    await expect(doctorService.registerDoctor({}, 'test-tenant')).rejects.toThrow('Nombre, especialidad y email son obligatorios');
-    await expect(doctorService.registerDoctor({ name: 'Dr. Test' }, 'test-tenant')).rejects.toThrow('Nombre, especialidad y email son obligatorios');
+    await expect(doctorService.registerDoctor({}, 'test-tenant')).rejects.toThrow('Name, specialty, and email are required');
+    await expect(doctorService.registerDoctor({ name: 'Dr. Test' }, 'test-tenant')).rejects.toThrow('Name, specialty, and email are required');
   });
 
   it('throws if email invalid', async () => {
     await expect(doctorService.registerDoctor({
       name: 'Dr. Test', specialty: 'Medicina General', email: 'not-email',
-    }, 'test-tenant')).rejects.toThrow('Email inválido');
+    }, 'test-tenant'))      .rejects.toThrow('Invalid email');
   });
 
   it('throws if RUT invalid', async () => {
     await expect(doctorService.registerDoctor({
       name: 'Dr. Test', specialty: 'Medicina General', email: 'doc@test.com', rut: 'invalid',
-    }, 'test-tenant')).rejects.toThrow('RUT inválido');
+    }, 'test-tenant'))      .rejects.toThrow('Invalid RUT');
   });
 
   it('throws if RUT already registered', async () => {
@@ -84,7 +84,7 @@ describe('doctorService.registerDoctor', () => {
 
     await expect(doctorService.registerDoctor({
       name: 'Dr. Test', specialty: 'Medicina General', email: 'doc@test.com', rut: '12.345.678-5',
-    }, 'test-tenant')).rejects.toThrow('RUT ya registrado');
+    }, 'test-tenant'))      .rejects.toThrow('RUT already registered');
   });
 
   it('throws if email already registered', async () => {
@@ -97,7 +97,7 @@ describe('doctorService.registerDoctor', () => {
 
     await expect(doctorService.registerDoctor({
       name: 'Dr. Test', specialty: 'Medicina General', email: 'doc@test.com',
-    }, 'test-tenant')).rejects.toThrow('Email ya registrado');
+    }, 'test-tenant'))      .rejects.toThrow('Email already registered');
   });
 
   it('creates doctor with availability', async () => {
@@ -175,7 +175,7 @@ describe('doctorService.registerDoctor', () => {
 
     await expect(doctorService.registerDoctor({
       name: 'Dr. Dup', specialty: 'Medicina General', email: 'dup@test.com',
-    }, 'test-tenant')).rejects.toThrow('Doctor o usuario ya existe');
+    }, 'test-tenant'))      .rejects.toThrow('Doctor or user already exists');
 
     expect(mockClient.query).toHaveBeenCalledWith('ROLLBACK');
   });
@@ -206,7 +206,7 @@ describe('doctorService.registerDoctor', () => {
 
 describe('doctorService.createDoctor', () => {
   it('throws if missing required fields', async () => {
-    await expect(doctorService.createDoctor({}, 'test-tenant')).rejects.toThrow('Missing required fields');
+    await expect(doctorService.createDoctor({}, 'test-tenant')).rejects.toThrow('Name, specialty, and email are required');
   });
 
   it('throws if user not found', async () => {

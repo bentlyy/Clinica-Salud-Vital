@@ -1,5 +1,6 @@
 import { pool } from '../../shared/db.js';
 import { BadRequestError } from '../../utils/errors.js';
+import { E } from '../../utils/error-codes.js';
 
 export interface SpecialtyDoctor {
   id: number;
@@ -46,7 +47,7 @@ export const getAllSpecialties = async (): Promise<Specialty[]> => {
 };
 
 export const createSpecialty = async (name: string, description?: string): Promise<Specialty> => {
-  if (!name || name.trim().length === 0) throw new BadRequestError('Name is required');
+  if (!name || name.trim().length === 0) throw new BadRequestError(E.SPECIALTY_NAME_REQUIRED);
   const trimmed = name.trim();
   const desc = description?.trim() || '';
 
@@ -80,7 +81,7 @@ export const getSpecialtyById = async (id: number): Promise<Specialty> => {
      FROM specialties WHERE id = $1 AND tenant_id = 'default'`,
     [id]
   );
-  if (result.rows.length === 0) throw new BadRequestError('Specialty not found');
+  if (result.rows.length === 0) throw new BadRequestError(E.SPECIALTY_NOT_FOUND);
   return {
     ...result.rows[0],
     procedures: typeof result.rows[0].procedures === 'string' ? JSON.parse(result.rows[0].procedures) : result.rows[0].procedures || [],
@@ -104,14 +105,14 @@ export const updateSpecialty = async (id: number, data: Partial<Specialty>): Pro
     values.push(JSON.stringify(data.procedures));
   }
 
-  if (fields.length === 0) throw new BadRequestError('No fields to update');
+  if (fields.length === 0) throw new BadRequestError(E.SPECIALTY_NO_FIELDS);
 
   values.push(id);
   const result = await pool.query(
     `UPDATE specialties SET ${fields.join(', ')} WHERE id = $${paramCount} AND tenant_id = 'default' RETURNING id, name, icon, description, department, procedures, color`,
     values
   );
-  if (result.rows.length === 0) throw new BadRequestError('Specialty not found');
+  if (result.rows.length === 0) throw new BadRequestError(E.SPECIALTY_NOT_FOUND);
   return {
     ...result.rows[0],
     procedures: typeof result.rows[0].procedures === 'string' ? JSON.parse(result.rows[0].procedures) : result.rows[0].procedures || [],
@@ -123,12 +124,12 @@ export const deleteSpecialty = async (id: number): Promise<void> => {
     `DELETE FROM specialties WHERE id = $1 AND tenant_id = 'default'`,
     [id]
   );
-  if (result.rowCount === 0) throw new BadRequestError('Specialty not found');
+  if (result.rowCount === 0) throw new BadRequestError(E.SPECIALTY_NOT_FOUND);
 };
 
 export const ensureSpecialty = async (name: string): Promise<Specialty> => {
   const trimmed = name.trim();
-  if (!trimmed) throw new BadRequestError('Name is required');
+  if (!trimmed) throw new BadRequestError(E.SPECIALTY_NAME_REQUIRED);
 
   const exists = await pool.query(
     `SELECT id, name, icon, description, department, procedures, color

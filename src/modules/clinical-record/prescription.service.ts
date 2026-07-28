@@ -1,5 +1,6 @@
 import { pool } from '../../shared/db.js';
 import { NotFoundError, BadRequestError } from '../../utils/errors.js';
+import { E } from '../../utils/error-codes.js';
 
 interface PrescriptionData {
   clinical_record_id: number;
@@ -38,7 +39,7 @@ export const getPrescriptionById = async (id: string | number, tenantId: string)
     WHERE p.id = $1 AND p.tenant_id = $2
   `, [id, tenantId]);
 
-  if (result.rows.length === 0) throw new NotFoundError('Prescription not found');
+  if (result.rows.length === 0) throw new NotFoundError(E.PRESCRIPTION_NOT_FOUND);
   return result.rows[0];
 };
 
@@ -59,8 +60,8 @@ export const createPrescription = async (data: PrescriptionData, doctor_id: numb
       [data.clinical_record_id]
     );
 
-    if (record.rows.length === 0) throw new NotFoundError('Clinical record not found');
-    if (record.rows[0].doctor_id !== doctor_id) throw new BadRequestError('You can only add prescriptions to your own records');
+    if (record.rows.length === 0) throw new NotFoundError(E.CLINICAL_RECORD_NOT_FOUND);
+    if (record.rows[0].doctor_id !== doctor_id) throw new BadRequestError(E.PRESCRIPTION_OWN_ONLY);
 
     const { clinical_record_id, medication, dosage, frequency, duration, instructions, route } = data;
 
@@ -70,7 +71,7 @@ export const createPrescription = async (data: PrescriptionData, doctor_id: numb
       [clinical_record_id, medication, tenantId]
     );
     if (dupCheck.rows.length > 0) {
-      throw new BadRequestError('Esta medicación ya fue recetada en este registro clínico');
+      throw new BadRequestError(E.PRESCRIPTION_DUPLICATE);
     }
 
     const columns = ['clinical_record_id', 'medication', 'dosage', 'frequency', 'duration', 'instructions', 'route', 'tenant_id'];
@@ -107,7 +108,7 @@ export const updatePrescription = async (id: string | number, data: Prescription
     RETURNING p.*
   `, [data.medication, data.dosage, data.frequency, data.duration, data.instructions, data.route, id, doctor_id, tenantId]);
 
-  if (result.rows.length === 0) throw new NotFoundError('Prescription not found or unauthorized');
+  if (result.rows.length === 0) throw new NotFoundError(E.PRESCRIPTION_UNAUTHORIZED);
   return result.rows[0];
 };
 
@@ -148,6 +149,6 @@ export const deletePrescription = async (id: string | number, doctor_id: number,
     RETURNING p.*
   `, [id, doctor_id, tenantId]);
 
-  if (result.rows.length === 0) throw new NotFoundError('Prescription not found or unauthorized');
+  if (result.rows.length === 0) throw new NotFoundError(E.PRESCRIPTION_UNAUTHORIZED);
   return { message: 'Prescription deleted successfully' };
 };

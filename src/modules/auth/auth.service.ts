@@ -4,7 +4,8 @@ import { validateRut, cleanRut, formatRut } from '../../shared/rut.js';
 import { jwtManager } from '../../shared/jwt.service.js';
 import { verifyInviteToken } from '../doctor/doctor.service.js';
 import { UserRole } from '../../types/index.js';
-import { BadRequestError, NotFoundError, UnauthorizedError } from '../../utils/errors.js';
+import { BadRequestError, NotFoundError, UnauthorizedError, toError } from '../../utils/errors.js';
+import { E } from '../../utils/error-codes.js';
 import { logger } from '../../utils/logger.js';
 import crypto from 'crypto';
 import { hashToken, encrypt, decrypt } from '../../shared/crypto.service.js';
@@ -91,16 +92,16 @@ const revokeAllUserRefreshTokens = async (userId: number): Promise<void> => {
 };
 
 const validatePassword = (password: string): void => {
-  if (password.length < 8) throw new BadRequestError('Password must be at least 8 characters');
-  if (!/[A-Z]/.test(password)) throw new BadRequestError('Password must contain at least one uppercase letter');
-  if (!/[a-z]/.test(password)) throw new BadRequestError('Password must contain at least one lowercase letter');
-  if (!/[0-9]/.test(password)) throw new BadRequestError('Password must contain at least one number');
-  if (!/[^A-Za-z0-9]/.test(password)) throw new BadRequestError('Password must contain at least one special character');
+  if (password.length < 8) throw new BadRequestError(E.AUTH_PASSWORD_TOO_SHORT);
+  if (!/[A-Z]/.test(password)) throw new BadRequestError(E.AUTH_PASSWORD_NO_UPPERCASE);
+  if (!/[a-z]/.test(password)) throw new BadRequestError(E.AUTH_PASSWORD_NO_LOWERCASE);
+  if (!/[0-9]/.test(password)) throw new BadRequestError(E.AUTH_PASSWORD_NO_NUMBER);
+  if (!/[^A-Za-z0-9]/.test(password)) throw new BadRequestError(E.AUTH_PASSWORD_NO_SPECIAL);
 };
 
 export const register = async ({ email, password, name, rut, phone, tenant_id, invite_token }: RegisterParams): Promise<Pick<User, 'id' | 'email' | 'rut' | 'phone'>> => {
-  if (!email || !password) throw new BadRequestError('Email and password required');
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new BadRequestError('Invalid email format');
+  if (!email || !password) throw new BadRequestError(E.AUTH_EMAIL_REQUIRED);
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new BadRequestError(E.AUTH_INVALID_EMAIL_FORMAT);
   validatePassword(password);
 
   let role: string = 'patient';
@@ -119,7 +120,7 @@ export const register = async ({ email, password, name, rut, phone, tenant_id, i
   let formattedRut: string | null = null;
   if (rut) {
     const cleaned = cleanRut(rut);
-    if (!validateRut(cleaned)) throw new BadRequestError('RUT inválido');
+    if (!validateRut(cleaned)) throw new BadRequestError(E.AUTH_INVALID_RUT);
     formattedRut = formatRut(cleaned);
   }
 
@@ -153,8 +154,8 @@ export const register = async ({ email, password, name, rut, phone, tenant_id, i
     } catch (error: unknown) {
       await client.query('ROLLBACK');
       const pgError = error as { code?: string };
-      if (pgError.code === '23505') throw new BadRequestError('Email or RUT already registered');
-      throw new BadRequestError('Error creating user');
+      if (pgError.code === '23505') throw new BadRequestError(E.AUTH_EMAIL_ALREADY_EXISTS);
+      throw new BadRequestError(E.AUTH_USER_CREATION_FAILED);
     } finally {
       client.release();
     }
@@ -170,8 +171,8 @@ export const register = async ({ email, password, name, rut, phone, tenant_id, i
     return result.rows[0];
   } catch (error: unknown) {
     const pgError = error as { code?: string };
-    if (pgError.code === '23505') throw new BadRequestError('Email or RUT already registered');
-    throw new BadRequestError('Error creating user');
+    if (pgError.code === '23505') throw new BadRequestError(E.AUTH_EMAIL_ALREADY_EXISTS);
+    throw new BadRequestError(E.AUTH_USER_CREATION_FAILED);
   }
 };
 
@@ -192,7 +193,7 @@ const verifyCaptcha = async (token: string): Promise<boolean> => {
     const data = await res.json() as { success: boolean };
     return data.success === true;
   } catch (err) {
-    logger.error('reCAPTCHA verification failed, blocking login', { error: (err as Error).message });
+    logger.error('reCAPTCHA verification failed, blocking login', { error: toError(err).message });
     return false;
   }
 };
@@ -202,7 +203,7 @@ export const login = async ({ email, password, totp_token, captcha_token }: Logi
   refresh_token: string;
   user: { id: number; email: string; name: string | null; role: UserRole; rut: string | null; phone: string | null; password_changed: boolean; totp_enabled: boolean; tenant_id: string };
 }> => {
-  if (!email || !password) throw new BadRequestError('Email and password required');
+  if (!email || !password) throw new BadRequestError(E.AUTH_EMAIL_REQUIRED);
 
   if (!(await verifyCaptcha(captcha_token || ''))) {
     throw new BadRequestError('CAPTCHA verification failed');
@@ -222,7 +223,7 @@ export const login = async ({ email, password, totp_token, captcha_token }: Logi
     const dummyHash = '$2b$12$LJ3m4ys3Lg3YOCwFfj5NOWJX0GqBiN3H0w5Cqx3z5Gq5X5z5P5Q5S';
     await bcrypt.compare(password, dummyHash);
     logger.warn('Login failed: user not found', { email, tenantId });
-    throw new BadRequestError('Invalid credentials');
+    throw new BadRequestError(E.AUTH_INVALID_CREDENTIALS);
   }
 
   const isValid = await bcrypt.compare(password, user.password);
@@ -236,17 +237,17 @@ export const login = async ({ email, password, totp_token, captcha_token }: Logi
       [user.id]
     );
     logger.warn('Login failed: wrong password', { email, tenantId, userId: user.id });
-    throw new BadRequestError('Invalid credentials');
+    throw new BadRequestError(E.AUTH_INVALID_CREDENTIALS);
   }
 
   if (!user.active) {
     logger.warn('Login blocked - user inactive', { userId: user.id });
-    throw new UnauthorizedError('Account is deactivated. Contact an administrator.');
+    throw new UnauthorizedError(E.AUTH_USER_INACTIVE);
   }
 
   if (user.locked_until && new Date(user.locked_until) > new Date()) {
     logger.warn('Login blocked - account locked', { userId: user.id });
-    throw new UnauthorizedError('Account is temporarily locked due to too many failed attempts. Try again later.');
+    throw new UnauthorizedError(E.AUTH_USER_LOCKED);
   }
 
   await pool.query(
@@ -261,7 +262,7 @@ export const login = async ({ email, password, totp_token, captcha_token }: Logi
       throw err;
     }
     if (!user.totp_secret || !verifyToken(user.totp_secret, totp_token)) {
-      throw new BadRequestError('Invalid 2FA token');
+      throw new BadRequestError(E.AUTH_2FA_INVALID_TOKEN);
     }
   }
 
@@ -405,13 +406,13 @@ export const changePassword = async ({ userId, currentPassword, newPassword }: C
      WHERE id = $1 AND (tenant_id = $2 OR (role = 'superadmin' AND tenant_id IS NULL))`,
     [userId, tenantId]
   );
-  if (!userResult.rows[0]) throw new BadRequestError('User not found');
+  if (!userResult.rows[0]) throw new BadRequestError(E.AUTH_USER_NOT_FOUND);
 
   const isValid = await bcrypt.compare(currentPassword, userResult.rows[0].password);
-  if (!isValid) throw new BadRequestError('Current password is incorrect');
+  if (!isValid) throw new BadRequestError(E.AUTH_CURRENT_PASSWORD_WRONG);
 
   if (currentPassword === newPassword) {
-    throw new BadRequestError('New password must be different from current password');
+    throw new BadRequestError(E.AUTH_PASSWORD_SAME_AS_CURRENT);
   }
 
   const hashedPassword = await bcrypt.hash(newPassword, 12);
@@ -504,13 +505,13 @@ export const verifyAndEnable2FA = async (userId: number, token: string): Promise
     const storedSecret = result.rows[0]?.totp_secret;
     if (!storedSecret) {
       await client.query('ROLLBACK');
-      throw new BadRequestError('2FA not initialized');
+      throw new BadRequestError(E.AUTH_2FA_NOT_INITIALIZED);
     }
 
     const isValid = verifyToken(storedSecret, token);
     if (!isValid) {
       await client.query('ROLLBACK');
-      throw new BadRequestError('Invalid 2FA token');
+      throw new BadRequestError(E.AUTH_2FA_INVALID_TOKEN);
     }
 
     await client.query('UPDATE users SET totp_enabled = true WHERE id = $1', [userId]);
@@ -525,20 +526,20 @@ export const verifyAndEnable2FA = async (userId: number, token: string): Promise
 };
 
 export const disable2FA = async (userId: number, password: string, totpToken?: string): Promise<void> => {
-  if (!password) throw new BadRequestError('Password is required to disable 2FA');
+  if (!password) throw new BadRequestError(E.AUTH_2FA_PASSWORD_REQUIRED);
 
   const userResult = await pool.query('SELECT password, totp_secret FROM users WHERE id = $1', [userId]);
-  if (!userResult.rows[0]) throw new BadRequestError('User not found');
+  if (!userResult.rows[0]) throw new BadRequestError(E.AUTH_USER_NOT_FOUND);
 
   const isValid = await bcrypt.compare(password, userResult.rows[0].password);
-  if (!isValid) throw new UnauthorizedError('Current password is incorrect');
+  if (!isValid) throw new UnauthorizedError(E.AUTH_CURRENT_PASSWORD_WRONG);
 
   if (userResult.rows[0].totp_secret) {
     if (!totpToken) {
-      throw new BadRequestError('Código TOTP requerido para deshabilitar 2FA. Ingresa el código de tu app de autenticación.');
+      throw new BadRequestError(E.AUTH_2FA_TOTP_REQUIRED);
     }
     if (!verifyToken(userResult.rows[0].totp_secret, totpToken)) {
-      throw new BadRequestError('Código TOTP inválido');
+      throw new BadRequestError(E.AUTH_2FA_INVALID_TOKEN);
     }
   }
 
@@ -556,8 +557,6 @@ export const is2FARequired = async (userId: number): Promise<boolean> => {
 // ============================================================
 // PASSWORD RESET
 // ============================================================
-
-const RESET_TOKEN_EXPIRY = '1h';
 
 export const forgotPassword = async (email: string, tenantId: string): Promise<void> => {
   const startTime = Date.now();
@@ -597,7 +596,7 @@ export const forgotPassword = async (email: string, tenantId: string): Promise<v
         tenantId,
       });
     } catch (err) {
-      logger.error('Error sending password reset email', { error: (err as Error).message });
+      logger.error('Error sending password reset email', { error: toError(err).message });
     }
   }
 
@@ -609,11 +608,11 @@ export const forgotPassword = async (email: string, tenantId: string): Promise<v
 };
 
 export const resetPassword = async (token: string, email: string, newPassword: string, tenantId: string): Promise<void> => {
-  if (newPassword.length < 8) throw new BadRequestError('Password must be at least 8 characters');
-  if (!/[A-Z]/.test(newPassword)) throw new BadRequestError('Password must contain at least one uppercase letter');
-  if (!/[a-z]/.test(newPassword)) throw new BadRequestError('Password must contain at least one lowercase letter');
-  if (!/[0-9]/.test(newPassword)) throw new BadRequestError('Password must contain at least one number');
-  if (!/[^A-Za-z0-9]/.test(newPassword)) throw new BadRequestError('Password must contain at least one special character');
+  if (newPassword.length < 8) throw new BadRequestError(E.AUTH_PASSWORD_TOO_SHORT);
+  if (!/[A-Z]/.test(newPassword)) throw new BadRequestError(E.AUTH_PASSWORD_NO_UPPERCASE);
+  if (!/[a-z]/.test(newPassword)) throw new BadRequestError(E.AUTH_PASSWORD_NO_LOWERCASE);
+  if (!/[0-9]/.test(newPassword)) throw new BadRequestError(E.AUTH_PASSWORD_NO_NUMBER);
+  if (!/[^A-Za-z0-9]/.test(newPassword)) throw new BadRequestError(E.AUTH_PASSWORD_NO_SPECIAL);
 
   const client = await pool.connect();
   try {
@@ -626,7 +625,7 @@ export const resetPassword = async (token: string, email: string, newPassword: s
     );
 
     if (result.rows.length === 0) {
-      throw new BadRequestError('Invalid or expired reset token');
+      throw new BadRequestError(E.AUTH_RESET_TOKEN_INVALID);
     }
 
     const tokenRecord = result.rows[0];
@@ -637,11 +636,11 @@ export const resetPassword = async (token: string, email: string, newPassword: s
     );
 
     if (userResult.rows.length === 0) {
-      throw new NotFoundError('User not found');
+      throw new NotFoundError(E.AUTH_USER_NOT_FOUND);
     }
 
     if (userResult.rows[0].email !== email) {
-      throw new BadRequestError('Email does not match reset token');
+      throw new BadRequestError(E.AUTH_RESET_EMAIL_MISMATCH);
     }
 
     const hashedPassword = await bcrypt.hash(newPassword, 12);
@@ -673,11 +672,11 @@ export const resetAdminPassword = async (
     'SELECT id, password FROM users WHERE email = $1 AND tenant_id = $2 LIMIT 1',
     [email, tenantId],
   );
-  if (userResult.rows.length === 0) throw new NotFoundError('Admin user not found');
+  if (userResult.rows.length === 0) throw new NotFoundError(E.AUTH_ADMIN_NOT_FOUND);
 
   const user = userResult.rows[0];
   const valid = await bcrypt.compare(currentPassword, user.password);
-  if (!valid) throw new UnauthorizedError('Current password is incorrect');
+  if (!valid) throw new UnauthorizedError(E.AUTH_CURRENT_PASSWORD_WRONG);
 
   const hash = await bcrypt.hash(newPassword, 12);
 

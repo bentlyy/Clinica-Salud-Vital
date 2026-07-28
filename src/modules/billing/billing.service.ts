@@ -1,5 +1,6 @@
 import { pool } from '../../shared/db.js';
 import { NotFoundError, BadRequestError } from '../../utils/errors.js';
+import { E } from '../../utils/error-codes.js';
 import crypto from 'crypto';
 
 const generateInvoiceNumber = () => {
@@ -38,7 +39,7 @@ interface InvoiceInput {
 
 export const createInvoice = async (data: InvoiceInput, tenantId: string, idempotencyKey?: string) => {
   if (idempotencyKey && !(await checkIdempotencyKey(idempotencyKey))) {
-    throw new BadRequestError('Esta solicitud ya fue procesada (idempotency key duplicada)');
+    throw new BadRequestError(E.BILLING_IDEMPOTENCY_DUPLICATE);
   }
 
   const client = await pool.connect();
@@ -63,7 +64,7 @@ export const createInvoice = async (data: InvoiceInput, tenantId: string, idempo
         [booking_id, tenantId]
       );
       if (existing.rows.length > 0) {
-        throw new BadRequestError('Ya existe una factura para esta reserva');
+        throw new BadRequestError(E.BILLING_INVOICE_EXISTS);
       }
     }
 
@@ -98,7 +99,7 @@ export const createInvoice = async (data: InvoiceInput, tenantId: string, idempo
       }
     }
 
-    if (!inserted) throw new BadRequestError('Failed to generate unique invoice number after retries');
+    if (!inserted) throw new BadRequestError(E.BILLING_INVOICE_NUMBER_FAILED);
 
     if (items && items.length > 0) {
       for (const item of items) {
@@ -141,7 +142,7 @@ export const getInvoices = async ({ patient_id, doctor_id, status, start_date, e
 
 export const getInvoiceById = async (id: number, tenantId: string = 'default') => {
   const result = await pool.query('SELECT * FROM invoices WHERE id = $1 AND tenant_id = $2', [id, tenantId]);
-  if (result.rows.length === 0) throw new NotFoundError('Invoice not found');
+  if (result.rows.length === 0) throw new NotFoundError(E.BILLING_INVOICE_NOT_FOUND);
   return result.rows[0];
 };
 
@@ -150,7 +151,7 @@ export const updateInvoiceStatus = async (id: number, status: string, paymentDat
     'UPDATE invoices SET status = $1, payment_data = $2, updated_at = NOW() WHERE id = $3 AND tenant_id = $4 RETURNING *',
     [status, paymentData ? JSON.stringify(paymentData) : null, id, tenantId]
   );
-  if (result.rows.length === 0) throw new NotFoundError('Invoice not found');
+  if (result.rows.length === 0) throw new NotFoundError(E.BILLING_INVOICE_NOT_FOUND);
   return result.rows[0];
 };
 
@@ -162,7 +163,7 @@ export const deleteInvoice = async (id: number, tenantId: string = 'default') =>
     const result = await client.query('DELETE FROM invoices WHERE id = $1 AND tenant_id = $2 RETURNING *', [id, tenantId]);
     if (result.rows.length === 0) {
       await client.query('ROLLBACK');
-      throw new NotFoundError('Invoice not found');
+      throw new NotFoundError(E.BILLING_INVOICE_NOT_FOUND);
     }
     await client.query('COMMIT');
     return { message: 'Invoice deleted' };

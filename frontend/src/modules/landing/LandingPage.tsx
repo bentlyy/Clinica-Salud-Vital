@@ -407,8 +407,9 @@ function LoginModal({ onClose }: { onClose: () => void }) {
         if (res.requires_2fa) { setError('Codigo incorrecto. Intenta de nuevo.'); setLoading(false); return; }
         if (rememberMe) localStorage.setItem('rememberedEmail', pendingEmail);
         navigate(getRedirectPath(res.user.role), { replace: true });
-      } catch (err: any) {
-        const msg = err?.response?.data?.error || 'Codigo invalido';
+      } catch (err: unknown) {
+        const axiosErr = err as { response?: { data?: { error?: string } } };
+        const msg = axiosErr?.response?.data?.error || 'Codigo invalido';
         setError(msg);
       } finally {
         setLoading(false);
@@ -432,8 +433,9 @@ function LoginModal({ onClose }: { onClose: () => void }) {
       }
       if (rememberMe) localStorage.setItem('rememberedEmail', email);
       navigate(getRedirectPath(res.user.role), { replace: true });
-    } catch (err: any) {
-      const msg = err?.response?.data?.error || 'Credenciales incorrectas';
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { data?: { error?: string } } };
+      const msg = axiosErr?.response?.data?.error || 'Credenciales incorrectas';
       setError(msg);
       recaptchaRef.current?.reset();
     } finally {

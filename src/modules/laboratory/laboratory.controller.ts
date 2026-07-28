@@ -2,6 +2,7 @@ import * as laboratoryService from './laboratory.service.js';
 import * as doctorService from '../doctor/doctor.service.js';
 import { asyncHandler } from '../../middlewares/asyncHandler.middleware.js';
 import { NotFoundError, BadRequestError } from '../../utils/errors.js';
+import { E } from '../../utils/error-codes.js';
 import { getQuery, getQueryInt } from '../../shared/query.js';
 import { onLabEvent, emitLabEvent, LAB_EVENTS } from './lab-events.service.js';
 
@@ -58,7 +59,7 @@ export const getLabRequests = asyncHandler(async (req, res) => {
 
   if (req.user!.role === 'doctor') {
     const doctor = await doctorService.getDoctorByUserId(req.user!.id, req.tenant_id);
-    if (!doctor) throw new NotFoundError('Doctor profile not found');
+    if (!doctor) throw new NotFoundError(E.DOCTOR_PROFILE_NOT_FOUND);
     const requests = await laboratoryService.getLabRequests({
       doctor_id: doctor.id,
       status,
@@ -83,13 +84,13 @@ export const getLabRequestById = asyncHandler(async (req, res) => {
   const request = await laboratoryService.getLabRequestById(Number(req.params.id), req.tenant_id);
 
   if (req.user!.role === 'user' && request.patient_id !== req.user!.id) {
-    throw new BadRequestError('Access denied');
+    throw new BadRequestError(E.LAB_ACCESS_DENIED);
   }
 
   if (req.user!.role === 'doctor') {
     const doctor = await doctorService.getDoctorByUserId(req.user!.id, req.tenant_id);
     if (!doctor || request.doctor_id !== doctor.id) {
-      throw new BadRequestError('Access denied');
+      throw new BadRequestError(E.LAB_ACCESS_DENIED);
     }
   }
 
@@ -98,7 +99,7 @@ export const getLabRequestById = asyncHandler(async (req, res) => {
 
 export const createLabRequest = asyncHandler(async (req, res) => {
   const doctor = await doctorService.getDoctorByUserId(req.user!.id, req.tenant_id);
-  if (!doctor) throw new NotFoundError('Doctor profile not found');
+  if (!doctor) throw new NotFoundError(E.DOCTOR_PROFILE_NOT_FOUND);
 
   const data = { ...req.body, doctor_id: doctor.id };
   const request = await laboratoryService.createLabRequest(data, req.tenant_id);
@@ -126,12 +127,12 @@ export const downloadLabOrderPDF = asyncHandler(async (req, res) => {
   const request = await laboratoryService.getLabRequestById(Number(req.params.id), req.tenant_id);
 
   if (req.user!.role === 'user' && request.patient_id !== req.user!.id) {
-    throw new BadRequestError('Access denied');
+    throw new BadRequestError(E.LAB_ACCESS_DENIED);
   }
   if (req.user!.role === 'doctor') {
     const doctor = await doctorService.getDoctorByUserId(req.user!.id, req.tenant_id);
     if (!doctor || request.doctor_id !== doctor.id) {
-      throw new BadRequestError('Access denied');
+      throw new BadRequestError(E.LAB_ACCESS_DENIED);
     }
   }
 

@@ -78,19 +78,19 @@ describe('guestService.createGuestBooking', () => {
   it('throws if RUT invalid', async () => {
     await expect(guestService.createGuestBooking({
       doctor_id: 1, date: '2025-01-15', time: '10:00', rut: 'invalid', email: 'guest@test.com',
-    }, 'default')).rejects.toThrow('RUT inválido');
+    }, 'default'))      .rejects.toThrow('Invalid RUT');
   });
 
   it('throws if date format invalid', async () => {
     await expect(guestService.createGuestBooking({
       doctor_id: 1, date: 'bad', time: '10:00', rut: '12.345.678-5', email: 'guest@test.com',
-    }, 'default')).rejects.toThrow('Formato de fecha inválido');
+    }, 'default'))      .rejects.toThrow('Invalid date format');
   });
 
   it('throws if time format invalid', async () => {
     await expect(guestService.createGuestBooking({
       doctor_id: 1, date: '2025-01-15', time: 'bad', rut: '12.345.678-5', email: 'guest@test.com',
-    }, 'default')).rejects.toThrow('Formato de hora inválido');
+    }, 'default'))      .rejects.toThrow('Invalid time format');
   });
 });
 
@@ -131,7 +131,7 @@ describe('guestService.cancelGuestBooking', () => {
   it('throws if booking not found', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [] });
 
-    await expect(guestService.cancelGuestBooking(999, 1, undefined, 'default')).rejects.toThrow('Reserva no encontrada');
+    await expect(guestService.cancelGuestBooking(999, 1, undefined, 'default')).rejects.toThrow('Booking not found');
   });
 
   it('allows admin to cancel any booking', async () => {
@@ -155,7 +155,7 @@ describe('guestService.cancelGuestBooking', () => {
   });
 
   it('throws BadRequestError if no auth and no rut', async () => {
-    await expect(guestService.cancelGuestBooking(1, undefined, undefined, 'default')).rejects.toThrow('Debe proporcionar autenticación o RUT para cancelar');
+    await expect(guestService.cancelGuestBooking(1, undefined, undefined, 'default')).rejects.toThrow('Authentication or RUT required to cancel');
   });
 
   it('cancels booking with tenantId', async () => {
@@ -251,7 +251,7 @@ describe('guestService.createGuestBooking advanced', () => {
 
     await expect(guestService.createGuestBooking({
       doctor_id: 1, date: '2026-06-15', time: '10:00', rut: '12.345.678-5', email: 'guest@test.com',
-    }, 'default')).rejects.toThrow('Este horario ya está reservado');
+    }, 'default')).rejects.toThrow('This time slot is already booked');
 
     expect(mockClient.query).toHaveBeenCalledWith('ROLLBACK');
   });
@@ -262,7 +262,7 @@ describe('guestService.createGuestBooking advanced', () => {
 
     await expect(guestService.createGuestBooking({
       doctor_id: 1, date: '2026-06-15', time: '10:00', rut: '12.345.678-5', email: 'guest@test.com',
-    }, 'default')).rejects.toThrow('bloqueado');
+    }, 'default')).rejects.toThrow('Your RUT is blocked due to missed appointments.');
   });
 
   it('throws if doctor not found', async () => {
@@ -277,7 +277,7 @@ describe('guestService.createGuestBooking advanced', () => {
 
     await expect(guestService.createGuestBooking({
       doctor_id: 999, date: '2026-06-15', time: '10:00', rut: '12.345.678-5', email: 'guest@test.com',
-    }, 'default')).rejects.toThrow('Doctor no encontrado');
+    }, 'default')).rejects.toThrow('Doctor not found');
 
     expect(mockClient.query).toHaveBeenCalledWith('ROLLBACK');
   });
