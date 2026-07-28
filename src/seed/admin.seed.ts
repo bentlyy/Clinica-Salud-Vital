@@ -282,6 +282,22 @@ export const seedTestTenants = async (): Promise<void> => {
         );
       }
     }
+
+    // ── Doctor exceptions ──────────────────────────────────────────────────
+
+    for (const doctorId of doctorIds) {
+      const vacationDate = addDays(today, -randomInt(10, 60));
+      await pool.query(
+        'INSERT INTO doctor_exceptions (doctor_id, date, is_full_day, tenant_id) VALUES ($1, $2, true, $3) ON CONFLICT DO NOTHING',
+        [doctorId, formatDate(vacationDate), t.id]
+      );
+      const futureDate = addDays(today, randomInt(5, 30));
+      await pool.query(
+        "INSERT INTO doctor_exceptions (doctor_id, date, start_time, end_time, is_full_day, tenant_id) VALUES ($1, $2, '09:00', '12:00', false, $3) ON CONFLICT DO NOTHING",
+        [doctorId, formatDate(futureDate), t.id]
+      );
+    }
+
     logger.info(`  Doctores: ${doctorIds.length}`);
 
     // ── Patients (8-10 per tenant) ─────────────────────────────────────────
@@ -303,11 +319,12 @@ export const seedTestTenants = async (): Promise<void> => {
       const email = `${pName.toLowerCase().replace(/\s+/g, '.')}@${t.domain}.clinic.com`;
       const rutSuffix = pick(['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'K']);
       const result = await pool.query(
-        'INSERT INTO users (email, password, name, role, rut, phone, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (tenant_id, email) DO NOTHING RETURNING id',
+        'INSERT INTO users (email, password, name, role, rut, phone, gender, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT (tenant_id, email) DO NOTHING RETURNING id',
         [
           email, hash, pName, 'user',
           `${randomInt(10000000, 99999999)}-${rutSuffix}`,
           `+569${randomInt(10000000, 99999999)}`,
+          pick(['M', 'F']),
           t.id,
         ]
       );
@@ -338,6 +355,199 @@ export const seedTestTenants = async (): Promise<void> => {
         [t.labTechnicianEmail, hash, 'Encargado de Laboratorio', 'lab_technician', `${randomInt(10000000, 99999999)}-K`, t.id]
       );
       logger.info(`  Lab technician: ${t.labTechnicianEmail}`);
+    }
+
+    // ── Specialties ────────────────────────────────────────────────────────
+
+    const specialtyData = [
+      { name: 'Cardiología', icon: '❤️', description: 'Enfermedades del corazón', department: 'Cardiología', color: '#ef4444' },
+      { name: 'Dermatología', icon: '🧴', description: 'Enfermedades de la piel', department: 'Dermatología', color: '#f59e0b' },
+      { name: 'Neurología', icon: '🧠', description: 'Trastornos del sistema nervioso', department: 'Neurología', color: '#8b5cf6' },
+      { name: 'Pediatría', icon: '👶', description: 'Atención integral para niños', department: 'Pediatría', color: '#06b6d4' },
+      { name: 'Medicina General', icon: '🩺', description: 'Atención primaria', department: 'Medicina General', color: '#10b981' },
+      { name: 'Ginecología', icon: '🌸', description: 'Salud femenina', department: 'Ginecología', color: '#ec4899' },
+      { name: 'Traumatología', icon: '🦴', description: 'Lesiones musculoesqueléticas', department: 'Traumatología', color: '#f97316' },
+      { name: 'Oftalmología', icon: '👁️', description: 'Enfermedades visuales', department: 'Oftalmología', color: '#3b82f6' },
+      { name: 'Psiquiatría', icon: '💭', description: 'Salud mental', department: 'Psiquiatría', color: '#a855f7' },
+      { name: 'Endocrinología', icon: '⚖️', description: 'Trastornos hormonales', department: 'Endocrinología', color: '#14b8a6' },
+      { name: 'Urología', icon: '🫀', description: 'Sistema urinario', department: 'Urología', color: '#0ea5e9' },
+      { name: 'Reumatología', icon: '🦋', description: 'Enfermedades autoinmunes', department: 'Reumatología', color: '#e11d48' },
+    ];
+
+    for (const s of specialtyData) {
+      await pool.query(
+        `INSERT INTO specialties (name, icon, description, department, procedures, color, tenant_id)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)
+         ON CONFLICT (tenant_id, name) DO NOTHING`,
+        [s.name, s.icon, s.description, s.department, '[]', s.color, t.id]
+      );
+    }
+    logger.info(`  Specialties: ${specialtyData.length}`);
+
+    // ── Lab areas (pro plan only) ──────────────────────────────────────────
+
+    const labAreaData = [
+      { name: 'Hematología', code: 'HEM', description: 'Estudio de la sangre', icon: 'blood', color: '#ef4444', sort_order: 1 },
+      { name: 'Bioquímica', code: 'BIO', description: 'Análisis químicos en sangre', icon: 'flask', color: '#f59e0b', sort_order: 2 },
+      { name: 'Hormonas', code: 'HOR', description: 'Marcadores endocrinos', icon: 'activity', color: '#8b5cf6', sort_order: 3 },
+      { name: 'Inmunología', code: 'INM', description: 'Sistema inmune y anticuerpos', icon: 'shield', color: '#06b6d4', sort_order: 4 },
+      { name: 'Microbiología', code: 'MIC', description: 'Microorganismos y cultivos', icon: 'bacteria', color: '#10b981', sort_order: 5 },
+      { name: 'Parasitología', code: 'PAR', description: 'Estudio de parásitos', icon: 'worm', color: '#84cc16', sort_order: 6 },
+      { name: 'Uroanálisis', code: 'URO', description: 'Análisis de orina', icon: 'droplet', color: '#3b82f6', sort_order: 7 },
+      { name: 'Coagulación', code: 'COA', description: 'Coagulación sanguínea', icon: 'droplets', color: '#ec4899', sort_order: 8 },
+      { name: 'Serología', code: 'SER', description: 'Suero y anticuerpos', icon: 'test-tube', color: '#14b8a6', sort_order: 9 },
+    ];
+
+    const labAreaIds: Record<string, number> = {};
+
+    if (t.planCode === 'pro') {
+      for (const area of labAreaData) {
+        const areaResult = await pool.query(
+          `INSERT INTO lab_areas (name, code, description, icon, color, sort_order, tenant_id)
+           VALUES ($1, $2, $3, $4, $5, $6, $7)
+           ON CONFLICT DO NOTHING RETURNING id`,
+          [area.name, area.code, area.description, area.icon, area.color, area.sort_order, t.id]
+        );
+        if (areaResult.rows.length > 0) {
+          labAreaIds[area.code] = areaResult.rows[0].id;
+        } else {
+          const existing = await pool.query('SELECT id FROM lab_areas WHERE code = $1 AND tenant_id = $2', [area.code, t.id]);
+          if (existing.rows.length > 0) labAreaIds[area.code] = existing.rows[0].id;
+        }
+      }
+      logger.info(`  Lab areas: ${Object.keys(labAreaIds).length}`);
+    }
+
+    // ── Lab tests (pro plan only) ──────────────────────────────────────────
+
+    const labTestData = [
+      { name: 'Hemograma completo', code: 'HEM001', areaCode: 'HEM', price: 25, reference_ranges: '{"hemoglobin": {"min": 12, "max": 16}, "hematocrit": {"min": 36, "max": 48}}', unit: 'g/dL', category: 'Hematología', sample_type: 'Sangre total', container_type: 'Tubo EDTA', turnaround_time_min: 120 },
+      { name: 'Glucosa en ayunas', code: 'GLU001', areaCode: 'BIO', price: 15, reference_ranges: '{"glucose": {"min": 70, "max": 100}}', unit: 'mg/dL', category: 'Bioquímica', sample_type: 'Suero', container_type: 'Tubo seco', turnaround_time_min: 60 },
+      { name: 'Perfil lipídico', code: 'LIP001', areaCode: 'BIO', price: 35, reference_ranges: '{"cholesterol": {"min": 0, "max": 200}, "triglycerides": {"min": 0, "max": 150}}', unit: 'mg/dL', category: 'Bioquímica', sample_type: 'Suero', container_type: 'Tubo seco', turnaround_time_min: 120 },
+      { name: 'Creatinina', code: 'CRE001', areaCode: 'BIO', price: 20, reference_ranges: '{"creatinine": {"min": 0.6, "max": 1.2}}', unit: 'mg/dL', category: 'Bioquímica', sample_type: 'Suero', container_type: 'Tubo seco', turnaround_time_min: 60 },
+      { name: 'TSH', code: 'TSH001', areaCode: 'HOR', price: 30, reference_ranges: '{"tsh": {"min": 0.4, "max": 4.0}}', unit: 'mIU/L', category: 'Hormonas', sample_type: 'Suero', container_type: 'Tubo seco', turnaround_time_min: 240 },
+      { name: 'Urocultivo', code: 'URO001', areaCode: 'MIC', price: 25, reference_ranges: '{"bacteria": {"max": 10000}}', unit: 'UFC/mL', category: 'Microbiología', sample_type: 'Orina', container_type: 'Tubo estéril', turnaround_time_min: 2880 },
+      { name: 'Hemoglobina glicosilada', code: 'HBA001', areaCode: 'HEM', price: 35, reference_ranges: '{"hba1c": {"min": 4, "max": 5.6}}', unit: '%', category: 'Hematología', sample_type: 'Sangre total', container_type: 'Tubo EDTA', turnaround_time_min: 240 },
+      { name: 'PCR', code: 'PCR001', areaCode: 'BIO', price: 20, reference_ranges: '{"pcr": {"min": 0, "max": 10}}', unit: 'mg/L', category: 'Bioquímica', sample_type: 'Suero', container_type: 'Tubo seco', turnaround_time_min: 120 },
+      { name: 'Transaminasas', code: 'ALT001', areaCode: 'BIO', price: 25, reference_ranges: '{"alt": {"min": 7, "max": 56}, "ast": {"min": 10, "max": 40}}', unit: 'U/L', category: 'Bioquímica', sample_type: 'Suero', container_type: 'Tubo seco', turnaround_time_min: 120 },
+    ];
+
+    const labTestIds: Record<string, number> = {};
+
+    if (t.planCode === 'pro') {
+      for (const test of labTestData) {
+        const areaId = labAreaIds[test.areaCode];
+        const testResult = await pool.query(
+          `INSERT INTO lab_tests (name, code, price, lab_area_id, reference_ranges, unit, category, sample_type, container_type, turnaround_time_min, tenant_id)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+           ON CONFLICT (tenant_id, code) DO NOTHING RETURNING id`,
+          [test.name, test.code, test.price, areaId, test.reference_ranges, test.unit, test.category, test.sample_type, test.container_type, test.turnaround_time_min, t.id]
+        );
+        if (testResult.rows.length > 0) {
+          labTestIds[test.code] = testResult.rows[0].id;
+        } else {
+          const existing = await pool.query('SELECT id FROM lab_tests WHERE code = $1 AND tenant_id = $2', [test.code, t.id]);
+          if (existing.rows.length > 0) labTestIds[test.code] = existing.rows[0].id;
+        }
+      }
+      logger.info(`  Lab tests: ${Object.keys(labTestIds).length}`);
+    }
+
+    // ── Lab equipment (pro plan only) ──────────────────────────────────────
+
+    const equipmentData = [
+      { name: 'Analizador Hematológico', model: 'Sysmex XN-1000', serial_number: 'SYS-XN-001', areaCode: 'HEM', connection_type: 'hl7', status: 'online' },
+      { name: 'Analizador Bioquímico', model: 'Beckman Coulter AU5800', serial_number: 'BC-AU-001', areaCode: 'BIO', connection_type: 'hl7', status: 'online' },
+      { name: 'Analizador de Hormonas', model: 'Roche Cobas e411', serial_number: 'RC-E411-001', areaCode: 'HOR', connection_type: 'astm', status: 'online' },
+      { name: 'Microscopio Digital', model: 'Olympus BX53', serial_number: 'OLY-BX53-001', areaCode: 'MIC', connection_type: 'manual', status: 'online' },
+      { name: 'Analizador de Orina', model: 'Sysmex UF-5000', serial_number: 'SYS-UF-001', areaCode: 'URO', connection_type: 'hl7', status: 'maintenance' },
+    ];
+
+    const equipmentIds: number[] = [];
+
+    if (t.planCode === 'pro') {
+      for (const eq of equipmentData) {
+        const eqResult = await pool.query(
+          `INSERT INTO lab_equipment (name, model, serial_number, lab_area_id, connection_type, status, tenant_id)
+           VALUES ($1, $2, $3, $4, $5, $6, $7)
+           ON CONFLICT DO NOTHING RETURNING id`,
+          [eq.name, eq.model, eq.serial_number, labAreaIds[eq.areaCode], eq.connection_type, eq.status, t.id]
+        );
+        if (eqResult.rows.length > 0) equipmentIds.push(eqResult.rows[0].id);
+      }
+      logger.info(`  Lab equipment: ${equipmentIds.length}`);
+    }
+
+    // ── Lab reagents (pro plan only) ───────────────────────────────────────
+
+    const reagentData = [
+      { name: 'Hemoglobina Reagent Kit', catalog_number: 'HK-5000', lot_number: 'LOT-2025-001', supplier: 'Sysmex', stock_quantity: 50, unit: 'tests', min_stock: 10, current_stock: 45, storage_conditions: '2-8°C', areaCode: 'HEM' },
+      { name: 'Glucosa GOD-POD', catalog_number: 'GLU-100', lot_number: 'LOT-2025-002', supplier: 'Beckman', stock_quantity: 100, unit: 'tests', min_stock: 20, current_stock: 85, storage_conditions: '15-25°C', areaCode: 'BIO' },
+      { name: 'Colesterol Total', catalog_number: 'CHOL-200', lot_number: 'LOT-2025-003', supplier: 'Beckman', stock_quantity: 80, unit: 'tests', min_stock: 15, current_stock: 70, storage_conditions: '2-8°C', areaCode: 'BIO' },
+      { name: 'TSH Calibrator', catalog_number: 'TSH-CAL', lot_number: 'LOT-2025-004', supplier: 'Roche', stock_quantity: 30, unit: 'tests', min_stock: 5, current_stock: 25, storage_conditions: '2-8°C', areaCode: 'HOR' },
+      { name: 'Medio de Cultivo CLED', catalog_number: 'CLED-050', lot_number: 'LOT-2025-005', supplier: 'Oxoid', stock_quantity: 40, unit: 'units', min_stock: 10, current_stock: 35, storage_conditions: '15-25°C', areaCode: 'MIC' },
+      { name: 'Reactivo PCR Quantitative', catalog_number: 'PCR-500', lot_number: 'LOT-2025-006', supplier: 'Bio-Rad', stock_quantity: 25, unit: 'tests', min_stock: 5, current_stock: 20, storage_conditions: '-20°C', areaCode: 'BIO' },
+    ];
+
+    const reagentIds: number[] = [];
+
+    if (t.planCode === 'pro') {
+      for (const re of reagentData) {
+        const reResult = await pool.query(
+          `INSERT INTO lab_reagents (name, catalog_number, lot_number, supplier, stock_quantity, unit, min_stock, current_stock, storage_conditions, lab_area_id, tenant_id)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+           ON CONFLICT DO NOTHING RETURNING id`,
+          [re.name, re.catalog_number, re.lot_number, re.supplier, re.stock_quantity, re.unit, re.min_stock, re.current_stock, re.storage_conditions, labAreaIds[re.areaCode], t.id]
+        );
+        if (reResult.rows.length > 0) reagentIds.push(reResult.rows[0].id);
+      }
+      logger.info(`  Lab reagents: ${reagentIds.length}`);
+    }
+
+    // ── Lab QC records (pro plan only) ─────────────────────────────────────
+
+    if (t.planCode === 'pro') {
+      const qcTypes = ['internal', 'internal', 'internal', 'external', 'calibration', 'proficiency', 'internal', 'external'];
+      const qcStatuses = ['passed', 'passed', 'passed', 'failed', 'passed', 'passed', 'warning', 'passed'];
+
+      const labTechResult = await pool.query(
+        "SELECT id FROM users WHERE tenant_id = $1 AND role = 'lab_technician' LIMIT 1",
+        [t.id]
+      );
+      let qcUserId: number = labTechResult.rows.length > 0 ? labTechResult.rows[0].id : 1;
+      if (labTechResult.rows.length === 0) {
+        const adminForQc = await pool.query('SELECT id FROM users WHERE tenant_id = $1 AND role = $2 LIMIT 1', [t.id, 'admin']);
+        if (adminForQc.rows.length > 0) qcUserId = adminForQc.rows[0].id;
+      }
+
+      const allLabTestIds = Object.values(labTestIds);
+      const allLabAreaIds = Object.values(labAreaIds);
+
+      let qcCount = 0;
+      for (let i = 0; i < 8; i++) {
+        if (allLabTestIds.length === 0 || allLabAreaIds.length === 0) break;
+        try {
+          await pool.query(
+            `INSERT INTO lab_qc_records (lab_test_id, lab_area_id, equipment_id, reagent_id, qc_type, status, performed_by, performed_at, results, notes, tenant_id)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+            [
+              pick(allLabTestIds),
+              pick(allLabAreaIds),
+              equipmentIds.length > 0 ? pick(equipmentIds) : null,
+              reagentIds.length > 0 ? pick(reagentIds) : null,
+              qcTypes[i],
+              qcStatuses[i],
+              qcUserId,
+              addDays(today, -randomInt(0, 30)),
+              JSON.stringify({ value: randomInt(90, 110), unit: 'control' }),
+              `QC ${qcTypes[i]} - ${qcStatuses[i]}`,
+              t.id,
+            ]
+          );
+          qcCount++;
+        } catch { /* skip */ }
+      }
+      logger.info(`  Lab QC records: ${qcCount}`);
     }
 
     // ── Bookings (past + future) ───────────────────────────────────────────
