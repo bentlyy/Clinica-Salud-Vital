@@ -22,11 +22,18 @@ vi.mock('../../src/middlewares/asyncHandler.middleware.js', () => ({
   asyncHandler: (fn) => fn,
 }));
 
-vi.mock('../../src/utils/errors.js', () => ({
-  BadRequestError: class BadRequestError extends Error {
-    constructor(msg) { super(msg); this.name = 'BadRequestError'; }
-  },
-}));
+vi.mock('../../src/utils/errors.js', async () => {
+  const { ERROR_MESSAGES } = await vi.importActual('../../src/utils/error-codes.js');
+  return {
+    BadRequestError: class BadRequestError extends Error {
+      constructor(msg) {
+        const resolved = (typeof msg === 'string' && msg in ERROR_MESSAGES) ? ERROR_MESSAGES[msg] : msg;
+        super(resolved);
+        this.name = 'BadRequestError';
+      }
+    },
+  };
+});
 
 vi.mock('../../src/utils/logger.js', () => ({
   logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },

@@ -1,5 +1,6 @@
 import { pool } from './db.js';
 import { logger } from '../utils/logger.js';
+import { toError } from '../utils/errors.js';
 
 export interface Tenant {
   id: string;
@@ -72,7 +73,7 @@ export const tenantService = {
         lastLoaded = Date.now();
         logger.info(`Tenants loaded from DB: ${loaded.length} (was ${oldCount})`);
       } catch (error) {
-        logger.error('Failed to load tenants from DB', { error: (error as Error).message });
+        logger.error('Failed to load tenants from DB', { error: toError(error).message });
       } finally {
         loadingLock = null;
       }

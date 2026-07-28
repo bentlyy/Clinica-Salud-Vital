@@ -1,5 +1,6 @@
 import { pool } from '../../shared/db.js';
 import { BadRequestError, NotFoundError } from '../../utils/errors.js';
+import { E } from '../../utils/error-codes.js';
 import { logger } from '../../utils/logger.js';
 
 interface TenantRow {
@@ -87,9 +88,8 @@ export const listTenants = async (
 
 export const getTenantDetail = async (tenantId: string): Promise<Record<string, unknown>> => {
   const tenantResult = await pool.query<TenantRow>('SELECT * FROM tenants WHERE id = $1', [tenantId]);
-  if (tenantResult.rows.length === 0) throw new NotFoundError('Tenant not found');
+  if (tenantResult.rows.length === 0) throw new NotFoundError(E.SA_TENANT_NOT_FOUND);
   const tenant = tenantResult.rows[0];
-
   const statsResult = await pool.query(`
     SELECT
       (SELECT COUNT(*) FROM users WHERE tenant_id = $1 AND role IN ('user', 'patient')) as total_patients,
@@ -147,7 +147,7 @@ export const updateTenant = async (
 
   for (const [key, value] of Object.entries(data)) {
     if (!ALLOWED_TENANT_FIELDS.has(key)) {
-      throw new BadRequestError(`Unknown field: ${key}`);
+      throw new BadRequestError(E.SA_UNKNOWN_FIELD, 'Unknown field: ' + key);
     }
     if (value !== undefined) {
       sets.push(`${key} = $${paramIdx++}`);
@@ -155,14 +155,14 @@ export const updateTenant = async (
     }
   }
 
-  if (sets.length === 0) throw new BadRequestError('No fields to update');
+  if (sets.length === 0) throw new BadRequestError(E.SA_NO_FIELDS);
 
   params.push(tenantId);
   const result = await pool.query<TenantRow>(
     `UPDATE tenants SET ${sets.join(', ')}, updated_at = NOW() WHERE id = $${paramIdx} RETURNING *`,
     params
   );
-  if (result.rows.length === 0) throw new NotFoundError('Tenant not found');
+  if (result.rows.length === 0) throw new NotFoundError(E.SA_TENANT_NOT_FOUND);
 
   try {
     const { tenantService } = await import('../../shared/multi-tenant.service.js');
@@ -179,7 +179,7 @@ export const deleteTenant = async (tenantId: string, deletedBy?: number): Promis
     'UPDATE tenants SET active = false, deleted_at = NOW(), deleted_by = $2 WHERE id = $1 AND deleted_at IS NULL RETURNING id',
     [tenantId, deletedBy || null]
   );
-  if (result.rows.length === 0) throw new NotFoundError('Tenant not found or already deleted');
+  if (result.rows.length === 0) throw new NotFoundError(E.SA_TENANT_DELETED);
 
   // Revocar todos los refresh tokens del tenant
   await pool.query(
@@ -262,7 +262,7 @@ export const setUserActive = async (userId: number, active: boolean, tenantId?: 
     `UPDATE users SET active = $1 WHERE id = $2${tenantId ? ' AND tenant_id = $3' : ''} RETURNING id, email, name, role, active, tenant_id`,
     tenantId ? [active, userId, tenantId] : [active, userId]
   );
-  if (result.rows.length === 0) throw new NotFoundError('User not found');
+  if (result.rows.length === 0) throw new NotFoundError(E.SA_USER_NOT_FOUND);
   return result.rows[0];
 };
 
@@ -489,7 +489,7 @@ export const getTenantHealthScores = async (): Promise<Record<string, unknown>[]
 export const getTenantHealthDetail = async (tenantId: string): Promise<Record<string, unknown>> => {
   const all = await getTenantHealthScores();
   const tenant = all.find((r: Record<string, unknown>) => r.id === tenantId);
-  if (!tenant) throw new NotFoundError('Tenant not found');
+  if (!tenant) throw new NotFoundError(E.SA_TENANT_NOT_FOUND);
   return tenant;
 };
 
@@ -593,7 +593,7 @@ export const getChurnMetrics = async (months: number = 12): Promise<Record<strin
 
   const rows = result.rows;
   const lastMonth = rows[rows.length - 1];
-  const prevMonth = rows[rows.length - 2];
+
 
   const churnRate = lastMonth && lastMonth.total_active > 0
     ? Math.round((lastMonth.canceled / lastMonth.total_active) * 100 * 10) / 10
@@ -698,11 +698,9 @@ export const getAlerts = async (): Promise<Record<string, unknown>[]> => {
 
   for (const tenant of healthScores) {
     const act = activityMap.get(tenant.id as string) as Record<string, unknown> | undefined;
-    const score = Number(tenant.health_score || 0);
     const daysSinceBooking = act?.last_booking
       ? Math.floor((Date.now() - new Date(act.last_booking as string).getTime()) / (1000 * 60 * 60 * 24))
       : 999;
-    const bookings7d = Number(act?.bookings_7d || 0);
     const bookings30d = Number(tenant.bookings_30d || 0);
     const bookingsPrev30d = Number(tenant.bookings_prev_30d || 0);
     const uniquePatients30d = Number(tenant.unique_patients_30d || 0);

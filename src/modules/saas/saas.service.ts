@@ -1,6 +1,7 @@
 import { pool } from '../../shared/db.js';
 import { logger } from '../../utils/logger.js';
-import { BadRequestError, NotFoundError, ForbiddenError } from '../../utils/errors.js';
+import { BadRequestError, NotFoundError } from '../../utils/errors.js';
+import { E } from '../../utils/error-codes.js';
 
 export interface Plan {
   id: number;
@@ -57,7 +58,7 @@ export const getPlanByCode = async (code: string): Promise<Plan> => {
      FROM plans WHERE code = $1`,
     [code]
   );
-  if (result.rows.length === 0) throw new NotFoundError(`Plan '${code}' not found`);
+  if (result.rows.length === 0) throw new NotFoundError(E.SAAS_PLAN_NOT_FOUND);
   return result.rows[0];
 };
 
@@ -68,7 +69,7 @@ export const getPlanById = async (id: number): Promise<Plan> => {
      FROM plans WHERE id = $1`,
     [id]
   );
-  if (result.rows.length === 0) throw new NotFoundError(`Plan with id ${id} not found`);
+  if (result.rows.length === 0) throw new NotFoundError(E.SAAS_PLAN_BY_ID_NOT_FOUND);
   return result.rows[0];
 };
 
@@ -128,7 +129,7 @@ export const createSubscription = async (
       [tenantId]
     );
     if (existing.rows.length > 0) {
-      throw new BadRequestError('Tenant already has an active subscription. Change plan instead.');
+      throw new BadRequestError(E.SAAS_SUBSCRIPTION_EXISTS);
     }
 
     const now = new Date();
@@ -187,13 +188,13 @@ export const changePlan = async (
     );
 
     if (subResult.rows.length === 0) {
-      throw new BadRequestError('No active subscription found. Create one first.');
+      throw new BadRequestError(E.SAAS_NO_SUBSCRIPTION);
     }
 
     const sub = subResult.rows[0];
 
     if (sub.plan_id === newPlan.id) {
-      throw new BadRequestError('Already on this plan.');
+      throw new BadRequestError(E.SAAS_ALREADY_ON_PLAN);
     }
 
     await client.query(
@@ -238,7 +239,7 @@ export const cancelSubscription = async (tenantId: string): Promise<{ message: s
     );
 
     if (result.rows.length === 0) {
-      throw new BadRequestError('No active subscription to cancel.');
+      throw new BadRequestError(E.SAAS_NO_ACTIVE_SUBSCRIPTION);
     }
 
     await client.query('COMMIT');
@@ -396,7 +397,7 @@ export const updateTenantConfig = async (
 
   for (const [key, value] of Object.entries(data)) {
     if (!ALLOWED_TENANT_CONFIG_FIELDS.has(key)) {
-      throw new BadRequestError(`Unknown field: ${key}`);
+      throw new BadRequestError(E.SAAS_UNKNOWN_FIELD, 'Unknown field: ' + key);
     }
     if (value !== undefined) {
       sets.push(`${key} = $${paramIdx++}`);
@@ -412,7 +413,7 @@ export const updateTenantConfig = async (
     params
   );
 
-  if (result.rows.length === 0) throw new BadRequestError('Tenant not found');
+  if (result.rows.length === 0) throw new BadRequestError(E.SAAS_TENANT_NOT_FOUND);
 };
 
 // ─── Onboarding ──────────────────────────────────────────
@@ -436,7 +437,7 @@ export const onboardTenant = async (data: {
 
     const existing = await client.query('SELECT 1 FROM tenants WHERE id = $1 OR domain = $2 FOR UPDATE', [tenantId, domain]);
     if (existing.rows.length > 0) {
-      throw new BadRequestError('Tenant with this domain already exists');
+      throw new BadRequestError(E.SAAS_DOMAIN_EXISTS);
     }
 
     await client.query(

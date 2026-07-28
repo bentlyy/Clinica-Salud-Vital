@@ -312,7 +312,7 @@ describe('labService.setLabType', () => {
   });
 
   it('throws for invalid lab_type', async () => {
-    await expect(labService.setLabType(1, 'invalid', 'test-tenant')).rejects.toThrow('lab_type debe ser');
+    await expect(labService.setLabType(1, 'invalid', 'test-tenant')).rejects.toThrow('lab_type must be "internal" or "external"');
   });
 
   it('throws if request not found', async () => {

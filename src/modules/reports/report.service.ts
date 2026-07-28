@@ -1,5 +1,6 @@
 import { pool } from '../../shared/db.js';
-import { NotFoundError, BadRequestError } from '../../utils/errors.js';
+import { NotFoundError, BadRequestError, toError } from '../../utils/errors.js';
+import { E } from '../../utils/error-codes.js';
 import { logger } from '../../utils/logger.js';
 
 export interface ReportConfig {
@@ -122,7 +123,7 @@ const generators: Record<string, (config: ReportConfig, tenantId: string) => any
 
 export const generateReport = async (type: string, config: ReportConfig, userId: number, tenantId: string) => {
   const validTypes = ['appointments', 'revenue', 'patients', 'laboratory', 'custom'];
-  if (!validTypes.includes(type)) throw new BadRequestError(`Invalid report type: ${type}`);
+  if (!validTypes.includes(type)) throw new BadRequestError(E.REPORT_INVALID_TYPE, 'Invalid report type: ' + type);
 
   const { rows } = await pool.query(
     `INSERT INTO reports (tenant_id, user_id, type, status, config)
@@ -149,7 +150,7 @@ export const generateReport = async (type: string, config: ReportConfig, userId:
 
     return { ...report, status: 'completed', result_url: JSON.stringify(result) };
   } catch (err) {
-    logger.error('Report generation failed', { error: (err as Error).message, type, reportId: report.id });
+    logger.error('Report generation failed', { error: toError(err).message, type, reportId: report.id });
     await pool.query(
       `UPDATE reports SET status = 'failed' WHERE id = $1`,
       [report.id]
@@ -163,6 +164,6 @@ export const getById = async (id: number, tenantId: string): Promise<Report> => 
     `SELECT * FROM reports WHERE id = $1 AND tenant_id = $2`,
     [id, tenantId]
   );
-  if (!rows[0]) throw new NotFoundError('Report not found');
+  if (!rows[0]) throw new NotFoundError(E.REPORT_NOT_FOUND);
   return rows[0];
 };

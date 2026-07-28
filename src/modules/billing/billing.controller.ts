@@ -2,6 +2,7 @@ import * as billingService from './billing.service.js';
 import * as doctorService from '../doctor/doctor.service.js';
 import { asyncHandler } from '../../middlewares/asyncHandler.middleware.js';
 import { NotFoundError, BadRequestError } from '../../utils/errors.js';
+import { E } from '../../utils/error-codes.js';
 import { getQueryInt, getQueryString } from '../../shared/query.js';
 
 export const getInvoices = asyncHandler(async (req, res) => {
@@ -19,7 +20,7 @@ export const getInvoices = asyncHandler(async (req, res) => {
 
   if (req.user!.role === 'doctor') {
     const doctor = await doctorService.getDoctorByUserId(req.user!.id, req.tenant_id);
-    if (!doctor) throw new NotFoundError('Doctor profile not found');
+    if (!doctor) throw new NotFoundError(E.DOCTOR_PROFILE_NOT_FOUND);
     const invoices = await billingService.getInvoices({ doctor_id: doctor.id, limit, offset }, req.tenant_id);
     return res.json(invoices);
   }
@@ -37,17 +38,17 @@ export const getInvoices = asyncHandler(async (req, res) => {
 
 export const getInvoiceById = asyncHandler(async (req, res) => {
   const id = Number(req.params.id);
-  if (isNaN(id) || id <= 0) throw new BadRequestError('Invalid invoice ID');
+  if (isNaN(id) || id <= 0) throw new BadRequestError(E.BILLING_INVALID_ID);
   const invoice = await billingService.getInvoiceById(id, req.tenant_id);
 
   if ((req.user!.role === 'user' || req.user!.role === 'patient') && invoice.patient_id !== req.user!.id) {
-    throw new BadRequestError('Access denied');
+    throw new BadRequestError(E.BILLING_ACCESS_DENIED);
   }
 
   if (req.user!.role === 'doctor') {
     const doctor = await doctorService.getDoctorByUserId(req.user!.id, req.tenant_id);
     if (!doctor || invoice.doctor_id !== doctor.id) {
-      throw new BadRequestError('Access denied');
+      throw new BadRequestError(E.BILLING_ACCESS_DENIED);
     }
   }
 

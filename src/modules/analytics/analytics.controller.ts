@@ -2,7 +2,7 @@ import * as analyticsService from './analytics.service.js';
 import * as doctorService from '../doctor/doctor.service.js';
 import { asyncHandler } from '../../middlewares/asyncHandler.middleware.js';
 import { NotFoundError } from '../../utils/errors.js';
-import { getQueryInt, getQueryString } from '../../shared/query.js';
+import { getQueryInt } from '../../shared/query.js';
 
 export const getDashboardStats = asyncHandler(async (req, res) => {
   const stats = await analyticsService.getDashboardStats(req.tenant_id);

@@ -1,5 +1,6 @@
 import { pool } from './db.js';
 import { logger } from '../utils/logger.js';
+import { toError } from '../utils/errors.js';
 
 interface JobData {
   type: string;
@@ -73,11 +74,11 @@ class QueueService {
 
       for (const row of rows) {
         this.processRow(row).catch((err) => {
-          logger.error(`QueueService: Unexpected error processing job #${row.id}`, { error: (err as Error).message });
+          logger.error(`QueueService: Unexpected error processing job #${row.id}`, { error: toError(err).message });
         });
       }
     } catch (err) {
-      logger.error('QueueService: poll query failed', { error: (err as Error).message });
+      logger.error('QueueService: poll query failed', { error: toError(err).message });
     } finally {
       this.processing = false;
     }
@@ -100,7 +101,7 @@ class QueueService {
         [row.id],
       );
     } catch (err) {
-      const errorMsg = (err as Error).message || String(err);
+      const errorMsg = toError(err).message || String(err);
       const attempts = row.attempts;
 
       if (attempts >= 3) {

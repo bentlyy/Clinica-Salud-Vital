@@ -18,10 +18,20 @@ function isSensitiveError(message: string): boolean {
   return SQL_PATTERNS.some((pattern) => pattern.test(message));
 }
 
+export interface ApiErrorBody {
+  error?: string;
+  code?: string;
+}
+
+export function getErrorCode(err: unknown): string | undefined {
+  const apiErr = err as { response?: { data?: ApiErrorBody } };
+  return apiErr.response?.data?.code;
+}
+
 export function sanitizeError(err: unknown): string {
   if (!err) return FALLBACK_ERROR;
 
-  const apiErr = err as { response?: { data?: { error?: string } } };
+  const apiErr = err as { response?: { data?: ApiErrorBody } };
   const apiMessage = apiErr.response?.data?.error;
   if (apiMessage && typeof apiMessage === 'string' && apiMessage.length <= 200) {
     return apiMessage;

@@ -44,18 +44,18 @@ describe('exceptionService.getExceptionsByDoctor', () => {
 
 describe('exceptionService.createException', () => {
   it('throws if missing required fields', async () => {
-    await expect(exceptionService.createException({}, 'test-tenant')).rejects.toThrow('doctor_id and date are required');
-    await expect(exceptionService.createException({ doctor_id: 1 }, 'test-tenant')).rejects.toThrow('doctor_id and date are required');
+    await expect(exceptionService.createException({}, 'test-tenant')).rejects.toThrow('Missing required fields');
+    await expect(exceptionService.createException({ doctor_id: 1 }, 'test-tenant')).rejects.toThrow('Missing required fields');
   });
 
   it('throws if date format invalid', async () => {
     await expect(exceptionService.createException({ doctor_id: 1, date: 'bad-date' }, 'test-tenant'))
-      .rejects.toThrow('Invalid date format');
+      .rejects.toThrow('Invalid time format, use HH:MM');
   });
 
   it('throws if partial block missing times', async () => {
     await expect(exceptionService.createException({ doctor_id: 1, date: '2025-01-20' }, 'test-tenant'))
-      .rejects.toThrow('start_time and end_time required');
+      .rejects.toThrow('Missing required fields');
   });
 
   it('throws if time format invalid', async () => {
@@ -135,7 +135,7 @@ describe('exceptionService.deleteException', () => {
   it('throws if exception not found', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [] });
 
-    await expect(exceptionService.deleteException(999, 1, 'test-tenant')).rejects.toThrow('Exception not found or unauthorized');
+    await expect(exceptionService.deleteException(999, 1, 'test-tenant')).rejects.toThrow('Availability not found or unauthorized');
   });
 
   it('deletes with tenantId', async () => {
