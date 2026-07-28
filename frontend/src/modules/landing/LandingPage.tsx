@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
+import { useTranslation, Trans } from 'react-i18next';
+import { LanguageSwitcher } from '@/shared/components/LanguageSwitcher';
 import ReCAPTCHA from 'react-google-recaptcha';
 import { useAuth } from '@/shared/providers/AuthProvider';
 import { getRedirectPath } from '@/shared/utils/role.utils';
@@ -132,6 +133,7 @@ function LandingPage() {
           <li><a href="#faq">{t('navFaq')}</a></li>
         </ul>
         <div className="lp-nav-actions">
+          <LanguageSwitcher />
           <button className="lp-nav-btn lp-nav-btn-ghost" onClick={openLogin}>{t('navLogin')}</button>
           <button className="lp-nav-btn lp-nav-btn-primary" onClick={openLogin}>{t('navCta')}</button>
         </div>
@@ -145,7 +147,13 @@ function LandingPage() {
               <span className="lp-hero-badge-dot" />
               {t('tagline')}
             </div>
-            <h1 className="lp-hero-title" dangerouslySetInnerHTML={{ __html: t('heroTitle') }} />
+            <h1 className="lp-hero-title">
+              <Trans
+                i18nKey="heroTitle"
+                ns="landing"
+                components={{ 1: <span /> }}
+              />
+            </h1>
             <p className="lp-hero-subtitle">
               {t('heroSubtitle')}
             </p>
