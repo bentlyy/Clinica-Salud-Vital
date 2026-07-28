@@ -239,6 +239,7 @@
     "laboratory": "Laboratório",
     "labPanel": "Painel",
     "labRequests": "Solicitações",
+    "labCatalog": "Catálogo",
     "labQualityControl": "Controle de Qualidade",
     "labAnalytics": "Analítica",
     "billing": "Faturamento",
@@ -247,6 +248,9 @@
     "audit": "Auditoria",
     "notifications": "Notificações",
     "settings": "Configurações",
+    "doctorPanel": "Meu Painel",
+    "doctorLabResults": "Resultados Lab",
+    "doctorPatientHistory": "Meus Pacientes",
     "profile": "Meu Perfil",
     "logout": "Sair",
     "login": "Entrar"

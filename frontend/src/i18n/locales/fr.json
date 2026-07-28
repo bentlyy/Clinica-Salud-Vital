@@ -239,6 +239,7 @@
     "laboratory": "Laboratoire",
     "labPanel": "Panneau",
     "labRequests": "Demandes",
+    "labCatalog": "Catalogue",
     "labQualityControl": "Contrôle qualité",
     "labAnalytics": "Analyses",
     "billing": "Facturation",
@@ -247,6 +248,9 @@
     "audit": "Audit",
     "notifications": "Notifications",
     "settings": "Paramètres",
+    "doctorPanel": "Mon Panneau",
+    "doctorLabResults": "Résultats Lab",
+    "doctorPatientHistory": "Mes Patients",
     "profile": "Mon profil",
     "logout": "Déconnexion",
     "login": "Connexion"
