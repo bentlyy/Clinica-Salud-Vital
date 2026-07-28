@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import * as specialtiesService from './specialties.service.js';
 import { asyncHandler } from '../../middlewares/asyncHandler.middleware.js';
 import { BadRequestError } from '../../utils/errors.js';
+import { E } from '../../utils/error-codes.js';
 
 export const getSpecialties = asyncHandler(async (_req: Request, res: Response) => {
   const specialties = await specialtiesService.getAllSpecialties();
@@ -15,7 +16,7 @@ export const getSpecialtyById = asyncHandler(async (req: Request, res: Response)
 
 export const createSpecialty = asyncHandler(async (req: Request, res: Response) => {
   const { name, description } = req.body;
-  if (!name) throw new BadRequestError('Name is required');
+  if (!name) throw new BadRequestError(E.SPECIALTY_NAME_REQUIRED);
   const specialty = await specialtiesService.createSpecialty(name, description);
   res.status(201).json(specialty);
 });

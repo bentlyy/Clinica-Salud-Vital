@@ -4,7 +4,7 @@ import {
   Typography,
   Chip,
 } from '@mui/material';
-import { useTheme } from '@mui/material/styles';
+import { useTheme, type Theme } from '@mui/material/styles';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import TrendingDownIcon from '@mui/icons-material/TrendingDown';
 import RemoveIcon from '@mui/icons-material/Remove';
@@ -33,7 +33,7 @@ function computeDeltaPercentage(
 function getDeltaColor(
   status?: string,
   deltaPct?: number | null,
-  theme?: any,
+  theme?: Theme,
 ): { main: string; bg: string; text: string } {
   if (status === 'critical') {
     return { main: theme?.palette.error.main ?? '#ef4444', bg: theme?.palette.error.light ?? '#fef2f2', text: theme?.palette.error.dark ?? '#991b1b' };

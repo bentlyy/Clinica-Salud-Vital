@@ -1,6 +1,7 @@
 import * as reportService from './report.service.js';
 import { asyncHandler } from '../../middlewares/asyncHandler.middleware.js';
 import { BadRequestError } from '../../utils/errors.js';
+import { E } from '../../utils/error-codes.js';
 
 export const getAvailable = asyncHandler(async (_req, res) => {
   const data = await reportService.getAvailable();
@@ -10,7 +11,7 @@ export const getAvailable = asyncHandler(async (_req, res) => {
 export const generate = asyncHandler(async (req, res) => {
   const { type, date_from, date_to, filters } = req.body;
   if (!type || !date_from || !date_to) {
-    throw new BadRequestError('type, date_from, and date_to are required');
+    throw new BadRequestError(E.REPORT_MISSING_PARAMS);
   }
   const report = await reportService.generateReport(
     type,
@@ -23,7 +24,7 @@ export const generate = asyncHandler(async (req, res) => {
 
 export const getById = asyncHandler(async (req, res) => {
   const id = Number(req.params.id);
-  if (isNaN(id)) throw new BadRequestError('Invalid report ID');
+  if (isNaN(id)) throw new BadRequestError(E.REPORT_INVALID_ID);
   const report = await reportService.getById(id, req.tenant_id);
   res.json(report);
 });

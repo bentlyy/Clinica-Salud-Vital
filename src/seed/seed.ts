@@ -1,6 +1,7 @@
 import { pool } from '../shared/db.js';
 import bcrypt from 'bcrypt';
 import { logger } from '../utils/logger.js';
+import { toError } from '../utils/errors.js';
 
 const DEFAULT_TENANT_ID = process.env.DEFAULT_TENANT_ID || 'default';
 
@@ -303,7 +304,6 @@ export const seed = async (): Promise<void> => {
     [14, { diagnosis: 'Hernia inguinal', doctorIdx: 10, vitalKey: 'normal' }],
   ];
 
-  const statuses = ['pending', 'confirmed', 'completed', 'no_show', 'cancelled'];
   const bookingIds: number[] = [];
   const usedSlots = new Set<string>();
 
@@ -921,7 +921,7 @@ export const seed = async (): Promise<void> => {
     const amount = randomInt(30, 500) + Math.round(Math.random() * 99) / 100;
     const tax = Math.round(amount * 0.19 * 100) / 100;
     try {
-      const invResult = await pool.query(
+      await pool.query(
         `INSERT INTO invoices (invoice_number, patient_id, doctor_id, booking_id, concept, description, amount, tax_amount, discount_amount, total_amount, due_date, status, created_at, tenant_id)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING id`,
         [
@@ -1312,7 +1312,7 @@ export const backfillInvoices = async (): Promise<void> => {
       );
       count++;
     } catch (err) {
-      logger.warn('Error creando factura para booking ' + row.id, { error: (err as Error).message });
+      logger.warn('Error creando factura para booking ' + row.id, { error: toError(err).message });
     }
   }
 

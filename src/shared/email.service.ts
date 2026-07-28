@@ -2,6 +2,7 @@ import nodemailer, { Transporter } from 'nodemailer';
 import sgMail from '@sendgrid/mail';
 import { logger } from '../utils/logger.js';
 import { tenantService } from './multi-tenant.service.js';
+import { toError } from '../utils/errors.js';
 
 export interface EmailOptions {
   to: string;
@@ -82,7 +83,7 @@ export const validateEmailConfig = (): void => {
   if (provider === 'smtp' && transporter) {
     transporter.verify((err: Error | null) => {
       if (err) {
-        logger.error('[Email] Falló verificación SMTP:', { error: (err as Error).message });
+        logger.error('[Email] Falló verificación SMTP:', { error: toError(err).message });
       } else {
         logger.info('[Email] Conexión SMTP verificada correctamente');
       }

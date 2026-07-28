@@ -43,7 +43,7 @@ describe('getCie10ByCode', () => {
 
   it('throws NotFoundError when not found', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [] });
-    await expect(getCie10ByCode('ZZZ')).rejects.toThrow('CIE-10 code not found');
+    await expect(getCie10ByCode('ZZZ')).rejects.toThrow('CIE-10 entry not found');
   });
 });
 

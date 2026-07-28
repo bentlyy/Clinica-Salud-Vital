@@ -1,5 +1,3 @@
-import { pool, query as rawQuery } from './db.js';
-
 type QueryParams = (string | number | boolean | null | Date | undefined)[];
 
 export const getQuery = (query: Record<string, unknown>, key: string): string | undefined => {

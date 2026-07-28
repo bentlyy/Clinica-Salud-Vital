@@ -1,19 +1,14 @@
 import { Request, Response, NextFunction } from 'express';
-import { NotFoundError } from '../utils/errors.js';
+import { AppError, NotFoundError } from '../utils/errors.js';
 import { logger } from '../utils/logger.js';
-
-export interface AppErrorWithStatus extends Error {
-  statusCode?: number;
-  code?: string;
-}
 
 const isInternalError = (statusCode: number): boolean => statusCode >= 500;
 
 export const errorHandler = (
-  err: AppErrorWithStatus,
+  err: AppError & { stack?: string },
   req: Request,
   res: Response,
-  next: NextFunction
+  _next: NextFunction,
 ): void => {
   const statusCode = err.statusCode || 500;
   const isDev = process.env.NODE_ENV === 'development';
@@ -27,7 +22,7 @@ export const errorHandler = (
   const message = isDev || !isInternalError(statusCode) ? err.message : 'Internal server error';
 
   const body: Record<string, unknown> = { error: message };
-  if (isDev && err.code) body.code = err.code;
+  if (err.code) body.code = err.code;
   if (isDev && err.stack) body.stack = err.stack;
 
   res.status(statusCode).json(body);

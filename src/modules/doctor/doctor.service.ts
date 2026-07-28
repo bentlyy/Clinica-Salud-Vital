@@ -4,6 +4,7 @@ import { sendEmail } from '../../shared/email.service.js';
 import { doctorCredentialsEmail, invitationEmail } from './doctor.email.js';
 import { jwtManager } from '../../shared/jwt.service.js';
 import { BadRequestError, NotFoundError } from '../../utils/errors.js';
+import { E } from '../../utils/error-codes.js';
 import { logger } from '../../utils/logger.js';
 import crypto from 'crypto';
 import { cleanRut, validateRut, formatRut } from '../../shared/rut.js';
@@ -53,7 +54,7 @@ const generatePassword = (): string => {
 
 export const registerDoctor = async ({ name, specialty, email, rut, phone }: DoctorInput, tenantId: string): Promise<{ doctor: Doctor; credentials: { email: string } }> => {
   if (!name || !specialty || !email) {
-    throw new BadRequestError('Nombre, especialidad y email son obligatorios');
+    throw new BadRequestError(E.DOCTOR_MISSING_FIELDS);
   }
 
   const client = await pool.connect();
@@ -62,20 +63,20 @@ export const registerDoctor = async ({ name, specialty, email, rut, phone }: Doc
     await client.query('BEGIN');
     await ensureSpecialty(specialty);
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) throw new BadRequestError('Email inválido');
+    if (!emailRegex.test(email)) throw new BadRequestError(E.DOCTOR_INVALID_EMAIL);
 
     let formattedRut: string | null = null;
     if (rut) {
       const cleaned = cleanRut(rut);
-      if (!validateRut(cleaned)) throw new BadRequestError('RUT inválido');
+      if (!validateRut(cleaned)) throw new BadRequestError(E.DOCTOR_INVALID_RUT);
       formattedRut = formatRut(cleaned);
 
       const rutCheck = await client.query('SELECT 1 FROM users WHERE rut = $1 FOR UPDATE', [formattedRut]);
-      if (rutCheck.rows.length > 0) throw new BadRequestError('RUT ya registrado');
+      if (rutCheck.rows.length > 0) throw new BadRequestError(E.DOCTOR_RUT_EXISTS);
     }
 
     const emailCheck = await client.query('SELECT 1 FROM users WHERE email = $1 FOR UPDATE', [email]);
-    if (emailCheck.rows.length > 0) throw new BadRequestError('Email ya registrado');
+    if (emailCheck.rows.length > 0) throw new BadRequestError(E.DOCTOR_EMAIL_EXISTS);
 
     const tempPassword = generatePassword();
     const hashedPassword = await bcrypt.hash(tempPassword, 12);
@@ -130,7 +131,7 @@ export const registerDoctor = async ({ name, specialty, email, rut, phone }: Doc
   } catch (error: unknown) {
     await client.query('ROLLBACK');
     const pgError = error as { code?: string };
-    if (pgError.code === '23505') throw new BadRequestError('Doctor o usuario ya existe');
+    if (pgError.code === '23505')     throw new BadRequestError(E.DOCTOR_USER_EXISTS);
     throw error;
   } finally {
     client.release();
@@ -139,7 +140,7 @@ export const registerDoctor = async ({ name, specialty, email, rut, phone }: Doc
 
 export const createDoctor = async ({ name, specialty, email, user_id }: CreateDoctorInput, tenantId: string): Promise<Doctor> => {
   if (!name || !specialty || !email || !user_id) {
-    throw new BadRequestError('Missing required fields');
+    throw new BadRequestError(E.DOCTOR_MISSING_FIELDS);
   }
 
   const client = await pool.connect();
@@ -154,11 +155,11 @@ export const createDoctor = async ({ name, specialty, email, user_id }: CreateDo
     );
 
     if (user.rows.length === 0) {
-      throw new BadRequestError('User not found');
+      throw new BadRequestError(E.DOCTOR_USER_NOT_FOUND);
     }
 
     if (user.rows[0].role !== 'doctor') {
-      throw new BadRequestError('User must have role doctor');
+      throw new BadRequestError(E.DOCTOR_USER_MUST_BE_DOCTOR);
     }
 
     const result = await client.query(
@@ -186,7 +187,7 @@ export const createDoctor = async ({ name, specialty, email, user_id }: CreateDo
     await client.query('ROLLBACK');
     const pgError = error as { code?: string };
     if (pgError.code === '23505') {
-      throw new BadRequestError('Doctor already exists for this user or email');
+      throw new BadRequestError(E.DOCTOR_ALREADY_EXISTS);
     }
     throw error;
   } finally {
@@ -222,15 +223,15 @@ interface InvitePersonInput {
 export const invitePerson = async (input: InvitePersonInput, tenantId: string): Promise<void> => {
   let { email, name, role, specialty } = input;
 
-  if (!email) throw new BadRequestError('Email es obligatorio');
+  if (!email) throw new BadRequestError(E.DOCTOR_EMAIL_REQUIRED);
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(email)) throw new BadRequestError('Email inválido');
+  if (!emailRegex.test(email)) throw new BadRequestError(E.DOCTOR_INVALID_EMAIL);
 
-  if (role === 'doctor' && !specialty) throw new BadRequestError('Especialidad es obligatoria para doctores');
+  if (role === 'doctor' && !specialty) throw new BadRequestError(E.DOCTOR_SPECIALTY_REQUIRED);
   if (role === 'lab_technician') specialty = undefined;
 
   const existing = await pool.query('SELECT 1 FROM users WHERE email = $1 AND tenant_id = $2', [email, tenantId]);
-  if (existing.rows.length > 0) throw new BadRequestError('Email ya registrado en este tenant');
+  if (existing.rows.length > 0) throw new BadRequestError(E.DOCTOR_EMAIL_EXISTS);
 
   const inviteToken = jwtManager.signInvite(
     { email, name: name || email, role, specialty: specialty || null, tenant_id: tenantId, purpose: 'invite' },
@@ -256,7 +257,7 @@ export const invitePerson = async (input: InvitePersonInput, tenantId: string): 
 export const verifyInviteToken = (token: string): { email: string; name: string; role: string; specialty: string | null; tenant_id: string | null } => {
   const payload = jwtManager.verify<{ email: string; name: string; role: string; specialty: string | null; tenant_id: string | null; purpose: string }>(token);
   if (!payload || payload.purpose !== 'invite') {
-    throw new BadRequestError('Token de invitación inválido o expirado');
+    throw new BadRequestError(E.DOCTOR_INVITE_INVALID);
   }
   return payload;
 };
@@ -311,7 +312,7 @@ export const toggleUserActive = async (userId: number, tenantId: string): Promis
     `UPDATE users SET active = NOT active WHERE id = $1 AND tenant_id = $2 RETURNING id, email, name, role, active`,
     [userId, tenantId]
   );
-  if (result.rows.length === 0) throw new NotFoundError('Usuario no encontrado en este tenant');
+  if (result.rows.length === 0) throw new NotFoundError(E.DOCTOR_NOT_FOUND_TENANT);
 
   const isNowActive = result.rows[0].active;
   if (!isNowActive) {

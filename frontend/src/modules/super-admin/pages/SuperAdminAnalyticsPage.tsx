@@ -100,19 +100,22 @@ function formatMonth(m: string): string {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function extractList<T>(response: any): T[] {
+function extractList<T>(response: { data?: unknown }): T[] {
   const body = response?.data;
-  if (Array.isArray(body?.data)) return body.data as T[];
+  if (Array.isArray(body) && 'data' in body && Array.isArray((body as { data: unknown }).data)) {
+    return (body as { data: T[] }).data;
+  }
   if (Array.isArray(body)) return body as T[];
   return [];
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function extractObject<T>(response: any): T | null {
+function extractObject<T>(response: { data?: unknown }): T | null {
   const body = response?.data;
   if (body && typeof body === 'object' && !Array.isArray(body)) {
-    if (body.data && typeof body.data === 'object' && !Array.isArray(body.data)) {
-      return body.data as T;
+    const record = body as Record<string, unknown>;
+    if (record.data && typeof record.data === 'object' && !(Array.isArray(record.data))) {
+      return record.data as T;
     }
     return body as T;
   }

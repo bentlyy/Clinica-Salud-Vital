@@ -1,5 +1,6 @@
 import { pool } from '../../shared/db.js';
 import { NotFoundError } from '../../utils/errors.js';
+import { E } from '../../utils/error-codes.js';
 
 interface Cie10Query {
   query?: string;
@@ -46,7 +47,7 @@ export const searchCie10 = async ({ query, category, limit = 50, offset = 0 }: C
 export const getCie10ByCode = async (code: string) => {
   const result = await pool.query('SELECT * FROM cie10_catalog WHERE code = $1', [code]);
 
-  if (result.rows.length === 0) throw new NotFoundError('CIE-10 code not found');
+  if (result.rows.length === 0) throw new NotFoundError(E.CIE10_NOT_FOUND);
   return result.rows[0];
 };
 
@@ -65,14 +66,14 @@ export const updateCie10Entry = async (id: number, { description, category }: Ci
     [description, category, id]
   );
 
-  if (result.rows.length === 0) throw new NotFoundError('CIE-10 entry not found');
+  if (result.rows.length === 0) throw new NotFoundError(E.CIE10_NOT_FOUND);
   return result.rows[0];
 };
 
 export const deleteCie10Entry = async (id: number) => {
   const result = await pool.query('DELETE FROM cie10_catalog WHERE id = $1 RETURNING *', [id]);
 
-  if (result.rows.length === 0) throw new NotFoundError('CIE-10 entry not found');
+  if (result.rows.length === 0) throw new NotFoundError(E.CIE10_NOT_FOUND);
   return { message: 'CIE-10 entry deleted successfully' };
 };
 

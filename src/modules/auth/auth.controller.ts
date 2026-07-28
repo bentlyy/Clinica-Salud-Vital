@@ -6,6 +6,7 @@ import { verifyInviteToken } from '../doctor/doctor.service.js';
 import { waitForSeed } from '../../shared/seed-status.js';
 import { logger } from '../../utils/logger.js';
 import { BadRequestError, NotFoundError, UnauthorizedError } from '../../utils/errors.js';
+import { E } from '../../utils/error-codes.js';
 
 const ACCESS_COOKIE = 'access_token';
 const REFRESH_COOKIE = 'refresh_token';
@@ -29,14 +30,14 @@ const clearAuthCookies = (res: Response): void => {
 
 export const getMyProfile = asyncHandler(async (req: Request, res: Response) => {
   if (!req.user) {
-    throw new UnauthorizedError('Authentication required');
+    throw new UnauthorizedError(E.AUTH_AUTHENTICATION_REQUIRED);
   }
   const { rows } = await pool.query(
     'SELECT id, name, email, phone, role FROM users WHERE id = $1 AND active = true',
     [req.user.id]
   );
   if (!rows[0]) {
-    throw new NotFoundError('User not found');
+    throw new NotFoundError(E.AUTH_USER_NOT_FOUND);
   }
   res.json(rows[0]);
 });
@@ -44,7 +45,7 @@ export const getMyProfile = asyncHandler(async (req: Request, res: Response) => 
 export const inviteInfo = asyncHandler(async (req: Request, res: Response) => {
   const { token } = req.query;
   if (!token || typeof token !== 'string') {
-    throw new BadRequestError('Token requerido');
+    throw new BadRequestError(E.AUTH_TOKEN_REQUIRED);
   }
   const data = verifyInviteToken(token);
   res.json({ email: data.email, name: data.name, role: data.role, specialty: data.specialty });
@@ -74,12 +75,12 @@ export const refresh = asyncHandler(async (req: Request, res: Response) => {
     cookieHeader: req.headers.cookie ? 'present' : 'missing',
   });
   if (!refresh_token) {
-    throw new BadRequestError('Refresh token required');
+    throw new BadRequestError(E.AUTH_REFRESH_REQUIRED);
   }
   const data = await authService.refreshToken({ refresh_token });
   if (!data) {
     clearAuthCookies(res);
-    throw new UnauthorizedError('Invalid or expired refresh token');
+    throw new UnauthorizedError(E.AUTH_REFRESH_INVALID);
   }
   setAuthCookies(res, data.access_token, data.refresh_token);
   res.json(data);
@@ -104,7 +105,7 @@ export const logout = asyncHandler(async (req: Request, res: Response) => {
 
 export const logoutAll = asyncHandler(async (req: Request, res: Response) => {
   if (!req.user) {
-    throw new UnauthorizedError('Authentication required');
+    throw new UnauthorizedError(E.AUTH_AUTHENTICATION_REQUIRED);
   }
   clearAuthCookies(res);
   await authService.logoutAll(req.user.id);
@@ -113,7 +114,7 @@ export const logoutAll = asyncHandler(async (req: Request, res: Response) => {
 
 export const changePassword = asyncHandler(async (req: Request, res: Response) => {
   if (!req.user) {
-    throw new UnauthorizedError('Authentication required');
+    throw new UnauthorizedError(E.AUTH_AUTHENTICATION_REQUIRED);
   }
   await authService.changePassword({
     userId: req.user.id,
@@ -125,7 +126,7 @@ export const changePassword = asyncHandler(async (req: Request, res: Response) =
 
 export const enable2FA = asyncHandler(async (req: Request, res: Response) => {
   if (!req.user) {
-    throw new UnauthorizedError('Authentication required');
+    throw new UnauthorizedError(E.AUTH_AUTHENTICATION_REQUIRED);
   }
   const { rows } = await pool.query('SELECT email FROM users WHERE id = $1', [req.user.id]);
   const email = rows[0]?.email || 'user';
@@ -135,7 +136,7 @@ export const enable2FA = asyncHandler(async (req: Request, res: Response) => {
 
 export const verifyAndEnable2FA = asyncHandler(async (req: Request, res: Response) => {
   if (!req.user) {
-    throw new UnauthorizedError('Authentication required');
+    throw new UnauthorizedError(E.AUTH_AUTHENTICATION_REQUIRED);
   }
   await authService.verifyAndEnable2FA(req.user.id, req.body.token);
   res.json({ message: '2FA enabled successfully' });
@@ -143,10 +144,10 @@ export const verifyAndEnable2FA = asyncHandler(async (req: Request, res: Respons
 
 export const disable2FA = asyncHandler(async (req: Request, res: Response) => {
   if (!req.user) {
-    throw new UnauthorizedError('Authentication required');
+    throw new UnauthorizedError(E.AUTH_AUTHENTICATION_REQUIRED);
   }
   if (!req.body.password) {
-    throw new BadRequestError('Password is required to disable 2FA');
+    throw new BadRequestError(E.AUTH_2FA_PASSWORD_REQUIRED);
   }
   await authService.disable2FA(req.user.id, req.body.password, req.body.totp_token);
   res.json({ message: '2FA disabled successfully' });

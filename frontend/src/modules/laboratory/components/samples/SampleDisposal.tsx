@@ -20,7 +20,7 @@ import {
   Divider,
   CircularProgress,
 } from '@mui/material';
-import { useTheme } from '@mui/material/styles';
+import { useTheme, type Theme } from '@mui/material/styles';
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import DeleteSweepIcon from '@mui/icons-material/DeleteSweep';
@@ -48,7 +48,7 @@ function daysStored(receptionTime: string | null): number {
   return Math.floor((now.getTime() - received.getTime()) / (1000 * 60 * 60 * 24));
 }
 
-function getDaysColor(days: number, theme: any): { bg: string; text: string } {
+function getDaysColor(days: number, theme: Theme): { bg: string; text: string } {
   if (days < 7) return { bg: theme.palette.success.light, text: theme.palette.success.dark };
   if (days <= 30) return { bg: theme.palette.warning.light, text: theme.palette.warning.dark };
   return { bg: theme.palette.error.light, text: theme.palette.error.dark };

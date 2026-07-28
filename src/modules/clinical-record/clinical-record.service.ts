@@ -1,5 +1,6 @@
 import { pool } from '../../shared/db.js';
 import { NotFoundError, BadRequestError } from '../../utils/errors.js';
+import { E } from '../../utils/error-codes.js';
 import { sanitizeTextStrict } from '../../shared/sanitize.js';
 import crypto from 'crypto';
 
@@ -117,7 +118,7 @@ export const getClinicalRecordById = async (id: string | number, tenantId: strin
     WHERE cr.id = $1 AND cr.tenant_id = $2
   `, [id, tenantId]);
 
-  if (result.rows.length === 0) throw new NotFoundError('Clinical record not found');
+  if (result.rows.length === 0) throw new NotFoundError(E.CLINICAL_RECORD_NOT_FOUND);
   return sanitizeFields(result.rows[0]);
 };
 
@@ -150,16 +151,16 @@ export const createClinicalRecord = async (data: ClinicalRecordData, tenantId: s
         [data.booking_id, tenantId]
       );
       if (existing.rows.length > 0) {
-        throw new BadRequestError('Ya existe un registro clínico para esta reserva');
+        throw new BadRequestError(E.CLINICAL_RECORD_DUPLICATE);
       }
     }
 
     const patientResult = await client.query('SELECT id FROM users WHERE id = $1 AND tenant_id = $2', [data.patient_id, tenantId]);
-    if (patientResult.rows.length === 0) throw new BadRequestError('Patient not found');
+    if (patientResult.rows.length === 0) throw new BadRequestError(E.CLINICAL_RECORD_PATIENT_NOT_FOUND);
 
     if (data.booking_id) {
       const bookingResult = await client.query('SELECT id FROM bookings WHERE id = $1 AND tenant_id = $2', [data.booking_id, tenantId]);
-      if (bookingResult.rows.length === 0) throw new BadRequestError('Booking not found');
+      if (bookingResult.rows.length === 0) throw new BadRequestError(E.CLINICAL_RECORD_BOOKING_NOT_FOUND);
     }
 
     const { patient_id, booking_id, chief_complaint, anamnesis, vital_signs, physical_exam, diagnosis, cie10_codes, treatment_plan, notes } = data;
@@ -203,7 +204,7 @@ export const createClinicalRecord = async (data: ClinicalRecordData, tenantId: s
       if (testResult.rows.length !== data.lab_test_ids.length) {
         const found = new Set(testResult.rows.map(r => r.id));
         const missing = data.lab_test_ids.filter(id => !found.has(id));
-        throw new BadRequestError('Exámenes no encontrados o inactivos: ' + missing.join(', '));
+        throw new BadRequestError(E.CLINICAL_RECORD_EXAMS_NOT_FOUND, 'Exámenes no encontrados o inactivos: ' + missing.join(', '));
       }
 
       const recordId = recordResult.rows[0].id;
@@ -245,14 +246,14 @@ export const updateClinicalRecord = async (id: string | number, data: ClinicalRe
       `SELECT id, doctor_id, status, updated_at FROM clinical_records WHERE id = $1 AND tenant_id = $2 FOR UPDATE`,
       [id, tenantId]
     );
-    if (existing.rows.length === 0) throw new NotFoundError('Clinical record not found');
+    if (existing.rows.length === 0) throw new NotFoundError(E.CLINICAL_RECORD_NOT_FOUND);
 
     if (existing.rows[0].doctor_id !== doctor_id) {
-      throw new BadRequestError('You can only update your own records');
+      throw new BadRequestError(E.CLINICAL_RECORD_OWN_ONLY);
     }
 
     if (existing.rows[0].status === 'completed') {
-      throw new BadRequestError('Cannot update a completed record');
+      throw new BadRequestError(E.CLINICAL_RECORD_COMPLETED);
     }
 
     const fields: string[] = [];
@@ -278,7 +279,7 @@ export const updateClinicalRecord = async (id: string | number, data: ClinicalRe
       }
     }
 
-    if (fields.length === 0) throw new BadRequestError('No fields to update');
+    if (fields.length === 0) throw new BadRequestError(E.CLINICAL_RECORD_NO_FIELDS);
 
     fields.push(`updated_at = NOW()`);
     const oldUpdatedAt = existing.rows[0].updated_at;
@@ -292,7 +293,7 @@ export const updateClinicalRecord = async (id: string | number, data: ClinicalRe
     `, values);
 
     if (result.rows.length === 0) {
-      throw new BadRequestError('El registro fue modificado por otro usuario. Recarga y reintenta.');
+      throw new BadRequestError(E.CLINICAL_RECORD_CONFLICT);
     }
 
     const record = result.rows[0];
@@ -305,7 +306,7 @@ export const updateClinicalRecord = async (id: string | number, data: ClinicalRe
       if (testResult.rows.length !== data.lab_test_ids.length) {
         const found = new Set(testResult.rows.map(r => r.id));
         const missing = data.lab_test_ids.filter(id => !found.has(id));
-        throw new BadRequestError('Exámenes no encontrados o inactivos: ' + missing.join(', '));
+        throw new BadRequestError(E.CLINICAL_RECORD_EXAMS_NOT_FOUND, 'Exámenes no encontrados o inactivos: ' + missing.join(', '));
       }
 
       const requestNumber = generateLabRequestNumber();
@@ -342,7 +343,7 @@ export const deleteClinicalRecord = async (id: string | number, doctor_id: numbe
     [id, doctor_id, tenantId]
   );
 
-  if (result.rows.length === 0) throw new NotFoundError('Clinical record not found or cannot be deleted');
+  if (result.rows.length === 0) throw new NotFoundError(E.CLINICAL_RECORD_DELETE_FAILED);
   return { message: 'Clinical record cancelled successfully' };
 };
 

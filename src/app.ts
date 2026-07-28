@@ -24,6 +24,7 @@ import { errorHandler, notFoundHandler } from './middlewares/errorHandler.middle
 import { trackActivity, stopSessionCleanup } from './middlewares/sessionActivity.middleware.js';
 import { initSentry, setupExpressErrorHandler } from './shared/sentry.service.js';
 import { logger } from './utils/logger.js';
+import { toError } from './utils/errors.js';
 import cron from 'node-cron';
 import { registerWorkers, startQueueProcessor, stopQueueProcessor } from './shared/queue.service.js';
 import pkg from '../package.json';
@@ -371,13 +372,13 @@ const startServer = async (): Promise<void> => {
             logger.info(`Audit chain integrity check passed: ${result.checked} logs verified`);
           }
         } catch (error) {
-          logger.error('Audit chain integrity cron job failed', { error: (error as Error).message });
+          logger.error('Audit chain integrity cron job failed', { error: toError(error).message });
         }
       });
       logger.info('Audit chain integrity cron scheduled (every 6 hours)');
     } catch (error) {
-      logger.error('Post-boot initialization failed', { error: (error as Error).message, stack: (error as Error).stack });
-      markSeedFailed(error as Error);
+      logger.error('Post-boot initialization failed', { error: toError(error).message, stack: toError(error).stack });
+      markSeedFailed(toError(error));
     }
   });
 };
@@ -391,7 +392,7 @@ process.on('SIGTERM', () => {
   logger.info('SIGTERM received. Shutting down gracefully...');
   stopSessionCleanup();
   stopQueueProcessor();
-  pool.end().catch((err: unknown) => logger.warn('Pool close error on SIGTERM', (err as Error).message));
+  pool.end().catch((err: unknown) => logger.warn('Pool close error on SIGTERM', toError(err).message));
   process.exit(0);
 });
 
@@ -399,7 +400,7 @@ process.on('SIGINT', () => {
   logger.info('SIGINT received. Shutting down gracefully...');
   stopSessionCleanup();
   stopQueueProcessor();
-  pool.end().catch((err: unknown) => logger.warn('Pool close error on SIGINT', (err as Error).message));
+  pool.end().catch((err: unknown) => logger.warn('Pool close error on SIGINT', toError(err).message));
   process.exit(0);
 });
 
@@ -408,7 +409,7 @@ export { startServer };
 
 if (process.env.NODE_ENV !== 'test') {
   startServer().catch((err) => {
-    logger.error('Fatal startup error', { error: (err as Error).message, stack: (err as Error).stack });
+    logger.error('Fatal startup error', { error: toError(err).message, stack: toError(err).stack });
     process.exit(1);
   });
 }

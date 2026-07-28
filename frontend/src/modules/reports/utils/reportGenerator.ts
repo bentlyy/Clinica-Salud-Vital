@@ -319,22 +319,26 @@ export function downloadReport(type: ReportType, resultUrl: string, dateFrom: st
 
   switch (type) {
     case 'appointments': {
-      const rows = Array.isArray(data) ? data : (data as any).appointments || [];
+      const record = data as Record<string, unknown>;
+      const rows = Array.isArray(data) ? data : (Array.isArray(record.appointments) ? record.appointments : []) as AppointmentRow[];
       generateAppointmentsReport(rows, dateFrom, dateTo);
       break;
     }
     case 'revenue': {
-      const rows = (data as any).invoices || (Array.isArray(data) ? data : []);
+      const record = data as Record<string, unknown>;
+      const rows = (Array.isArray(record.invoices) ? record.invoices : (Array.isArray(data) ? data : [])) as InvoiceRow[];
       generateRevenueReport(rows, dateFrom, dateTo);
       break;
     }
     case 'patients': {
-      const rows = (data as any).patients || (Array.isArray(data) ? data : []);
+      const record = data as Record<string, unknown>;
+      const rows = (Array.isArray(record.patients) ? record.patients : (Array.isArray(data) ? data : [])) as PatientRow[];
       generatePatientsReport(rows, dateFrom, dateTo);
       break;
     }
     case 'laboratory': {
-      const rows = (data as any).results || (Array.isArray(data) ? data : []);
+      const record = data as Record<string, unknown>;
+      const rows = (Array.isArray(record.results) ? record.results : (Array.isArray(data) ? data : [])) as LabRow[];
       generateLaboratoryReport(rows, dateFrom, dateTo);
       break;
     }

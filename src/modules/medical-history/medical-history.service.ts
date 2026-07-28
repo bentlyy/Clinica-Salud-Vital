@@ -1,5 +1,6 @@
 import { pool } from '../../shared/db.js';
 import { NotFoundError } from '../../utils/errors.js';
+import { E } from '../../utils/error-codes.js';
 
 interface MedicalHistoryQuery {
   patient_id?: number;
@@ -65,7 +66,7 @@ export const getMedicalHistoryById = async (id: number, tenantId: string) => {
     'SELECT mh.*, u.name AS patient_name FROM medical_history mh JOIN users u ON mh.patient_id = u.id WHERE mh.id = $1 AND mh.tenant_id = $2',
     [id, tenantId],
   );
-  if (result.rows.length === 0) throw new NotFoundError('Medical history entry not found');
+  if (result.rows.length === 0) throw new NotFoundError(E.MEDICAL_HISTORY_NOT_FOUND);
   return result.rows[0];
 };
 
@@ -89,6 +90,6 @@ export const updateMedicalHistory = async (id: number, data: Partial<MedicalHist
      RETURNING *`,
     [data.condition, data.onset_date, data.status, data.notes, id, tenantId],
   );
-  if (result.rows.length === 0) throw new NotFoundError('Medical history entry not found');
+  if (result.rows.length === 0) throw new NotFoundError(E.MEDICAL_HISTORY_NOT_FOUND);
   return result.rows[0];
 };

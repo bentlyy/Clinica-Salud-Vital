@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { jwtManager } from '../shared/jwt.service.js';
 import { UserRole } from '../types/index.js';
-import { UnauthorizedError, ForbiddenError } from '../utils/errors.js';
+import { UnauthorizedError, ForbiddenError, toError } from '../utils/errors.js';
 import { pool } from '../shared/db.js';
 import { logger } from '../utils/logger.js';
 
@@ -86,7 +86,7 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
       }
     }
   } catch (err) {
-    logger.warn('Token version verification failed (non-critical)', { error: (err as Error).message });
+    logger.warn('Token version verification failed (non-critical)', { error: toError(err).message });
   }
 
   req.user = user;

@@ -1275,7 +1275,20 @@
     "activeDoctors": "Médecins actifs",
     "monthlyAppointments": "Rendez-vous mensuels",
     "confirmDelete": "Êtes-vous sûr de vouloir supprimer cette spécialité ?",
-    "specialtyDeleted": "Spécialité supprimée avec succès"
+    "specialtyDeleted": "Spécialité supprimée avec succès",
+    "loading": "Chargement des spécialités...",
+    "subtitle": "{{total}} spécialités enregistrées",
+    "searchPlaceholder": "Rechercher des spécialités...",
+    "notFound": "Aucune spécialité trouvée",
+    "tryOtherTerms": "Essayez d'autres termes de recherche.",
+    "createFirst": "Créez votre première spécialité pour commencer.",
+    "creationDate": "Date de création",
+    "descriptionOptional": "Description (optionnel)",
+    "saving": "Enregistrement...",
+    "updating": "Mise à jour",
+    "deleteTitle": "Supprimer la spécialité",
+    "confirmDeleteMessage": "Êtes-vous sûr de vouloir supprimer <strong>{{name}}</strong> ?",
+    "deleting": "Suppression..."
   },
   "billing": {
     "title": "Facturation",
