@@ -13,7 +13,7 @@ const LANGUAGES = [
 
 export function LanguageSwitcher() {
   const theme = useTheme();
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation(['common', 'settings']);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
 
@@ -26,7 +26,7 @@ export function LanguageSwitcher() {
 
   return (
     <>
-      <Tooltip title="Idioma">
+      <Tooltip title={t('language', { ns: 'settings' })}>
         <IconButton
           size="small"
           sx={{ color: theme.palette.text.secondary, gap: 0.5 }}

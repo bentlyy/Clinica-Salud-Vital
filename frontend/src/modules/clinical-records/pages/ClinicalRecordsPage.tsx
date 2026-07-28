@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '@mui/material/styles';
 import {
@@ -33,13 +33,14 @@ import Description from '@mui/icons-material/Description';
 import Close from '@mui/icons-material/Close';
 import CalendarToday from '@mui/icons-material/CalendarToday';
 import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
+import type { Locale } from 'date-fns';
 import { MotionDiv } from '@/shared/utils/animations';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { LoadingState } from '@/shared/components/ui/LoadingState';
 import { ErrorState } from '@/shared/components/ui/ErrorState';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { useAuth } from '@/shared/providers/AuthProvider';
+import { getDateFnsLocale } from '@/shared/utils/localeUtils';
 import {
   useClinicalRecords,
   useCreateClinicalRecord,
@@ -64,6 +65,11 @@ export default function ClinicalRecordsPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [editingRecord, setEditingRecord] = useState<ClinicalRecord | null>(null);
   const [detailRecord, setDetailRecord] = useState<ClinicalRecord | null>(null);
+  const [dateFnsLocale, setDateFnsLocale] = useState<Locale | undefined>(undefined);
+
+  useEffect(() => {
+    getDateFnsLocale().then(setDateFnsLocale);
+  }, []);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [menuRecord, setMenuRecord] = useState<ClinicalRecord | null>(null);
 
@@ -239,7 +245,7 @@ export default function ClinicalRecordsPage() {
                     </TableCell>
                     <TableCell>
                       <Typography variant="body2" sx={{ color: theme.palette.text.secondary, whiteSpace: 'nowrap' }}>
-                        {format(new Date(record.created_at), 'dd MMM yyyy', { locale: es })}
+                        {format(new Date(record.created_at), 'dd MMM yyyy', { locale: dateFnsLocale })}
                       </Typography>
                     </TableCell>
                     <TableCell align="right">
@@ -329,7 +335,7 @@ export default function ClinicalRecordsPage() {
                 <DetailField label={t('field_doctor')} value={detailRecord.doctor_name || t('doctorFallback', { id: detailRecord.doctor_id })} />
                 <DetailField
                   label={t('field_date')}
-                  value={format(new Date(detailRecord.created_at), "dd 'de' MMMM 'de' yyyy", { locale: es })}
+                  value={format(new Date(detailRecord.created_at), "dd 'de' MMMM 'de' yyyy", { locale: dateFnsLocale })}
                   icon={<CalendarToday sx={{ fontSize: 14, color: theme.palette.text.secondary }} />}
                 />
               </Box>

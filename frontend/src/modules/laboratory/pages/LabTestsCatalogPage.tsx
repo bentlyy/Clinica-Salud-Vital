@@ -17,6 +17,7 @@ import Search from '@mui/icons-material/Search';
 import Science from '@mui/icons-material/Science';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { getLabTests } from '../services/lab.service';
+import { formatNumber } from '@/shared/utils/localeUtils';
 import { getLabIcon, getLabColor } from '@/shared/components/lab-icons/LabIcons';
 import type { LabTest } from '../types/lab.types';
 
@@ -228,7 +229,7 @@ export default function LabTestsCatalogPage() {
                         </Typography>
                       </Box>
                       <Chip
-                        label={`$${test.price.toLocaleString('es-CL')}`}
+                        label={`$${formatNumber(test.price)}`}
                         size="small"
                         sx={{ backgroundColor: theme.palette.custom.status.success.bg, color: theme.palette.custom.status.success.text, fontWeight: 600, fontSize: 11 }}
                       />

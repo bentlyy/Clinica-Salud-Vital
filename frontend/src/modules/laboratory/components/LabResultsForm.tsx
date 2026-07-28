@@ -10,6 +10,7 @@ import {
   Divider,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
+import { useTranslation } from 'react-i18next';
 import Add from '@mui/icons-material/Add';
 import Delete from '@mui/icons-material/Delete';
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
@@ -48,6 +49,7 @@ const defaultRow = {
 
 export function LabResultsForm({ onSubmit, isLoading }: LabResultsFormProps) {
   const theme = useTheme();
+  const { t } = useTranslation('lab');
   const {
     control,
     handleSubmit,
@@ -72,7 +74,7 @@ export function LabResultsForm({ onSubmit, isLoading }: LabResultsFormProps) {
     <Box component="form" onSubmit={handleSubmit(onFormSubmit)}>
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
         <Typography variant="h6" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
-          Resultados de Laboratorio
+          {t('labResultsTitle')}
         </Typography>
         <Button
           variant="outlined"
@@ -81,7 +83,7 @@ export function LabResultsForm({ onSubmit, isLoading }: LabResultsFormProps) {
           onClick={() => append({ ...defaultRow })}
           sx={{ borderColor: theme.palette.divider, color: theme.palette.text.primary }}
         >
-          Agregar Resultado
+          {t('addResult')}
         </Button>
       </Box>
 
@@ -105,7 +107,7 @@ export function LabResultsForm({ onSubmit, isLoading }: LabResultsFormProps) {
           >
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}>
               <Typography variant="body2" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
-                Test #{index + 1}
+                {t('testNumber', { number: index + 1 })}
               </Typography>
               {fields.length > 1 && (
                 <IconButton
@@ -125,7 +127,7 @@ export function LabResultsForm({ onSubmit, isLoading }: LabResultsFormProps) {
                 render={({ field: f }) => (
                   <TextField
                     {...f}
-                    label="Nombre del Test"
+                    label={t('testNameLabel')}
                     size="small"
                     error={!!errors.results?.[index]?.test_name}
                     helperText={errors.results?.[index]?.test_name?.message}
@@ -138,7 +140,7 @@ export function LabResultsForm({ onSubmit, isLoading }: LabResultsFormProps) {
                 render={({ field: f }) => (
                   <TextField
                     {...f}
-                    label="Valor"
+                    label={t('resultValue')}
                     size="small"
                     error={!!errors.results?.[index]?.value}
                     helperText={errors.results?.[index]?.value?.message}
@@ -149,14 +151,14 @@ export function LabResultsForm({ onSubmit, isLoading }: LabResultsFormProps) {
                 name={`results.${index}.unit`}
                 control={control}
                 render={({ field: f }) => (
-                  <TextField {...f} label="Unidad (ej: mg/dL)" size="small" />
+                  <TextField {...f} label={t('unitExample')} size="small" />
                 )}
               />
               <Controller
                 name={`results.${index}.reference_range`}
                 control={control}
                 render={({ field: f }) => (
-                  <TextField {...f} label="Rango de Referencia" size="small" />
+                  <TextField {...f} label={t('referenceRange')} size="small" />
                 )}
               />
             </Box>
@@ -177,7 +179,7 @@ export function LabResultsForm({ onSubmit, isLoading }: LabResultsFormProps) {
                     }
                     label={
                       <Typography variant="caption" sx={{ color: f.value ? theme.palette.success.dark : theme.palette.error.main, fontWeight: 500 }}>
-                        {f.value ? 'Normal' : 'Anormal'}
+                        {f.value ? t('normal') : t('abnormal')}
                       </Typography>
                     }
                   />
@@ -187,7 +189,7 @@ export function LabResultsForm({ onSubmit, isLoading }: LabResultsFormProps) {
                 name={`results.${index}.notes`}
                 control={control}
                 render={({ field: f }) => (
-                  <TextField {...f} label="Notas" size="small" sx={{ flex: 1 }} />
+                  <TextField {...f} label={t('notes')} size="small" sx={{ flex: 1 }} />
                 )}
               />
             </Box>
@@ -203,7 +205,7 @@ export function LabResultsForm({ onSubmit, isLoading }: LabResultsFormProps) {
         disabled={isLoading}
         sx={{ mt: 1 }}
       >
-        {isLoading ? 'Guardando...' : 'Guardar Resultados'}
+        {isLoading ? t('saving') : t('saveResults')}
       </Button>
     </Box>
   );

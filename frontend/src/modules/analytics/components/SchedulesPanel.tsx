@@ -1,5 +1,6 @@
 import { Box, Paper, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
+import { useTranslation } from 'react-i18next';
 import type { ScheduleRecord } from '../types/analytics.types';
 
 const HOURS = ['09:00', '10:00', '11:00', '14:00', '15:00', '16:00'];
@@ -7,6 +8,7 @@ const DAYS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'];
 
 export function SchedulesPanel({ data }: { data: ScheduleRecord[] }) {
   const theme = useTheme();
+  const { t } = useTranslation('analytics');
 
   function getScoreColor(score: number): string {
     if (score > 70) return theme.palette.success.main;
@@ -16,9 +18,9 @@ export function SchedulesPanel({ data }: { data: ScheduleRecord[] }) {
   return (
     <Box>
       <Paper sx={{ p: 3, border: `1px solid ${theme.palette.divider}`, mb: 3 }}>
-        <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>Mejores Horarios</Typography>
+        <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>{t('best_schedules')}</Typography>
         <Typography variant="body2" sx={{ color: theme.palette.text.secondary, mb: 2 }}>
-          Mapa de ocupación por día y hora. Verde = mayor demanda.
+          {t('schedule_map_description')}
         </Typography>
         <Box sx={{ display: 'grid', gap: 1 }}>
           {DAYS.map((day) => {
@@ -55,14 +57,14 @@ export function SchedulesPanel({ data }: { data: ScheduleRecord[] }) {
       </Paper>
 
       <Paper sx={{ p: 3, border: `1px solid ${theme.palette.divider}` }}>
-        <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>Recomendaciones de Horario</Typography>
+        <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>{t('schedule_recommendations')}</Typography>
         <TableContainer>
           <Table size="small">
             <TableHead>
               <TableRow>
-                <TableCell>Día</TableCell>
-                <TableCell>Mejor Hora</TableCell>
-                <TableCell>Ocupación</TableCell>
+                <TableCell>{t('day')}</TableCell>
+                <TableCell>{t('best_time')}</TableCell>
+                <TableCell>{t('occupancy')}</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>

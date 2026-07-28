@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Box,
@@ -36,13 +36,14 @@ import Assignment from '@mui/icons-material/Assignment';
 import Close from '@mui/icons-material/Close';
 import MedicationIcon from '@mui/icons-material/Medication';
 import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
+import type { Locale } from 'date-fns';
 import { MotionDiv } from '@/shared/utils/animations';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { LoadingState } from '@/shared/components/ui/LoadingState';
 import { ErrorState } from '@/shared/components/ui/ErrorState';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { useAuth } from '@/shared/providers/AuthProvider';
+import { getDateFnsLocale } from '@/shared/utils/localeUtils';
 import {
   useAllPrescriptions,
   useCreatePrescription,
@@ -67,6 +68,11 @@ export default function PrescriptionsPage() {
   const [search, setSearch] = useState('');
   const [formOpen, setFormOpen] = useState(false);
   const [editingPrescription, setEditingPrescription] = useState<Prescription | null>(null);
+  const [dateFnsLocale, setDateFnsLocale] = useState<Locale | undefined>(undefined);
+
+  useEffect(() => {
+    getDateFnsLocale().then(setDateFnsLocale);
+  }, []);
   const [detailPrescription, setDetailPrescription] = useState<Prescription | null>(null);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [menuPrescription, setMenuPrescription] = useState<Prescription | null>(null);
@@ -238,7 +244,7 @@ export default function PrescriptionsPage() {
                     </TableCell>
                     <TableCell>
                       <Typography variant="body2" sx={{ color: theme.palette.text.secondary, whiteSpace: 'nowrap' }}>
-                        {format(new Date(prescription.created_at), 'dd MMM yyyy', { locale: es })}
+                        {format(new Date(prescription.created_at), 'dd MMM yyyy', { locale: dateFnsLocale })}
                       </Typography>
                     </TableCell>
                     <TableCell align="right">
@@ -334,7 +340,7 @@ export default function PrescriptionsPage() {
                 <Box>
                   <Typography variant="caption" sx={{ color: theme.palette.text.secondary, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t('date')}</Typography>
                   <Typography variant="body1" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
-                    {format(new Date(detailPrescription.created_at), "dd 'de' MMMM 'de' yyyy", { locale: es })}
+                    {format(new Date(detailPrescription.created_at), "dd 'de' MMMM 'de' yyyy", { locale: dateFnsLocale })}
                   </Typography>
                 </Box>
               </Box>

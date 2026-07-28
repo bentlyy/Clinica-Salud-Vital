@@ -12,6 +12,7 @@ import { useAuth } from '@/shared/providers/AuthProvider';
 import { getRoleLabel } from '@/shared/utils/role.utils';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { LoadingState } from '@/shared/components/ui/LoadingState';
+import { formatDate } from '@/shared/utils/localeUtils';
 import { useDashboardStats, useUpcomingBookings, useMyDoctorStats, useDoctorUpcomingBookings } from '../hooks/useAnalytics';
 
 function getStatusMap(isDark: boolean) {
@@ -107,7 +108,7 @@ function DoctorDashboard() {
                       }
                       secondary={
                         <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                          {d.toLocaleDateString('es-CL', { weekday: 'short', day: 'numeric', month: 'short' })} &middot; {b.time}
+                          {formatDate(d, { weekday: 'short', day: 'numeric', month: 'short' })} &middot; {b.time}
                         </Typography>
                       }
                     />
@@ -211,7 +212,7 @@ function AdminDashboard() {
                       }
                       secondary={
                         <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                          {d.toLocaleDateString('es-CL', { weekday: 'short', day: 'numeric', month: 'short' })} &middot; {b.time} &middot; {b.doctor_name || t('doctor')}
+                          {formatDate(d, { weekday: 'short', day: 'numeric', month: 'short' })} &middot; {b.time} &middot; {b.doctor_name || t('doctor')}
                         </Typography>
                       }
                     />

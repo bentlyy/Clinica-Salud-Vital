@@ -1,4 +1,5 @@
 import { memo, useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Box,
   Typography,
@@ -59,6 +60,7 @@ export const SampleAliquot = memo(function SampleAliquot({
   isLoading = false,
 }: SampleAliquotProps) {
   const theme = useTheme();
+  const { t } = useTranslation('lab');
   const [expandedRow, setExpandedRow] = useState<number | null>(null);
 
   const verifiedSamples = samples.filter(
@@ -84,10 +86,10 @@ export const SampleAliquot = memo(function SampleAliquot({
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2.5 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
           <Typography variant="h5" sx={{ fontWeight: 700, color: theme.palette.text.primary }}>
-            Alicuotado
+            {t('aliquot')}
           </Typography>
           <Chip
-            label={`${verifiedSamples.length} disponibles`}
+            label={`${verifiedSamples.length} ${t('available')}`}
             size="small"
             sx={{
               backgroundColor: theme.palette.custom.brand.light,
@@ -112,7 +114,7 @@ export const SampleAliquot = memo(function SampleAliquot({
         >
           <ContentPasteIcon sx={{ fontSize: 40, color: theme.palette.text.disabled, mb: 1 }} />
           <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
-            No hay muestras verificadas disponibles para alicuotar
+            {t('noAliquots')}
           </Typography>
         </Box>
       ) : (
@@ -120,11 +122,11 @@ export const SampleAliquot = memo(function SampleAliquot({
           <Table size="small">
             <TableHead>
               <TableRow>
-                <TableCell>Código Original</TableCell>
-                <TableCell>Tipo</TableCell>
-                <TableCell>Volumen Disponible</TableCell>
-                <TableCell>Alicuotas</TableCell>
-                <TableCell align="right">Acciones</TableCell>
+                <TableCell>{t('originalCode')}</TableCell>
+                <TableCell>{t('type')}</TableCell>
+                <TableCell>{t('availableVolume')}</TableCell>
+                <TableCell>{t('aliquots')}</TableCell>
+                <TableCell align="right">{t('actionsLabel')}</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -176,6 +178,7 @@ const AliquotRow = memo(function AliquotRow({
   getSampleTypeLabel,
 }: AliquotRowProps) {
   const theme = useTheme();
+  const { t } = useTranslation('lab');
   const {
     control,
     handleSubmit,
@@ -290,10 +293,10 @@ const AliquotRow = memo(function AliquotRow({
               }}
             >
               <Typography variant="body2" sx={{ fontWeight: 600, color: theme.palette.text.primary, mb: 0.5 }}>
-                Nueva Alicuota — {sample.sample_code}
+                {t('newAliquot')} — {sample.sample_code}
               </Typography>
               <Typography variant="caption" sx={{ color: theme.palette.text.secondary, display: 'block', mb: 2 }}>
-                Volumen disponible: {maxVolume} ml
+                {t('availableVolumeLabel', { volume: maxVolume })}
               </Typography>
 
               <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr 1fr' }, gap: 1.5, mb: 2 }}>
@@ -304,7 +307,7 @@ const AliquotRow = memo(function AliquotRow({
                     <TextField
                       {...field}
                       select
-                      label="Tipo de Contenedor"
+                      label={t('containerType')}
                       size="small"
                       error={!!errors.container_type}
                       helperText={errors.container_type?.message}
@@ -324,7 +327,7 @@ const AliquotRow = memo(function AliquotRow({
                   render={({ field }) => (
                     <TextField
                       {...field}
-                      label="Volumen (ml)"
+                      label={t('volumeMl')}
                       type="number"
                       size="small"
                       inputProps={{ min: 0.1, max: maxVolume, step: 0.1 }}
@@ -342,11 +345,11 @@ const AliquotRow = memo(function AliquotRow({
                   render={({ field }) => (
                     <TextField
                       {...field}
-                      label="Etiqueta"
+                      label={t('label')}
                       size="small"
                       error={!!errors.label}
                       helperText={errors.label?.message}
-                      placeholder="Ej: Aliquota #1 - Glucosa"
+                      placeholder={t('aliquotPlaceholder')}
                     />
                   )}
                 />
@@ -360,7 +363,7 @@ const AliquotRow = memo(function AliquotRow({
                   disabled={isLoading}
                   sx={{ color: theme.palette.text.secondary }}
                 >
-                  Cancelar
+                  {t('cancel')}
                 </Button>
                 <Button
                   type="submit"
@@ -369,7 +372,7 @@ const AliquotRow = memo(function AliquotRow({
                   disabled={isLoading || (watchedVolume != null && watchedVolume > maxVolume)}
                   startIcon={isLoading ? <CircularProgress size={14} color="inherit" /> : undefined}
                 >
-                  Crear
+                  {t('create')}
                 </Button>
               </Box>
             </Box>

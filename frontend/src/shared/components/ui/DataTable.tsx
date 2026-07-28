@@ -1,4 +1,5 @@
 import { useState, useMemo, type ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Box,
   Paper,
@@ -53,7 +54,7 @@ export function DataTable<T>({
   data,
   keyExtractor,
   loading = false,
-  emptyTitle = 'No hay datos',
+  emptyTitle,
   emptyMessage = '',
   emptyAction,
   onRowClick,
@@ -69,6 +70,7 @@ export function DataTable<T>({
   onSortChange,
   serverSide = false,
 }: DataTableProps<T>) {
+  const { t } = useTranslation('common');
   const theme = useTheme();
   const [internalPage, setInternalPage] = useState(0);
   const [internalRowsPerPage, setInternalRowsPerPage] = useState(10);
@@ -199,7 +201,7 @@ export function DataTable<T>({
                   <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
                     <InboxOutlinedIcon sx={{ fontSize: 40, color: theme.palette.divider }} />
                     <Typography variant="body1" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
-                      {emptyTitle}
+                      {emptyTitle ?? t('noData')}
                     </Typography>
                     {emptyMessage && (
                       <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
@@ -255,9 +257,9 @@ export function DataTable<T>({
           rowsPerPage={rowsPerPage}
           onRowsPerPageChange={handleRowsPerPageChange}
           rowsPerPageOptions={[5, 10, 25, 50]}
-          labelRowsPerPage="Filas por página"
+          labelRowsPerPage={t('rowsPerPage')}
           labelDisplayedRows={({ from, to, count }) =>
-            `${from}–${to} de ${count !== -1 ? count : `más de ${to}`}`
+            `${from}–${to} ${t('of')} ${count !== -1 ? count : `${t('moreThan')} ${to}`}`
           }
         />
       )}

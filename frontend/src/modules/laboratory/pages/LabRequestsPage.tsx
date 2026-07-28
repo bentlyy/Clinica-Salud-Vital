@@ -28,6 +28,7 @@ import Add from '@mui/icons-material/Add';
 import Visibility from '@mui/icons-material/Visibility';
 import Edit from '@mui/icons-material/Edit';
 import Science from '@mui/icons-material/Science';
+import { formatDate } from '@/shared/utils/localeUtils';
 import { useNavigate } from 'react-router-dom';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -282,7 +283,7 @@ function LabRequestsPageInner() {
                     </TableCell>
                     <TableCell>
                       <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
-                        {new Date(req.created_at).toLocaleDateString('es-CL')}
+                        {formatDate(req.created_at)}
                       </Typography>
                     </TableCell>
                     <TableCell align="right">

@@ -28,6 +28,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useTranslation } from 'react-i18next';
+import { formatDate } from '@/shared/utils/localeUtils';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { LoadingState } from '@/shared/components/ui/LoadingState';
 import { ErrorState } from '@/shared/components/ui/ErrorState';
@@ -275,7 +276,7 @@ export default function AvailabilityPage() {
               <Chip
                 key={ex.id}
                 icon={<EventBusy />}
-                label={`${new Date(ex.date + 'T00:00:00').toLocaleDateString('es-CL', { weekday: 'short', day: 'numeric', month: 'short' })} — ${ex.reason}`}
+                label={`${formatDate(new Date(ex.date + 'T00:00:00'), { weekday: 'short', day: 'numeric', month: 'short' })} — ${ex.reason}`}
                 onDelete={() => setDeleteExceptionConfirmId(ex.id)}
                 sx={{
                   backgroundColor: theme.palette.custom.status.error.bg,

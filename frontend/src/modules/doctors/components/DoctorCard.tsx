@@ -6,6 +6,7 @@ import Mail from '@mui/icons-material/Mail';
 import People from '@mui/icons-material/People';
 import EventNote from '@mui/icons-material/EventNote';
 import { useTranslation } from 'react-i18next';
+import { formatCurrency } from '@/shared/utils/localeUtils';
 import type { Doctor, DoctorStats } from '../types/doctor.types';
 
 interface DoctorCardProps {
@@ -130,7 +131,7 @@ export function DoctorCard({ doctor, stats, onEdit, onViewSchedule, onInvite, ca
           )}
           {doctor.consultation_fee !== undefined && doctor.consultation_fee !== null && (
             <Typography variant="caption" sx={{ color: theme.palette.text.secondary, display: 'block' }}>
-              {t('consultation')}: ${doctor.consultation_fee.toLocaleString('es-CL')}
+              {t('consultation')}: {formatCurrency(doctor.consultation_fee)}
             </Typography>
           )}
         </Box>

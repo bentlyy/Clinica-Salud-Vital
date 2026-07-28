@@ -32,6 +32,7 @@ import { MotionDiv } from '@/shared/utils/animations';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { LoadingState } from '@/shared/components/ui/LoadingState';
 import { ErrorState } from '@/shared/components/ui/ErrorState';
+import { formatDate } from '@/shared/utils/localeUtils';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
 import {
   useSpecialtyList,
@@ -200,7 +201,7 @@ export default function SpecialtiesPage() {
                     </TableCell>
                     <TableCell>
                       <Box component="span" sx={{ color: '#6b7280', fontSize: '0.8125rem' }}>
-                        {new Date(spec.created_at).toLocaleDateString('es-CL')}
+                        {formatDate(spec.created_at)}
                       </Box>
                     </TableCell>
                     <TableCell align="right">

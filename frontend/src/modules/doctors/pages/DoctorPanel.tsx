@@ -26,6 +26,7 @@ import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { LoadingState } from '@/shared/components/ui/LoadingState';
 import { ErrorState } from '@/shared/components/ui/ErrorState';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
+import { formatDate } from '@/shared/utils/localeUtils';
 import { useAuth } from '@/shared/providers/AuthProvider';
 import { useMyBookings } from '@/modules/bookings/hooks/useBookings';
 import type { Booking } from '@/modules/bookings/types/booking.types';
@@ -99,7 +100,7 @@ export default function DoctorPanel() {
     <Box>
       <PageHeader
         title={t('doctor_panel.welcome', { name: user?.name || '' })}
-        subtitle={new Date().toLocaleDateString('es-CL', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+        subtitle={formatDate(new Date(), { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
       />
 
       {/* Quick Links */}

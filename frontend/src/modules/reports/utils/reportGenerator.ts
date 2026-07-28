@@ -1,4 +1,5 @@
 import type { ReportType } from '../types/report.types';
+import { formatDate, formatDateTime, formatCurrency } from '@/shared/utils/localeUtils';
 
 interface ReportMeta {
   title: string;
@@ -16,25 +17,9 @@ function meta(type: ReportType, dateFrom: string, dateTo: string): ReportMeta {
   };
   return {
     title: labels[type] || 'Reporte',
-    generatedAt: new Date().toLocaleString('es-CL'),
-    period: `${formatDate(dateFrom)} – ${formatDate(dateTo)}`,
+    generatedAt: formatDateTime(new Date()),
+    period: `${formatDate(dateFrom, { day: '2-digit', month: 'short', year: 'numeric' })} – ${formatDate(dateTo, { day: '2-digit', month: 'short', year: 'numeric' })}`,
   };
-}
-
-function formatDate(d: string): string {
-  return new Date(d + 'T00:00:00').toLocaleDateString('es-CL', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  });
-}
-
-function formatCurrency(v: number): string {
-  return new Intl.NumberFormat('es-CL', {
-    style: 'currency',
-    currency: 'CLP',
-    maximumFractionDigits: 0,
-  }).format(v);
 }
 
 function escapeCsv(value: unknown): string {

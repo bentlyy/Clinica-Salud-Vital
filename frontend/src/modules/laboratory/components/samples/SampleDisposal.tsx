@@ -29,6 +29,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import type { LabSample } from '../../types/lab.types';
+import { formatDate } from '@/shared/utils/localeUtils';
 import { SAMPLE_TYPE_OPTIONS } from '../../types/lab.types';
 
 // ── Schema ──────────────────────────────────────────────────────────────────
@@ -66,6 +67,7 @@ const DisposalStats = memo(function DisposalStats({
   pendingCount,
 }: DisposalStatsProps) {
   const theme = useTheme();
+  const { t } = useTranslation('lab');
 
   return (
     <Box sx={{ display: 'flex', gap: 2, mb: 2.5 }}>
@@ -101,7 +103,7 @@ const DisposalStats = memo(function DisposalStats({
             {disposedThisMonth}
           </Typography>
           <Typography variant="caption" sx={{ color: theme.palette.primary.main, opacity: 0.8 }}>
-            Dispuestas este mes
+            {t('disposedThisMonth')}
           </Typography>
         </Box>
       </Paper>
@@ -138,7 +140,7 @@ const DisposalStats = memo(function DisposalStats({
             {pendingCount}
           </Typography>
           <Typography variant="caption" sx={{ color: theme.palette.warning.dark, opacity: 0.8 }}>
-            Pendientes de disposición
+            {t('pendingDisposal')}
           </Typography>
         </Box>
       </Paper>
@@ -230,7 +232,7 @@ export const SampleDisposal = memo(function SampleDisposal({
       >
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2.5 }}>
           <Typography variant="h5" sx={{ fontWeight: 700, color: theme.palette.text.primary }}>
-            Disposición de Muestras
+            {t('sampleDisposal')}
           </Typography>
           {isLoading && <CircularProgress size={20} sx={{ color: theme.palette.primary.main }} />}
         </Box>
@@ -249,21 +251,21 @@ export const SampleDisposal = memo(function SampleDisposal({
           >
             <DeleteSweepIcon sx={{ fontSize: 40, color: theme.palette.text.disabled, mb: 1 }} />
             <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
-              No hay muestras elegibles para disposición
+              {t('noEligibleSamples')}
             </Typography>
           </Box>
         ) : (
           <TableContainer>
             <Table size="small">
               <TableHead>
-                <TableRow>
-                  <TableCell>Código</TableCell>
-                  <TableCell>Tipo</TableCell>
-                  <TableCell>Fecha Recepción</TableCell>
-                  <TableCell>Días Almacenada</TableCell>
-                  <TableCell>Estado</TableCell>
-                  <TableCell align="right">Acciones</TableCell>
-                </TableRow>
+              <TableRow>
+                <TableCell>{t('code')}</TableCell>
+                <TableCell>{t('type')}</TableCell>
+                <TableCell>{t('receptionDateLabel')}</TableCell>
+                <TableCell>{t('daysStoredLabel')}</TableCell>
+                <TableCell>{t('status')}</TableCell>
+                <TableCell align="right">{t('actionsLabel')}</TableCell>
+              </TableRow>
               </TableHead>
               <TableBody>
                 {eligibleSamples.map((sample) => {
@@ -293,14 +295,14 @@ export const SampleDisposal = memo(function SampleDisposal({
                       <TableCell>
                         <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
                           {sample.reception_time
-                            ? new Date(sample.reception_time).toLocaleDateString('es-CL')
+                            ? formatDate(sample.reception_time)
                             : '—'}
                         </Typography>
                       </TableCell>
                       <TableCell>
                         <Chip
                           icon={<ScheduleIcon sx={{ fontSize: 12 }} />}
-                          label={`${days} días`}
+                          label={`${days} ${t('days')}`}
                           size="small"
                           sx={{
                             backgroundColor: colors.bg,
@@ -340,7 +342,7 @@ export const SampleDisposal = memo(function SampleDisposal({
                             },
                           }}
                         >
-                          Disponer
+                          {t('dispose')}
                         </Button>
                       </TableCell>
                     </TableRow>
@@ -364,7 +366,7 @@ export const SampleDisposal = memo(function SampleDisposal({
       >
         <Box component="form" onSubmit={handleSubmit(handleDisposeSubmit)}>
           <DialogTitle sx={{ fontWeight: 700, color: theme.palette.text.primary, pb: 1 }}>
-            Confirmar Disposición de Muestra
+            {t('confirmDisposalTitle')}
           </DialogTitle>
 
           <DialogContent sx={{ pt: 0 }}>
@@ -383,14 +385,14 @@ export const SampleDisposal = memo(function SampleDisposal({
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                     <WarningAmberIcon sx={{ fontSize: 18, color: theme.palette.error.dark }} />
                     <Typography variant="body2" sx={{ fontWeight: 600, color: theme.palette.error.dark }}>
-                      Esta acción es irreversible
+                      {t('irreversibleAction')}
                     </Typography>
                   </Box>
                   <Divider sx={{ my: 1 }} />
                   <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1, mt: 1 }}>
                     <Box>
                       <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
-                        Código
+                        {t('code')}
                       </Typography>
                       <Typography variant="body2" sx={{ fontWeight: 600, color: theme.palette.text.primary, fontFamily: 'monospace' }}>
                         {disposalDialog.sample.sample_code}
@@ -398,7 +400,7 @@ export const SampleDisposal = memo(function SampleDisposal({
                     </Box>
                     <Box>
                       <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
-                        Tipo
+                        {t('type')}
                       </Typography>
                       <Typography variant="body2" sx={{ fontWeight: 500, color: theme.palette.text.primary }}>
                         {getSampleTypeLabel(disposalDialog.sample.sample_type)}
@@ -406,20 +408,20 @@ export const SampleDisposal = memo(function SampleDisposal({
                     </Box>
                     <Box>
                       <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
-                        Recibida
+                        {t('receivedLabel')}
                       </Typography>
                       <Typography variant="body2" sx={{ fontWeight: 500, color: theme.palette.text.primary }}>
                         {disposalDialog.sample.reception_time
-                          ? new Date(disposalDialog.sample.reception_time).toLocaleDateString('es-CL')
+                          ? formatDate(disposalDialog.sample.reception_time)
                           : '—'}
                       </Typography>
                     </Box>
                     <Box>
                       <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
-                        Días Almacenada
+                        {t('daysStoredLabel')}
                       </Typography>
                       <Typography variant="body2" sx={{ fontWeight: 500, color: theme.palette.text.primary }}>
-                        {daysStored(disposalDialog.sample.reception_time)} días
+                        {daysStored(disposalDialog.sample.reception_time)} {t('days')}
                       </Typography>
                     </Box>
                   </Box>
@@ -451,7 +453,7 @@ export const SampleDisposal = memo(function SampleDisposal({
               variant="text"
               sx={{ color: theme.palette.text.secondary }}
             >
-              Cancelar
+              {t('cancel')}
             </Button>
             <Button
               type="submit"
@@ -465,7 +467,7 @@ export const SampleDisposal = memo(function SampleDisposal({
                 },
               }}
             >
-              Confirmar Disposición
+              {t('confirmDisposal')}
             </Button>
           </DialogActions>
         </Box>

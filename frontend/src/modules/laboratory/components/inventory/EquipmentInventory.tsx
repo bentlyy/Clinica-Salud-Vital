@@ -28,6 +28,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import PrecisionManufacturingIcon from '@mui/icons-material/PrecisionManufacturing';
 import InboxOutlinedIcon from '@mui/icons-material/InboxOutlined';
 import type { LabEquipment, LabArea } from '../../types/lab.types';
+import { formatDate } from '@/shared/utils/localeUtils';
 
 // ── Props ────────────────────────────────────────────────────────────────────
 
@@ -75,7 +76,7 @@ function getMaintenanceColor(
   if (diffDays <= 30) {
     return { color: theme.palette.warning.main, label: `${diffDays}d` };
   }
-  return { color: theme.palette.success.main, label: date.toLocaleDateString('es-CL') };
+  return { color: theme.palette.success.main, label: formatDate(date) };
 }
 
 // ── Component ────────────────────────────────────────────────────────────────
@@ -314,7 +315,7 @@ export const EquipmentInventory = memo(function EquipmentInventory({
                     <TableCell>
                       <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
                         {eq.last_maintenance
-                          ? new Date(eq.last_maintenance).toLocaleDateString('es-CL')
+                          ? formatDate(eq.last_maintenance)
                           : '—'}
                       </Typography>
                     </TableCell>
@@ -324,7 +325,7 @@ export const EquipmentInventory = memo(function EquipmentInventory({
                         sx={{ color: nextMaint.color, fontWeight: 500 }}
                       >
                         {eq.next_maintenance
-                          ? new Date(eq.next_maintenance).toLocaleDateString('es-CL')
+                          ? formatDate(eq.next_maintenance)
                           : '—'}
                       </Typography>
                     </TableCell>

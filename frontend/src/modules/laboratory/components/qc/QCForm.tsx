@@ -63,15 +63,6 @@ interface QCFormProps {
   isLoading?: boolean;
 }
 
-// ── Constants ────────────────────────────────────────────────────────────────
-
-const QC_TYPE_OPTIONS = [
-  { value: 'internal' as const, label: 'Control Interno' },
-  { value: 'external' as const, label: 'Control Externo' },
-  { value: 'calibration' as const, label: 'Calibración' },
-  { value: 'proficiency' as const, label: 'Competencia / Proficiency' },
-];
-
 // ── Component ────────────────────────────────────────────────────────────────
 
 export const QCForm = memo(function QCForm({
@@ -86,6 +77,13 @@ export const QCForm = memo(function QCForm({
   const theme = useTheme();
   const { t } = useTranslation('lab');
   const isEditing = !!initialData?.id;
+
+  const QC_TYPE_OPTIONS = useMemo(() => [
+    { value: 'internal' as const, label: t('qcTypes.internal') },
+    { value: 'external' as const, label: t('qcTypes.external') },
+    { value: 'calibration' as const, label: t('qcTypes.calibration') },
+    { value: 'proficiency' as const, label: t('qualityControl') },
+  ], [t]);
 
   const {
     control,
@@ -187,12 +185,12 @@ export const QCForm = memo(function QCForm({
     >
       {/* Header */}
       <Typography variant="h6" sx={{ fontWeight: 700, color: theme.palette.text.primary, mb: 0.5 }}>
-        {isEditing ? 'Editar Registro QC' : 'Nuevo Registro QC'}
+        {isEditing ? t('editRecord') : t('newRecord')}
       </Typography>
       <Typography variant="body2" sx={{ color: theme.palette.text.secondary, mb: 3 }}>
         {isEditing
-          ? 'Modifique los datos del registro de control de calidad'
-          : 'Complete los datos para registrar un nuevo control de calidad'}
+          ? t('editRecordSubtitle')
+          : t('newRecordSubtitle')}
       </Typography>
 
       <Box
@@ -222,7 +220,7 @@ export const QCForm = memo(function QCForm({
                     sx={{ borderRadius: '10px' }}
                   >
                     <MenuItem value={0} disabled>
-                      <em>Seleccione un área</em>
+                      <em>{t('selectArea')}</em>
                     </MenuItem>
                     {areas.map((a) => (
                       <MenuItem key={a.id} value={a.id}>
@@ -248,17 +246,17 @@ export const QCForm = memo(function QCForm({
                   size="small"
                   error={!!errors.lab_test_id}
                 >
-                  <InputLabel id="test-label">Test</InputLabel>
+                  <InputLabel id="test-label">{t('test')}</InputLabel>
                   <Select
                     labelId="test-label"
                     {...field}
                     value={field.value || ''}
-                    label="Test"
+                    label={t('test')}
                     onChange={(e) => field.onChange(Number(e.target.value))}
                     sx={{ borderRadius: '10px' }}
                   >
                     <MenuItem value={0} disabled>
-                      <em>Seleccione un test</em>
+                      <em>{t('selectTest')}</em>
                     </MenuItem>
                     {filteredTests.map((t) => (
                       <MenuItem key={t.id} value={t.id}>
@@ -284,11 +282,11 @@ export const QCForm = memo(function QCForm({
                   size="small"
                   error={!!errors.qc_type}
                 >
-                  <InputLabel id="qc-type-label">Tipo QC</InputLabel>
+                  <InputLabel id="qc-type-label">{t('qcType')}</InputLabel>
                   <Select
                     labelId="qc-type-label"
                     {...field}
-                    label="Tipo QC"
+                    label={t('qcType')}
                     sx={{ borderRadius: '10px' }}
                   >
                     {QC_TYPE_OPTIONS.map((opt) => (
@@ -313,8 +311,8 @@ export const QCForm = memo(function QCForm({
               render={({ field }) => (
                 <TextField
                   {...field}
-                  label="Nombre del Control"
-                  placeholder="Ej: Niveles Normales"
+                  label={t('controlName')}
+                  placeholder={t('controlNamePlaceholder')}
                   fullWidth
                   size="small"
                   error={!!errors.control_name}
@@ -355,7 +353,7 @@ export const QCForm = memo(function QCForm({
               render={({ field }) => (
                 <TextField
                   {...field}
-                  label="Fecha de Vencimiento"
+                  label={t('expirationDate')}
                   type="date"
                   fullWidth
                   size="small"
@@ -426,7 +424,7 @@ export const QCForm = memo(function QCForm({
               render={({ field }) => (
                 <TextField
                   {...field}
-                  label="Valor Medido"
+                  label={t('measuredValue')}
                   type="number"
                   fullWidth
                   size="small"
@@ -450,19 +448,19 @@ export const QCForm = memo(function QCForm({
               control={control}
               render={({ field }) => (
                 <FormControl fullWidth size="small">
-                  <InputLabel id="equipment-label">Equipo</InputLabel>
+                  <InputLabel id="equipment-label">{t('equipment')}</InputLabel>
                   <Select
                     labelId="equipment-label"
                     {...field}
                     value={field.value ?? ''}
-                    label="Equipo"
+                    label={t('equipment')}
                     onChange={(e) =>
                       field.onChange(e.target.value === '' ? null : Number(e.target.value))
                     }
                     sx={{ borderRadius: '10px' }}
                   >
                     <MenuItem value="">
-                      <em>Ninguno</em>
+                      <em>{t('none')}</em>
                     </MenuItem>
                     {filteredEquipment.map((eq) => (
                       <MenuItem key={eq.id} value={eq.id}>
@@ -482,8 +480,8 @@ export const QCForm = memo(function QCForm({
               render={({ field }) => (
                 <TextField
                   {...field}
-                  label="Notas"
-                  placeholder="Observaciones adicionales..."
+                  label={t('notes')}
+                  placeholder={t('notesPlaceholder')}
                   fullWidth
                   size="small"
                   multiline
@@ -520,10 +518,10 @@ export const QCForm = memo(function QCForm({
               }}
             />
             <Typography variant="body2" sx={{ fontWeight: 600, color: autoStatus.color }}>
-              Auto-evaluación: {autoStatus.label}
+              {t('autoEvaluation')}: {autoStatus.label}
             </Typography>
             <Typography variant="caption" sx={{ color: theme.palette.text.secondary, ml: 1 }}>
-              (Rango aceptable: {watchedMin} – {watchedMax})
+              ({t('acceptableRange')}: {watchedMin} – {watchedMax})
             </Typography>
           </Box>
         )}
@@ -543,7 +541,7 @@ export const QCForm = memo(function QCForm({
                 '&:hover': { backgroundColor: theme.palette.custom.surface.sunken },
               }}
             >
-              Cancelar
+              {t('cancel')}
             </Button>
           )}
           <Button
@@ -559,7 +557,7 @@ export const QCForm = memo(function QCForm({
               },
             }}
           >
-            {isSubmitting ? 'Guardando...' : isEditing ? 'Actualizar' : 'Guardar'}
+            {isSubmitting ? t('savingRecord') : isEditing ? t('update') : t('save')}
           </Button>
         </Box>
       </Box>
