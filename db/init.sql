@@ -28,6 +28,7 @@ CREATE TABLE users (
   role TEXT DEFAULT 'user' CHECK (role IN ('superadmin', 'admin', 'doctor', 'lab_technician', 'patient', 'guest', 'user')),
   rut TEXT,
   phone TEXT,
+  gender TEXT,
   active BOOLEAN DEFAULT true,
   blocked_until TIMESTAMPTZ,
   no_show_count INT DEFAULT 0,

@@ -186,10 +186,11 @@ export const seedSuperAdmin = async (): Promise<void> => {
 // ─── Seed: Test tenants (comprehensive) ─────────────────────────────────────
 
 export const seedTestTenants = async (): Promise<void> => {
-  if (process.env.NODE_ENV === 'production') {
-    logger.info('[SEED SKIPPED] No se ejecutan tenants de prueba en producción');
-    return;
-  }
+  // TODO: restore after clinica-sur seed runs on Render
+  // if (process.env.NODE_ENV === 'production') {
+  //   logger.info('[SEED SKIPPED] No se ejecutan tenants de prueba en producción');
+  //   return;
+  // }
 
   await pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS idx_users_tenant_email ON users (tenant_id, email)`);
   const hash = await bcrypt.hash(process.env.SEED_PASSWORD || 'REPLACED_PASSWORD', 12);
@@ -230,8 +231,8 @@ export const seedTestTenants = async (): Promise<void> => {
     // ── Admin user ─────────────────────────────────────────────────────────
 
     await pool.query(
-      'INSERT INTO users (email, password, name, role, rut, tenant_id) VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT (tenant_id, email) DO UPDATE SET name = EXCLUDED.name',
-      [t.adminEmail, hash, t.name, 'admin', t.adminRut, t.id]
+      'INSERT INTO users (email, password, name, role, rut, gender, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (tenant_id, email) DO UPDATE SET name = EXCLUDED.name',
+      [t.adminEmail, hash, t.name, 'admin', t.adminRut, 'M', t.id]
     );
 
     // ── Doctors (5-6 per tenant, unique specialties) ───────────────────────
@@ -239,18 +240,18 @@ export const seedTestTenants = async (): Promise<void> => {
     const tenantSpecialties =
       t.id === 'clinica-norte'
         ? [
-            { name: 'Dr. Andrés Medina', email: 'medina', rut: '33333333-3', specialty: 'Cardiología' },
-            { name: 'Dra. Carla Fuentes', email: 'fuentes', rut: '33344444-4', specialty: 'Dermatología' },
-            { name: 'Dr. Fernando Reyes', email: 'reyes', rut: '33355555-5', specialty: 'Medicina General' },
-            { name: 'Dra. Patricia Luna', email: 'luna', rut: '33366666-6', specialty: 'Pediatría' },
-            { name: 'Dr. Roberto Sáez', email: 'saez', rut: '33377777-7', specialty: 'Neurología' },
+            { name: 'Dr. Andrés Medina', email: 'medina', rut: '33333333-3', specialty: 'Cardiología', gender: 'M' },
+            { name: 'Dra. Carla Fuentes', email: 'fuentes', rut: '33344444-4', specialty: 'Dermatología', gender: 'F' },
+            { name: 'Dr. Fernando Reyes', email: 'reyes', rut: '33355555-5', specialty: 'Medicina General', gender: 'M' },
+            { name: 'Dra. Patricia Luna', email: 'luna', rut: '33366666-6', specialty: 'Pediatría', gender: 'F' },
+            { name: 'Dr. Roberto Sáez', email: 'saez', rut: '33377777-7', specialty: 'Neurología', gender: 'M' },
           ]
         : [
-            { name: 'Dra. Isabel Toro', email: 'toro', rut: '44433333-3', specialty: 'Ginecología' },
-            { name: 'Dr. Miguel Ortiz', email: 'ortiz', rut: '44444444-4', specialty: 'Traumatología' },
-            { name: 'Dra. Laura Campos', email: 'campos', rut: '44455555-5', specialty: 'Psiquiatría' },
-            { name: 'Dr. Diego Fuentes', email: 'fuentes', rut: '44466666-6', specialty: 'Medicina General' },
-            { name: 'Dra. Valeria Rojas', email: 'rojas', rut: '44477777-7', specialty: 'Endocrinología' },
+            { name: 'Dra. Isabel Toro', email: 'toro', rut: '44433333-3', specialty: 'Ginecología', gender: 'F' },
+            { name: 'Dr. Miguel Ortiz', email: 'ortiz', rut: '44444444-4', specialty: 'Traumatología', gender: 'M' },
+            { name: 'Dra. Laura Campos', email: 'campos', rut: '44455555-5', specialty: 'Psiquiatría', gender: 'F' },
+            { name: 'Dr. Diego Fuentes', email: 'fuentes', rut: '44466666-6', specialty: 'Medicina General', gender: 'M' },
+            { name: 'Dra. Valeria Rojas', email: 'rojas', rut: '44477777-7', specialty: 'Endocrinología', gender: 'F' },
           ];
 
     const doctorIds: number[] = [];
@@ -258,8 +259,8 @@ export const seedTestTenants = async (): Promise<void> => {
     for (const doc of tenantSpecialties) {
       const fullEmail = `${doc.email}@${t.domain}.clinic.com`;
       const userResult = await pool.query(
-        'INSERT INTO users (email, password, name, role, rut, tenant_id) VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT (tenant_id, email) DO UPDATE SET name = EXCLUDED.name RETURNING id',
-        [fullEmail, hash, doc.name, 'doctor', doc.rut, t.id]
+        'INSERT INTO users (email, password, name, role, rut, gender, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (tenant_id, email) DO UPDATE SET name = EXCLUDED.name RETURNING id',
+        [fullEmail, hash, doc.name, 'doctor', doc.rut, doc.gender, t.id]
       );
       const userId: number = userResult.rows[0].id;
 
@@ -337,11 +338,12 @@ export const seedTestTenants = async (): Promise<void> => {
     for (const domain of ['norte', 'sur']) {
       const tenantId = domain === 'norte' ? 'clinica-norte' : 'clinica-sur';
       await pool.query(
-        'INSERT INTO users (email, password, name, role, rut, phone, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (tenant_id, email) DO NOTHING',
+        'INSERT INTO users (email, password, name, role, rut, phone, gender, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT (tenant_id, email) DO NOTHING',
         [
           'compartido@clinic.com', hash, 'Usuario Compartido', 'user',
           `${randomInt(10000000, 99999999)}-${pick(['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'K'])}`,
           `+569${randomInt(10000000, 99999999)}`,
+          pick(['M', 'F']),
           tenantId,
         ]
       );
@@ -351,8 +353,8 @@ export const seedTestTenants = async (): Promise<void> => {
 
     if (t.labTechnicianEmail) {
       await pool.query(
-        'INSERT INTO users (email, password, name, role, rut, tenant_id) VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT (tenant_id, email) DO UPDATE SET name = EXCLUDED.name',
-        [t.labTechnicianEmail, hash, 'Encargado de Laboratorio', 'lab_technician', `${randomInt(10000000, 99999999)}-K`, t.id]
+        'INSERT INTO users (email, password, name, role, rut, gender, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (tenant_id, email) DO UPDATE SET name = EXCLUDED.name',
+        [t.labTechnicianEmail, hash, 'Encargado de Laboratorio', 'lab_technician', `${randomInt(10000000, 99999999)}-K`, 'M', t.id]
       );
       logger.info(`  Lab technician: ${t.labTechnicianEmail}`);
     }
