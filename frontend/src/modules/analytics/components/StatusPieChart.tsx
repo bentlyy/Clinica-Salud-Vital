@@ -1,5 +1,6 @@
 import { Box, Paper, Typography } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
+import { useTranslation } from 'react-i18next';
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { motion } from 'framer-motion';
 import type { BookingsByStatus } from '../types/analytics.types';
@@ -8,14 +9,6 @@ interface StatusPieChartProps {
   data: BookingsByStatus[];
   isLoading: boolean;
 }
-
-const STATUS_LABELS: Record<string, string> = {
-  confirmed: 'Confirmadas',
-  completed: 'Completadas',
-  cancelled: 'Canceladas',
-  pending: 'Pendientes',
-  no_show: 'No Asistió',
-};
 
 interface CustomTooltipProps {
   active?: boolean;
@@ -45,6 +38,15 @@ function CustomTooltip({ active, payload }: CustomTooltipProps) {
 
 export function StatusPieChart({ data, isLoading }: StatusPieChartProps) {
   const theme = useTheme();
+  const { t } = useTranslation('analytics');
+
+  const STATUS_LABELS: Record<string, string> = {
+    confirmed: t('status_confirmed'),
+    completed: t('status_completed'),
+    cancelled: t('status_cancelled'),
+    pending: t('status_pending'),
+    no_show: t('status_no_show'),
+  };
 
   const STATUS_COLORS: Record<string, string> = {
     confirmed: theme.palette.primary.main,
@@ -77,16 +79,16 @@ export function StatusPieChart({ data, isLoading }: StatusPieChartProps) {
       sx={{ p: 3, border: `1px solid ${theme.palette.divider}` }}
     >
       <Typography variant="h6" sx={{ fontWeight: 600, color: theme.palette.text.primary, mb: 3 }}>
-        Citas por Estado
+        {t('bookings_by_status')}
       </Typography>
 
       {isLoading ? (
         <Box sx={{ height: 350, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>Cargando datos...</Typography>
+          <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>{t('loading_data')}</Typography>
         </Box>
       ) : data.length === 0 ? (
         <Box sx={{ height: 350, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>No hay datos disponibles</Typography>
+          <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>{t('noData')}</Typography>
         </Box>
       ) : (
         <ResponsiveContainer width="100%" height={350}>

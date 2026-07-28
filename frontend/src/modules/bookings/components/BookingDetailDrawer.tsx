@@ -24,6 +24,7 @@ import CancelOutlined from '@mui/icons-material/CancelOutlined';
 import CircularProgress from '@mui/material/CircularProgress';
 import type { Booking } from '../types/booking.types';
 import { BOOKING_STATUS_CONFIG } from '../types/booking.types';
+import { formatDate, formatDateTime } from '@/shared/utils/localeUtils';
 
 interface BookingDetailDrawerProps {
   open: boolean;
@@ -127,7 +128,7 @@ export function BookingDetailDrawer({
           {/* Date & time */}
           <DetailSection icon={<CalendarToday />} label={t('date')}>
             <Typography variant="body1" sx={{ fontWeight: 500, color: theme.palette.text.primary }}>
-              {new Date(booking.date + 'T00:00:00').toLocaleDateString('es-CL', {
+              {formatDate(new Date(booking.date + 'T00:00:00'), {
                 weekday: 'long',
                 year: 'numeric',
                 month: 'long',
@@ -154,10 +155,10 @@ export function BookingDetailDrawer({
           {/* Timestamps */}
           <Divider sx={{ my: 2 }} />
           <Typography variant="caption" sx={{ color: theme.palette.text.secondary, display: 'block' }}>
-            {t('created')}: {new Date(booking.created_at).toLocaleString('es-CL')}
+            {t('created')}: {formatDateTime(booking.created_at)}
           </Typography>
           <Typography variant="caption" sx={{ color: theme.palette.text.secondary, display: 'block' }}>
-            {t('updated')}: {new Date(booking.updated_at).toLocaleString('es-CL')}
+            {t('updated')}: {formatDateTime(booking.updated_at)}
           </Typography>
 
           {/* Cancel button */}

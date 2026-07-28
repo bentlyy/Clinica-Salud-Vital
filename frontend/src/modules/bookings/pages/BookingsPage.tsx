@@ -21,6 +21,7 @@ import { BookingDetailDrawer } from '../components/BookingDetailDrawer';
 import type { Booking, BookingListParams, BookingStatus } from '../types/booking.types';
 import { BOOKING_STATUS_CONFIG, BOOKING_STATUS_OPTIONS } from '../types/booking.types';
 import { useCreateBooking } from '../hooks/useBookings';
+import { formatDate } from '@/shared/utils/localeUtils';
 
 const MotionBox = motion(Box);
 
@@ -398,7 +399,7 @@ function BookingCard({ booking, onView, t }: BookingCardProps) {
         }}
       >
         <Typography variant="caption" sx={{ color: statusConfig.color, fontWeight: 600, textTransform: 'uppercase', display: 'block' }}>
-          {new Date(booking.date + 'T00:00:00').toLocaleDateString('es-CL', { weekday: 'short' })}
+          {formatDate(new Date(booking.date + 'T00:00:00'), { weekday: 'short' })}
         </Typography>
         <Typography variant="h5" sx={{ fontWeight: 700, color: theme.palette.text.primary, lineHeight: 1.2 }}>
           {new Date(booking.date + 'T00:00:00').getDate()}

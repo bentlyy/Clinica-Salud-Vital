@@ -7,6 +7,7 @@ import {
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import type { LabResultHistory } from '../../types/lab.types';
+import { formatDate } from '@/shared/utils/localeUtils';
 
 // ── Props ────────────────────────────────────────────────────────────────────
 
@@ -87,7 +88,7 @@ export const ResultTrendChart = memo(function ResultTrendChart({
       const value = parseFloat(item.result_value);
       const x = scaleX(index);
       const y = scaleY(value);
-      const dateStr = new Date(item.checked_at).toLocaleDateString('es-CL', {
+      const dateStr = formatDate(new Date(item.checked_at), {
         day: '2-digit',
         month: 'short',
       });

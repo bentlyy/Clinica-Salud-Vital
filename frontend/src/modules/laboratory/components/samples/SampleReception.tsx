@@ -1,4 +1,5 @@
 import { memo, useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Box,
   Typography,
@@ -67,6 +68,7 @@ export const SampleReception = memo(function SampleReception({
   isLoading = false,
 }: SampleReceptionProps) {
   const theme = useTheme();
+  const { t } = useTranslation('lab');
   const [expandedRow, setExpandedRow] = useState<number | null>(null);
 
   const handleToggleRow = useCallback((itemId: number) => {
@@ -93,11 +95,11 @@ export const SampleReception = memo(function SampleReception({
     >
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2.5 }}>
         <Typography variant="h5" sx={{ fontWeight: 700, color: theme.palette.text.primary }}>
-          Recepción de Muestras
+          {t('reception')}
         </Typography>
         {requestId && (
           <Chip
-            label={`Solicitud #${requestId}`}
+            label={t('requestNumber', { id: requestId })}
             size="small"
             sx={{
               backgroundColor: theme.palette.custom.brand.lightest,
@@ -110,18 +112,18 @@ export const SampleReception = memo(function SampleReception({
 
       {items.length === 0 ? (
         <Typography variant="body2" sx={{ color: theme.palette.text.secondary, textAlign: 'center', py: 4 }}>
-          No hay ítems en esta solicitud
+          {t('noItemsInRequest')}
         </Typography>
       ) : (
         <TableContainer>
           <Table size="small">
             <TableHead>
               <TableRow>
-                <TableCell>Test</TableCell>
-                <TableCell>Tipo Muestra</TableCell>
-                <TableCell>Volumen</TableCell>
-                <TableCell>Estado</TableCell>
-                <TableCell align="right">Acciones</TableCell>
+                <TableCell>{t('test')}</TableCell>
+                <TableCell>{t('sampleType')}</TableCell>
+                <TableCell>{t('volume')}</TableCell>
+                <TableCell>{t('status')}</TableCell>
+                <TableCell align="right">{t('actionsLabel')}</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -164,6 +166,7 @@ const SampleReceptionRow = memo(function SampleReceptionRow({
   alreadyReceived,
 }: SampleReceptionRowProps) {
   const theme = useTheme();
+  const { t } = useTranslation('lab');
   const {
     control,
     handleSubmit,
@@ -236,7 +239,7 @@ const SampleReceptionRow = memo(function SampleReceptionRow({
           {alreadyReceived ? (
             <Chip
               icon={<CheckCircleIcon sx={{ fontSize: 14 }} />}
-              label="Recibida"
+              label={t('received')}
               size="small"
               sx={{
                 backgroundColor: theme.palette.custom.status.success.bg,
@@ -276,7 +279,7 @@ const SampleReceptionRow = memo(function SampleReceptionRow({
               }}
             >
               <Typography variant="body2" sx={{ fontWeight: 600, color: theme.palette.text.primary, mb: 2 }}>
-                Registrar Muestra — {item.test_name ?? `Test #${item.lab_test_id}`}
+                {t('registerSample')} — {item.test_name ?? `Test #${item.lab_test_id}`}
               </Typography>
 
               <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 1.5, mb: 2 }}>
@@ -287,7 +290,7 @@ const SampleReceptionRow = memo(function SampleReceptionRow({
                     <TextField
                       {...field}
                       select
-                      label="Tipo de Muestra"
+                      label={t('sampleType')}
                       size="small"
                       error={!!errors.sample_type}
                       helperText={errors.sample_type?.message}
@@ -308,7 +311,7 @@ const SampleReceptionRow = memo(function SampleReceptionRow({
                     <TextField
                       {...field}
                       select
-                      label="Tipo de Contenedor"
+                      label={t('containerType')}
                       size="small"
                       error={!!errors.container_type}
                       helperText={errors.container_type?.message}
@@ -328,7 +331,7 @@ const SampleReceptionRow = memo(function SampleReceptionRow({
                   render={({ field }) => (
                     <TextField
                       {...field}
-                      label="Volumen (ml)"
+                      label={t('volumeMl')}
                       type="number"
                       size="small"
                       value={field.value ?? ''}
@@ -345,7 +348,7 @@ const SampleReceptionRow = memo(function SampleReceptionRow({
                   render={({ field }) => (
                     <TextField
                       {...field}
-                      label="Notas"
+                      label={t('notes')}
                       size="small"
                       multiline
                       rows={2}
@@ -362,7 +365,7 @@ const SampleReceptionRow = memo(function SampleReceptionRow({
                   disabled={isLoading}
                   sx={{ color: theme.palette.text.secondary }}
                 >
-                  Cancelar
+                  {t('cancel')}
                 </Button>
                 <Button
                   type="submit"
@@ -371,7 +374,7 @@ const SampleReceptionRow = memo(function SampleReceptionRow({
                   disabled={isLoading}
                   startIcon={isLoading ? <CircularProgress size={14} color="inherit" /> : undefined}
                 >
-                  Registrar
+                  {t('register')}
                 </Button>
               </Box>
             </Box>

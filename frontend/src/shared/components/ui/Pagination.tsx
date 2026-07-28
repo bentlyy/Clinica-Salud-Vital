@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Box, Button, Typography } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 
@@ -9,6 +10,7 @@ interface PaginationProps {
 }
 
 export function Pagination({ page, totalPages, total, onPageChange }: PaginationProps) {
+  const { t } = useTranslation('common');
   const theme = useTheme();
 
   if (totalPages <= 1) return null;
@@ -79,7 +81,7 @@ export function Pagination({ page, totalPages, total, onPageChange }: Pagination
 
       {total !== undefined && (
         <Typography variant="body2" sx={{ color: theme.palette.text.secondary, ml: 2 }}>
-          {total} registros
+          {total} {t('records')}
         </Typography>
       )}
     </Box>

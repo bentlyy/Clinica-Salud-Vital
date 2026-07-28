@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef, memo } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { SxProps } from '@mui/material/styles';
 import { useTheme } from '@mui/material/styles';
 import TextField from '@mui/material/TextField';
@@ -23,6 +24,7 @@ export const SearchInput = memo(function SearchInput({
   sx,
 }: SearchInputProps) {
   const theme = useTheme();
+  const { t } = useTranslation('lab');
   const [localValue, setLocalValue] = useState(value);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -83,7 +85,7 @@ export const SearchInput = memo(function SearchInput({
               <IconButton
                 size="small"
                 onClick={handleClear}
-                aria-label="Limpiar busqueda"
+                aria-label={t('clear')}
                 sx={{ color: theme.palette.text.secondary, p: 0.25 }}
               >
                 <ClearIcon sx={{ fontSize: 16 }} />

@@ -26,6 +26,7 @@ import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { LoadingState } from '@/shared/components/ui/LoadingState';
 import { ErrorState } from '@/shared/components/ui/ErrorState';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
+import { formatDateTime } from '@/shared/utils/localeUtils';
 import { useAuditList } from '../hooks/useAudit';
 import { AuditDetailDialog } from '../components/AuditDetailDialog';
 import { MotionDiv } from '@/shared/utils/animations';
@@ -77,7 +78,7 @@ export default function AuditPage() {
   const handleExport = () => {
     const headers = [t('csvHeaders.date'), t('csvHeaders.user'), t('csvHeaders.action'), t('csvHeaders.entity'), t('csvHeaders.entityId'), t('csvHeaders.ip')];
     const rows = logs.map((log) => [
-      new Date(log.created_at).toLocaleString('es-CL'),
+      formatDateTime(log.created_at),
       log.user_name || t('userFallback', { id: log.user_id }),
       AUDIT_ACTION_LABELS[log.action] || log.action,
       AUDIT_ENTITY_LABELS[log.entity_type] || log.entity_type,
@@ -257,7 +258,7 @@ export default function AuditPage() {
                     </TableCell>
                     <TableCell>
                       <Box component="span" sx={{ color: theme.palette.text.secondary, fontSize: '0.875rem' }}>
-                        {new Date(log.created_at).toLocaleString('es-CL')}
+                        {formatDateTime(log.created_at)}
                       </Box>
                     </TableCell>
                     <TableCell align="right">

@@ -1,5 +1,6 @@
 import { Suspense, lazy } from 'react';
 import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/shared/providers/AuthProvider';
 import { useFeature } from '@/shared/hooks/useFeature';
 import { DashboardLayout } from '@/shared/components/layout/DashboardLayout';
@@ -122,6 +123,7 @@ function FeatureRoute({ featureKey, featureName }: { featureKey: string; feature
 }
 
 export function AppRouter() {
+  const { t } = useTranslation('common');
   return (
     <Suspense fallback={<LoadingState />}>
       <Routes>
@@ -206,7 +208,7 @@ export function AppRouter() {
             </ProtectedRoute>
           }
         >
-          <Route path="/patient" element={<PlaceholderPage title="Mi Portal" />} />
+          <Route path="/patient" element={<PlaceholderPage title={t('my_portal')} />} />
           <Route path="/patient/bookings" element={<BookingsPage />} />
           <Route path="/patient/clinical-records" element={<ClinicalRecordsPage />} />
           <Route path="/patient/clinical-records/:id" element={<ClinicalRecordDetailPage />} />

@@ -1,4 +1,5 @@
 import { memo, useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Box,
   Typography,
@@ -20,6 +21,7 @@ import VisibilityIcon from '@mui/icons-material/Visibility';
 import InboxOutlinedIcon from '@mui/icons-material/InboxOutlined';
 import { PriorityChip } from '../shared/PriorityChip';
 import { StatusBadge } from '../shared/StatusBadge';
+import { formatDate } from '@/shared/utils/localeUtils';
 import type { LabRequest } from '../../types/lab.types';
 
 interface WorkQueueProps {
@@ -28,14 +30,6 @@ interface WorkQueueProps {
   selectedId?: number;
   isLoading?: boolean;
 }
-
-const TAB_FILTERS = [
-  { label: 'Todos', value: 'all' },
-  { label: 'Pendientes', value: 'pending' },
-  { label: 'En Proceso', value: 'processing' },
-  { label: 'Urgentes', value: 'urgent' },
-  { label: 'Críticos', value: 'critical' },
-] as const;
 
 function filterRequests(requests: LabRequest[], filter: string): LabRequest[] {
   if (!requests) return [];
@@ -59,9 +53,9 @@ function filterRequests(requests: LabRequest[], filter: string): LabRequest[] {
   }
 }
 
-function formatDate(dateStr: string): string {
+function formatDateLocal(dateStr: string): string {
   try {
-    return new Date(dateStr).toLocaleDateString('es-CL', {
+    return formatDate(new Date(dateStr), {
       day: '2-digit',
       month: 'short',
       year: 'numeric',
@@ -73,11 +67,20 @@ function formatDate(dateStr: string): string {
 
 function WorkQueueBase({ requests, onSelectRequest, selectedId, isLoading }: WorkQueueProps) {
   const theme = useTheme();
+  const { t } = useTranslation('lab');
   const [tabValue, setTabValue] = useState(0);
 
+  const tabFilters = useMemo(() => [
+    { label: t('all'), value: 'all' },
+    { label: t('pending'), value: 'pending' },
+    { label: t('inProgress'), value: 'processing' },
+    { label: t('urgent'), value: 'urgent' },
+    { label: t('critical'), value: 'critical' },
+  ], [t]);
+
   const filteredRequests = useMemo(
-    () => filterRequests(requests ?? [], TAB_FILTERS[tabValue]?.value ?? 'all'),
-    [requests, tabValue],
+    () => filterRequests(requests ?? [], tabFilters[tabValue]?.value ?? 'all'),
+    [requests, tabValue, tabFilters],
   );
 
   if (isLoading) {
@@ -90,7 +93,7 @@ function WorkQueueBase({ requests, onSelectRequest, selectedId, isLoading }: Wor
           <Table>
             <TableHead>
               <TableRow>
-                {['#', 'Paciente', 'Prioridad', 'Estado', 'Fecha', 'Acciones'].map((col) => (
+                {[t('requestNumber'), t('patient'), t('priority'), t('status'), t('dateLabel'), t('actionsLabel')].map((col) => (
                   <TableCell key={col}>{col}</TableCell>
                 ))}
               </TableRow>
@@ -133,7 +136,7 @@ function WorkQueueBase({ requests, onSelectRequest, selectedId, isLoading }: Wor
           },
         }}
       >
-        {TAB_FILTERS.map((tab) => (
+        {tabFilters.map((tab) => (
           <Tab key={tab.value} label={tab.label} />
         ))}
       </Tabs>
@@ -151,7 +154,7 @@ function WorkQueueBase({ requests, onSelectRequest, selectedId, isLoading }: Wor
         >
           <InboxOutlinedIcon sx={{ fontSize: 40, color: theme.palette.divider }} />
           <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
-            No hay solicitudes en esta cola
+            {t('noRequests')}
           </Typography>
         </Box>
       ) : (
@@ -160,11 +163,11 @@ function WorkQueueBase({ requests, onSelectRequest, selectedId, isLoading }: Wor
             <TableHead>
               <TableRow>
                 <TableCell sx={{ width: 80 }}>#</TableCell>
-                <TableCell>Paciente</TableCell>
-                <TableCell sx={{ width: 100 }}>Prioridad</TableCell>
-                <TableCell sx={{ width: 140 }}>Estado</TableCell>
-                <TableCell sx={{ width: 110 }}>Fecha</TableCell>
-                <TableCell sx={{ width: 60 }}>Acciones</TableCell>
+                <TableCell>{t('patient')}</TableCell>
+                <TableCell sx={{ width: 100 }}>{t('priority')}</TableCell>
+                <TableCell sx={{ width: 140 }}>{t('status')}</TableCell>
+                <TableCell sx={{ width: 110 }}>{t('dateLabel')}</TableCell>
+                <TableCell sx={{ width: 60 }}>{t('actionsLabel')}</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -210,11 +213,11 @@ function WorkQueueBase({ requests, onSelectRequest, selectedId, isLoading }: Wor
                     </TableCell>
                     <TableCell>
                       <Typography variant="body2" sx={{ color: theme.palette.text.secondary, fontSize: '0.75rem' }}>
-                        {formatDate(request.requested_at)}
+                        {formatDateLocal(request.requested_at)}
                       </Typography>
                     </TableCell>
                     <TableCell>
-                      <Tooltip title="Ver detalle">
+                      <Tooltip title={t('viewDetail')}>
                         <IconButton
                           size="small"
                           onClick={(e) => {

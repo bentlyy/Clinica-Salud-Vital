@@ -1,4 +1,5 @@
 import { memo, useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Box,
   Typography,
@@ -49,26 +50,27 @@ interface StatsBarProps {
 
 const StatsBar = memo(function StatsBar({ total, verified, pending }: StatsBarProps) {
   const theme = useTheme();
+  const { t } = useTranslation('lab');
   return (
     <Box sx={{ display: 'flex', gap: 2, mb: 2.5 }}>
       {[
         {
           icon: <BiotechIcon sx={{ fontSize: 20 }} />,
-          label: 'Total',
+          label: t('total'),
           value: total,
           bg: theme.palette.custom.brand.lightest,
           color: theme.palette.primary.main,
         },
         {
           icon: <VerifiedIcon sx={{ fontSize: 20 }} />,
-          label: 'Verificadas',
+          label: t('verified'),
           value: verified,
           bg: theme.palette.custom.status.success.bg,
           color: theme.palette.success.main,
         },
         {
           icon: <HourglassEmptyIcon sx={{ fontSize: 20 }} />,
-          label: 'Pendientes',
+          label: t('pendingVerification'),
           value: pending,
           bg: theme.palette.custom.status.warning.bg,
           color: theme.palette.warning.dark,
@@ -134,6 +136,7 @@ export const SampleVerification = memo(function SampleVerification({
   isLoading = false,
 }: SampleVerificationProps) {
   const theme = useTheme();
+  const { t } = useTranslation('lab');
   const [rejectDialog, setRejectDialog] = useState<{ open: boolean; sampleId: number | null }>({
     open: false,
     sampleId: null,
@@ -187,7 +190,7 @@ export const SampleVerification = memo(function SampleVerification({
       >
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2.5 }}>
           <Typography variant="h5" sx={{ fontWeight: 700, color: theme.palette.text.primary }}>
-            Verificación de Muestras
+            {t('verification')}
           </Typography>
           {isLoading && <CircularProgress size={20} sx={{ color: theme.palette.primary.main }} />}
         </Box>
@@ -206,21 +209,21 @@ export const SampleVerification = memo(function SampleVerification({
           >
             <CheckCircleIcon sx={{ fontSize: 40, color: theme.palette.divider, mb: 1 }} />
             <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
-              No hay muestras pendientes de verificación
+              {t('noPendingVerification')}
             </Typography>
           </Box>
         ) : (
           <TableContainer>
             <Table size="small">
               <TableHead>
-                <TableRow>
-                  <TableCell>Código</TableCell>
-                  <TableCell>Tipo</TableCell>
-                  <TableCell>Contenedor</TableCell>
-                  <TableCell>Volumen</TableCell>
-                  <TableCell>Estado</TableCell>
-                  <TableCell align="right">Acciones</TableCell>
-                </TableRow>
+              <TableRow>
+                <TableCell>{t('code')}</TableCell>
+                <TableCell>{t('type')}</TableCell>
+                <TableCell>{t('container')}</TableCell>
+                <TableCell>{t('volume')}</TableCell>
+                <TableCell>{t('status')}</TableCell>
+                <TableCell align="right">{t('actionsLabel')}</TableCell>
+              </TableRow>
               </TableHead>
               <TableBody>
                 {receivedSamples.map((sample) => (
@@ -250,7 +253,7 @@ export const SampleVerification = memo(function SampleVerification({
                     </TableCell>
                     <TableCell>
                       <Chip
-                        label="Recibida"
+                        label={t('received')}
                         size="small"
                         sx={{
                           backgroundColor: theme.palette.custom.status.info.bg,
@@ -270,7 +273,7 @@ export const SampleVerification = memo(function SampleVerification({
                             color: theme.palette.success.main,
                             '&:hover': { backgroundColor: theme.palette.custom.status.success.bg },
                           }}
-                          title="Verificar"
+                           title={t('verify')}
                         >
                           <CheckCircleIcon fontSize="small" />
                         </IconButton>
@@ -282,7 +285,7 @@ export const SampleVerification = memo(function SampleVerification({
                             color: theme.palette.error.main,
                             '&:hover': { backgroundColor: theme.palette.custom.status.error.bg },
                           }}
-                          title="Rechazar"
+                           title={t('reject')}
                         >
                           <CancelIcon fontSize="small" />
                         </IconButton>
@@ -308,11 +311,11 @@ export const SampleVerification = memo(function SampleVerification({
       >
         <Box component="form" onSubmit={handleSubmit(handleRejectSubmit)}>
           <DialogTitle sx={{ fontWeight: 700, color: theme.palette.text.primary }}>
-            Rechazar Muestra
+            {t('rejectSampleDialog')}
           </DialogTitle>
           <DialogContent>
             <Typography variant="body2" sx={{ color: theme.palette.text.secondary, mb: 2 }}>
-              Ingrese el motivo del rechazo. Esta acción no se puede deshacer.
+              {t('rejectReasonText')}
             </Typography>
             <Controller
               name="reason"
@@ -320,13 +323,13 @@ export const SampleVerification = memo(function SampleVerification({
               render={({ field }) => (
                 <TextField
                   {...field}
-                  label="Motivo del Rechazo"
+                  label={t('rejectReasonLabel')}
                   fullWidth
                   multiline
                   rows={3}
                   error={!!errors.reason}
                   helperText={errors.reason?.message}
-                  placeholder="Describa el motivo del rechazo..."
+                  placeholder={t('rejectReasonPlaceholder')}
                 />
               )}
             />
@@ -337,7 +340,7 @@ export const SampleVerification = memo(function SampleVerification({
               variant="text"
               sx={{ color: theme.palette.text.secondary }}
             >
-              Cancelar
+              {t('cancel')}
             </Button>
             <Button
               type="submit"
@@ -351,7 +354,7 @@ export const SampleVerification = memo(function SampleVerification({
                 },
               }}
             >
-              Rechazar
+              {t('reject')}
             </Button>
           </DialogActions>
         </Box>

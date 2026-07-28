@@ -1,4 +1,5 @@
 import { memo } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { SxProps } from '@mui/material/styles';
 import Box from '@mui/material/Box';
 import Paper from '@mui/material/Paper';
@@ -57,6 +58,7 @@ export const FiltersBar = memo(function FiltersBar({
   sx,
 }: FiltersBarProps) {
   const theme = useTheme();
+  const { t } = useTranslation('lab');
 
   return (
     <Paper
@@ -81,7 +83,7 @@ export const FiltersBar = memo(function FiltersBar({
         <SearchInput
           value={filters.search}
           onChange={(val) => onFilterChange('search', val)}
-          placeholder="Buscar solicitudes..."
+          placeholder={t('searchPlaceholder')}
           sx={{ minWidth: 250, flex: '1 1 250px' }}
         />
 
@@ -89,7 +91,7 @@ export const FiltersBar = memo(function FiltersBar({
         <TextField
           select
           size="small"
-          label="Area"
+          label={t('area')}
           value={filters.areaId}
           onChange={(e) =>
             onFilterChange('areaId', e.target.value === '' ? '' : Number(e.target.value))
@@ -97,7 +99,7 @@ export const FiltersBar = memo(function FiltersBar({
           sx={{ ...selectSx, minWidth: 140 }}
         >
           <MenuItem value="">
-            <em>Todas</em>
+            <em>{t('allAreas')}</em>
           </MenuItem>
           {LAB_AREA_OPTIONS.map((opt) => (
             <MenuItem key={opt.value} value={opt.value}>
@@ -110,7 +112,7 @@ export const FiltersBar = memo(function FiltersBar({
         <TextField
           select
           size="small"
-          label="Prioridad"
+          label={t('priority')}
           value={filters.priority}
           onChange={(e) =>
             onFilterChange('priority', e.target.value as LabPriority | '')
@@ -118,7 +120,7 @@ export const FiltersBar = memo(function FiltersBar({
           sx={selectSx}
         >
           <MenuItem value="">
-            <em>Todas</em>
+            <em>{t('allPriorities')}</em>
           </MenuItem>
           {PRIORITY_OPTIONS.map((opt) => (
             <MenuItem key={opt.value} value={opt.value}>
@@ -131,7 +133,7 @@ export const FiltersBar = memo(function FiltersBar({
         <TextField
           select
           size="small"
-          label="Estado"
+          label={t('status')}
           value={filters.status}
           onChange={(e) =>
             onFilterChange('status', e.target.value as LabRequestStatus | '')
@@ -139,7 +141,7 @@ export const FiltersBar = memo(function FiltersBar({
           sx={selectSx}
         >
           <MenuItem value="">
-            <em>Todos</em>
+            <em>{t('allStatuses')}</em>
           </MenuItem>
           {STATUS_OPTIONS.map((opt) => (
             <MenuItem key={opt.value} value={opt.value}>
@@ -152,7 +154,7 @@ export const FiltersBar = memo(function FiltersBar({
         <TextField
           size="small"
           type="date"
-          label="Desde"
+          label={t('from')}
           value={filters.dateFrom}
           onChange={(e) => onFilterChange('dateFrom', e.target.value)}
           slotProps={{
@@ -165,7 +167,7 @@ export const FiltersBar = memo(function FiltersBar({
         <TextField
           size="small"
           type="date"
-          label="Hasta"
+          label={t('to')}
           value={filters.dateTo}
           onChange={(e) => onFilterChange('dateTo', e.target.value)}
           slotProps={{
@@ -177,7 +179,7 @@ export const FiltersBar = memo(function FiltersBar({
         {/* Action buttons */}
         <Box sx={{ display: 'flex', gap: 0.5, ml: 'auto' }}>
           {hasActiveFilters && (
-            <Tooltip title="Limpiar filtros">
+            <Tooltip title={t('clearFilters')}>
               <IconButton
                 size="small"
                 onClick={onReset}
@@ -193,7 +195,7 @@ export const FiltersBar = memo(function FiltersBar({
               </IconButton>
             </Tooltip>
           )}
-          <Tooltip title="Filtros activos">
+          <Tooltip title={t('activeFilters')}>
             <IconButton
               size="small"
               disabled={!hasActiveFilters}

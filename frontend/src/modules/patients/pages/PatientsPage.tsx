@@ -28,6 +28,7 @@ import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { LoadingState } from '@/shared/components/ui/LoadingState';
 import { ErrorState } from '@/shared/components/ui/ErrorState';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
+import { formatDate } from '@/shared/utils/localeUtils';
 import { usePatientList } from '../hooks/usePatients';
 
 export default function PatientsPage() {
@@ -166,7 +167,7 @@ export default function PatientsPage() {
                     </TableCell>
                     <TableCell>
                       <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
-                        {new Date(patient.created_at).toLocaleDateString('es-CL')}
+                        {formatDate(patient.created_at)}
                       </Typography>
                     </TableCell>
                   </TableRow>
