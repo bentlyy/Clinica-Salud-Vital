@@ -43,7 +43,7 @@ interface NavItemDef {
 }
 
 const NAV_ITEMS_DEF: NavItemDef[] = [
-  { labelKey: 'dashboard', icon: <Dashboard />, path: '/dashboard', roles: ['superadmin', 'admin', 'doctor', 'lab_technician'] },
+  { labelKey: 'dashboard', icon: <Dashboard />, path: '/dashboard', roles: ['superadmin', 'admin', 'doctor', 'lab_technician', 'patient'] },
   { labelKey: 'panelSaas', icon: <TrendingUp />, path: '/saas', roles: ['superadmin'] },
   { labelKey: 'clinics', icon: <AccountBalance />, path: '/tenants', roles: ['superadmin'] },
   { labelKey: 'users', icon: <People />, path: '/users', roles: ['superadmin', 'admin'] },
@@ -76,6 +76,7 @@ const NAV_ITEMS_DEF: NavItemDef[] = [
   { labelKey: 'analytics', icon: <Assessment />, path: '/analytics', roles: ['admin', 'doctor'] },
   { labelKey: 'reports', icon: <Badge />, path: '/reports', roles: ['admin', 'doctor', 'lab_technician'] },
   { labelKey: 'audit', icon: <Inventory />, path: '/audit', roles: ['superadmin', 'admin'] },
+  { labelKey: 'labResults', icon: <Science />, path: '/my-laboratory', roles: ['patient'] },
   { labelKey: 'notifications', icon: <Notifications />, path: '/notifications', roles: ['superadmin', 'admin', 'doctor', 'lab_technician', 'patient'] },
   { labelKey: 'settings', icon: <Settings />, path: '/settings', roles: ['superadmin', 'admin', 'doctor', 'lab_technician', 'patient'] },
 ];
