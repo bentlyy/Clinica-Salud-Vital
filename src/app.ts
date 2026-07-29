@@ -140,7 +140,8 @@ if (process.env.NODE_ENV === 'production') {
   });
 }
 
-app.use(cookieParser(process.env.COOKIE_SECRET || process.env.JWT_SECRET));
+// COOKIE_SECRET must be set independently of JWT_SECRET; do not share secrets between mechanisms
+app.use(cookieParser(process.env.COOKIE_SECRET));
 app.use(express.json({ limit: '100kb' }));
 app.use(optionalAuth);
 app.use(tenantMiddleware);

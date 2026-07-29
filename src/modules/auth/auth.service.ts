@@ -669,7 +669,7 @@ export const resetAdminPassword = async (
   const email = process.env.ADMIN_EMAIL || 'admin@clinic.com';
 
   const userResult = await pool.query(
-    'SELECT id, password FROM users WHERE email = $1 AND tenant_id = $2 LIMIT 1',
+    'SELECT id, password FROM users WHERE email = $1 AND (tenant_id IS NULL OR tenant_id = $2) LIMIT 1',
     [email, tenantId],
   );
   if (userResult.rows.length === 0) throw new NotFoundError(E.AUTH_ADMIN_NOT_FOUND);

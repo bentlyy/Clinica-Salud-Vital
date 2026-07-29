@@ -14,8 +14,8 @@ describe('encrypt', () => {
   it('encrypts a text string', () => {
     const result = encrypt('hello world');
     expect(typeof result).toBe('string');
-    expect(result).toMatch(/^[a-f0-9]+:[a-f0-9]+:[a-f0-9]+$/);
-  });
+		expect(result).toMatch(/^[a-f0-9]+:[a-f0-9]+:[a-f0-9]+:[a-f0-9]+$/);
+	});
 
   it('produces different output for same input (random IV)', () => {
     const a = encrypt('same');
@@ -26,8 +26,8 @@ describe('encrypt', () => {
   it('encrypts empty string', () => {
     const result = encrypt('');
     expect(typeof result).toBe('string');
-    expect(result).toMatch(/^[a-f0-9]+:[a-f0-9]+:$/);
-  });
+		expect(result).toMatch(/^[a-f0-9]+:[a-f0-9]+:[a-f0-9]+:$/);
+	});
 
   it('encrypts long text', () => {
     const long = 'x'.repeat(10000);
@@ -48,6 +48,33 @@ describe('decrypt', () => {
     const encrypted = encrypt(original);
     const decrypted = decrypt(encrypted);
     expect(decrypted).toBe(original);
+  });
+
+  it('decrypts empty string roundtrip', () => {
+    const encrypted = encrypt('');
+    const decrypted = decrypt(encrypted);
+    expect(decrypted).toBe('');
+  });
+
+  it('decrypts with correct 4-part format (iv:tag:salt:encrypted)', () => {
+    const original = 'format-test';
+    const encrypted = encrypt(original);
+    const parts = encrypted.split(':');
+    expect(parts.length).toBe(4);
+    expect(parts[0].length).toBe(32);
+    expect(parts[1].length).toBe(32);
+    expect(parts[2].length).toBe(32);
+    const decrypted = decrypt(encrypted);
+    expect(decrypted).toBe(original);
+  });
+
+  it('decrypt fails with wrong ENCRYPTION_KEY', () => {
+    const original = 'secret data';
+    const encrypted = encrypt(original);
+    const originalKey = process.env.ENCRYPTION_KEY;
+    process.env.ENCRYPTION_KEY = 'wrong-key-that-will-break-decryption!!';
+    expect(() => decrypt(encrypted)).toThrow();
+    process.env.ENCRYPTION_KEY = originalKey;
   });
 
   it('decrypts special characters', () => {
@@ -73,7 +100,7 @@ describe('decrypt', () => {
 
   it('throws if ENCRYPTION_KEY is missing', () => {
     delete process.env.ENCRYPTION_KEY;
-    expect(() => decrypt('a:b:c')).toThrow('ENCRYPTION_KEY');
+    expect(() => decrypt('a:b:c:d')).toThrow('ENCRYPTION_KEY');
   });
 });
 

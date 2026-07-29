@@ -183,6 +183,113 @@ export const seedSuperAdmin = async (): Promise<void> => {
   logger.info('Superadmin created with tenant_id=NULL (cross-clinic)');
 };
 
+// ─── Seed: Admin (single clinic) ───────────────────────────────────
+
+export const seedAdmin = async (): Promise<void> => {
+  const exists = await pool.query('SELECT 1 FROM users WHERE role = $1 LIMIT 1', ['admin']);
+  if (exists.rows.length > 0) {
+    logger.info('Seed ya ejecutado');
+    return;
+  }
+
+  const password = process.env.ADMIN_PASSWORD || 'REPLACED_PASSWORD';
+  const hash = await bcrypt.hash(password, 12);
+
+  await pool.query(
+    'INSERT INTO users (email, password, name, role, tenant_id) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (tenant_id, email) DO NOTHING RETURNING id',
+    ['admin@clinic.com', hash, 'Admin Principal', 'admin', DEFAULT_TENANT_ID]
+  );
+
+  const TEST_DOCTORS = [
+    { name: 'Dr. Andrés Medina', email: 'medina', rut: '33333333-3', specialty: 'Cardiología', gender: 'M' },
+    { name: 'Dra. Carla Fuentes', email: 'fuentes', rut: '33344444-4', specialty: 'Dermatología', gender: 'F' },
+    { name: 'Dr. Fernando Reyes', email: 'reyes', rut: '33355555-5', specialty: 'Medicina General', gender: 'M' },
+    { name: 'Dra. Patricia Luna', email: 'luna', rut: '33366666-6', specialty: 'Pediatría', gender: 'F' },
+  ];
+
+  const doctorIds: number[] = [];
+  for (const doc of TEST_DOCTORS) {
+    const fullEmail = `${doc.email}@clinic.com`;
+    const userResult = await pool.query(
+      'INSERT INTO users (email, password, name, role, rut, gender, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (tenant_id, email) DO UPDATE SET name = EXCLUDED.name RETURNING id',
+      [fullEmail, hash, doc.name, 'doctor', doc.rut, doc.gender, DEFAULT_TENANT_ID]
+    );
+    const userId: number = userResult.rows[0].id;
+
+    const doctorResult = await pool.query(
+      'INSERT INTO doctors (name, specialty, email, user_id, tenant_id) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (tenant_id, email) DO UPDATE SET name = EXCLUDED.name RETURNING id',
+      [doc.name, doc.specialty, fullEmail, userId, DEFAULT_TENANT_ID]
+    );
+    const doctorId: number = doctorResult.rows[0].id;
+    doctorIds.push(doctorId);
+
+    for (let day = 1; day <= 5; day++) {
+      await pool.query(
+        'INSERT INTO doctor_availability (doctor_id, day_of_week, start_time, end_time, tenant_id) VALUES ($1, $2, $3, $4, $5) ON CONFLICT DO NOTHING',
+        [doctorId, day, '09:00', '13:00', DEFAULT_TENANT_ID]
+      );
+    }
+  }
+
+  const TEST_PATIENTS = [
+    'Pedro Navarro', 'Sofía Rivas', 'Mateo Delgado', 'Valentina Castro', 'Santiago Peña',
+    'Camila Herrera', 'Nicolás Bravo', 'Isidora Muñoz', 'Joaquín Vargas', 'Fernanda Cortés',
+  ];
+  for (const pName of TEST_PATIENTS) {
+    const email = `${pName.toLowerCase().replace(/\s+/g, '.')}@clinic.com`;
+    await pool.query(
+      'INSERT INTO users (email, password, name, role, rut, phone, gender, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT (tenant_id, email) DO NOTHING',
+      [
+        email, hash, pName, 'user',
+        `${randomInt(10000000, 99999999)}-${pick(['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'K'])}`,
+        `+569${randomInt(10000000, 99999999)}`, pick(['M', 'F']), DEFAULT_TENANT_ID,
+      ]
+    );
+  }
+
+  if (process.env.DEFAULT_TENANT_ID === 'default') {
+    const labTechResult = await pool.query(
+      'INSERT INTO users (email, password, name, role, rut, gender, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (tenant_id, email) DO UPDATE SET name = EXCLUDED.name',
+      ['lab@clinic.com', hash, 'Encargado de Laboratorio', 'lab_technician', `${randomInt(10000000, 99999999)}-K`, 'M', DEFAULT_TENANT_ID]
+    );
+    const labTechId = labTechResult.rows[0]?.id;
+
+    const labAreaData = [
+      { name: 'Hematología', code: 'HEM', description: 'Estudio de la sangre', icon: 'blood', color: '#ef4444', sort_order: 1 },
+      { name: 'Bioquímica', code: 'BIO', description: 'Análisis químicos en sangre', icon: 'flask', color: '#f59e0b', sort_order: 2 },
+    ];
+    const labAreaIds: Record<string, number> = {};
+    for (const area of labAreaData) {
+      const areaResult = await pool.query(
+        'INSERT INTO lab_areas (name, code, description, icon, color, sort_order, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT DO NOTHING RETURNING id',
+        [area.name, area.code, area.description, area.icon, area.color, area.sort_order, DEFAULT_TENANT_ID]
+      );
+      if (areaResult.rows.length > 0) labAreaIds[area.code] = areaResult.rows[0].id;
+    }
+
+    const labTestData = [
+      { name: 'Hemograma completo', code: 'HEM001', areaCode: 'HEM', price: 25 },
+      { name: 'Glucosa en ayunas', code: 'GLU001', areaCode: 'BIO', price: 15 },
+    ];
+    for (const test of labTestData) {
+      const areaId = labAreaIds[test.areaCode];
+      await pool.query(
+        'INSERT INTO lab_tests (name, code, price, lab_area_id, tenant_id) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (tenant_id, code) DO NOTHING',
+        [test.name, test.code, test.price, areaId, DEFAULT_TENANT_ID]
+      );
+    }
+
+    if (labTechId) {
+      await pool.query(
+        'INSERT INTO lab_reagents (name, catalog_number, lab_area_id, tenant_id) VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING',
+        ['Reactivo Hemoglobina', 'HEM-R001', labAreaIds['HEM'], DEFAULT_TENANT_ID]
+      );
+    }
+  }
+
+  logger.info('Seed completo: admin, doctores (con disponibilidad), pacientes y laboratorio creados');
+};
+
 // ─── Seed: Test tenants (comprehensive) ─────────────────────────────────────
 
 export const seedTestTenants = async (): Promise<void> => {

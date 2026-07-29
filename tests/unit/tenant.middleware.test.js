@@ -98,4 +98,28 @@ describe('tenant.middleware', () => {
 
     expect(next).toHaveBeenCalledWith(expect.objectContaining({ message: 'Tenant not found or inactive' }));
   });
+
+  it('uses default tenant when no X-Tenant-Id header in non-production', async () => {
+    delete process.env.NODE_ENV;
+    const { tenantMiddleware } = await import('../../src/middlewares/tenant.middleware.js');
+    const req = { headers: {}, path: '/api/bookings' };
+    const res = { setHeader: vi.fn() };
+    const next = vi.fn();
+
+    await tenantMiddleware(req, res, next);
+
+    expect(req.tenant_id).toBe('default');
+    expect(next).toHaveBeenCalled();
+  });
+
+  it('rejects when loadTenantsFromDB fails and tenant not cached', async () => {
+    const { tenantMiddleware } = await import('../../src/middlewares/tenant.middleware.js');
+    const req = { headers: { 'x-tenant-id': 'unknown-tenant' }, path: '/api/bookings' };
+    const res = { setHeader: vi.fn() };
+    const next = vi.fn();
+
+    await tenantMiddleware(req, res, next);
+
+    expect(next).toHaveBeenCalledWith(expect.objectContaining({ message: 'Tenant not found or inactive' }));
+  });
 });

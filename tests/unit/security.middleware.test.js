@@ -8,11 +8,13 @@ vi.mock('../../src/utils/logger.js', () => ({
 
 const originalEnv = process.env;
 const VALID_AUDIT_SECRET = 'a'.repeat(32);
+const VALID_COOKIE_SECRET = 'a'.repeat(32);
 
 beforeEach(() => {
   vi.clearAllMocks();
   vi.resetModules();
   process.env = { ...originalEnv };
+  process.env.COOKIE_SECRET = VALID_COOKIE_SECRET;
   delete process.env.JWT_SECRET;
   delete process.env.AUDIT_HMAC_SECRET;
 });

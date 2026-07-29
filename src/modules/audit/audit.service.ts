@@ -33,8 +33,8 @@ export interface AuditLogQuery {
   action?: string;
   resource_type?: string;
   resource_id?: number;
+  page?: number;
   limit?: number;
-  offset?: number;
   start_date?: string;
   end_date?: string;
   tenant_id?: string;
@@ -67,6 +67,11 @@ export const logAction = async (input: AuditLogInput): Promise<void> => {
 };
 
 export const getAuditLogs = async (query: AuditLogQuery = {}): Promise<unknown[]> => {
+  const page = query.page ?? 1;
+  const limit = query.limit ?? 20;
+  const safePage = Math.max(1, Number.isInteger(page) ? page : 1);
+  const safeLimit = Math.max(1, Math.min(100, Number.isInteger(limit) ? limit : 20));
+  const offset = (safePage - 1) * safeLimit;
   const conditions: string[] = [];
   const params: unknown[] = [];
   let paramCount = 1;
@@ -80,7 +85,7 @@ export const getAuditLogs = async (query: AuditLogQuery = {}): Promise<unknown[]
 
   const whereClause = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : '';
   const sql = `SELECT al.*, u.email AS user_email FROM audit_logs al LEFT JOIN users u ON al.user_id = u.id ${whereClause} ORDER BY al.created_at DESC LIMIT $${paramCount++} OFFSET $${paramCount++}`;
-  params.push(query.limit || 100, query.offset || 0);
+  params.push(safeLimit, offset);
 
   const result = await pool.query(sql, params);
   return result.rows;

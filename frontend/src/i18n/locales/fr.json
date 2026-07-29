@@ -2030,6 +2030,10 @@
     "locked": "La ressource est verrouillée",
     "tooManyRequests": "Trop de requêtes"
   },
+  "error_sanitizer": {
+    "fallback": "Une erreur inattendue s'est produite",
+    "serverError": "Erreur serveur"
+  },
   "emptyStates": {
     "loading": "Chargement...",
     "noData": "Aucune donnée disponible",

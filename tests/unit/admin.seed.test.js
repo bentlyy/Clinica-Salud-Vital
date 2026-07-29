@@ -72,8 +72,8 @@ describe('seedSuperAdmin', () => {
 
     await seedSuperAdmin();
 
-    expect(mockLogger.info).toHaveBeenCalledWith('Superadmin already exists');
-    expect(mockQuery).toHaveBeenCalledTimes(1);
+    expect(mockLogger.info).toHaveBeenCalledWith('Superadmin already exists — ensured cross-clinic tenant_id=NULL');
+    expect(mockQuery).toHaveBeenCalledTimes(2);
   });
 
   it('creates superadmin when none exists', async () => {
@@ -83,7 +83,7 @@ describe('seedSuperAdmin', () => {
 
     await seedSuperAdmin();
 
-    expect(mockLogger.info).toHaveBeenCalledWith('Superadmin created');
+    expect(mockLogger.info).toHaveBeenCalledWith('Superadmin created with tenant_id=NULL (cross-clinic)');
     const insertCall = mockQuery.mock.calls.find(c => c[0].includes('INSERT INTO users'));
     expect(insertCall).toBeDefined();
     expect(insertCall[1]).toContain('superadmin');

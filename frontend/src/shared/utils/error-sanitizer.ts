@@ -1,5 +1,7 @@
-const FALLBACK_ERROR = 'Ocurrió un error inesperado';
-const SERVER_ERROR = 'Error interno del servidor';
+import i18n from '../../i18n/i18n.js';
+
+const FALLBACK_ERROR_KEY = 'error_sanitizer.fallback';
+const SERVER_ERROR_KEY = 'error_sanitizer.serverError';
 
 const SQL_PATTERNS = [
   /SELECT\s+\*/i,
@@ -29,7 +31,7 @@ export function getErrorCode(err: unknown): string | undefined {
 }
 
 export function sanitizeError(err: unknown): string {
-  if (!err) return FALLBACK_ERROR;
+  if (!err) return i18n.t(FALLBACK_ERROR_KEY);
 
   const apiErr = err as { response?: { data?: ApiErrorBody } };
   const apiMessage = apiErr.response?.data?.error;
@@ -37,12 +39,12 @@ export function sanitizeError(err: unknown): string {
     return apiMessage;
   }
   if (apiMessage && typeof apiMessage === 'object') {
-    return FALLBACK_ERROR;
+    return i18n.t(FALLBACK_ERROR_KEY);
   }
 
   const message = String((err as Error).message ?? err);
 
-  if (isSensitiveError(message)) return SERVER_ERROR;
+  if (isSensitiveError(message)) return i18n.t(SERVER_ERROR_KEY);
 
   return message;
 }

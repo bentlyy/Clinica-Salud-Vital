@@ -341,6 +341,60 @@ describe('bookingService.getAllBookings', () => {
       [10, 0, 'tenant-1']
     );
   });
+
+  it('enforces Math.min(limit, 100) when limit exceeds 100', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] });
+    mockQuery.mockResolvedValueOnce({ rows: [{ count: '0' }] });
+
+    const result = await bookingService.getAllBookings({ page: 1, limit: 200 });
+
+    expect(result.limit).toBe(100);
+    expect(result.total).toBe(0);
+  });
+
+  it('enforces Math.max(1, page) when page is 0 or negative', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] });
+    mockQuery.mockResolvedValueOnce({ rows: [{ count: '0' }] });
+
+    const result = await bookingService.getAllBookings({ page: -1, limit: 10 });
+
+    expect(result.page).toBe(1);
+  });
+
+  it('uses default limit of 100 when limit is non-integer', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] });
+    mockQuery.mockResolvedValueOnce({ rows: [{ count: '0' }] });
+
+    /** @type {any} */
+    const badPage = 'invalid';
+    const result = await bookingService.getAllBookings({ page: 1, limit: badPage });
+
+    expect(result.limit).toBe(100);
+  });
+
+  it('uses default page of 1 when page is non-integer', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] });
+    mockQuery.mockResolvedValueOnce({ rows: [{ count: '0' }] });
+
+    /** @type {any} */
+    const badLimit = 'invalid';
+    const result = await bookingService.getAllBookings({ page: badLimit, limit: 10 });
+
+    expect(result.page).toBe(1);
+  });
+
+  it('enforces Math.min(limit, 100) with tenant_id', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] });
+    mockQuery.mockResolvedValueOnce({ rows: [{ count: '5' }] });
+
+    const result = await bookingService.getAllBookings({ page: 1, limit: 999 }, 'tenant-1');
+
+    expect(result.limit).toBe(100);
+    expect(mockQuery).toHaveBeenCalledWith(
+      expect.stringContaining('tenant_id'),
+      [100, 0, 'tenant-1']
+    );
+  });
 });
 
 describe('bookingService.createBooking advanced', () => {

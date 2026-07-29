@@ -2043,6 +2043,10 @@
     "locked": "El recurso esta bloqueado",
     "tooManyRequests": "Demasiadas peticiones"
   },
+  "error_sanitizer": {
+    "fallback": "Ocurrio un error inesperado",
+    "serverError": "Error interno del servidor"
+  },
   "emptyStates": {
     "loading": "Cargando...",
     "noData": "No hay datos disponibles",

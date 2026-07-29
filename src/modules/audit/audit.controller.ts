@@ -8,8 +8,8 @@ export const getAuditLogs = asyncHandler(async (req, res) => {
   const resource_type = getQuery(req.query, 'resource_type');
   const start_date = getQuery(req.query, 'start_date');
   const end_date = getQuery(req.query, 'end_date');
-  const limit = getQueryInt(req.query, 'limit', 100);
-  const offset = getQueryInt(req.query, 'offset', 0);
+  const limit = getQueryInt(req.query, 'limit', 20);
+  const page = getQueryInt(req.query, 'page', 1);
 
   const logs = await auditService.getAuditLogs({
     tenant_id: req.tenant_id,
@@ -19,7 +19,7 @@ export const getAuditLogs = asyncHandler(async (req, res) => {
     start_date,
     end_date,
     limit,
-    offset,
+    page,
   });
 
   res.json(logs);

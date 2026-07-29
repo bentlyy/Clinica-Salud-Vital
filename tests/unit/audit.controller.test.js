@@ -18,7 +18,7 @@ describe('getAuditLogs', () => {
   it('returns audit logs with query params', async () => {
     vi.mocked(auditService.getAuditLogs).mockResolvedValue([{ id: 1 }]);
     const req = {
-      query: { user_id: '1', action: 'CREATE', resource_type: 'booking', start_date: '2026-01-01', end_date: '2026-06-01', limit: '50', offset: '0' },
+      query: { user_id: '1', action: 'CREATE', resource_type: 'booking', start_date: '2026-01-01', end_date: '2026-06-01', limit: '50', page: '1' },
       tenant_id: 't1',
     };
     const res = mkRes();
@@ -34,7 +34,7 @@ describe('getAuditLogs', () => {
       start_date: '2026-01-01',
       end_date: '2026-06-01',
       limit: 50,
-      offset: 0,
+      page: 1,
     });
     expect(res.json).toHaveBeenCalledWith([{ id: 1 }]);
   });
@@ -54,8 +54,8 @@ describe('getAuditLogs', () => {
       resource_type: undefined,
       start_date: undefined,
       end_date: undefined,
-      limit: 100,
-      offset: 0,
+      limit: 20,
+      page: 1,
     });
     expect(res.json).toHaveBeenCalledWith([]);
   });
