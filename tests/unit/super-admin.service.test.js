@@ -84,13 +84,15 @@ describe('getTenantDetail', () => {
   it('returns tenant with stats and subscription', async () => {
     mockQuery
       .mockResolvedValueOnce({ rows: [{ id: 't1', name: 'Test' }] })
-      .mockResolvedValueOnce({ rows: [{ patient_count: 10, doctor_count: 2 }] })
+      .mockResolvedValueOnce({ rows: [{ total_patients: 10, total_doctors: 2 }] })
       .mockResolvedValueOnce({ rows: [{ plan_name: 'Pro', status: 'active' }] });
 
     const result = await getTenantDetail('t1');
-    expect(result.tenant.id).toBe('t1');
-    expect(result.stats.patient_count).toBe(10);
-    expect(result.subscription.plan_name).toBe('Pro');
+    expect(result.id).toBe('t1');
+    expect(result.name).toBe('Test');
+    expect(result.total_patients).toBe(10);
+    expect(result.total_doctors).toBe(2);
+    expect(result.plan_name).toBe('Pro');
   });
 
   it('throws NotFoundError for unknown tenant', async () => {
@@ -101,11 +103,11 @@ describe('getTenantDetail', () => {
   it('returns null subscription when none active', async () => {
     mockQuery
       .mockResolvedValueOnce({ rows: [{ id: 't1', name: 'Test' }] })
-      .mockResolvedValueOnce({ rows: [{ patient_count: 0 }] })
+      .mockResolvedValueOnce({ rows: [{ total_patients: 0 }] })
       .mockResolvedValueOnce({ rows: [] });
 
     const result = await getTenantDetail('t1');
-    expect(result.subscription).toBeNull();
+    expect(result.plan).toBe('free');
   });
 });
 

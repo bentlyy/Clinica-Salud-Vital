@@ -10,6 +10,8 @@
     "lint": "eslint .",
     "type-check": "tsc --noEmit",
     "test": "vitest run",
+    "test:unit": "vitest run --testPathPattern=unit",
+    "test:integration": "vitest run --testPathPattern=integration",
     "test:watch": "vitest"
   },
   "dependencies": {

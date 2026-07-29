@@ -3,31 +3,34 @@ import { BadRequestError } from '../utils/errors.js';
 
 const ALGORITHM = 'aes-256-gcm';
 const IV_LENGTH = 16;
+const SALT_LENGTH = 16;
 
 
-function getEncryptionKey(): Buffer {
+function getEncryptionKey(salt: Buffer): Buffer {
   const secret = process.env.ENCRYPTION_KEY;
   if (!secret) throw new Error('ENCRYPTION_KEY environment variable must be set separately from JWT_SECRET');
-  return crypto.pbkdf2Sync(secret, 'encryption-key-salt', 100000, 32, 'sha256');
+  return crypto.pbkdf2Sync(secret, salt, 100000, 32, 'sha256');
 }
 
 export function encrypt(text: string): string {
-  const key = getEncryptionKey();
+  const salt = crypto.randomBytes(SALT_LENGTH);
+  const key = getEncryptionKey(salt);
   const iv = crypto.randomBytes(IV_LENGTH);
   const cipher = crypto.createCipheriv(ALGORITHM, key, iv);
   let encrypted = cipher.update(text, 'utf8', 'hex');
   encrypted += cipher.final('hex');
   const tag = cipher.getAuthTag().toString('hex');
-  return `${iv.toString('hex')}:${tag}:${encrypted}`;
+  return `${iv.toString('hex')}:${tag}:${salt.toString('hex')}:${encrypted}`;
 }
 
 export function decrypt(encoded: string): string {
-  const key = getEncryptionKey();
   const parts = encoded.split(':');
-  if (parts.length !== 3) throw new BadRequestError('Invalid encrypted format');
-  const [ivHex, tagHex, encrypted] = parts;
+  if (parts.length !== 4) throw new BadRequestError('Invalid encrypted format');
+  const [ivHex, tagHex, saltHex, encrypted] = parts;
   const iv = Buffer.from(ivHex, 'hex');
   const tag = Buffer.from(tagHex, 'hex');
+  const salt = Buffer.from(saltHex, 'hex');
+  const key = getEncryptionKey(salt);
   const decipher = crypto.createDecipheriv(ALGORITHM, key, iv);
   decipher.setAuthTag(tag);
   let decrypted = decipher.update(encrypted, 'hex', 'utf8');

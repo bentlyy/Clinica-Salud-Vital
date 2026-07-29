@@ -70,9 +70,10 @@ describe('GET /api/bookings/available-slots', () => {
       .mockResolvedValueOnce({ rows: [] })
       .mockResolvedValueOnce({ rows: [] });
 
-    const res = await request(app)
-      .get('/api/bookings/available-slots')
-      .query({ doctor_id: '1', date: '2025-01-15' });
+     const res = await request(app)
+       .get('/api/bookings/available-slots')
+       .set('Authorization', `Bearer ${userToken}`)
+       .query({ doctor_id: '1', date: '2025-01-15' });
 
 
 
@@ -82,9 +83,10 @@ describe('GET /api/bookings/available-slots', () => {
   });
 
   it('returns 400 if missing params', async () => {
-    const res = await request(app)
-      .get('/api/bookings/available-slots')
-      .query({});
+     const res = await request(app)
+       .get('/api/bookings/available-slots')
+       .set('Authorization', `Bearer ${userToken}`)
+       .query({});
 
     expect(res.status).toBe(400);
     expect(res.body.error).toContain('Validation failed');
@@ -175,17 +177,18 @@ describe('GET /api/bookings/doctor', () => {
     expect(res.status).toBe(403);
   });
 
-  it('returns 404 if doctor profile not found', async () => {
-    mockQuery
-      .mockResolvedValueOnce({ rows: [] });
+   it('returns 404 if doctor profile not found', async () => {
+     mockQuery
+       .mockResolvedValueOnce({ rows: [{ token_version: 0 }] })
+       .mockResolvedValueOnce({ rows: [] });
 
-    const res = await request(app)
-      .get('/api/bookings/doctor')
-      .set('Authorization', `Bearer ${doctorToken}`);
+     const res = await request(app)
+       .get('/api/bookings/doctor')
+       .set('Authorization', `Bearer ${doctorToken}`);
 
-    expect(res.status).toBe(404);
-    expect(res.body.error).toBeDefined();
-  });
+     expect(res.status).toBe(404);
+     expect(res.body.error).toBeDefined();
+   });
 
   it('returns bookings for doctor', async () => {
     mockQuery

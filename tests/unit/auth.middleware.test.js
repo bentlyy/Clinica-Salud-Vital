@@ -56,6 +56,55 @@ describe('authMiddleware', () => {
     expect(next).toHaveBeenCalledWith(expect.any(UnauthorizedError));
   });
 
+  it('calls next with 401 if token has invalid format', async () => {
+    mockVerify.mockReturnValue(null);
+    const req = mockReq('Bearer malformed.token.with.dots');
+    const res = mockRes();
+    const next = vi.fn();
+
+    await authMiddleware(req, res, next);
+    expect(next).toHaveBeenCalledWith(expect.any(UnauthorizedError));
+  });
+
+  it('calls next with 401 for completely malformed token', async () => {
+    mockVerify.mockReturnValue(null);
+    const req = mockReq('invalid-token-format-no-bearer');
+    const res = mockRes();
+    const next = vi.fn();
+
+    await authMiddleware(req, res, next);
+    expect(next).toHaveBeenCalledWith(expect.any(UnauthorizedError));
+  });
+
+  it('allows superadmin access when tenant_id is NULL', async () => {
+    const decoded = { id: 1, email: 'superadmin@test.com', role: 'superadmin', tenant_id: null };
+    mockVerify.mockReturnValue(decoded);
+    const req = mockReq('Bearer superadmin-token');
+    req.tenant_id = null;
+    const res = mockRes();
+    const next = vi.fn();
+
+    await authMiddleware(req, res, next);
+
+    expect(req.user).toBeDefined();
+    expect(req.user.role).toBe('superadmin');
+    expect(next).toHaveBeenCalled();
+  });
+
+  it('allows superadmin access to tenant resources (tenant_id mismatch)', async () => {
+    const decoded = { id: 1, email: 'superadmin@test.com', role: 'superadmin', tenant_id: 'other-tenant' };
+    mockVerify.mockReturnValue(decoded);
+    const req = mockReq('Bearer superadmin-token');
+    req.tenant_id = 'different-tenant';
+    const res = mockRes();
+    const next = vi.fn();
+
+    await authMiddleware(req, res, next);
+
+    expect(req.user).toBeDefined();
+    expect(next).toHaveBeenCalled();
+  });
+
   it('calls next with 401 if token expired', async () => {
     mockVerify.mockReturnValue(null);
     const req = mockReq('Bearer expired-token');

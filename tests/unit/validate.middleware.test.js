@@ -85,4 +85,44 @@ describe('validateZod', () => {
 
     expect(next).toHaveBeenCalledWith(expect.any(Error));
   });
+
+  it('returns field-specific error messages for multiple Zod issues', () => {
+    const req = mockReq({ email: 'not-an-email', age: -5 });
+    const res = mockRes();
+    const next = vi.fn();
+
+    validateZod(testSchema, 'body')(req, res, next);
+
+    expect(next).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: expect.stringContaining('email'),
+        statusCode: 400,
+      })
+    );
+  });
+
+  it('returns 400 for missing required field', () => {
+    const req = mockReq({});
+    const res = mockRes();
+    const next = vi.fn();
+
+    validateZod(testSchema, 'body')(req, res, next);
+
+    expect(next).toHaveBeenCalledWith(
+      expect.objectContaining({ statusCode: 400 })
+    );
+  });
+
+  it('passes non-object schema errors to next', () => {
+    const badSchema = {
+      parse: () => { throw new Error('Unexpected'); },
+    };
+    const req = mockReq({});
+    const res = mockRes();
+    const next = vi.fn();
+
+    validateZod(badSchema, 'body')(req, res, next);
+
+    expect(next).toHaveBeenCalledWith(expect.any(Error));
+  });
 });

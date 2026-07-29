@@ -52,6 +52,13 @@ wiki/.obsidian/
 prompts-secuenciales.md
 prompts-secuenciales-v2.md
 
+# Audit working documents (do not commit)
+wiki/system-summary.md
+wiki/audit-2026-07-29.md
+wiki/corrections-report.md
+wiki/testing-report.md
+wiki/5-retrospectiva-final.md
+
 # Testing
 coverage/
 .nyc_output/

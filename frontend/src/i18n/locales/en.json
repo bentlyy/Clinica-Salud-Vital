@@ -2064,6 +2064,10 @@
     "locked": "Resource is locked",
     "tooManyRequests": "Too many requests"
   },
+  "error_sanitizer": {
+    "fallback": "An unexpected error occurred",
+    "serverError": "Server error"
+  },
   "emptyStates": {
     "loading": "Loading...",
     "noData": "No data available",

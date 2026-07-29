@@ -56,19 +56,28 @@ export const securityMiddleware = [
 ];
 
 export const validateEnvSecurity = (): void => {
-  // JWT_SECRET validation
-  const jwtSecret = process.env.JWT_SECRET;
-  const defaultSecret = 'CHANGE_ME_USE_LONG_RANDOM_SECRET_IN_PRODUCTION';
+   // JWT_SECRET validation
+   const jwtSecret = process.env.JWT_SECRET;
+   const defaultSecret = 'CHANGE_ME_USE_LONG_RANDOM_SECRET_IN_PRODUCTION';
 
-  if (!jwtSecret) {
-    throw new UnauthorizedError('JWT_SECRET no está definido en las variables de entorno');
-  }
+   if (!jwtSecret) {
+     throw new UnauthorizedError('JWT_SECRET no está definido en las variables de entorno');
+   }
 
-  if (jwtSecret === defaultSecret) {
-    throw new UnauthorizedError('JWT_SECRET tiene el valor por defecto. Cámbielo antes de iniciar.');
-  }
-  if (jwtSecret.length < 32) {
-    throw new UnauthorizedError('JWT_SECRET debe tener al menos 32 caracteres.');
+   if (jwtSecret === defaultSecret) {
+     throw new UnauthorizedError('JWT_SECRET tiene el valor por defecto. Cámbielo antes de iniciar.');
+   }
+   if (jwtSecret.length < 32) {
+     throw new UnauthorizedError('JWT_SECRET debe tener al menos 32 caracteres.');
+   }
+
+   // COOKIE_SECRET validation (MANDATORY — cookie signing must use its own secret)
+   const cookieSecret = process.env.COOKIE_SECRET;
+   if (!cookieSecret) {
+     throw new UnauthorizedError('COOKIE_SECRET no está definida en las variables de entorno');
+   }
+   if (cookieSecret.length < 32) {
+     throw new UnauthorizedError('COOKIE_SECRET debe tener al menos 32 caracteres.');
   }
 
   // AUDIT_HMAC_SECRET validation (MANDATORY — audit chain integrity)

@@ -19,7 +19,7 @@ export const listTenants = async (
   page: number = 1,
   limit: number = 20,
   filters?: { active?: boolean; search?: string }
-): Promise<{ data: Record<string, unknown>[]; total: number; page: number; limit: number; totalPages: number }> => {
+): Promise<{ data: Record<string, unknown>[]; pagination: { total: number; page: number; limit: number; totalPages: number } }> => {
   const conditions: string[] = ['1=1'];
   const params: (string | number | boolean)[] = [];
   let paramIdx = 1;
@@ -79,10 +79,7 @@ export const listTenants = async (
       total_doctors: r.total_doctors,
       created_at: r.created_at,
     })),
-    total,
-    page,
-    limit,
-    totalPages,
+    pagination: { total, page, limit, totalPages },
   };
 };
 
