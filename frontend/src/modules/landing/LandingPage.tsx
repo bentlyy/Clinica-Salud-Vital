@@ -577,7 +577,7 @@ function LoginModal({ onClose }: { onClose: () => void }) {
             )}
 
             {step === 'login' && hasCaptcha && (
-              <div className="lm-field" style={{ display: 'flex', justifyContent: 'center' }}>
+              <div className="lm-field lm-field-recaptcha">
                 <ReCAPTCHA ref={recaptchaRef} sitekey={RECAPTCHA_SITE_KEY!} />
               </div>
             )}
