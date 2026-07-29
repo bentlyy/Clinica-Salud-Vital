@@ -851,6 +851,7 @@
   position: relative;
   width: 100%;
   max-width: 820px;
+  max-height: 90vh;
   display: flex;
   border-radius: 20px;
   overflow: hidden;
@@ -938,6 +939,7 @@
   flex-direction: column;
   justify-content: center;
   position: relative;
+  overflow-y: auto;
 }
 
 .lm-close {
@@ -1433,6 +1435,7 @@
   .lm-card {
     flex-direction: column;
     max-width: 440px;
+    max-height: 90vh;
   }
   .lm-visual {
     flex: none;
@@ -1440,5 +1443,6 @@
   }
   .lm-form-panel {
     padding: 28px 24px;
+    overflow-y: auto;
   }
 }
