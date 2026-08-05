@@ -2,9 +2,10 @@ import React from 'react';
 import Dashboard from '@mui/icons-material/Dashboard';
 import CalendarMonth from '@mui/icons-material/CalendarMonth';
 import Science from '@mui/icons-material/Science';
-
+import Receipt from '@mui/icons-material/Receipt';
 import Settings from '@mui/icons-material/Settings';
 import People from '@mui/icons-material/People';
+import LocalHospital from '@mui/icons-material/LocalHospital';
 import Assessment from '@mui/icons-material/Assessment';
 import History from '@mui/icons-material/History';
 import Description from '@mui/icons-material/Description';
@@ -46,20 +47,21 @@ const NAV_ITEMS_DEF: NavItemDef[] = [
   { labelKey: 'dashboard', icon: <Dashboard />, path: '/dashboard', roles: ['admin', 'doctor', 'lab_technician', 'patient'] },
   { labelKey: 'panelSaas', icon: <TrendingUp />, path: '/saas', roles: ['superadmin'] },
   { labelKey: 'clinics', icon: <AccountBalance />, path: '/tenants', roles: ['superadmin'] },
-  { labelKey: 'users', icon: <People />, path: '/users', roles: ['superadmin'] },
-  { labelKey: 'patients', icon: <PersonSearch />, path: '/patients', roles: ['doctor'] },
-  { labelKey: 'specialties', icon: <MedicalServices />, path: '/specialties', roles: ['superadmin'] },
-  { labelKey: 'bookings', icon: <CalendarMonth />, path: '/bookings', roles: ['doctor', 'patient'] },
+  { labelKey: 'users', icon: <People />, path: '/users', roles: ['superadmin', 'admin'] },
+  { labelKey: 'doctors', icon: <LocalHospital />, path: '/doctors', roles: ['admin'] },
+  { labelKey: 'patients', icon: <PersonSearch />, path: '/patients', roles: ['admin', 'doctor'] },
+  { labelKey: 'specialties', icon: <MedicalServices />, path: '/specialties', roles: ['superadmin', 'admin'] },
+  { labelKey: 'bookings', icon: <CalendarMonth />, path: '/bookings', roles: ['admin', 'doctor', 'patient'] },
   { labelKey: 'availability', icon: <CalendarMonth />, path: '/availability', roles: ['doctor'] },
   { labelKey: 'doctorPanel', icon: <Dashboard />, path: '/panel', roles: ['doctor'] },
-  { labelKey: 'clinicalRecords', icon: <Description />, path: '/clinical-records', roles: ['doctor', 'patient'] },
-  { labelKey: 'prescriptions', icon: <Assignment />, path: '/prescriptions', roles: ['doctor', 'patient'] },
-  { labelKey: 'medicalHistory', icon: <History />, path: '/medical-history', roles: ['doctor', 'patient'] },
+  { labelKey: 'clinicalRecords', icon: <Description />, path: '/clinical-records', roles: ['admin', 'doctor', 'patient'] },
+  { labelKey: 'prescriptions', icon: <Assignment />, path: '/prescriptions', roles: ['admin', 'doctor', 'patient'] },
+  { labelKey: 'medicalHistory', icon: <History />, path: '/medical-history', roles: ['admin', 'doctor', 'patient'] },
   {
     labelKey: 'laboratory',
     icon: <Science />,
     path: '/laboratory',
-    roles: ['doctor', 'lab_technician'],
+    roles: ['admin', 'doctor', 'lab_technician'],
     featureKey: 'laboratory',
     children: [
       { labelKey: 'labPanel', path: '/laboratory', icon: <Dashboard /> },
@@ -71,13 +73,14 @@ const NAV_ITEMS_DEF: NavItemDef[] = [
   },
   { labelKey: 'doctorLabResults', icon: <Science />, path: '/doctor/lab-results', roles: ['doctor'] },
   { labelKey: 'doctorPatientHistory', icon: <History />, path: '/patient-history', roles: ['doctor'] },
-  { labelKey: 'analytics', icon: <Assessment />, path: '/analytics', roles: ['doctor'] },
-  { labelKey: 'reports', icon: <Badge />, path: '/reports', roles: ['doctor', 'lab_technician'] },
-  { labelKey: 'audit', icon: <Inventory />, path: '/audit', roles: ['superadmin'] },
+  { labelKey: 'billing', icon: <Receipt />, path: '/billing', roles: ['admin'] },
+  { labelKey: 'analytics', icon: <Assessment />, path: '/analytics', roles: ['admin', 'doctor'] },
+  { labelKey: 'reports', icon: <Badge />, path: '/reports', roles: ['admin', 'doctor', 'lab_technician'] },
+  { labelKey: 'audit', icon: <Inventory />, path: '/audit', roles: ['superadmin', 'admin'] },
   { labelKey: 'labResults', icon: <Science />, path: '/my-laboratory', roles: ['patient'] },
-  { labelKey: 'notifications', icon: <Notifications />, path: '/notifications', roles: ['superadmin', 'doctor', 'lab_technician', 'patient'] },
+  { labelKey: 'notifications', icon: <Notifications />, path: '/notifications', roles: ['superadmin', 'admin', 'doctor', 'lab_technician', 'patient'] },
   { labelKey: 'cobros', icon: <Payments />, path: '/cobros', roles: ['superadmin'] },
-  { labelKey: 'settings', icon: <Settings />, path: '/settings', roles: ['superadmin', 'doctor', 'lab_technician', 'patient'] },
+  { labelKey: 'settings', icon: <Settings />, path: '/settings', roles: ['superadmin', 'admin', 'doctor', 'lab_technician', 'patient'] },
 ];
 
 export function getNavItems(role: UserRole, t: TranslationFn): NavItem[] {
