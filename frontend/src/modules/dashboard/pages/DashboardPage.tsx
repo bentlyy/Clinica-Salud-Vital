@@ -1,4 +1,6 @@
-import { Box, Typography, Paper, Avatar, Chip, List, ListItem, ListItemAvatar, ListItemText, Divider } from '@mui/material';
+import { lazy, Suspense, useState } from 'react';
+import type { ReactElement, ReactNode } from 'react';
+import { Box, Typography, Paper, Avatar, Chip, List, ListItem, ListItemAvatar, ListItemText, Divider, Tabs, Tab } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import CalendarMonth from '@mui/icons-material/CalendarMonth';
 import People from '@mui/icons-material/People';
@@ -6,14 +8,51 @@ import Science from '@mui/icons-material/Science';
 import TrendingUp from '@mui/icons-material/TrendingUp';
 import EventBusy from '@mui/icons-material/EventBusy';
 import Assignment from '@mui/icons-material/Assignment';
+import DashboardIcon from '@mui/icons-material/Dashboard';
+import LocalHospital from '@mui/icons-material/LocalHospital';
+import PersonSearch from '@mui/icons-material/PersonSearch';
+import MedicalServices from '@mui/icons-material/MedicalServices';
+import Description from '@mui/icons-material/Description';
+import History from '@mui/icons-material/History';
+import Receipt from '@mui/icons-material/Receipt';
+import Assessment from '@mui/icons-material/Assessment';
+import Badge from '@mui/icons-material/Badge';
+import Inventory from '@mui/icons-material/Inventory';
+import Notifications from '@mui/icons-material/Notifications';
+import Settings from '@mui/icons-material/Settings';
+import Verified from '@mui/icons-material/Verified';
+import Analytics from '@mui/icons-material/Analytics';
 import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { useTheme } from '@mui/material/styles';
 import { useAuth } from '@/shared/providers/AuthProvider';
+import { useFeature } from '@/shared/hooks/useFeature';
 import { getRoleLabel } from '@/shared/utils/role.utils';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { LoadingState } from '@/shared/components/ui/LoadingState';
+import { PremiumLocked } from '@/shared/components/PremiumLocked';
 import { formatDate } from '@/shared/utils/localeUtils';
 import { useDashboardStats, useUpcomingBookings, useMyDoctorStats, useDoctorUpcomingBookings } from '../hooks/useAnalytics';
+
+const UsersPage = lazy(() => import('@/modules/users/pages/UsersPage'));
+const DoctorsPage = lazy(() => import('@/modules/doctors/pages/DoctorsPage'));
+const PatientsPage = lazy(() => import('@/modules/patients/pages/PatientsPage'));
+const SpecialtiesPage = lazy(() => import('@/modules/specialties/pages/SpecialtiesPage'));
+const BookingsPage = lazy(() => import('@/modules/bookings/pages/BookingsPage'));
+const ClinicalRecordsPage = lazy(() => import('@/modules/clinical-records/pages/ClinicalRecordsPage'));
+const PrescriptionsPage = lazy(() => import('@/modules/prescriptions/pages/PrescriptionsPage'));
+const MedicalHistoryPage = lazy(() => import('@/modules/medical-history/pages/MedicalHistoryPage'));
+const LabDashboardPage = lazy(() => import('@/modules/laboratory/pages/LabDashboardPage'));
+const LabRequestsPage = lazy(() => import('@/modules/laboratory/pages/LabRequestsPage'));
+const LabTestsCatalogPage = lazy(() => import('@/modules/laboratory/pages/LabTestsCatalogPage'));
+const LabQualityControlPage = lazy(() => import('@/modules/laboratory/pages/LabQualityControlPage'));
+const LabAnalyticsPage = lazy(() => import('@/modules/laboratory/pages/LabAnalyticsPage'));
+const BillingPage = lazy(() => import('@/modules/billing/pages/BillingPage'));
+const AdminAnalyticsPage = lazy(() => import('@/modules/analytics/pages/AdminAnalyticsPage'));
+const ReportsPage = lazy(() => import('@/modules/reports/pages/ReportsPage'));
+const AuditPage = lazy(() => import('@/modules/audit/pages/AuditPage'));
+const NotificationsPage = lazy(() => import('@/modules/notifications/pages/NotificationsPage'));
+const SettingsPage = lazy(() => import('@/modules/settings/pages/SettingsPage'));
 
 function getStatusMap(isDark: boolean) {
   return {
@@ -130,15 +169,37 @@ function DoctorDashboard() {
   );
 }
 
-function AdminDashboard() {
-  const { t } = useTranslation('dashboard');
-  const { user } = useAuth();
-  const theme = useTheme();
-  const isDark = theme.palette.mode === 'dark';
-  const statusMap = getStatusMap(isDark);
-  const { data: stats } = useDashboardStats();
-  const { data: upcoming } = useUpcomingBookings();
+interface SectionTab {
+  key: string;
+  label: string;
+  icon: ReactElement;
+  content: ReactNode;
+}
 
+interface SectionGroup {
+  key: string;
+  label: string;
+  icon: ReactElement;
+  sections: SectionTab[];
+}
+
+type DashboardStats = ReturnType<typeof useDashboardStats>['data'];
+type UpcomingBooking = NonNullable<ReturnType<typeof useUpcomingBookings>['data']>[number];
+
+function AdminOverview({
+  t,
+  isDark,
+  statusMap,
+  stats,
+  upcoming,
+}: {
+  t: TFunction<'dashboard', undefined>;
+  isDark: boolean;
+  statusMap: ReturnType<typeof getStatusMap>;
+  stats: DashboardStats;
+  upcoming: UpcomingBooking[] | undefined;
+}) {
+  const theme = useTheme();
   const statCards = [
     { label: t('todaysAppointments'), value: stats?.today_bookings ?? 0, icon: <CalendarMonth />, color: isDark ? '#2dd4bf' : '#0d9488', bgColor: isDark ? '#042f2e' : '#f0fdfa' },
     { label: t('totalPatients'), value: stats?.total_patients ?? 0, icon: <People />, color: isDark ? '#60a5fa' : '#2563eb', bgColor: isDark ? '#1e3a5f' : '#eff6ff' },
@@ -147,12 +208,7 @@ function AdminDashboard() {
   ];
 
   return (
-    <Box>
-      <PageHeader
-        title={t('welcome_user', { name: user?.name || t('default_user') })}
-        subtitle={t('role_subtitle', { role: user ? getRoleLabel(user.role) : '', tenant: user?.tenant_name || '' })}
-      />
-
+    <>
       <Grid container spacing={3}>
         {statCards.map((stat) => (
           <Grid xs={12} sm={6} md={3} key={stat.label}>
@@ -230,6 +286,135 @@ function AdminDashboard() {
           </Box>
         )}
       </Paper>
+    </>
+  );
+}
+
+function AdminDashboard() {
+  const { t } = useTranslation('dashboard');
+  const { t: tn } = useTranslation('nav');
+  const { user } = useAuth();
+  const { hasFeature, loading: featureLoading } = useFeature();
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
+  const statusMap = getStatusMap(isDark);
+  const { data: stats } = useDashboardStats();
+  const { data: upcoming } = useUpcomingBookings();
+  const [groupIndex, setGroupIndex] = useState(0);
+  const [sectionIndex, setSectionIndex] = useState(0);
+
+  const groups: SectionGroup[] = [
+    {
+      key: 'dashboard',
+      label: tn('dashboard'),
+      icon: <DashboardIcon />,
+      sections: [
+        {
+          key: 'dashboard',
+          label: tn('dashboard'),
+          icon: <DashboardIcon />,
+          content: <AdminOverview t={t} isDark={isDark} statusMap={statusMap} stats={stats} upcoming={upcoming} />,
+        },
+        { key: 'users', label: tn('users'), icon: <People />, content: <UsersPage /> },
+        { key: 'doctors', label: tn('doctors'), icon: <LocalHospital />, content: <DoctorsPage /> },
+        { key: 'patients', label: tn('patients'), icon: <PersonSearch />, content: <PatientsPage /> },
+        { key: 'specialties', label: tn('specialties'), icon: <MedicalServices />, content: <SpecialtiesPage /> },
+      ],
+    },
+    {
+      key: 'clinical',
+      label: tn('groupClinical'),
+      icon: <MedicalServices />,
+      sections: [
+        { key: 'clinicalRecords', label: tn('clinicalRecords'), icon: <Description />, content: <ClinicalRecordsPage /> },
+        { key: 'prescriptions', label: tn('prescriptions'), icon: <Assignment />, content: <PrescriptionsPage /> },
+        { key: 'medicalHistory', label: tn('medicalHistory'), icon: <History />, content: <MedicalHistoryPage /> },
+      ],
+    },
+    {
+      key: 'management',
+      label: tn('groupManagement'),
+      icon: <Assignment />,
+      sections: [
+        { key: 'bookings', label: tn('bookings'), icon: <CalendarMonth />, content: <BookingsPage /> },
+        { key: 'billing', label: tn('billing'), icon: <Receipt />, content: <BillingPage /> },
+        { key: 'analytics', label: tn('analytics'), icon: <Assessment />, content: <AdminAnalyticsPage /> },
+        { key: 'reports', label: tn('reports'), icon: <Badge />, content: <ReportsPage /> },
+      ],
+    },
+    {
+      key: 'laboratory',
+      label: tn('laboratory'),
+      icon: <Science />,
+      sections: [
+        { key: 'labPanel', label: tn('labPanel'), icon: <DashboardIcon />, content: <LabDashboardPage /> },
+        { key: 'labRequests', label: tn('labRequests'), icon: <Assignment />, content: <LabRequestsPage /> },
+        { key: 'labCatalog', label: tn('labCatalog'), icon: <Inventory />, content: <LabTestsCatalogPage /> },
+        { key: 'labQualityControl', label: tn('labQualityControl'), icon: <Verified />, content: <LabQualityControlPage /> },
+        { key: 'labAnalytics', label: tn('labAnalytics'), icon: <Analytics />, content: <LabAnalyticsPage /> },
+      ],
+    },
+    {
+      key: 'system',
+      label: tn('groupSystem'),
+      icon: <Settings />,
+      sections: [
+        { key: 'audit', label: tn('audit'), icon: <Inventory />, content: <AuditPage /> },
+        { key: 'notifications', label: tn('notifications'), icon: <Notifications />, content: <NotificationsPage /> },
+        { key: 'settings', label: tn('settings'), icon: <Settings />, content: <SettingsPage /> },
+      ],
+    },
+  ];
+
+  const activeGroup = groups[groupIndex]!;
+  const activeSection = activeGroup.sections[Math.min(sectionIndex, activeGroup.sections.length - 1)]!;
+  const laboratoryLocked = !featureLoading && activeGroup.key === 'laboratory' && !hasFeature('laboratory');
+
+  return (
+    <Box>
+      <PageHeader
+        title={t('welcome_user', { name: user?.name || t('default_user') })}
+        subtitle={t('role_subtitle', { role: user ? getRoleLabel(user.role) : '', tenant: user?.tenant_name || '' })}
+      />
+
+      <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
+        <Tabs
+          value={groupIndex}
+          onChange={(_, v) => {
+            setGroupIndex(v);
+            setSectionIndex(0);
+          }}
+          variant="scrollable"
+          scrollButtons="auto"
+          aria-label="admin section groups"
+        >
+          {groups.map((g) => (
+            <Tab key={g.key} label={g.label} icon={g.icon} iconPosition="start" />
+          ))}
+        </Tabs>
+      </Box>
+
+      {activeGroup.sections.length > 1 && (
+        <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
+          <Tabs
+            value={sectionIndex}
+            onChange={(_, v) => setSectionIndex(v)}
+            variant="scrollable"
+            scrollButtons="auto"
+            aria-label="admin sections"
+          >
+            {activeGroup.sections.map((s) => (
+              <Tab key={s.key} label={s.label} icon={s.icon} iconPosition="start" />
+            ))}
+          </Tabs>
+        </Box>
+      )}
+
+      {laboratoryLocked ? (
+        <PremiumLocked featureName="Laboratorio" />
+      ) : (
+        <Suspense fallback={<LoadingState message={t('loading')} />}>{activeSection.content}</Suspense>
+      )}
     </Box>
   );
 }
