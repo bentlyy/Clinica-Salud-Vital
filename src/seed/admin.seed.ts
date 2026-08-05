@@ -172,6 +172,14 @@ export const seedSuperAdmin = async (): Promise<void> => {
     return;
   }
 
+  const isProd = process.env.NODE_ENV === 'production';
+  if (isProd && !process.env.SUPERADMIN_PASSWORD) {
+    throw new Error('SUPERADMIN_PASSWORD must be configured in production');
+  }
+  if (isProd && !process.env.SUPERADMIN_EMAIL) {
+    throw new Error('SUPERADMIN_EMAIL must be configured in production');
+  }
+
   const password = process.env.SUPERADMIN_PASSWORD || 'REPLACED_PASSWORD';
   const hash = await bcrypt.hash(password, 12);
 

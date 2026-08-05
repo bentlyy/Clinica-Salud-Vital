@@ -12,6 +12,8 @@ export const superAdminKeys = {
   tenants: ['super-admin', 'tenants'] as const,
   tenantList: (params?: TenantListParams) => ['super-admin', 'tenants', params] as const,
   tenantDetail: (id: string) => ['super-admin', 'tenants', id] as const,
+  health: ['super-admin', 'health'] as const,
+  alerts: ['super-admin', 'alerts'] as const,
 };
 
 export function useSuperAdminStats() {
@@ -25,6 +27,20 @@ export function useSuperAdminDashboard() {
   return useQuery({
     queryKey: superAdminKeys.stats,
     queryFn: ({ signal }) => superAdminService.getDashboardData({ signal }),
+  });
+}
+
+export function useHealthScores() {
+  return useQuery({
+    queryKey: superAdminKeys.health,
+    queryFn: ({ signal }) => superAdminService.getHealthScores({ signal }),
+  });
+}
+
+export function useAlerts() {
+  return useQuery({
+    queryKey: superAdminKeys.alerts,
+    queryFn: ({ signal }) => superAdminService.getAlerts({ signal }),
   });
 }
 

@@ -14,6 +14,7 @@ import Badge from '@mui/icons-material/Badge';
 import Inventory from '@mui/icons-material/Inventory';
 import Notifications from '@mui/icons-material/Notifications';
 import AccountBalance from '@mui/icons-material/AccountBalance';
+import Payments from '@mui/icons-material/Payments';
 import MedicalServices from '@mui/icons-material/MedicalServices';
 import PersonSearch from '@mui/icons-material/PersonSearch';
 import TrendingUp from '@mui/icons-material/TrendingUp';
@@ -43,11 +44,11 @@ interface NavItemDef {
 }
 
 const NAV_ITEMS_DEF: NavItemDef[] = [
-  { labelKey: 'dashboard', icon: <Dashboard />, path: '/dashboard', roles: ['superadmin', 'admin', 'doctor', 'lab_technician', 'patient'] },
+  { labelKey: 'dashboard', icon: <Dashboard />, path: '/dashboard', roles: ['admin', 'doctor', 'lab_technician', 'patient'] },
   { labelKey: 'panelSaas', icon: <TrendingUp />, path: '/saas', roles: ['superadmin'] },
   { labelKey: 'clinics', icon: <AccountBalance />, path: '/tenants', roles: ['superadmin'] },
   { labelKey: 'users', icon: <People />, path: '/users', roles: ['superadmin', 'admin'] },
-  { labelKey: 'doctors', icon: <LocalHospital />, path: '/doctors', roles: ['superadmin', 'admin'] },
+  { labelKey: 'doctors', icon: <LocalHospital />, path: '/doctors', roles: ['admin'] },
   { labelKey: 'patients', icon: <PersonSearch />, path: '/patients', roles: ['admin', 'doctor'] },
   { labelKey: 'specialties', icon: <MedicalServices />, path: '/specialties', roles: ['superadmin', 'admin'] },
   { labelKey: 'bookings', icon: <CalendarMonth />, path: '/bookings', roles: ['admin', 'doctor', 'patient'] },
@@ -78,6 +79,7 @@ const NAV_ITEMS_DEF: NavItemDef[] = [
   { labelKey: 'audit', icon: <Inventory />, path: '/audit', roles: ['superadmin', 'admin'] },
   { labelKey: 'labResults', icon: <Science />, path: '/my-laboratory', roles: ['patient'] },
   { labelKey: 'notifications', icon: <Notifications />, path: '/notifications', roles: ['superadmin', 'admin', 'doctor', 'lab_technician', 'patient'] },
+  { labelKey: 'cobros', icon: <Payments />, path: '/cobros', roles: ['superadmin'] },
   { labelKey: 'settings', icon: <Settings />, path: '/settings', roles: ['superadmin', 'admin', 'doctor', 'lab_technician', 'patient'] },
 ];
 

@@ -834,3 +834,49 @@ export const adminCreateTenant = async (data: {
     client.release();
   }
 };
+
+export const getBillingSummary = async (options: { tenantId?: string; search?: string } = {}): Promise<Record<string, unknown>[]> => {
+  const conditions: string[] = [];
+  const params: unknown[] = [];
+  let paramCount = 1;
+
+  if (options.tenantId) {
+    conditions.push(`t.id = $${paramCount++}`);
+    params.push(options.tenantId);
+  }
+  if (options.search) {
+    conditions.push(`t.name ILIKE $${paramCount++}`);
+    params.push(`%${options.search}%`);
+  }
+
+  const whereClause = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : '';
+
+  const result = await pool.query(
+    `SELECT
+       t.id,
+       t.name,
+       t.active,
+       COALESCE(i.invoice_count, 0)::int AS invoice_count,
+       COALESCE(i.total_billed, 0)::numeric AS total_billed,
+       COALESCE(i.total_paid, 0)::numeric AS total_paid,
+       COALESCE(i.total_pending, 0)::numeric AS total_pending,
+       COALESCE(i.overdue_count, 0)::int AS overdue_count
+     FROM tenants t
+     LEFT JOIN (
+       SELECT
+         tenant_id,
+         COUNT(*)::int AS invoice_count,
+         SUM(CASE WHEN status IN ('pending', 'paid', 'overdue') THEN total_amount ELSE 0 END)::numeric AS total_billed,
+         SUM(CASE WHEN status = 'paid' THEN total_amount ELSE 0 END)::numeric AS total_paid,
+         SUM(CASE WHEN status IN ('pending', 'overdue') THEN total_amount ELSE 0 END)::numeric AS total_pending,
+         COUNT(*) FILTER (WHERE status IN ('pending', 'overdue') AND due_date < CURRENT_DATE)::int AS overdue_count
+       FROM invoices
+       GROUP BY tenant_id
+     ) i ON i.tenant_id = t.id
+     ${whereClause}
+     ORDER BY total_billed DESC NULLS LAST, t.name ASC`,
+    params
+  );
+
+  return result.rows.map((r) => ({ ...r, slug: r.id }));
+};

@@ -25,6 +25,7 @@ export interface AuditListParams {
   entity_type?: string;
   date_from?: string;
   date_to?: string;
+  tenant_id?: string;
 }
 
 export interface AuditRecentActivity {

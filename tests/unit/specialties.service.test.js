@@ -181,7 +181,7 @@ describe('specialtiesService.deleteSpecialty', () => {
 
     expect(mockQuery).toHaveBeenCalledWith(
       expect.stringContaining('DELETE FROM specialties'),
-      [1]
+      [1, 'default']
     );
   });
 

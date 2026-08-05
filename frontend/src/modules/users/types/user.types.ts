@@ -7,8 +7,8 @@ export interface User {
   name: string;
   email: string;
   role: UserRole;
-  tenant_id: number;
   is_active: boolean;
+  rut?: string;
   phone?: string;
   avatar_url?: string;
   created_at: string;
@@ -20,12 +20,22 @@ export interface CreateUserInput {
   email: string;
   role: UserRole;
   phone?: string;
+  rut?: string;
+  specialty?: string;
 }
 
-export interface UpdateUserInput {
+export interface InviteUserInput {
+  email: string;
   name?: string;
-  email?: string;
-  role?: UserRole;
+  role: 'patient' | 'doctor' | 'lab_technician';
+  specialty?: string;
+}
+
+export interface CreateDoctorInput {
+  name: string;
+  specialty: string;
+  email: string;
+  rut?: string;
   phone?: string;
 }
 

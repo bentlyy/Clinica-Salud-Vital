@@ -25,7 +25,7 @@ import type { TenantDetail } from '../types/super-admin.types';
 import { formatDate } from '@/shared/utils/localeUtils';
 
 export default function SuperAdminTenantDetailPage() {
-  const { t } = useTranslation();
+  const { t } = useTranslation('super_admin_tenant_detail');
   const theme = useTheme();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -41,7 +41,7 @@ export default function SuperAdminTenantDetailPage() {
       const data = await superAdminService.getTenantById(id);
       setTenant(data);
     } catch {
-      setError(t('super_admin_tenant_detail.errorLoad'));
+      setError(t('errorLoad'));
     } finally {
       setLoading(false);
     }
@@ -53,27 +53,27 @@ export default function SuperAdminTenantDetailPage() {
 
   if (loading) return <LoadingState message="Cargando detalles..." />;
   if (error) return <ErrorState error={new Error(error)} onRetry={load} />;
-  if (!tenant) return <ErrorState error={new Error(t('super_admin_tenant_detail.notFound'))} />;
+  if (!tenant) return <ErrorState error={new Error(t('notFound'))} />;
 
   const planConfig = TENANT_PLAN_CONFIG[tenant.plan] ?? TENANT_PLAN_CONFIG.free!;
 
   const stats = [
-    { label: t('super_admin_tenant_detail.statUsers'), value: tenant.total_users || 0, icon: <People sx={{ fontSize: 22 }} />, color: theme.palette.info.main },
-    { label: t('super_admin_tenant_detail.statPatients'), value: tenant.total_patients || 0, icon: <People sx={{ fontSize: 22 }} />, color: theme.palette.primary.main },
-    { label: t('super_admin_tenant_detail.statDoctors'), value: tenant.total_doctors || 0, icon: <LocalHospital sx={{ fontSize: 22 }} />, color: '#7c3aed' },
-    { label: t('super_admin_tenant_detail.statBookings'), value: tenant.total_bookings || 0, icon: <CalendarMonth sx={{ fontSize: 22 }} />, color: theme.palette.warning.main },
-    { label: t('super_admin_tenant_detail.statInvoices'), value: tenant.invoice_count || 0, icon: <Receipt sx={{ fontSize: 22 }} />, color: '#ec4899' },
-    { label: t('super_admin_tenant_detail.statLabRequests'), value: tenant.lab_request_count || 0, icon: <Science sx={{ fontSize: 22 }} />, color: theme.palette.warning.main },
+    { label: t('statUsers'), value: tenant.total_users || 0, icon: <People sx={{ fontSize: 22 }} />, color: theme.palette.info.main },
+    { label: t('statPatients'), value: tenant.total_patients || 0, icon: <People sx={{ fontSize: 22 }} />, color: theme.palette.primary.main },
+    { label: t('statDoctors'), value: tenant.total_doctors || 0, icon: <LocalHospital sx={{ fontSize: 22 }} />, color: '#7c3aed' },
+    { label: t('statBookings'), value: tenant.total_bookings || 0, icon: <CalendarMonth sx={{ fontSize: 22 }} />, color: theme.palette.warning.main },
+    { label: t('statInvoices'), value: tenant.invoice_count || 0, icon: <Receipt sx={{ fontSize: 22 }} />, color: '#ec4899' },
+    { label: t('statLabRequests'), value: tenant.lab_request_count || 0, icon: <Science sx={{ fontSize: 22 }} />, color: theme.palette.warning.main },
   ];
 
   return (
     <Box>
       <PageHeader
         title={tenant.name}
-        subtitle={t('super_admin_tenant_detail.subtitle', { slug: tenant.slug })}
+        subtitle={t('subtitle', { slug: tenant.slug })}
         action={
           <Button startIcon={<ArrowBack />} onClick={() => navigate('/tenants')} sx={{ textTransform: 'none' }}>
-            {t('super_admin_tenant_detail.back')}
+            {t('back')}
           </Button>
         }
       />
@@ -81,16 +81,16 @@ export default function SuperAdminTenantDetailPage() {
       {/* Info */}
       <Paper sx={{ p: 3, mb: 3, border: '1px solid #e5e7eb', borderRadius: '14px' }}>
         <Typography variant="subtitle2" sx={{ fontWeight: 600, color: theme.palette.text.secondary, mb: 2, letterSpacing: 1, fontSize: 11 }}>
-          {t('super_admin_tenant_detail.infoTitle')}
+          {t('infoTitle')}
         </Typography>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
           {[
-            { label: t('super_admin_tenant_detail.labelDomain'), value: tenant.domain || '—' },
-            { label: t('super_admin_tenant_detail.labelPlan'), value: <Chip label={planConfig.label} size="small" sx={{ backgroundColor: planConfig.bgColor, color: planConfig.color, fontWeight: 600 }} /> },
-            { label: t('super_admin_tenant_detail.labelStatus'), value: <Chip label={tenant.active ? t('super_admin_tenant_detail.statusActive') : t('super_admin_tenant_detail.statusInactive')} size="small" sx={{ backgroundColor: tenant.active ? '#ecfdf5' : '#fef2f2', color: tenant.active ? theme.palette.success.main : '#dc2626', fontWeight: 600 }} /> },
-            { label: t('super_admin_tenant_detail.labelLocale'), value: tenant.locale || '—' },
-            { label: t('super_admin_tenant_detail.labelTimezone'), value: tenant.timezone || '—' },
-            { label: t('super_admin_tenant_detail.labelCreated'), value: formatDate(tenant.created_at) },
+            { label: t('labelDomain'), value: tenant.domain || '—' },
+            { label: t('labelPlan'), value: <Chip label={planConfig.label} size="small" sx={{ backgroundColor: planConfig.bgColor, color: planConfig.color, fontWeight: 600 }} /> },
+            { label: t('labelStatus'), value: <Chip label={tenant.active ? t('statusActive') : t('statusInactive')} size="small" sx={{ backgroundColor: tenant.active ? '#ecfdf5' : '#fef2f2', color: tenant.active ? theme.palette.success.main : '#dc2626', fontWeight: 600 }} /> },
+            { label: t('labelLocale'), value: tenant.locale || '—' },
+            { label: t('labelTimezone'), value: tenant.timezone || '—' },
+            { label: t('labelCreated'), value: formatDate(tenant.created_at) },
           ].map((item) => (
             <Box key={item.label} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>{item.label}</Typography>
@@ -102,7 +102,7 @@ export default function SuperAdminTenantDetailPage() {
 
       {/* Stats */}
       <Typography variant="subtitle2" sx={{ fontWeight: 600, color: theme.palette.text.secondary, mb: 2, letterSpacing: 1, fontSize: 11 }}>
-        {t('super_admin_tenant_detail.statsTitle')}
+        {t('statsTitle')}
       </Typography>
       <Grid container spacing={2} sx={{ mb: 3 }}>
         {stats.map((s) => (
@@ -119,15 +119,15 @@ export default function SuperAdminTenantDetailPage() {
       {/* Revenue placeholder */}
       <Paper sx={{ p: 3, border: '1px solid #e5e7eb', borderRadius: '14px' }}>
         <Typography variant="subtitle2" sx={{ fontWeight: 600, color: theme.palette.text.secondary, mb: 2, letterSpacing: 1, fontSize: 11 }}>
-          {t('super_admin_tenant_detail.financialTitle')}
+          {t('financialTitle')}
         </Typography>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-            <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>{t('super_admin_tenant_detail.totalInvoices')}</Typography>
+            <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>{t('totalInvoices')}</Typography>
             <Typography variant="body2" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>{tenant.invoice_count || 0}</Typography>
           </Box>
           <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-            <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>{t('super_admin_tenant_detail.confirmedBookings')}</Typography>
+            <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>{t('confirmedBookings')}</Typography>
             <Typography variant="body2" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>{tenant.confirmed_bookings || 0}</Typography>
           </Box>
         </Box>

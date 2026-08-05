@@ -59,6 +59,16 @@ vi.mock('react-i18next', () => ({
         unknown_status: 'Desconocido',
         without_name: 'Sin nombre',
         view_detail_tooltip: 'Ver detalle',
+        filterAll: 'Todas',
+        filterPending: 'Pendientes',
+        filterConfirmed: 'Confirmadas',
+        filterCancelled: 'Canceladas',
+        filterCompleted: 'Completadas',
+        'statusLabels.no_show': 'No asistió',
+        'statusLabels.pending': 'Pendiente',
+        'statusLabels.confirmed': 'Confirmada',
+        'statusLabels.cancelled': 'Cancelada',
+        'statusLabels.completed': 'Completada',
       };
       return translations[key] ?? key;
     },

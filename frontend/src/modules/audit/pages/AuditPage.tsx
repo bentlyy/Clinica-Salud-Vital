@@ -1,6 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '@mui/material/styles';
+import { useAuth } from '@/shared/providers/AuthProvider';
+import { superAdminService } from '@/modules/super-admin/services/super-admin.service';
 import {
   Box,
   Paper,
@@ -42,14 +44,30 @@ export default function AuditPage() {
   const { t } = useTranslation('audit');
   const { t: tc } = useTranslation('common');
   const theme = useTheme();
+  const { user } = useAuth();
+  const isSuperAdmin = user?.role === 'superadmin';
 
   const [page, setPage] = useState(0);
   const [limit] = useState(15);
   const [search, setSearch] = useState('');
   const [actionFilter, setActionFilter] = useState('all');
   const [entityFilter, setEntityFilter] = useState('all');
+  const [clinicFilter, setClinicFilter] = useState('');
+  const [clinics, setClinics] = useState<{ id: string; name: string }[]>([]);
   const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
+
+  useEffect(() => {
+    if (!isSuperAdmin) return;
+    let active = true;
+    superAdminService
+      .listTenants({ page: 1, limit: 200 })
+      .then((res) => {
+        if (active) setClinics(res.data.map((c) => ({ id: c.id, name: c.name })));
+      })
+      .catch(() => undefined);
+    return () => { active = false; };
+  }, [isSuperAdmin]);
 
   const {
     data: response,
@@ -61,6 +79,7 @@ export default function AuditPage() {
     limit,
     action: actionFilter !== 'all' ? actionFilter : undefined,
     entity_type: entityFilter !== 'all' ? entityFilter : undefined,
+    tenant_id: isSuperAdmin && clinicFilter ? clinicFilter : undefined,
   });
 
   const logs = response?.data ?? [];
@@ -172,6 +191,26 @@ export default function AuditPage() {
               </MenuItem>
             ))}
           </TextField>
+          {isSuperAdmin && (
+            <TextField
+              select
+              size="small"
+              label={t('clinicFilter')}
+              value={clinicFilter}
+              onChange={(e) => {
+                setClinicFilter(e.target.value);
+                setPage(0);
+              }}
+              sx={{ minWidth: 180 }}
+            >
+              <MenuItem value="">{t('allClinics')}</MenuItem>
+              {clinics.map((clinic) => (
+                <MenuItem key={clinic.id} value={clinic.id}>
+                  {clinic.name}
+                </MenuItem>
+              ))}
+            </TextField>
+          )}
         </Box>
       </Paper>
 

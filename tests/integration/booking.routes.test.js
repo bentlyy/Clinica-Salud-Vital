@@ -157,6 +157,7 @@ describe('PATCH /api/bookings/:id/cancel', () => {
 
   it('cancels booking successfully', async () => {
     mockQuery
+      .mockResolvedValueOnce({ rows: [{ token_version: 0 }] })
       .mockResolvedValueOnce({ rows: [{ id: 1 }] });
 
     const res = await request(app)
@@ -192,6 +193,7 @@ describe('GET /api/bookings/doctor', () => {
 
   it('returns bookings for doctor', async () => {
     mockQuery
+      .mockResolvedValueOnce({ rows: [{ token_version: 0 }] })
       .mockResolvedValueOnce({ rows: [{ id: 1, name: 'Dr. Test', user_id: 2, email: 'doc@test.com' }] })
       .mockResolvedValueOnce({ rows: [{ id: 1, date: '2025-01-15', time: '10:00', patient_email: 'test@test.com' }] })
       .mockResolvedValueOnce({ rows: [{ count: '1' }] });

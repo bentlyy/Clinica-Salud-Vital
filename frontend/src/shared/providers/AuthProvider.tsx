@@ -8,8 +8,7 @@ import {
   type ReactNode,
 } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import { apiClient, setAccessToken, setUnauthorizedHandler } from '@/shared/services/api-client';
+import { apiClient, setAccessToken, setUnauthorizedHandler, refreshSession } from '@/shared/services/api-client';
 import type { JwtUser, AuthResponse } from '@/shared/types/api.types';
 import { hasPermission } from '@/shared/utils/role.utils';
 
@@ -35,29 +34,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const restoreSession = async () => {
       try {
-        const { data } = await axios.post<AuthResponse>(
-          '/api/auth/refresh',
-          {},
-          { withCredentials: true },
-        );
+        const data = await refreshSession();
         if (!cancelled) {
           setAccessToken(data.access_token);
           setUser(data.user);
           localStorage.setItem('auth_user', JSON.stringify(data.user));
         }
-      } catch {
+      } catch (err) {
         if (!cancelled) {
           setAccessToken(null);
-          const saved = localStorage.getItem('auth_user');
-          if (saved) {
-            try {
-              setUser(JSON.parse(saved));
-            } catch {
-              setUser(null);
-              localStorage.removeItem('auth_user');
-            }
-          } else {
+          const status = (err as { response?: { status?: number } })?.response?.status;
+          if (status === 401 || status === 400) {
             setUser(null);
+            localStorage.removeItem('auth_user');
+          } else {
+            const saved = localStorage.getItem('auth_user');
+            if (saved) {
+              try {
+                setUser(JSON.parse(saved));
+              } catch {
+                setUser(null);
+                localStorage.removeItem('auth_user');
+              }
+            } else {
+              setUser(null);
+            }
           }
         }
       } finally {

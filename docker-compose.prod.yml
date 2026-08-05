@@ -17,6 +17,7 @@ services:
       PORT: 3000
       DATABASE_URL: ${DATABASE_URL}
       JWT_SECRET: ${JWT_SECRET}
+      COOKIE_SECRET: ${COOKIE_SECRET}
       APP_LOCALE: es
       DEFAULT_TENANT_ID: default
       SMS_PROVIDER: log

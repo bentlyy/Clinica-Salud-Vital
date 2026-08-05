@@ -83,7 +83,7 @@ export const getLabRequests = asyncHandler(async (req, res) => {
 export const getLabRequestById = asyncHandler(async (req, res) => {
   const request = await laboratoryService.getLabRequestById(Number(req.params.id), req.tenant_id);
 
-  if (req.user!.role === 'user' && request.patient_id !== req.user!.id) {
+  if ((req.user!.role === 'user' || req.user!.role === 'patient') && request.patient_id !== req.user!.id) {
     throw new BadRequestError(E.LAB_ACCESS_DENIED);
   }
 
@@ -126,7 +126,7 @@ export const updateLabRequestItemResult = asyncHandler(async (req, res) => {
 export const downloadLabOrderPDF = asyncHandler(async (req, res) => {
   const request = await laboratoryService.getLabRequestById(Number(req.params.id), req.tenant_id);
 
-  if (req.user!.role === 'user' && request.patient_id !== req.user!.id) {
+  if ((req.user!.role === 'user' || req.user!.role === 'patient') && request.patient_id !== req.user!.id) {
     throw new BadRequestError(E.LAB_ACCESS_DENIED);
   }
   if (req.user!.role === 'doctor') {
@@ -322,7 +322,10 @@ export const updateReagentStockCtrl = asyncHandler(async (req, res) => {
 
 // === Notifications ===
 export const getNotificationsCtrl = asyncHandler(async (req, res) => {
-  const notifications = await laboratoryService.getNotifications(req.tenant_id, req.query);
+  const tenantId = req.user!.role === 'superadmin' && req.query.tenant_id
+    ? String(req.query.tenant_id)
+    : req.tenant_id;
+  const notifications = await laboratoryService.getNotifications(tenantId, req.query);
   res.json(notifications);
 });
 

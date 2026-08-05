@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -13,6 +13,10 @@ import {
   IconButton,
   Pagination,
   Chip,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import CheckCircleOutline from '@mui/icons-material/CheckCircleOutline';
@@ -30,6 +34,8 @@ import { useNotifications, useMarkAsRead } from '../hooks/useNotifications';
 import { NOTIFICATION_TYPE_CONFIG } from '../types/notification.types';
 import type { Notification } from '../types/notification.types';
 import { formatDate } from '@/shared/utils/localeUtils';
+import { useAuth } from '@/shared/providers/AuthProvider';
+import { superAdminService } from '@/modules/super-admin/services/super-admin.service';
 
 const TYPE_ICONS: Record<Notification['type'], React.ReactNode> = {
   info: <InfoOutlined sx={{ fontSize: 20 }} />,
@@ -42,10 +48,32 @@ export default function NotificationsPage() {
   const { t } = useTranslation('notifications');
   const theme = useTheme();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const isSuperAdmin = user?.role === 'superadmin';
   const [page, setPage] = useState(1);
   const limit = 15;
+  const [clinics, setClinics] = useState<{ id: number; name: string }[]>([]);
+  const [clinicFilter, setClinicFilter] = useState('');
 
-  const { data, isLoading, error, refetch } = useNotifications({ page, limit });
+  useEffect(() => {
+    if (!isSuperAdmin) return;
+    let active = true;
+    superAdminService
+      .listTenants()
+      .then((res) => {
+        if (active) setClinics(res.data ?? res ?? []);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [isSuperAdmin]);
+
+  const { data, isLoading, error, refetch } = useNotifications({
+    page,
+    limit,
+    tenantId: isSuperAdmin ? clinicFilter || undefined : undefined,
+  });
   const markAsRead = useMarkAsRead();
 
   const handleNotificationClick = (notification: Notification) => {
@@ -95,6 +123,27 @@ export default function NotificationsPage() {
         ) : undefined
       }
       />
+
+      {isSuperAdmin && (
+        <Paper sx={{ p: 2, mb: 3, border: `1px solid ${theme.palette.divider}`, borderRadius: '14px' }}>
+          <FormControl size="small" fullWidth>
+            <InputLabel id="notifications-clinic-filter">{t('clinicFilter')}</InputLabel>
+            <Select
+              labelId="notifications-clinic-filter"
+              label={t('clinicFilter')}
+              value={clinicFilter}
+              onChange={(e) => { setClinicFilter(e.target.value); setPage(1); }}
+            >
+              <MenuItem value="">{t('allClinics')}</MenuItem>
+              {clinics.map((c) => (
+                <MenuItem key={c.id} value={String(c.id)}>
+                  {c.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Paper>
+      )}
 
       {notifications.length === 0 ? (
         <EmptyState

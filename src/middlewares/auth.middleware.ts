@@ -74,16 +74,27 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
   }
 
   try {
-    const result = await pool.query(
-      'SELECT token_version FROM users WHERE id = $1 AND tenant_id = $2',
-      [user.id, user.tenant_id]
-    );
+    const result = user.role === 'superadmin'
+      ? await pool.query(
+          'SELECT token_version, active FROM users WHERE id = $1',
+          [user.id]
+        )
+      : await pool.query(
+          'SELECT token_version, active FROM users WHERE id = $1 AND tenant_id = $2',
+          [user.id, user.tenant_id]
+        );
     const rows = result?.rows;
-    if (rows && rows.length > 0) {
-      if (user.token_version !== 0 && rows[0].token_version !== user.token_version) {
-        next(new UnauthorizedError('Token version mismatch — session invalidated'));
-        return;
-      }
+    if (!rows || rows.length === 0) {
+      next(new UnauthorizedError('User no longer exists'));
+      return;
+    }
+    if (rows[0].active === false) {
+      next(new UnauthorizedError('User is deactivated'));
+      return;
+    }
+    if (rows[0].token_version !== user.token_version) {
+      next(new UnauthorizedError('Token version mismatch — session invalidated'));
+      return;
     }
   } catch (err) {
     logger.warn('Token version verification failed (non-critical)', { error: toError(err).message });

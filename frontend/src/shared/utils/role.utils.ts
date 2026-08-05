@@ -12,7 +12,7 @@ export function getRedirectPath(role: JwtUser['role']): string {
     case 'lab_technician':
       return '/laboratory';
     case 'patient':
-      return '/patient';
+      return '/dashboard';
     default:
       return '/dashboard';
   }

@@ -180,8 +180,8 @@ const verifyCaptcha = async (token: string): Promise<boolean> => {
   const secret = process.env.RECAPTCHA_SECRET_KEY;
   if (!secret) return true;
   if (!token) {
-    logger.warn('reCAPTCHA secret configured but no token provided — skipping verification');
-    return true;
+    logger.warn('reCAPTCHA secret configured but no token provided — blocking request');
+    return false;
   }
   try {
     const params = new URLSearchParams({ secret, response: token });

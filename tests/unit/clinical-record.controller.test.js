@@ -74,6 +74,8 @@ describe('getClinicalRecords', () => {
 
   it('returns records for doctor with filters', async () => {
     vi.mocked(doctorService.getDoctorByUserId).mockResolvedValue({ id: 1 });
+    vi.mocked(clinicalRecordService.getClinicalRecordsByPatient).mockResolvedValue([{ id: 1, doctor_id: 1 }]);
+    vi.mocked(clinicalRecordService.doesDoctorHaveBookingWithPatient).mockResolvedValue(true);
     vi.mocked(clinicalRecordService.getAllClinicalRecords).mockResolvedValue([{ id: 1 }]);
     const req = { user: { role: 'doctor', id: 1 }, tenant_id: 'test', query: { patient_id: '5', status: 'active', limit: '20', offset: '10' } };
     const res = { json: vi.fn() };

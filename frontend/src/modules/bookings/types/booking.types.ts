@@ -45,20 +45,20 @@ export type { PaginatedResponse };
 
 export const BOOKING_STATUS_CONFIG: Record<
   BookingStatus,
-  { label: string; color: string; bgColor: string }
+  { labelKey: string; color: string; bgColor: string }
 > = {
-  pending: { label: 'Pendiente', color: '#d97706', bgColor: '#fffbeb' },
-  confirmed: { label: 'Confirmada', color: '#0d9488', bgColor: '#f0fdfa' },
-  cancelled: { label: 'Cancelada', color: '#ef4444', bgColor: '#fef2f2' },
-  completed: { label: 'Completada', color: '#2563eb', bgColor: '#eff6ff' },
-  no_show: { label: 'No asistió', color: '#6b7280', bgColor: '#f3f4f6' },
+  pending: { labelKey: 'statusLabels.pending', color: '#d97706', bgColor: '#fffbeb' },
+  confirmed: { labelKey: 'statusLabels.confirmed', color: '#0d9488', bgColor: '#f0fdfa' },
+  cancelled: { labelKey: 'statusLabels.cancelled', color: '#ef4444', bgColor: '#fef2f2' },
+  completed: { labelKey: 'statusLabels.completed', color: '#2563eb', bgColor: '#eff6ff' },
+  no_show: { labelKey: 'statusLabels.no_show', color: '#6b7280', bgColor: '#f3f4f6' },
 };
 
-export const BOOKING_STATUS_OPTIONS: { value: BookingStatus | 'all'; label: string }[] = [
-  { value: 'all', label: 'Todas' },
-  { value: 'pending', label: 'Pendientes' },
-  { value: 'confirmed', label: 'Confirmadas' },
-  { value: 'cancelled', label: 'Canceladas' },
-  { value: 'completed', label: 'Completadas' },
-  { value: 'no_show', label: 'No asistió' },
+export const BOOKING_STATUS_OPTIONS: { value: BookingStatus | 'all'; labelKey: string }[] = [
+  { value: 'all', labelKey: 'filterAll' },
+  { value: 'pending', labelKey: 'filterPending' },
+  { value: 'confirmed', labelKey: 'filterConfirmed' },
+  { value: 'cancelled', labelKey: 'filterCancelled' },
+  { value: 'completed', labelKey: 'filterCompleted' },
+  { value: 'no_show', labelKey: 'statusLabels.no_show' },
 ];

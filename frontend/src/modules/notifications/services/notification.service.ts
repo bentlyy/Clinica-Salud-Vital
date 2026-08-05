@@ -1,8 +1,10 @@
 import { apiClient } from '@/shared/services/api-client';
 
 export const notificationService = {
-  async list(params: { page?: number; limit?: number } = {}, opts?: { signal?: AbortSignal }) {
-    const { data } = await apiClient.get('/laboratory/notifications', { params, signal: opts?.signal });
+  async list(params: { page?: number; limit?: number; tenantId?: string } = {}, opts?: { signal?: AbortSignal }) {
+    const { tenantId, ...rest } = params;
+    const requestParams = tenantId ? { ...rest, tenant_id: tenantId } : rest;
+    const { data } = await apiClient.get('/laboratory/notifications', { params: requestParams, signal: opts?.signal });
     return data;
   },
 

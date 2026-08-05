@@ -1,12 +1,18 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { notificationService } from '../services/notification.service';
 
+export interface NotificationListParams {
+  page?: number;
+  limit?: number;
+  tenantId?: string;
+}
+
 export const notificationKeys = {
   all: ['notifications'] as const,
-  list: (params?: { page?: number; limit?: number }) => ['notifications', 'list', params] as const,
+  list: (params?: NotificationListParams) => ['notifications', 'list', params] as const,
 };
 
-export function useNotifications(params?: { page?: number; limit?: number }) {
+export function useNotifications(params?: NotificationListParams) {
   return useQuery({
     queryKey: notificationKeys.list(params),
     queryFn: ({ signal }) => notificationService.list(params, { signal }),

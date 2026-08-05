@@ -66,7 +66,10 @@ export const getUsageSummary = asyncHandler(async (req: Request, res: Response) 
 const verifyCaptchaOnboard = async (token: string): Promise<boolean> => {
   const secret = process.env.RECAPTCHA_SECRET_KEY;
   if (!secret) return true;
-  if (!token) return true;
+  if (!token) {
+    logger.warn('reCAPTCHA secret configured but no token provided — blocking request');
+    return false;
+  }
   try {
     const params = new URLSearchParams({ secret, response: token });
     const res = await fetch('https://www.google.com/recaptcha/api/siteverify', {

@@ -163,6 +163,8 @@ describe('GET /api/saas/subscription (authenticated)', () => {
   });
 
   it('returns 403 for user role', async () => {
+    mockQuery.mockResolvedValueOnce(AUTH_OK); // auth
+
     const res = await request(app)
       .get('/api/saas/subscription')
       .set('Authorization', `Bearer ${userToken}`);

@@ -6,7 +6,6 @@ services:
     region: oregon
     plan: free
     buildCommand: npm install --include=dev && npm run build
-    preDeployCommand: npm install --include=dev && npm run build
     startCommand: npm start
     healthCheckPath: /health
     envVars:

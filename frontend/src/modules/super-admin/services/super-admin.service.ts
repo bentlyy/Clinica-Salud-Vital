@@ -7,6 +7,8 @@ import type {
   TenantListParams,
   TenantDetail,
   SaasDashboard,
+  HealthScore,
+  SaasAlert,
 } from '../types/super-admin.types';
 
 export const superAdminService = {
@@ -95,12 +97,48 @@ export const superAdminService = {
     role?: string;
     tenantId?: string;
   } = {}, opts?: { signal?: AbortSignal }): Promise<{ data: Array<{ id: number; name: string; email: string; role: string; tenant_id: string | null; active: boolean }>; pagination: { total: number; page: number; limit: number } }> {
-    const { data } = await apiClient.get('/super-admin/users', { params, signal: opts?.signal });
+    const { tenantId, ...rest } = params;
+    const { data } = await apiClient.get('/super-admin/users', {
+      params: tenantId ? { ...rest, tenant_id: tenantId } : rest,
+      signal: opts?.signal,
+    });
     return data;
   },
 
   async toggleUserActive(userId: number, active: boolean, opts?: { signal?: AbortSignal }): Promise<{ message: string }> {
-    const { data } = await apiClient.patch(`/super-admin/users/${userId}/toggle-active`, { active }, { signal: opts?.signal });
+    const { data } = await apiClient.patch(`/super-admin/users/${userId}/active`, { active }, { signal: opts?.signal });
+    return data;
+  },
+
+  async getHealthScores(opts?: { signal?: AbortSignal }): Promise<HealthScore[]> {
+    const { data } = await apiClient.get<{ data: HealthScore[] }>('/super-admin/analytics/health', {
+      signal: opts?.signal,
+    });
+    return data.data || [];
+  },
+
+  async getAlerts(opts?: { signal?: AbortSignal }): Promise<SaasAlert[]> {
+    const { data } = await apiClient.get<{ data: SaasAlert[] }>('/super-admin/analytics/alerts', {
+      signal: opts?.signal,
+    });
+    return data.data || [];
+  },
+
+  async getBillingSummary(params: { tenantId?: string; search?: string } = {}, opts?: { signal?: AbortSignal }): Promise<{ data: Array<{
+    id: string;
+    name: string;
+    slug: string;
+    active: boolean;
+    invoice_count: number;
+    total_billed: number;
+    total_paid: number;
+    total_pending: number;
+    overdue_count: number;
+  }> }> {
+    const { data } = await apiClient.get('/super-admin/billing', {
+      params: { ...(params.tenantId ? { tenant_id: params.tenantId } : {}), ...(params.search ? { search: params.search } : {}) },
+      signal: opts?.signal,
+    });
     return data;
   },
 };

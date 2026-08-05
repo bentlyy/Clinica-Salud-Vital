@@ -1,52 +1,22 @@
-import { useState, useMemo } from 'react';
-import {
-  Box,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Avatar,
-  IconButton,
-  Tooltip,
-  TextField,
-  InputAdornment,
-  TablePagination,
-  Chip,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-  Typography,
-} from '@mui/material';
+import { useState, useMemo, useRef } from 'react';
+import { Box, Button, TablePagination } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import Add from '@mui/icons-material/Add';
-import Search from '@mui/icons-material/Search';
-import Edit from '@mui/icons-material/Edit';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { LoadingState } from '@/shared/components/ui/LoadingState';
 import { ErrorState } from '@/shared/components/ui/ErrorState';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
+import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
 import { useAuth } from '@/shared/providers/AuthProvider';
-import { getRoleLabel, getRoleColor } from '@/shared/utils/role.utils';
-import { useUserList, useCreateUser, useToggleUserActive } from '../hooks/useUsers';
+import { useUserList, useRegisterDoctor, useInviteUser, useToggleUserActive } from '../hooks/useUsers';
+import { UserFilters, type UserFiltersState } from '../components/UserFilters';
+import { UsersStats } from '../components/UsersStats';
+import { UserRow } from '../components/UserRow';
 import { UserFormDialog } from '../components/UserFormDialog';
-import { UserStatusChip } from '../components/UserStatusChip';
-import type { User, UserRole, CreateUserInput } from '../types/user.types';
-
-const ROLE_FILTER_OPTIONS: Array<{ value: UserRole | ''; labelKey: string }> = [
-  { value: '', labelKey: 'roleLabels.all' },
-  { value: 'admin', labelKey: 'roleLabels.admin' },
-  { value: 'doctor', labelKey: 'roleLabels.doctor' },
-  { value: 'lab_technician', labelKey: 'roleLabels.lab_technician' },
-  { value: 'patient', labelKey: 'roleLabels.patient' },
-  { value: 'user', labelKey: 'roleLabels.user' },
-];
+import { UserDetailDialog } from '../components/UserDetailDialog';
+import type { User, CreateUserInput } from '../types/user.types';
 
 const pageVariants = {
   initial: { opacity: 0, y: 12 },
@@ -64,18 +34,35 @@ export default function UsersPage() {
 
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [search, setSearch] = useState('');
-  const [roleFilter, setRoleFilter] = useState<UserRole | ''>('');
+  const [filters, setFilters] = useState<UserFiltersState>({ search: '', role: '', status: '' });
   const [searchDebounced, setSearchDebounced] = useState('');
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [formOpen, setFormOpen] = useState(false);
-  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [detailUser, setDetailUser] = useState<User | null>(null);
   const [confirmToggle, setConfirmToggle] = useState<User | null>(null);
 
   const handleSearchChange = (value: string) => {
-    setSearch(value);
-    const timeoutId = setTimeout(() => setSearchDebounced(value), 400);
-    return () => clearTimeout(timeoutId);
+    setFilters((prev) => ({ ...prev, search: value }));
+    setPage(0);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => setSearchDebounced(value), 400);
+  };
+
+  const handleRoleChange = (role: User['role'] | '') => {
+    setFilters((prev) => ({ ...prev, role }));
+    setPage(0);
+  };
+
+  const handleStatusChange = (status: UserFiltersState['status']) => {
+    setFilters((prev) => ({ ...prev, status }));
+    setPage(0);
+  };
+
+  const handleClearFilters = () => {
+    setFilters({ search: '', role: '', status: '' });
+    setSearchDebounced('');
+    setPage(0);
   };
 
   const queryParams = useMemo(
@@ -83,29 +70,47 @@ export default function UsersPage() {
       page: page + 1,
       limit: rowsPerPage,
       search: searchDebounced || undefined,
-      role: (roleFilter as UserRole) || undefined,
+      role: (filters.role as User['role']) || undefined,
     }),
-    [page, rowsPerPage, searchDebounced, roleFilter],
+    [page, rowsPerPage, searchDebounced, filters.role],
   );
 
   const { data, isLoading, error, refetch } = useUserList(queryParams);
-  const createUser = useCreateUser();
+  const registerDoctor = useRegisterDoctor();
+  const inviteUser = useInviteUser();
   const toggleActive = useToggleUserActive();
 
   const users = data?.data ?? [];
   const total = data?.total ?? 0;
+  const isCreating = registerDoctor.isPending || inviteUser.isPending;
+
+  const filteredUsers = useMemo(() => {
+    if (!filters.status) return users;
+    return users.filter((u) => (filters.status === 'active' ? u.is_active : !u.is_active));
+  }, [users, filters.status]);
 
   const handleCreateUser = (input: CreateUserInput) => {
-    createUser.mutate(input, {
-      onSuccess: () => setFormOpen(false),
-    });
-  };
-
-  const handleUpdateUser = (input: CreateUserInput) => {
-    if (!editingUser) return;
-    createUser.mutate(input, {
-      onSuccess: () => { setFormOpen(false); setEditingUser(null); },
-    });
+    if (input.role === 'doctor') {
+      registerDoctor.mutate(
+        {
+          name: input.name,
+          email: input.email,
+          specialty: input.specialty ?? '',
+          rut: input.rut,
+          phone: input.phone,
+        },
+        { onSuccess: () => setFormOpen(false) },
+      );
+    } else {
+      inviteUser.mutate(
+        {
+          name: input.name,
+          email: input.email,
+          role: input.role as 'patient' | 'doctor' | 'lab_technician',
+        },
+        { onSuccess: () => setFormOpen(false) },
+      );
+    }
   };
 
   const handleToggleActive = () => {
@@ -113,16 +118,6 @@ export default function UsersPage() {
     toggleActive.mutate(confirmToggle.id, {
       onSuccess: () => setConfirmToggle(null),
     });
-  };
-
-  const openCreateDialog = () => {
-    setEditingUser(null);
-    setFormOpen(true);
-  };
-
-  const openEditDialog = (user: User) => {
-    setEditingUser(user);
-    setFormOpen(true);
   };
 
   if (isLoading) return <LoadingState message={t('loading')} />;
@@ -138,7 +133,7 @@ export default function UsersPage() {
             <Button
               variant="contained"
               startIcon={<Add />}
-              onClick={openCreateDialog}
+              onClick={() => setFormOpen(true)}
               sx={{
                 background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
                 '&:hover': {
@@ -152,156 +147,35 @@ export default function UsersPage() {
         }
       />
 
-      {/* Filters */}
-      <Paper
-        sx={{
-          p: 2,
-          mb: 3,
-          display: 'flex',
-          flexDirection: { xs: 'column', md: 'row' },
-          gap: 2,
-          alignItems: { md: 'center' },
-          border: `1px solid ${theme.palette.divider}`,
-        }}
-      >
-        <TextField
-          size="small"
-          placeholder={t('searchPlaceholder')}
-          value={search}
-          onChange={(e) => handleSearchChange(e.target.value)}
-          sx={{ minWidth: { md: 280 } }}
-          slotProps={{
-            input: {
-              startAdornment: (
-                <InputAdornment position="start">
-                  <Search sx={{ color: theme.palette.text.secondary, fontSize: 20 }} />
-                </InputAdornment>
-              ),
-            },
-          }}
-        />
+      <UserFilters
+        filters={filters}
+        onSearchChange={handleSearchChange}
+        onRoleChange={handleRoleChange}
+        onStatusChange={handleStatusChange}
+        onClear={handleClearFilters}
+      />
 
-        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-          {ROLE_FILTER_OPTIONS.map((opt) => (
-            <Chip
-              key={opt.value}
-              label={t(opt.labelKey)}
-              onClick={() => { setRoleFilter(opt.value as UserRole | ''); setPage(0); }}
-              variant={roleFilter === opt.value ? 'filled' : 'outlined'}
-              sx={{
-                fontWeight: 500,
-                borderRadius: '8px',
-                ...(roleFilter === opt.value
-                  ? {
-                      backgroundColor: theme.palette.primary.main,
-                      color: theme.palette.background.paper,
-                      '&:hover': { backgroundColor: theme.palette.primary.dark },
-                    }
-                  : {
-                      borderColor: theme.palette.divider,
-                      color: theme.palette.text.primary,
-                      '&:hover': { borderColor: theme.palette.primary.main, color: theme.palette.primary.main },
-                    }),
-              }}
-            />
-          ))}
-        </Box>
-      </Paper>
+      <UsersStats users={users} total={total} />
 
-      {/* Table */}
-      {users.length === 0 ? (
+      {filteredUsers.length === 0 ? (
         <EmptyState
           title={t('noUsers')}
           message={t('try_adjusting_filters')}
-          action={canEdit ? { label: t('newUser'), onClick: openCreateDialog } : undefined}
+          action={canEdit ? { label: t('newUser'), onClick: () => setFormOpen(true) } : undefined}
         />
       ) : (
-        <Paper sx={{ border: `1px solid ${theme.palette.divider}`, overflow: 'hidden' }}>
-          <TableContainer>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>{t('username')}</TableCell>
-                  <TableCell>{tc('email')}</TableCell>
-                  <TableCell>{t('role')}</TableCell>
-                  <TableCell align="center">{t('status')}</TableCell>
-                  <TableCell align="right">{tc('actions')}</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {users.map((user) => (
-                  <TableRow key={user.id} hover>
-                    <TableCell>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                        <Avatar
-                          sx={{
-                            width: 36,
-                            height: 36,
-                            backgroundColor: getRoleColor(user.role),
-                            fontSize: '0.8rem',
-                            fontWeight: 600,
-                          }}
-                          src={user.avatar_url}
-                        >
-                          {user.name?.charAt(0)?.toUpperCase()}
-                        </Avatar>
-                        <Box>
-                          <Typography variant="body2" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
-                            {user.name}
-                          </Typography>
-                          {user.phone && (
-                            <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
-                              {user.phone}
-                            </Typography>
-                          )}
-                        </Box>
-                      </Box>
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="body2" sx={{ color: theme.palette.text.primary }}>
-                        {user.email}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Chip
-                        label={getRoleLabel(user.role)}
-                        size="small"
-                        sx={{
-                          fontWeight: 600,
-                          backgroundColor: `${getRoleColor(user.role)}15`,
-                          color: getRoleColor(user.role),
-                          border: `1px solid ${getRoleColor(user.role)}30`,
-                        }}
-                      />
-                    </TableCell>
-                    <TableCell align="center">
-                      {canToggle ? (
-                        <UserStatusChip
-                          isActive={user.is_active}
-                          onClick={() => setConfirmToggle(user)}
-                        />
-                      ) : (
-                        <UserStatusChip isActive={user.is_active} />
-                      )}
-                    </TableCell>
-                    <TableCell align="right">
-                      {canEdit && (
-                        <Tooltip title={tc('edit')}>
-                          <IconButton
-                            size="small"
-                            onClick={() => openEditDialog(user)}
-                            sx={{ color: theme.palette.text.secondary, '&:hover': { color: theme.palette.primary.main } }}
-                          >
-                            <Edit fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+        <Box role="list" aria-label={t('page_title')}>
+          {filteredUsers.map((user) => (
+            <UserRow
+              key={user.id}
+              user={user}
+              canView={canEdit}
+              canToggle={canToggle}
+              onView={(u) => setDetailUser(u)}
+              onToggle={(u) => setConfirmToggle(u)}
+              isToggling={toggleActive.isPending && confirmToggle?.id === user.id}
+            />
+          ))}
 
           <TablePagination
             component="div"
@@ -319,66 +193,47 @@ export default function UsersPage() {
               `${from}–${to} ${tc('of')} ${count !== -1 ? count : `${tc('moreThan')} ${to}`}`
             }
           />
-        </Paper>
+        </Box>
       )}
 
-      {/* Create / Edit Dialog */}
       <UserFormDialog
         open={formOpen}
-        onClose={() => { setFormOpen(false); setEditingUser(null); }}
-        user={editingUser}
-        onSubmit={editingUser ? handleUpdateUser : handleCreateUser}
-        isPending={createUser.isPending}
+        onClose={() => setFormOpen(false)}
+        onSubmit={handleCreateUser}
+        isPending={isCreating}
       />
 
-      {/* Toggle Active Confirmation */}
-      <Dialog
+      <UserDetailDialog
+        open={!!detailUser}
+        user={detailUser}
+        onClose={() => setDetailUser(null)}
+      />
+
+      <ConfirmDialog
         open={!!confirmToggle}
         onClose={() => setConfirmToggle(null)}
-        PaperProps={{ sx: { borderRadius: '16px', border: `1px solid ${theme.palette.divider}`, maxWidth: 400 } }}
-      >
-        <DialogTitle sx={{ fontWeight: 700 }}>
-          {confirmToggle?.is_active ? t('deactivate_user') : t('activate_user')}
-        </DialogTitle>
-        <DialogContent>
-          <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
+        onConfirm={handleToggleActive}
+        loading={toggleActive.isPending}
+        variant={confirmToggle?.is_active ? 'danger' : 'primary'}
+        title={confirmToggle?.is_active ? t('deactivate_user') : t('activate_user')}
+        confirmLabel={confirmToggle?.is_active ? t('deactivate') : t('activate')}
+        message={
+          <>
             {t('confirm_toggle', {
               action: confirmToggle?.is_active ? t('deactivate').toLowerCase() : t('activate').toLowerCase(),
               name: confirmToggle?.name,
             })}
             {confirmToggle?.is_active && (
-              <br />
+              <>
+                <br />
+                <Box component="span" sx={{ color: theme.palette.error.main, fontWeight: 500 }}>
+                  {t('deactivate_warning')}
+                </Box>
+              </>
             )}
-            {confirmToggle?.is_active && (
-              <span style={{ color: theme.palette.error.dark }}>
-                {t('deactivate_warning')}
-              </span>
-            )}
-          </Typography>
-        </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>
-          <Button onClick={() => setConfirmToggle(null)} variant="outlined" disabled={toggleActive.isPending}>
-            {tc('cancel')}
-          </Button>
-          <Button
-            onClick={handleToggleActive}
-            variant="contained"
-            disabled={toggleActive.isPending}
-            sx={{
-              backgroundColor: confirmToggle?.is_active ? theme.palette.error.dark : theme.palette.primary.main,
-              '&:hover': {
-                backgroundColor: confirmToggle?.is_active ? theme.palette.error.dark : theme.palette.primary.dark,
-              },
-            }}
-          >
-            {toggleActive.isPending
-              ? t('processing')
-              : confirmToggle?.is_active
-                ? t('deactivate')
-                : t('activate')}
-          </Button>
-        </DialogActions>
-      </Dialog>
+          </>
+        }
+      />
     </Box>
   );
 }

@@ -17,6 +17,7 @@ const specialtySchema = z.object({
     name: z.string(),
     email: z.string().email(),
   })).optional(),
+  tenant_id: z.string().optional(),
 }).strict();
 
 const specialtyUpdateSchema = z.object({
@@ -30,6 +31,7 @@ const specialtyUpdateSchema = z.object({
     name: z.string(),
     email: z.string().email(),
   })).optional(),
+  tenant_id: z.string().optional(),
 }).strict();
 
 router.get('/', getSpecialties);

@@ -235,7 +235,7 @@ export default function BookingsPage() {
         {BOOKING_STATUS_OPTIONS.map((opt) => (
           <Chip
             key={opt.value}
-            label={opt.label}
+            label={t(opt.labelKey)}
             clickable
             onClick={() => handleStatusFilter(opt.value)}
             variant={statusFilter === opt.value ? 'filled' : 'outlined'}
@@ -269,7 +269,7 @@ export default function BookingsPage() {
           title={t('no_appointments_title')}
           message={
             statusFilter !== 'all'
-              ? t('no_appointments_filtered', { status: BOOKING_STATUS_CONFIG[statusFilter as BookingStatus]?.label })
+              ? t('no_appointments_filtered', { status: t(BOOKING_STATUS_CONFIG[statusFilter as BookingStatus]?.labelKey || 'unknown_status') })
               : t('no_appointments_empty')
           }
           action={{
@@ -366,8 +366,11 @@ interface BookingCardProps {
 
 function BookingCard({ booking, onView, t }: BookingCardProps) {
   const theme = useTheme();
-  const FALLBACK_STATUS = { label: t('unknown_status'), color: theme.palette.text.secondary, bgColor: theme.palette.grey[100] };
-  const statusConfig = BOOKING_STATUS_CONFIG[booking.status] ?? { ...FALLBACK_STATUS };
+  const FALLBACK_STATUS = { labelKey: 'unknown_status', color: theme.palette.text.secondary, bgColor: theme.palette.grey[100] };
+  const statusConfig = BOOKING_STATUS_CONFIG[booking.status] ?? FALLBACK_STATUS;
+  const statusLabel = statusConfig.labelKey === 'unknown_status'
+    ? t('unknown_status')
+    : t(statusConfig.labelKey);
   const patientLabel = booking.patient_name || booking.guest_name || t('without_name');
 
   return (
@@ -428,7 +431,7 @@ function BookingCard({ booking, onView, t }: BookingCardProps) {
       {/* Status + actions */}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
         <Chip
-          label={statusConfig.label}
+          label={statusLabel}
           size="small"
           sx={{
             backgroundColor: statusConfig.bgColor,

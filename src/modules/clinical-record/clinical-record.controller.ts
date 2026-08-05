@@ -27,9 +27,17 @@ export const getClinicalRecords = asyncHandler(async (req: Request, res: Respons
     const doctor = await doctorService.getDoctorByUserId(req.user!.id, req.tenant_id);
     if (!doctor) throw new NotFoundError(E.DOCTOR_PROFILE_NOT_FOUND);
 
+    const requestedPatientId = patient_id ? parseInt(patient_id as string) : undefined;
+    if (requestedPatientId) {
+      const existingRecords = await clinicalRecordService.getClinicalRecordsByPatient(requestedPatientId, req.tenant_id);
+      const hasRelationship = existingRecords.some((r) => r.doctor_id === doctor.id);
+      const hasBooking = await clinicalRecordService.doesDoctorHaveBookingWithPatient(doctor.id, requestedPatientId, req.tenant_id);
+      if (!hasRelationship && !hasBooking) throw new BadRequestError(E.ACCESS_DENIED);
+    }
+
     const records = await clinicalRecordService.getAllClinicalRecords({
       doctor_id: doctor.id,
-      patient_id: patient_id ? parseInt(patient_id as string) : undefined,
+      patient_id: requestedPatientId,
       status: status ? String(status) : undefined,
       limit,
       offset,

@@ -90,7 +90,7 @@ export function BookingDetailDrawer({
 
           {/* Status badge */}
           <Chip
-            label={statusConfig.label}
+            label={t(statusConfig.labelKey)}
             sx={{
               backgroundColor: statusConfig.bgColor,
               color: statusConfig.color,
