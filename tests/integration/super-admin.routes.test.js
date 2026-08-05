@@ -55,6 +55,7 @@ app.use(errorHandler);
 beforeEach(() => {
   vi.clearAllMocks();
   mockQuery.mockReset();
+  mockQuery.mockResolvedValue({ rows: [{ token_version: 0, active: true }] });
   mockConnect.mockReturnValue(mockClient);
 });
 

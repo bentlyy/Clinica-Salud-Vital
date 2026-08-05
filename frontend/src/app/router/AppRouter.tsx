@@ -1,7 +1,8 @@
 import { Suspense, lazy } from 'react';
-import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
+import { Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '@/shared/providers/AuthProvider';
 import { useFeature } from '@/shared/hooks/useFeature';
+import { getRedirectPath } from '@/shared/utils/role.utils';
 import { DashboardLayout } from '@/shared/components/layout/DashboardLayout';
 
 import { LoadingState } from '@/shared/components/ui/LoadingState';
@@ -47,6 +48,7 @@ const SuperAdminDashboardPage = lazy(() => import('@/modules/super-admin/pages/S
 const SuperAdminTenantsPage = lazy(() => import('@/modules/super-admin/pages/SuperAdminTenantsPage'));
 const SuperAdminTenantDetailPage = lazy(() => import('@/modules/super-admin/pages/SuperAdminTenantDetailPage'));
 const SuperAdminUsersPage = lazy(() => import('@/modules/super-admin/pages/SuperAdminUsersPage'));
+const SuperAdminBillingPage = lazy(() => import('@/modules/super-admin/pages/SuperAdminBillingPage'));
 
 // Specialties module
 const SpecialtiesPage = lazy(() => import('@/modules/specialties/pages/SpecialtiesPage'));
@@ -100,11 +102,16 @@ const NotFoundPage = lazy(() => import('@/modules/auth/pages/NotFoundPage'));
 
 function ProtectedRoute({ children, allowedRoles }: { children: ReactNode; allowedRoles?: string[] }) {
   const { user, isAuthenticated, isLoading } = useAuth();
+  const location = useLocation();
 
   if (isLoading) return <LoadingState />;
   if (!isAuthenticated) return <Navigate to="/" replace />;
   if (allowedRoles && user && !allowedRoles.includes(user.role)) {
-    return <Navigate to="/dashboard" replace />;
+    const home = getRedirectPath(user.role);
+    if (location.pathname === home) {
+      return <Navigate to="/" replace />;
+    }
+    return <Navigate to={home} replace />;
   }
 
   return <>{children}</>;
@@ -117,6 +124,12 @@ function FeatureRoute({ featureKey, featureName }: { featureKey: string; feature
   if (!hasFeature(featureKey)) return <PremiumLocked featureName={featureName} />;
 
   return <Outlet />;
+}
+
+function UsersRoute() {
+  const { user } = useAuth();
+  if (user?.role === 'superadmin') return <SuperAdminUsersPage />;
+  return <UsersPage />;
 }
 
 export function AppRouter() {
@@ -139,7 +152,12 @@ export function AppRouter() {
               <SuperAdminUsersPage />
             </ProtectedRoute>
           } />
-          <Route path="/users" element={<UsersPage />} />
+          <Route path="/users" element={<UsersRoute />} />
+          <Route path="/cobros" element={
+            <ProtectedRoute allowedRoles={['superadmin']}>
+              <SuperAdminBillingPage />
+            </ProtectedRoute>
+          } />
           <Route path="/doctors" element={<DoctorsPage />} />
           <Route path="/bookings" element={<BookingsPage />} />
           <Route path="/availability" element={<AvailabilityPage />} />

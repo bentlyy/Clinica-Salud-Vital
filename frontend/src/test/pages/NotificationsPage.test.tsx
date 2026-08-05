@@ -57,6 +57,10 @@ vi.mock('react-router-dom', async () => {
   return { ...actual, useNavigate: () => mockNavigate };
 });
 
+vi.mock('@/shared/providers/AuthProvider', () => ({
+  useAuth: () => ({ user: null }),
+}));
+
 vi.mock('@/modules/notifications/hooks/useNotifications', () => ({
   useNotifications: () => mockHookReturn,
   useMarkAsRead: () => ({ mutate: vi.fn(), isPending: false }),

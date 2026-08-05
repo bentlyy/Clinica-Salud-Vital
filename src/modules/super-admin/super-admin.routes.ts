@@ -25,6 +25,8 @@ router.delete('/tenants/:id', authorize('superadmin'), superAdminController.dele
 router.get('/users', authorize('superadmin'), superAdminController.listUsers);
 router.patch('/users/:userId/active', authorize('superadmin'), superAdminController.toggleUserActive);
 
+router.get('/billing', authorize('superadmin'), superAdminController.getBillingSummary);
+
 router.get('/analytics/health', authorize('superadmin'), superAdminController.getHealthScores);
 router.get('/analytics/health/:tenantId', authorize('superadmin'), superAdminController.getHealthScoreDetail);
 router.get('/analytics/operations', authorize('superadmin'), superAdminController.getOperations);

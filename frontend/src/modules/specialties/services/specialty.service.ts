@@ -9,7 +9,8 @@ import type {
 
 export const specialtyService = {
   async list(params: SpecialtyListParams = {}, opts?: { signal?: AbortSignal }): Promise<PaginatedResponse<Specialty>> {
-    const { data } = await apiClient.get<Specialty[] | PaginatedResponse<Specialty>>('/specialties', { signal: opts?.signal });
+    const requestParams = params.tenantId ? { tenant_id: params.tenantId } : undefined;
+    const { data } = await apiClient.get<Specialty[] | PaginatedResponse<Specialty>>('/specialties', { params: requestParams, signal: opts?.signal });
 
     let specialties: Specialty[];
     if (Array.isArray(data)) {
@@ -33,13 +34,15 @@ export const specialtyService = {
     return data;
   },
 
-  async create(input: CreateSpecialtyInput, opts?: { signal?: AbortSignal }): Promise<Specialty> {
-    const { data } = await apiClient.post<Specialty>('/specialties', input, { signal: opts?.signal });
+  async create(input: CreateSpecialtyInput & { tenantId?: string }, opts?: { signal?: AbortSignal }): Promise<Specialty> {
+    const { tenantId, ...body } = input;
+    const { data } = await apiClient.post<Specialty>('/specialties', tenantId ? { ...body, tenant_id: tenantId } : body, { signal: opts?.signal });
     return data;
   },
 
-  async update(id: number, input: UpdateSpecialtyInput, opts?: { signal?: AbortSignal }): Promise<Specialty> {
-    const { data } = await apiClient.put<Specialty>(`/specialties/${id}`, input, { signal: opts?.signal });
+  async update(id: number, input: UpdateSpecialtyInput & { tenantId?: string }, opts?: { signal?: AbortSignal }): Promise<Specialty> {
+    const { tenantId, ...body } = input;
+    const { data } = await apiClient.put<Specialty>(`/specialties/${id}`, tenantId ? { ...body, tenant_id: tenantId } : body, { signal: opts?.signal });
     return data;
   },
 

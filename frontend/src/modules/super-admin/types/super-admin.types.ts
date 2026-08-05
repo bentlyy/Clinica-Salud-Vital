@@ -59,6 +59,31 @@ export interface SaasDashboard {
   growth_by_month: { month: string; tenants: number; revenue: number }[];
 }
 
+export interface HealthScore {
+  id: string;
+  name: string;
+  active: boolean;
+  health_score: number;
+  score_activity: number;
+  score_trend: number;
+  score_patients: number;
+  score_cancellation: number;
+  score_modules: number;
+  last_booking: string | null;
+  bookings_30d: number;
+  bookings_prev_30d: number;
+}
+
+export type AlertSeverity = 'critical' | 'high' | 'medium' | 'low';
+
+export interface SaasAlert {
+  tenant_id: string;
+  tenant_name: string;
+  type: string;
+  severity: AlertSeverity;
+  message: string;
+}
+
 export interface FeatureFlag {
   key: string;
   name: string;

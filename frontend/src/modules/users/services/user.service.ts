@@ -1,7 +1,7 @@
 import type { AxiosRequestConfig } from 'axios';
 import { apiClient } from '@/shared/services/api-client';
 import type { PaginatedResponse } from '@/shared/types/api.types';
-import type { User, CreateUserInput, UserListParams } from '../types/user.types';
+import type { User, CreateDoctorInput, InviteUserInput, UserListParams } from '../types/user.types';
 
 interface BackendUserRow {
   id: number;
@@ -30,8 +30,8 @@ function mapUser(row: BackendUserRow): User {
     email: row.email,
     name: row.name,
     role: row.role as User['role'],
-    tenant_id: 0,
     is_active: row.active,
+    rut: row.rut,
     phone: row.phone,
     created_at: row.created_at,
     updated_at: row.created_at,
@@ -57,8 +57,27 @@ export const userService = {
     return { is_active: data.active };
   },
 
-  async create(input: CreateUserInput, config?: AxiosRequestConfig): Promise<User> {
-    const { data } = await apiClient.post<User>('/auth/register', input, config);
+  async registerDoctor(input: CreateDoctorInput, config?: AxiosRequestConfig): Promise<User> {
+    const { data } = await apiClient.post<{ doctor: { id: number; user_id: number; name: string } }>(
+      '/doctors/register',
+      input,
+      config,
+    );
+    return {
+      id: data.doctor.user_id,
+      name: data.doctor.name,
+      email: input.email,
+      role: 'doctor',
+      is_active: true,
+      rut: input.rut,
+      phone: input.phone,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+  },
+
+  async invitePerson(input: InviteUserInput, config?: AxiosRequestConfig): Promise<{ message: string }> {
+    const { data } = await apiClient.post<{ message: string }>('/doctors/invite', input, config);
     return data;
   },
 };

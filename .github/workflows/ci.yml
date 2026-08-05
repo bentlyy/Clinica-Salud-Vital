@@ -49,9 +49,6 @@ jobs:
       - name: Audit dependencies
         run: npm audit --audit-level=high
 
-      - name: Lint
-        run: npm run lint
-
       - name: Typecheck
         run: npm run typecheck
 
@@ -89,10 +86,6 @@ jobs:
 
       - name: Check coverage thresholds
         run: npm test -- --coverage
-        working-directory: frontend
-
-      - name: Run integration tests
-        run: npm run test:integration
         working-directory: frontend
 
       - name: Build

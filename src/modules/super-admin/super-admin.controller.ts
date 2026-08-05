@@ -144,3 +144,11 @@ export const getAlerts = asyncHandler(async (_req: Request, res: Response) => {
   const data = await superAdminService.getAlerts();
   res.json({ data });
 });
+
+export const getBillingSummary = asyncHandler(async (req: Request, res: Response) => {
+  const tenantId = req.query.tenant_id ? String(req.query.tenant_id) : undefined;
+  const search = req.query.search ? String(req.query.search) : undefined;
+
+  const data = await superAdminService.getBillingSummary({ tenantId, search });
+  res.json({ data });
+});

@@ -17,8 +17,8 @@ Plataforma integral para administrar clínicas, pacientes, médicos, citas, hist
 [![Render](https://img.shields.io/badge/Render-46E3B7?logo=render&logoColor=white)](https://render.com/)
 [![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
 [![CI](https://img.shields.io/github/actions/workflow/status/bentlyy/Clinica-Salud-Vital/ci.yml?branch=master&label=CI&logo=githubactions)](https://github.com/bentlyy/Clinica-Salud-Vital/actions)
-[![Tests](https://img.shields.io/badge/tests-1128%20passing-2ea043)](#-testing)
-[![Coverage](https://img.shields.io/badge/coverage-~85%25-2ea043)](#-testing)
+[![Tests](https://img.shields.io/badge/tests-1244%20passing-2ea043)](#-testing)
+[![Coverage](https://img.shields.io/badge/coverage-~86%25-2ea043)](#-testing)
 [![Audit](https://img.shields.io/badge/audit-2026--07--29-FF6B6B)](#-auditor%C3%ADa-y-mejora)
 
 </div>
@@ -279,11 +279,11 @@ npm run test:coverage             # Reporte HTML
 
 | Métrica | Valor |
 |---------|-------|
-| **Framework** | Vitest 4 con pool forks |
-| **Tests backend** | 1145 passing — 77 archivos |
-| **Tests frontend** | ~89 passing — 13 archivos |
-| **Cobertura** | ~85% lines (threshold: 70%) |
-| **Setup** | Mocks de DB, auth, email, JWT |
+| **Framework** | Vitest 4 con pool forks (backend) / Vitest 3 (frontend) |
+| **Tests backend** | 1146 passing — 77 archivos (21 fallos pre-existentes documentados en la wiki) |
+| **Tests frontend** | 98 passing — 15 archivos |
+| **Cobertura** | ~86% lines (threshold: 70%) |
+| **Setup** | Mocks de DB, auth, email, JWT; storage funcional + i18n en frontend |
 | **CI** | GitHub Actions: typecheck → test → build |
 
 ---
@@ -355,13 +355,13 @@ Los datos de prueba se generan automáticamente al iniciar la app en desarrollo.
 | Aspecto | Estado |
 |---------|--------|
 | **Versión** | `1.0.0` — Producción |
-| **Backend** | 1145 passing tests — ~85% cobertura — typecheck sin errores |
-| **Frontend** | ~89 passing tests — 35 páginas — 28 componentes — lazy loading — tema claro/oscuro |
+| **Backend** | 1146 passing tests — ~85% cobertura — typecheck sin errores |
+| **Frontend** | 98 passing tests — 35 páginas — 28 componentes — lazy loading — tema claro/oscuro |
 | **CI/CD** | GitHub Actions (typecheck + test + build) |
-| **Seguridad** | Helmet, CORS, rate limiting, Zod, 2FA, auditoría HMAC |
+| **Seguridad** | Helmet, CORS, rate limiting, Zod, 2FA, auditoría HMAC, IDOR fixes, captcha fail-closed |
 | **Multi-tenancy** | Implementado con planes SaaS auto-gestionables |
 | **i18n** | 🇪🇸 🇺🇸 completos — ~363 claves c/u — pt/fr deprecated |
-| **Auditoría** | 2026-07-29 — Score 61/100 — 16 corregidos — Mejoras de seguridad implementadas |
+| **Auditoría** | 2026-07-29 — Score ~75/100 — 30 corregidos — Mejoras de seguridad implementadas |
 | **Documentación** | API docs, ADR (monolito modular), Wiki Obsidian |
 | **Frontend** | Consolidado en `frontend/` (v3) — eliminados v1, v2 y login-options |
 

@@ -6,6 +6,7 @@ import {
   DialogActions,
   Button,
 } from '@mui/material';
+import type { ReactNode } from 'react';
 import { useTheme } from '@mui/material/styles';
 import WarningAmber from '@mui/icons-material/WarningAmber';
 import ErrorOutline from '@mui/icons-material/ErrorOutline';
@@ -17,7 +18,7 @@ interface ConfirmDialogProps {
   onClose: () => void;
   onConfirm: () => void;
   title: string;
-  message: string;
+  message: ReactNode;
   confirmLabel?: string;
   cancelLabel?: string;
   variant?: 'danger' | 'primary' | 'warning';

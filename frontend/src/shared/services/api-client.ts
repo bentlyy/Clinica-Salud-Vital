@@ -1,10 +1,14 @@
 import axios, { type AxiosRequestConfig } from 'axios';
 import toast from 'react-hot-toast';
+import type { AuthResponse } from '@/shared/types/api.types';
+
+export const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
 let accessToken: string | null = null;
 let onUnauthorized: (() => void) | null = null;
 let isRefreshing = false;
-let refreshSubscribers: ((token: string) => void)[] = [];
+let refreshSubscribers: ((token: string | null) => void)[] = [];
+let refreshPromise: Promise<AuthResponse> | null = null;
 
 export function setAccessToken(token: string | null) {
   accessToken = token;
@@ -18,8 +22,26 @@ export function setUnauthorizedHandler(handler: () => void) {
   onUnauthorized = handler;
 }
 
+export function refreshSession(): Promise<AuthResponse> {
+  if (refreshPromise) return refreshPromise;
+  refreshPromise = axios
+    .post<AuthResponse>(
+      `${API_BASE_URL}/auth/refresh`,
+      {},
+      { withCredentials: true },
+    )
+    .then(({ data }) => {
+      setAccessToken(data.access_token);
+      return data;
+    })
+    .finally(() => {
+      refreshPromise = null;
+    });
+  return refreshPromise;
+}
+
 export const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || '/api',
+  baseURL: API_BASE_URL,
   timeout: 30000,
   withCredentials: true,
   headers: { 'Content-Type': 'application/json' },
@@ -59,18 +81,26 @@ apiClient.interceptors.response.use(
     return response;
   },
   async (error) => {
+    if (axios.isCancel(error) || (error as { code?: string }).code === 'ERR_CANCELED') {
+      return Promise.reject(error);
+    }
+
     const originalRequest = error.config as { _retry?: boolean; headers?: Record<string, string> };
 
     const isRefreshCall = error.config?.url?.includes('/auth/refresh');
 
     if (error.response?.status === 401 && !originalRequest._retry && !isRefreshCall) {
       if (isRefreshing) {
-        return new Promise((resolve) => {
-          refreshSubscribers.push((token: string) => {
-            if (originalRequest.headers) {
-              originalRequest.headers.Authorization = `Bearer ${token}`;
+        return new Promise((resolve, reject) => {
+          refreshSubscribers.push((token: string | null) => {
+            if (token) {
+              if (originalRequest.headers) {
+                originalRequest.headers.Authorization = `Bearer ${token}`;
+              }
+              resolve(apiClient(originalRequest as AxiosRequestConfig));
+            } else {
+              reject(error);
             }
-            resolve(apiClient(originalRequest as AxiosRequestConfig));
           });
         });
       }
@@ -79,12 +109,7 @@ apiClient.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        const { data } = await axios.post(
-          '/api/auth/refresh',
-          {},
-          { withCredentials: true },
-        );
-        setAccessToken(data.access_token);
+        const data = await refreshSession();
         refreshSubscribers.forEach((cb) => cb(data.access_token));
         refreshSubscribers = [];
         if (originalRequest.headers) {
@@ -93,7 +118,9 @@ apiClient.interceptors.response.use(
         return apiClient(originalRequest as AxiosRequestConfig);
       } catch {
         setAccessToken(null);
+        const failedSubscribers = refreshSubscribers;
         refreshSubscribers = [];
+        failedSubscribers.forEach((cb) => cb(null));
         onUnauthorized?.();
         return Promise.reject(error);
       } finally {

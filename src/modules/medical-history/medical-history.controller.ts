@@ -6,7 +6,8 @@ import { getQueryInt, getQueryString } from '../../shared/query.js';
 export const getMedicalHistory = asyncHandler(async (req: Request, res: Response) => {
   const tenantId = req.user!.role === 'superadmin' ? undefined : req.tenant_id;
 
-  const patientId = req.query.patient_id ? Number(req.query.patient_id) : undefined;
+  const isPatientRole = req.user!.role === 'user' || req.user!.role === 'patient';
+  const patientId = isPatientRole ? req.user!.id : (req.query.patient_id ? Number(req.query.patient_id) : undefined);
   const status = getQueryString(req.query, 'status', undefined);
   const search = getQueryString(req.query, 'search', undefined);
   const limit = getQueryInt(req.query, 'limit', 100);
@@ -21,7 +22,8 @@ export const getMedicalHistory = asyncHandler(async (req: Request, res: Response
 
 export const getMedicalHistoryByPatient = asyncHandler(async (req: Request, res: Response) => {
   const tenantId = req.user!.role === 'superadmin' ? undefined : req.tenant_id;
-  const patientId = Number(req.params.patientId);
+  const isPatientRole = req.user!.role === 'user' || req.user!.role === 'patient';
+  const patientId = isPatientRole ? req.user!.id : Number(req.params.patientId);
 
   const records = await medicalHistoryService.getAllMedicalHistory(
     { patient_id: patientId, limit: 200, offset: 0 },

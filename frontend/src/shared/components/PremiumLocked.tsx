@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { Box, Typography, Button } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
@@ -6,6 +7,7 @@ import LockIcon from '@mui/icons-material/Lock';
 export function PremiumLocked({ featureName }: { featureName?: string }) {
   const navigate = useNavigate();
   const theme = useTheme();
+  const { t } = useTranslation('premium');
 
   return (
     <Box
@@ -33,10 +35,10 @@ export function PremiumLocked({ featureName }: { featureName?: string }) {
         <LockIcon sx={{ fontSize: 32, color: theme.palette.warning.dark }} />
       </Box>
       <Typography variant="h5" sx={{ fontWeight: 700, color: theme.palette.text.primary }}>
-        {featureName || 'Funcionalidad premium'}
+        {featureName || t('title')}
       </Typography>
       <Typography variant="body1" sx={{ color: theme.palette.text.secondary, maxWidth: 400 }}>
-        Esta funcionalidad no está disponible en tu plan actual. Actualiza tu plan para desbloquearla.
+        {t('message')}
       </Typography>
       <Button
         variant="contained"
@@ -50,7 +52,7 @@ export function PremiumLocked({ featureName }: { featureName?: string }) {
           fontWeight: 600,
         }}
       >
-        Ver Planes
+        {t('see_plans')}
       </Button>
     </Box>
   );

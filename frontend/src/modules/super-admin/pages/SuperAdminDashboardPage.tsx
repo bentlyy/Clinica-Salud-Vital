@@ -1,23 +1,42 @@
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '@mui/material/styles';
-import { Box, Paper, Typography, Avatar, Chip } from '@mui/material';
+import { Box, Paper, Typography } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import TrendingUp from '@mui/icons-material/TrendingUp';
 import AccountBalance from '@mui/icons-material/AccountBalance';
 import People from '@mui/icons-material/People';
 import AttachMoney from '@mui/icons-material/AttachMoney';
+import NotificationsNone from '@mui/icons-material/NotificationsNone';
 import { PieChart, Pie, Cell, ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
 import { MotionDiv } from '@/shared/utils/animations';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { LoadingState } from '@/shared/components/ui/LoadingState';
 import { ErrorState } from '@/shared/components/ui/ErrorState';
-import { useSuperAdminDashboard } from '../hooks/useSuperAdmin';
+import { useSuperAdminDashboard, useHealthScores, useAlerts } from '../hooks/useSuperAdmin';
+import { DashboardKpiCard } from '../components/DashboardKpiCard';
+import { HealthScoreGauge } from '../components/HealthScoreGauge';
+import { AlertCard } from '../components/AlertCard';
 import { formatNumber } from '@/shared/utils/localeUtils';
+
+function computeTrend(months: { tenants: number }[]): { value: number; up: boolean } | null {
+  if (months.length < 2) return null;
+  const last = months[months.length - 1].tenants;
+  const prev = months[months.length - 2].tenants;
+  if (prev === 0) return last > 0 ? { value: 100, up: true } : null;
+  const diff = Math.round(((last - prev) / prev) * 100);
+  return { value: Math.abs(diff), up: diff >= 0 };
+}
 
 export default function SuperAdminDashboardPage() {
   const { t } = useTranslation('super_admin_dashboard');
   const theme = useTheme();
   const { data: dashboard, isLoading, error, refetch } = useSuperAdminDashboard();
+  const { data: healthScores = [] } = useHealthScores();
+  const { data: alerts = [] } = useAlerts();
+
+  if (isLoading) return <LoadingState message={t('loading')} />;
+  if (error) return <ErrorState error={error as never} onRetry={refetch} />;
+  if (!dashboard) return null;
 
   const PLAN_COLORS = [
     theme.palette.text.secondary,
@@ -26,16 +45,48 @@ export default function SuperAdminDashboardPage() {
     '#7c3aed',
   ];
 
+  const trend = computeTrend(dashboard.growth_by_month);
+  const sparkData = dashboard.growth_by_month.map((m) => ({ v: m.tenants }));
+  const lastMonth = dashboard.growth_by_month[dashboard.growth_by_month.length - 1];
+
   const statCardConfigs = [
-    { key: 'total_clinics', icon: <AccountBalance />, color: theme.palette.primary.main, bgColor: '#f0fdfa', getValue: (d: { total_tenants: number }) => d.total_tenants.toString() },
-    { key: 'active_clinics', icon: <TrendingUp />, color: theme.palette.success.main, bgColor: '#ecfdf5', getValue: (d: { active_tenants: number }) => d.active_tenants.toString() },
-    { key: 'total_users', icon: <People />, color: theme.palette.info.main, bgColor: '#eff6ff', getValue: (d: { total_users: number }) => d.total_users.toString() },
-    { key: 'total_revenue', icon: <AttachMoney />, color: '#7c3aed', bgColor: '#f5f3ff', getValue: (d: { total_revenue: number }) => `$${formatNumber(d.total_revenue)}` },
+    {
+      key: 'total_clinics',
+      icon: <AccountBalance sx={{ fontSize: 20 }} />,
+      color: theme.palette.primary.main,
+      bgColor: theme.palette.mode === 'dark' ? 'rgba(13,148,136,0.15)' : '#f0fdfa',
+      value: dashboard.total_tenants.toString(),
+      trend: trend,
+    },
+    {
+      key: 'active_clinics',
+      icon: <TrendingUp sx={{ fontSize: 20 }} />,
+      color: theme.palette.success.main,
+      bgColor: theme.palette.mode === 'dark' ? 'rgba(16,185,129,0.15)' : '#ecfdf5',
+      value: dashboard.active_tenants.toString(),
+      trend: null,
+    },
+    {
+      key: 'total_users',
+      icon: <People sx={{ fontSize: 20 }} />,
+      color: theme.palette.info.main,
+      bgColor: theme.palette.mode === 'dark' ? 'rgba(59,130,246,0.15)' : '#eff6ff',
+      value: formatNumber(dashboard.total_users),
+      trend: null,
+    },
+    {
+      key: 'total_revenue',
+      icon: <AttachMoney sx={{ fontSize: 20 }} />,
+      color: '#7c3aed',
+      bgColor: theme.palette.mode === 'dark' ? 'rgba(124,58,237,0.15)' : '#f5f3ff',
+      value: `$${formatNumber(dashboard.total_revenue)}`,
+      trend: null,
+    },
   ];
 
-  if (isLoading) return <LoadingState message={t('loading')} />;
-  if (error) return <ErrorState error={error as never} onRetry={refetch} />;
-  if (!dashboard) return null;
+  const worstHealth = [...healthScores]
+    .sort((a, b) => a.health_score - b.health_score)
+    .slice(0, 3);
 
   return (
     <MotionDiv initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
@@ -48,44 +99,23 @@ export default function SuperAdminDashboardPage() {
       <Grid container spacing={3} sx={{ mb: 4 }}>
         {statCardConfigs.map((stat) => (
           <Grid xs={12} sm={6} md={3} key={stat.key}>
-            <Paper
-              sx={{
-                p: 3,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 2,
-                transition: 'box-shadow 0.2s',
-                '&:hover': { boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' },
-              }}
-            >
-              <Avatar
-                sx={{
-                  width: 48,
-                  height: 48,
-                  backgroundColor: stat.bgColor,
-                  color: stat.color,
-                }}
-              >
-                {stat.icon}
-              </Avatar>
-              <Box>
-                <Typography variant="h4" sx={{ fontWeight: 700, color: theme.palette.text.primary }}>
-                  {stat.getValue(dashboard)}
-                </Typography>
-                <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
-                  {t(stat.key)}
-                </Typography>
-              </Box>
-            </Paper>
+            <DashboardKpiCard
+              label={t(stat.key)}
+              value={stat.value}
+              icon={stat.icon}
+              color={stat.color}
+              bgColor={stat.bgColor}
+              sparkData={sparkData}
+              trend={stat.trend}
+            />
           </Grid>
         ))}
       </Grid>
 
       {/* Charts Row */}
-      <Grid container spacing={3}>
-        {/* Pie Chart - Tenants by Plan */}
+      <Grid container spacing={3} sx={{ mb: 4 }}>
         <Grid xs={12} md={5}>
-          <Paper sx={{ p: 3, border: '1px solid #e5e7eb', borderRadius: '14px' }}>
+          <Paper sx={{ p: 3, border: `1px solid ${theme.palette.divider}`, borderRadius: '16px', height: '100%' }}>
             <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, color: theme.palette.text.primary }}>
               {t('clinics_by_plan')}
             </Typography>
@@ -109,45 +139,55 @@ export default function SuperAdminDashboardPage() {
                       />
                     ))}
                   </Pie>
-                  <Tooltip />
+                  <Tooltip
+                    contentStyle={{
+                      borderRadius: '10px',
+                      border: `1px solid ${theme.palette.divider}`,
+                      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+                    }}
+                  />
                   <Legend />
                 </PieChart>
               </ResponsiveContainer>
             </Box>
             <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mt: 1 }}>
               {dashboard.tenants_by_plan.map((item: { plan: string; count: number }, index: number) => (
-                <Chip
+                <Box
                   key={item.plan}
-                  label={`${item.plan}: ${item.count}`}
-                  size="small"
+                  component="span"
                   sx={{
+                    px: 1,
+                    py: 0.25,
+                    borderRadius: '8px',
+                    fontSize: '0.75rem',
+                    fontWeight: 600,
                     backgroundColor: `${PLAN_COLORS[index % PLAN_COLORS.length]}15`,
                     color: PLAN_COLORS[index % PLAN_COLORS.length],
-                    fontWeight: 600,
                   }}
-                />
+                >
+                  {item.plan}: {item.count}
+                </Box>
               ))}
             </Box>
           </Paper>
         </Grid>
 
-        {/* Line Chart - Growth */}
         <Grid xs={12} md={7}>
-          <Paper sx={{ p: 3, border: '1px solid #e5e7eb', borderRadius: '14px' }}>
+          <Paper sx={{ p: 3, border: `1px solid ${theme.palette.divider}`, borderRadius: '16px', height: '100%' }}>
             <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, color: theme.palette.text.primary }}>
               {t('monthly_growth')}
             </Typography>
             <Box sx={{ height: 320 }}>
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={dashboard.growth_by_month}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+                  <CartesianGrid strokeDasharray="3 3" stroke={theme.palette.divider} />
                   <XAxis dataKey="month" tick={{ fontSize: 12, fill: theme.palette.text.secondary }} />
                   <YAxis yAxisId="left" tick={{ fontSize: 12, fill: theme.palette.text.secondary }} />
                   <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 12, fill: theme.palette.text.secondary }} />
                   <Tooltip
                     contentStyle={{
                       borderRadius: '10px',
-                      border: '1px solid #e5e7eb',
+                      border: `1px solid ${theme.palette.divider}`,
                       boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
                     }}
                   />
@@ -175,6 +215,55 @@ export default function SuperAdminDashboardPage() {
                 </LineChart>
               </ResponsiveContainer>
             </Box>
+            {lastMonth && (
+              <Typography variant="caption" sx={{ color: theme.palette.text.secondary, display: 'block', mt: 1 }}>
+                {t('last_month', { month: lastMonth.month, count: lastMonth.tenants })}
+              </Typography>
+            )}
+          </Paper>
+        </Grid>
+      </Grid>
+
+      {/* Health + Alerts Row */}
+      <Grid container spacing={3}>
+        <Grid xs={12} md={5}>
+          <Paper sx={{ p: 3, border: `1px solid ${theme.palette.divider}`, borderRadius: '16px', height: '100%' }}>
+            <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, color: theme.palette.text.primary }}>
+              {t('health_score_title')}
+            </Typography>
+            {worstHealth.length === 0 ? (
+              <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
+                {t('health_empty')}
+              </Typography>
+            ) : (
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+                {worstHealth.map((tenant) => (
+                  <HealthScoreGauge key={tenant.id} tenant={tenant} />
+                ))}
+              </Box>
+            )}
+          </Paper>
+        </Grid>
+
+        <Grid xs={12} md={7}>
+          <Paper sx={{ p: 3, border: `1px solid ${theme.palette.divider}`, borderRadius: '16px', height: '100%' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+              <NotificationsNone sx={{ color: theme.palette.text.secondary, fontSize: 20 }} />
+              <Typography variant="h6" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
+                {t('alerts_title')}
+              </Typography>
+            </Box>
+            {alerts.length === 0 ? (
+              <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
+                {t('alerts_empty')}
+              </Typography>
+            ) : (
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                {alerts.slice(0, 6).map((alert) => (
+                  <AlertCard key={`${alert.tenant_id}-${alert.type}`} alert={alert} />
+                ))}
+              </Box>
+            )}
           </Paper>
         </Grid>
       </Grid>
