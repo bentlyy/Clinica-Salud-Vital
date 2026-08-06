@@ -23,7 +23,7 @@ const ReportsPage = lazy(() => import('@/modules/reports/pages/ReportsPage'));
 // Real module pages
 const ClinicalRecordsPage = lazy(() => import('@/modules/clinical-records/pages/ClinicalRecordsPage'));
 const ClinicalRecordDetailPage = lazy(() => import('@/modules/clinical-records/pages/ClinicalRecordDetailPage'));
-const PrescriptionsPage = lazy(() => import('@/modules/prescriptions/pages/PrescriptionsPage'));
+const PatientPrescriptionsPage = lazy(() => import('@/modules/prescriptions/pages/PatientPrescriptionsPage'));
 const MedicalHistoryPage = lazy(() => import('@/modules/medical-history/pages/MedicalHistoryPage'));
 
 // Laboratory module
@@ -52,6 +52,15 @@ const SuperAdminBillingPage = lazy(() => import('@/modules/super-admin/pages/Sup
 
 // Specialties module
 const SpecialtiesPage = lazy(() => import('@/modules/specialties/pages/SpecialtiesPage'));
+
+// Clinical module
+const ClinicalPage = lazy(() => import('@/modules/clinical/pages/ClinicalPage'));
+
+// Management module
+const ManagementPage = lazy(() => import('@/modules/management/pages/ManagementPage'));
+
+// System module
+const SystemPage = lazy(() => import('@/modules/system/pages/SystemPage'));
 
 // Patients module
 const PatientsPage = lazy(() => import('@/modules/patients/pages/PatientsPage'));
@@ -139,7 +148,7 @@ export function AppRouter() {
         {/* Dashboard routes (all roles with sidebar) */}
         <Route
           element={
-            <ProtectedRoute allowedRoles={['superadmin', 'admin', 'doctor', 'lab_technician', 'patient']}>
+            <ProtectedRoute allowedRoles={['superadmin', 'admin', 'doctor', 'lab_technician', 'patient', 'user']}>
               <DashboardLayout />
             </ProtectedRoute>
           }
@@ -160,11 +169,14 @@ export function AppRouter() {
           } />
           <Route path="/doctors" element={<DoctorsPage />} />
           <Route path="/bookings" element={<BookingsPage />} />
+          <Route path="/clinical" element={<ClinicalPage />} />
+          <Route path="/management" element={<ManagementPage />} />
+          <Route path="/system" element={<SystemPage />} />
           <Route path="/availability" element={<AvailabilityPage />} />
           <Route path="/calendar" element={<DoctorCalendarPage />} />
           <Route path="/clinical-records" element={<ClinicalRecordsPage />} />
           <Route path="/clinical-records/:id" element={<ClinicalRecordDetailPage />} />
-          <Route path="/prescriptions" element={<PrescriptionsPage />} />
+          <Route path="/prescriptions" element={<PatientPrescriptionsPage />} />
           <Route path="/medical-history" element={<MedicalHistoryPage />} />
           <Route path="/laboratory" element={<FeatureRoute featureKey="laboratory" featureName="Laboratorio" />}>
             <Route index element={<LabDashboardPage />} />
@@ -191,7 +203,11 @@ export function AppRouter() {
           <Route path="/reports" element={<ReportsPage />} />
           <Route path="/audit" element={<AuditPage />} />
           <Route path="/settings" element={<SettingsPage />} />
-          <Route path="/notifications" element={<NotificationsPage />} />
+          <Route path="/notifications" element={
+            <ProtectedRoute allowedRoles={['superadmin', 'lab_technician', 'admin', 'doctor']}>
+              <NotificationsPage />
+            </ProtectedRoute>
+          } />
           <Route path="/saas" element={<SuperAdminDashboardPage />} />
           <Route path="/specialties" element={<SpecialtiesPage />} />
           <Route path="/panel" element={<DoctorPanel />} />

@@ -10,7 +10,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { apiClient, setAccessToken, setUnauthorizedHandler, refreshSession } from '@/shared/services/api-client';
 import type { JwtUser, AuthResponse } from '@/shared/types/api.types';
-import { hasPermission } from '@/shared/utils/role.utils';
+import { hasPermission, normalizeRole } from '@/shared/utils/role.utils';
 
 interface AuthContextType {
   user: JwtUser | null;
@@ -23,6 +23,10 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
+
+function normalizeUser(user: JwtUser): JwtUser {
+  return user.role === 'user' ? { ...user, role: normalizeRole(user.role) } : user;
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<JwtUser | null>(null);
@@ -37,8 +41,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const data = await refreshSession();
         if (!cancelled) {
           setAccessToken(data.access_token);
-          setUser(data.user);
-          localStorage.setItem('auth_user', JSON.stringify(data.user));
+          setUser(normalizeUser(data.user));
+          localStorage.setItem('auth_user', JSON.stringify(normalizeUser(data.user)));
         }
       } catch (err) {
         if (!cancelled) {
@@ -51,7 +55,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const saved = localStorage.getItem('auth_user');
             if (saved) {
               try {
-                setUser(JSON.parse(saved));
+                setUser(normalizeUser(JSON.parse(saved)));
               } catch {
                 setUser(null);
                 localStorage.removeItem('auth_user');
@@ -87,8 +91,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data } = await apiClient.post<AuthResponse>('/auth/login', { email, password, totp_token, captcha_token });
     if (data.requires_2fa) return data;
     setAccessToken(data.access_token);
-    setUser(data.user);
-    localStorage.setItem('auth_user', JSON.stringify(data.user));
+    setUser(normalizeUser(data.user));
+    localStorage.setItem('auth_user', JSON.stringify(normalizeUser(data.user)));
     return data;
   }, []);
 

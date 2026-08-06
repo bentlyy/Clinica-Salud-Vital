@@ -14,7 +14,7 @@ import { LoadingState } from '@/shared/components/ui/LoadingState';
 import { ErrorState } from '@/shared/components/ui/ErrorState';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { useMyBookings, useDoctorBookings, useAllBookings, useCancelBooking } from '../hooks/useBookings';
-import { useDoctorList } from '@/modules/doctors/hooks/useDoctors';
+import { usePublicDoctorList } from '@/modules/doctors/hooks/useDoctors';
 import { BookingCalendar } from '../components/BookingCalendar';
 import { CreateBookingDialog } from '../components/CreateBookingDialog';
 import { BookingDetailDrawer } from '../components/BookingDetailDrawer';
@@ -41,11 +41,11 @@ export default function BookingsPage() {
 
   const limit = 10;
 
-  // Fetch doctor list for CreateBookingDialog
-  const { data: doctorsData, isLoading: isLoadingDoctors } = useDoctorList({ page: 1, limit: 100 });
+  // Fetch doctor list for CreateBookingDialog (public endpoint: id/name/specialty)
+  const { data: doctorsData, isLoading: isLoadingDoctors } = usePublicDoctorList();
   const doctors = useMemo(() => {
-    if (!doctorsData?.data) return [];
-    return doctorsData.data.map((d: { id: number; name: string; specialty?: string }) => ({
+    if (!doctorsData) return [];
+    return doctorsData.map((d: { id: number; name: string; specialty?: string }) => ({
       id: d.id,
       name: d.name,
       specialty: d.specialty,

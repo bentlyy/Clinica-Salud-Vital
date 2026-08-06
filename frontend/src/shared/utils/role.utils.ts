@@ -13,9 +13,15 @@ export function getRedirectPath(role: JwtUser['role']): string {
       return '/laboratory';
     case 'patient':
       return '/dashboard';
+    case 'user':
+      return '/dashboard';
     default:
       return '/dashboard';
   }
+}
+
+export function normalizeRole(role: JwtUser['role']): JwtUser['role'] {
+  return role === 'user' ? 'patient' : role;
 }
 
 export function hasPermission(role: JwtUser['role'], module: string, action?: string): boolean {

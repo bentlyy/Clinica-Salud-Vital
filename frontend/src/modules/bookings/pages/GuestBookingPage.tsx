@@ -97,7 +97,7 @@ export default function GuestBookingPage() {
   const loadDoctors = useCallback(async () => {
     setDoctorsLoading(true);
     try {
-      const res = await apiClient.get<Doctor[] | { data: Doctor[] }>('/doctors');
+      const res = await apiClient.get<Doctor[] | { data: Doctor[] }>('/doctors/public');
       const list = Array.isArray(res.data) ? res.data : (res.data as { data: Doctor[] }).data;
       setDoctors(list ?? []);
     } catch {

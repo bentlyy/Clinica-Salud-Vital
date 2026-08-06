@@ -21,6 +21,7 @@ import {
   updatePrescription,
   deletePrescription,
   getAllPrescriptions,
+  getMyPrescriptions,
   searchCie10,
   getCie10ByCode,
   getCie10Categories,
@@ -35,6 +36,7 @@ router.get('/cie10/search', authorize('doctor', 'admin'), searchCie10);
 router.get('/cie10/categories', authorize('doctor', 'admin'), getCie10Categories);
 router.get('/cie10/:code', authorize('doctor', 'admin'), getCie10ByCode);
 router.get('/prescriptions/all', authorize('doctor', 'admin', 'superadmin'), getAllPrescriptions);
+router.get('/prescriptions/mine', authorize('user', 'patient'), getMyPrescriptions);
 router.get('/prescriptions/:id/pdf', authorize('doctor'), downloadPrescriptionPDF);
 
 router.get('/', authorize('doctor', 'admin', 'user', 'patient', 'superadmin'), getClinicalRecords);
