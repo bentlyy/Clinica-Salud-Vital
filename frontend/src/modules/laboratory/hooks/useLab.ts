@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState, useCallback, useRef } from 'react';
 import toast from 'react-hot-toast';
+import i18n from '@/i18n/i18n';
 import * as labService from '../services/lab.service';
 import type {
   LabRequestListParams,
@@ -114,10 +115,10 @@ export function useCreateLabRequest() {
     mutationFn: (input: CreateLabRequestInput) => labService.createLabRequest(input),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: labKeys.all });
-      toast.success('Solicitud de laboratorio creada');
+      toast.success(i18n.t('lab:requestCreated'));
     },
     onError: () => {
-      toast.error('Error al crear la solicitud');
+      toast.error(i18n.t('lab:requestCreateError'));
     },
   });
 }
@@ -129,10 +130,10 @@ export function useUpdateLabRequest() {
       labService.updateLabRequest(id, input),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: labKeys.all });
-      toast.success('Solicitud actualizada');
+      toast.success(i18n.t('lab:requestUpdated'));
     },
     onError: () => {
-      toast.error('Error al actualizar la solicitud');
+      toast.error(i18n.t('lab:requestUpdateError'));
     },
   });
 }
@@ -143,10 +144,10 @@ export function useDeleteLabRequest() {
     mutationFn: (id: number) => labService.deleteLabRequest(id),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: labKeys.all });
-      toast.success('Solicitud eliminada');
+      toast.success(i18n.t('lab:requestDeleted'));
     },
     onError: () => {
-      toast.error('Error al eliminar la solicitud');
+      toast.error(i18n.t('lab:requestDeleteError'));
     },
   });
 }
@@ -158,10 +159,10 @@ export function useCancelLabRequest() {
       labService.cancelLabRequest(id, reason),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: labKeys.all });
-      toast.success('Solicitud cancelada');
+      toast.success(i18n.t('lab:requestCancelled'));
     },
     onError: () => {
-      toast.error('Error al cancelar la solicitud');
+      toast.error(i18n.t('lab:requestCancelError'));
     },
   });
 }
@@ -173,10 +174,10 @@ export function useUpdateLabRequestStatus() {
       labService.updateLabRequestStatus(id, status),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: labKeys.all });
-      toast.success('Estado actualizado');
+      toast.success(i18n.t('lab:statusUpdated'));
     },
     onError: () => {
-      toast.error('Error al actualizar estado');
+      toast.error(i18n.t('lab:statusUpdateError'));
     },
   });
 }
@@ -204,7 +205,7 @@ export function useAddLabRequestItem() {
     onSuccess: (_data, variables) => {
       void queryClient.invalidateQueries({ queryKey: labKeys.items(variables.requestId) });
       void queryClient.invalidateQueries({ queryKey: labKeys.requestDetail(variables.requestId) });
-      toast.success('Item agregado');
+      toast.success(i18n.t('lab:itemAdded'));
     },
   });
 }
@@ -224,7 +225,7 @@ export function useUpdateLabRequestItem() {
     onSuccess: (_data, variables) => {
       void queryClient.invalidateQueries({ queryKey: labKeys.items(variables.requestId) });
       void queryClient.invalidateQueries({ queryKey: labKeys.all });
-      toast.success('Item actualizado');
+      toast.success(i18n.t('lab:itemUpdated'));
     },
   });
 }
@@ -237,7 +238,7 @@ export function useRemoveLabRequestItem() {
     onSuccess: (_data, variables) => {
       void queryClient.invalidateQueries({ queryKey: labKeys.items(variables.requestId) });
       void queryClient.invalidateQueries({ queryKey: labKeys.all });
-      toast.success('Item eliminado');
+      toast.success(i18n.t('lab:itemDeleted'));
     },
   });
 }
@@ -259,10 +260,10 @@ export function useEnterResult() {
     onSuccess: (_data, variables) => {
       void queryClient.invalidateQueries({ queryKey: labKeys.items(variables.requestId) });
       void queryClient.invalidateQueries({ queryKey: labKeys.all });
-      toast.success('Resultado registrado');
+      toast.success(i18n.t('lab:resultRegistered'));
     },
     onError: () => {
-      toast.error('Error al registrar resultado');
+      toast.error(i18n.t('lab:resultRegisterError'));
     },
   });
 }
@@ -282,7 +283,7 @@ export function useUpdateResult() {
     onSuccess: (_data, variables) => {
       void queryClient.invalidateQueries({ queryKey: labKeys.items(variables.requestId) });
       void queryClient.invalidateQueries({ queryKey: labKeys.all });
-      toast.success('Resultado actualizado');
+      toast.success(i18n.t('lab:resultUpdated'));
     },
   });
 }
@@ -304,10 +305,10 @@ export function useValidateTech() {
     onSuccess: (_data, variables) => {
       void queryClient.invalidateQueries({ queryKey: labKeys.items(variables.requestId) });
       void queryClient.invalidateQueries({ queryKey: labKeys.all });
-      toast.success('Validado por técnico');
+      toast.success(i18n.t('lab:validatedByTech'));
     },
     onError: () => {
-      toast.error('Error al validar');
+      toast.error(i18n.t('lab:validationError'));
     },
   });
 }
@@ -327,10 +328,10 @@ export function useValidateDoctor() {
     onSuccess: (_data, variables) => {
       void queryClient.invalidateQueries({ queryKey: labKeys.items(variables.requestId) });
       void queryClient.invalidateQueries({ queryKey: labKeys.all });
-      toast.success('Validado por médico');
+      toast.success(i18n.t('lab:validatedByDoctor'));
     },
     onError: () => {
-      toast.error('Error al validar');
+      toast.error(i18n.t('lab:validationError'));
     },
   });
 }
@@ -343,10 +344,10 @@ export function useSignResult() {
     onSuccess: (_data, variables) => {
       void queryClient.invalidateQueries({ queryKey: labKeys.items(variables.requestId) });
       void queryClient.invalidateQueries({ queryKey: labKeys.all });
-      toast.success('Resultado firmado');
+      toast.success(i18n.t('lab:resultSigned'));
     },
     onError: () => {
-      toast.error('Error al firmar');
+      toast.error(i18n.t('lab:signError'));
     },
   });
 }
@@ -366,7 +367,7 @@ export function useDeliverResult() {
     onSuccess: (_data, variables) => {
       void queryClient.invalidateQueries({ queryKey: labKeys.items(variables.requestId) });
       void queryClient.invalidateQueries({ queryKey: labKeys.all });
-      toast.success('Resultado entregado');
+      toast.success(i18n.t('lab:resultDelivered'));
     },
   });
 }
@@ -396,7 +397,7 @@ export function useCreateSample() {
       labService.createSample(input),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: labKeys.all });
-      toast.success('Muestra creada');
+      toast.success(i18n.t('lab:sampleCreated'));
     },
   });
 }
@@ -408,7 +409,7 @@ export function useUpdateSample() {
       labService.updateSample(id, input),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: labKeys.all });
-      toast.success('Muestra actualizada');
+      toast.success(i18n.t('lab:sampleUpdated'));
     },
   });
 }
@@ -419,7 +420,7 @@ export function useReceiveSample() {
     mutationFn: (id: number) => labService.receiveSample(id),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: labKeys.all });
-      toast.success('Muestra recibida');
+      toast.success(i18n.t('lab:sampleReceived'));
     },
   });
 }
@@ -430,7 +431,7 @@ export function useVerifySample() {
     mutationFn: (id: number) => labService.verifySample(id),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: labKeys.all });
-      toast.success('Muestra verificada');
+      toast.success(i18n.t('lab:sampleVerified'));
     },
   });
 }
@@ -442,7 +443,7 @@ export function useRejectSample() {
       labService.rejectSample(id, reason),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: labKeys.all });
-      toast.success('Muestra rechazada');
+      toast.success(i18n.t('lab:sampleRejected'));
     },
   });
 }
@@ -473,7 +474,7 @@ export function useCreateQCRecord() {
     mutationFn: (input: Partial<Record<string, unknown>>) => labService.createQCRecord(input),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: labKeys.all });
-      toast.success('Registro QC creado');
+      toast.success(i18n.t('lab:qcCreated'));
     },
   });
 }
@@ -484,7 +485,7 @@ export function useApproveQCRecord() {
     mutationFn: (id: number) => labService.approveQCRecord(id),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: labKeys.all });
-      toast.success('Registro QC aprobado');
+      toast.success(i18n.t('lab:qcApproved'));
     },
   });
 }
@@ -505,7 +506,7 @@ export function useCreateEquipment() {
     mutationFn: (input: Partial<Record<string, unknown>>) => labService.createEquipment(input),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: labKeys.all });
-      toast.success('Equipo registrado');
+      toast.success(i18n.t('lab:equipmentRegistered'));
     },
   });
 }
@@ -517,7 +518,7 @@ export function useUpdateEquipment() {
       labService.updateEquipment(id, input),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: labKeys.all });
-      toast.success('Equipo actualizado');
+      toast.success(i18n.t('lab:equipmentUpdated'));
     },
   });
 }
@@ -538,7 +539,7 @@ export function useCreateReagent() {
     mutationFn: (input: Partial<Record<string, unknown>>) => labService.createReagent(input),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: labKeys.all });
-      toast.success('Reactivo registrado');
+      toast.success(i18n.t('lab:reagentRegistered'));
     },
   });
 }
@@ -550,7 +551,7 @@ export function useUpdateReagent() {
       labService.updateReagent(id, input),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: labKeys.all });
-      toast.success('Reactivo actualizado');
+      toast.success(i18n.t('lab:reagentUpdated'));
     },
   });
 }
@@ -613,7 +614,7 @@ export function useAcknowledgeAllNotifications() {
     mutationFn: labService.acknowledgeAllNotifications,
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: labKeys.notifications() });
-      toast.success('Notificaciones marcadas como leídas');
+      toast.success(i18n.t('lab:notificationsRead'));
     },
   });
 }

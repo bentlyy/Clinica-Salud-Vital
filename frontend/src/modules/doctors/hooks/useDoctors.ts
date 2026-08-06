@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
+import i18n from '@/i18n/i18n';
 import { doctorService } from '../services/doctor.service';
 import type { DoctorListParams, CreateDoctorInput, UpdateDoctorInput } from '../types/doctor.types';
 
@@ -48,7 +49,7 @@ export function useCreateDoctor() {
     mutationFn: (input: CreateDoctorInput) => doctorService.create(input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['doctors'] });
-      toast.success('Doctor creado exitosamente');
+      toast.success(i18n.t('doctors:doctorCreated'));
     },
   });
 }
@@ -62,7 +63,7 @@ export function useUpdateDoctor() {
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['doctors'] });
       queryClient.invalidateQueries({ queryKey: ['doctors', variables.id] });
-      toast.success('Doctor actualizado exitosamente');
+      toast.success(i18n.t('doctors:doctorUpdated'));
     },
   });
 }
@@ -75,7 +76,7 @@ export function useInviteDoctor() {
       doctorService.invite(id, email),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['doctors'] });
-      toast.success('Invitación enviada exitosamente');
+      toast.success(i18n.t('doctors:inviteSent'));
     },
   });
 }

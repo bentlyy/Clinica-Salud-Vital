@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
+import i18n from '@/i18n/i18n';
 import { clinicalRecordService } from '../services/clinical-record.service';
 import type {
   ClinicalRecordListParams,
@@ -37,7 +38,7 @@ export function useCreateClinicalRecord() {
     mutationFn: (input: CreateClinicalRecordInput) => clinicalRecordService.create(input),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['clinical-records'] });
-      toast.success('Expediente creado correctamente');
+      toast.success(i18n.t('clinical_records:created'));
     },
   });
 }
@@ -50,7 +51,7 @@ export function useUpdateClinicalRecord() {
       clinicalRecordService.update(id, input),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['clinical-records'] });
-      toast.success('Expediente actualizado correctamente');
+      toast.success(i18n.t('clinical_records:updated'));
     },
   });
 }
@@ -62,7 +63,7 @@ export function useDeleteClinicalRecord() {
     mutationFn: (id: number) => clinicalRecordService.remove(id),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['clinical-records'] });
-      toast.success('Expediente eliminado correctamente');
+      toast.success(i18n.t('clinical_records:deleted'));
     },
   });
 }

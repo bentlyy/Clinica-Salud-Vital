@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
+import i18n from '@/i18n/i18n';
 import { prescriptionService } from '../services/prescription.service';
 import type {
   CreatePrescriptionInput,
@@ -28,7 +29,7 @@ export function useCreatePrescription() {
     mutationFn: (input: CreatePrescriptionInput) => prescriptionService.create(input),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['prescriptions'] });
-      toast.success('Receta creada correctamente');
+      toast.success(i18n.t('prescriptions:created'));
     },
   });
 }
@@ -41,7 +42,7 @@ export function useUpdatePrescription() {
       prescriptionService.update(id, input),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['prescriptions'] });
-      toast.success('Receta actualizada correctamente');
+      toast.success(i18n.t('prescriptions:updated'));
     },
   });
 }
@@ -53,7 +54,7 @@ export function useDeletePrescription() {
     mutationFn: (id: number) => prescriptionService.remove(id),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['prescriptions'] });
-      toast.success('Receta eliminada correctamente');
+      toast.success(i18n.t('prescriptions:deleted'));
     },
   });
 }
@@ -62,7 +63,7 @@ export function useDownloadPrescriptionPdf() {
   return useMutation({
     mutationFn: (id: number) => prescriptionService.downloadPdf(id),
     onError: () => {
-      toast.error('Error al descargar el PDF');
+      toast.error(i18n.t('prescriptions:downloadError'));
     },
   });
 }

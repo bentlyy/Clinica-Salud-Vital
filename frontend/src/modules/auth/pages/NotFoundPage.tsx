@@ -33,11 +33,11 @@ export default function NotFoundPage() {
       </Typography>
 
       <Typography variant="h5" sx={{ fontWeight: 600, color: theme.palette.text.primary, mb: 1 }}>
-        {t('not_found.title', 'Página no encontrada')}
+        {t('not_found:title', 'Página no encontrada')}
       </Typography>
 
       <Typography variant="body1" sx={{ color: theme.palette.text.secondary, mb: 4, maxWidth: 400 }}>
-        {t('not_found.message', 'La página que buscas no existe o fue movida.')}
+        {t('not_found:message', 'La página que buscas no existe o fue movida.')}
       </Typography>
 
       <Button
@@ -54,7 +54,7 @@ export default function NotFoundPage() {
           borderRadius: '10px',
         }}
       >
-        {t('not_found.go_home', 'Volver al inicio')}
+        {t('not_found:go_home', 'Volver al inicio')}
       </Button>
     </Box>
   );

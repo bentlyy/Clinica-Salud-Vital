@@ -202,7 +202,7 @@ export function SecurityTab() {
                   <Box
                     component="img"
                     src={generateTwoFA.data.qr_code}
-                    alt="QR Code 2FA"
+                    alt={t('qrCode2fa')}
                     sx={{ width: 200, height: 200, borderRadius: '10px', mb: 2 }}
                   />
                   <Typography variant="caption" sx={{ color: theme.palette.text.secondary, display: 'block', mb: 2 }}>

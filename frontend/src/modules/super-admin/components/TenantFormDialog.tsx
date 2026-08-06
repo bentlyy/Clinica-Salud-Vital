@@ -110,10 +110,10 @@ export function TenantFormDialog({ open, tenant, onClose, onSubmit, isPending }:
                 <FormControl fullWidth>
                   <InputLabel>{t('plan_label', 'Plan')}</InputLabel>
                   <Select {...field} label={t('plan_label', 'Plan')}>
-                    <MenuItem value="free">Gratuito</MenuItem>
-                    <MenuItem value="basic">Básico</MenuItem>
-                    <MenuItem value="pro">Pro</MenuItem>
-                    <MenuItem value="enterprise">Enterprise</MenuItem>
+                    <MenuItem value="free">{t('planFree')}</MenuItem>
+                    <MenuItem value="basic">{t('planBasic')}</MenuItem>
+                    <MenuItem value="pro">{t('planPro')}</MenuItem>
+                    <MenuItem value="enterprise">{t('planEnterprise')}</MenuItem>
                   </Select>
                 </FormControl>
               )}

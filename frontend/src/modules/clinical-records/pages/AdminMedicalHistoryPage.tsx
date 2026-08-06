@@ -42,7 +42,7 @@ export default function AdminMedicalHistoryPage() {
   const grouped = useMemo(() => {
     const map = new Map<string, ClinicalRecord[]>();
     for (const r of records) {
-      const key = `${r.doctor_name || t('admin_medical_history.noDoctor')}`;
+      const key = `${r.doctor_name || t('admin_medical_history:noDoctor')}`;
       if (!map.has(key)) map.set(key, []);
       map.get(key)!.push(r);
     }
@@ -51,9 +51,9 @@ export default function AdminMedicalHistoryPage() {
 
   const getStatusConfig = (status: string) => {
     const map: Record<string, { bg: string; fg: string; label: string }> = {
-      completed: { bg: theme.palette.success.light, fg: theme.palette.success.main, label: t('admin_medical_history.status.completed') },
-      draft: { bg: theme.palette.warning.light, fg: theme.palette.warning.main, label: t('admin_medical_history.status.draft') },
-      cancelled: { bg: theme.palette.grey[100], fg: theme.palette.text.secondary, label: t('admin_medical_history.status.cancelled') },
+      completed: { bg: theme.palette.success.light, fg: theme.palette.success.main, label: t('admin_medical_history:status.completed') },
+      draft: { bg: theme.palette.warning.light, fg: theme.palette.warning.main, label: t('admin_medical_history:status.draft') },
+      cancelled: { bg: theme.palette.grey[100], fg: theme.palette.text.secondary, label: t('admin_medical_history:status.cancelled') },
     };
     return map[status] || { bg: theme.palette.grey[100], fg: theme.palette.text.secondary, label: status };
   };
@@ -62,25 +62,25 @@ export default function AdminMedicalHistoryPage() {
 
   return (
     <Box>
-      <PageHeader title={t('admin_medical_history.title')} subtitle={t('admin_medical_history.subtitle')} />
+      <PageHeader title={t('admin_medical_history:title')} subtitle={t('admin_medical_history:subtitle')} />
 
       {grouped.length === 0 ? (
-        <EmptyState title={t('admin_medical_history.emptyTitle')} message={t('admin_medical_history.emptyDesc')} />
+        <EmptyState title={t('admin_medical_history:emptyTitle')} message={t('admin_medical_history:emptyDesc')} />
       ) : (
         grouped.map(([doctorName, doctorRecords]) => (
           <Paper key={doctorName} sx={{ p: 2.5, mb: 2, border: '1px solid #e5e7eb', borderRadius: '12px' }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
               <Typography variant="subtitle1" sx={{ fontWeight: 700, color: theme.palette.text.primary }}>{doctorName}</Typography>
-              <Chip label={t('admin_medical_history.recordCount', { count: doctorRecords.length })} size="small" sx={{ backgroundColor: theme.palette.info.light, color: theme.palette.info.main, fontWeight: 600 }} />
+              <Chip label={t('admin_medical_history:recordCount', { count: doctorRecords.length })} size="small" sx={{ backgroundColor: theme.palette.info.light, color: theme.palette.info.main, fontWeight: 600 }} />
             </Box>
             <TableContainer>
               <Table size="small">
                 <TableHead>
                   <TableRow>
-                    <TableCell>{t('admin_medical_history.colPatient')}</TableCell>
-                    <TableCell>{t('admin_medical_history.colDiagnosis')}</TableCell>
-                    <TableCell>{t('admin_medical_history.colDate')}</TableCell>
-                    <TableCell>{t('admin_medical_history.colStatus')}</TableCell>
+                    <TableCell>{t('admin_medical_history:colPatient')}</TableCell>
+                    <TableCell>{t('admin_medical_history:colDiagnosis')}</TableCell>
+                    <TableCell>{t('admin_medical_history:colDate')}</TableCell>
+                    <TableCell>{t('admin_medical_history:colStatus')}</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>

@@ -40,7 +40,7 @@ export default function LabResultDetailPage() {
     setLoading(true);
     getLabRequestById(Number(id))
       .then((res) => setRequest(res as LabRequest & { items: LabRequestItem[] }))
-      .catch(() => setError(t('lab_result_detail.errorLoading')))
+      .catch(() => setError(t('lab_result_detail:errorLoading')))
       .finally(() => setLoading(false));
   }, [id]);
 
@@ -51,7 +51,7 @@ export default function LabResultDetailPage() {
 
   if (loading) return <Box sx={{ p: 4 }}><Skeleton variant="rounded" height={200} sx={{ borderRadius: '12px' }} /></Box>;
   if (error) return <Box sx={{ p: 4 }}><Alert severity="error" sx={{ borderRadius: '10px' }}>{error}</Alert></Box>;
-  if (!request) return <Box sx={{ p: 4 }}><Alert severity="info" sx={{ borderRadius: '10px' }}>{t('lab_result_detail.notFound')}</Alert></Box>;
+  if (!request) return <Box sx={{ p: 4 }}><Alert severity="info" sx={{ borderRadius: '10px' }}>{t('lab_result_detail:notFound')}</Alert></Box>;
 
   const items = request.items || [];
   const testNames = items.map((i) => i.test_name).filter(Boolean).join(', ');
@@ -82,7 +82,7 @@ export default function LabResultDetailPage() {
           </Box>
         }
         action={
-          <Button startIcon={<ArrowBack />} onClick={goBack} sx={{ textTransform: 'none' }}>{t('lab_result_detail.back')}</Button>
+          <Button startIcon={<ArrowBack />} onClick={goBack} sx={{ textTransform: 'none' }}>{t('lab_result_detail:back')}</Button>
         }
       />
 
@@ -105,7 +105,7 @@ export default function LabResultDetailPage() {
           </Typography>
         </Box>
         <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
-          {isCompleted ? t('lab_result_detail.allCompleted') : t('lab_result_detail.progress', { done: completedItems.length, total: items.length })}
+          {isCompleted ? t('lab_result_detail:allCompleted') : t('lab_result_detail:progress', { done: completedItems.length, total: items.length })}
         </Typography>
       </Paper>
 
@@ -115,10 +115,10 @@ export default function LabResultDetailPage() {
           <Table>
             <TableHead>
               <TableRow>
-                <TableCell>{t('lab_result_detail.colExam')}</TableCell>
-                <TableCell>{t('lab_result_detail.colResult')}</TableCell>
-                <TableCell>{t('lab_result_detail.colReference')}</TableCell>
-                <TableCell>{t('lab_result_detail.colNotes')}</TableCell>
+                <TableCell>{t('lab_result_detail:colExam')}</TableCell>
+                <TableCell>{t('lab_result_detail:colResult')}</TableCell>
+                <TableCell>{t('lab_result_detail:colReference')}</TableCell>
+                <TableCell>{t('lab_result_detail:colNotes')}</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -142,7 +142,7 @@ export default function LabResultDetailPage() {
                           {item.unit && <Typography component="span" variant="caption" sx={{ ml: 0.5, fontWeight: 400, color: theme.palette.text.secondary }}>{item.unit}</Typography>}
                         </Typography>
                       ) : (
-                        <Typography variant="body2" sx={{ color: theme.palette.text.secondary, fontStyle: 'italic' }}>{t('lab_result_detail.pending')}</Typography>
+                        <Typography variant="body2" sx={{ color: theme.palette.text.secondary, fontStyle: 'italic' }}>{t('lab_result_detail:pending')}</Typography>
                       )}
                     </TableCell>
                     <TableCell>
@@ -161,7 +161,7 @@ export default function LabResultDetailPage() {
 
       {request.notes && (
         <Paper sx={{ p: 2, mt: 2, border: `1px solid ${color}30`, borderRadius: '12px', backgroundColor: `${color}08` }}>
-          <Typography variant="caption" sx={{ fontWeight: 600, color: theme.palette.text.secondary }}>{t('lab_result_detail.requestNotes')}</Typography>
+          <Typography variant="caption" sx={{ fontWeight: 600, color: theme.palette.text.secondary }}>{t('lab_result_detail:requestNotes')}</Typography>
           <Typography variant="body2" sx={{ color: theme.palette.text.primary, mt: 0.5 }}>{request.notes}</Typography>
         </Paper>
       )}

@@ -19,11 +19,13 @@ import Send from '@mui/icons-material/Send';
 import Mail from '@mui/icons-material/Mail';
 import type { Doctor } from '../types/doctor.types';
 
-const inviteSchema = z.object({
-  email: z.string().email('Ingresa un email válido'),
-});
+function createInviteSchema(t: (key: string) => string) {
+  return z.object({
+    email: z.string().email(t('errors:invalidEmail')),
+  });
+}
 
-type InviteFormData = z.infer<typeof inviteSchema>;
+type InviteFormData = z.infer<ReturnType<typeof createInviteSchema>>;
 
 interface InviteDoctorDialogProps {
   open: boolean;
@@ -36,6 +38,7 @@ interface InviteDoctorDialogProps {
 export function InviteDoctorDialog({ open, onClose, doctor, onSubmit, isPending }: InviteDoctorDialogProps) {
   const theme = useTheme();
   const { t } = useTranslation('doctors');
+  const inviteSchema = createInviteSchema(t);
   const {
     register,
     handleSubmit,

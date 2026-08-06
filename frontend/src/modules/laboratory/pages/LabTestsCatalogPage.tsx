@@ -65,7 +65,7 @@ export default function LabTestsCatalogPage() {
         const testsData = await getLabTests({});
         setTests(testsData);
       } catch {
-        setError(t('lab_catalog.errorLoading'));
+        setError(t('lab_catalog:errorLoading'));
       } finally {
         setLoading(false);
       }
@@ -114,14 +114,14 @@ export default function LabTestsCatalogPage() {
 
   return (
     <Box>
-      <PageHeader title={t('lab_catalog.title')} />
+      <PageHeader title={t('lab_catalog:title')} />
 
       {/* Search */}
       <Paper sx={{ p: 2, mb: 3, border: `1px solid ${theme.palette.divider}`, borderRadius: '12px' }}>
         <TextField
           fullWidth
           size="small"
-          placeholder={t('lab_catalog.searchPlaceholder')}
+          placeholder={t('lab_catalog:searchPlaceholder')}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           slotProps={{
@@ -140,7 +140,7 @@ export default function LabTestsCatalogPage() {
       {/* Category filters */}
       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 3 }}>
         <Chip
-          label={t('lab_catalog.all', { count: tests.length })}
+          label={t('lab_catalog:all', { count: tests.length })}
           onClick={() => setActiveCategory('all')}
           variant={activeCategory === 'all' ? 'filled' : 'outlined'}
           sx={{
@@ -181,7 +181,7 @@ export default function LabTestsCatalogPage() {
         <Paper sx={{ p: 4, textAlign: 'center', border: `1px solid ${theme.palette.divider}`, borderRadius: '12px' }}>
           <Science sx={{ fontSize: 48, color: theme.palette.divider, mb: 1 }} />
           <Typography variant="h6" sx={{ color: theme.palette.text.secondary }}>
-            {t('lab_catalog.noResults')}
+            {t('lab_catalog:noResults')}
           </Typography>
         </Paper>
       ) : (
@@ -246,12 +246,12 @@ export default function LabTestsCatalogPage() {
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, mb: 1.5 }}>
                       {test.unit && (
                         <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
-                          {t('lab_catalog.unit')} <strong style={{ color: theme.palette.text.primary }}>{test.unit}</strong>
+                          {t('lab_catalog:unit')} <strong style={{ color: theme.palette.text.primary }}>{test.unit}</strong>
                         </Typography>
                       )}
                       {test.turnaround_time_min > 0 && (
                         <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
-                          {t('lab_catalog.turnaround')} <strong style={{ color: theme.palette.text.primary }}>{test.turnaround_time_min} min</strong>
+                          {t('lab_catalog:turnaround')} <strong style={{ color: theme.palette.text.primary }}>{test.turnaround_time_min} min</strong>
                         </Typography>
                       )}
                     </Box>
@@ -260,7 +260,7 @@ export default function LabTestsCatalogPage() {
                     {test.preparation_instructions && (
                       <Box sx={{ backgroundColor: theme.palette.custom.status.info.bg, borderRadius: '8px', p: 1, mb: 1 }}>
                         <Typography variant="caption" sx={{ color: theme.palette.info.dark, fontWeight: 500 }}>
-                          {t('lab_catalog.preparation')} {test.preparation_instructions}
+                          {t('lab_catalog:preparation')} {test.preparation_instructions}
                         </Typography>
                       </Box>
                     )}
@@ -269,7 +269,7 @@ export default function LabTestsCatalogPage() {
                     {test.reference_ranges && Object.keys(test.reference_ranges).length > 0 && (
                       <Box sx={{ mt: 'auto' }}>
                         <Typography variant="caption" sx={{ color: theme.palette.text.secondary, fontWeight: 600 }}>
-                          {t('lab_catalog.refRanges')}
+                          {t('lab_catalog:refRanges')}
                         </Typography>
                         {Object.entries(test.reference_ranges).slice(0, 3).map(([group, range]) => (
                           <Typography key={group} variant="caption" sx={{ color: theme.palette.text.secondary, display: 'block' }}>

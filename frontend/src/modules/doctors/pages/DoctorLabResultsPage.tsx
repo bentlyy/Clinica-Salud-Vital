@@ -87,7 +87,7 @@ export default function DoctorLabResultsPage() {
         setPatients(Array.from(patientMap.values()));
       }
     } catch {
-      setError(t('doctor_lab_results.errorLoad'));
+      setError(t('doctor_lab_results:errorLoad'));
     } finally {
       setLoading(false);
     }
@@ -101,7 +101,7 @@ export default function DoctorLabResultsPage() {
       const req = await getLabRequestById(id);
       setDetailRequest(req as LabRequest & { items: LabRequestItem[] });
     } catch {
-      toast.error(t('doctor_lab_results.errorDetail'));
+      toast.error(t('doctor_lab_results:errorDetail'));
     } finally {
       setDetailLoading(false);
     }
@@ -109,7 +109,7 @@ export default function DoctorLabResultsPage() {
 
   const handleCreateRequest = async () => {
     if (!patientId || testIds.length === 0) {
-      toast.error(t('doctor_lab_results.selectPatientAndExam'));
+      toast.error(t('doctor_lab_results:selectPatientAndExam'));
       return;
     }
     setSaving(true);
@@ -119,14 +119,14 @@ export default function DoctorLabResultsPage() {
         notes: notes || undefined,
         test_ids: testIds,
       });
-      toast.success(t('doctor_lab_results.requestCreated'));
+      toast.success(t('doctor_lab_results:requestCreated'));
       setNewDialogOpen(false);
       setPatientId('');
       setNotes('');
       setTestIds([]);
       fetchAll();
     } catch {
-      toast.error(t('doctor_lab_results.errorCreate'));
+      toast.error(t('doctor_lab_results:errorCreate'));
     } finally {
       setSaving(false);
     }
@@ -134,30 +134,30 @@ export default function DoctorLabResultsPage() {
 
   const getStatusConfig = (status: string) => {
     const map: Record<string, { bg: string; fg: string; label: string }> = {
-      pending: { bg: theme.palette.warning.light, fg: theme.palette.warning.main, label: t('lab.statusLabels.pending') },
-      received: { bg: theme.palette.info.light, fg: theme.palette.info.main, label: t('lab.statusLabels.received') },
-      processing: { bg: '#fff7ed', fg: '#f97316', label: t('lab.statusLabels.processing') },
-      result_entered: { bg: '#f0fdfa', fg: '#14b8a6', label: t('lab.statusLabels.result_entered') },
-      validated_tech: { bg: '#ecfdf5', fg: '#22c55e', label: t('lab.statusLabels.validated_tech') },
-      validated_doctor: { bg: '#ecfdf5', fg: '#10b981', label: t('lab.statusLabels.validated_doctor') },
-      signed: { bg: '#f0fdfa', fg: theme.palette.primary.main, label: t('lab.statusLabels.signed') },
-      delivered: { bg: '#ecfdf5', fg: '#065f46', label: t('lab.statusLabels.delivered') },
-      cancelled: { bg: theme.palette.grey[100], fg: theme.palette.text.secondary, label: t('lab.statusLabels.cancelled') },
-      rejected: { bg: theme.palette.error.light, fg: theme.palette.error.main, label: t('lab.statusLabels.rejected') },
+      pending: { bg: theme.palette.warning.light, fg: theme.palette.warning.main, label: t('lab:statusLabels.pending') },
+      received: { bg: theme.palette.info.light, fg: theme.palette.info.main, label: t('lab:statusLabels.received') },
+      processing: { bg: '#fff7ed', fg: '#f97316', label: t('lab:statusLabels.processing') },
+      result_entered: { bg: '#f0fdfa', fg: '#14b8a6', label: t('lab:statusLabels.result_entered') },
+      validated_tech: { bg: '#ecfdf5', fg: '#22c55e', label: t('lab:statusLabels.validated_tech') },
+      validated_doctor: { bg: '#ecfdf5', fg: '#10b981', label: t('lab:statusLabels.validated_doctor') },
+      signed: { bg: '#f0fdfa', fg: theme.palette.primary.main, label: t('lab:statusLabels.signed') },
+      delivered: { bg: '#ecfdf5', fg: '#065f46', label: t('lab:statusLabels.delivered') },
+      cancelled: { bg: theme.palette.grey[100], fg: theme.palette.text.secondary, label: t('lab:statusLabels.cancelled') },
+      rejected: { bg: theme.palette.error.light, fg: theme.palette.error.main, label: t('lab:statusLabels.rejected') },
     };
     return map[status] || { bg: theme.palette.grey[100], fg: theme.palette.text.secondary, label: status };
   };
 
-  if (loading) return <LoadingState message={t('doctor_lab_results.loadingRequests')} />;
+  if (loading) return <LoadingState message={t('doctor_lab_results:loadingRequests')} />;
 
   return (
     <Box>
       <PageHeader
-        title={t('doctor_lab_results.title')}
-        subtitle={t('doctor_lab_results.subtitle')}
+        title={t('doctor_lab_results:title')}
+        subtitle={t('doctor_lab_results:subtitle')}
         action={
           <Button variant="contained" startIcon={<Add />} onClick={() => setNewDialogOpen(true)}>
-            {t('doctor_lab_results.newRequest')}
+            {t('doctor_lab_results:newRequest')}
           </Button>
         }
       />
@@ -165,19 +165,19 @@ export default function DoctorLabResultsPage() {
       {error && <Alert severity="error" sx={{ mb: 2, borderRadius: '10px' }}>{error}</Alert>}
 
       {requests.length === 0 ? (
-        <EmptyState title={t('doctor_lab_results.emptyTitle')} message={t('doctor_lab_results.emptyDesc')} action={{ label: t('doctor_lab_results.newRequest'), onClick: () => setNewDialogOpen(true) }} />
+        <EmptyState title={t('doctor_lab_results:emptyTitle')} message={t('doctor_lab_results:emptyDesc')} action={{ label: t('doctor_lab_results:newRequest'), onClick: () => setNewDialogOpen(true) }} />
       ) : (
         <Paper sx={{ borderRadius: '14px', border: '1px solid #e5e7eb', overflow: 'hidden' }}>
           <TableContainer>
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>{t('doctor_lab_results.colRequest')}</TableCell>
-                  <TableCell>{t('doctor_lab_results.colPatient')}</TableCell>
-                  <TableCell>{t('doctor_lab_results.colDoctor')}</TableCell>
-                  <TableCell>{t('doctor_lab_results.colDate')}</TableCell>
-                  <TableCell>{t('doctor_lab_results.colStatus')}</TableCell>
-                  <TableCell align="right">{t('doctor_lab_results.colActions')}</TableCell>
+                  <TableCell>{t('doctor_lab_results:colRequest')}</TableCell>
+                  <TableCell>{t('doctor_lab_results:colPatient')}</TableCell>
+                  <TableCell>{t('doctor_lab_results:colDoctor')}</TableCell>
+                  <TableCell>{t('doctor_lab_results:colDate')}</TableCell>
+                  <TableCell>{t('doctor_lab_results:colStatus')}</TableCell>
+                  <TableCell align="right">{t('doctor_lab_results:colActions')}</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -216,7 +216,7 @@ export default function DoctorLabResultsPage() {
                           onClick={() => navigate(`/patient-history?patientId=${r.patient_id}`)}
                           sx={{ textTransform: 'none', fontSize: 12, color: theme.palette.primary.main, ml: 0.5 }}
                         >
-                          {t('doctor_lab_results.history')}
+                          {t('doctor_lab_results:history')}
                         </Button>
                       </TableCell>
                     </TableRow>
@@ -237,7 +237,7 @@ export default function DoctorLabResultsPage() {
             </DialogTitle>
             <DialogContent>
               {detailLoading ? (
-                <LoadingState message={t('doctor_lab_results.loadingDetail') || 'Cargando...'} />
+                <LoadingState message={t('doctor_lab_results:loadingDetail') || 'Cargando...'} />
               ) : (
                 <Box>
                   {detailRequest.items?.map((item) => (
@@ -256,7 +256,7 @@ export default function DoctorLabResultsPage() {
                   ))}
                   {detailRequest.notes && (
                     <Box sx={{ mt: 2, p: 1.5, backgroundColor: '#f9fafb', borderRadius: '8px' }}>
-                      <Typography variant="caption" sx={{ color: theme.palette.text.secondary, fontWeight: 600 }}>{t('doctor_lab_results.notes')}</Typography>
+                      <Typography variant="caption" sx={{ color: theme.palette.text.secondary, fontWeight: 600 }}>{t('doctor_lab_results:notes')}</Typography>
                       <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>{detailRequest.notes}</Typography>
                     </Box>
                   )}
@@ -264,7 +264,7 @@ export default function DoctorLabResultsPage() {
               )}
             </DialogContent>
             <DialogActions>
-              <Button onClick={() => setDetailRequest(null)}>{t('doctor_lab_results.close')}</Button>
+              <Button onClick={() => setDetailRequest(null)}>{t('doctor_lab_results:close')}</Button>
             </DialogActions>
           </>
         )}
@@ -272,12 +272,12 @@ export default function DoctorLabResultsPage() {
 
       {/* New Request Dialog */}
       <Dialog open={newDialogOpen} onClose={() => setNewDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle sx={{ fontWeight: 600 }}>{t('doctor_lab_results.newRequestTitle')}</DialogTitle>
+        <DialogTitle sx={{ fontWeight: 600 }}>{t('doctor_lab_results:newRequestTitle')}</DialogTitle>
         <DialogContent>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
             <FormControl fullWidth size="small">
-              <InputLabel>{t('doctor_lab_results.patient') + ' *'}</InputLabel>
-              <Select value={patientId} label={t('doctor_lab_results.patient') + ' *'} onChange={(e) => setPatientId(e.target.value)}>
+              <InputLabel>{t('doctor_lab_results:patient') + ' *'}</InputLabel>
+              <Select value={patientId} label={t('doctor_lab_results:patient') + ' *'} onChange={(e) => setPatientId(e.target.value)}>
                 {patients.map((p) => (
                   <MenuItem key={p.patient_id} value={p.patient_id}>
                     {p.patient_name || p.patient_email || `Paciente #${p.patient_id}`}
@@ -289,7 +289,7 @@ export default function DoctorLabResultsPage() {
             <TextField
               fullWidth
               size="small"
-              label={t('doctor_lab_results.notesLabel')}
+              label={t('doctor_lab_results:notesLabel')}
               multiline
               rows={2}
               value={notes}
@@ -298,15 +298,15 @@ export default function DoctorLabResultsPage() {
 
             <Divider />
 
-            <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>{t('doctor_lab_results.exams')}</Typography>
+            <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>{t('doctor_lab_results:exams')}</Typography>
             {testIds.map((tid, idx) => {
               return (
                 <Box key={idx} sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
                   <FormControl fullWidth size="small">
-                    <InputLabel>{t('doctor_lab_results.exam')}</InputLabel>
+                    <InputLabel>{t('doctor_lab_results:exam')}</InputLabel>
                     <Select
                       value={tid}
-                      label={t('doctor_lab_results.exam')}
+                      label={t('doctor_lab_results:exam')}
                       onChange={(e) => {
                         const newIds = [...testIds];
                         newIds[idx] = Number(e.target.value);
@@ -332,14 +332,14 @@ export default function DoctorLabResultsPage() {
               onClick={() => setTestIds([...testIds, 0])}
               sx={{ textTransform: 'none', alignSelf: 'flex-start' }}
             >
-              {t('doctor_lab_results.addExam')}
+              {t('doctor_lab_results:addExam')}
             </Button>
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setNewDialogOpen(false)}>{t('doctor_lab_results.cancel')}</Button>
+          <Button onClick={() => setNewDialogOpen(false)}>{t('doctor_lab_results:cancel')}</Button>
           <Button variant="contained" onClick={handleCreateRequest} disabled={saving}>
-            {saving ? t('doctor_lab_results.creating') : t('doctor_lab_results.createRequest')}
+            {saving ? t('doctor_lab_results:creating') : t('doctor_lab_results:createRequest')}
           </Button>
         </DialogActions>
       </Dialog>

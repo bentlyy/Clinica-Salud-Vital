@@ -88,7 +88,7 @@ export default function PatientLabResultsPage() {
         Array.isArray(data) ? data : (Array.isArray(data.data) ? data.data as LabRequest[] : []),
       );
     } catch {
-      setError(t('lab_results.error_loading', 'Error al cargar resultados'));
+      setError(t('lab_results:error_loading', 'Error al cargar resultados'));
     } finally {
       setLoading(false);
     }
@@ -99,7 +99,7 @@ export default function PatientLabResultsPage() {
   }, []);
 
   if (loading) {
-    return <LoadingState message={t('lab_results.loading', 'Cargando resultados...')} />;
+    return <LoadingState message={t('lab_results:loading', 'Cargando resultados...')} />;
   }
 
   if (error) {
@@ -110,14 +110,13 @@ export default function PatientLabResultsPage() {
     return (
       <MotionDiv initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
         <PageHeader
-          title={t('lab_results.title', 'Mis Resultados de Laboratorio')}
-          subtitle={t('lab_results.subtitle', 'Consulta tus exámenes y resultados')}
+          title={t('lab_results:title', 'Mis Resultados de Laboratorio')}
+          subtitle={t('lab_results:subtitle', 'Consulta tus exámenes y resultados')}
         />
         <EmptyState
           icon={<ScienceIcon sx={{ fontSize: 48, color: theme.palette.divider }} />}
-          title={t('lab_results.empty_title', 'Sin resultados')}
-          message={t(
-            'lab_results.empty_desc',
+          title={t('lab_results:empty_title', 'Sin resultados')}
+          message={t('lab_results:empty_desc',
             'Aún no tienes resultados de laboratorio disponibles.',
           )}
         />
@@ -137,20 +136,20 @@ export default function PatientLabResultsPage() {
 
   const statCards: StatCard[] = [
     {
-      label: t('lab_results.total', 'Total Solicitudes'),
+      label: t('lab_results:total', 'Total Solicitudes'),
       value: requests.length,
       icon: '📋',
       bg: theme.palette.custom.status.info.bg,
     },
     {
-      label: t('lab_results.completed', 'Completados'),
+      label: t('lab_results:completed', 'Completados'),
       value: completed.length,
       icon: '✅',
       bg: theme.palette.custom.status.success.bg,
       color: theme.palette.success.main,
     },
     {
-      label: t('lab_results.pending', 'Pendientes'),
+      label: t('lab_results:pending', 'Pendientes'),
       value: pending.length,
       icon: '⏳',
       bg: theme.palette.custom.status.warning.bg,
@@ -161,8 +160,8 @@ export default function PatientLabResultsPage() {
   return (
     <MotionDiv initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
       <PageHeader
-        title={t('lab_results.title', 'Mis Resultados de Laboratorio')}
-        subtitle={t('lab_results.subtitle', 'Consulta tus exámenes y resultados')}
+        title={t('lab_results:title', 'Mis Resultados de Laboratorio')}
+        subtitle={t('lab_results:subtitle', 'Consulta tus exámenes y resultados')}
       />
 
       {/* ── Summary Stats ─────────────────────────────────────────────── */}
@@ -226,7 +225,7 @@ export default function PatientLabResultsPage() {
             gap={1}
           >
             <PendingIcon sx={{ color: theme.palette.warning.main, fontSize: 18 }} />{' '}
-            {t('lab_results.pending_section', 'Pendientes')} ({pending.length})
+            {t('lab_results:pending_section', 'Pendientes')} ({pending.length})
           </Typography>
           <Box display="flex" flexDirection="column" gap={1.5}>
             {pending.map((r) => (
@@ -252,7 +251,7 @@ export default function PatientLabResultsPage() {
             gap={1}
           >
             <CheckCircleIcon sx={{ color: theme.palette.success.main, fontSize: 18 }} />{' '}
-            {t('lab_results.completed_section', 'Completados')} ({completed.length})
+            {t('lab_results:completed_section', 'Completados')} ({completed.length})
           </Typography>
           <Box display="flex" flexDirection="column" gap={1.5}>
             {completed.map((r) => (

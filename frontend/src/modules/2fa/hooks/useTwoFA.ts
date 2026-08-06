@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
+import i18n from '@/i18n/i18n';
 import { twoFAService } from '../services/two-fa.service';
 
 export const twoFAKeys = {
@@ -17,7 +18,7 @@ export function useGenerateTwoFA() {
   return useMutation({
     mutationFn: () => twoFAService.generate(),
     onError: () => {
-      toast.error('Error al generar el código 2FA');
+      toast.error(i18n.t('two_fa:generateError'));
     },
   });
 }
@@ -29,10 +30,10 @@ export function useVerifyTwoFA() {
     mutationFn: (code: string) => twoFAService.verify(code),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: twoFAKeys.status });
-      toast.success('Autenticación de dos factores activada');
+      toast.success(i18n.t('two_fa:enabled'));
     },
     onError: () => {
-      toast.error('Código inválido. Intenta de nuevo.');
+      toast.error(i18n.t('two_fa:invalid_code'));
     },
   });
 }
@@ -44,10 +45,10 @@ export function useDisableTwoFA() {
     mutationFn: () => twoFAService.disable(),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: twoFAKeys.status });
-      toast.success('Autenticación de dos factores desactivada');
+      toast.success(i18n.t('two_fa:disabled'));
     },
     onError: () => {
-      toast.error('Error al desactivar 2FA');
+      toast.error(i18n.t('two_fa:disableError'));
     },
   });
 }
