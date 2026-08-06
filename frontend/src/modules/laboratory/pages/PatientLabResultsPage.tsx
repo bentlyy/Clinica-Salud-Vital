@@ -81,7 +81,7 @@ export default function PatientLabResultsPage() {
     setLoading(true);
     setError(null);
     try {
-      const { data } = await apiClient.get('/lab/requests', {
+      const { data } = await apiClient.get('/laboratory', {
         params: { limit: 50 },
       });
       setRequests(
@@ -233,7 +233,7 @@ export default function PatientLabResultsPage() {
               <RequestCard
                 key={r.id}
                 request={r}
-                onClick={() => navigate(`/patient/laboratory/${String(r.id)}`)}
+                onClick={() => navigate(`/my-laboratory/${String(r.id)}`)}
               />
             ))}
           </Box>
@@ -259,7 +259,7 @@ export default function PatientLabResultsPage() {
               <RequestCard
                 key={r.id}
                 request={r}
-                onClick={() => navigate(`/patient/laboratory/${String(r.id)}`)}
+                onClick={() => navigate(`/my-laboratory/${String(r.id)}`)}
               />
             ))}
           </Box>

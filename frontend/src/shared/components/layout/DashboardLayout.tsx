@@ -153,6 +153,24 @@ export function DashboardLayout() {
 
           {/* Nav items */}
           <Box sx={{ flex: 1, overflowY: 'auto', pb: 2, pt: 0.5 }}>
+            {sidebarOpen && (
+              <Typography
+                variant="caption"
+                sx={{
+                  display: 'block',
+                  px: 2.5,
+                  pt: 0.5,
+                  pb: 1,
+                  color: 'text.secondary',
+                  fontWeight: 600,
+                  textTransform: 'uppercase',
+                  fontSize: '0.65rem',
+                  letterSpacing: 1.2,
+                }}
+              >
+                {tc('menu')}
+              </Typography>
+            )}
             {navItems.map((item) => (
               <SidebarItem
                 key={item.path}
@@ -172,8 +190,11 @@ export function DashboardLayout() {
           {sidebarOpen && user && (
             <Box
               sx={{
-                p: 2,
-                borderTop: `1px solid ${theme.palette.divider}`,
+                p: 1.5,
+                m: 1.25,
+                borderRadius: '12px',
+                border: `1px solid ${theme.palette.divider}`,
+                backgroundColor: theme.palette.custom?.surface?.muted || theme.palette.background.paper,
                 display: 'flex',
                 alignItems: 'center',
                 gap: 1.5,
@@ -185,6 +206,7 @@ export function DashboardLayout() {
                   height: 36,
                   backgroundColor: getRoleColor(user.role),
                   fontSize: '0.8rem',
+                  fontWeight: 600,
                 }}
               >
                 {user.name?.charAt(0)?.toUpperCase()}
@@ -200,6 +222,15 @@ export function DashboardLayout() {
                   {getRoleLabel(user.role)}
                 </Typography>
               </Box>
+              <Tooltip title={tc('logout')}>
+                <IconButton
+                  size="small"
+                  onClick={logout}
+                  sx={{ color: 'text.secondary', '&:hover': { color: theme.palette.error.main } }}
+                >
+                  <Logout fontSize="small" />
+                </IconButton>
+              </Tooltip>
             </Box>
           )}
         </Drawer>
@@ -232,7 +263,7 @@ export function DashboardLayout() {
 
             {/* Topbar actions */}
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-              <NotificationBell />
+              {user?.role !== 'patient' && user?.role !== 'user' && <NotificationBell />}
 
               <LanguageSwitcher />
 

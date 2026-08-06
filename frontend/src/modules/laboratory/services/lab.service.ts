@@ -18,7 +18,7 @@ import type {
   PaginatedResponse,
 } from '../types/lab.types';
 
-const BASE = '/api/laboratory';
+const BASE = '/laboratory';
 
 // ── Dashboard ────────────────────────────────────────────────────────────────
 

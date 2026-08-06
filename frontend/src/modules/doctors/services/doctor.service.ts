@@ -34,6 +34,11 @@ export const doctorService = {
     return { data: doctors, total: doctors.length, page: 1, limit: doctors.length, totalPages: 1 };
   },
 
+  async listPublic(config?: AxiosRequestConfig): Promise<Doctor[]> {
+    const { data } = await apiClient.get<Doctor[] | { data: Doctor[] }>('/doctors/public', config);
+    return Array.isArray(data) ? data : (data.data ?? []);
+  },
+
   async getById(id: number, config?: AxiosRequestConfig): Promise<Doctor> {
     const { data } = await apiClient.get<Doctor>(`/doctors/${id}`, config);
     return data;

@@ -161,6 +161,11 @@ export const getPrescriptionsByRecord = asyncHandler(async (req: Request, res: R
   res.json(prescriptions);
 });
 
+export const getMyPrescriptions = asyncHandler(async (req: Request, res: Response) => {
+  const prescriptions = await prescriptionService.getMyPrescriptions(req.user!.id, req.tenant_id);
+  res.json(prescriptions);
+});
+
 export const createPrescription = asyncHandler(async (req: Request, res: Response) => {
   const doctor = await doctorService.getDoctorByUserId(req.user!.id, req.tenant_id);
   if (!doctor) throw new NotFoundError(E.DOCTOR_PROFILE_NOT_FOUND);

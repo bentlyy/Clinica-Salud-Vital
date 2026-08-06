@@ -10,6 +10,13 @@ export function useDoctorList(params: DoctorListParams) {
   });
 }
 
+export function usePublicDoctorList() {
+  return useQuery({
+    queryKey: ['doctors', 'public'],
+    queryFn: ({ signal }) => doctorService.listPublic({ signal }),
+  });
+}
+
 export function useDoctorDetail(id: number) {
   return useQuery({
     queryKey: ['doctors', id],
