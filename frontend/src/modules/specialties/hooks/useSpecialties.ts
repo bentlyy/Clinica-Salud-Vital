@@ -34,7 +34,7 @@ export function useCreateSpecialty() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (input: CreateSpecialtyInput) => specialtyService.create(input),
+    mutationFn: (input: CreateSpecialtyInput & { tenantId?: string }) => specialtyService.create(input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: specialtyKeys.all });
       toast.success(i18n.t('specialties:specialtyCreated'));

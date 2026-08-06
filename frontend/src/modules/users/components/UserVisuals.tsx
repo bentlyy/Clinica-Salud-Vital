@@ -26,7 +26,6 @@ export function UserAvatar({
   src?: string;
   size?: number;
 }) {
-  const theme = useTheme();
   const color = getRoleColor(role);
 
   return (

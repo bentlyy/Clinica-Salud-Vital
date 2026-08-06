@@ -36,6 +36,7 @@ import type { Notification } from '../types/notification.types';
 import { formatDate } from '@/shared/utils/localeUtils';
 import { useAuth } from '@/shared/providers/AuthProvider';
 import { superAdminService } from '@/modules/super-admin/services/super-admin.service';
+import type { Tenant } from '@/modules/super-admin/types/super-admin.types';
 
 const TYPE_ICONS: Record<Notification['type'], React.ReactNode> = {
   info: <InfoOutlined sx={{ fontSize: 20 }} />,
@@ -52,7 +53,7 @@ export default function NotificationsPage({ embedded }: { embedded?: boolean }) 
   const isSuperAdmin = user?.role === 'superadmin';
   const [page, setPage] = useState(1);
   const limit = 15;
-  const [clinics, setClinics] = useState<{ id: number; name: string }[]>([]);
+  const [clinics, setClinics] = useState<Tenant[]>([]);
   const [clinicFilter, setClinicFilter] = useState('');
 
   useEffect(() => {
@@ -61,7 +62,7 @@ export default function NotificationsPage({ embedded }: { embedded?: boolean }) 
     superAdminService
       .listTenants()
       .then((res) => {
-        if (active) setClinics(res.data ?? res ?? []);
+        if (active) setClinics(res.data ?? []);
       })
       .catch(() => {});
     return () => {

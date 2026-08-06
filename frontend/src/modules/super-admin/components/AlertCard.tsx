@@ -17,6 +17,8 @@ const SEVERITY_CONFIG: Record<string, { color: string; bg: string }> = {
   low: { color: '#64748b', bg: '#f8fafc' },
 };
 
+const DEFAULT_SEVERITY = { color: '#64748b', bg: '#f8fafc' };
+
 function alertIcon(type: string) {
   switch (type) {
     case 'inactivity':
@@ -37,7 +39,7 @@ function alertIcon(type: string) {
 export function AlertCard({ alert }: { alert: SaasAlert }) {
   const theme = useTheme();
   const { t } = useTranslation('super_admin_dashboard');
-  const severity = SEVERITY_CONFIG[alert.severity] ?? SEVERITY_CONFIG.low;
+  const severity = SEVERITY_CONFIG[alert.severity] ?? DEFAULT_SEVERITY;
 
   return (
     <Box
