@@ -12,6 +12,7 @@ import {
   Divider,
 } from '@mui/material';
 import { useTheme, alpha } from '@mui/material/styles';
+import { useTranslation } from 'react-i18next';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import CancelIcon from '@mui/icons-material/Cancel';
@@ -68,6 +69,7 @@ function KanbanBoardBase({
   statuses = DEFAULT_STATUSES,
 }: KanbanBoardProps) {
   const theme = useTheme();
+  const { t } = useTranslation('lab');
 
   // ── Context Menu ──────────────────────────────────────────────────────────
   const [ctxMenu, setCtxMenu] = useState<{
@@ -389,7 +391,7 @@ function KanbanBoardBase({
               />
             </ListItemIcon>
             <ListItemText
-              primary={`Mover a ${LAB_STATUS_LABELS[targetStatus]}`}
+              primary={t('moveTo', { status: LAB_STATUS_LABELS[targetStatus] })}
               primaryTypographyProps={{ fontSize: '0.875rem', fontWeight: 500 }}
             />
           </MenuItem>

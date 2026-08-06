@@ -223,7 +223,9 @@
       "en": "Ingles",
       "pt": "Portugues",
       "fr": "Frances"
-    }
+    },
+    "doctor": "Médico",
+    "to": "a"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -701,17 +703,13 @@
     "aliquots": "Alicuotas",
     "newAliquot": "Nueva Alicuota",
     "availableVolumeLabel": "Volumen disponible: {{volume}} ml",
-    "containerType": "Tipo de Contenedor",
     "volumeMl": "Volumen (ml)",
     "label": "Etiqueta",
     "aliquotPlaceholder": "Ej: Aliquota #1 - Glucosa",
     "create": "Crear",
     "reception": "Recepcion de Muestras",
-    "requestNumber": "Solicitud #{{id}}",
     "noItemsInRequest": "No hay items en esta solicitud",
     "test": "Test",
-    "sampleType": "Tipo Muestra",
-    "volume": "Volumen",
     "status": "Estado",
     "actions": "Acciones",
     "registerSample": "Registrar Muestra",
@@ -732,18 +730,14 @@
     "rejectReasonLabel": "Motivo del Rechazo",
     "rejectReasonPlaceholder": "Describa el motivo del rechazo...",
     "cancel": "Cancelar",
-    "create": "Crear",
     "noLocation": "Sin Ubicacion",
     "withoutLocation": "sin ubicacion",
     "allSamplesLocated": "Todas las muestras tienen ubicacion asignada",
-    "code": "Codigo",
-    "type": "Tipo",
     "receivedDate": "Fecha Recibimiento",
     "stored": "Almacenadas",
     "noStoredSamples": "No hay muestras almacenadas",
     "location": "Ubicacion",
     "temperature": "Temperatura",
-    "dateLabel": "Fecha",
     "save": "Guardar",
     "update": "Actualizar",
     "ambient": "Ambiente",
@@ -761,7 +755,6 @@
     "criticalRange": "Resultado fuera de rango critico",
     "criticalRangeDetail": "El valor {{value}} esta por fuera de los limites criticos del test. Revise antes de guardar.",
     "testNameLabel": "Nombre del Test",
-    "referenceRange": "Rango de Referencia",
     "sampleTypeLabel": "Tipo de Muestra",
     "resultValueLabel": "Valor del Resultado",
     "resultValuePlaceholder": "Ingrese el valor",
@@ -791,21 +784,17 @@
     "expectedMin": "Valor Minimo Esperado",
     "expectedMax": "Valor Maximo Esperado",
     "measuredValue": "Valor Medido",
-    "equipment": "Equipo",
     "none": "Ninguno",
-    "notesPlaceholder": "Observaciones adicionales...",
     "autoEvaluation": "Auto-evaluacion",
     "inRange": "Dentro de rango (Paso)",
     "outOfRange": "Fuera de rango (Fallo)",
     "acceptableRange": "Rango aceptable",
-    "update": "Actualizar",
     "model": "Modelo",
     "serial": "Serial",
     "lastCalibration": "Ultima calibracion",
     "labResultsTitle": "Resultados de Laboratorio",
     "addResult": "Agregar Resultado",
     "testNumber": "Test #{{number}}",
-    "resultValue": "Valor",
     "unitExample": "Unidad (ej: mg/dL)",
     "normal": "Normal",
     "abnormal": "Anormal",
@@ -893,7 +882,44 @@
     "reagentsExpired": "Reactivos Vencidos",
     "reagentsLow": "Reactivos con Stock Bajo",
     "equipmentMaintenance": "Equipamiento en Mantenimiento",
-    "equipmentOutOfService": "Equipamiento Fuera de Servicio"
+    "equipmentOutOfService": "Equipamiento Fuera de Servicio",
+    "clear": "Limpiar",
+    "requestCreated": "Solicitud de laboratorio creada",
+    "requestCreateError": "Error al crear la solicitud",
+    "requestUpdated": "Solicitud actualizada",
+    "requestUpdateError": "Error al actualizar la solicitud",
+    "requestDeleted": "Solicitud eliminada",
+    "requestDeleteError": "Error al eliminar la solicitud",
+    "requestCancelled": "Solicitud cancelada",
+    "requestCancelError": "Error al cancelar la solicitud",
+    "statusUpdated": "Estado actualizado",
+    "statusUpdateError": "Error al actualizar estado",
+    "itemAdded": "Item agregado",
+    "itemUpdated": "Item actualizado",
+    "itemDeleted": "Item eliminado",
+    "resultRegistered": "Resultado registrado",
+    "resultRegisterError": "Error al registrar resultado",
+    "resultUpdated": "Resultado actualizado",
+    "validatedByTech": "Validado por técnico",
+    "validationError": "Error al validar",
+    "validatedByDoctor": "Validado por médico",
+    "resultSigned": "Resultado firmado",
+    "signError": "Error al firmar",
+    "resultDelivered": "Resultado entregado",
+    "sampleCreated": "Muestra creada",
+    "sampleUpdated": "Muestra actualizada",
+    "sampleReceived": "Muestra recibida",
+    "sampleVerified": "Muestra verificada",
+    "sampleRejected": "Muestra rechazada",
+    "qcCreated": "Registro QC creado",
+    "qcApproved": "Registro QC aprobado",
+    "equipmentRegistered": "Equipo registrado",
+    "equipmentUpdated": "Equipo actualizado",
+    "reagentRegistered": "Reactivo registrado",
+    "reagentUpdated": "Reactivo actualizado",
+    "notificationsRead": "Notificaciones marcadas como leídas",
+    "allAreas": "Todas las áreas",
+    "moveTo": "Mover a {{status}}"
   },
   "bookings": {
     "title": "Citas",
@@ -1022,7 +1048,11 @@
     "no_keep": "No, mantener",
     "yes_cancel": "Sí, cancelar",
     "without_name": "Sin nombre",
-    "no_bookings_calendar": "No hay citas para mostrar en el calendario."
+    "no_bookings_calendar": "No hay citas para mostrar en el calendario.",
+    "created": "Cita creada correctamente",
+    "createError": "Error al crear la cita",
+    "cancelled": "Cita cancelada correctamente",
+    "cancelError": "Error al cancelar la cita"
   },
   "clinicalRecords": {
     "title": "Expedientes",
@@ -1181,7 +1211,35 @@
     "create_btn": "Crear Receta",
     "patient_name_required": "El nombre del paciente es requerido",
     "patient_required": "Seleccione un paciente",
-    "at_least_one_medication": "Agregue al menos un medicamento"
+    "at_least_one_medication": "Agregue al menos un medicamento",
+    "by_doctor": "Receta - Dr. {{name}}",
+    "cancel": "Cancelar",
+    "confirmDelete": "¿Eliminar esta receta?",
+    "createPrescription": "Nueva receta",
+    "date": "Fecha",
+    "doctorFallback": "Médico {{id}}",
+    "downloadPdf": "Descargar PDF",
+    "durationLabel": "Duración",
+    "empty_desc": "Aún no tienes recetas disponibles.",
+    "empty_title": "Sin recetas",
+    "error_loading": "Error al cargar las recetas",
+    "frequencyLabel": "Frecuencia",
+    "loading": "Cargando recetas...",
+    "noResultsMessage": "No se encontraron recetas para tu búsqueda",
+    "notes": "Notas",
+    "patientFallback": "Paciente {{id}}",
+    "prescriptionNumber": "Nº de receta",
+    "searchPlaceholder": "Buscar por medicamento, médico...",
+    "subtitle": "Consulta y descarga tus recetas médicas",
+    "total": "Total",
+    "total_medications": "Medicamentos",
+    "totalSubtitle": "en total",
+    "viewDetail": "Ver detalle",
+    "with_medications": "Con medicamentos",
+    "created": "Receta creada correctamente",
+    "updated": "Receta actualizada correctamente",
+    "deleted": "Receta eliminada correctamente",
+    "downloadError": "Error al descargar el PDF"
   },
   "medicalHistory": {
     "title": "Historial Medico",
@@ -1272,7 +1330,9 @@
     "cancel": "Cancelar",
     "saving": "Guardando...",
     "update": "Actualizar",
-    "create": "Crear Entrada"
+    "create": "Crear Entrada",
+    "entryCreated": "Entrada del historial creada correctamente",
+    "entryUpdated": "Entrada del historial actualizada correctamente"
   },
   "doctors": {
     "title": "Doctores",
@@ -1379,7 +1439,9 @@
     "invite_description": "El doctor recibirá un email con un enlace para crear su contraseña y activar su cuenta.",
     "sending": "Enviando...",
     "send_invitation": "Enviar Invitación",
-    "valid_email": "Ingresa un email válido"
+    "valid_email": "Ingresa un email válido",
+    "doctorCreated": "Doctor creado exitosamente",
+    "inviteSent": "Invitación enviada exitosamente"
   },
   "patients": {
     "title": "Pacientes",
@@ -1694,7 +1756,10 @@
     "due_date_required": "La fecha de vencimiento es requerida",
     "tax_positive": "El impuesto debe ser positivo",
     "tax_max": "El impuesto no puede superar el 100%",
-    "min_one_service": "Debe agregar al menos un servicio"
+    "min_one_service": "Debe agregar al menos un servicio",
+    "cancel": "Cancelar",
+    "invoiceDeleted": "Factura eliminada exitosamente",
+    "invoicePaid": "Factura marcada como pagada"
   },
   "availability": {
     "title": "Horarios",
@@ -1767,7 +1832,15 @@
     "enter_reason": "Ingresa un motivo",
     "no_rules_configured": "No hay reglas de disponibilidad configuradas.",
     "available_slot": "Horario disponible",
-    "no_availability": "Sin disponibilidad"
+    "no_availability": "Sin disponibilidad",
+    "ruleCreated": "Regla de disponibilidad creada",
+    "ruleCreateError": "Error al crear la regla de disponibilidad",
+    "ruleDeleted": "Regla de disponibilidad eliminada",
+    "ruleDeleteError": "Error al eliminar la regla de disponibilidad",
+    "exceptionCreated": "Excepción de disponibilidad creada",
+    "exceptionCreateError": "Error al crear la excepción de disponibilidad",
+    "exceptionDeleted": "Excepción de disponibilidad eliminada",
+    "exceptionDeleteError": "Error al eliminar la excepción de disponibilidad"
   },
   "reports": {
     "title": "Reportes",
@@ -1818,7 +1891,20 @@
     "downloadReport": "Descargar reporte",
     "emailReport": "Enviar reporte por email",
     "reportScheduled": "Reporte programado exitosamente",
-    "reportCancelled": "Reporte cancelado exitosamente"
+    "reportCancelled": "Reporte cancelado exitosamente",
+    "subtitle": "Genera y descarga informes de tu consulta",
+    "dateFrom": "Desde",
+    "dateTo": "Hasta",
+    "generating": "Generando...",
+    "reportStatus": "Estado",
+    "selectType": "Seleccionar tipo de informe",
+    "selectTypeMessage": "Elige el tipo de informe que deseas generar",
+    "download": "Descargar",
+    "columnId": "ID",
+    "columnType": "Tipo",
+    "columnPeriod": "Período",
+    "columnStatus": "Estado",
+    "columnDate": "Fecha"
   },
   "audit": {
     "title": "Auditoria",
@@ -1861,7 +1947,22 @@
     "ipAddress": "Direccion IP",
     "userAgent": "Navegador",
     "changeFrom": "Cambio de",
-    "changeTo": "Cambio a"
+    "changeTo": "Cambio a",
+    "subtitle": "Registro de actividades del sistema",
+    "actionLabel": "Acción",
+    "entityLabel": "Entidad",
+    "loading": "Cargando auditoría...",
+    "noResultsWithFilters": "No se encontraron registros con los filtros aplicados",
+    "rowsLabel": "Filas por página",
+    "userFallback": "Usuario {{id}}",
+    "csvHeaders": {
+      "date": "Fecha",
+      "user": "Usuario",
+      "action": "Acción",
+      "entity": "Entidad",
+      "entityId": "ID Entidad",
+      "ip": "IP"
+    }
   },
   "notifications": {
     "title": "Notificaciones",
@@ -1993,7 +2094,15 @@
     "user_id": "ID de usuario",
     "change_password_short": "Cambiar contrasena",
     "go_to_settings": "Ir a Ajustes",
-    "notifications_placeholder": "Preferencias de Notificacion — Proximamente disponible"
+    "notifications_placeholder": "Preferencias de Notificacion — Proximamente disponible",
+    "email": "Correo electrónico",
+    "current_password": "Contraseña actual",
+    "new_password": "Nueva contraseña",
+    "two_factor_auth": "Autenticación de dos factores",
+    "active_sessions": "Sesiones activas",
+    "revoke_all_sessions": "Revocar todas las sesiones",
+    "passwordChanged": "Contraseña cambiada correctamente",
+    "qrCode2fa": "Código QR 2FA"
   },
   "superAdmin": {
     "title": "Panel SaaS",
@@ -2130,7 +2239,10 @@
     "unsupportedMediaType": "Tipo de medio no soportado",
     "unprocessableEntity": "Entidad no procesable",
     "locked": "El recurso esta bloqueado",
-    "tooManyRequests": "Demasiadas peticiones"
+    "tooManyRequests": "Demasiadas peticiones",
+    "badRequest": "Datos inválidos",
+    "pdfDownloadError": "Error al descargar el PDF",
+    "invalidEmail": "Ingresa un email válido"
   },
   "error_sanitizer": {
     "fallback": "Ocurrio un error inesperado",
@@ -2177,7 +2289,11 @@
     "description": "Ingresa el código de 6 dígitos de tu aplicación de autenticación.",
     "verify": "Verificar",
     "invalid_code": "Código inválido. Intenta de nuevo.",
-    "back": "Volver"
+    "back": "Volver",
+    "generateError": "Error al generar el código 2FA",
+    "enabled": "Autenticación de dos factores activada",
+    "disabled": "Autenticación de dos factores desactivada",
+    "disableError": "Error al desactivar 2FA"
   },
   "forgot_password": {
     "title": "¿Olvidaste tu contraseña?",
@@ -2247,7 +2363,8 @@
     "booking_detail": "Detalle de Cita",
     "patient": "Paciente",
     "time": "Horario",
-    "no_events": "Sin eventos para esta fecha"
+    "no_events": "Sin eventos para esta fecha",
+    "calendarFilters": "filtros del calendario"
   },
   "super_admin_analytics": {
     "tenant_detail": "Detalle del Tenant",
@@ -2313,7 +2430,8 @@
     "revenue_last_12m": "Evolución de Ingresos — Últimos 12 meses",
     "total_bookings_6m": "Citas (últimos 6m)",
     "occupancy_name": "Tasa de ocupación",
-    "loading": "Cargando analíticas..."
+    "loading": "Cargando analíticas...",
+    "occupancy": "Ocupación"
   },
   "dates": {
     "today": "Hoy",
@@ -2397,7 +2515,10 @@
     "cleaned_for": "Datos demo limpiados para {{tenant}}",
     "loaded_all": "Datos demo cargados en todos los tenants",
     "cleaned_all": "Datos demo limpiados en todos los tenants",
-    "rut": "RUT"
+    "rut": "RUT",
+    "clinicalHistoryCount": "Historial Clínico ({{count}})",
+    "examsCount": "Exámenes ({{count}})",
+    "bookingsCount": "Reservas ({{count}})"
   },
   "doctor_panel": {
     "loading": "Cargando panel...",
@@ -2486,7 +2607,8 @@
     "selectPatientAndExam": "Selecciona paciente y al menos un examen",
     "requestCreated": "Solicitud creada",
     "errorCreate": "Error al crear solicitud",
-    "errorChangeState": "Error al cambiar estado"
+    "errorChangeState": "Error al cambiar estado",
+    "loadingDetail": "Cargando detalle..."
   },
   "medical_history_detail": {
     "title": "Detalle del Historial",
@@ -2684,7 +2806,11 @@
     "additional_notes": "Notas Adicionales",
     "notes_placeholder": "Observaciones, seguimiento, indicaciones especiales...",
     "saving": "Guardando...",
-    "update": "Actualizar"
+    "update": "Actualizar",
+    "cancel": "Cancelar",
+    "created": "Expediente creado correctamente",
+    "updated": "Expediente actualizado correctamente",
+    "deleted": "Expediente eliminado correctamente"
   },
   "clinical_record_detail": {
     "loading_record": "Cargando expediente...",
@@ -2840,7 +2966,14 @@
     "create_record": "Crear Registro",
     "test_label": "Test",
     "select_test": "Seleccione un test",
-    "all_tests": "Todos los tests"
+    "all_tests": "Todos los tests",
+    "passed": "Pasó",
+    "failed": "Falló",
+    "controlLimits": "Límites Control (±2σ)",
+    "warningLimits": "Límites Advertencia (±1σ)",
+    "warning": "Advertencia",
+    "mean": "Media",
+    "noDate": "Sin fecha"
   },
   "lab_analytics": {
     "loading": "Cargando analitica...",
@@ -2910,7 +3043,14 @@
     "saving": "Guardando...",
     "update_btn": "Actualizar",
     "create_btn": "Crear",
-    "name_min_2": "El nombre debe tener al menos 2 caracteres"
+    "name_min_2": "El nombre debe tener al menos 2 caracteres",
+    "clinicCreated": "Clínica creada exitosamente",
+    "clinicUpdated": "Clínica actualizada exitosamente",
+    "clinicDeleted": "Clínica eliminada exitosamente",
+    "planFree": "Gratuito",
+    "planBasic": "Básico",
+    "planPro": "Pro",
+    "planEnterprise": "Enterprise"
   },
   "super_admin_dashboard": {
     "loading": "Cargando panel de administracion...",
@@ -2990,7 +3130,9 @@
     "top_diagnoses": "Top Diagnósticos",
     "main_diagnoses": "Diagnósticos Principales",
     "cases": "casos",
-    "top_diagnoses_chart": "Casos"
+    "top_diagnoses_chart": "Casos",
+    "doctor": "Médico",
+    "noData": "Sin datos"
   },
   "register": {
     "title": "Crear Cuenta",
@@ -3042,5 +3184,36 @@
     "title": "Funcionalidad premium",
     "message": "Esta funcionalidad no está disponible en tu plan actual. Actualiza tu plan para desbloquearla.",
     "see_plans": "Ver Planes"
+  },
+  "admin_analytics": {
+    "title": "Mis Analíticas",
+    "subtitle": "Visión general de tus indicadores y estadísticas",
+    "myAnalytics": "Mis analíticas",
+    "myAnalyticsSubtitle": "Resumen de tu actividad clínica",
+    "myBookings": "Mis citas",
+    "totalPatients": "Pacientes totales",
+    "totalDoctors": "Médicos totales",
+    "totalBookings": "Citas totales",
+    "todayBookings": "Citas de hoy",
+    "upcomingBookings": "Próximas citas",
+    "patientsServed": "Pacientes atendidos",
+    "clinicalRecords": "Historias clínicas",
+    "topDoctors": "Top médicos",
+    "noData": "Sin datos",
+    "tabGeneral": "General",
+    "tabNoShows": "No presentados",
+    "tabDiagnoses": "Diagnósticos",
+    "tabDemand": "Demanda",
+    "tabSchedules": "Horarios",
+    "tabVitals": "Signos vitales",
+    "colDoctor": "Médico",
+    "colSpecialty": "Especialidad",
+    "colBookings": "Citas",
+    "colConfirmed": "Confirmadas"
+  },
+  "clinical_templates":{
+    "created": "Plantilla creada correctamente",
+    "updated": "Plantilla actualizada correctamente",
+    "deleted": "Plantilla eliminada correctamente"
   }
 }

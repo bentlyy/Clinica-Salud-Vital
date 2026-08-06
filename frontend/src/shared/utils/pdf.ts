@@ -1,6 +1,7 @@
 import { apiClient } from '@/shared/services/api-client';
 import { logger } from '@/shared/utils/logger';
 import toast from 'react-hot-toast';
+import i18n from '@/i18n/i18n';
 
 export async function downloadPdf(url: string, filename: string): Promise<void> {
   try {
@@ -16,7 +17,7 @@ export async function downloadPdf(url: string, filename: string): Promise<void> 
     URL.revokeObjectURL(blobUrl);
   } catch (error) {
     logger.error('PDF download failed:', error);
-    toast.error('Error al descargar el PDF');
+    toast.error(i18n.t('errors:pdfDownloadError'));
     throw error;
   }
 }

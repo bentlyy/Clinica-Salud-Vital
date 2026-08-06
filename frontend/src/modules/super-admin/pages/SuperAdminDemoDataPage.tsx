@@ -152,7 +152,7 @@ export default function SuperAdminDemoDataPage() {
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Box>
           <Typography variant="h5" sx={{ fontWeight: 700, color: theme.palette.text.primary }}>
-            {t('demo_data.title', 'Datos Demo')}
+            {t('demo_data:title', 'Datos Demo')}
           </Typography>
           <Typography variant="body2" sx={{ color: theme.palette.text.secondary, mt: 0.5 }}>
             {t('description_manage', 'Gestiona datos de demostración para cada tenant')}
@@ -218,9 +218,9 @@ export default function SuperAdminDemoDataPage() {
               <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>{t('global_data_desc', 'Toda la información del sistema a nivel global')}</Typography>
             </Box>
             <Tabs value={selectedTab} onChange={(_, v) => setSelectedTab(v)} sx={{ px: 2.5, borderBottom: 1, borderColor: 'divider' }}>
-              <Tab value="bookings" label={`Reservas (${bookings.length})`} />
-              <Tab value="clinical" label={`Historial Clínico (${records.length})`} />
-              <Tab value="lab" label={`Exámenes (${labReqs.length})`} />
+              <Tab value="bookings" label={t('bookingsCount', { count: bookings.length })} />
+              <Tab value="clinical" label={t('clinicalHistoryCount', { count: records.length })} />
+              <Tab value="lab" label={t('examsCount', { count: labReqs.length })} />
             </Tabs>
             <TableContainer sx={{ p: 0 }}>
               <Table size="small">

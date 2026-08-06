@@ -24,7 +24,7 @@ export default function TwoFAPage() {
       await login('', '', code);
       navigate('/dashboard');
     } catch {
-      setError(t('two_fa.invalid_code', 'Código inválido. Intenta de nuevo.'));
+      setError(t('two_fa:invalid_code', 'Código inválido. Intenta de nuevo.'));
     } finally {
       setLoading(false);
     }
@@ -35,10 +35,10 @@ export default function TwoFAPage() {
       <Paper elevation={3} sx={{ p: 4, maxWidth: 400, textAlign: 'center', borderRadius: 2 }}>
         <ShieldIcon sx={{ fontSize: 64, color: theme.palette.primary.main, mb: 2 }} />
         <Typography variant="h5" gutterBottom fontWeight="bold">
-          {t('two_fa.title', 'Verificación en Dos Pasos')}
+          {t('two_fa:title', 'Verificación en Dos Pasos')}
         </Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-          {t('two_fa.description', 'Ingresa el código de 6 dígitos de tu aplicación de autenticación.')}
+          {t('two_fa:description', 'Ingresa el código de 6 dígitos de tu aplicación de autenticación.')}
         </Typography>
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
         <form onSubmit={handleSubmit}>
@@ -52,11 +52,11 @@ export default function TwoFAPage() {
             autoFocus
           />
           <Button type="submit" fullWidth variant="contained" size="large" disabled={loading || code.length !== 6}>
-            {loading ? <CircularProgress size={24} color="inherit" /> : t('two_fa.verify', 'Verificar')}
+            {loading ? <CircularProgress size={24} color="inherit" /> : t('two_fa:verify', 'Verificar')}
           </Button>
         </form>
         <Button fullWidth sx={{ mt: 2 }} onClick={() => navigate('/')}>
-          {t('two_fa.back', 'Volver')}
+          {t('two_fa:back', 'Volver')}
         </Button>
       </Paper>
     </Box>

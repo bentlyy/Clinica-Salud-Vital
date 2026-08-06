@@ -91,7 +91,7 @@ export function PatientLayout() {
               C
             </Box>
             <Typography variant="h6" sx={{ fontWeight: 700, color: 'text.primary', fontSize: '1rem' }}>
-              {t('patient_nav.portal')}
+              {t('patient_nav:portal')}
             </Typography>
           </Box>
 

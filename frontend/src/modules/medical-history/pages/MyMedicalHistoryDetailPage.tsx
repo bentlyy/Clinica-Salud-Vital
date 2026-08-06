@@ -41,7 +41,7 @@ export default function MyMedicalHistoryDetailPage() {
         const labs = await getLabRequests({ patient_id: rec.patient_id }).catch(() => ({ data: [] }));
         setLabResults(Array.isArray(labs) ? labs : labs.data || []);
       } catch {
-        setError(t('medical_history_detail.errorLoading'));
+        setError(t('medical_history_detail:errorLoading'));
       } finally {
         setLoading(false);
       }
@@ -55,7 +55,7 @@ export default function MyMedicalHistoryDetailPage() {
     </Box>
   );
   if (error) return <Box sx={{ p: 4 }}><Alert severity="error" sx={{ borderRadius: '10px' }}>{error}</Alert></Box>;
-  if (!record) return <Box sx={{ p: 4 }}><Alert severity="info" sx={{ borderRadius: '10px' }}>{t('medical_history_detail.notFound')}</Alert></Box>;
+  if (!record) return <Box sx={{ p: 4 }}><Alert severity="info" sx={{ borderRadius: '10px' }}>{t('medical_history_detail:notFound')}</Alert></Box>;
 
   const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
     <Paper sx={{ p: 2.5, mb: 2, border: `1px solid ${theme.palette.divider}`, borderRadius: '12px' }}>
@@ -69,29 +69,29 @@ export default function MyMedicalHistoryDetailPage() {
   return (
     <Box>
       <PageHeader
-        title={t('medical_history_detail.title')}
-        subtitle={`${record.created_at?.split('T')[0]} — ${t('medical_history_detail.doctorLabel', { name: record.doctor_name || t('medical_history_detail.unknownDoctor') })}`}
+        title={t('medical_history_detail:title')}
+        subtitle={`${record.created_at?.split('T')[0]} — ${t('medical_history_detail:doctorLabel', { name: record.doctor_name || t('medical_history_detail:unknownDoctor') })}`}
         action={
           <Button startIcon={<ArrowBack />} onClick={() => navigate(-1)} sx={{ textTransform: 'none' }}>
-            {t('medical_history_detail.back')}
+            {t('medical_history_detail:back')}
           </Button>
         }
       />
 
       {record.chief_complaint && (
-        <Section title={t('medical_history_detail.chiefComplaint')}>
+        <Section title={t('medical_history_detail:chiefComplaint')}>
           <Typography variant="body2">{record.chief_complaint}</Typography>
         </Section>
       )}
 
       {record.anamnesis && (
-        <Section title={t('medical_history_detail.anamnesis')}>
+        <Section title={t('medical_history_detail:anamnesis')}>
           <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>{record.anamnesis}</Typography>
         </Section>
       )}
 
       {record.vital_signs && typeof record.vital_signs === 'object' && Object.values(record.vital_signs as Record<string, unknown>).some(Boolean) && (
-        <Section title={t('medical_history_detail.vitalSigns')}>
+        <Section title={t('medical_history_detail:vitalSigns')}>
           <Grid container spacing={2}>
             {Object.entries(record.vital_signs as Record<string, string>).filter(([, v]) => v).map(([k, v]) => (
               <Grid xs={6} sm={4} md={3} key={k}>
@@ -104,19 +104,19 @@ export default function MyMedicalHistoryDetailPage() {
       )}
 
       {record.physical_exam && (
-        <Section title={t('medical_history_detail.physicalExam')}>
+        <Section title={t('medical_history_detail:physicalExam')}>
           <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>{record.physical_exam}</Typography>
         </Section>
       )}
 
       {record.diagnosis && (
-        <Section title={t('medical_history_detail.diagnosis')}>
+        <Section title={t('medical_history_detail:diagnosis')}>
           <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>{record.diagnosis}</Typography>
         </Section>
       )}
 
       {record.cie10_codes && record.cie10_codes.length > 0 && (
-        <Section title={t('medical_history_detail.cie10Codes')}>
+        <Section title={t('medical_history_detail:cie10Codes')}>
           <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
             {record.cie10_codes.map((c) => (
               <Chip key={c} label={c} size="small" sx={{ backgroundColor: theme.palette.custom.status.info.bg, color: theme.palette.info.dark }} />
@@ -126,13 +126,13 @@ export default function MyMedicalHistoryDetailPage() {
       )}
 
       {record.treatment_plan && (
-        <Section title={t('medical_history_detail.treatmentPlan')}>
+        <Section title={t('medical_history_detail:treatmentPlan')}>
           <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>{record.treatment_plan}</Typography>
         </Section>
       )}
 
       {record.notes && (
-        <Section title={t('medical_history_detail.notes')}>
+        <Section title={t('medical_history_detail:notes')}>
           <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', color: theme.palette.text.secondary }}>{record.notes}</Typography>
         </Section>
       )}
@@ -143,12 +143,12 @@ export default function MyMedicalHistoryDetailPage() {
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <Science sx={{ color: theme.palette.primary.main, fontSize: 20 }} />
               <Typography variant="subtitle2" sx={{ fontWeight: 600, color: theme.palette.text.secondary, fontSize: 12 }}>
-                {t('medical_history_detail.labResultsTitle')}
+                {t('medical_history_detail:labResultsTitle')}
               </Typography>
           </Box>
           {labResults.length > 0 && (
             <Button size="small" onClick={() => setShowLab(!showLab)} sx={{ textTransform: 'none', fontSize: 12 }}>
-              {showLab ? t('medical_history_detail.hide') : t('medical_history_detail.show', { count: labResults.length })}
+              {showLab ? t('medical_history_detail:hide') : t('medical_history_detail:show', { count: labResults.length })}
             </Button>
           )}
         </Box>
@@ -160,13 +160,13 @@ export default function MyMedicalHistoryDetailPage() {
             </Box>
             {req.items?.map((item) => (
               <Typography key={item.id} variant="caption" sx={{ color: theme.palette.text.secondary, display: 'block', pl: 1 }}>
-                {item.test_name || `Test #${item.lab_test_id}`}: {item.result_value || t('medical_history_detail.pending')}
+                {item.test_name || `Test #${item.lab_test_id}`}: {item.result_value || t('medical_history_detail:pending')}
               </Typography>
             ))}
           </Box>
         ))}
         {labResults.length === 0 && (
-          <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>{t('medical_history_detail.noLabResults')}</Typography>
+          <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>{t('medical_history_detail:noLabResults')}</Typography>
         )}
       </Paper>
     </Box>

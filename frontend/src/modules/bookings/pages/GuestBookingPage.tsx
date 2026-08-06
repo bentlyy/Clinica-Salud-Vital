@@ -82,7 +82,7 @@ export default function GuestBookingPage() {
 
   const handleNext = useCallback(() => {
     if (activeStep === 0 && rut.trim().length > 0 && !validateRut(rut)) {
-      setRutError(t('validation.invalidFormat'));
+      setRutError(t('validation:invalidFormat'));
       return;
     }
     setRutError('');
@@ -101,7 +101,7 @@ export default function GuestBookingPage() {
       const list = Array.isArray(res.data) ? res.data : (res.data as { data: Doctor[] }).data;
       setDoctors(list ?? []);
     } catch {
-      setError(t('errors.fetchError'));
+      setError(t('errors:fetchError'));
     } finally {
       setDoctorsLoading(false);
     }
@@ -179,9 +179,9 @@ export default function GuestBookingPage() {
         time: selectedSlot,
       });
       setSuccess(true);
-      toast.success(t('guest_booking.success'));
+      toast.success(t('guest_booking:success'));
     } catch {
-      setError(t('guest_booking.error'));
+      setError(t('guest_booking:error'));
     } finally {
       setLoading(false);
     }
@@ -194,10 +194,10 @@ export default function GuestBookingPage() {
         <Box sx={{ textAlign: 'center', py: 4 }}>
           <CheckCircleOutlineIcon sx={{ fontSize: 64, color: 'success.main', mb: 2 }} />
           <Typography variant="h5" sx={{ fontWeight: 700, mb: 1 }}>
-            {t('guest_booking.success')}
+            {t('guest_booking:success')}
           </Typography>
           <Button variant="contained" sx={{ mt: 3 }} onClick={() => navigate('/')}>
-            {t('common.goHome')}
+            {t('common:goHome')}
           </Button>
         </Box>
       );
@@ -210,7 +210,7 @@ export default function GuestBookingPage() {
             <TextField
               fullWidth
               required
-              label={t('guest_booking.name')}
+              label={t('guest_booking:name')}
               value={name}
               onChange={(e) => setName(e.target.value)}
               autoFocus
@@ -219,21 +219,21 @@ export default function GuestBookingPage() {
               fullWidth
               required
               type="email"
-              label={t('guest_booking.email')}
+              label={t('guest_booking:email')}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
             <TextField
               fullWidth
               required
-              label={t('guest_booking.phone')}
+              label={t('guest_booking:phone')}
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               placeholder="+56 9 1234 5678"
             />
             <TextField
               fullWidth
-              label={t('guest_booking.rut')}
+              label={t('guest_booking:rut')}
               value={rut}
               onChange={handleRutChange}
               error={!!rutError}
@@ -256,13 +256,13 @@ export default function GuestBookingPage() {
               onChange={handleDoctorChange}
               value={selectedDoctor}
               renderInput={(params) => (
-                <TextField {...params} label={t('guest_booking.select_doctor')} />
+                <TextField {...params} label={t('guest_booking:select_doctor')} />
               )}
             />
             <TextField
               fullWidth
               type="date"
-              label={t('guest_booking.select_date')}
+              label={t('guest_booking:select_date')}
               value={date}
               onChange={handleDateChange}
               slotProps={{ inputLabel: { shrink: true } }}
@@ -271,14 +271,14 @@ export default function GuestBookingPage() {
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <CircularProgress size={20} />
                 <Typography variant="body2" color="text.secondary">
-                  {t('common.loading')}
+                  {t('common:loading')}
                 </Typography>
               </Box>
             )}
             {!slotsLoading && slots.length > 0 && (
               <Box>
                 <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                  {t('guest_booking.select_time')}
+                  {t('guest_booking:select_time')}
                 </Typography>
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                   {slots.map((slot) => (
@@ -296,7 +296,7 @@ export default function GuestBookingPage() {
               </Box>
             )}
             {!slotsLoading && selectedDoctor && date && slots.length === 0 && (
-              <Alert severity="info">{t('guest_booking.no_slots')}</Alert>
+              <Alert severity="info">{t('guest_booking:no_slots')}</Alert>
             )}
           </Box>
         );
@@ -306,24 +306,24 @@ export default function GuestBookingPage() {
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <Paper variant="outlined" sx={{ p: 2 }}>
               <Typography variant="subtitle2" sx={{ mb: 1, color: 'text.secondary' }}>
-                {t('guest_booking.step_personal')}
+                {t('guest_booking:step_personal')}
               </Typography>
-              <Typography variant="body2"><strong>{t('common.name')}:</strong> {name}</Typography>
-              <Typography variant="body2"><strong>{t('common.email')}:</strong> {email}</Typography>
-              <Typography variant="body2"><strong>{t('common.phone')}:</strong> {phone}</Typography>
+              <Typography variant="body2"><strong>{t('common:name')}:</strong> {name}</Typography>
+              <Typography variant="body2"><strong>{t('common:email')}:</strong> {email}</Typography>
+              <Typography variant="body2"><strong>{t('common:phone')}:</strong> {phone}</Typography>
               {rut && <Typography variant="body2"><strong>RUT:</strong> {rut}</Typography>}
             </Paper>
             <Paper variant="outlined" sx={{ p: 2 }}>
               <Typography variant="subtitle2" sx={{ mb: 1, color: 'text.secondary' }}>
-                {t('guest_booking.step_doctor')}
+                {t('guest_booking:step_doctor')}
               </Typography>
               <Typography variant="body2">
-                <strong>{t('common.doctor', { defaultValue: 'Doctor' })}:</strong>{' '}
+                <strong>{t('common:doctor', { defaultValue: 'Doctor' })}:</strong>{' '}
                 {selectedDoctor?.name}
                 {selectedDoctor?.specialty ? ` — ${selectedDoctor.specialty}` : ''}
               </Typography>
-              <Typography variant="body2"><strong>{t('common.date')}:</strong> {date}</Typography>
-              <Typography variant="body2"><strong>{t('common.time')}:</strong> {selectedSlot}</Typography>
+              <Typography variant="body2"><strong>{t('common:date')}:</strong> {date}</Typography>
+              <Typography variant="body2"><strong>{t('common:time')}:</strong> {selectedSlot}</Typography>
             </Paper>
           </Box>
         );
@@ -337,10 +337,10 @@ export default function GuestBookingPage() {
     <Box sx={{ minHeight: '100vh', bgcolor: 'grey.50', py: 4 }}>
       <Box sx={{ maxWidth: 600, mx: 'auto', px: 2 }}>
         <PageHeader
-          title={t('guest_booking.title')}
+          title={t('guest_booking:title')}
           action={
             <Button startIcon={<ArrowBackIcon />} onClick={() => navigate('/')}>
-              {t('common.back')}
+              {t('common:back')}
             </Button>
           }
         />
@@ -368,11 +368,11 @@ export default function GuestBookingPage() {
           {!success && (
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 3 }}>
               <Button disabled={activeStep === 0} onClick={handleBack}>
-                {t('common.back')}
+                {t('common:back')}
               </Button>
               {activeStep < STEPS.length - 1 ? (
                 <Button variant="contained" disabled={!canNext} onClick={handleNext}>
-                  {t('common.next')}
+                  {t('common:next')}
                 </Button>
               ) : (
                 <Button
@@ -382,7 +382,7 @@ export default function GuestBookingPage() {
                   onClick={handleSubmit}
                   startIcon={loading ? <CircularProgress size={18} /> : undefined}
                 >
-                  {loading ? t('common.loading') : t('guest_booking.confirm_booking')}
+                  {loading ? t('common:loading') : t('guest_booking:confirm_booking')}
                 </Button>
               )}
             </Box>

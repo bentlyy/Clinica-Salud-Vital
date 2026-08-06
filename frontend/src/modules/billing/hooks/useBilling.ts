@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { billingService } from '../services/billing.service';
 import type { InvoiceListParams, CreateInvoiceInput, UpdateInvoiceInput } from '../types/billing.types';
 import toast from 'react-hot-toast';
+import i18n from '@/i18n/i18n';
 
 const BILLING_KEYS = {
   all: ['billing'] as const,
@@ -39,7 +40,7 @@ export function useCreateInvoice() {
     mutationFn: (input: CreateInvoiceInput) => billingService.create(input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: BILLING_KEYS.all });
-      toast.success('Factura creada exitosamente');
+      toast.success(i18n.t('billing:invoiceCreated'));
     },
   });
 }
@@ -53,7 +54,7 @@ export function useUpdateInvoice() {
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: BILLING_KEYS.all });
       queryClient.invalidateQueries({ queryKey: BILLING_KEYS.detail(variables.id) });
-      toast.success('Factura actualizada exitosamente');
+      toast.success(i18n.t('billing:invoiceUpdated'));
     },
   });
 }
@@ -65,7 +66,7 @@ export function useDeleteInvoice() {
     mutationFn: (id: number) => billingService.remove(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: BILLING_KEYS.all });
-      toast.success('Factura eliminada exitosamente');
+      toast.success(i18n.t('billing:invoiceDeleted'));
     },
   });
 }
@@ -78,7 +79,7 @@ export function usePayInvoice() {
     onSuccess: (_data, id) => {
       queryClient.invalidateQueries({ queryKey: BILLING_KEYS.all });
       queryClient.invalidateQueries({ queryKey: BILLING_KEYS.detail(id) });
-      toast.success('Factura marcada como pagada');
+      toast.success(i18n.t('billing:invoicePaid'));
     },
   });
 }

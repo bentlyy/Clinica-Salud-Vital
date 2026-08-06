@@ -231,7 +231,7 @@ export const ReagentInventory = memo(function ReagentInventory({
             sx={{ borderRadius: '10px' }}
           >
             <MenuItem value="">
-              <em>Todas las áreas</em>
+              <em>{t('allAreas')}</em>
             </MenuItem>
             {areas.map((a) => (
               <MenuItem key={a.id} value={a.id}>

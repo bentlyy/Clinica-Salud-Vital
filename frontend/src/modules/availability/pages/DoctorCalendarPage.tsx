@@ -171,7 +171,7 @@ export default function DoctorCalendarPage() {
       setAllExceptions(excRes.data ?? []);
       setAllBookings(Array.isArray(bksRes.data) ? bksRes.data : []);
     } catch {
-      setError(t('errors.fetchError'));
+      setError(t('errors:fetchError'));
     } finally {
       setLoading(false);
     }
@@ -201,7 +201,7 @@ export default function DoctorCalendarPage() {
 
     if (filters.exceptions) {
       allExceptions.forEach((e) => {
-        const label = e.reason ? ` ${e.reason}` : ` ${t('doctor_calendar.filter_exceptions')}`;
+        const label = e.reason ? ` ${e.reason}` : ` ${t('doctor_calendar:filter_exceptions')}`;
         list.push({
           id: `exc-${e.id}`,
           title: label,
@@ -281,7 +281,7 @@ export default function DoctorCalendarPage() {
       setBlockReason('');
       await fetchData();
     } catch {
-      setError(t('errors.generic'));
+      setError(t('errors:generic'));
     }
   }, [blockRange, blockReason, fetchData, t]);
 
@@ -289,13 +289,13 @@ export default function DoctorCalendarPage() {
     async (info: { event: { extendedProps: Record<string, unknown>; id: string } }) => {
       const p = info.event.extendedProps;
       if (p.type === 'exception') {
-        const confirmed = window.confirm(t('doctor_calendar.delete_block'));
+        const confirmed = window.confirm(t('doctor_calendar:delete_block'));
         if (confirmed) {
           try {
             await apiClient.delete(`/availability/exceptions/${String(p.exceptionId)}`);
             await fetchData();
           } catch {
-            setError(t('errors.deleteError'));
+            setError(t('errors:deleteError'));
           }
         }
       } else if (p.type === 'booking') {
@@ -415,8 +415,8 @@ export default function DoctorCalendarPage() {
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100%', p: 3 }}>
       <PageHeader
-        title={t('doctor_calendar.title')}
-        subtitle={t('doctor_calendar.subtitle')}
+        title={t('doctor_calendar:title')}
+        subtitle={t('doctor_calendar:subtitle')}
         action={
           <Button
             variant="outlined"
@@ -424,7 +424,7 @@ export default function DoctorCalendarPage() {
             startIcon={<CalendarTodayIcon />}
             onClick={today}
           >
-            {t('dates.today')}
+            {t('dates:today')}
           </Button>
         }
       />
@@ -434,30 +434,30 @@ export default function DoctorCalendarPage() {
       {/* Filters */}
       <Paper sx={{ p: 1.5, mb: 2, display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
         <Typography variant="caption" sx={{ fontWeight: 600, mr: 1 }}>
-          {t('doctor_calendar.filter_availability')}:
+          {t('doctor_calendar:filter_availability')}:
         </Typography>
         <ToggleButtonGroup
           value={activeFilters}
           onChange={handleFilterChange}
           size="small"
-          aria-label="calendar filters"
+          aria-label={t('doctor_calendar:calendarFilters')}
         >
           <ToggleButton value="bookings" aria-label="bookings">
             <EventAvailableIcon sx={{ fontSize: 16, mr: 0.5, color: theme.palette.info.dark }} />
-            {t('doctor_calendar.filter_bookings')}
+            {t('doctor_calendar:filter_bookings')}
           </ToggleButton>
           <ToggleButton value="availability" aria-label="availability">
             <EventAvailableIcon sx={{ fontSize: 16, mr: 0.5, color: theme.palette.success.dark }} />
-            {t('doctor_calendar.filter_availability')}
+            {t('doctor_calendar:filter_availability')}
           </ToggleButton>
           <ToggleButton value="exceptions" aria-label="exceptions">
             <EventBusyIcon sx={{ fontSize: 16, mr: 0.5, color: theme.palette.error.main }} />
-            {t('doctor_calendar.filter_exceptions')}
+            {t('doctor_calendar:filter_exceptions')}
           </ToggleButton>
         </ToggleButtonGroup>
         {loading && (
           <Typography variant="caption" sx={{ color: 'text.secondary', ml: 1 }}>
-            {t('common.loading')}
+            {t('common:loading')}
           </Typography>
         )}
       </Paper>
@@ -465,9 +465,9 @@ export default function DoctorCalendarPage() {
       {/* Legend */}
       <Paper sx={{ p: 1.5, mb: 2, display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
         {[
-          { color: theme.palette.custom.brand.lightest, label: t('doctor_calendar.filter_availability') },
-          { color: theme.palette.info.dark, label: t('doctor_calendar.filter_bookings') },
-          { color: theme.palette.error.main, label: t('doctor_calendar.filter_exceptions') },
+          { color: theme.palette.custom.brand.lightest, label: t('doctor_calendar:filter_availability') },
+          { color: theme.palette.info.dark, label: t('doctor_calendar:filter_bookings') },
+          { color: theme.palette.error.main, label: t('doctor_calendar:filter_exceptions') },
         ].map((item) => (
           <Box key={item.label} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
             <Box
@@ -489,7 +489,7 @@ export default function DoctorCalendarPage() {
 
       {/* Calendar */}
       {loading && events.length === 0 ? (
-        <LoadingState message={t('common.loading')} />
+        <LoadingState message={t('common:loading')} />
       ) : (
         <Paper sx={{ flex: 1, minHeight: 400, overflow: 'hidden', '& .fc': { fontFamily: 'inherit' } }}>
           <FullCalendar ref={calendarRef} {...calOptions} />
@@ -504,7 +504,7 @@ export default function DoctorCalendarPage() {
         fullWidth
       >
         <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          {t('doctor_calendar.booking_detail')}
+          {t('doctor_calendar:booking_detail')}
           <IconButton size="small" onClick={() => setSelectedBooking(null)}>
             <CloseIcon fontSize="small" />
           </IconButton>
@@ -513,21 +513,21 @@ export default function DoctorCalendarPage() {
         <DialogContent>
           {selectedBooking && (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              <DetailRow label={t('doctor_calendar.patient')} value={selectedBooking.patient} />
-              {selectedBooking.email && <DetailRow label={t('common.email')} value={selectedBooking.email} />}
-              {selectedBooking.phone && <DetailRow label={t('common.phone')} value={selectedBooking.phone} />}
+              <DetailRow label={t('doctor_calendar:patient')} value={selectedBooking.patient} />
+              {selectedBooking.email && <DetailRow label={t('common:email')} value={selectedBooking.email} />}
+              {selectedBooking.phone && <DetailRow label={t('common:phone')} value={selectedBooking.phone} />}
               {selectedBooking.rut && <DetailRow label="RUT" value={selectedBooking.rut} />}
-              <DetailRow label={t('common.date')} value={selectedBooking.date} />
+              <DetailRow label={t('common:date')} value={selectedBooking.date} />
               <DetailRow
-                label={t('common.time')}
+                label={t('common:time')}
                 value={`${selectedBooking.time} (${String(selectedBooking.duration)} min)`}
               />
               <DetailRow
-                label={t('common.status')}
+                label={t('common:status')}
                 value={
                   <Chip
                     size="small"
-                    label={selectedBooking.confirmed ? t('common.confirmed') : t('common.pending')}
+                    label={selectedBooking.confirmed ? t('common:confirmed') : t('common:pending')}
                     color={selectedBooking.confirmed ? 'success' : 'warning'}
                   />
                 }
@@ -546,26 +546,26 @@ export default function DoctorCalendarPage() {
       >
         <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <BlockIcon />
-          {t('doctor_calendar.block_time')}
+          {t('doctor_calendar:block_time')}
         </DialogTitle>
         <DialogContent>
           <Typography variant="body2" sx={{ mb: 2, color: 'text.secondary' }}>
-            {blockRange.date} — {blockRange.start} {t('common.to', { defaultValue: 'a' })} {blockRange.end}
+            {blockRange.date} — {blockRange.start} {t('common:to', { defaultValue: 'a' })} {blockRange.end}
           </Typography>
           <TextField
             fullWidth
-            label={t('doctor_calendar.block_reason')}
+            label={t('doctor_calendar:block_reason')}
             value={blockReason}
             onChange={(e) => setBlockReason(e.target.value)}
-            placeholder={t('doctor_calendar.block_reason')}
+            placeholder={t('doctor_calendar:block_reason')}
             multiline
             rows={2}
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setBlockModalOpen(false)}>{t('common.cancel')}</Button>
+          <Button onClick={() => setBlockModalOpen(false)}>{t('common:cancel')}</Button>
           <Button variant="contained" color="error" onClick={confirmBlock} startIcon={<BlockIcon />}>
-            {t('doctor_calendar.confirm_block')}
+            {t('doctor_calendar:confirm_block')}
           </Button>
         </DialogActions>
       </Dialog>

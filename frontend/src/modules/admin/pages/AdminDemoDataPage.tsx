@@ -99,15 +99,15 @@ export default function AdminDemoDataPage() {
   }, []);
 
   const tabs: { key: TabValue; label: string; count: number }[] = [
-    { key: 'bookings', label: t('demo_data.tab_bookings', 'Reservas'), count: bookings.length },
-    { key: 'clinical', label: t('demo_data.tab_clinical', 'Historial Clínico'), count: records.length },
-    { key: 'lab', label: t('demo_data.tab_lab', 'Exámenes'), count: labReqs.length },
+    { key: 'bookings', label: t('demo_data:tab_bookings', 'Reservas'), count: bookings.length },
+    { key: 'clinical', label: t('demo_data:tab_clinical', 'Historial Clínico'), count: records.length },
+    { key: 'lab', label: t('demo_data:tab_lab', 'Exámenes'), count: labReqs.length },
   ];
 
   return (
     <Box sx={{ p: 0 }}>
       <Alert severity="info" sx={{ mb: 3, borderRadius: '10px' }}>
-        <strong>{t('demo_data.title', 'Datos de Demostración')}</strong> — {t('demo_data.description', 'Información de ejemplo precargada en el sistema.')}
+        <strong>{t('demo_data:title', 'Datos de Demostración')}</strong> — {t('demo_data:description', 'Información de ejemplo precargada en el sistema.')}
       </Alert>
 
       <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mb: 3, borderBottom: 1, borderColor: 'divider' }}>
@@ -127,40 +127,40 @@ export default function AdminDemoDataPage() {
               <TableRow sx={{ backgroundColor: theme.palette.custom.surface.muted }}>
                 {tab === 'bookings' && (
                   <>
-                    <TableCell sx={{ fontWeight: 600 }}>{t('demo_data.patient', 'Paciente')}</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>{t('demo_data:patient', 'Paciente')}</TableCell>
                     <TableCell sx={{ fontWeight: 600 }}>RUT</TableCell>
-                    <TableCell sx={{ fontWeight: 600 }}>{t('demo_data.doctor', 'Doctor')}</TableCell>
-                    <TableCell sx={{ fontWeight: 600 }}>{t('demo_data.specialty', 'Especialidad')}</TableCell>
-                    <TableCell sx={{ fontWeight: 600 }}>{t('demo_data.date', 'Fecha')}</TableCell>
-                    <TableCell sx={{ fontWeight: 600 }}>{t('demo_data.time', 'Hora')}</TableCell>
-                    <TableCell sx={{ fontWeight: 600 }}>{t('demo_data.status', 'Estado')}</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>{t('demo_data:doctor', 'Doctor')}</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>{t('demo_data:specialty', 'Especialidad')}</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>{t('demo_data:date', 'Fecha')}</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>{t('demo_data:time', 'Hora')}</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>{t('demo_data:status', 'Estado')}</TableCell>
                   </>
                 )}
                 {tab === 'clinical' && (
                   <>
-                    <TableCell sx={{ fontWeight: 600 }}>{t('demo_data.patient', 'Paciente')}</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>{t('demo_data:patient', 'Paciente')}</TableCell>
                     <TableCell sx={{ fontWeight: 600 }}>RUT</TableCell>
-                    <TableCell sx={{ fontWeight: 600 }}>{t('demo_data.doctor', 'Doctor')}</TableCell>
-                    <TableCell sx={{ fontWeight: 600 }}>{t('demo_data.diagnosis', 'Diagnóstico')}</TableCell>
-                    <TableCell sx={{ fontWeight: 600 }}>{t('demo_data.date', 'Fecha')}</TableCell>
-                    <TableCell sx={{ fontWeight: 600 }}>{t('demo_data.status', 'Estado')}</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>{t('demo_data:doctor', 'Doctor')}</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>{t('demo_data:diagnosis', 'Diagnóstico')}</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>{t('demo_data:date', 'Fecha')}</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>{t('demo_data:status', 'Estado')}</TableCell>
                   </>
                 )}
                 {tab === 'lab' && (
                   <>
-                    <TableCell sx={{ fontWeight: 600 }}>{t('demo_data.request_number', 'N° Solicitud')}</TableCell>
-                    <TableCell sx={{ fontWeight: 600 }}>{t('demo_data.patient', 'Paciente')}</TableCell>
-                    <TableCell sx={{ fontWeight: 600 }}>{t('demo_data.doctor', 'Doctor')}</TableCell>
-                    <TableCell sx={{ fontWeight: 600 }}>{t('demo_data.priority', 'Prioridad')}</TableCell>
-                    <TableCell sx={{ fontWeight: 600 }}>{t('demo_data.date', 'Fecha')}</TableCell>
-                    <TableCell sx={{ fontWeight: 600 }}>{t('demo_data.status', 'Estado')}</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>{t('demo_data:request_number', 'N° Solicitud')}</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>{t('demo_data:patient', 'Paciente')}</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>{t('demo_data:doctor', 'Doctor')}</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>{t('demo_data:priority', 'Prioridad')}</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>{t('demo_data:date', 'Fecha')}</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>{t('demo_data:status', 'Estado')}</TableCell>
                   </>
                 )}
               </TableRow>
             </TableHead>
             <TableBody>
               {tab === 'bookings' && bookings.length === 0 && (
-                <TableRow><TableCell colSpan={7} align="center" sx={{ py: 4, color: 'text.secondary' }}>{t('demo_data.no_bookings', 'No hay reservas.')}</TableCell></TableRow>
+                <TableRow><TableCell colSpan={7} align="center" sx={{ py: 4, color: 'text.secondary' }}>{t('demo_data:no_bookings', 'No hay reservas.')}</TableCell></TableRow>
               )}
               {tab === 'bookings' && bookings.map(b => (
                 <TableRow key={b.id} hover>
@@ -175,7 +175,7 @@ export default function AdminDemoDataPage() {
               ))}
 
               {tab === 'clinical' && records.length === 0 && (
-                <TableRow><TableCell colSpan={6} align="center" sx={{ py: 4, color: 'text.secondary' }}>{t('demo_data.no_records', 'No hay historial clínico.')}</TableCell></TableRow>
+                <TableRow><TableCell colSpan={6} align="center" sx={{ py: 4, color: 'text.secondary' }}>{t('demo_data:no_records', 'No hay historial clínico.')}</TableCell></TableRow>
               )}
               {tab === 'clinical' && records.map(r => (
                 <TableRow key={r.id} hover>
@@ -189,7 +189,7 @@ export default function AdminDemoDataPage() {
               ))}
 
               {tab === 'lab' && labReqs.length === 0 && (
-                <TableRow><TableCell colSpan={6} align="center" sx={{ py: 4, color: 'text.secondary' }}>{t('demo_data.no_lab', 'No hay exámenes.')}</TableCell></TableRow>
+                <TableRow><TableCell colSpan={6} align="center" sx={{ py: 4, color: 'text.secondary' }}>{t('demo_data:no_lab', 'No hay exámenes.')}</TableCell></TableRow>
               )}
               {tab === 'lab' && labReqs.map(r => (
                 <TableRow key={r.id} hover>

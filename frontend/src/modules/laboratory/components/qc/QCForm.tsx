@@ -376,7 +376,7 @@ export const QCForm = memo(function QCForm({
               render={({ field }) => (
                 <TextField
                   {...field}
-                  label={t('expected_value_min')}
+                  label={t('expectedMin')}
                   type="number"
                   fullWidth
                   size="small"
@@ -400,7 +400,7 @@ export const QCForm = memo(function QCForm({
               render={({ field }) => (
                 <TextField
                   {...field}
-                  label={t('expected_value_max')}
+                  label={t('expectedMax')}
                   type="number"
                   fullWidth
                   size="small"
@@ -557,7 +557,7 @@ export const QCForm = memo(function QCForm({
               },
             }}
           >
-            {isSubmitting ? t('savingRecord') : isEditing ? t('update') : t('save')}
+            {isSubmitting ? t('saving') : isEditing ? t('update') : t('save')}
           </Button>
         </Box>
       </Box>

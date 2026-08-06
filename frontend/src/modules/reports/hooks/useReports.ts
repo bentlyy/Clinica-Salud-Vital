@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { reportService } from '../services/report.service';
 import type { GenerateReportInput } from '../types/report.types';
 import toast from 'react-hot-toast';
+import i18n from '@/i18n/i18n';
 
 const REPORT_KEYS = {
   all: ['reports'] as const,
@@ -36,7 +37,7 @@ export function useGenerateReport() {
     mutationFn: (input: GenerateReportInput) => reportService.generate(input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: REPORT_KEYS.all });
-      toast.success('Reporte generado exitosamente');
+      toast.success(i18n.t('reports:reportGenerated'));
     },
   });
 }

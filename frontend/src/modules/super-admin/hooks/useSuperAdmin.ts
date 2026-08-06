@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
+import i18n from '@/i18n/i18n';
 import { superAdminService } from '../services/super-admin.service';
 import type {
   TenantListParams,
@@ -67,7 +68,7 @@ export function useCreateTenant() {
     mutationFn: (input: CreateTenantInput) => superAdminService.createTenant(input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: superAdminKeys.tenants });
-      toast.success('Clínica creada exitosamente');
+      toast.success(i18n.t('super_admin_tenants:clinicCreated'));
     },
   });
 }
@@ -81,7 +82,7 @@ export function useUpdateTenant() {
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: superAdminKeys.tenants });
       queryClient.invalidateQueries({ queryKey: superAdminKeys.tenantDetail(variables.id) });
-      toast.success('Clínica actualizada exitosamente');
+      toast.success(i18n.t('super_admin_tenants:clinicUpdated'));
     },
   });
 }
@@ -93,7 +94,7 @@ export function useDeleteTenant() {
     mutationFn: (id: string) => superAdminService.deleteTenant(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: superAdminKeys.tenants });
-      toast.success('Clínica eliminada exitosamente');
+      toast.success(i18n.t('super_admin_tenants:clinicDeleted'));
     },
   });
 }

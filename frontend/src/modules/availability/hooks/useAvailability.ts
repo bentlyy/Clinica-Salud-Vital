@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { availabilityService } from '../services/availability.service';
 import type { CreateAvailabilityRuleInput, CreateAvailabilityExceptionInput } from '../types/availability.types';
 import toast from 'react-hot-toast';
+import i18n from '@/i18n/i18n';
 
 export const availabilityKeys = {
   all: ['availability'] as const,
@@ -25,11 +26,11 @@ export function useCreateAvailabilityRule() {
   return useMutation({
     mutationFn: (data: CreateAvailabilityRuleInput) => availabilityService.createRule(data),
     onSuccess: () => {
-      toast.success('Regla de disponibilidad creada');
+      toast.success(i18n.t('availability:ruleCreated'));
       void queryClient.invalidateQueries({ queryKey: availabilityKeys.all });
     },
     onError: () => {
-      toast.error('Error al crear la regla de disponibilidad');
+      toast.error(i18n.t('availability:ruleCreateError'));
     },
   });
 }
@@ -40,11 +41,11 @@ export function useDeleteAvailabilityRule() {
   return useMutation({
     mutationFn: (id: number) => availabilityService.deleteRule(id),
     onSuccess: () => {
-      toast.success('Regla de disponibilidad eliminada');
+      toast.success(i18n.t('availability:ruleDeleted'));
       void queryClient.invalidateQueries({ queryKey: availabilityKeys.all });
     },
     onError: () => {
-      toast.error('Error al eliminar la regla de disponibilidad');
+      toast.error(i18n.t('availability:ruleDeleteError'));
     },
   });
 }
@@ -63,11 +64,11 @@ export function useCreateAvailabilityException() {
   return useMutation({
     mutationFn: (data: CreateAvailabilityExceptionInput) => availabilityService.createException(data),
     onSuccess: () => {
-      toast.success('Excepción de disponibilidad creada');
+      toast.success(i18n.t('availability:exceptionCreated'));
       void queryClient.invalidateQueries({ queryKey: availabilityKeys.all });
     },
     onError: () => {
-      toast.error('Error al crear la excepción de disponibilidad');
+      toast.error(i18n.t('availability:exceptionCreateError'));
     },
   });
 }
@@ -78,11 +79,11 @@ export function useDeleteAvailabilityException() {
   return useMutation({
     mutationFn: (id: number) => availabilityService.deleteException(id),
     onSuccess: () => {
-      toast.success('Excepción de disponibilidad eliminada');
+      toast.success(i18n.t('availability:exceptionDeleted'));
       void queryClient.invalidateQueries({ queryKey: availabilityKeys.all });
     },
     onError: () => {
-      toast.error('Error al eliminar la excepción de disponibilidad');
+      toast.error(i18n.t('availability:exceptionDeleteError'));
     },
   });
 }

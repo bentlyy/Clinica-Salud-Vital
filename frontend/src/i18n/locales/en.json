@@ -223,7 +223,9 @@
     "completed": "Completed",
     "inProgress": "In progress",
     "overdue": "Overdue",
-    "expired": "Expired"
+    "expired": "Expired",
+    "doctor": "Doctor",
+    "to": "to"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -888,7 +890,44 @@
     "unitExample": "e.g., mg/dL",
     "normal": "Normal",
     "abnormal": "Abnormal",
-    "saveResults": "Save Results"
+    "saveResults": "Save Results",
+    "clear": "Clear",
+    "requestCreated": "Lab request created",
+    "requestCreateError": "Error creating the request",
+    "requestUpdated": "Request updated",
+    "requestUpdateError": "Error updating the request",
+    "requestDeleted": "Request deleted",
+    "requestDeleteError": "Error deleting the request",
+    "requestCancelled": "Request cancelled",
+    "requestCancelError": "Error cancelling the request",
+    "statusUpdated": "Status updated",
+    "statusUpdateError": "Error updating status",
+    "itemAdded": "Item added",
+    "itemUpdated": "Item updated",
+    "itemDeleted": "Item deleted",
+    "resultRegistered": "Result registered",
+    "resultRegisterError": "Error registering the result",
+    "resultUpdated": "Result updated",
+    "validatedByTech": "Validated by technician",
+    "validationError": "Validation error",
+    "validatedByDoctor": "Validated by doctor",
+    "resultSigned": "Result signed",
+    "signError": "Error signing",
+    "resultDelivered": "Result delivered",
+    "sampleCreated": "Sample created",
+    "sampleUpdated": "Sample updated",
+    "sampleReceived": "Sample received",
+    "sampleVerified": "Sample verified",
+    "sampleRejected": "Sample rejected",
+    "qcCreated": "QC record created",
+    "qcApproved": "QC record approved",
+    "equipmentRegistered": "Equipment registered",
+    "equipmentUpdated": "Equipment updated",
+    "reagentRegistered": "Reagent registered",
+    "reagentUpdated": "Reagent updated",
+    "notificationsRead": "Notifications marked as read",
+    "allAreas": "All areas",
+    "moveTo": "Move to {{status}}"
   },
   "bookings": {
     "title": "Appointments",
@@ -1019,7 +1058,11 @@
     "waitlistNotification": "Waitlist notification",
     "waitlistAvailable": "A spot is available",
     "waitlistFull": "Waitlist is full",
-    "no_bookings_calendar": "No bookings for this date"
+    "no_bookings_calendar": "No bookings for this date",
+    "created": "Appointment created successfully",
+    "createError": "Error creating the appointment",
+    "cancelled": "Appointment cancelled successfully",
+    "cancelError": "Error cancelling the appointment"
   },
   "clinicalRecords": {
     "title": "Medical Records",
@@ -1180,7 +1223,35 @@
     "create_btn": "Create Prescription",
     "patient_name_required": "Patient name is required",
     "patient_required": "Patient is required",
-    "at_least_one_medication": "At least one medication is required"
+    "at_least_one_medication": "At least one medication is required",
+    "by_doctor": "Prescription - Dr. {{name}}",
+    "cancel": "Cancel",
+    "confirmDelete": "Delete this prescription?",
+    "createPrescription": "New prescription",
+    "date": "Date",
+    "doctorFallback": "Doctor {{id}}",
+    "downloadPdf": "Download PDF",
+    "durationLabel": "Duration",
+    "empty_desc": "You don't have any prescriptions available yet.",
+    "empty_title": "No prescriptions",
+    "error_loading": "Error loading prescriptions",
+    "frequencyLabel": "Frequency",
+    "loading": "Loading prescriptions...",
+    "noResultsMessage": "No prescriptions match your search",
+    "notes": "Notes",
+    "patientFallback": "Patient {{id}}",
+    "prescriptionNumber": "Prescription #",
+    "searchPlaceholder": "Search by medication, doctor...",
+    "subtitle": "View and download your medical prescriptions",
+    "total": "Total",
+    "total_medications": "Medications",
+    "totalSubtitle": "in total",
+    "viewDetail": "View details",
+    "with_medications": "With medications",
+    "created": "Prescription created successfully",
+    "updated": "Prescription updated successfully",
+    "deleted": "Prescription deleted successfully",
+    "downloadError": "Error downloading the PDF"
   },
   "medicalHistory": {
     "title": "Medical History",
@@ -1273,7 +1344,9 @@
     "cancel": "Cancel",
     "saving": "Saving...",
     "update": "Update",
-    "create": "Create Entry"
+    "create": "Create Entry",
+    "entryCreated": "History entry created successfully",
+    "entryUpdated": "History entry updated successfully"
   },
   "doctors": {
     "title": "Doctors",
@@ -1380,7 +1453,9 @@
     "invite_description": "The doctor will receive an email with instructions to create their account",
     "sending": "Sending...",
     "send_invitation": "Send Invitation",
-    "valid_email": "Please enter a valid email address"
+    "valid_email": "Please enter a valid email address",
+    "doctorCreated": "Doctor created successfully",
+    "inviteSent": "Invitation sent successfully"
   },
   "patients": {
     "title": "Patients",
@@ -1701,7 +1776,10 @@
     "due_date_required": "Due date is required",
     "tax_positive": "Tax must be positive",
     "tax_max": "Tax cannot exceed 100%",
-    "min_one_service": "At least one service is required"
+    "min_one_service": "At least one service is required",
+    "cancel": "Cancel",
+    "invoiceDeleted": "Invoice deleted successfully",
+    "invoicePaid": "Invoice marked as paid"
   },
   "availability": {
     "title": "Schedule",
@@ -1776,7 +1854,15 @@
     "dateRangeOverride": "Override by date range",
     "overrideSaved": "Override saved successfully",
     "noOverrides": "No active overrides",
-    "upcomingOverrides": "Upcoming overrides"
+    "upcomingOverrides": "Upcoming overrides",
+    "ruleCreated": "Availability rule created",
+    "ruleCreateError": "Error creating the availability rule",
+    "ruleDeleted": "Availability rule deleted",
+    "ruleDeleteError": "Error deleting the availability rule",
+    "exceptionCreated": "Availability exception created",
+    "exceptionCreateError": "Error creating the availability exception",
+    "exceptionDeleted": "Availability exception deleted",
+    "exceptionDeleteError": "Error deleting the availability exception"
   },
   "reports": {
     "title": "Reports",
@@ -1831,7 +1917,20 @@
     "downloadReport": "Download report",
     "emailReport": "Send report by email",
     "reportScheduled": "Report scheduled successfully",
-    "reportCancelled": "Report cancelled successfully"
+    "reportCancelled": "Report cancelled successfully",
+    "subtitle": "Generate and download reports of your practice",
+    "dateFrom": "From",
+    "dateTo": "To",
+    "generating": "Generating...",
+    "reportStatus": "Status",
+    "selectType": "Select report type",
+    "selectTypeMessage": "Choose the report type you want to generate",
+    "download": "Download",
+    "columnId": "ID",
+    "columnType": "Type",
+    "columnPeriod": "Period",
+    "columnStatus": "Status",
+    "columnDate": "Date"
   },
   "audit": {
     "title": "Audit",
@@ -1878,7 +1977,22 @@
     "ipAddress": "IP Address",
     "userAgent": "Browser",
     "changeFrom": "Changed from",
-    "changeTo": "Changed to"
+    "changeTo": "Changed to",
+    "subtitle": "System activity log",
+    "actionLabel": "Action",
+    "entityLabel": "Entity",
+    "loading": "Loading audit log...",
+    "noResultsWithFilters": "No records found with the applied filters",
+    "rowsLabel": "Rows per page",
+    "userFallback": "User {{id}}",
+    "csvHeaders": {
+      "date": "Date",
+      "user": "User",
+      "action": "Action",
+      "entity": "Entity",
+      "entityId": "Entity ID",
+      "ip": "IP"
+    }
   },
   "notifications": {
     "title": "Notifications",
@@ -2012,7 +2126,15 @@
     "bio": "Bio",
     "website": "Website",
     "location": "Location",
-    "socialLinks": "Social links"
+    "socialLinks": "Social links",
+    "email": "Email",
+    "current_password": "Current password",
+    "new_password": "New password",
+    "two_factor_auth": "Two-factor authentication",
+    "active_sessions": "Active sessions",
+    "revoke_all_sessions": "Revoke all sessions",
+    "passwordChanged": "Password changed successfully",
+    "qrCode2fa": "QR Code 2FA"
   },
   "superAdmin": {
     "title": "SaaS Panel",
@@ -2151,7 +2273,10 @@
     "unsupportedMediaType": "Unsupported media type",
     "unprocessableEntity": "Unprocessable entity",
     "locked": "Resource is locked",
-    "tooManyRequests": "Too many requests"
+    "tooManyRequests": "Too many requests",
+    "badRequest": "Invalid data",
+    "pdfDownloadError": "Error downloading the PDF",
+    "invalidEmail": "Enter a valid email"
   },
   "error_sanitizer": {
     "fallback": "An unexpected error occurred",
@@ -2198,7 +2323,11 @@
     "description": "Enter the 6-digit code from your authenticator app.",
     "verify": "Verify",
     "invalid_code": "Invalid code. Try again.",
-    "back": "Back"
+    "back": "Back",
+    "generateError": "Error generating the 2FA code",
+    "enabled": "Two-factor authentication enabled",
+    "disabled": "Two-factor authentication disabled",
+    "disableError": "Error disabling 2FA"
   },
   "forgot_password": {
     "title": "Forgot your password?",
@@ -2268,7 +2397,8 @@
     "booking_detail": "Appointment Detail",
     "patient": "Patient",
     "time": "Time",
-    "no_events": "No events for this date"
+    "no_events": "No events for this date",
+    "calendarFilters": "calendar filters"
   },
   "super_admin_analytics": {
     "tenant_detail": "Tenant Detail",
@@ -2334,7 +2464,8 @@
     "revenue_last_12m": "Revenue (last 12 months)",
     "total_bookings_6m": "Total bookings (6 months)",
     "occupancy_name": "Occupancy Rate",
-    "loading": "Loading..."
+    "loading": "Loading...",
+    "occupancy": "Occupancy"
   },
   "dates": {
     "today": "Today",
@@ -2418,7 +2549,10 @@
     "cleaned_for": "Cleaned for {name}",
     "loaded_all": "All demo data loaded",
     "cleaned_all": "All demo data cleaned",
-    "rut": "RUT"
+    "rut": "RUT",
+    "clinicalHistoryCount": "Clinical History ({{count}})",
+    "examsCount": "Exams ({{count}})",
+    "bookingsCount": "Bookings ({{count}})"
   },
   "doctor_panel": {
     "loading": "Loading panel...",
@@ -2507,7 +2641,8 @@
     "selectPatientAndExam": "Select patient and at least one exam",
     "requestCreated": "Request created",
     "errorCreate": "Error creating request",
-    "errorChangeState": "Error changing state"
+    "errorChangeState": "Error changing state",
+    "loadingDetail": "Loading detail..."
   },
   "medical_history_detail": {
     "title": "Record Detail",
@@ -2705,7 +2840,11 @@
     "additional_notes": "Additional Notes",
     "notes_placeholder": "Observations, follow-up, special instructions...",
     "saving": "Saving...",
-    "update": "Update"
+    "update": "Update",
+    "cancel": "Cancel",
+    "created": "Record created successfully",
+    "updated": "Record updated successfully",
+    "deleted": "Record deleted successfully"
   },
   "clinical_record_detail": {
     "loading_record": "Loading record...",
@@ -2861,7 +3000,14 @@
     "create_record": "Create Record",
     "test_label": "Test",
     "select_test": "Select a test",
-    "all_tests": "All tests"
+    "all_tests": "All tests",
+    "passed": "Passed",
+    "failed": "Failed",
+    "controlLimits": "Control Limits (±2σ)",
+    "warningLimits": "Warning Limits (±1σ)",
+    "warning": "Warning",
+    "mean": "Mean",
+    "noDate": "No date"
   },
   "lab_analytics": {
     "loading": "Loading analytics...",
@@ -2931,7 +3077,14 @@
     "saving": "Saving...",
     "update_btn": "Update Clinic",
     "create_btn": "Create Clinic",
-    "name_min_2": "Name must be at least 2 characters"
+    "name_min_2": "Name must be at least 2 characters",
+    "clinicCreated": "Clinic created successfully",
+    "clinicUpdated": "Clinic updated successfully",
+    "clinicDeleted": "Clinic deleted successfully",
+    "planFree": "Free",
+    "planBasic": "Basic",
+    "planPro": "Pro",
+    "planEnterprise": "Enterprise"
   },
   "super_admin_dashboard": {
     "loading": "Loading admin panel...",
@@ -3011,7 +3164,9 @@
     "top_diagnoses": "Top Diagnoses",
     "main_diagnoses": "Main Diagnoses",
     "cases": "cases",
-    "top_diagnoses_chart": "Top Diagnoses"
+    "top_diagnoses_chart": "Top Diagnoses",
+    "doctor": "Doctor",
+    "noData": "No data"
   },
   "register": {
     "title": "Create Account",
@@ -3063,5 +3218,36 @@
     "title": "Premium feature",
     "message": "This feature is not available in your current plan. Upgrade your plan to unlock it.",
     "see_plans": "View Plans"
+  },
+  "admin_analytics": {
+    "title": "My Analytics",
+    "subtitle": "Overview of your key metrics and statistics",
+    "myAnalytics": "My analytics",
+    "myAnalyticsSubtitle": "Summary of your clinical activity",
+    "myBookings": "My bookings",
+    "totalPatients": "Total patients",
+    "totalDoctors": "Total doctors",
+    "totalBookings": "Total bookings",
+    "todayBookings": "Today's bookings",
+    "upcomingBookings": "Upcoming bookings",
+    "patientsServed": "Patients served",
+    "clinicalRecords": "Clinical records",
+    "topDoctors": "Top doctors",
+    "noData": "No data",
+    "tabGeneral": "General",
+    "tabNoShows": "No-shows",
+    "tabDiagnoses": "Diagnoses",
+    "tabDemand": "Demand",
+    "tabSchedules": "Schedules",
+    "tabVitals": "Vital signs",
+    "colDoctor": "Doctor",
+    "colSpecialty": "Specialty",
+    "colBookings": "Bookings",
+    "colConfirmed": "Confirmed"
+  },
+  "clinical_templates":{
+    "created": "Template created successfully",
+    "updated": "Template updated successfully",
+    "deleted": "Template deleted successfully"
   }
 }

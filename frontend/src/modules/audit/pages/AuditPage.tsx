@@ -130,7 +130,7 @@ export default function AuditPage() {
             onClick={handleExport}
             disabled={logs.length === 0}
           >
-            {t('exportCsv')}
+            {t('exportAuditLog')}
           </Button>
         }
       />
@@ -230,7 +230,7 @@ export default function AuditPage() {
                 <TableCell>{t('action')}</TableCell>
                 <TableCell>{t('entity')}</TableCell>
                 <TableCell>{t('details')}</TableCell>
-                <TableCell>{t('ip')}</TableCell>
+                <TableCell>{t('ipAddress')}</TableCell>
                 <TableCell>{t('date')}</TableCell>
                 <TableCell align="right">{t('actions')}</TableCell>
               </TableRow>

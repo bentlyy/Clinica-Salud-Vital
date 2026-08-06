@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
+import i18n from '@/i18n/i18n';
 import { clinicalTemplateService } from '../services/clinical-template.service';
 import type { CreateTemplateInput, UpdateTemplateInput } from '../types/template.types';
 
@@ -26,7 +27,7 @@ export function useCreateTemplate() {
     mutationFn: (input: CreateTemplateInput) => clinicalTemplateService.create(input),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['clinical-templates'] });
-      toast.success('Plantilla creada correctamente');
+      toast.success(i18n.t('clinical_templates:created'));
     },
   });
 }
@@ -39,7 +40,7 @@ export function useUpdateTemplate() {
       clinicalTemplateService.update(id, input),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['clinical-templates'] });
-      toast.success('Plantilla actualizada correctamente');
+      toast.success(i18n.t('clinical_templates:updated'));
     },
   });
 }
@@ -51,7 +52,7 @@ export function useDeleteTemplate() {
     mutationFn: (id: number) => clinicalTemplateService.remove(id),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['clinical-templates'] });
-      toast.success('Plantilla eliminada correctamente');
+      toast.success(i18n.t('clinical_templates:deleted'));
     },
   });
 }

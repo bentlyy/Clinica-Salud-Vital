@@ -45,7 +45,7 @@ export default function PatientPrescriptionsPage() {
         if (active) setPrescriptions(Array.isArray(data) ? data : []);
       })
       .catch(() => {
-        if (active) setError(t('prescriptions.error_loading', 'Error al cargar las recetas'));
+        if (active) setError(t('prescriptions:error_loading', 'Error al cargar las recetas'));
       })
       .finally(() => {
         if (active) setLoading(false);
@@ -56,7 +56,7 @@ export default function PatientPrescriptionsPage() {
   }, [t]);
 
   if (loading) {
-    return <LoadingState message={t('prescriptions.loading', 'Cargando recetas...')} />;
+    return <LoadingState message={t('prescriptions:loading', 'Cargando recetas...')} />;
   }
 
   if (error) {
@@ -67,13 +67,13 @@ export default function PatientPrescriptionsPage() {
     return (
       <MotionDiv initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
         <PageHeader
-          title={t('prescriptions.title', 'Mis Recetas')}
-          subtitle={t('prescriptions.subtitle', 'Consulta tus recetas médicas')}
+          title={t('prescriptions:title', 'Mis Recetas')}
+          subtitle={t('prescriptions:subtitle', 'Consulta tus recetas médicas')}
         />
         <EmptyState
           icon={<MedicationIcon sx={{ fontSize: 48, color: theme.palette.divider }} />}
-          title={t('prescriptions.empty_title', 'Sin recetas')}
-          message={t('prescriptions.empty_desc', 'Aún no tienes recetas disponibles.')}
+          title={t('prescriptions:empty_title', 'Sin recetas')}
+          message={t('prescriptions:empty_desc', 'Aún no tienes recetas disponibles.')}
         />
       </MotionDiv>
     );
@@ -84,19 +84,19 @@ export default function PatientPrescriptionsPage() {
 
   const statCards = [
     {
-      label: t('prescriptions.total', 'Total Recetas'),
+      label: t('prescriptions:total', 'Total Recetas'),
       value: prescriptions.length,
       icon: <Assignment sx={{ fontSize: 20, color: theme.palette.primary.main }} />,
       bg: theme.palette.custom.status.info.bg,
     },
     {
-      label: t('prescriptions.with_medications', 'Con Medicamentos'),
+      label: t('prescriptions:with_medications', 'Con Medicamentos'),
       value: withMeds.length,
       icon: <MedicationIcon sx={{ fontSize: 20, color: theme.palette.success.main }} />,
       bg: theme.palette.custom.status.success.bg,
     },
     {
-      label: t('prescriptions.total_medications', 'Medicamentos'),
+      label: t('prescriptions:total_medications', 'Medicamentos'),
       value: totalMeds,
       icon: <MedicationIcon sx={{ fontSize: 20, color: theme.palette.warning.main }} />,
       bg: theme.palette.custom.status.warning.bg,
@@ -106,8 +106,8 @@ export default function PatientPrescriptionsPage() {
   return (
     <MotionDiv initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
       <PageHeader
-        title={t('prescriptions.title', 'Mis Recetas')}
-        subtitle={t('prescriptions.subtitle', 'Consulta tus recetas médicas')}
+        title={t('prescriptions:title', 'Mis Recetas')}
+        subtitle={t('prescriptions:subtitle', 'Consulta tus recetas médicas')}
       />
 
       <Grid container spacing={2} sx={{ mb: 3 }}>
@@ -169,8 +169,8 @@ export default function PatientPrescriptionsPage() {
               <Box flex={1}>
                 <Typography fontWeight={600} gutterBottom>
                   {prescription.doctor_name
-                    ? t('prescriptions.by_doctor', 'Receta — Dr. {{name}}', { name: prescription.doctor_name })
-                    : t('prescriptions.by_doctor', 'Receta')}
+                    ? t('prescriptions:by_doctor', 'Receta — Dr. {{name}}', { name: prescription.doctor_name })
+                    : t('prescriptions:by_doctor', 'Receta')}
                 </Typography>
                 <Box display="flex" gap={2} color="text.secondary" fontSize={13}>
                   <span>📅 {prescription.created_at ? format(new Date(prescription.created_at), 'dd MMM yyyy') : '-'}</span>

@@ -1,5 +1,6 @@
 import axios, { type AxiosRequestConfig } from 'axios';
 import toast from 'react-hot-toast';
+import i18n from '@/i18n/i18n';
 import type { AuthResponse } from '@/shared/types/api.types';
 
 export const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
@@ -133,28 +134,28 @@ apiClient.interceptors.response.use(
 
     switch (status) {
       case 400:
-        if (!isRefreshCall) toast.error(message || 'Datos inválidos');
+        if (!isRefreshCall) toast.error(message || i18n.t('errors:badRequest'));
         break;
       case 401:
-        if (!isRefreshCall) toast.error('Sesión expirada. Inicia sesión nuevamente.');
+        if (!isRefreshCall) toast.error(i18n.t('errors:sessionExpired'));
         break;
       case 403:
-        toast.error('No tienes permisos para esta acción');
+        toast.error(i18n.t('errors:accessDenied'));
         break;
       case 404:
-        toast.error('Recurso no encontrado');
+        toast.error(i18n.t('errors:notFound'));
         break;
       case 409:
-        toast.error(message || 'Conflicto con datos existentes');
+        toast.error(message || i18n.t('errors:conflict'));
         break;
       case 429:
-        if (!isRefreshCall) toast.error('Demasiadas solicitudes. Espera un momento.');
+        if (!isRefreshCall) toast.error(i18n.t('errors:rateLimited'));
         break;
       case 500:
-        toast.error('Error del servidor. Intenta más tarde.');
+        toast.error(i18n.t('errors:serverError'));
         break;
       default:
-        if (!status) toast.error('Error de conexión');
+        if (!status) toast.error(i18n.t('errors:networkError'));
     }
 
     return Promise.reject(error);

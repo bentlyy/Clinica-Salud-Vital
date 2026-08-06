@@ -44,7 +44,7 @@ export default function AdminLabRequestsPage() {
   const grouped = useMemo(() => {
     const map = new Map<string, LabRequest[]>();
     for (const r of requests) {
-      const key = r.doctor_name || t('admin_lab_requests.noDoctor');
+      const key = r.doctor_name || t('admin_lab_requests:noDoctor');
       if (!map.has(key)) map.set(key, []);
       map.get(key)!.push(r);
     }
@@ -76,27 +76,27 @@ export default function AdminLabRequestsPage() {
 
   return (
     <Box>
-      <PageHeader title={t('admin_lab_requests.title')} subtitle={t('admin_lab_requests.subtitle')} />
+      <PageHeader title={t('admin_lab_requests:title')} subtitle={t('admin_lab_requests:subtitle')} />
 
       {grouped.length === 0 ? (
-        <EmptyState title={t('admin_lab_requests.emptyTitle')} message={t('admin_lab_requests.emptyDesc')} />
+        <EmptyState title={t('admin_lab_requests:emptyTitle')} message={t('admin_lab_requests:emptyDesc')} />
       ) : (
         grouped.map(([doctorName, doctorRequests]) => (
           <Paper key={doctorName} sx={{ p: 2.5, mb: 2, border: `1px solid ${theme.palette.divider}`, borderRadius: '12px' }}>
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
               <Typography variant="subtitle1" sx={{ fontWeight: 700, color: theme.palette.text.primary }}>{doctorName}</Typography>
-              <Chip label={t('admin_lab_requests.requestCount', { count: doctorRequests.length })} size="small" sx={{ backgroundColor: theme.palette.custom.status.info.bg, color: theme.palette.info.dark, fontWeight: 600 }} />
+              <Chip label={t('admin_lab_requests:requestCount', { count: doctorRequests.length })} size="small" sx={{ backgroundColor: theme.palette.custom.status.info.bg, color: theme.palette.info.dark, fontWeight: 600 }} />
             </Box>
             <TableContainer>
               <Table size="small">
                 <TableHead>
                   <TableRow>
-                    <TableCell>{t('admin_lab_requests.colRequestNumber')}</TableCell>
-                    <TableCell>{t('admin_lab_requests.colPatient')}</TableCell>
-                    <TableCell>{t('admin_lab_requests.colPriority')}</TableCell>
-                    <TableCell>{t('admin_lab_requests.colDate')}</TableCell>
-                    <TableCell>{t('admin_lab_requests.colStatus')}</TableCell>
-                    <TableCell align="right">{t('admin_lab_requests.colAction')}</TableCell>
+                    <TableCell>{t('admin_lab_requests:colRequestNumber')}</TableCell>
+                    <TableCell>{t('admin_lab_requests:colPatient')}</TableCell>
+                    <TableCell>{t('admin_lab_requests:colPriority')}</TableCell>
+                    <TableCell>{t('admin_lab_requests:colDate')}</TableCell>
+                    <TableCell>{t('admin_lab_requests:colStatus')}</TableCell>
+                    <TableCell align="right">{t('admin_lab_requests:colAction')}</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -112,7 +112,7 @@ export default function AdminLabRequestsPage() {
                         <TableCell><Chip label={r.status} size="small" sx={{ backgroundColor: st.bg, color: st.fg, fontSize: 11 }} /></TableCell>
                         <TableCell align="right">
                           <Button size="small" onClick={() => navigate(`/laboratory/requests/${r.id}`)} sx={{ textTransform: 'none', fontSize: 12, color: theme.palette.primary.main }}>
-                            {t('admin_lab_requests.view')}
+                            {t('admin_lab_requests:view')}
                           </Button>
                         </TableCell>
                       </TableRow>

@@ -57,10 +57,10 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
           >
             <ErrorOutlineIcon sx={{ fontSize: 64, color: 'error.main', mb: 2 }} />
             <Typography variant="h5" gutterBottom fontWeight="bold">
-              {t('error_boundary.title', 'Algo salió mal')}
+              {t('error_boundary:title', 'Algo salió mal')}
             </Typography>
             <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-              {t('error_boundary.message', 'Ha ocurrido un error inesperado. Por favor, intenta de nuevo.')}
+              {t('error_boundary:message', 'Ha ocurrido un error inesperado. Por favor, intenta de nuevo.')}
             </Typography>
             {this.state.error && (
               <Typography
@@ -73,10 +73,10 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
             )}
             <Box display="flex" gap={2} justifyContent="center">
               <Button variant="contained" onClick={this.handleRetry}>
-                {t('error_boundary.retry', 'Reintentar')}
+                {t('error_boundary:retry', 'Reintentar')}
               </Button>
               <Button variant="outlined" onClick={this.handleGoHome}>
-                {t('error_boundary.go_home', 'Ir al inicio')}
+                {t('error_boundary:go_home', 'Ir al inicio')}
               </Button>
             </Box>
           </Paper>

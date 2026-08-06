@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { bookingService } from '../services/booking.service';
 import type { BookingListParams, CreateBookingInput } from '../types/booking.types';
 import toast from 'react-hot-toast';
+import i18n from '@/i18n/i18n';
 
 export const bookingKeys = {
   all: ['bookings'] as const,
@@ -52,11 +53,11 @@ export function useCreateBooking() {
   return useMutation({
     mutationFn: (data: CreateBookingInput) => bookingService.create(data),
     onSuccess: () => {
-      toast.success('Cita creada correctamente');
+      toast.success(i18n.t('bookings:created'));
       void queryClient.invalidateQueries({ queryKey: bookingKeys.all });
     },
     onError: () => {
-      toast.error('Error al crear la cita');
+      toast.error(i18n.t('bookings:createError'));
     },
   });
 }
@@ -67,11 +68,11 @@ export function useCancelBooking() {
   return useMutation({
     mutationFn: (id: number) => bookingService.cancel(id),
     onSuccess: () => {
-      toast.success('Cita cancelada correctamente');
+      toast.success(i18n.t('bookings:cancelled'));
       void queryClient.invalidateQueries({ queryKey: bookingKeys.all });
     },
     onError: () => {
-      toast.error('Error al cancelar la cita');
+      toast.error(i18n.t('bookings:cancelError'));
     },
   });
 }

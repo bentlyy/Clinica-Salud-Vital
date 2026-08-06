@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
+import i18n from '@/i18n/i18n';
 import { specialtyService } from '../services/specialty.service';
 import type {
   SpecialtyListParams,
@@ -36,7 +37,7 @@ export function useCreateSpecialty() {
     mutationFn: (input: CreateSpecialtyInput) => specialtyService.create(input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: specialtyKeys.all });
-      toast.success('Especialidad creada exitosamente');
+      toast.success(i18n.t('specialties:specialtyCreated'));
     },
   });
 }
@@ -50,7 +51,7 @@ export function useUpdateSpecialty() {
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: specialtyKeys.all });
       queryClient.invalidateQueries({ queryKey: specialtyKeys.detail(variables.id) });
-      toast.success('Especialidad actualizada exitosamente');
+      toast.success(i18n.t('specialties:specialtyUpdated'));
     },
   });
 }
@@ -62,7 +63,7 @@ export function useDeleteSpecialty() {
     mutationFn: (id: number) => specialtyService.remove(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: specialtyKeys.all });
-      toast.success('Especialidad eliminada exitosamente');
+      toast.success(i18n.t('specialties:specialtyDeleted'));
     },
   });
 }

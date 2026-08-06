@@ -33,11 +33,11 @@ import type { Booking } from '@/modules/bookings/types/booking.types';
 
 function getStatusLabel(status: string, t: (key: string) => string) {
   const labels: Record<string, string> = {
-    pending: t('doctor_panel.status.pending'),
-    confirmed: t('doctor_panel.status.confirmed'),
-    completed: t('doctor_panel.status.completed'),
-    cancelled: t('doctor_panel.status.cancelled'),
-    no_show: t('doctor_panel.status.no_show'),
+    pending: t('doctor_panel:status.pending'),
+    confirmed: t('doctor_panel:status.confirmed'),
+    completed: t('doctor_panel:status.completed'),
+    cancelled: t('doctor_panel:status.cancelled'),
+    no_show: t('doctor_panel:status.no_show'),
   };
   return labels[status] || status;
 }
@@ -93,13 +93,13 @@ export default function DoctorPanel() {
     return patientIds.size;
   }, [bookings]);
 
-  if (isLoading) return <LoadingState message={t('doctor_panel.loading')} />;
+  if (isLoading) return <LoadingState message={t('doctor_panel:loading')} />;
   if (error) return <ErrorState error={error as Error} onRetry={refetch} />;
 
   return (
     <Box>
       <PageHeader
-        title={t('doctor_panel.welcome', { name: user?.name || '' })}
+        title={t('doctor_panel:welcome', { name: user?.name || '' })}
         subtitle={formatDate(new Date(), { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
       />
 
@@ -139,19 +139,19 @@ export default function DoctorPanel() {
         <Grid xs={12} md={4}>
           <Paper sx={{ p: 2.5, border: '1px solid #e5e7eb', borderRadius: '12px' }}>
             <Typography variant="subtitle2" sx={{ fontWeight: 600, color: theme.palette.text.secondary, mb: 2 }}>
-              {t('doctor_panel.daySummary')}
+              {t('doctor_panel:daySummary')}
             </Typography>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>{t('doctor_panel.todayAppointments')}</Typography>
+                <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>{t('doctor_panel:todayAppointments')}</Typography>
                 <Chip label={todayBookings.length} size="small" sx={{ backgroundColor: theme.palette.primary.main, color: '#fff', fontWeight: 600 }} />
               </Box>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>{t('doctor_panel.upcomingAppointments')}</Typography>
+                <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>{t('doctor_panel:upcomingAppointments')}</Typography>
                 <Chip label={upcomingBookings.length} size="small" sx={{ backgroundColor: theme.palette.info.main, color: '#fff', fontWeight: 600 }} />
               </Box>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>{t('doctor_panel.activePatients')}</Typography>
+                <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>{t('doctor_panel:activePatients')}</Typography>
                 <Chip label={patientCount} size="small" sx={{ backgroundColor: '#7c3aed', color: '#fff', fontWeight: 600 }} />
               </Box>
             </Box>
@@ -164,14 +164,14 @@ export default function DoctorPanel() {
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
               <EventNote sx={{ color: theme.palette.primary.main, fontSize: 20 }} />
               <Typography variant="subtitle2" sx={{ fontWeight: 600, color: theme.palette.text.secondary }}>
-                {t('doctor_panel.todayAgenda')}
+                {t('doctor_panel:todayAgenda')}
               </Typography>
             </Box>
 
             {todayBookings.length === 0 ? (
               <EmptyState
-                title={t('doctor_panel.noAppointmentsToday')}
-                message={t('doctor_panel.noAppointmentsTodayDesc')}
+                title={t('doctor_panel:noAppointmentsToday')}
+                message={t('doctor_panel:noAppointmentsTodayDesc')}
               />
             ) : (
               <List disablePadding>
@@ -192,7 +192,7 @@ export default function DoctorPanel() {
                           </Avatar>
                         </ListItemAvatar>
                         <ListItemText
-                          primary={booking.patient_name || booking.guest_name || t('doctor_panel.patient')}
+                          primary={booking.patient_name || booking.guest_name || t('doctor_panel:patient')}
                           secondary={`${booking.duration || 30} min${booking.doctor_name ? ` · ${booking.doctor_name}` : ''}`}
                           primaryTypographyProps={{ fontWeight: 600, color: theme.palette.text.primary }}
                           secondaryTypographyProps={{ color: theme.palette.text.secondary, fontSize: 13 }}
@@ -207,7 +207,7 @@ export default function DoctorPanel() {
             {todayBookings.length > 0 && (
               <Box sx={{ mt: 1, textAlign: 'center' }}>
                 <Button size="small" onClick={() => navigate('/bookings')} sx={{ textTransform: 'none', color: theme.palette.primary.main }}>
-                  {t('doctor_panel.viewAll')}
+                  {t('doctor_panel:viewAll')}
                 </Button>
               </Box>
             )}

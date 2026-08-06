@@ -21,22 +21,22 @@ export default function ConfirmPage() {
   useEffect(() => {
     if (!token) {
       setStatus('error');
-      setMessage(t('confirm.error_desc', 'Token no válido.'));
+      setMessage(t('confirm:error_desc', 'Token no válido.'));
       return;
     }
     apiClient.post(`/bookings/confirm/${token}`)
       .then((r: { data: { alreadyConfirmed?: boolean } }) => {
         if (r.data.alreadyConfirmed) {
           setStatus('info');
-          setMessage(t('confirm.already', 'Esta cita ya había sido confirmada anteriormente.'));
+          setMessage(t('confirm:already', 'Esta cita ya había sido confirmada anteriormente.'));
           return;
         }
         setStatus('success');
-        setMessage(t('confirm.success_desc', 'Tu cita ha sido confirmada exitosamente.'));
+        setMessage(t('confirm:success_desc', 'Tu cita ha sido confirmada exitosamente.'));
       })
       .catch(() => {
         setStatus('error');
-        setMessage(t('confirm.error_desc', 'No se pudo confirmar la cita. El enlace puede haber expirado.'));
+        setMessage(t('confirm:error_desc', 'No se pudo confirmar la cita. El enlace puede haber expirado.'));
       });
   }, [token, t]);
 
@@ -48,10 +48,10 @@ export default function ConfirmPage() {
   };
 
   const titleMap: Record<PageStatus, string> = {
-    loading: t('confirm.confirming', 'Confirmando tu cita...'),
-    success: t('confirm.success_title', '¡Cita Confirmada!'),
-    error: t('confirm.error_title', 'Error de Confirmación'),
-    info: t('confirm.title', 'Información'),
+    loading: t('confirm:confirming', 'Confirmando tu cita...'),
+    success: t('confirm:success_title', '¡Cita Confirmada!'),
+    error: t('confirm:error_title', 'Error de Confirmación'),
+    info: t('confirm:title', 'Información'),
   };
 
   return (
@@ -66,7 +66,7 @@ export default function ConfirmPage() {
         </Typography>
         {status !== 'loading' && (
           <Button variant="contained" onClick={() => navigate('/')} fullWidth size="large">
-            {t('confirm.back_home', 'Volver al inicio')}
+            {t('confirm:back_home', 'Volver al inicio')}
           </Button>
         )}
       </Paper>

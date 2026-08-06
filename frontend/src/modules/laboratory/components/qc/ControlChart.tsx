@@ -6,6 +6,8 @@ import {
   Skeleton,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
+import { useTranslation } from 'react-i18next';
+import i18n from '@/i18n/i18n';
 import { formatDate, formatDateTime } from '@/shared/utils/localeUtils';
 import type { LabQCRecord } from '../../types/lab.types';
 
@@ -47,7 +49,7 @@ function formatDateChart(iso: string | null): string {
 }
 
 function formatDateTimeChart(iso: string | null): string {
-  if (!iso) return 'Sin fecha';
+  if (!iso) return i18n.t('lab_qc:noDate');
   const d = new Date(iso);
   return formatDateTime(d);
 }
@@ -61,6 +63,7 @@ export const ControlChart = memo(function ControlChart({
   isLoading = false,
 }: ControlChartProps) {
   const theme = useTheme();
+  const { t } = useTranslation('lab_qc');
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
   const sorted = useMemo(
@@ -467,27 +470,27 @@ export const ControlChart = memo(function ControlChart({
       <Box sx={{ display: 'flex', gap: 3, mt: 2, justifyContent: 'center', flexWrap: 'wrap' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
           <Box sx={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: theme.palette.success.main }} />
-          <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>Pasó</Typography>
+          <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>{t('passed')}</Typography>
         </Box>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
           <Box sx={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: theme.palette.warning.main }} />
-          <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>Advertencia</Typography>
+          <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>{t('warning')}</Typography>
         </Box>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
           <Box sx={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: theme.palette.error.main }} />
-          <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>Falló</Typography>
+          <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>{t('failed')}</Typography>
         </Box>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
           <Box sx={{ width: 20, height: 2, backgroundColor: theme.palette.primary.main }} />
-          <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>Media</Typography>
+          <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>{t('mean')}</Typography>
         </Box>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
           <Box sx={{ width: 20, height: 0, borderTop: `2px dashed ${theme.palette.warning.main}` }} />
-          <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>Límites Control (±2σ)</Typography>
+          <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>{t('controlLimits')}</Typography>
         </Box>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
           <Box sx={{ width: 20, height: 0, borderTop: `2px dotted ${theme.palette.warning.dark}` }} />
-          <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>Límites Advertencia (±1σ)</Typography>
+          <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>{t('warningLimits')}</Typography>
         </Box>
       </Box>
     </Paper>

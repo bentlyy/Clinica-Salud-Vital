@@ -23,7 +23,7 @@ export default function ForgotPasswordPage() {
       await apiClient.post('/auth/forgot-password', { email });
       setSent(true);
     } catch {
-      setError(t('forgot_password.error', 'Error al enviar el correo. Intenta de nuevo.'));
+      setError(t('forgot_password:error', 'Error al enviar el correo. Intenta de nuevo.'));
     } finally {
       setLoading(false);
     }
@@ -35,13 +35,13 @@ export default function ForgotPasswordPage() {
         <Paper elevation={3} sx={{ p: 4, maxWidth: 420, textAlign: 'center', borderRadius: 2 }}>
           <LockResetIcon sx={{ fontSize: 64, color: theme.palette.primary.main, mb: 2 }} />
           <Typography variant="h5" gutterBottom fontWeight="bold">
-            {t('forgot_password.sent_title', 'Correo enviado')}
+            {t('forgot_password:sent_title', 'Correo enviado')}
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-            {t('forgot_password.sent_message', 'Si existe una cuenta con ese correo, recibirás instrucciones para restablecer tu contraseña.')}
+            {t('forgot_password:sent_message', 'Si existe una cuenta con ese correo, recibirás instrucciones para restablecer tu contraseña.')}
           </Typography>
           <Button component={Link} to="/" variant="contained" fullWidth>
-            {t('forgot_password.back_login', 'Volver al inicio de sesión')}
+            {t('forgot_password:back_login', 'Volver al inicio de sesión')}
           </Button>
         </Paper>
       </Box>
@@ -54,10 +54,10 @@ export default function ForgotPasswordPage() {
         <Box textAlign="center" sx={{ mb: 3 }}>
           <LockResetIcon sx={{ fontSize: 64, color: theme.palette.primary.main, mb: 1 }} />
           <Typography variant="h5" gutterBottom fontWeight="bold">
-            {t('forgot_password.title', '¿Olvidaste tu contraseña?')}
+            {t('forgot_password:title', '¿Olvidaste tu contraseña?')}
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            {t('forgot_password.subtitle', 'Ingresa tu correo electrónico y te enviaremos las instrucciones para restablecerla.')}
+            {t('forgot_password:subtitle', 'Ingresa tu correo electrónico y te enviaremos las instrucciones para restablecerla.')}
           </Typography>
         </Box>
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
@@ -65,18 +65,18 @@ export default function ForgotPasswordPage() {
           <TextField
             fullWidth
             type="email"
-            label={t('forgot_password.email', 'Correo electrónico')}
+            label={t('forgot_password:email', 'Correo electrónico')}
             value={email}
             onChange={(e) => { setEmail(e.target.value); }}
             required
             sx={{ mb: 3 }}
           />
           <Button type="submit" fullWidth variant="contained" size="large" disabled={loading}>
-            {loading ? '...' : t('forgot_password.submit', 'Enviar instrucciones')}
+            {loading ? '...' : t('forgot_password:submit', 'Enviar instrucciones')}
           </Button>
         </form>
         <Button fullWidth sx={{ mt: 2 }} component={Link} to="/">
-          {t('forgot_password.back', 'Volver')}
+          {t('forgot_password:back', 'Volver')}
         </Button>
       </Paper>
     </Box>
