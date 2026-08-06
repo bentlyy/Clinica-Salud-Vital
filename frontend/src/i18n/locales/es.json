@@ -1855,7 +1855,7 @@
     "reportGenerated": "Reporte generado exitosamente",
     "reportTypes.appointments": "Reporte de Citas",
     "reportTypes.patients": "Reporte de Pacientes",
-    "reportTypes.billing": "Reporte Financiero",
+    "reportTypes.revenue": "Reporte Financiero",
     "reportTypes.laboratory": "Reporte de Laboratorio",
     "reportTypes.doctors": "Reporte de Doctores",
     "csvHeaders.date": "Fecha",
@@ -1904,7 +1904,14 @@
     "columnType": "Tipo",
     "columnPeriod": "Período",
     "columnStatus": "Estado",
-    "columnDate": "Fecha"
+    "columnDate": "Fecha",
+    "typeDescriptions.appointments": "Métricas de citas y consultas médicas en el periodo seleccionado.",
+    "typeDescriptions.revenue": "Ingresos, facturas y estados de pago del periodo.",
+    "typeDescriptions.patients": "Listado de pacientes con su actividad de citas.",
+    "typeDescriptions.laboratory": "Solicitudes y resultados del laboratorio en el periodo.",
+    "statusLabels.generating": "Generando",
+    "statusLabels.completed": "Completado",
+    "statusLabels.failed": "Falló"
   },
   "audit": {
     "title": "Auditoria",
