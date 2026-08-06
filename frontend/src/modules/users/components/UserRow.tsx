@@ -33,7 +33,6 @@ function lastAccessLabel(iso: string, t: (key: string, opts?: Record<string, unk
 export function UserRow({ user, canToggle, canView, onView, onToggle, isToggling }: UserRowProps) {
   const theme = useTheme();
   const { t } = useTranslation('users');
-  const { t: tc } = useTranslation('common');
 
   const contactParts = [
     user.email,

@@ -20,8 +20,11 @@ import { formatNumber } from '@/shared/utils/localeUtils';
 
 function computeTrend(months: { tenants: number }[]): { value: number; up: boolean } | null {
   if (months.length < 2) return null;
-  const last = months[months.length - 1].tenants;
-  const prev = months[months.length - 2].tenants;
+  const lastMonth = months[months.length - 1];
+  const prevMonth = months[months.length - 2];
+  if (!lastMonth || !prevMonth) return null;
+  const last = lastMonth.tenants;
+  const prev = prevMonth.tenants;
   if (prev === 0) return last > 0 ? { value: 100, up: true } : null;
   const diff = Math.round(((last - prev) / prev) * 100);
   return { value: Math.abs(diff), up: diff >= 0 };
