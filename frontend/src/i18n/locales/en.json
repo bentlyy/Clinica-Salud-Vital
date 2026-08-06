@@ -1878,7 +1878,7 @@
     "reportTypes": {
       "appointments": "Appointments Report",
       "patients": "Patients Report",
-      "billing": "Financial Report",
+      "revenue": "Financial Report",
       "laboratory": "Laboratory Report",
       "doctors": "Doctors Report"
     },
@@ -1930,7 +1930,18 @@
     "columnType": "Type",
     "columnPeriod": "Period",
     "columnStatus": "Status",
-    "columnDate": "Date"
+    "columnDate": "Date",
+    "typeDescriptions": {
+      "appointments": "Appointments and medical consultations metrics for the selected period.",
+      "revenue": "Revenue, invoices and payment statuses for the period.",
+      "patients": "Patient list with their appointment activity.",
+      "laboratory": "Laboratory requests and results for the period."
+    },
+    "statusLabels": {
+      "generating": "Generating",
+      "completed": "Completed",
+      "failed": "Failed"
+    }
   },
   "audit": {
     "title": "Audit",

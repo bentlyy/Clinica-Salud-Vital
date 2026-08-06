@@ -136,7 +136,7 @@ export default function ReportsPage() {
               <CardContent sx={{ textAlign: 'center', py: 3 }}>
                 <Box sx={{ color: colors.color, mb: 1.5 }}>{REPORT_ICONS[type]}</Box>
                 <Typography variant="h6" sx={{ fontWeight: 600, color: theme.palette.text.primary, fontSize: '0.9375rem' }}>
-                  {t(`reportTypeLabels.${type}`)}
+                  {t(`reportTypes.${type}`)}
                 </Typography>
                 <Typography variant="body2" sx={{ color: theme.palette.text.secondary, mt: 0.5, fontSize: '0.75rem' }}>
                   {t(`typeDescriptions.${type}`)}
@@ -219,7 +219,7 @@ export default function ReportsPage() {
                   <TableCell>#{pollingReport.id}</TableCell>
                   <TableCell>
                     <Chip
-                      label={t(`reportTypeLabels.${pollingReport.type}`) || pollingReport.type}
+                      label={t(`reportTypes.${pollingReport.type}`) || pollingReport.type}
                       size="small"
                       sx={{
                         backgroundColor: REPORT_COLORS[pollingReport.type]?.bgColor,

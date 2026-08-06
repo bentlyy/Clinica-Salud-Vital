@@ -1878,7 +1878,7 @@
     "reportTypes": {
       "appointments": "Relatório de Consultas",
       "patients": "Relatório de Pacientes",
-      "billing": "Relatório Financeiro",
+      "revenue": "Relatório Financeiro",
       "laboratory": "Relatório de Laboratório",
       "doctors": "Relatório de Doutores"
     },
@@ -1930,7 +1930,18 @@
     "columnType": "Tipo",
     "columnPeriod": "Período",
     "columnStatus": "Status",
-    "columnDate": "Data"
+    "columnDate": "Data",
+    "typeDescriptions": {
+      "appointments": "Métricas de consultas e atendimentos médicos no período selecionado.",
+      "revenue": "Receitas, faturas e status de pagamento do período.",
+      "patients": "Lista de pacientes com sua atividade de consultas.",
+      "laboratory": "Solicitações e resultados do laboratório no período."
+    },
+    "statusLabels": {
+      "generating": "Gerando",
+      "completed": "Concluído",
+      "failed": "Falhou"
+    }
   },
   "audit": {
     "title": "Auditoria",

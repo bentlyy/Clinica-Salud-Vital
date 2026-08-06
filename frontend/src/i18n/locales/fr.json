@@ -1855,7 +1855,7 @@
     "reportGenerated": "Rapport généré avec succès",
     "reportTypes.appointments": "Rapport des rendez-vous",
     "reportTypes.patients": "Rapport des patients",
-    "reportTypes.billing": "Rapport financier",
+    "reportTypes.revenue": "Rapport financier",
     "reportTypes.laboratory": "Rapport de laboratoire",
     "reportTypes.doctors": "Rapport des médecins",
     "csvHeaders.date": "Date",
@@ -1904,7 +1904,14 @@
     "columnType": "Type",
     "columnPeriod": "Période",
     "columnStatus": "Statut",
-    "columnDate": "Date"
+    "columnDate": "Date",
+    "typeDescriptions.appointments": "Métriques des rendez-vous et consultations médicales pour la période sélectionnée.",
+    "typeDescriptions.revenue": "Revenus, factures et statuts de paiement de la période.",
+    "typeDescriptions.patients": "Liste des patients avec leur activité de rendez-vous.",
+    "typeDescriptions.laboratory": "Demandes et résultats de laboratoire de la période.",
+    "statusLabels.generating": "Génération",
+    "statusLabels.completed": "Terminé",
+    "statusLabels.failed": "Échec"
   },
   "audit": {
     "title": "Audit",
