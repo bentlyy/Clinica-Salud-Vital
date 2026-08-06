@@ -48,12 +48,26 @@ Plataforma integral para administrar clínicas, pacientes, médicos, citas, hist
 
 | Rol | Acceso |
 |-----|--------|
-| `superadmin` | Panel global: todos los tenants, usuarios, estadísticas |
-| `admin` | Gestión completa de su clínica |
-| `doctor` | Agenda, pacientes, historiales clínicos |
-| `patient` | Sus propias citas y registros |
+| `superadmin` | Panel global SaaS: tenants, usuarios, facturación, especialidades, auditoría y analytics del sistema |
+| `admin` | Gestión completa de su clínica (dashboard, clínica, gestión, laboratorio) |
+| `doctor` | Agenda, pacientes, fichas clínicas, recetas, laboratorio, analytics y disponibilidad |
+| `lab_technician` | Panel completo de laboratorio, analytics y reportes |
+| `patient` | Sus propias citas, fichas clínicas, recetas, historial y resultados de laboratorio |
+| `guest` / `user` | Sin panel (reserva pública por RUT / mapeado a `patient` en la navegación) |
 
 Base de datos compartida con columna `tenant_id` en todas las tablas. Resolución automática via header `X-Tenant-Id` o JWT. Planes SaaS (`free`, `basic`, `pro`, `enterprise`) con límites configurables y self-service (onboarding, Stripe checkout, cambio de plan, cancelación).
+
+La **barra lateral** se genera dinámicamente según el rol (`getNavItems` en `frontend/src/shared/constants/navigation.tsx`):
+
+| Rol | Secciones en la barra lateral |
+|-----|-------------------------------|
+| 🔷 `superadmin` | Panel SaaS · Clínicas · Usuarios · Especialidades · Auditoría · Cobros · Configuración |
+| 🟢 `admin` | Dashboard · Clínica · Gestión · Laboratorio (panel, solicitudes, catálogo, control de calidad, analytics, resultados) · Configuración |
+| 🟡 `doctor` | Dashboard · Clínica · Gestión · Laboratorio (mismo submenú que admin) · Configuración |
+| 🔬 `lab_technician` | Dashboard · Laboratorio · Analytics · Reportes · Configuración |
+| ⚪ `patient` | Dashboard · Mis Citas · Fichas Clínicas · Recetas · Historial Médico · Mis Resultados de Laboratorio · Configuración |
+
+El submenú **Laboratorio** se bloquea con `featureKey: 'laboratory'` (feature gate por plan SaaS). Los hubs `/clinical` y `/management` agrupan pestañas condicionadas por rol. El paciente usa además un portal con bottom-nav propio (`PatientLayout`).
 
 </details>
 
@@ -62,33 +76,38 @@ Base de datos compartida con columna `tenant_id` en todas las tablas. Resolució
 
 | Módulo | Descripción |
 |--------|------------|
-| **Auth** | Registro, login, refresh, logout, 2FA, cambio/recuperación de password |
-| **Doctors** | CRUD, listado público, invitación por email, toggle activo |
+| **Auth** | Registro, login, refresh, logout, 2FA, cambio/recuperación de password, reset-admin, JWKS |
+| **Doctors** | CRUD, listado público, invitación por email, toggle activo, listado de usuarios |
 | **Booking** | Creación/cancelación de citas, slots disponibles, densidad diaria, agenda del doctor |
-| **Availability** | Disponibilidad semanal + excepciones (días completos o parciales) |
+| **Availability** | Disponibilidad semanal + excepciones (días completos o parciales), calendario del doctor |
 | **Guest** | Reserva sin login mediante RUT chileno |
 | **Clinical Records** | Historia clínica electrónica (SOAP), recetas/prescripciones, búsqueda CIE-10, descarga PDF |
 | **Billing** | Facturas, pagos, seguros, integración Stripe |
-| **Laboratory** | Catálogo de exámenes, solicitudes, resultados, muestras, QC, equipos, reactivos |
-| **Analytics** | Dashboard con KPIs, gráficos Recharts, pronóstico de demanda, tendencias |
+| **Laboratory** | Catálogo de exámenes, solicitudes, muestras, workflow (recepción→QC→validación→entrega), resultados, equipos, reactivos, QC, dashboard por área y eventos SSE en tiempo real |
+| **Analytics** | Dashboard con KPIs, gráficos Recharts, demanda, no-shows, diagnósticos, signos vitales, estadísticas por rol |
 | **Audit** | Logs de auditoría encadenados con verificación de integridad |
 | **Specialties** | Catálogo público de especialidades |
-| **SaaS** | Planes, onboarding multi-tenant, webhook Stripe, suscripción, uso, límites |
-| **Super Admin** | Panel global: gestión de tenants, usuarios, estadísticas del sistema |
-| **Medical History** | Historial clínico por paciente |
-| **Reports** | Generación de reportes (citas, revenue, pacientes, laboratorio) |
+| **SaaS** | Planes, onboarding multi-tenant, webhook Stripe, suscripción, uso, límites, features |
+| **Super Admin** | Panel global: KPIs, tenants, usuarios, billing, analytics (health scores, churn, ocupación, alertas), demo data |
+| **Medical History** | Historial clínico y antecedentes por paciente |
+| **Reports** | Generación de reportes (citas, revenue, pacientes, laboratorio, doctores) con descarga CSV |
+| **Notifications** | Bandeja de notificaciones con filtros, paginación y leído/no leído |
+| **Clinical (hub)** | Pestañas de bookings, fichas clínicas, recetas, historial, pacientes y disponibilidad |
+| **Management (hub)** | Pestañas de analytics, reportes, auditoría y billing |
 
 </details>
 
 <details open>
 <summary><b>🌐 Internacionalización</b></summary>
 
-| Idioma | Estado | Claves |
-|--------|--------|-------|
-| 🇪🇸 Español | Completo | ~811 |
-| 🇺🇸 Inglés | Completo | ~811 |
-| 🇧🇷 Portugués | Completo | ~811 |
-| 🇫🇷 Francés | Completo | ~811 |
+| Idioma | Estado | Namespaces | Claves |
+|--------|--------|------------|--------|
+| 🇪🇸 Español | Completo | 65 | 3.079 |
+| 🇺🇸 Inglés | Completo (paridad total) | 65 | 3.079 |
+| 🇧🇷 Portugués | Completo (paridad total) | 65 | 3.079 |
+| 🇫🇷 Francés | Completo (paridad total) | 65 | 3.079 |
+
+Patrón `t('ns:clave')`, `fallbackLng: 'es'`, selector de idioma en la topbar, test automático de paridad de claves (`i18n-keys.test.ts`).
 
 </details>
 
@@ -180,12 +199,13 @@ El proyecto sigue un patrón **monolito modular**: un solo deploy con módulos d
 │   ├── jobs/                      # recordatorios (5min), auditoría (6h)
 │   ├── seed/                      # Seed datos de prueba
 │   └── types/                     # Definiciones globales TypeScript
-├── frontend/                      # Frontend React + Vite (consolidado)
+├── frontend/                      # Frontend React + Vite (consolidado, único)
+│   ├── public/                    # Estáticos (clinicafoto.jpg)
 │   └── src/
-│       ├── modules/               # Módulos por dominio (auth, bookings, doctors, etc.)
-│       ├── shared/                # Componentes compartidos, providers, utils
-│       ├── test/                  # Tests frontend
-│       ├── i18n/                  # Traducciones (es, en)
+│       ├── modules/               # Módulos por dominio (auth, bookings, doctors, laboratory, super-admin, clinical, management, notifications, etc.)
+│       ├── shared/                # Componentes compartidos, providers, constants (navigation), hooks, utils
+│       ├── test/                  # Tests frontend (16 archivos, 104 tests)
+│       ├── i18n/                  # Traducciones (es, en, pt, fr — 65 namespaces)
 │       └── main.tsx               # Entry point
 ├── db/
 │   ├── init.sql                   # Schema completo + índices + triggers + seed
@@ -251,20 +271,22 @@ La API REST usa el prefijo `/api`. Las respuestas siguen el formato `{ data, pag
 
 | Módulo | Prefijo | Propósito |
 |--------|---------|-----------|
-| Auth | `/api/auth` | register, login, refresh, logout, 2FA, change-password, forgot/reset |
-| Doctors | `/api/doctors` | CRUD, listar público, invitar, toggle activo |
+| Auth | `/api/auth` | register, login, refresh, logout, 2FA, change-password, forgot/reset, invite-info, reset-admin, jwks |
+| Doctors | `/api/doctors` | CRUD, listar público, invitar, toggle activo, users |
 | Bookings | `/api/bookings` | CRUD, available-slots, daily-density, agenda |
 | Availability | `/api/availability` | Disponibilidad semanal |
-| Exceptions | `/api/exceptions` | Excepciones (full/partial day) |
+| Exceptions | `/api/availability-exceptions` | Excepciones (full/partial day) |
 | Guest | `/api/guest` | Booking sin login por RUT |
 | Clinical Records | `/api/clinical-records` | EHR, CIE-10, recetas, PDF |
-| Billing | `/api/billing` | Facturas, pagos, seguros |
-| Laboratory | `/api/laboratory` | Tests, solicitudes, resultados |
-| Analytics | `/api/analytics` | Dashboard, KPIs, pronóstico |
-| Audit | `/api/audit` | Logs (admin) |
+| Billing | `/api/billing` | Facturas, pagos, seguros, stats |
+| Laboratory | `/api/laboratory` | Tests, solicitudes, muestras, QC, equipos, reactivos, eventos SSE |
+| Analytics | `/api/analytics` | Dashboard, KPIs, demanda, no-shows, vitals |
+| Audit | `/api/audit` | Logs (admin/superadmin) |
 | Specialties | `/api/specialties` | Catálogo público |
-| SaaS | `/api/saas` | Planes, onboarding, webhook Stripe, subscription |
-| Super Admin | `/api/super-admin` | Tenants, usuarios globales, stats |
+| SaaS | `/api/saas` | Planes, onboarding, webhook Stripe, subscription, usage, limits |
+| Super Admin | `/api/super-admin` | Tenants, usuarios globales, stats, analytics global |
+| Medical History | `/api/medical-history` | Historiales por paciente |
+| Reports | `/api/reports` | Tipos disponibles, generación y descarga |
 
 ---
 
@@ -281,7 +303,7 @@ npm run test:coverage             # Reporte HTML
 |---------|-------|
 | **Framework** | Vitest 4 con pool forks (backend) / Vitest 3 (frontend) |
 | **Tests backend** | 1146 passing — 77 archivos (21 fallos pre-existentes documentados en la wiki) |
-| **Tests frontend** | 98 passing — 15 archivos |
+| **Tests frontend** | 104 passing — 16 archivos |
 | **Cobertura** | ~86% lines (threshold: 70%) |
 | **Setup** | Mocks de DB, auth, email, JWT; storage funcional + i18n en frontend |
 | **CI** | GitHub Actions: typecheck → test → build |
@@ -355,15 +377,15 @@ Los datos de prueba se generan automáticamente al iniciar la app en desarrollo.
 | Aspecto | Estado |
 |---------|--------|
 | **Versión** | `1.0.0` — Producción |
-| **Backend** | 1146 passing tests — ~85% cobertura — typecheck sin errores |
-| **Frontend** | 98 passing tests — 35 páginas — 28 componentes — lazy loading — tema claro/oscuro |
-| **CI/CD** | GitHub Actions (typecheck + test + build) |
+| **Backend** | 1146 passing tests — ~86% cobertura — typecheck sin errores |
+| **Frontend** | 104 passing tests — ~50 páginas — lazy loading — tema claro/oscuro — sidebar por rol |
+| **CI/CD** | GitHub Actions (typecheck + test + build) + deploy a Render |
 | **Seguridad** | Helmet, CORS, rate limiting, Zod, 2FA, auditoría HMAC, IDOR fixes, captcha fail-closed |
 | **Multi-tenancy** | Implementado con planes SaaS auto-gestionables |
-| **i18n** | 🇪🇸 🇺🇸 completos — ~363 claves c/u — pt/fr deprecated |
+| **i18n** | 🇪🇸 🇺🇸 🇧🇷 🇫🇷 completos — 3.079 claves c/u — paridad total verificada por test |
 | **Auditoría** | 2026-07-29 — Score ~75/100 — 30 corregidos — Mejoras de seguridad implementadas |
 | **Documentación** | API docs, ADR (monolito modular), Wiki Obsidian |
-| **Frontend** | Consolidado en `frontend/` (v3) — eliminados v1, v2 y login-options |
+| **Frontend** | Consolidado en `frontend/` (único) — `frontend-v3/` es solo un `node_modules` residual |
 
 </div>
 
