@@ -59,9 +59,6 @@ const ClinicalPage = lazy(() => import('@/modules/clinical/pages/ClinicalPage'))
 // Management module
 const ManagementPage = lazy(() => import('@/modules/management/pages/ManagementPage'));
 
-// System module
-const SystemPage = lazy(() => import('@/modules/system/pages/SystemPage'));
-
 // Patients module
 const PatientsPage = lazy(() => import('@/modules/patients/pages/PatientsPage'));
 
@@ -171,7 +168,6 @@ export function AppRouter() {
           <Route path="/bookings" element={<BookingsPage />} />
           <Route path="/clinical" element={<ClinicalPage />} />
           <Route path="/management" element={<ManagementPage />} />
-          <Route path="/system" element={<SystemPage />} />
           <Route path="/availability" element={<AvailabilityPage />} />
           <Route path="/calendar" element={<DoctorCalendarPage />} />
           <Route path="/clinical-records" element={<ClinicalRecordsPage />} />

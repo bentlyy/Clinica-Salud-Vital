@@ -1984,6 +1984,15 @@
     "password_change_error": "Error al cambiar la contrasena",
     "password_min_length_profile": "La contrasena debe tener al menos 6 caracteres",
     "password_must_differ": "La nueva contrasena debe ser diferente a la actual",
+    "profile_page_title": "Mi Perfil",
+    "profile_page_subtitle": "Consulta tu informacion personal y de cuenta",
+    "personal_info": "Informacion personal",
+    "account_info": "Informacion de la cuenta",
+    "full_name": "Nombre completo",
+    "clinic": "Clinica",
+    "user_id": "ID de usuario",
+    "change_password_short": "Cambiar contrasena",
+    "go_to_settings": "Ir a Ajustes",
     "notifications_placeholder": "Preferencias de Notificacion — Proximamente disponible"
   },
   "superAdmin": {
