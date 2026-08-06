@@ -10,7 +10,6 @@ import Description from '@mui/icons-material/Description';
 import Assignment from '@mui/icons-material/Assignment';
 import Badge from '@mui/icons-material/Badge';
 import Inventory from '@mui/icons-material/Inventory';
-import Notifications from '@mui/icons-material/Notifications';
 import AccountBalance from '@mui/icons-material/AccountBalance';
 import Payments from '@mui/icons-material/Payments';
 import MedicalServices from '@mui/icons-material/MedicalServices';
@@ -50,7 +49,6 @@ const NAV_ITEMS_DEF: NavItemDef[] = [
   { labelKey: 'dashboard', icon: <Dashboard />, path: '/dashboard', roles: ['admin', 'doctor', 'lab_technician', 'patient'] },
   { labelKey: 'clinical', icon: <MedicalServices />, path: '/clinical', roles: ['admin', 'doctor'] },
   { labelKey: 'management', icon: <Assessment />, path: '/management', roles: ['admin', 'doctor'] },
-  { labelKey: 'system', icon: <Settings />, path: '/system', roles: ['admin', 'doctor'] },
   { labelKey: 'panelSaas', icon: <TrendingUp />, path: '/saas', roles: ['superadmin'] },
   { labelKey: 'clinics', icon: <AccountBalance />, path: '/tenants', roles: ['superadmin'] },
   { labelKey: 'users', icon: <People />, path: '/users', roles: ['superadmin'] },
@@ -78,9 +76,8 @@ const NAV_ITEMS_DEF: NavItemDef[] = [
   { labelKey: 'reports', icon: <Badge />, path: '/reports', roles: ['lab_technician'] },
   { labelKey: 'audit', icon: <Inventory />, path: '/audit', roles: ['superadmin'] },
   { labelKey: 'labResults', icon: <Science />, path: '/my-laboratory', roles: ['patient'] },
-  { labelKey: 'notifications', icon: <Notifications />, path: '/notifications', roles: ['superadmin', 'lab_technician'] },
   { labelKey: 'cobros', icon: <Payments />, path: '/cobros', roles: ['superadmin'] },
-  { labelKey: 'settings', icon: <Settings />, path: '/settings', roles: ['superadmin', 'lab_technician', 'patient'] },
+  { labelKey: 'settings', icon: <Settings />, path: '/settings', roles: ['superadmin', 'admin', 'doctor', 'lab_technician', 'patient'] },
 ];
 
 export function getNavItems(role: UserRole, t: TranslationFn): NavItem[] {

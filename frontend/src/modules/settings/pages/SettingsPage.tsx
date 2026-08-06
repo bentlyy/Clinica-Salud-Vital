@@ -9,7 +9,10 @@ import { MotionDiv } from '@/shared/utils/animations';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { ProfileTab } from '../components/ProfileTab';
 import { SecurityTab } from '../components/SecurityTab';
-import { NotificationTab } from '../components/NotificationTab';
+import NotificationsPage from '@/modules/notifications/pages/NotificationsPage';
+import { useAuth } from '@/shared/providers/AuthProvider';
+
+const NOTIFICATION_ROLES = ['superadmin', 'lab_technician', 'admin', 'doctor'];
 
 interface TabPanelProps {
   children: React.ReactNode;
@@ -33,7 +36,10 @@ function TabPanel({ children, value, index }: TabPanelProps) {
 export default function SettingsPage() {
   const theme = useTheme();
   const { t } = useTranslation('settings');
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState(0);
+
+  const canViewNotifications = !!user && NOTIFICATION_ROLES.includes(user.role);
 
   const handleChange = (_event: React.SyntheticEvent, newValue: number) => {
     setActiveTab(newValue);
@@ -41,10 +47,7 @@ export default function SettingsPage() {
 
   return (
     <MotionDiv initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-      <PageHeader
-        title={t('title')}
-        subtitle={t('subtitle')}
-      />
+      <PageHeader title={t('title')} />
 
       <Paper sx={{ borderRadius: '14px', border: `1px solid ${theme.palette.divider}` }}>
         <Tabs
@@ -76,11 +79,13 @@ export default function SettingsPage() {
             iconPosition="start"
             label={t('tab_security')}
           />
-          <Tab
-            icon={<NotificationsActive sx={{ fontSize: 20 }} />}
-            iconPosition="start"
-            label={t('tab_notifications')}
-          />
+          {canViewNotifications && (
+            <Tab
+              icon={<NotificationsActive sx={{ fontSize: 20 }} />}
+              iconPosition="start"
+              label={t('tab_notifications')}
+            />
+          )}
         </Tabs>
 
         <Box sx={{ px: { xs: 2, md: 3 }, pb: 3 }}>
@@ -90,9 +95,11 @@ export default function SettingsPage() {
           <TabPanel value={activeTab} index={1}>
             <SecurityTab />
           </TabPanel>
-          <TabPanel value={activeTab} index={2}>
-            <NotificationTab />
-          </TabPanel>
+          {canViewNotifications && (
+            <TabPanel value={activeTab} index={2}>
+              <NotificationsPage embedded />
+            </TabPanel>
+          )}
         </Box>
       </Paper>
     </MotionDiv>

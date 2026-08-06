@@ -44,7 +44,7 @@ const TYPE_ICONS: Record<Notification['type'], React.ReactNode> = {
   error: <ErrorOutline sx={{ fontSize: 20 }} />,
 };
 
-export default function NotificationsPage() {
+export default function NotificationsPage({ embedded }: { embedded?: boolean }) {
   const { t } = useTranslation('notifications');
   const theme = useTheme();
   const navigate = useNavigate();
@@ -108,21 +108,23 @@ export default function NotificationsPage() {
 
   return (
     <MotionDiv initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-      <PageHeader
-        title={t('title')}
-        subtitle={t('total_notifications', { count: data?.total ?? 0 })}
-      action={
-        notifications.some((n: Notification) => !n.is_read) ? (
-          <Button
-            variant="outlined"
-            startIcon={<MarkEmailRead />}
-            disabled
-          >
-            {t('markAllRead')}
-          </Button>
-        ) : undefined
-      }
-      />
+      {!embedded && (
+        <PageHeader
+          title={t('title')}
+          subtitle={t('total_notifications', { count: data?.total ?? 0 })}
+          action={
+            notifications.some((n: Notification) => !n.is_read) ? (
+              <Button
+                variant="outlined"
+                startIcon={<MarkEmailRead />}
+                disabled
+              >
+                {t('markAllRead')}
+              </Button>
+            ) : undefined
+          }
+        />
+      )}
 
       {isSuperAdmin && (
         <Paper sx={{ p: 2, mb: 3, border: `1px solid ${theme.palette.divider}`, borderRadius: '14px' }}>

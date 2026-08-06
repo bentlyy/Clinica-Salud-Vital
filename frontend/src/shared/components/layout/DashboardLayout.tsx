@@ -189,6 +189,7 @@ export function DashboardLayout() {
           {/* Sidebar footer */}
           {sidebarOpen && user && (
             <Box
+              onClick={() => navigate('/settings')}
               sx={{
                 p: 1.5,
                 m: 1.25,
@@ -198,6 +199,12 @@ export function DashboardLayout() {
                 display: 'flex',
                 alignItems: 'center',
                 gap: 1.5,
+                cursor: 'pointer',
+                transition: 'background-color 0.15s, border-color 0.15s',
+                '&:hover': {
+                  backgroundColor: theme.palette.custom?.brand?.lightest || theme.palette.action.hover,
+                  borderColor: theme.palette.custom?.brand?.light || theme.palette.divider,
+                },
               }}
             >
               <Avatar
@@ -225,7 +232,10 @@ export function DashboardLayout() {
               <Tooltip title={tc('logout')}>
                 <IconButton
                   size="small"
-                  onClick={logout}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    logout();
+                  }}
                   sx={{ color: 'text.secondary', '&:hover': { color: theme.palette.error.main } }}
                 >
                   <Logout fontSize="small" />
@@ -311,7 +321,7 @@ export function DashboardLayout() {
               <MenuItem
                 onClick={() => {
                   handleProfileMenuClose();
-                  navigate('/settings/profile');
+                  navigate('/settings');
                 }}
               >
                 <Person sx={{ mr: 1.5, fontSize: 18, color: 'text.secondary' }} />
