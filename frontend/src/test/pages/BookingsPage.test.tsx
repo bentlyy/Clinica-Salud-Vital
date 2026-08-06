@@ -106,6 +106,10 @@ vi.mock('@/modules/doctors/hooks/useDoctors', () => ({
     data: { data: [] },
     isLoading: false,
   }),
+  usePublicDoctorList: () => ({
+    data: [],
+    isLoading: false,
+  }),
 }));
 
 vi.mock('@/modules/bookings/components/CreateBookingDialog', () => ({
