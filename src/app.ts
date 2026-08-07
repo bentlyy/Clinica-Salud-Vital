@@ -243,7 +243,10 @@ const runMigration = async (): Promise<void> => {
   }
 
   const migrationsDir = resolve(__dirname, '../db/migrations');
-  if (!fs.existsSync(migrationsDir)) return;
+  if (!fs.existsSync(migrationsDir)) {
+    logger.warn(`[MIGRATION] directorio de migraciones NO encontrado: ${migrationsDir} — se omiten migraciones`);
+    return;
+  }
 
   await pool.query(
     `CREATE TABLE IF NOT EXISTS _migrations (id SERIAL PRIMARY KEY, name VARCHAR(255) UNIQUE NOT NULL, applied_at TIMESTAMP DEFAULT NOW())`
@@ -253,6 +256,9 @@ const runMigration = async (): Promise<void> => {
     await pool.query('DELETE FROM _migrations');
     logger.info('Migraciones previas limpiadas para re-ejecución');
   }
+
+  const appliedRes = await pool.query('SELECT name FROM _migrations');
+  logger.info(`[MIGRATION] migraciones registradas (${appliedRes.rows.length}): ${appliedRes.rows.map((r: { name: string }) => r.name).join(', ')}`);
 
   const migrationFiles = fs.readdirSync(migrationsDir)
     .filter(f => f.endsWith('.sql'))
@@ -280,6 +286,26 @@ const runMigration = async (): Promise<void> => {
         if (isLastAttempt) throw migErr;
         await new Promise((r: (value: unknown) => void) => setTimeout(r, attempt * 2000));
       }
+    }
+  }
+
+  // Reconciliación: si una migración quedó registrada pero su tabla principal no
+  // existe (ej. boot previo falló a medias), se re-aplica.
+  const RECONCILE: Array<{ file: string; table: string }> = [
+    { file: '012_booking_status_history.sql', table: 'booking_status_history' },
+  ];
+  for (const rec of RECONCILE) {
+    if (!migrationFiles.includes(rec.file)) continue;
+    const registered = (await pool.query('SELECT 1 FROM _migrations WHERE name = $1', [rec.file])).rows.length > 0;
+    const tablePresent = (await pool.query(
+      'SELECT 1 FROM information_schema.tables WHERE table_name = $1',
+      [rec.table]
+    )).rows.length > 0;
+    if (registered && !tablePresent) {
+      logger.warn(`[MIGRATION] ${rec.file} registrada pero tabla "${rec.table}" no existe — re-aplicando`);
+      const sql = fs.readFileSync(resolve(migrationsDir, rec.file), 'utf-8');
+      await pool.query(sql);
+      logger.info(`[MIGRATION] ${rec.file} re-aplicada correctamente`);
     }
   }
 };
