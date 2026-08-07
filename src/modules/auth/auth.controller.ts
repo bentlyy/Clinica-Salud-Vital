@@ -72,7 +72,7 @@ export const refresh = asyncHandler(async (req: Request, res: Response) => {
     hasBodyToken: !!req.body?.refresh_token,
     hasCookieToken: !!req.cookies?.refresh_token,
     cookiesKeys: Object.keys(req.cookies || {}),
-    cookieHeader: req.headers.cookie ? 'present' : 'missing',
+    cookieHeader: req.headers?.cookie ? 'present' : 'missing',
   });
   if (!refresh_token) {
     throw new BadRequestError(E.AUTH_REFRESH_REQUIRED);

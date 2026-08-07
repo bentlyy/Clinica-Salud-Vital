@@ -27,13 +27,13 @@ beforeEach(() => {
 describe('laboratoryController.getLabTests', () => {
   it('returns lab tests with filters', async () => {
     vi.mocked(laboratoryService.getLabTests).mockResolvedValue([{ id: 1, name: 'Blood Test' }]);
-    const req = { query: { category: 'hematology', active: 'true', limit: '10', offset: '0' } };
+    const req = { user: { role: 'admin' }, tenant_id: 'test', query: { category: 'hematology', active: 'true', limit: '10', offset: '0' } };
     const res = { json: vi.fn() };
     const next = vi.fn();
 
     laboratoryController.getLabTests(req, res, next);
     await flush();
-    expect(laboratoryService.getLabTests).toHaveBeenCalledWith({ category: 'hematology', active: true, areaId: 0, limit: 10, offset: 0 });
+    expect(laboratoryService.getLabTests).toHaveBeenCalledWith({ category: 'hematology', active: true, areaId: 0, limit: 10, offset: 0 }, 'test');
     expect(res.json).toHaveBeenCalledWith([{ id: 1, name: 'Blood Test' }]);
   });
 });

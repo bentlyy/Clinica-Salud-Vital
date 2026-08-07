@@ -24,7 +24,7 @@ const mockCtrl = Object.fromEntries([
   // billing
   'getInvoices', 'getInvoiceById', 'createInvoice', 'updateInvoiceStatus', 'deleteInvoice', 'getBillingStats',
   // laboratory
-  'getLabTests', 'createLabTest', 'updateLabTest', 'deleteLabTest', 'getLabRequests', 'getLabRequestById', 'createLabRequest', 'updateLabRequestStatus', 'updateLabRequestItemResult', 'cancelLabRequest', 'downloadLabOrderPDF', 'getLabRequestsForLab', 'updateLabRequestItemStatusCtrl', 'setLabTypeCtrl',
+  'getLabTests', 'createLabTest', 'updateLabTest', 'deleteLabTest', 'getLabRequests', 'getLabRequestById', 'createLabRequest', 'updateLabRequestStatus', 'updateLabRequestItemResult', 'cancelLabRequest', 'downloadLabOrderPDF', 'getLabRequestsForLab', 'updateLabRequestItemStatusCtrl', 'setLabTypeCtrl', 'handleLabEvents',
   'getDashboardMetricsCtrl', 'getAreaDashboardCtrl', 'getAnalyticsDataCtrl',
   'getSamplesCtrl', 'getSampleByIdCtrl', 'createSampleCtrl', 'receiveSampleCtrl', 'verifySampleCtrl', 'assignSampleCtrl', 'recordSampleQCCtrl', 'rejectSampleCtrl',
   'getLabAreasCtrl', 'createLabAreaCtrl',

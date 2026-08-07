@@ -130,9 +130,9 @@ describe('refreshSchema', () => {
     expect(result.success).toBe(false);
   });
 
-  it('rejects missing refresh_token', () => {
+  it('accepts missing refresh_token (cookie-based refresh)', () => {
     const result = refreshSchema.safeParse({});
-    expect(result.success).toBe(false);
+    expect(result.success).toBe(true);
   });
 });
 
