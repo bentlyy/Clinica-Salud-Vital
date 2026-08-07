@@ -73,19 +73,19 @@ export default function DoctorPanel() {
   const { data, isLoading, error, refetch } = useMyBookings({
     page: 1,
     limit: 100,
-    status: 'confirmed',
   });
 
   const bookings: Booking[] = data?.data ?? [];
+  const scheduled = useMemo(() => bookings.filter((b) => b.status !== 'cancelled'), [bookings]);
 
   const todayBookings = useMemo(
-    () => bookings.filter((b) => b.date === today),
-    [bookings, today],
+    () => scheduled.filter((b) => b.date === today),
+    [scheduled, today],
   );
 
   const upcomingBookings = useMemo(
-    () => bookings.filter((b) => b.date > today).slice(0, 5),
-    [bookings, today],
+    () => scheduled.filter((b) => b.date > today).slice(0, 5),
+    [scheduled, today],
   );
 
   const patientCount = useMemo(() => {

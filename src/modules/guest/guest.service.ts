@@ -9,6 +9,7 @@ import { E } from '../../utils/error-codes.js';
 import { logger } from '../../utils/logger.js';
 import { isValidDate, isValidTime } from '../../shared/date.js';
 import { validateBookingSlot } from '../../shared/booking-utils.js';
+import { recordBookingStatusChange } from '../../shared/booking-history.js';
 
 interface GuestBookingInput {
   doctor_id: number;
@@ -161,5 +162,14 @@ export const cancelGuestBooking = async (bookingId: number, userIdOrRut?: number
   }
 
   if (result.rows.length === 0) throw new NotFoundError(E.GUEST_BOOKING_NOT_FOUND);
+
+  const actorType = canCancelAny ? (userRole === 'doctor' ? 'doctor' : 'admin') : 'guest';
+  await recordBookingStatusChange(bookingId, {
+    toStatus: 'cancelled',
+    actorType,
+    changedByUserId: typeof userIdOrRut === 'number' ? userIdOrRut : null,
+    changedByRole: userRole ?? null,
+  });
+
   return { message: 'Reserva cancelada correctamente' };
 };

@@ -7,7 +7,7 @@ import 'dotenv/config';
 import { resolve } from 'path';
 import fs from 'fs';
 
-import { seed, backfillInvoices, backfillMedicalHistory, backfillLabRequests, backfillLabNotifications } from './seed/seed.js';
+import { seed, backfillInvoices, backfillMedicalHistory, backfillLabRequests, backfillLabNotifications, backfillUser1Data } from './seed/seed.js';
 import { markSeedComplete, markSeedFailed } from './shared/seed-status.js';
 import { pool } from './shared/db.js';
 import { tenantService } from './shared/multi-tenant.service.js';
@@ -359,6 +359,7 @@ const startServer = async (): Promise<void> => {
       await backfillMedicalHistory();
       await backfillLabRequests();
       await backfillLabNotifications();
+      await backfillUser1Data();
       await spreadSeedDates();
       markSeedComplete();
 

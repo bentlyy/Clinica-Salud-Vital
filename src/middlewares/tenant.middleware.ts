@@ -28,7 +28,7 @@ const PUBLIC_PATHS = new Set([
   '/api/auth/.well-known/jwks.json',
 ]);
 
-const PUBLIC_PATH_PREFIXES = ['/api/guest/bookings/'];
+const PUBLIC_PATH_PREFIXES = ['/api/guest/bookings/', '/api/bookings/confirm/'];
 
 const getLocaleFromRequest = (req: Request): string => {
   return req.headers['accept-language']?.toString().slice(0, 2) || process.env.APP_LOCALE || 'es';

@@ -158,6 +158,8 @@ describe('PATCH /api/bookings/:id/cancel', () => {
   it('cancels booking successfully', async () => {
     mockQuery
       .mockResolvedValueOnce({ rows: [{ token_version: 0 }] })
+      .mockResolvedValueOnce({ rows: [{ id: 1, status: 'confirmed' }] })
+      .mockResolvedValueOnce({ rows: [{ id: 1 }] })
       .mockResolvedValueOnce({ rows: [{ id: 1 }] });
 
     const res = await request(app)

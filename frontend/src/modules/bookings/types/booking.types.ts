@@ -17,6 +17,8 @@ export interface Booking {
   notes: string | null;
   doctor_name?: string;
   patient_name?: string;
+  cancel_reason?: string | null;
+  cancelled_at?: string | null;
   created_at: string;
   updated_at: string;
 }
