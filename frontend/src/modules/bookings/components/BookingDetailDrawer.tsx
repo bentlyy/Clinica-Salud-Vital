@@ -12,6 +12,7 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  TextField,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import Close from '@mui/icons-material/Close';
@@ -30,7 +31,7 @@ interface BookingDetailDrawerProps {
   open: boolean;
   onClose: () => void;
   booking: Booking | null;
-  onCancel?: (id: number) => void;
+  onCancel?: (id: number, reason?: string) => void;
   isCancelling?: boolean;
 }
 
@@ -44,6 +45,7 @@ export function BookingDetailDrawer({
   const { t } = useTranslation('bookings');
   const theme = useTheme();
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [cancelReason, setCancelReason] = useState('');
 
   if (!booking) return null;
 
@@ -52,8 +54,9 @@ export function BookingDetailDrawer({
   const patientLabel = booking.patient_name || booking.guest_name || t('without_name');
 
   const handleCancelConfirm = () => {
-    onCancel?.(booking.id);
+    onCancel?.(booking.id, cancelReason.trim() || undefined);
     setConfirmOpen(false);
+    setCancelReason('');
   };
 
   return (
@@ -152,6 +155,22 @@ export function BookingDetailDrawer({
             </DetailSection>
           )}
 
+          {/* Cancellation info */}
+          {booking.status === 'cancelled' && (booking.cancel_reason || booking.cancelled_at) && (
+            <DetailSection icon={<CancelOutlined />} label={t('cancellationInfo')}>
+              {booking.cancel_reason && (
+                <Typography variant="body2" sx={{ color: theme.palette.error.main }}>
+                  {booking.cancel_reason}
+                </Typography>
+              )}
+              {booking.cancelled_at && (
+                <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
+                  {t('cancelledOn')}: {formatDateTime(booking.cancelled_at)}
+                </Typography>
+              )}
+            </DetailSection>
+          )}
+
           {/* Timestamps */}
           <Divider sx={{ my: 2 }} />
           <Typography variant="caption" sx={{ color: theme.palette.text.secondary, display: 'block' }}>
@@ -199,9 +218,21 @@ export function BookingDetailDrawer({
           </Typography>
         </DialogTitle>
         <DialogContent>
-          <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
+          <Typography variant="body2" sx={{ color: theme.palette.text.secondary, mb: 2 }}>
             {t('confirm_cancel_message')}
           </Typography>
+          <TextField
+            fullWidth
+            size="small"
+            multiline
+            minRows={2}
+            maxRows={4}
+            label={t('cancelReason')}
+            placeholder={t('cancelReasonPlaceholder')}
+            value={cancelReason}
+            onChange={(e) => setCancelReason(e.target.value)}
+            inputProps={{ maxLength: 255 }}
+          />
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
           <Button

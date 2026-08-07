@@ -21,12 +21,18 @@ export const createBooking = asyncHandler(async (req: Request, res: Response) =>
 export const getMyBookings = asyncHandler(async (req: Request, res: Response) => {
   const page = getQueryInt(req.query, 'page', 1);
   const limit = getQueryInt(req.query, 'limit', 20);
-  const bookings = await bookingService.getBookingsByUser(req.user!.id, { page, limit }, req.tenant_id);
+  const status = getQueryString(req.query, 'status', '');
+  const bookings = await bookingService.getBookingsByUser(req.user!.id, { page, limit, status }, req.tenant_id);
   res.json(bookings);
 });
 
 export const cancelBooking = asyncHandler(async (req: Request, res: Response) => {
-  const result = await bookingService.cancelBooking(Number(req.params.id), req.user!.id, req.tenant_id);
+  const result = await bookingService.cancelBooking(Number(req.params.id), req.user!.id, req.tenant_id, req.body?.reason);
+  res.json(result);
+});
+
+export const confirmBooking = asyncHandler(async (req: Request, res: Response) => {
+  const result = await bookingService.confirmBooking(String(req.params.token), req.tenant_id);
   res.json(result);
 });
 
@@ -54,8 +60,9 @@ export const getDailyDensity = asyncHandler(async (req: Request, res: Response) 
 export const getAllBookingsAdmin = asyncHandler(async (req: Request, res: Response) => {
   const page = getQueryInt(req.query, 'page', 1);
   const limit = getQueryInt(req.query, 'limit', 100);
+  const status = getQueryString(req.query, 'status', '');
   const tenantId = req.user!.role === 'superadmin' ? undefined : req.tenant_id;
-  const bookings = await bookingService.getAllBookings({ page, limit }, tenantId);
+  const bookings = await bookingService.getAllBookings({ page, limit, status }, tenantId);
   res.json(bookings);
 });
 
@@ -68,6 +75,7 @@ export const getDoctorBookings = asyncHandler(async (req: Request, res: Response
 
   const page = getQueryInt(req.query, 'page', 1);
   const limit = getQueryInt(req.query, 'limit', 50);
-  const bookings = await bookingService.getBookingsByDoctor(doctor.id, { page, limit }, req.tenant_id);
+  const status = getQueryString(req.query, 'status', '');
+  const bookings = await bookingService.getBookingsByDoctor(doctor.id, { page, limit, status }, req.tenant_id);
   res.json(bookings);
 });

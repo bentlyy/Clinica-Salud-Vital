@@ -25,6 +25,15 @@ vi.mock('../../src/shared/email.service.js', () => ({
   sendEmail: mockSendEmail,
 }));
 
+const mockVerifyToken = vi.hoisted(() => vi.fn());
+vi.mock('../../src/shared/jwt.service.js', () => ({
+  jwtManager: {
+    sign: vi.fn(),
+    signInvite: vi.fn(() => 'fake-confirm-token'),
+    verify: mockVerifyToken,
+  },
+}));
+
 import * as bookingService from '../../src/modules/booking/booking.service.js';
 
 const futureDate = (() => {
@@ -155,15 +164,55 @@ describe('bookingService.getBookingsByUser', () => {
       [1, 20, 0, 'tenant-1']
     );
   });
+
+  it('filters by status and includes cancel metadata', async () => {
+    mockQuery.mockResolvedValueOnce({
+      rows: [{ id: 1, status: 'cancelled', cancel_reason: 'Enfermo', cancelled_at: '2026-08-01T10:00:00.000Z' }],
+    });
+    mockQuery.mockResolvedValueOnce({ rows: [{ count: '1' }] });
+
+    const result = await bookingService.getBookingsByUser(1, { page: 1, limit: 20, status: 'cancelled' }, 'tenant-1');
+
+    expect(result.data[0].cancel_reason).toBe('Enfermo');
+    expect(result.data[0].cancelled_at).toBe('2026-08-01T10:00:00.000Z');
+    expect(mockQuery).toHaveBeenCalledWith(
+      expect.stringContaining('booking_status_history'),
+      [1, 20, 0, 'tenant-1', 'cancelled']
+    );
+    expect(mockQuery).toHaveBeenCalledWith(
+      expect.stringContaining('COUNT(*)'),
+      [1, 'tenant-1', 'cancelled']
+    );
+  });
 });
 
 describe('bookingService.cancelBooking', () => {
   it('cancels booking successfully', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [{ id: 1, status: 'confirmed' }] });
     mockQuery.mockResolvedValueOnce({ rows: [{ id: 1 }] });
+    mockQuery.mockResolvedValueOnce({ rows: [] });
 
     const result = await bookingService.cancelBooking(1, 1);
 
     expect(result.message).toBe('Booking cancelled successfully');
+    expect(mockQuery).toHaveBeenCalledWith(
+      expect.stringContaining('INSERT INTO booking_status_history'),
+      expect.arrayContaining([1, 'confirmed', 'cancelled', 'user', 1])
+    );
+  });
+
+  it('cancels booking with a reason', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [{ id: 1, status: 'pending' }] });
+    mockQuery.mockResolvedValueOnce({ rows: [{ id: 1 }] });
+    mockQuery.mockResolvedValueOnce({ rows: [] });
+
+    const result = await bookingService.cancelBooking(1, 1, 'tenant-1', 'Ya no puedo asistir');
+
+    expect(result.message).toBe('Booking cancelled successfully');
+    expect(mockQuery).toHaveBeenCalledWith(
+      expect.stringContaining('INSERT INTO booking_status_history'),
+      expect.arrayContaining(['Ya no puedo asistir'])
+    );
   });
 
   it('throws if booking not found', async () => {
@@ -181,13 +230,15 @@ describe('bookingService.cancelBooking', () => {
   });
 
   it('cancels booking with tenant_id', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [{ id: 1, status: 'confirmed' }] });
     mockQuery.mockResolvedValueOnce({ rows: [{ id: 1 }] });
+    mockQuery.mockResolvedValueOnce({ rows: [] });
 
     const result = await bookingService.cancelBooking(1, 1, 'tenant-1');
 
     expect(result.message).toBe('Booking cancelled successfully');
     expect(mockQuery).toHaveBeenCalledWith(
-      expect.stringContaining('tenant_id'),
+      expect.stringContaining('UPDATE bookings SET status'),
       [1, 1, 'tenant-1']
     );
   });
@@ -313,6 +364,19 @@ describe('bookingService.getBookingsByDoctor', () => {
       [1, 50, 0, 'tenant-1']
     );
   });
+
+  it('filters by status with tenant_id', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [{ id: 1, status: 'no_show' }] });
+    mockQuery.mockResolvedValueOnce({ rows: [{ count: '1' }] });
+
+    const result = await bookingService.getBookingsByDoctor(1, { page: 1, limit: 50, status: 'no_show' }, 'tenant-1');
+
+    expect(result.data).toHaveLength(1);
+    expect(mockQuery).toHaveBeenCalledWith(
+      expect.stringContaining('booking_status_history'),
+      [1, 50, 0, 'tenant-1', 'no_show']
+    );
+  });
 });
 
 describe('bookingService.getAllBookings', () => {
@@ -393,6 +457,19 @@ describe('bookingService.getAllBookings', () => {
     expect(mockQuery).toHaveBeenCalledWith(
       expect.stringContaining('tenant_id'),
       [100, 0, 'tenant-1']
+    );
+  });
+
+  it('filters by status', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [{ id: 1, status: 'cancelled' }] });
+    mockQuery.mockResolvedValueOnce({ rows: [{ count: '1' }] });
+
+    const result = await bookingService.getAllBookings({ page: 1, limit: 10, status: 'cancelled' }, 'tenant-1');
+
+    expect(result.data).toHaveLength(1);
+    expect(mockQuery).toHaveBeenCalledWith(
+      expect.stringContaining('booking_status_history'),
+      expect.arrayContaining(['cancelled'])
     );
   });
 });
@@ -595,5 +672,59 @@ describe('bookingService.createBooking advanced', () => {
 
     expect(result.id).toBe(1);
     expect(mockClient.query).toHaveBeenCalledWith('COMMIT');
+  });
+});
+
+describe('bookingService.confirmBooking', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockVerifyToken.mockReturnValue({ user_id: 1, doctor_id: 1, date: futureDate, time: '10:00' });
+  });
+
+  it('throws if token is missing', async () => {
+    await expect(bookingService.confirmBooking('', 'tenant-1')).rejects.toThrow('Missing required fields');
+  });
+
+  it('throws if token is invalid or expired', async () => {
+    mockVerifyToken.mockReturnValue(null);
+    await expect(bookingService.confirmBooking('bad-token', 'tenant-1')).rejects.toThrow('Invalid or expired token');
+  });
+
+  it('throws if token belongs to a different tenant', async () => {
+    mockVerifyToken.mockReturnValue({ tenant_id: 'other-tenant' });
+    await expect(bookingService.confirmBooking('token', 'tenant-1')).rejects.toThrow('Booking not found or unauthorized');
+  });
+
+  it('confirms a previously unconfirmed booking', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [{ id: 5 }] });
+    mockQuery.mockResolvedValueOnce({ rows: [{ id: 1 }] });
+
+    const result = await bookingService.confirmBooking('valid-token', 'tenant-1');
+
+    expect(result).toEqual({ confirmed: true, alreadyConfirmed: false });
+    expect(mockQuery).toHaveBeenCalledWith(
+      expect.stringContaining('confirmed = FALSE'),
+      ['valid-token', 'tenant-1']
+    );
+    expect(mockQuery).toHaveBeenCalledWith(
+      expect.stringContaining('INSERT INTO booking_status_history'),
+      expect.arrayContaining([5, null, 'confirmed', 'user'])
+    );
+  });
+
+  it('returns alreadyConfirmed when booking was already confirmed', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] });
+    mockQuery.mockResolvedValueOnce({ rows: [{ confirmed: true }] });
+
+    const result = await bookingService.confirmBooking('valid-token', 'tenant-1');
+
+    expect(result).toEqual({ confirmed: true, alreadyConfirmed: true });
+  });
+
+  it('throws if no booking matches the token', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] });
+    mockQuery.mockResolvedValueOnce({ rows: [] });
+
+    await expect(bookingService.confirmBooking('unknown-token', 'tenant-1')).rejects.toThrow('Booking not found or unauthorized');
   });
 });

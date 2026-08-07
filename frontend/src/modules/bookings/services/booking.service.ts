@@ -68,8 +68,8 @@ export const bookingService = {
   create: (data: import('../types/booking.types').CreateBookingInput, config?: AxiosRequestConfig): Promise<Booking> =>
     apiClient.post('/bookings', data, config).then((r) => normalizeBooking(r.data)),
 
-  cancel: (id: number, config?: AxiosRequestConfig): Promise<Booking> =>
-    apiClient.patch(`/bookings/${id}/cancel`, undefined, config).then((r) => r.data),
+  cancel: (id: number, reason?: string, config?: AxiosRequestConfig): Promise<Booking> =>
+    apiClient.patch(`/bookings/${id}/cancel`, reason ? { reason } : undefined, config).then((r) => r.data),
 
   getAvailableSlots: (doctorId: number, date: string, config?: AxiosRequestConfig): Promise<string[]> =>
     apiClient

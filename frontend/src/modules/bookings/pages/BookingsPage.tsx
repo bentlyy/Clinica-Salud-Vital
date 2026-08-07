@@ -108,13 +108,16 @@ export default function BookingsPage() {
   }, []);
 
   const handleCancelBooking = useCallback(
-    (id: number) => {
-      cancelMutation.mutate(id, {
-        onSuccess: () => {
-          setDrawerOpen(false);
-          setSelectedBooking(null);
+    (id: number, reason?: string) => {
+      cancelMutation.mutate(
+        { id, reason },
+        {
+          onSuccess: () => {
+            setDrawerOpen(false);
+            setSelectedBooking(null);
+          },
         },
-      });
+      );
     },
     [cancelMutation],
   );
@@ -426,6 +429,14 @@ function BookingCard({ booking, onView, t }: BookingCardProps) {
           {booking.duration} min
           {booking.notes ? ` · ${booking.notes.substring(0, 50)}${booking.notes.length > 50 ? '...' : ''}` : ''}
         </Typography>
+        {booking.status === 'cancelled' && booking.cancel_reason && (
+          <Typography
+            variant="caption"
+            sx={{ color: theme.palette.error.main, display: 'block', mt: 0.5, fontStyle: 'italic' }}
+          >
+            {t('cancelledReason')}: {booking.cancel_reason}
+          </Typography>
+        )}
       </Box>
 
       {/* Status + actions */}

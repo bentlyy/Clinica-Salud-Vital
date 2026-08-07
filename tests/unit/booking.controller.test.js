@@ -54,23 +54,47 @@ describe('bookingController.getMyBookings', () => {
     bookingController.getMyBookings(req, res, next);
     await flush();
 
-    expect(bookingService.getBookingsByUser).toHaveBeenCalledWith(1, { page: 1, limit: 20 }, 'test');
+    expect(bookingService.getBookingsByUser).toHaveBeenCalledWith(1, { page: 1, limit: 20, status: '' }, 'test');
     expect(res.json).toHaveBeenCalled();
+  });
+
+  it('passes status filter to the service', async () => {
+    vi.mocked(bookingService.getBookingsByUser).mockResolvedValue({ data: [], pagination: { page: 1, limit: 20, total: 0, totalPages: 0 } });
+    const req = { user: { id: 1 }, tenant_id: 'test', query: { status: 'cancelled' } };
+    const res = { json: vi.fn() };
+    const next = vi.fn();
+
+    bookingController.getMyBookings(req, res, next);
+    await flush();
+
+    expect(bookingService.getBookingsByUser).toHaveBeenCalledWith(1, { page: 1, limit: 20, status: 'cancelled' }, 'test');
   });
 });
 
 describe('bookingController.cancelBooking', () => {
   it('cancels a booking', async () => {
     vi.mocked(bookingService.cancelBooking).mockResolvedValue({ message: 'Booking cancelled' });
-    const req = { user: { id: 1 }, tenant_id: 'test', params: { id: '5' } };
+    const req = { user: { id: 1 }, tenant_id: 'test', params: { id: '5' }, body: {} };
     const res = { status: vi.fn().mockReturnThis(), json: vi.fn() };
     const next = vi.fn();
 
     bookingController.cancelBooking(req, res, next);
     await flush();
 
-    expect(bookingService.cancelBooking).toHaveBeenCalledWith(5, 1, 'test');
+    expect(bookingService.cancelBooking).toHaveBeenCalledWith(5, 1, 'test', undefined);
     expect(res.json).toHaveBeenCalledWith({ message: 'Booking cancelled' });
+  });
+
+  it('passes the cancel reason to the service', async () => {
+    vi.mocked(bookingService.cancelBooking).mockResolvedValue({ message: 'Booking cancelled' });
+    const req = { user: { id: 1 }, tenant_id: 'test', params: { id: '5' }, body: { reason: 'Enfermo' } };
+    const res = { status: vi.fn().mockReturnThis(), json: vi.fn() };
+    const next = vi.fn();
+
+    bookingController.cancelBooking(req, res, next);
+    await flush();
+
+    expect(bookingService.cancelBooking).toHaveBeenCalledWith(5, 1, 'test', 'Enfermo');
   });
 });
 
@@ -87,7 +111,7 @@ describe('bookingController.getDoctorBookings', () => {
     await flush();
 
     expect(doctorService.getDoctorByUserId).toHaveBeenCalledWith(1, 'test');
-    expect(bookingService.getBookingsByDoctor).toHaveBeenCalledWith(2, { page: 1, limit: 50 }, 'test');
+    expect(bookingService.getBookingsByDoctor).toHaveBeenCalledWith(2, { page: 1, limit: 50, status: '' }, 'test');
     expect(res.json).toHaveBeenCalled();
   });
 

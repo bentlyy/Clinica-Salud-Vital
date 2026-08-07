@@ -1318,3 +1318,310 @@ export const backfillInvoices = async (): Promise<void> => {
 
   if (count > 0) logger.info(`Facturas generadas para bookings existentes: ${count}`);
 };
+
+const USER1_EMAIL = 'user1@clinic.com';
+
+interface User1Visit {
+  doctorEmail: string;
+  daysAgo: number;
+  time: string;
+  diagnosis: string;
+  cie10: string;
+  vitalKey: string;
+  meds: string[];
+  labs: string[];
+}
+
+const user1Visits: User1Visit[] = [
+  { doctorEmail: 'juan@clinic.com', daysAgo: 75, time: '09:00', diagnosis: 'Hipertensión arterial esencial', cie10: 'I10', vitalKey: 'hypertension', meds: ['Enalapril 10mg', 'Losartán 50mg'], labs: ['HEM001', 'CRE001', 'TSH001'] },
+  { doctorEmail: 'carmen@clinic.com', daysAgo: 60, time: '10:30', diagnosis: 'Diabetes mellitus tipo 2', cie10: 'E11', vitalKey: 'diabetes', meds: ['Metformina 850mg'], labs: ['GLU001', 'HBA001'] },
+  { doctorEmail: 'pedro@clinic.com', daysAgo: 45, time: '15:00', diagnosis: 'Gastritis crónica', cie10: 'K29', vitalKey: 'gastritis', meds: ['Omeprazol 20mg'], labs: ['HEM001'] },
+  { doctorEmail: 'juan@clinic.com', daysAgo: 30, time: '09:30', diagnosis: 'Hipertensión arterial esencial', cie10: 'I10', vitalKey: 'hypertension', meds: ['Enalapril 10mg'], labs: ['CRE001', 'TSH001'] },
+  { doctorEmail: 'ricardo@clinic.com', daysAgo: 21, time: '11:00', diagnosis: 'Lumbago crónico', cie10: 'M54.5', vitalKey: 'lumbago', meds: ['Ibuprofeno 400mg', 'Paracetamol 500mg'], labs: ['HEM001', 'PCR001'] },
+  { doctorEmail: 'francisco@clinic.com', daysAgo: 12, time: '16:00', diagnosis: 'Infección del tracto urinario', cie10: 'N39.0', vitalKey: 'infection', meds: ['Ciprofloxacino 500mg', 'Nitrofurantoína 100mg'], labs: ['HEM001', 'URO001', 'PCR001'] },
+  { doctorEmail: 'maria@clinic.com', daysAgo: 90, time: '10:00', diagnosis: 'Dermatitis atópica', cie10: 'L20.9', vitalKey: 'dermatitis', meds: ['Hidrocortisona 1% crema', 'Cetirizina 10mg'], labs: ['HEM001'] },
+];
+
+const user1FutureBookings: Array<{ doctorEmail: string; daysFromNow: number; time: string; status: string }> = [
+  { doctorEmail: 'juan@clinic.com', daysFromNow: 4, time: '09:30', status: 'confirmed' },
+  { doctorEmail: 'pedro@clinic.com', daysFromNow: 11, time: '15:00', status: 'pending' },
+  { doctorEmail: 'carmen@clinic.com', daysFromNow: 18, time: '10:15', status: 'confirmed' },
+];
+
+const user1RecordTemplates: Record<string, { chiefComplaint: string; anamnesis: string; physicalExam: string; treatmentPlan: string; notes: string }> = {
+  'Hipertensión arterial esencial': {
+    chiefComplaint: 'Control de presión arterial',
+    anamnesis: 'Paciente con HTA diagnosticada hace 4 años. Refiere buen apego al tratamiento. Cefalea occipital ocasional matinal. Dieta baja en sodio. Antecedente familiar de HTA.',
+    physicalExam: 'Conciente, orientado. TA elevada. Ruidos cardíacos rítmicos, sin soplos. Pulsos periféricos simétricos. Sin edemas.',
+    treatmentPlan: 'Ajuste de terapia antihipertensiva. Control de PA en 1 mes. Mantener dieta hiposódica. Ejercicio 30 min/día.',
+    notes: 'Alergias: Penicilina. Hábitos: Sedentario, alimentación con exceso de sodio. Ex fumador.',
+  },
+  'Diabetes mellitus tipo 2': {
+    chiefComplaint: 'Control de glicemia',
+    anamnesis: 'Paciente con DM2 desde 2020. Refiere cumplir metformina. Última HbA1c 7.4%. Control de glicemia capilar irregular. Dieta alta en carbohidratos.',
+    physicalExam: 'Paciente en buenas condiciones. Auscultación cardiopulmonar normal. Pulsos pedios presentes. Sensibilidad distal conservada. Sin lesiones en pies.',
+    treatmentPlan: 'Mantener metformina. Educación diabetológica. Control de glicemia capilar diario. Evaluación por nutricionista. Control en 1 mes con HbA1c.',
+    notes: 'Alergias: Sulfonamidas. Madre con DM2. Sin antecedentes quirúrgicos.',
+  },
+  'Gastritis crónica': {
+    chiefComplaint: 'Dolor epigástrico',
+    anamnesis: 'Paciente refiere dolor epigástrico urente postprandial desde hace 1 mes. Náuseas ocasionales. Usó antiácidos con mejoría parcial.',
+    physicalExam: 'Abdomen blando, depresible. Dolor epigástrico a la palpación profunda. Sin signos de irritación peritoneal. Murphy negativo.',
+    treatmentPlan: 'Inhibidor de bomba de protones por 14 días. Dieta fraccionada. Evaluar necesidad de estudio endoscópico. Control en 1 mes.',
+    notes: 'Alergias: AINES (urticaria). H. pylori positivo tratado en 2022.',
+  },
+  'Lumbago crónico': {
+    chiefComplaint: 'Dolor lumbar persistente',
+    anamnesis: 'Paciente con lumbago crónico reagudizado hace 5 días. Dolor 6/10 irradiado a glúteo derecho. Empeora con flexión. Trabajo con carga de peso.',
+    physicalExam: 'Columna lumbar con dolor a la palpación paravertebral derecha. Lasègue negativo bilateral. Fuerza y sensibilidad conservadas en EEII.',
+    treatmentPlan: 'AINEs por 7 días. Reposo relativo. Kinesioterapia lumbar. Higiene postural. Control en 15 días.',
+    notes: 'Alergias: Ninguna conocida. Niega cirugías previas.',
+  },
+  'Infección del tracto urinario': {
+    chiefComplaint: 'Ardor al orinar',
+    anamnesis: 'Paciente refiere disuria, polaquiuria y tenesmo vesical desde hace 3 días. Dolor suprapúbico. Fiebre de 38°C. Sin antecedentes de ITU recurrente.',
+    physicalExam: 'Febril 38.1°C. Puño percusión lumbar derecha leve positiva. Abdomen blando, dolor suprapúbico leve. Genitales sin lesiones.',
+    treatmentPlan: 'Antibioticoterapia según cultivo y sensibilidades. Aumentar ingesta de líquidos. Uroanalítico de control. Evaluar factores de riesgo.',
+    notes: 'Alergias: Trimetoprima-sulfa. Niega cirugías previas. Ingesta hídrica insuficiente.',
+  },
+  'Dermatitis atópica': {
+    chiefComplaint: 'Picazón intensa',
+    anamnesis: 'Paciente refiere lesiones eccematosas pruriginosas en flexuras desde hace 2 semanas. Brotes recurrentes desde la niñez. Uso irregular de corticoide tópico.',
+    physicalExam: 'Lesiones eccematosas eritematosas con descamación fina en flexuras cubitales y poplíteas. Excoriaciones por rascado. Piel xerótica generalizada.',
+    treatmentPlan: 'Corticoide tópico por 10 días. Emolientes diarios. Antihistamínico oral por prurito nocturno. Evitar desencadenantes. Control en 2 semanas.',
+    notes: 'Alergias: Metales, fragancias. Rinitis alérgica concomitante. Sin cirugías.',
+  },
+};
+
+const user1VitalPresets: Record<string, () => Record<string, unknown>> = {
+  hypertension: () => ({ blood_pressure: '148/94', heart_rate: 76, temperature: 36.5, respiratory_rate: 16, oxygen_saturation: 97, weight: 80, height: 170, bmi: 27.7 }),
+  diabetes: () => ({ blood_pressure: '135/85', heart_rate: 82, temperature: 36.4, respiratory_rate: 17, oxygen_saturation: 98, weight: 75, height: 168, bmi: 26.5 }),
+  gastritis: () => ({ blood_pressure: '118/75', heart_rate: 72, temperature: 36.4, respiratory_rate: 16, oxygen_saturation: 98, weight: 65, height: 170, bmi: 22.5 }),
+  lumbago: () => ({ blood_pressure: '125/80', heart_rate: 70, temperature: 36.5, respiratory_rate: 15, oxygen_saturation: 98, weight: 78, height: 175, bmi: 25.5 }),
+  infection: () => ({ blood_pressure: '130/85', heart_rate: 95, temperature: 38.2, respiratory_rate: 18, oxygen_saturation: 96, weight: 72, height: 165, bmi: 26.4 }),
+  dermatitis: () => ({ blood_pressure: '118/76', heart_rate: 72, temperature: 36.5, respiratory_rate: 16, oxygen_saturation: 98, weight: 58, height: 160, bmi: 22.7 }),
+};
+
+const user1Meds: Record<string, { medication: string; dosage: string; frequency: string; duration: string; instructions: string }> = {
+  'Enalapril 10mg': { medication: 'Enalapril 10mg', dosage: '1 comprimido', frequency: 'cada 12 horas', duration: '30 días', instructions: 'Tomar con alimentos' },
+  'Losartán 50mg': { medication: 'Losartán 50mg', dosage: '1 comprimido', frequency: 'cada 24 horas', duration: '30 días', instructions: 'Tomar en la mañana' },
+  'Metformina 850mg': { medication: 'Metformina 850mg', dosage: '1 comprimido', frequency: 'cada 12 horas', duration: '30 días', instructions: 'Tomar con alimentos' },
+  'Omeprazol 20mg': { medication: 'Omeprazol 20mg', dosage: '1 cápsula', frequency: 'cada 24 horas', duration: '14 días', instructions: 'Tomar en ayunas 30 minutos antes del desayuno' },
+  'Ibuprofeno 400mg': { medication: 'Ibuprofeno 400mg', dosage: '1 comprimido', frequency: 'cada 8 horas', duration: '7 días', instructions: 'Tomar con alimentos. No exceder 3 dosis al día' },
+  'Paracetamol 500mg': { medication: 'Paracetamol 500mg', dosage: '1 comprimido', frequency: 'cada 8 horas', duration: '5 días', instructions: 'Para dolor moderado' },
+  'Ciprofloxacino 500mg': { medication: 'Ciprofloxacino 500mg', dosage: '1 comprimido', frequency: 'cada 12 horas', duration: '7 días', instructions: 'Tomar con abundante agua. Completar todo el tratamiento' },
+  'Nitrofurantoína 100mg': { medication: 'Nitrofurantoína 100mg', dosage: '1 cápsula', frequency: 'cada 6 horas', duration: '5 días', instructions: 'Tomar con alimentos. Puede colorar la orina' },
+  'Hidrocortisona 1% crema': { medication: 'Hidrocortisona 1% crema', dosage: 'aplicar capa fina', frequency: 'cada 12 horas', duration: '10 días', instructions: 'Solo en zonas afectadas. Evitar uso prolongado >14 días' },
+  'Cetirizina 10mg': { medication: 'Cetirizina 10mg', dosage: '1 comprimido', frequency: 'cada 24 horas', duration: '10 días', instructions: 'Tomar en la noche para controlar prurito' },
+};
+
+const user1LabResults: Record<string, () => object> = {
+  HEM001: () => ({ hemoglobin: (14 + Math.random()).toFixed(1), hematocrit: Math.round(40 + Math.random() * 6), wbc: (6 + Math.random() * 3).toFixed(1), platelets: Math.round(220 + Math.random() * 80) }),
+  GLU001: () => ({ glucose: Math.round(90 + Math.random() * 40), unit: 'mg/dL' }),
+  LIP001: () => ({ cholesterol: Math.round(180 + Math.random() * 40), triglycerides: Math.round(120 + Math.random() * 50), hdl: Math.round(35 + Math.random() * 15), ldl: Math.round(100 + Math.random() * 30) }),
+  CRE001: () => ({ creatinine: (0.8 + Math.random() * 0.4).toFixed(2), unit: 'mg/dL' }),
+  TSH001: () => ({ tsh: (1.2 + Math.random() * 2.0).toFixed(2), unit: 'mIU/L' }),
+  URO001: () => ({ bacteria: 'Positivo', culture: 'E. coli >100,000 UFC/mL' }),
+  HBA001: () => ({ hba1c: (6.5 + Math.random() * 1.2).toFixed(1), unit: '%' }),
+  PCR001: () => ({ pcr: (5 + Math.random() * 15).toFixed(1), unit: 'mg/L' }),
+  ALT001: () => ({ alt: Math.round(15 + Math.random() * 20), ast: Math.round(15 + Math.random() * 15), unit: 'U/L' }),
+};
+
+export const backfillUser1Data = async (): Promise<void> => {
+  const userRes = await pool.query('SELECT id FROM users WHERE email = $1 AND tenant_id = $2', [USER1_EMAIL, DEFAULT_TENANT_ID]);
+  if (userRes.rows.length === 0) return;
+  const userId: number = userRes.rows[0].id;
+
+  await pool.query(
+    'UPDATE users SET name = $1, gender = $2 WHERE id = $3',
+    ['Usuario Uno', 'male', userId]
+  );
+
+  const doctorsRes = await pool.query('SELECT id, email FROM doctors WHERE tenant_id = $1 ORDER BY id', [DEFAULT_TENANT_ID]);
+  const doctorIdByEmail = new Map<string, number>();
+  for (const d of doctorsRes.rows) doctorIdByEmail.set(d.email, d.id);
+  if (doctorIdByEmail.size === 0) return;
+
+  const labRes = await pool.query(
+    'SELECT id, code FROM lab_tests WHERE tenant_id = $1 AND code = ANY($2::text[])',
+    [DEFAULT_TENANT_ID, ['HEM001', 'GLU001', 'LIP001', 'CRE001', 'TSH001', 'URO001', 'HBA001', 'PCR001', 'ALT001']]
+  );
+  const labIdByCode = new Map<string, number>();
+  for (const r of labRes.rows) labIdByCode.set(r.code, r.id);
+
+  const bookingCount = await pool.query('SELECT COUNT(*)::int AS cnt FROM bookings WHERE user_id = $1', [userId]);
+  const hasBookings = (bookingCount.rows[0].cnt as number) > 0;
+
+  if (hasBookings) {
+    logger.info('[SEED user1] user1 ya tiene bookings — omitiendo generación de citas y registros');
+  } else {
+    await pool.query('ALTER TABLE bookings DROP CONSTRAINT IF EXISTS check_future_date');
+
+    const maxSeqRes = await pool.query(
+      `SELECT COALESCE(MAX(REGEXP_REPLACE(request_number, '^LAB-[0-9]+-', ''))::INTEGER, 0) AS seq FROM lab_requests WHERE request_number ~ '^LAB-'`
+    );
+    let labSeq = (maxSeqRes.rows[0]?.seq ?? 0) + 1;
+
+    const maxInvRes = await pool.query(
+      `SELECT COALESCE(MAX(REGEXP_REPLACE(invoice_number, '^INV-[0-9]+-', ''))::INTEGER, 0) AS seq FROM invoices WHERE invoice_number ~ '^INV-'`
+    );
+    let invSeq = (maxInvRes.rows[0]?.seq ?? 0) + 1;
+
+    const year = today.getFullYear();
+    const labRequestNumber = (): string => `LAB-${year}-${String(labSeq++).padStart(6, '0')}`;
+    const invoiceNumber = (): string => `INV-${year}-${String(invSeq++).padStart(5, '0')}`;
+
+    let createdBookings = 0;
+    let createdRecords = 0;
+    let createdPrescriptions = 0;
+    let createdInvoices = 0;
+    let createdLabRequests = 0;
+
+    const insertBooking = async (doctorId: number, date: string, time: string, status: string, confirmed: boolean): Promise<number | null> => {
+      for (let attempt = 0; attempt < 6; attempt++) {
+        const slotTime = attempt === 0 ? time : `${String(randomInt(9, 17)).padStart(2, '0')}:${pick(['00', '15', '30', '45'])}`;
+        try {
+          const res = await pool.query(
+            `INSERT INTO bookings (doctor_id, user_id, date, time, duration, status, confirmed, tenant_id)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`,
+            [doctorId, userId, date, slotTime, 30, status, confirmed, DEFAULT_TENANT_ID]
+          );
+          return res.rows[0].id as number;
+        } catch {
+          // Slot ocupado (unique_booking), probar otro horario
+        }
+      }
+      return null;
+    };
+
+    for (const visit of user1Visits) {
+      const doctorId = doctorIdByEmail.get(visit.doctorEmail);
+      if (!doctorId) continue;
+      const bookingId = await insertBooking(doctorId, formatDate(addDays(today, -visit.daysAgo)), visit.time, 'completed', true);
+      if (!bookingId) continue;
+      createdBookings++;
+
+      const tpl = user1RecordTemplates[visit.diagnosis] || user1RecordTemplates['Hipertensión arterial esencial'];
+      let crId: number | null = null;
+      try {
+        const crRes = await pool.query(
+          `INSERT INTO clinical_records (patient_id, doctor_id, booking_id, chief_complaint, anamnesis, physical_exam, diagnosis, cie10_codes, treatment_plan, notes, vital_signs, status, tenant_id, created_at)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'completed', $12, $13) RETURNING id`,
+          [userId, doctorId, bookingId, tpl.chiefComplaint, tpl.anamnesis, tpl.physicalExam, visit.diagnosis, [visit.cie10], tpl.treatmentPlan, tpl.notes, JSON.stringify(user1VitalPresets[visit.vitalKey]()), DEFAULT_TENANT_ID, formatDate(addDays(today, -visit.daysAgo))]
+        );
+        crId = crRes.rows[0].id as number;
+        createdRecords++;
+      } catch (err) {
+        logger.warn('[SEED user1] Error creando registro clínico', { error: toError(err).message });
+      }
+
+      if (crId) {
+        for (const medName of visit.meds) {
+          const med = user1Meds[medName];
+          if (!med) continue;
+          try {
+            await pool.query(
+              `INSERT INTO prescriptions (clinical_record_id, medication, dosage, frequency, duration, instructions, tenant_id)
+               VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+              [crId, med.medication, med.dosage, med.frequency, med.duration, med.instructions, DEFAULT_TENANT_ID]
+            );
+            createdPrescriptions++;
+          } catch {}
+        }
+      }
+
+      if (crId) {
+        const labCodes = visit.labs.filter((c) => labIdByCode.has(c));
+        if (labCodes.length > 0) {
+          const isRecent = visit.daysAgo <= 15;
+          const status = isRecent ? 'in_progress' : 'completed';
+          const priority = isRecent ? 'urgent' : 'routine';
+          try {
+            const lrRes = await pool.query(
+              `INSERT INTO lab_requests (request_number, patient_id, doctor_id, clinical_record_id, priority, status, notes, tenant_id)
+               VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`,
+              [labRequestNumber(), userId, doctorId, crId, priority, status, 'Exámenes solicitados según diagnóstico', DEFAULT_TENANT_ID]
+            );
+            const lrId = lrRes.rows[0].id as number;
+            createdLabRequests++;
+
+            let criticalItemId: number | null = null;
+            for (const code of labCodes) {
+              const testId = labIdByCode.get(code);
+              if (!testId) continue;
+              const itemStatus = status === 'completed' ? 'completed' : pick(['pending', 'in_progress']);
+              const results = itemStatus === 'completed' ? JSON.stringify(user1LabResults[code]()) : null;
+              const itemPriority = code === 'URO001' ? 'urgent' : pick(['low', 'normal', 'normal', 'urgent']);
+              const itemRes = await pool.query(
+                `INSERT INTO lab_request_items (lab_request_id, lab_test_id, priority, status, results, tenant_id)
+                 VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
+                [lrId, testId, itemPriority, itemStatus, results, DEFAULT_TENANT_ID]
+              );
+              if (code === 'URO001' && itemStatus === 'completed') criticalItemId = itemRes.rows[0].id as number;
+            }
+
+            if (criticalItemId) {
+              await pool.query(
+                `INSERT INTO lab_notifications (type, title, message, severity, lab_request_item_id, lab_request_id, tenant_id)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+                ['critical_result', 'Resultado crítico: Urocultivo', 'El urocultivo del paciente presenta desarrollo de E. coli >100,000 UFC/mL. Requiere revisión inmediata.', 'critical', criticalItemId, lrId, DEFAULT_TENANT_ID]
+              );
+            }
+          } catch (err) {
+            logger.warn('[SEED user1] Error creando solicitud de laboratorio', { error: toError(err).message });
+          }
+        }
+      }
+
+      if (visit.daysAgo >= 20) {
+        const amount = Math.round((45 + visit.daysAgo * 1.5) * 100) / 100;
+        const tax = Math.round(amount * 0.19 * 100) / 100;
+        const status = visit.daysAgo > 25 ? 'paid' : 'pending';
+        try {
+          await pool.query(
+            `INSERT INTO invoices (invoice_number, patient_id, doctor_id, booking_id, concept, description, amount, tax_amount, discount_amount, total_amount, due_date, status, created_at, tenant_id)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`,
+            [invoiceNumber(), userId, doctorId, bookingId, 'Consulta médica', 'Atención médica programada', amount, tax, 0, amount + tax, formatDate(addDays(today, -10)), status, formatDate(addDays(today, -visit.daysAgo)), DEFAULT_TENANT_ID]
+          );
+          createdInvoices++;
+        } catch (err) {
+          logger.warn('[SEED user1] Error creando factura', { error: toError(err).message });
+        }
+      }
+    }
+
+    for (const future of user1FutureBookings) {
+      const doctorId = doctorIdByEmail.get(future.doctorEmail);
+      if (!doctorId) continue;
+      const id = await insertBooking(doctorId, formatDate(addDays(today, future.daysFromNow)), future.time, future.status, future.status === 'confirmed');
+      if (id) createdBookings++;
+    }
+
+    await pool.query('ALTER TABLE bookings ADD CONSTRAINT check_future_date CHECK (date >= CURRENT_DATE) NOT VALID');
+
+    logger.info(`[SEED user1] Creados: ${createdBookings} bookings, ${createdRecords} registros clínicos, ${createdPrescriptions} recetas, ${createdInvoices} facturas, ${createdLabRequests} solicitudes de laboratorio`);
+  }
+
+  const histCountRes = await pool.query('SELECT COUNT(*)::int AS cnt FROM medical_history WHERE patient_id = $1', [userId]);
+  if ((histCountRes.rows[0].cnt as number) === 0) {
+    const user1History = [
+      { condition: 'Hipertensión arterial esencial', onset: '2021', status: 'chronic', notes: 'HTA diagnosticada hace 4 años. Controlada con Enalapril. PA objetivo <140/90.' },
+      { condition: 'Diabetes mellitus tipo 2', onset: '2020', status: 'chronic', notes: 'DM2 en tratamiento con metformina. Última HbA1c 7.4%. Control nutricional en curso.' },
+      { condition: 'Dermatitis atópica', onset: '2018', status: 'resolved', notes: 'Brotes atópicos desde la infancia. Último brote controlado con corticoide tópico.' },
+      { condition: 'Gastritis crónica', onset: '2023', status: 'resolved', notes: 'Gastritis por H. pylori tratada. Erradicación confirmada.' },
+      { condition: 'Lumbago crónico', onset: '2024', status: 'active', notes: 'Dolor lumbar crónico por desgaste discal. Manejo con kinesiología y analgesia intermitente.' },
+    ];
+    let histCount = 0;
+    for (const h of user1History) {
+      try {
+        await pool.query(
+          `INSERT INTO medical_history (patient_id, condition, onset_date, status, notes, tenant_id)
+           VALUES ($1, $2, $3, $4, $5, $6)`,
+          [userId, h.condition, `${h.onset}-01-15`, h.status, h.notes, DEFAULT_TENANT_ID]
+        );
+        histCount++;
+      } catch {}
+    }
+    if (histCount > 0) logger.info(`[SEED user1] Medical history creado: ${histCount} entradas`);
+  }
+};

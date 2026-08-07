@@ -8,6 +8,7 @@ import { E } from '../../utils/error-codes.js';
 import { logger } from '../../utils/logger.js';
 import { isValidDate, isValidTime, getDayOfWeek } from '../../shared/date.js';
 import { validateBookingSlot } from '../../shared/booking-utils.js';
+import { recordBookingStatusChange } from '../../shared/booking-history.js';
 import { PaginationParams, PaginatedResponse } from '../../types/index.js';
 
 interface BookingInput {
@@ -21,7 +22,7 @@ interface BookingInput {
   phone?: string;
 }
 
-export const getAllBookings = async ({ page = 1, limit = 100 }: Partial<PaginationParams> = {}, tenantId?: string): Promise<PaginatedResponse<unknown>> => {
+export const getAllBookings = async ({ page = 1, limit = 100, status }: Partial<PaginationParams & { status?: string }> = {}, tenantId?: string): Promise<PaginatedResponse<unknown>> => {
   const safePage = Math.max(1, Number.isInteger(page) ? page : 1);
   const safeLimit = Math.max(1, Math.min(100, Number.isInteger(limit) ? limit : 100));
   const offset = (safePage - 1) * safeLimit;
@@ -32,23 +33,45 @@ export const getAllBookings = async ({ page = 1, limit = 100 }: Partial<Paginati
     whereClause = 'WHERE b.tenant_id = $3';
     params.push(tenantId);
   }
+  if (status) {
+    whereClause = whereClause
+      ? `${whereClause} AND b.status = $4`
+      : 'WHERE b.status = $3';
+    params.push(status);
+  }
 
   const result = await pool.query(`
     SELECT b.id, b.date, b.time, b.duration, b.status, b.confirmed,
            d.name AS doctor_name, d.specialty,
-           u.name AS patient_name, u.rut AS patient_rut, u.email AS patient_email
+           u.name AS patient_name, u.rut AS patient_rut, u.email AS patient_email,
+           ch.reason AS cancel_reason, ch.created_at AS cancelled_at
     FROM bookings b
     JOIN doctors d ON b.doctor_id = d.id AND d.tenant_id = b.tenant_id
     LEFT JOIN users u ON b.user_id = u.id AND u.tenant_id = b.tenant_id
+    LEFT JOIN LATERAL (
+      SELECT reason, created_at
+      FROM booking_status_history
+      WHERE booking_id = b.id AND to_status = 'cancelled'
+      ORDER BY created_at DESC LIMIT 1
+    ) ch ON true
     ${whereClause}
     ORDER BY b.date DESC, b.time
     LIMIT $1 OFFSET $2
   `, params);
 
-  const countQuery = tenantId !== undefined
-    ? 'SELECT COUNT(*) FROM bookings WHERE tenant_id = $1'
+  const countConditions: string[] = [];
+  const countParams: (string | number)[] = [];
+  if (tenantId !== undefined) {
+    countConditions.push('tenant_id = $1');
+    countParams.push(tenantId);
+  }
+  if (status) {
+    countConditions.push(`status = $${countParams.length + 1}`);
+    countParams.push(status);
+  }
+  const countQuery = countConditions.length > 0
+    ? `SELECT COUNT(*) FROM bookings WHERE ${countConditions.join(' AND ')}`
     : 'SELECT COUNT(*) FROM bookings';
-      const countParams = tenantId !== undefined ? [tenantId] : [];
   const countResult = await pool.query(countQuery, countParams);
 
   return {
@@ -114,6 +137,18 @@ export const createBooking = async ({ doctor_id, user_id, date, time, duration =
     );
     const booking = result.rows[0];
 
+    await recordBookingStatusChange(
+      booking.id,
+      {
+        toStatus: 'pending',
+        actorType: 'user',
+        changedByUserId: user_id,
+        changedByRole: 'patient',
+        notes: 'Cita agendada',
+      },
+      client
+    );
+
     await client.query('COMMIT');
 
     enqueueJob('email:send', {
@@ -145,25 +180,43 @@ export const createBooking = async ({ doctor_id, user_id, date, time, duration =
   }
 };
 
-export const getBookingsByUser = async (user_id: number, { page = 1, limit = 20 }: Partial<PaginationParams> = {}, tenantId: string): Promise<PaginatedResponse<unknown>> => {
+export const getBookingsByUser = async (user_id: number, { page = 1, limit = 20, status }: Partial<PaginationParams & { status?: string }> = {}, tenantId: string): Promise<PaginatedResponse<unknown>> => {
   const safePage = Math.max(1, Number.isInteger(page) ? page : 1);
   const safeLimit = Math.max(1, Math.min(100, Number.isInteger(limit) ? limit : 20));
   const offset = (safePage - 1) * safeLimit;
   const params: (string | number)[] = [user_id, safeLimit, offset, tenantId];
+  let statusClause = '';
+  if (status) {
+    statusClause = ' AND b.status = $5';
+    params.push(status);
+  }
 
   const result = await pool.query(`
     SELECT b.id, b.date, b.time, b.duration, b.status, b.confirmed,
-           d.name AS doctor_name, d.specialty
+           d.name AS doctor_name, d.specialty,
+           ch.reason AS cancel_reason, ch.created_at AS cancelled_at
     FROM bookings b
     JOIN doctors d ON b.doctor_id = d.id AND d.tenant_id = b.tenant_id
-    WHERE b.user_id = $1 AND b.status != 'cancelled' AND b.tenant_id = $4
+    LEFT JOIN LATERAL (
+      SELECT reason, created_at
+      FROM booking_status_history
+      WHERE booking_id = b.id AND to_status = 'cancelled'
+      ORDER BY created_at DESC LIMIT 1
+    ) ch ON true
+    WHERE b.user_id = $1 AND b.tenant_id = $4${statusClause}
     ORDER BY b.date, b.time
     LIMIT $2 OFFSET $3
   `, params);
 
+  const countParams: (string | number)[] = [user_id, tenantId];
+  let countStatusClause = '';
+  if (status) {
+    countStatusClause = ' AND status = $3';
+    countParams.push(status);
+  }
   const countResult = await pool.query(
-    'SELECT COUNT(*) FROM bookings WHERE user_id = $1 AND status != $2 AND tenant_id = $3',
-    [user_id, 'cancelled', tenantId]
+    `SELECT COUNT(*) FROM bookings WHERE user_id = $1 AND tenant_id = $2${countStatusClause}`,
+    countParams
   );
 
   return {
@@ -175,10 +228,18 @@ export const getBookingsByUser = async (user_id: number, { page = 1, limit = 20 
   };
 };
 
-export const cancelBooking = async (booking_id: number, user_id: number, tenantId: string): Promise<{ message: string }> => {
+export const cancelBooking = async (booking_id: number, user_id: number, tenantId: string, reason?: string): Promise<{ message: string }> => {
   if (!Number.isInteger(booking_id) || !Number.isInteger(user_id)) {
     throw new BadRequestError(E.BOOKING_INVALID_ID);
   }
+
+  const existing = await pool.query(
+    'SELECT id, status FROM bookings WHERE id = $1 AND user_id = $2 AND tenant_id = $3',
+    [booking_id, user_id, tenantId]
+  );
+
+  if (existing.rows.length === 0) throw new NotFoundError(E.BOOKING_NOT_FOUND);
+  const fromStatus = existing.rows[0].status as string;
 
   const result = await pool.query(
     `UPDATE bookings SET status = 'cancelled'
@@ -189,7 +250,56 @@ export const cancelBooking = async (booking_id: number, user_id: number, tenantI
 
   if (result.rows.length === 0) throw new NotFoundError(E.BOOKING_NOT_FOUND);
 
+  await recordBookingStatusChange(booking_id, {
+    toStatus: 'cancelled',
+    fromStatus,
+    actorType: 'user',
+    changedByUserId: user_id,
+    reason,
+  });
+
   return { message: 'Booking cancelled successfully' };
+};
+
+export const confirmBooking = async (token: string, tenantId: string): Promise<{ confirmed: boolean; alreadyConfirmed: boolean }> => {
+  if (!token) throw new BadRequestError(E.BOOKING_MISSING_FIELDS);
+
+  const payload = jwtManager.verify<{ tenant_id?: string }>(token);
+  if (!payload) throw new BadRequestError(E.AUTH_TOKEN_INVALID_EXPIRED);
+
+  if (payload.tenant_id && payload.tenant_id !== tenantId) {
+    throw new NotFoundError(E.BOOKING_NOT_FOUND);
+  }
+
+  const result = await pool.query(
+    `UPDATE bookings SET confirmed = TRUE
+     WHERE confirmation_token = $1 AND tenant_id = $2
+       AND confirmed = FALSE
+     RETURNING id`,
+    [token, tenantId]
+  );
+
+  if (result.rows.length > 0) {
+    await recordBookingStatusChange(Number(result.rows[0].id), {
+      toStatus: 'confirmed',
+      actorType: payload.user_id ? 'user' : 'guest',
+      changedByUserId: payload.user_id ?? null,
+      changedByRole: 'patient',
+      notes: 'Cita confirmada',
+    });
+    return { confirmed: true, alreadyConfirmed: false };
+  }
+
+  const existing = await pool.query(
+    'SELECT confirmed FROM bookings WHERE confirmation_token = $1 AND tenant_id = $2',
+    [token, tenantId]
+  );
+
+  if (existing.rows.length === 0) {
+    throw new NotFoundError(E.BOOKING_NOT_FOUND);
+  }
+
+  return { confirmed: true, alreadyConfirmed: existing.rows[0].confirmed !== false };
 };
 
 export const getAvailableSlots = async (doctor_id: number, date: string, tenantId: string): Promise<string[]> => {
@@ -289,11 +399,16 @@ export const getDailyBookingDensity = async (
   return result.rows;
 };
 
-export const getBookingsByDoctor = async (doctor_id: number, { page = 1, limit = 50 }: Partial<PaginationParams> = {}, tenantId: string): Promise<PaginatedResponse<unknown>> => {
+export const getBookingsByDoctor = async (doctor_id: number, { page = 1, limit = 50, status }: Partial<PaginationParams & { status?: string }> = {}, tenantId: string): Promise<PaginatedResponse<unknown>> => {
   const safePage = Math.max(1, Number.isInteger(page) ? page : 1);
   const safeLimit = Math.max(1, Math.min(100, Number.isInteger(limit) ? limit : 50));
   const offset = (safePage - 1) * safeLimit;
   const params: (string | number)[] = [doctor_id, safeLimit, offset, tenantId];
+  let statusClause = '';
+  if (status) {
+    statusClause = ' AND b.status = $5';
+    params.push(status);
+  }
 
   const result = await pool.query(`
     SELECT b.id, b.date, b.time, b.duration, b.status, b.confirmed,
@@ -301,19 +416,32 @@ export const getBookingsByDoctor = async (doctor_id: number, { page = 1, limit =
            u.email AS patient_email,
            u.rut AS patient_rut,
            b.guest_name, b.guest_email, b.guest_phone, b.guest_rut,
-           d.name AS doctor_name
+           d.name AS doctor_name,
+           ch.reason AS cancel_reason, ch.created_at AS cancelled_at
     FROM bookings b
     LEFT JOIN users u ON b.user_id = u.id AND u.tenant_id = b.tenant_id
     LEFT JOIN doctors doc ON b.doctor_id = doc.id AND doc.tenant_id = b.tenant_id
     LEFT JOIN users d ON doc.user_id = d.id AND d.tenant_id = b.tenant_id
-    WHERE b.doctor_id = $1 AND b.status != 'cancelled' AND b.tenant_id = $4
+    LEFT JOIN LATERAL (
+      SELECT reason, created_at
+      FROM booking_status_history
+      WHERE booking_id = b.id AND to_status = 'cancelled'
+      ORDER BY created_at DESC LIMIT 1
+    ) ch ON true
+    WHERE b.doctor_id = $1 AND b.tenant_id = $4${statusClause}
     ORDER BY b.date, b.time
     LIMIT $2 OFFSET $3
   `, params);
 
+  const countParams: (string | number)[] = [doctor_id, tenantId];
+  let countStatusClause = '';
+  if (status) {
+    countStatusClause = ' AND status = $3';
+    countParams.push(status);
+  }
   const countResult = await pool.query(
-    'SELECT COUNT(*) FROM bookings WHERE doctor_id = $1 AND status != $2 AND tenant_id = $3',
-    [doctor_id, 'cancelled', tenantId]
+    `SELECT COUNT(*) FROM bookings WHERE doctor_id = $1 AND tenant_id = $2${countStatusClause}`,
+    countParams
   );
 
   return {

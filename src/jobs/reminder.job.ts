@@ -13,6 +13,7 @@ interface BookingRow {
   user_id: number;
   doctor_name: string;
   confirmed: boolean;
+  confirmation_token: string;
 }
 
 interface EmailOptions {
@@ -42,7 +43,8 @@ export const sendReminders = async (intervalStart: string, intervalEnd: string, 
            COALESCE(u.email, b.guest_email) AS email,
            COALESCE(u.id, 0) AS user_id,
            d.name AS doctor_name,
-           b.confirmed
+           b.confirmed,
+           b.confirmation_token
     FROM bookings b
     LEFT JOIN users u ON b.user_id = u.id
     JOIN doctors d ON b.doctor_id = d.id
@@ -55,6 +57,10 @@ export const sendReminders = async (intervalStart: string, intervalEnd: string, 
 
   for (const booking of result.rows as BookingRow[]) {
     const needsConfirmation = !booking.confirmed;
+    const frontendUrl = process.env.FRONTEND_URL || process.env.RENDER_EXTERNAL_URL || 'http://localhost:5173';
+    const confirmUrl = booking.confirmation_token
+      ? `${frontendUrl}/confirm/${encodeURIComponent(booking.confirmation_token)}`
+      : null;
     try {
       await sendWithRetry({
         to: booking.email,
@@ -68,6 +74,7 @@ export const sendReminders = async (intervalStart: string, intervalEnd: string, 
             <li><strong>Hora:</strong> ${escapeHtml(booking.time)}</li>
             ${needsConfirmation ? '<li><strong>IMPORTANTE:</strong> Tu cita a\u00fan no ha sido confirmada. Conf\u00edrmala para evitar p\u00e9rdida.</li>' : ''}
           </ul>
+          ${confirmUrl ? `<p style="margin-top:16px;"><a href="${escapeHtml(confirmUrl)}" style="display:inline-block;padding:10px 24px;background-color:#1976d2;color:#ffffff;text-decoration:none;border-radius:6px;font-weight:600;">Confirmar cita</a></p>` : ''}
         `,
       });
 

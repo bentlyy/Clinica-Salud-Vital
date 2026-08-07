@@ -16,3 +16,7 @@ export const bookingIdSchema = z.object({
   id: z.coerce.number().int().positive(),
 }).strict();
 
+export const cancelBookingSchema = z.object({
+  reason: z.string().trim().max(255).optional(),
+}).strict();
+
