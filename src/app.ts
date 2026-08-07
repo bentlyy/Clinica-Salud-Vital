@@ -264,17 +264,23 @@ const runMigration = async (): Promise<void> => {
 
     logger.info(`Aplicando migración ${file}...`);
     const sql = fs.readFileSync(resolve(migrationsDir, file), 'utf-8');
-    try {
-      await pool.query(sql);
-    } catch (migErr) {
-      logger.error(`Error en migración ${file}`, {
-        error: (migErr as Error).message,
-        sql: sql.slice(0, 200),
-      });
-      throw migErr;
+    const MAX_MIGRATION_ATTEMPTS = 3;
+    for (let attempt = 1; attempt <= MAX_MIGRATION_ATTEMPTS; attempt++) {
+      try {
+        await pool.query(sql);
+        await pool.query('INSERT INTO _migrations (name) VALUES ($1)', [file]);
+        logger.info(`Migración ${file} aplicada`);
+        break;
+      } catch (migErr) {
+        const isLastAttempt = attempt === MAX_MIGRATION_ATTEMPTS;
+        logger.error(`Error en migración ${file} (intento ${attempt}/${MAX_MIGRATION_ATTEMPTS})`, {
+          error: (migErr as Error).message,
+          sql: sql.slice(0, 200),
+        });
+        if (isLastAttempt) throw migErr;
+        await new Promise((r: (value: unknown) => void) => setTimeout(r, attempt * 2000));
+      }
     }
-    await pool.query('INSERT INTO _migrations (name) VALUES ($1)', [file]);
-    logger.info(`Migración ${file} aplicada`);
   }
 };
 
