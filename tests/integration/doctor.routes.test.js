@@ -56,6 +56,7 @@ const generateToken = (payload) =>
 
 const adminToken = generateToken({ id: 1, email: 'admin@test.com', role: 'admin', token_version: 0 });
 const doctorToken = generateToken({ id: 2, email: 'doc@test.com', role: 'doctor', token_version: 0 });
+const patientToken = generateToken({ id: 3, email: 'patient@test.com', role: 'patient', token_version: 0 });
 
 app.use('/api/doctors', doctorRoutes);
 
@@ -89,7 +90,7 @@ describe('GET /api/doctors', () => {
   it('returns 403 for non-admin', async () => {
     const res = await request(app)
       .get('/api/doctors')
-      .set('Authorization', `Bearer ${doctorToken}`);
+      .set('Authorization', `Bearer ${patientToken}`);
 
     expect(res.status).toBe(403);
   });
@@ -148,6 +149,7 @@ describe('GET /api/doctors/me', () => {
 
   it('returns 404 if doctor profile not found', async () => {
     mockQuery
+      .mockResolvedValueOnce({ rows: [{ token_version: 0 }] })
       .mockResolvedValueOnce({ rows: [] });
 
     const res = await request(app)
@@ -159,6 +161,7 @@ describe('GET /api/doctors/me', () => {
 
   it('returns doctor profile', async () => {
     mockQuery
+      .mockResolvedValueOnce({ rows: [{ token_version: 0 }] })
       .mockResolvedValueOnce({ rows: [{ id: 2, name: 'Dr. Test', user_id: 2 }] });
 
     const res = await request(app)

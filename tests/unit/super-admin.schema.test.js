@@ -52,10 +52,10 @@ describe('adminCreateTenantSchema', () => {
     expect(result.success).toBe(true);
   });
 
-  it('rejects missing id', () => {
+  it('accepts missing id (auto-generated)', () => {
     const { id, ...rest } = validData;
     const result = adminCreateTenantSchema.safeParse(rest);
-    expect(result.success).toBe(false);
+    expect(result.success).toBe(true);
   });
 
   it('rejects id with uppercase letters', () => {

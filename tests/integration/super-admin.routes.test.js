@@ -74,6 +74,7 @@ describe('GET /api/super-admin/stats', () => {
 
   it('returns global stats for superadmin', async () => {
     mockQuery
+      .mockResolvedValueOnce({ rows: [{ token_version: 0, active: true }] })
       .mockResolvedValueOnce({ rows: [{ total_tenants: 10, active_tenants: 8, total_users: 100 }] });
 
     const res = await request(app)
@@ -88,6 +89,7 @@ describe('GET /api/super-admin/stats', () => {
 describe('GET /api/super-admin/tenants', () => {
   it('returns paginated tenants', async () => {
     mockQuery
+      .mockResolvedValueOnce({ rows: [{ token_version: 0, active: true }] })
       .mockResolvedValueOnce({ rows: [{ total: 2 }] })
       .mockResolvedValueOnce({ rows: [{ id: 't1', name: 'Test' }, { id: 't2', name: 'Test 2' }] });
 
@@ -102,6 +104,7 @@ describe('GET /api/super-admin/tenants', () => {
 
   it('filters by search param', async () => {
     mockQuery
+      .mockResolvedValueOnce({ rows: [{ token_version: 0, active: true }] })
       .mockResolvedValueOnce({ rows: [{ total: 1 }] })
       .mockResolvedValueOnce({ rows: [{ id: 't1', name: 'Target' }] });
 
@@ -117,6 +120,7 @@ describe('GET /api/super-admin/tenants', () => {
 describe('GET /api/super-admin/tenants/:id', () => {
   it('returns tenant detail', async () => {
     mockQuery
+      .mockResolvedValueOnce({ rows: [{ token_version: 0, active: true }] })
       .mockResolvedValueOnce({ rows: [{ id: 't1', name: 'Test' }] })
       .mockResolvedValueOnce({ rows: [{ patient_count: 5 }] })
       .mockResolvedValueOnce({ rows: [] });
@@ -126,11 +130,12 @@ describe('GET /api/super-admin/tenants/:id', () => {
       .set('Authorization', `Bearer ${superAdminToken}`);
 
     expect(res.status).toBe(200);
-    expect(res.body.tenant.id).toBe('t1');
+    expect(res.body.id).toBe('t1');
   });
 
   it('returns 404 for unknown tenant', async () => {
     mockQuery
+      .mockResolvedValueOnce({ rows: [{ token_version: 0, active: true }] })
       .mockResolvedValueOnce({ rows: [] });
 
     const res = await request(app)
@@ -183,6 +188,7 @@ describe('POST /api/super-admin/tenants', () => {
 describe('PATCH /api/super-admin/tenants/:id', () => {
   it('updates tenant', async () => {
     mockQuery
+      .mockResolvedValueOnce({ rows: [{ token_version: 0, active: true }] })
       .mockResolvedValueOnce({ rows: [{ id: 't1', name: 'Updated', updated_at: new Date() }] });
 
     const res = await request(app)
@@ -234,6 +240,7 @@ describe('DELETE /api/super-admin/tenants/:id', () => {
 describe('GET /api/super-admin/users', () => {
   it('returns paginated users', async () => {
     mockQuery
+      .mockResolvedValueOnce({ rows: [{ token_version: 0, active: true }] })
       .mockResolvedValueOnce({ rows: [{ total: 1 }] })
       .mockResolvedValueOnce({ rows: [{ id: 1, email: 'u@test.com' }] });
 
@@ -249,6 +256,7 @@ describe('GET /api/super-admin/users', () => {
 describe('PATCH /api/super-admin/users/:userId/active', () => {
   it('toggles user active status', async () => {
     mockQuery
+      .mockResolvedValueOnce({ rows: [{ token_version: 0, active: true }] })
       .mockResolvedValueOnce({ rows: [{ id: 1, active: false }] });
 
     const res = await request(app)
@@ -264,6 +272,7 @@ describe('PATCH /api/super-admin/users/:userId/active', () => {
 describe('GET /api/super-admin/analytics/*', () => {
   it('GET /analytics/dashboard returns dashboard data', async () => {
     mockQuery
+      .mockResolvedValueOnce({ rows: [{ token_version: 0, active: true }] })
       .mockResolvedValueOnce({ rows: [{ total_tenants: 10, mrr: 5000 }] })
       .mockResolvedValueOnce({ rows: [{ plan: 'Pro', count: 5 }] });
 
@@ -277,6 +286,7 @@ describe('GET /api/super-admin/analytics/*', () => {
 
   it('GET /analytics/health returns health scores', async () => {
     mockQuery
+      .mockResolvedValueOnce({ rows: [{ token_version: 0, active: true }] })
       .mockResolvedValueOnce({ rows: [{ id: 't1', health_total: 85 }] });
 
     const res = await request(app)
@@ -288,6 +298,7 @@ describe('GET /api/super-admin/analytics/*', () => {
 
   it('GET /analytics/revenue returns revenue data', async () => {
     mockQuery
+      .mockResolvedValueOnce({ rows: [{ token_version: 0, active: true }] })
       .mockResolvedValueOnce({ rows: [{ month: '2026-01', revenue: 1000 }] });
 
     const res = await request(app)

@@ -27,6 +27,7 @@ const sslConfig = !isInternalDb() && isProd
 export const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: sslConfig,
+  client_encoding: 'UTF8',
   max: poolMax,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 15000,
@@ -55,6 +56,7 @@ export const readPool = readOnlyUrl
   ? new Pool({
       connectionString: readOnlyUrl,
       ssl: sslConfig,
+      client_encoding: 'UTF8',
       max: Math.max(Math.floor(poolMax / 2), 5),
       idleTimeoutMillis: 30000,
       connectionTimeoutMillis: 15000,
