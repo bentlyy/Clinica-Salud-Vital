@@ -95,6 +95,14 @@ describe('api-client request interceptor', () => {
     const postConfig = requestInterceptor()(makeConfig({ method: 'post' }));
     expect(postConfig.headers).toMatchObject({ 'X-CSRF-Token': 'csrf-1' });
   });
+
+  it('prefers the csrf token from the cookie over localStorage', () => {
+    document.cookie = 'csrf_token=cookie-csrf';
+    localStorage.setItem('csrf_token', 'local-csrf');
+    const postConfig = requestInterceptor()(makeConfig({ method: 'post' }));
+    expect(postConfig.headers).toMatchObject({ 'X-CSRF-Token': 'cookie-csrf' });
+    document.cookie = 'csrf_token=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';
+  });
 });
 
 describe('api-client response interceptor (success)', () => {
@@ -207,7 +215,7 @@ describe('api-client response interceptor (errors)', () => {
     expect(state.mockAxiosPost).toHaveBeenCalledWith(
       '/api/auth/refresh',
       {},
-      { withCredentials: true },
+      expect.objectContaining({ withCredentials: true }),
     );
     expect(originalRequest.headers).toMatchObject({ Authorization: 'Bearer new-token' });
     expect(state.mockApi).toHaveBeenCalledWith(originalRequest);

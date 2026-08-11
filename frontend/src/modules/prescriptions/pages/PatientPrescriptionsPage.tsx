@@ -177,9 +177,9 @@ export default function PatientPrescriptionsPage() {
                 </Box>
                 {prescription.medications.length > 0 && (
                   <Box display="flex" gap={0.5} flexWrap="wrap" mt={1}>
-                    {prescription.medications.map((med, i) => (
+                    {prescription.medications.map((med) => (
                       <Chip
-                        key={i}
+                        key={`${med.name}-${med.dosage}`}
                         size="small"
                         label={`${med.name} ${med.dosage}`}
                         sx={{ fontSize: 11 }}

@@ -36,7 +36,7 @@ const getLocaleFromRequest = (req: Request): string => {
 
 export const tenantMiddleware = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   const headerTenantId = req.headers['x-tenant-id'] as string | undefined;
-  const userTenantId = (req as any).user?.tenant_id;
+  const userTenantId = req.user?.tenant_id;
   const isPublicPath = PUBLIC_PATHS.has(req.path) || PUBLIC_PATH_PREFIXES.some(p => req.path.startsWith(p));
 
   const rawTenantId = userTenantId || headerTenantId;

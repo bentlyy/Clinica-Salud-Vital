@@ -20,6 +20,7 @@ import { optionalAuth } from './middlewares/auth.middleware.js';
 import { validateEmailConfig } from './shared/email.service.js';
 import { requestLogger } from './middlewares/requestLogger.middleware.js';
 import { correlationIdMiddleware } from './middlewares/correlationId.middleware.js';
+import { csrfProtection } from './middlewares/csrf.middleware.js';
 import { errorHandler, notFoundHandler } from './middlewares/errorHandler.middleware.js';
 import { trackActivity, stopSessionCleanup } from './middlewares/sessionActivity.middleware.js';
 import { initSentry, setupExpressErrorHandler } from './shared/sentry.service.js';
@@ -143,6 +144,7 @@ if (process.env.NODE_ENV === 'production') {
 // COOKIE_SECRET must be set independently of JWT_SECRET; do not share secrets between mechanisms
 app.use(cookieParser(process.env.COOKIE_SECRET));
 app.use(express.json({ limit: '100kb' }));
+app.use(csrfProtection);
 app.use(optionalAuth);
 app.use(tenantMiddleware);
 app.use(trackActivity);

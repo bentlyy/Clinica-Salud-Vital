@@ -1,6 +1,7 @@
 import { Box, Typography, Paper, Chip } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { useTranslation } from 'react-i18next';
+import { memo } from 'react';
 import PrecisionManufacturing from '@mui/icons-material/PrecisionManufacturing';
 import Build from '@mui/icons-material/Build';
 import CheckCircle from '@mui/icons-material/CheckCircle';
@@ -14,7 +15,7 @@ interface EquipmentCardProps {
   equipment: LabEquipment;
 }
 
-export function EquipmentCard({ equipment }: EquipmentCardProps) {
+export const EquipmentCard = memo(function EquipmentCard({ equipment }: EquipmentCardProps) {
   const theme = useTheme();
   const { t } = useTranslation('lab');
   const statusConfig = LAB_EQUIPMENT_STATUS_CONFIG[equipment.status];
@@ -108,4 +109,4 @@ export function EquipmentCard({ equipment }: EquipmentCardProps) {
       </Paper>
     </MotionDiv>
   );
-}
+});

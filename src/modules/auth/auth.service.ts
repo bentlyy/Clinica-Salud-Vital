@@ -257,9 +257,7 @@ export const login = async ({ email, password, totp_token, captcha_token }: Logi
 
   if (user.totp_enabled) {
     if (!totp_token) {
-      const err = new BadRequestError('2FA token required');
-      (err as any).code = '2FA_REQUIRED';
-      throw err;
+      throw new BadRequestError(E.AUTH_2FA_REQUIRED);
     }
     if (!user.totp_secret || !verifyToken(user.totp_secret, totp_token)) {
       throw new BadRequestError(E.AUTH_2FA_INVALID_TOKEN);

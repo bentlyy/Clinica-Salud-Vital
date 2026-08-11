@@ -68,8 +68,8 @@ export function SchedulesPanel({ data }: { data: ScheduleRecord[] }) {
               </TableRow>
             </TableHead>
             <TableBody>
-              {data.slice(0, 5).map((d, i) => (
-                <TableRow key={i}>
+              {data.slice(0, 5).map((d) => (
+                <TableRow key={d.day}>
                   <TableCell>{d.day}</TableCell>
                   <TableCell>{d.bestTime}</TableCell>
                   <TableCell>

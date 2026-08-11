@@ -42,6 +42,7 @@ export const E = {
   AUTH_2FA_INVALID_TOKEN:       'AUTH_2FA_INVALID_TOKEN',
   AUTH_2FA_PASSWORD_REQUIRED:   'AUTH_2FA_PASSWORD_REQUIRED',
   AUTH_2FA_TOTP_REQUIRED:       'AUTH_2FA_TOTP_REQUIRED',
+  AUTH_2FA_REQUIRED:            'AUTH_2FA_REQUIRED',
 
   // Password reset
   AUTH_RESET_TOKEN_INVALID:     'AUTH_RESET_TOKEN_INVALID',
@@ -248,6 +249,7 @@ export const ERROR_MESSAGES: Record<ErrorCode, string> = {
   [E.AUTH_2FA_INVALID_TOKEN]:       'Invalid 2FA token',
   [E.AUTH_2FA_PASSWORD_REQUIRED]:   'Password is required to disable 2FA',
   [E.AUTH_2FA_TOTP_REQUIRED]:       'TOTP code required to disable 2FA. Enter the code from your authenticator app.',
+  [E.AUTH_2FA_REQUIRED]:            '2FA token required',
 
   [E.AUTH_RESET_TOKEN_INVALID]:     'Invalid or expired reset token',
   [E.AUTH_RESET_EMAIL_MISMATCH]:    'Email does not match reset token',

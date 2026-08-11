@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '@mui/material/styles';
 import { Box, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Avatar, Typography, Tabs, Tab, CircularProgress } from '@mui/material';
@@ -28,7 +28,7 @@ import { SchedulesPanel } from '../components/SchedulesPanel';
 import { VitalsPanel } from '../components/VitalsPanel';
 import { useAuth } from '@/shared/providers/AuthProvider';
 
-function StatCard({ icon, label, value, color }: { icon: React.ReactNode; label: string; value: number | string; color: string }) {
+const StatCard = memo(function StatCard({ icon, label, value, color }: { icon: React.ReactNode; label: string; value: number | string; color: string }) {
   const theme = useTheme();
   return (
     <Paper sx={{ p: 2.5, border: `1px solid ${theme.palette.divider}`, display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -41,7 +41,7 @@ function StatCard({ icon, label, value, color }: { icon: React.ReactNode; label:
       </Box>
     </Paper>
   );
-}
+});
 
 function LoadingPanel() {
   return (
