@@ -144,7 +144,7 @@ export function UserFormDialog({ open, onClose, onSubmit, isPending }: UserFormD
         </Button>
       </DialogTitle>
 
-      <Box component="form" onSubmit={handleSubmit(handleFormSubmit)}>
+      <Box component="form" onSubmit={handleSubmit(handleFormSubmit)} noValidate>
         <DialogContent sx={{ pt: 3 }}>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
             <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2.5 }}>

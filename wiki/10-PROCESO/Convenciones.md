@@ -40,6 +40,17 @@ tags: [convenciones, calidad, estandar]
 
 ### Tests
 
+- Un `it()` = un render. `@testing-library/react` hace cleanup **entre** tests, no dentro: si un escenario necesita otro estado, dividir en tests separados (nunca dos `render()` en el mismo test)
+- Usar `userEvent` (no `fireEvent.change`) para interacción con componentes MUI — `fireEvent.change` no dispara el `onChange` de `TextField`
+- Componentes controlados: envolver en un harness con `useState` para probar el flujo "mientras escribe..." (ej: `Combobox`)
+- Leer el source antes de escribir expectativas: confirmar la dirección real de sort (primer click en `TableSortLabel` ordena `asc`), ramas condicionales, etc.
+- `getByRole('link', { name })` para `<Button component={Link}>` de MUI (renderiza `<a>`, no `<button>`)
+- Transiciones de cierre de menús MUI mantienen hijos montados: usar `waitFor` para las aserciones post-cierre
+- Descargas programáticas (`anchor.click()` síncrono): spy en `HTMLAnchorElement.prototype.click` y verificar atributos `download`/`href`
+- Mock global de `react-i18next` en `setup.ts` debe incluir `initReactI18next` (si falta, falla cualquier test que importe `api-client` → `i18n`)
+- Datos de prueba sin colisiones léxicas: verificar que un substring de búsqueda no esté contenido en otras opciones (`'clinica'.includes('ca') === true`)
+- Queries por rol semántico y `name` accesible, nunca por tag HTML
+
 - No usar `mockResolvedValueOnce` secuencial para múltiples queries del mismo mock
 - Preferir mockear por nombre de función o usar `mockImplementation` condicional
 - Los tests de integración deben mockear `pool.connect()` si el código lo usa
