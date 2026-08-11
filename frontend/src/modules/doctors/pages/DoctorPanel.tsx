@@ -49,11 +49,11 @@ export default function DoctorPanel() {
   const { t } = useTranslation();
 
   const QUICK_LINKS = [
-    { labelKey: 'doctor_panel.linkCalendar', icon: <CalendarMonth />, path: '/calendar', color: theme.palette.primary.main },
-    { labelKey: 'doctor_panel.linkSchedule', icon: <AccessTime />, path: '/availability', color: theme.palette.info.main },
-    { labelKey: 'doctor_panel.linkHistory', icon: <History />, path: '/clinical-records', color: '#7c3aed' },
-    { labelKey: 'doctor_panel.linkLaboratory', icon: <Science />, path: '/laboratory', color: '#f59e0b' },
-    { labelKey: 'doctor_panel.linkPatients', icon: <People />, path: '/patients', color: theme.palette.success.main },
+    { labelKey: 'doctor_panel:linkCalendar', icon: <CalendarMonth />, path: '/calendar', color: theme.palette.primary.main },
+    { labelKey: 'doctor_panel:linkSchedule', icon: <AccessTime />, path: '/availability', color: theme.palette.info.main },
+    { labelKey: 'doctor_panel:linkHistory', icon: <History />, path: '/clinical-records', color: '#7c3aed' },
+    { labelKey: 'doctor_panel:linkLaboratory', icon: <Science />, path: '/laboratory', color: '#f59e0b' },
+    { labelKey: 'doctor_panel:linkPatients', icon: <People />, path: '/patients', color: theme.palette.success.main },
   ];
 
   const STATUS_COLORS: Record<string, { bg: string; color: string }> = {

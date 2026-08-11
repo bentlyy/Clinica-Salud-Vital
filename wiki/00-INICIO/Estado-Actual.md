@@ -1,6 +1,6 @@
 # Estado Actual del Proyecto
 
-> Versión: 1.0.0 — Producción | Última auditoría: 2026-07-29
+> Versión: 1.0.0 — Producción | Última auditoría: 2026-07-29 | QA completo: 2026-08-11
 
 ## Métricas del Proyecto
 
@@ -8,9 +8,9 @@
 |---------|-------|
 | Módulos backend | 15 activos |
 | Páginas frontend | ~50 |
-| Tests backend | ~1146 passing — 77 archivos (21 fallos pre-existentes) |
-| Tests frontend | 104 passing — 16 archivos |
-| Cobertura | ~86% líneas (threshold 70%) |
+| Tests backend | 1330 passing — 89 archivos |
+| Tests frontend | 1211 passing — 177 archivos |
+| Cobertura | Backend ~92% líneas (threshold 85%) · Frontend ~85% líneas (threshold 80%) |
 | Idiomas | 4 activos (es, en, pt, fr) — 65 namespaces — 3.079 claves c/u — paridad total verificada |
 | Tablas DB | 20+ |
 | Endpoints API | ~163 |
@@ -24,8 +24,8 @@
 
 | Área | Estado | Notas |
 |------|--------|-------|
-| Backend tests | ✅ ~1146 tests, ~86% cobertura | Vitest + pool forks |
-| Frontend | ✅ ~50 páginas, 104 tests, lazy loading, tema claro/oscuro, sidebar por rol | React 19 + Vite + MUI |
+| Backend tests | ✅ 1330 tests, ~92% cobertura | Vitest + pool forks |
+| Frontend | ✅ ~50 páginas, 1211 tests (177 archivos), lazy loading, tema claro/oscuro, sidebar por rol | React 19 + Vite + MUI |
 | API | ✅ ~163 endpoints documentados | Prefijo `/api`, paginación estándar |
 | CI/CD | ✅ GitHub Actions (typecheck + test + build) + deploy a Render | Webhook post-deploy |
 | Seguridad | ✅ Helmet, CORS, rate limiting, Zod, 2FA, auditoría HMAC | IDOR fixes + captcha fail-closed |

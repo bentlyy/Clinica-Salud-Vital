@@ -109,7 +109,7 @@ export function InviteDoctorDialog({ open, onClose, doctor, onSubmit, isPending 
         </Button>
       </DialogTitle>
 
-      <Box component="form" onSubmit={handleSubmit(handleFormSubmit)}>
+      <Box component="form" onSubmit={handleSubmit(handleFormSubmit)} noValidate>
         <DialogContent sx={{ pt: 3 }}>
           {doctor && (
             <Box

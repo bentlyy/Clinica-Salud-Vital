@@ -170,7 +170,7 @@ export function CreateBookingDialog({
         </Button>
       </DialogTitle>
 
-      <Box component="form" onSubmit={handleSubmit(handleFormSubmit)}>
+      <Box component="form" onSubmit={handleSubmit(handleFormSubmit)} noValidate>
         <DialogContent sx={{ pt: 2 }}>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
             {/* Doctor selector */}

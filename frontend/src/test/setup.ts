@@ -1,6 +1,23 @@
 import React from 'react';
 import '@testing-library/jest-dom';
 
+// ResizeObserver is required by recharts (ResponsiveContainer) but missing in jsdom.
+class ResizeObserverMock {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+if (!globalThis.ResizeObserver) {
+  // configurable:false so vitest's environment teardown (which deletes populated
+  // globals between files in a reused fork) cannot remove it under parallel load.
+  Object.defineProperty(globalThis, 'ResizeObserver', {
+    value: ResizeObserverMock,
+    writable: true,
+    configurable: false,
+    enumerable: true,
+  });
+}
+
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
   value: vi.fn().mockImplementation((query) => ({
@@ -42,5 +59,9 @@ vi.mock('react-i18next', () => {
     }),
     withTranslation: () => (Component: React.ComponentType<{ t: typeof t }>) =>
       (props: Record<string, unknown>) => React.createElement(Component, { ...props, t }),
+    initReactI18next: {
+      type: '3rdParty',
+      init: () => undefined,
+    },
   };
 });

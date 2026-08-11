@@ -17,8 +17,8 @@ Plataforma integral para administrar clínicas, pacientes, médicos, citas, hist
 [![Render](https://img.shields.io/badge/Render-46E3B7?logo=render&logoColor=white)](https://render.com/)
 [![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
 [![CI](https://img.shields.io/github/actions/workflow/status/bentlyy/Clinica-Salud-Vital/ci.yml?branch=master&label=CI&logo=githubactions)](https://github.com/bentlyy/Clinica-Salud-Vital/actions)
-[![Tests](https://img.shields.io/badge/tests-1244%20passing-2ea043)](#-testing)
-[![Coverage](https://img.shields.io/badge/coverage-~86%25-2ea043)](#-testing)
+[![Tests](https://img.shields.io/badge/tests-2541%20passing-2ea043)](#-testing)
+[![Coverage](https://img.shields.io/badge/coverage-~90%25-2ea043)](#-testing)
 [![Audit](https://img.shields.io/badge/audit-2026--07--29-FF6B6B)](#-auditor%C3%ADa-y-mejora)
 
 </div>
@@ -204,7 +204,7 @@ El proyecto sigue un patrón **monolito modular**: un solo deploy con módulos d
 │   └── src/
 │       ├── modules/               # Módulos por dominio (auth, bookings, doctors, laboratory, super-admin, clinical, management, notifications, etc.)
 │       ├── shared/                # Componentes compartidos, providers, constants (navigation), hooks, utils
-│       ├── test/                  # Tests frontend (16 archivos, 104 tests)
+│       ├── test/                  # Tests frontend (177 archivos, 1211 tests)
 │       ├── i18n/                  # Traducciones (es, en, pt, fr — 65 namespaces)
 │       └── main.tsx               # Entry point
 ├── db/
@@ -302,9 +302,9 @@ npm run test:coverage             # Reporte HTML
 | Métrica | Valor |
 |---------|-------|
 | **Framework** | Vitest 4 con pool forks (backend) / Vitest 3 (frontend) |
-| **Tests backend** | 1146 passing — 77 archivos (21 fallos pre-existentes documentados en la wiki) |
-| **Tests frontend** | 104 passing — 16 archivos |
-| **Cobertura** | ~86% lines (threshold: 70%) |
+| **Tests backend** | 1330 passing — 89 archivos |
+| **Tests frontend** | 1211 passing — 177 archivos |
+| **Cobertura** | Backend ~92% lines (threshold: 85%) · Frontend ~85% lines (threshold: 80%) |
 | **Setup** | Mocks de DB, auth, email, JWT; storage funcional + i18n en frontend |
 | **CI** | GitHub Actions: typecheck → test → build |
 
@@ -377,13 +377,13 @@ Los datos de prueba se generan automáticamente al iniciar la app en desarrollo.
 | Aspecto | Estado |
 |---------|--------|
 | **Versión** | `1.0.0` — Producción |
-| **Backend** | 1146 passing tests — ~86% cobertura — typecheck sin errores |
-| **Frontend** | 104 passing tests — ~50 páginas — lazy loading — tema claro/oscuro — sidebar por rol |
+| **Backend** | 1330 passing tests — ~92% cobertura — typecheck sin errores |
+| **Frontend** | 1211 passing tests (177 archivos, suite completa en verde) — ~85% cobertura — ~50 páginas — lazy loading — tema claro/oscuro — sidebar por rol |
 | **CI/CD** | GitHub Actions (typecheck + test + build) + deploy a Render |
 | **Seguridad** | Helmet, CORS, rate limiting, Zod, 2FA, auditoría HMAC, IDOR fixes, captcha fail-closed |
 | **Multi-tenancy** | Implementado con planes SaaS auto-gestionables |
 | **i18n** | 🇪🇸 🇺🇸 🇧🇷 🇫🇷 completos — 3.079 claves c/u — paridad total verificada por test |
-| **Auditoría** | 2026-07-29 — Score ~75/100 — 30 corregidos — Mejoras de seguridad implementadas |
+| **Auditoría** | 2026-07-29 — Score ~75/100 — 30 corregidos — Mejoras de seguridad implementadas · 2026-08-11 suites completas en verde ✅ |
 | **Documentación** | API docs, ADR (monolito modular), Wiki Obsidian |
 | **Frontend** | Consolidado en `frontend/` (único) — `frontend-v3/` es solo un `node_modules` residual |
 

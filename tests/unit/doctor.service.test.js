@@ -25,6 +25,18 @@ vi.mock('../../src/shared/email.service.js', () => ({
   sendEmail: mockSendEmail,
 }));
 
+const mockJwtManager = vi.hoisted(() => ({
+  signInvite: vi.fn(() => 'mock-invite-token'),
+  verify: vi.fn(),
+}));
+vi.mock('../../src/shared/jwt.service.js', () => ({
+  jwtManager: mockJwtManager,
+}));
+
+vi.mock('../../src/utils/logger.js', () => ({
+  logger: { info: vi.fn(), error: vi.fn(), warn: vi.fn() },
+}));
+
 import * as doctorService from '../../src/modules/doctor/doctor.service.js';
 
 beforeEach(() => {
@@ -54,6 +66,14 @@ describe('doctorService.getAllDoctors', () => {
 
     expect(mockQuery.mock.calls[0][0]).toContain('tenant_id');
     expect(mockQuery.mock.calls[0][1]).toContain('tenant-1');
+  });
+
+  it('returns empty array when no doctors', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] });
+
+    const result = await doctorService.getAllDoctors('tenant-1');
+
+    expect(result).toEqual([]);
   });
 });
 
@@ -138,6 +158,26 @@ describe('doctorService.registerDoctor', () => {
     }, 'test-tenant');
 
     expect(result.doctor.name).toBe('Dr. EmailFail');
+  });
+
+  it('still returns doctor when sendEmail rejects', async () => {
+    mockSendEmail.mockRejectedValueOnce(new Error('smtp down'));
+    mockClient.query.mockImplementation((sql) => {
+      if (sql === 'BEGIN') return Promise.resolve({});
+      if (sql.includes('SELECT 1 FROM users WHERE rut')) return Promise.resolve({ rows: [] });
+      if (sql.includes('SELECT 1 FROM users WHERE email')) return Promise.resolve({ rows: [] });
+      if (sql.includes('INSERT INTO users')) return Promise.resolve({ rows: [{ id: 6, email: 'reject@test.com' }] });
+      if (sql.includes('INSERT INTO doctors')) return Promise.resolve({ rows: [{ id: 6, name: 'Dr. Reject', specialty: 'Medicina General' }] });
+      if (sql.includes('INSERT INTO doctor_availability')) return Promise.resolve({ rows: [] });
+      if (sql === 'COMMIT') return Promise.resolve({});
+      return Promise.resolve({ rows: [] });
+    });
+
+    const result = await doctorService.registerDoctor({
+      name: 'Dr. Reject', specialty: 'Medicina General', email: 'reject@test.com',
+    }, 'test-tenant');
+
+    expect(result.doctor.name).toBe('Dr. Reject');
   });
 
   it('registers doctor with RUT (no duplicate)', async () => {
@@ -265,7 +305,7 @@ describe('doctorService.createDoctor', () => {
 
     await expect(doctorService.createDoctor({
       name: 'Dr. Test', specialty: 'Medicina General', email: 'doc@test.com', user_id: 1,
-    }, 'test-tenant')).rejects.toThrow('Doctor already exists');
+    }, 'test-tenant')).rejects.toThrow('Doctor already exists for this user or email');
   });
 });
 
@@ -278,7 +318,7 @@ describe('doctorService.getDoctorById', () => {
     expect(result.name).toBe('Dr. Test');
   });
 
-  it('returns undefined if not found', async () => {
+  it('returns null if not found', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [] });
 
     const result = await doctorService.getDoctorById(999, 'test-tenant');
@@ -294,5 +334,170 @@ describe('doctorService.getDoctorByUserId', () => {
     const result = await doctorService.getDoctorByUserId(5, 'test-tenant');
 
     expect(result.user_id).toBe(5);
+  });
+
+  it('returns null when no doctor for user', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] });
+
+    const result = await doctorService.getDoctorByUserId(999, 'test-tenant');
+
+    expect(result).toBeNull();
+  });
+});
+
+describe('doctorService.invitePerson', () => {
+  it('throws if email is missing', async () => {
+    await expect(doctorService.invitePerson({ role: 'patient' }, 't1')).rejects.toThrow('Email is required');
+  });
+
+  it('throws if email is invalid', async () => {
+    await expect(doctorService.invitePerson({ email: 'not-email', role: 'patient' }, 't1')).rejects.toThrow('Invalid email');
+  });
+
+  it('throws if doctor role has no specialty', async () => {
+    await expect(doctorService.invitePerson({ email: 'doc@test.com', role: 'doctor' }, 't1')).rejects.toThrow('Specialty is required for doctors');
+  });
+
+  it('throws if email already registered in tenant', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [{}] });
+
+    await expect(doctorService.invitePerson({ email: 'taken@test.com', role: 'patient' }, 't1')).rejects.toThrow('Email already registered');
+  });
+
+  it('sends invitation for patient and signs invite token', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] });
+
+    await doctorService.invitePerson({ email: 'patient@test.com', name: 'Ana', role: 'patient' }, 't1');
+
+    expect(mockJwtManager.signInvite).toHaveBeenCalledWith(
+      expect.objectContaining({
+        email: 'patient@test.com',
+        name: 'Ana',
+        role: 'patient',
+        specialty: null,
+        tenant_id: 't1',
+        purpose: 'invite',
+      }),
+      '7d'
+    );
+    expect(mockSendEmail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        to: 'patient@test.com',
+        tenantId: 't1',
+        html: expect.stringContaining('mock-invite-token'),
+      })
+    );
+  });
+
+  it('clears specialty for lab_technician role', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] });
+
+    await doctorService.invitePerson({ email: 'tech@test.com', role: 'lab_technician', specialty: 'should-be-cleared' }, 't1');
+
+    expect(mockJwtManager.signInvite).toHaveBeenCalledWith(
+      expect.objectContaining({ role: 'lab_technician', specialty: null }),
+      expect.any(String)
+    );
+    expect(mockSendEmail).toHaveBeenCalled();
+  });
+});
+
+describe('doctorService.verifyInviteToken', () => {
+  it('returns payload for valid invite token', () => {
+    const payload = { email: 'a@test.com', name: 'Ana', role: 'patient', specialty: null, tenant_id: 't1', purpose: 'invite' };
+    mockJwtManager.verify.mockReturnValue(payload);
+
+    const result = doctorService.verifyInviteToken('token');
+
+    expect(result).toEqual(payload);
+    expect(mockJwtManager.verify).toHaveBeenCalledWith('token');
+  });
+
+  it('throws if payload has wrong purpose', () => {
+    mockJwtManager.verify.mockReturnValue({ email: 'a@test.com', purpose: 'setup-password' });
+
+    expect(() => doctorService.verifyInviteToken('token')).toThrow('Invalid or expired invitation token');
+  });
+
+  it('throws if verify returns null', () => {
+    mockJwtManager.verify.mockReturnValue(null);
+
+    expect(() => doctorService.verifyInviteToken('bad-token')).toThrow('Invalid or expired invitation token');
+  });
+});
+
+describe('doctorService.listTenantUsers', () => {
+  it('returns paginated users with totalPages', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [{ total: '25' }] });
+    mockQuery.mockResolvedValueOnce({ rows: [{ id: 1 }, { id: 2 }] });
+
+    const result = await doctorService.listTenantUsers('t1', 3, 10);
+
+    expect(result.data).toHaveLength(2);
+    expect(result.pagination).toEqual({ page: 3, limit: 10, total: 25, totalPages: 3 });
+    // params: [tenantId, limit, offset]
+    expect(mockQuery.mock.calls[1][1]).toEqual(['t1', 10, 20]);
+  });
+
+  it('filters by role', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [{ total: '1' }] });
+    mockQuery.mockResolvedValueOnce({ rows: [{ id: 1, role: 'doctor' }] });
+
+    await doctorService.listTenantUsers('t1', 1, 20, { role: 'doctor' });
+
+    expect(mockQuery.mock.calls[0][0]).toContain('u.role = $2');
+    expect(mockQuery.mock.calls[0][1].slice(0, 2)).toEqual(['t1', 'doctor']);
+  });
+
+  it('filters by search term', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [{ total: '1' }] });
+    mockQuery.mockResolvedValueOnce({ rows: [{ id: 1, name: 'Ana' }] });
+
+    await doctorService.listTenantUsers('t1', 1, 20, { search: 'ana' });
+
+    expect(mockQuery.mock.calls[0][0]).toContain('ILIKE');
+    expect(mockQuery.mock.calls[0][1].slice(0, 2)).toEqual(['t1', '%ana%']);
+  });
+
+  it('combines role and search filters with correct param indices', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [{ total: '5' }] });
+    mockQuery.mockResolvedValueOnce({ rows: [] });
+
+    await doctorService.listTenantUsers('t1', 1, 20, { role: 'doctor', search: 'ana' });
+
+    expect(mockQuery.mock.calls[0][0]).toContain('u.role = $2');
+    expect(mockQuery.mock.calls[0][0]).toContain('ILIKE $3');
+    expect(mockQuery.mock.calls[0][1].slice(0, 3)).toEqual(['t1', 'doctor', '%ana%']);
+    expect(mockQuery.mock.calls[1][1].slice(0, 3)).toEqual(['t1', 'doctor', '%ana%']);
+    expect(mockQuery.mock.calls[1][1].slice(3)).toEqual([20, 0]);
+  });
+});
+
+describe('doctorService.toggleUserActive', () => {
+  it('deactivates user and revokes refresh tokens', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [{ id: 1, email: 'u@test.com', name: 'U', role: 'user', active: false }] });
+    mockQuery.mockResolvedValueOnce({ rows: [] });
+
+    const result = await doctorService.toggleUserActive(1, 't1');
+
+    expect(result.active).toBe(false);
+    expect(mockQuery).toHaveBeenCalledTimes(2);
+    expect(mockQuery.mock.calls[1][0]).toContain('UPDATE refresh_tokens SET revoked = true');
+    expect(mockQuery.mock.calls[1][1]).toEqual([1]);
+  });
+
+  it('reactivates user without touching refresh tokens', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [{ id: 1, email: 'u@test.com', name: 'U', role: 'user', active: true }] });
+
+    const result = await doctorService.toggleUserActive(1, 't1');
+
+    expect(result.active).toBe(true);
+    expect(mockQuery).toHaveBeenCalledTimes(1);
+  });
+
+  it('throws if user not found in tenant', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] });
+
+    await expect(doctorService.toggleUserActive(999, 't1')).rejects.toThrow('User not found in this tenant');
   });
 });
