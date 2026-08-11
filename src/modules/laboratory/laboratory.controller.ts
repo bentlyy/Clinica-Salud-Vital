@@ -5,6 +5,7 @@ import { NotFoundError, BadRequestError } from '../../utils/errors.js';
 import { E } from '../../utils/error-codes.js';
 import { getQuery, getQueryInt } from '../../shared/query.js';
 import { onLabEvent, emitLabEvent, LAB_EVENTS } from './lab-events.service.js';
+import type { Request, Response } from 'express';
 
 // === Test Catalog ===
 export const getLabTests = asyncHandler(async (req, res) => {
@@ -335,7 +336,7 @@ export const acknowledgeNotificationCtrl = asyncHandler(async (req, res) => {
 });
 
 // === Real-time Events (SSE) ===
-export const handleLabEvents = (req: any, res: any) => {
+export const handleLabEvents = (req: Request, res: Response) => {
   res.writeHead(200, {
     'Content-Type': 'text/event-stream',
     'Cache-Control': 'no-cache',

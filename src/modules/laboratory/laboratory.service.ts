@@ -27,6 +27,21 @@ export interface LabRequestFilters {
   offset?: number;
 }
 
+export type ReferenceRange = { min?: number; max?: number; text?: string };
+
+export interface LabTestInput {
+  name: string;
+  description?: string;
+  code?: string;
+  category?: string;
+  unit?: string;
+  reference_min?: number;
+  reference_max?: number;
+  price?: number;
+  reference_ranges?: ReferenceRange[];
+  active?: boolean;
+}
+
 export const getLabTests = async ({ category, active = true, areaId, limit = 50, offset = 0 }: LabTestFilters = {}, tenantId?: string) => {
   let query = 'SELECT * FROM lab_tests WHERE 1=1';
   const params: any[] = [];
@@ -59,7 +74,7 @@ export const getLabTests = async ({ category, active = true, areaId, limit = 50,
   return result.rows;
 };
 
-export const createLabTest = async (data: { name: string; description?: string; code?: string; category?: string; unit?: string; reference_min?: number; reference_max?: number; price?: number; reference_ranges?: any }, tenantId: string) => {
+export const createLabTest = async (data: LabTestInput, tenantId: string) => {
   const { name, description, code, category, unit, reference_min, reference_max, price, reference_ranges } = data;
   if (!name) throw new BadRequestError(E.LAB_TEST_NAME_REQUIRED);
 
@@ -72,15 +87,16 @@ export const createLabTest = async (data: { name: string; description?: string; 
   return result.rows[0];
 };
 
-export const updateLabTest = async (id: number, data: Partial<{ name: string; description: string; code: string; category: string; unit: string; reference_min: number; reference_max: number; price: number; reference_ranges: any; active: boolean }>, tenantId: string) => {
+export const updateLabTest = async (id: number, data: Partial<LabTestInput>, tenantId: string) => {
   const fields: string[] = [];
-  const values: any[] = [];
+  const values: unknown[] = [];
   let paramCount = 1;
 
-  for (const key of ['name', 'description', 'code', 'category', 'unit', 'reference_min', 'reference_max', 'price', 'active']) {
-    if ((data as any)[key] !== undefined) {
+  const scalarKeys = ['name', 'description', 'code', 'category', 'unit', 'reference_min', 'reference_max', 'price', 'active'] as const;
+  for (const key of scalarKeys) {
+    if (data[key] !== undefined) {
       fields.push(`${key} = $${paramCount++}`);
-      values.push((data as any)[key]);
+      values.push(data[key]);
     }
   }
 

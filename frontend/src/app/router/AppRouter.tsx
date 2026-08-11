@@ -106,6 +106,12 @@ const MyMedicalHistoryDetailPage = lazy(() => import('@/modules/medical-history/
 // Not Found
 const NotFoundPage = lazy(() => import('@/modules/auth/pages/NotFoundPage'));
 
+const SUPERADMIN_ONLY = ['superadmin'];
+const ADMIN_STAFF = ['superadmin', 'admin'];
+const STAFF_ROLES = ['superadmin', 'admin', 'doctor', 'lab_technician'];
+const CLINICAL_ROLES = ['superadmin', 'admin', 'doctor', 'patient', 'user'];
+const BOOKING_ROLES = ['superadmin', 'admin', 'doctor', 'patient', 'user'];
+
 function ProtectedRoute({ children, allowedRoles }: { children: ReactNode; allowedRoles?: string[] }) {
   const { user, isAuthenticated, isLoading } = useAuth();
   const location = useLocation();
@@ -151,30 +157,86 @@ export function AppRouter() {
           }
         >
           <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/tenants" element={<SuperAdminTenantsPage />} />
-          <Route path="/tenants/:id" element={<SuperAdminTenantDetailPage />} />
+          <Route path="/tenants" element={
+            <ProtectedRoute allowedRoles={SUPERADMIN_ONLY}>
+              <SuperAdminTenantsPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/tenants/:id" element={
+            <ProtectedRoute allowedRoles={SUPERADMIN_ONLY}>
+              <SuperAdminTenantDetailPage />
+            </ProtectedRoute>
+          } />
           <Route path="/super-admin/users" element={
-            <ProtectedRoute allowedRoles={['superadmin']}>
+            <ProtectedRoute allowedRoles={SUPERADMIN_ONLY}>
               <SuperAdminUsersPage />
             </ProtectedRoute>
           } />
-          <Route path="/users" element={<UsersRoute />} />
+          <Route path="/users" element={
+            <ProtectedRoute allowedRoles={ADMIN_STAFF}>
+              <UsersRoute />
+            </ProtectedRoute>
+          } />
           <Route path="/cobros" element={
-            <ProtectedRoute allowedRoles={['superadmin']}>
+            <ProtectedRoute allowedRoles={SUPERADMIN_ONLY}>
               <SuperAdminBillingPage />
             </ProtectedRoute>
           } />
-          <Route path="/doctors" element={<DoctorsPage />} />
-          <Route path="/bookings" element={<BookingsPage />} />
-          <Route path="/clinical" element={<ClinicalPage />} />
-          <Route path="/management" element={<ManagementPage />} />
-          <Route path="/availability" element={<AvailabilityPage />} />
-          <Route path="/calendar" element={<DoctorCalendarPage />} />
-          <Route path="/clinical-records" element={<ClinicalRecordsPage />} />
-          <Route path="/clinical-records/:id" element={<ClinicalRecordDetailPage />} />
-          <Route path="/prescriptions" element={<PatientPrescriptionsPage />} />
-          <Route path="/medical-history" element={<MedicalHistoryPage />} />
-          <Route path="/laboratory" element={<FeatureRoute featureKey="laboratory" featureName="Laboratorio" />}>
+          <Route path="/doctors" element={
+            <ProtectedRoute allowedRoles={ADMIN_STAFF}>
+              <DoctorsPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/bookings" element={
+            <ProtectedRoute allowedRoles={BOOKING_ROLES}>
+              <BookingsPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/clinical" element={
+            <ProtectedRoute allowedRoles={['admin', 'doctor']}>
+              <ClinicalPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/management" element={
+            <ProtectedRoute allowedRoles={['admin', 'doctor']}>
+              <ManagementPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/availability" element={
+            <ProtectedRoute allowedRoles={['superadmin', 'admin', 'doctor']}>
+              <AvailabilityPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/calendar" element={
+            <ProtectedRoute allowedRoles={['superadmin', 'admin', 'doctor']}>
+              <DoctorCalendarPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/clinical-records" element={
+            <ProtectedRoute allowedRoles={CLINICAL_ROLES}>
+              <ClinicalRecordsPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/clinical-records/:id" element={
+            <ProtectedRoute allowedRoles={CLINICAL_ROLES}>
+              <ClinicalRecordDetailPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/prescriptions" element={
+            <ProtectedRoute allowedRoles={CLINICAL_ROLES}>
+              <PatientPrescriptionsPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/medical-history" element={
+            <ProtectedRoute allowedRoles={CLINICAL_ROLES}>
+              <MedicalHistoryPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/laboratory" element={
+            <ProtectedRoute allowedRoles={STAFF_ROLES}>
+              <FeatureRoute featureKey="laboratory" featureName="Laboratorio" />
+            </ProtectedRoute>
+          }>
             <Route index element={<LabDashboardPage />} />
             <Route path="requests" element={<LabRequestsPage />} />
             <Route path="requests/:id" element={<LabRequestDetailPage />} />
@@ -194,26 +256,62 @@ export function AppRouter() {
               <AdminMedicalHistoryPage />
             </ProtectedRoute>
           } />
-          <Route path="/billing" element={<BillingPage />} />
-          <Route path="/analytics" element={<AdminAnalyticsPage />} />
-          <Route path="/reports" element={<ReportsPage />} />
-          <Route path="/audit" element={<AuditPage />} />
+          <Route path="/billing" element={
+            <ProtectedRoute allowedRoles={ADMIN_STAFF}>
+              <BillingPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/analytics" element={
+            <ProtectedRoute allowedRoles={STAFF_ROLES}>
+              <AdminAnalyticsPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/reports" element={
+            <ProtectedRoute allowedRoles={STAFF_ROLES}>
+              <ReportsPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/audit" element={
+            <ProtectedRoute allowedRoles={ADMIN_STAFF}>
+              <AuditPage />
+            </ProtectedRoute>
+          } />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/notifications" element={
             <ProtectedRoute allowedRoles={['superadmin', 'lab_technician', 'admin', 'doctor']}>
               <NotificationsPage />
             </ProtectedRoute>
           } />
-          <Route path="/saas" element={<SuperAdminDashboardPage />} />
-          <Route path="/specialties" element={<SpecialtiesPage />} />
-          <Route path="/panel" element={<DoctorPanel />} />
-          <Route path="/doctor/lab-results" element={
+          <Route path="/saas" element={
+            <ProtectedRoute allowedRoles={SUPERADMIN_ONLY}>
+              <SuperAdminDashboardPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/specialties" element={
+            <ProtectedRoute allowedRoles={ADMIN_STAFF}>
+              <SpecialtiesPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/panel" element={
             <ProtectedRoute allowedRoles={['doctor']}>
+              <DoctorPanel />
+            </ProtectedRoute>
+          } />
+          <Route path="/doctor/lab-results" element={
+            <ProtectedRoute allowedRoles={STAFF_ROLES}>
               <DoctorLabResultsPage />
             </ProtectedRoute>
           } />
-          <Route path="/patient-history" element={<DoctorPatientHistoryPage />} />
-          <Route path="/patients" element={<PatientsPage />} />
+          <Route path="/patient-history" element={
+            <ProtectedRoute allowedRoles={['doctor']}>
+              <DoctorPatientHistoryPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/patients" element={
+            <ProtectedRoute allowedRoles={['admin', 'doctor']}>
+              <PatientsPage />
+            </ProtectedRoute>
+          } />
           <Route path="/admin/demo-data" element={
             <ProtectedRoute allowedRoles={['admin']}>
               <AdminDemoDataPage />
@@ -224,7 +322,11 @@ export function AppRouter() {
               <SuperAdminDemoDataPage />
             </ProtectedRoute>
           } />
-          <Route path="/medical-history/:id" element={<MyMedicalHistoryDetailPage />} />
+          <Route path="/medical-history/:id" element={
+            <ProtectedRoute allowedRoles={CLINICAL_ROLES}>
+              <MyMedicalHistoryDetailPage />
+            </ProtectedRoute>
+          } />
           <Route path="/my-laboratory" element={<PatientLabResultsPage />} />
           <Route path="/my-laboratory/:id" element={<LabResultDetailPage />} />
         </Route>

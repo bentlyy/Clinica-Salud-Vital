@@ -3,10 +3,11 @@ import { useTheme } from '@mui/material/styles';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import WarningAmber from '@mui/icons-material/WarningAmber';
 import { useTranslation } from 'react-i18next';
+import { memo } from 'react';
 
 import type { VitalsRecord } from '../types/analytics.types';
 
-function StatCard({ label, value, color }: { label: string; value: number | string; color: string }) {
+const StatCard = memo(function StatCard({ label, value, color }: { label: string; value: number | string; color: string }) {
   const theme = useTheme();
   return (
     <Paper sx={{ p: 2.5, border: `1px solid ${theme.palette.divider}`, textAlign: 'center' }}>
@@ -14,7 +15,7 @@ function StatCard({ label, value, color }: { label: string; value: number | stri
       <Typography variant="body2" sx={{ color: theme.palette.text.secondary, mt: 0.5 }}>{label}</Typography>
     </Paper>
   );
-}
+});
 
 export function VitalsPanel({ data }: { data: VitalsRecord[] }) {
   const theme = useTheme();
@@ -39,8 +40,8 @@ export function VitalsPanel({ data }: { data: VitalsRecord[] }) {
           <Typography variant="body2" sx={{ color: theme.palette.text.secondary, mb: 2 }}>
             {t('vital_anomalies_description')}
           </Typography>
-          {anomalies.map((d, i) => (
-            <Paper key={i} sx={{ p: 2, mb: 1, borderLeft: `4px solid ${theme.palette.error.main}` }}>
+          {anomalies.map((d) => (
+            <Paper key={`${d.patientId}-${d.date}`} sx={{ p: 2, mb: 1, borderLeft: `4px solid ${theme.palette.error.main}` }}>
               <Typography variant="body2" sx={{ fontWeight: 600 }}>{t('patient')}: {d.patientId}</Typography>
               <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
                 {d.date} | {t('pressure')}: {d.pressure} {d.pressureAnomaly && '⚠️'} |

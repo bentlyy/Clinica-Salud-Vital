@@ -72,9 +72,20 @@ tags: [convenciones, calidad, estandar]
 ### Rendimiento
 
 - `React.memo` en componentes que renderizan listas
+- `memo(function NombreComponente(...) {})` (con nombre) para preservar el displayName en React DevTools — evitar arrow anónimas
 - `key` única y estable en todos los `.map()` (nunca el índice)
+  - Listas reordenables/sortables (`slice`, ordenamiento): `key` = identificador de negocio (`id`, `doctor`, `day`, `date`, `diagnosis`)
+  - Sin id único: usar un compuesto estable (`${med.name}-${med.dosage}`)
+  - Índice solo para arrays estáticos sin reorden (skeletons, arrays parseados)
 - `useMemo`/`useCallback` en cálculos costosos
 - Lazy loading con `React.lazy` + `Suspense` para rutas pesadas
+
+### Errores
+
+- Errores de negocio SIEMPRE vía catálogo central `E.*` de `src/utils/error-codes.ts` — nunca string literales sueltos
+- Antes de borrar/renombrar un código de error, buscar consumidores (`grep` en frontend y tests)
+- Nunca `as any` para "tapar" un código que no existe: registrarlo en el catálogo con su mensaje
+- Backend lanza `BadRequestError(E.CODE)` — el código sale en la respuesta y el frontend lo traduce por i18n
 
 ### Estilos
 

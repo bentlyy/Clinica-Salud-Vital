@@ -38,8 +38,8 @@ export default function ClinicalPage() {
       <PageHeader title={t('tabClinical')} />
       <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
         <Tabs value={tab} onChange={(_, v) => setTab(v)} variant="scrollable" scrollButtons="auto" allowScrollButtonsMobile>
-          {tabs.map((tb, i) => (
-            <Tab key={i} label={tb.label} />
+          {tabs.map((tb) => (
+            <Tab key={tb.label} label={tb.label} />
           ))}
         </Tabs>
       </Box>

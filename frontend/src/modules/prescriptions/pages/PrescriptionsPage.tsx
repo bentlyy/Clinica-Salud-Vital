@@ -224,9 +224,9 @@ export default function PrescriptionsPage() {
                     </TableCell>
                     <TableCell>
                       <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', maxWidth: 300 }}>
-                        {prescription.medications.slice(0, 3).map((med: Medication, i: number) => (
+                        {prescription.medications.slice(0, 3).map((med: Medication) => (
                           <Chip
-                            key={i}
+                            key={`${med.name}-${med.dosage}`}
                             label={`${med.name} ${med.dosage}`}
                             size="small"
                             sx={{ fontSize: '0.7rem', height: 22 }}
@@ -349,9 +349,9 @@ export default function PrescriptionsPage() {
                 {t('medications')}
               </Typography>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mb: 3 }}>
-                {detailPrescription.medications.map((med, i) => (
+                {detailPrescription.medications.map((med) => (
                   <Paper
-                    key={i}
+                    key={`${med.name}-${med.dosage}`}
                     sx={{
                       p: 2,
                       border: `1px solid ${theme.palette.divider}`,

@@ -2,9 +2,10 @@ import { Box, Paper, Typography } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useTranslation } from 'react-i18next';
+import { memo } from 'react';
 import type { DemandRecord } from '../types/analytics.types';
 
-function StatCard({ label, value, color }: { label: string; value: number | string; color?: string }) {
+const StatCard = memo(function StatCard({ label, value, color }: { label: string; value: number | string; color?: string }) {
   const theme = useTheme();
   return (
     <Paper sx={{ p: 2.5, border: `1px solid ${theme.palette.divider}`, textAlign: 'center' }}>
@@ -12,7 +13,7 @@ function StatCard({ label, value, color }: { label: string; value: number | stri
       <Typography variant="body2" sx={{ color: theme.palette.text.secondary, mt: 0.5 }}>{label}</Typography>
     </Paper>
   );
-}
+});
 
 export function DemandPanel({ data }: { data: DemandRecord[] }) {
   const theme = useTheme();
@@ -48,8 +49,8 @@ export function DemandPanel({ data }: { data: DemandRecord[] }) {
           {t('forecast_description')}
         </Typography>
         <Box>
-          {data.slice(0, 7).map((d, i) => (
-            <Box key={i} sx={{ display: 'flex', justifyContent: 'space-between', py: 1, borderBottom: `1px solid ${theme.palette.custom.surface.sunken}` }}>
+          {data.slice(0, 7).map((d) => (
+            <Box key={d.date} sx={{ display: 'flex', justifyContent: 'space-between', py: 1, borderBottom: `1px solid ${theme.palette.custom.surface.sunken}` }}>
               <Typography variant="body2">{d.date}</Typography>
               <Typography variant="body2" sx={{ fontWeight: 600 }}>{d.predicted || d.bookings} {t('bookings')}</Typography>
               <Typography variant="body2" sx={{ color: d.predicted && d.predicted > d.bookings ? theme.palette.error.main : theme.palette.success.main }}>

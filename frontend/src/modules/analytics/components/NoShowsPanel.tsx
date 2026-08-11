@@ -1,10 +1,11 @@
 import { Box, Paper, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { useTranslation } from 'react-i18next';
+import { memo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import type { NoShowRecord } from '../types/analytics.types';
 
-function StatCard({ label, value, color }: { label: string; value: number | string; color: string }) {
+const StatCard = memo(function StatCard({ label, value, color }: { label: string; value: number | string; color: string }) {
   const theme = useTheme();
   return (
     <Paper sx={{ p: 2.5, border: `1px solid ${theme.palette.divider}`, textAlign: 'center' }}>
@@ -12,7 +13,7 @@ function StatCard({ label, value, color }: { label: string; value: number | stri
       <Typography variant="body2" sx={{ color: theme.palette.text.secondary, mt: 0.5 }}>{label}</Typography>
     </Paper>
   );
-}
+});
 
 export function NoShowsPanel({ data }: { data: NoShowRecord[] }) {
   const theme = useTheme();
@@ -59,11 +60,11 @@ export function NoShowsPanel({ data }: { data: NoShowRecord[] }) {
               </TableRow>
             </TableHead>
             <TableBody>
-              {data.slice(0, 5).map((d, i) => {
+              {data.slice(0, 5).map((d) => {
                 const pct = d.total > 0 ? (d.noShows / d.total) * 100 : 0;
                 const highRisk = pct > 15;
                 return (
-                  <TableRow key={i}>
+                  <TableRow key={d.doctor}>
                     <TableCell>{d.doctor}</TableCell>
                     <TableCell align="right" sx={{ color: highRisk ? theme.palette.error.main : theme.palette.success.main, fontWeight: 600 }}>
                       {pct.toFixed(1)}%

@@ -109,7 +109,6 @@ function formatMonthFactory(monthLabels: string[]) {
   };
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function extractList<T>(response: { data?: unknown }): T[] {
   const body = response?.data;
   if (Array.isArray(body) && 'data' in body && Array.isArray((body as { data: unknown }).data)) {
@@ -119,7 +118,6 @@ function extractList<T>(response: { data?: unknown }): T[] {
   return [];
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function extractObject<T>(response: { data?: unknown }): T | null {
   const body = response?.data;
   if (body && typeof body === 'object' && !Array.isArray(body)) {

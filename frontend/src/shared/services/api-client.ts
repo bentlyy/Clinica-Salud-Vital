@@ -23,13 +23,25 @@ export function setUnauthorizedHandler(handler: () => void) {
   onUnauthorized = handler;
 }
 
+function getCsrfToken(): string | null {
+  if (typeof document !== 'undefined') {
+    const match = document.cookie.match(/(?:^|;\s*)csrf_token=([^;]+)/);
+    if (match) return decodeURIComponent(match[1] as string);
+  }
+  return localStorage.getItem('csrf_token');
+}
+
 export function refreshSession(): Promise<AuthResponse> {
   if (refreshPromise) return refreshPromise;
+  const csrfToken = getCsrfToken();
   refreshPromise = axios
     .post<AuthResponse>(
       `${API_BASE_URL}/auth/refresh`,
       {},
-      { withCredentials: true },
+      {
+        withCredentials: true,
+        headers: csrfToken ? { 'X-CSRF-Token': csrfToken } : undefined,
+      },
     )
     .then(({ data }) => {
       setAccessToken(data.access_token);
@@ -60,7 +72,7 @@ apiClient.interceptors.request.use((config) => {
   }
 
   if (config.method && !['get', 'head', 'options'].includes(config.method)) {
-    const csrfToken = localStorage.getItem('csrf_token');
+    const csrfToken = getCsrfToken();
     if (csrfToken) {
       config.headers['X-CSRF-Token'] = csrfToken;
     }
