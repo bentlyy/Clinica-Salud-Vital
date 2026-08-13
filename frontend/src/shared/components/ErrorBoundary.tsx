@@ -1,11 +1,12 @@
 import { Component, Fragment, type ReactNode } from 'react';
 import { withTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { Box, Button, Typography, Paper } from '@mui/material';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 
 interface ErrorBoundaryProps {
   children: ReactNode;
-  t: (key: string, fallback?: string) => string;
+  t: TFunction;
 }
 
 interface ErrorBoundaryState {

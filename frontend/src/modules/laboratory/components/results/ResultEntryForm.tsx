@@ -1,5 +1,6 @@
 import { memo, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import {
   Box,
   Typography,
@@ -19,14 +20,14 @@ import type { LabRequestItem } from '../../types/lab.types';
 
 // ── Schema ───────────────────────────────────────────────────────────────────
 
-const resultEntrySchema = (t: (key: string, fallback?: string) => string) =>
+const resultEntrySchema = (t: TFunction) =>
   z.object({
     result_value: z.string().min(1, t('lab:validation.resultRequired', 'El valor del resultado es requerido')),
     unit: z.string().optional(),
     notes: z.string().optional(),
   });
 
-type ResultEntryValues = z.infer<typeof resultEntrySchema>;
+type ResultEntryValues = z.infer<ReturnType<typeof resultEntrySchema>>;
 
 // ── Props ────────────────────────────────────────────────────────────────────
 

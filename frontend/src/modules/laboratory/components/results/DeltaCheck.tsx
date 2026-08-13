@@ -1,5 +1,6 @@
 import { memo, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import {
   Box,
   Typography,
@@ -55,7 +56,7 @@ function getDeltaColor(
   return { main: theme?.palette.success.main ?? '#10b981', bg: theme?.palette.success.light ?? '#ecfdf5', text: theme?.palette.success.dark ?? '#065f46' };
 }
 
-function getStatusLabel(status: string, t: (key: string, fallback?: string) => string): string {
+function getStatusLabel(status: string, t: TFunction): string {
   switch (status) {
     case 'critical':
       return t('lab:statusCritical', 'Crítico');
