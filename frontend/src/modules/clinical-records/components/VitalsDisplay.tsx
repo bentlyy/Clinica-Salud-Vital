@@ -5,50 +5,57 @@ import Favorite from '@mui/icons-material/Favorite';
 import Scale from '@mui/icons-material/Scale';
 import Height from '@mui/icons-material/Height';
 import Opacity from '@mui/icons-material/Opacity';
+import { useTranslation } from 'react-i18next';
 import { MotionDiv } from '@/shared/utils/animations';
 
 interface VitalsDisplayProps {
   vitals: Record<string, string>;
 }
 
-const VITAL_CONFIG: Record<string, { label: string; icon: React.ReactNode; color: string; bgColor: string; unit: string }> = {
+const VITAL_CONFIG: Record<string, { labelKey: string; labelFallback: string; icon: React.ReactNode; color: string; bgColor: string; unit: string }> = {
   temperature: {
-    label: 'Temperatura',
+    labelKey: 'clinical_records:temperature',
+    labelFallback: 'Temperatura',
     icon: <Thermostat />,
     color: '#ef4444',
     bgColor: '#fef2f2',
     unit: '°C',
   },
   blood_pressure: {
-    label: 'Presión Arterial',
+    labelKey: 'clinical_records:blood_pressure',
+    labelFallback: 'Presión Arterial',
     icon: <MonitorHeart />,
     color: '#2563eb',
     bgColor: '#eff6ff',
     unit: 'mmHg',
   },
   heart_rate: {
-    label: 'Frecuencia Cardíaca',
+    labelKey: 'clinical_records:heart_rate',
+    labelFallback: 'Frecuencia Cardíaca',
     icon: <Favorite />,
     color: '#ec4899',
     bgColor: '#fdf2f8',
     unit: 'lpm',
   },
   weight: {
-    label: 'Peso',
+    labelKey: 'clinical_records:weight',
+    labelFallback: 'Peso',
     icon: <Scale />,
     color: '#8b5cf6',
     bgColor: '#f5f3ff',
     unit: 'kg',
   },
   height: {
-    label: 'Estatura',
+    labelKey: 'clinical_records:height',
+    labelFallback: 'Altura',
     icon: <Height />,
     color: '#059669',
     bgColor: '#ecfdf5',
     unit: 'cm',
   },
   oxygen_saturation: {
-    label: 'Saturación Oò',
+    labelKey: 'clinical_records:oxygen_saturation',
+    labelFallback: 'Saturación de Oxígeno',
     icon: <Opacity />,
     color: '#0d9488',
     bgColor: '#f0fdfa',
@@ -59,6 +66,7 @@ const VITAL_CONFIG: Record<string, { label: string; icon: React.ReactNode; color
 const vitalsOrder = ['temperature', 'blood_pressure', 'heart_rate', 'weight', 'height', 'oxygen_saturation'];
 
 export function VitalsDisplay({ vitals }: VitalsDisplayProps) {
+  const { t } = useTranslation();
   const entries = vitalsOrder
     .filter((key) => vitals[key] !== undefined && vitals[key] !== '')
     .map((key) => ({ key, config: VITAL_CONFIG[key]!, value: vitals[key] }));
@@ -67,7 +75,7 @@ export function VitalsDisplay({ vitals }: VitalsDisplayProps) {
     return (
       <Box sx={{ textAlign: 'center', py: 3 }}>
         <Typography variant="body2" sx={{ color: '#9ca3af' }}>
-          No hay signos vitales registrados
+          {t('clinical_records:noVitals', 'No hay signos vitales registrados')}
         </Typography>
       </Box>
     );
@@ -114,7 +122,7 @@ export function VitalsDisplay({ vitals }: VitalsDisplayProps) {
                 </Box>
                 <Box sx={{ flex: 1, minWidth: 0 }}>
                   <Typography variant="caption" sx={{ color: '#9ca3af', fontWeight: 500 }}>
-                    {config.label}
+                    {t(config.labelKey, config.labelFallback)}
                   </Typography>
                   <Typography variant="h6" sx={{ fontWeight: 700, color: '#1f2937', lineHeight: 1.2 }}>
                     {value}

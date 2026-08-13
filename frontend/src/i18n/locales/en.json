@@ -225,7 +225,26 @@
     "overdue": "Overdue",
     "expired": "Expired",
     "doctor": "Doctor",
-    "to": "to"
+    "to": "to",
+    "appName": "Clinic",
+    "rut": "RUT",
+    "tenant": "Tenant",
+    "unknown": "Unknown",
+    "noOptions": "No results",
+    "comboboxPlaceholder": "Type or select...",
+    "addOption": "Add \"{{value}}\"",
+    "activeTooltip": "Active — Click to deactivate",
+    "inactiveTooltip": "Inactive — Click to activate",
+    "clearSearch": "Clear search",
+    "roles": {
+      "superadmin": "Super Admin",
+      "admin": "Administrator",
+      "doctor": "Doctor",
+      "lab_technician": "Lab Technician",
+      "patient": "Patient",
+      "guest": "Guest",
+      "user": "User"
+    }
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -606,7 +625,15 @@
     "newRequest": "New Request",
     "requestDetail": "Request Detail",
     "requestNumber": "Request No.",
-    "patient": "Patient",
+    "patient": {
+      "status": {
+        "completed": "Completed",
+        "in_progress": "In progress",
+        "pending": "Pending",
+        "cancelled": "Cancelled",
+        "unknown": "Unknown"
+      }
+    },
     "doctor": "Doctor",
     "tests": "Tests",
     "testCount": "tests",
@@ -617,7 +644,22 @@
     "area": "Area",
     "assignedTo": "Assigned to",
     "requestedAt": "Requested",
-    "results": "Results",
+    "results": {
+      "critical": "Critical",
+      "alert": "Alert",
+      "normal": "Normal",
+      "noStatus": "No status",
+      "previous": "Previous: ",
+      "noPrevious": "No previous value",
+      "refRange": "Reference range: ",
+      "review": "Review",
+      "deltaTitle": "Delta Check — {{test}}",
+      "deltaMessage": "Patient {{patient}}: result {{current}} vs previous {{previous}}",
+      "trendTitle": "Result Trend",
+      "noHistory": "No historical data available.",
+      "insufficientHistory": "Insufficient history",
+      "needTwo": "At least 2 results are required…"
+    },
     "resultValue": "Value",
     "resultUnit": "Unit",
     "referenceRange": "Reference Range",
@@ -647,7 +689,53 @@
     "qualityControl": "Quality Control",
     "qcRecords": "QC Records",
     "controlChart": "Control Chart",
-    "inventory": "Inventory",
+    "inventory": {
+      "equipmentTitle": "Equipment Inventory",
+      "addEquipment": "Add Equipment",
+      "totalEquipment": "Total Equipment",
+      "online": "Online",
+      "maintSoon": "Next Maint.",
+      "noEquipment": "No equipment registered",
+      "expired": "Expired",
+      "equipmentCols": {
+        "name": "Name",
+        "model": "Model",
+        "serial": "Serial",
+        "area": "Area",
+        "status": "Status",
+        "connection": "Connection",
+        "lastMaint": "Last Maint.",
+        "nextMaint": "Next Maint.",
+        "actions": "Actions"
+      },
+      "connectionLabels": {
+        "manual": "Manual",
+        "hl7": "HL7",
+        "astm": "ASTM",
+        "serial": "Serial",
+        "file": "File"
+      },
+      "edit": "Edit",
+      "reagentTitle": "Reagent Inventory",
+      "addReagent": "Add Reagent",
+      "totalReagents": "Total Reagents",
+      "lowStock": "Low Stock",
+      "expiring": "Expiring",
+      "noReagents": "No reagents registered",
+      "reagentCols": {
+        "name": "Name",
+        "lot": "Lot",
+        "supplier": "Supplier",
+        "stock": "Stock",
+        "minStock": "Min. Stock",
+        "expiry": "Expiry",
+        "area": "Area",
+        "status": "Status",
+        "actions": "Actions"
+      },
+      "active": "Active",
+      "inactive": "Inactive"
+    },
     "reagents": "Reagents",
     "equipment": "Equipment",
     "analytics": "Analytics",
@@ -664,7 +752,7 @@
     "pipeline": "Pipeline",
     "kanban": "Kanban",
     "viewDetail": "View detail",
-    "moveTo": "Move to",
+    "moveTo": "Move to {{status}}",
     "cancelRequest": "Cancel request",
     "noRequests": "No requests in queue",
     "noRequestsWithFilters": "No requests found with current filters.",
@@ -687,7 +775,9 @@
     "samplesProcessedToday": "Samples Today",
     "productivityPerHour": "Productivity per hour",
     "workload": "Workload",
-    "validation": "Validation",
+    "validation": {
+      "resultRequired": "The result value is required"
+    },
     "online": "Online",
     "offline": "Offline",
     "elapsedTime": "Elapsed time",
@@ -719,7 +809,12 @@
     "addReagent": "Add Reagent",
     "editReagent": "Edit Reagent",
     "equipmentName": "Equipment Name",
-    "equipmentStatus": "Equipment Status",
+    "equipmentStatus": {
+      "online": "Online",
+      "offline": "Offline",
+      "maintenance": "Maintenance",
+      "calibration": "Calibration"
+    },
     "equipmentStatuses": {
       "operational": "Operational",
       "maintenance": "Maintenance",
@@ -926,8 +1021,120 @@
     "reagentRegistered": "Reagent registered",
     "reagentUpdated": "Reagent updated",
     "notificationsRead": "Notifications marked as read",
-    "allAreas": "All areas",
-    "moveTo": "Move to {{status}}"
+    "areaLabels": {
+      "HEM": "Hematology",
+      "BIO": "Biochemistry",
+      "HOR": "Hormones",
+      "INM": "Immunology",
+      "MIC": "Microbiology",
+      "PAR": "Parasitology",
+      "URO": "Urinalysis",
+      "COA": "Coagulation",
+      "SER": "Serology"
+    },
+    "sampleTypeLabels": {
+      "blood": "Blood",
+      "urine": "Urine",
+      "feces": "Feces",
+      "sputum": "Sputum",
+      "swab": "Swab",
+      "csf": "CSF",
+      "other": "Other"
+    },
+    "containerTypeLabels": {
+      "tube": "Tube",
+      "flask": "Flask",
+      "jar": "Jar",
+      "swab": "Swab",
+      "slide": "Slide"
+    },
+    "notificationTypeLabels": {
+      "critical_result": "Critical Result",
+      "qc_failure": "QC Failure",
+      "equipment_alert": "Equipment Alert",
+      "stock_alert": "Stock Alert",
+      "sla_breach": "SLA Breach",
+      "repeated_result": "Repeated Result"
+    },
+    "noItems": "No items",
+    "drPrefix": "Dr. ",
+    "media": "Mean",
+    "noRange": "No reference range defined",
+    "qc": {
+      "withinRange": "Within range (Passed)",
+      "outOfRange": "Out of range (Failed)",
+      "validationTitle": "Pending Validation List",
+      "techTab": "Technical Validation",
+      "medTab": "Medical Validation",
+      "cols": {
+        "patient": "Patient",
+        "test": "Test",
+        "result": "Result",
+        "reference": "Reference",
+        "status": "Status",
+        "actions": "Actions"
+      },
+      "validateTech": "Validate Technical",
+      "validateMed": "Validate Medical",
+      "noPending": "No results pending validation"
+    },
+    "catalog": {
+      "categories": {
+        "HEM": "Hematology",
+        "GLU": "Glucose",
+        "LIP": "Lipids",
+        "CRE": "Kidney",
+        "TSH": "Thyroid",
+        "URO": "Urine",
+        "HBA": "HbA1c",
+        "PCR": "Inflammation",
+        "ALT": "Liver",
+        "GENERAL": "General"
+      }
+    },
+    "statusLabels.completed": "Completed",
+    "statusLabels.in_progress": "In progress",
+    "areaRequired": "Area is required",
+    "selectAreaRequired": "Select an area",
+    "testRequired": "Test is required",
+    "selectTestRequired": "Select a test",
+    "qcTypeRequired": "QC type is required",
+    "controlNameRequired": "Control name is required",
+    "lotNumberRequired": "Lot number is required",
+    "expirationDateRequired": "Expiration date is required",
+    "mustBePositive": "Must be positive",
+    "measuredValueRequired": "Measured value is required",
+    "minLessThanMax": "Minimum must be lower than maximum",
+    "testNameRequired": "Test name required",
+    "valueRequired": "Value required",
+    "atLeastOneResult": "Add at least one result",
+    "locationRequired": "Location required",
+    "maxChars100": "Maximum 100 characters",
+    "maxChars50": "Maximum 50 characters",
+    "sampleTypeRequired": "Sample type required",
+    "containerTypeRequired": "Container type required",
+    "volumeGreaterThanZero": "Volume must be greater than 0",
+    "labelRequired": "Label required",
+    "pendingValidation": "Pending Validation",
+    "withoutName": "Unnamed",
+    "statusNormal": "Normal",
+    "statusUnknown": "No status",
+ "statusCritical": "Critical",
+ "statusWarning": "Warning",
+ "previousLabel": "Previous: {{value}}",
+ "noPreviousValue": "No previous value",
+ "refRangeLabel": "Ref range: {{range}}",
+    "totalEquipment": "Total Equipment",
+    "totalReagents": "Total Reagents",
+    "expiredPlural": "Expired",
+    "name": "Name",
+    "lastMaintenance": "Last Maint.",
+    "edit": "Edit",
+    "active": "Active",
+    "inactive": "Inactive",
+    "idTypeManual": "Manual",
+    "idTypeSerial": "Serial",
+    "idTypeFile": "File"
   },
   "bookings": {
     "title": "Appointments",
@@ -992,7 +1199,7 @@
     "unknown_status": "Unknown",
     "patient_guest": "Patient / Guest",
     "not_specified": "Not specified",
-    "created": "Created",
+    "created": "Appointment created successfully",
     "updated": "Updated",
     "confirm_cancel_message": "Are you sure you want to cancel this appointment? This action cannot be undone.",
     "no_keep": "No, keep",
@@ -1062,10 +1269,18 @@
     "waitlistAvailable": "A spot is available",
     "waitlistFull": "Waitlist is full",
     "no_bookings_calendar": "No bookings for this date",
-    "created": "Appointment created successfully",
     "createError": "Error creating the appointment",
     "cancelled": "Appointment cancelled successfully",
-    "cancelError": "Error cancelling the appointment"
+    "cancelError": "Error cancelling the appointment",
+    "recurring": "Recurring appointment",
+    "recurring_help": "Repeat this appointment automatically",
+    "frequency_daily": "Daily",
+    "frequency_weekly": "Weekly",
+    "frequency_monthly": "Monthly",
+    "occurrences": "Number of appointments",
+    "occurrences_help": "Total appointments to schedule",
+    "seriesCreated": "Appointment series created successfully",
+    "seriesCancelled": "Appointment series cancelled"
   },
   "clinicalRecords": {
     "title": "Medical Records",
@@ -1254,7 +1469,16 @@
     "created": "Prescription created successfully",
     "updated": "Prescription updated successfully",
     "deleted": "Prescription deleted successfully",
-    "downloadError": "Error downloading the PDF"
+    "downloadError": "Error downloading the PDF",
+    "validation": {
+      "medRequired": "Medication name is required",
+      "doseRequired": "Dosage is required",
+      "freqRequired": "Frequency is required",
+      "durationRequired": "Duration is required",
+      "patientRequired": "Patient name is required",
+      "selectPatient": "Select a patient",
+      "addMedication": "Add at least one medication"
+    }
   },
   "medicalHistory": {
     "title": "Medical History",
@@ -1365,7 +1589,7 @@
     "active": "Active",
     "inactive": "Inactive",
     "noDoctors": "No doctors registered",
-    "doctorCreated": "Doctor registered successfully",
+    "doctorCreated": "Doctor created successfully",
     "doctorUpdated": "Doctor updated successfully",
     "doctorDeactivated": "Doctor deactivated successfully",
     "doctorActivated": "Doctor activated successfully",
@@ -1457,7 +1681,6 @@
     "sending": "Sending...",
     "send_invitation": "Send Invitation",
     "valid_email": "Please enter a valid email address",
-    "doctorCreated": "Doctor created successfully",
     "inviteSent": "Invitation sent successfully"
   },
   "patients": {
@@ -1782,7 +2005,26 @@
     "min_one_service": "At least one service is required",
     "cancel": "Cancel",
     "invoiceDeleted": "Invoice deleted successfully",
-    "invoicePaid": "Invoice marked as paid"
+    "invoicePaid": "Invoice marked as paid",
+    "summary": {
+      "totalRevenue": "Total Revenue",
+      "pending": "Pending Payment",
+      "overdue": "Overdue Invoices",
+      "last30Days": "Invoices Last 30 Days",
+      "pendingPayment": "Pending Payment",
+      "overdueInvoices": "Overdue Invoices",
+      "invoicesLast30": "Invoices Last 30 Days"
+    },
+    "validation": {
+      "descriptionRequired": "Description is required",
+      "quantityMin": "Quantity must be at least 1",
+      "unitPricePositive": "Unit price must be positive",
+      "selectPatient": "Select a patient",
+      "dueDateRequired": "Due date is required",
+      "taxPositive": "Tax must be positive",
+      "taxMax": "Tax cannot exceed 100%",
+      "addService": "Add at least one service"
+    }
   },
   "availability": {
     "title": "Schedule",
@@ -1962,7 +2204,11 @@
       "logout": "Logout",
       "view": "View",
       "export": "Export",
-      "validate": "Validation"
+      "validate": "Validation",
+      "approve": "Approval",
+      "reject": "Rejection",
+      "assign": "Assignment",
+      "cancel": "Cancellation"
     },
     "entityLabels": {
       "user": "User",
@@ -1973,7 +2219,10 @@
       "lab_result": "Lab Result",
       "clinical_record": "Medical Record",
       "prescription": "Prescription",
-      "equipment": "Equipment"
+      "equipment": "Equipment",
+      "template": "Template",
+      "tenant": "Clinic",
+      "billing": "Billing"
     },
     "noAuditLogs": "No audit logs",
     "searchPlaceholder": "Search audit...",
@@ -2006,7 +2255,14 @@
       "entity": "Entity",
       "entityId": "Entity ID",
       "ip": "IP"
-    }
+    },
+    "detailTitle": "Audit Detail",
+    "id": "ID",
+    "idValue": "ID: {{id}}",
+    "idEntidad": "Entity ID",
+    "fechaHora": "Date/Time",
+    "detallesAdicionales": "Additional Details",
+    "userValue": "User #{{id}}"
   },
   "notifications": {
     "title": "Notifications",
@@ -2042,7 +2298,14 @@
     "systemUpdates": "System updates",
     "securityAlerts": "Security alerts",
     "clinicFilter": "Filter by clinic",
-    "allClinics": "All clinics"
+    "allClinics": "All clinics",
+    "type": {
+      "info": "Info",
+      "warning": "Warning",
+      "success": "Success",
+      "error": "Error"
+    },
+    "bellTooltip": "Notifications ({{count}})"
   },
   "settings": {
     "title": "Settings",
@@ -2147,8 +2410,8 @@
     "two_factor_auth": "Two-factor authentication",
     "active_sessions": "Active sessions",
     "revoke_all_sessions": "Revoke all sessions",
-    "passwordChanged": "Password changed successfully",
-    "qrCode2fa": "QR Code 2FA"
+    "qrCode2fa": "QR Code 2FA",
+    "tenant_label": "Tenant"
   },
   "superAdmin": {
     "title": "SaaS Panel",
@@ -2394,7 +2657,10 @@
     "completed": "Completed",
     "pending": "Pending",
     "pending_section": "Pending",
-    "completed_section": "Completed"
+    "completed_section": "Completed",
+    "out_of_range": "Out of range",
+    "new_badge": "New",
+    "anomaly_banner": "This report contains {{count}} out-of-range values"
   },
   "doctor_calendar": {
     "title": "My Calendar",
@@ -2525,7 +2791,14 @@
     "last30Days": "Last 30 days",
     "last90Days": "Last 90 days",
     "customRange": "Custom range",
-    "allTime": "All time"
+    "allTime": "All time",
+    "sundayShort": "Sun",
+    "mondayShort": "Mon",
+    "tuesdayShort": "Tue",
+    "wednesdayShort": "Wed",
+    "thursdayShort": "Thu",
+    "fridayShort": "Fri",
+    "saturdayShort": "Sat"
   },
   "not_found": {
     "title": "Page Not Found",
@@ -2589,7 +2862,9 @@
     "status.confirmed": "Confirmed",
     "status.completed": "Completed",
     "status.cancelled": "Cancelled",
-    "status.no_show": "No show"
+    "status.no_show": "No show",
+    "openFicha": "View record",
+    "todayGroup": "Today's agenda by status"
   },
   "patient_history": {
     "title": "Patient History",
@@ -2611,6 +2886,37 @@
     "noExamsDesc": "This patient has no laboratory exams.",
     "downloadPdf": "Download PDF",
     "priority": "Priority"
+  },
+  "patient_ficha": {
+    "title": "Patient Record",
+    "subtitle": "Consolidated clinical information",
+    "tabSummary": "Summary",
+    "tabBookings": "Appointments ({{count}})",
+    "tabHistory": "History",
+    "tabPrescriptions": "Prescriptions ({{count}})",
+    "tabAttachments": "Attachments",
+    "tabLab": "Laboratory ({{count}})",
+    "summaryRecords": "Clinical records",
+    "summaryBookings": "Appointments",
+    "summaryPrescriptions": "Prescriptions",
+    "summaryLab": "Exams",
+    "summaryAttachments": "Attachments",
+    "noBookings": "No appointments recorded",
+    "noBookingsDesc": "This patient has no appointments associated with you.",
+    "noPrescriptions": "No prescriptions",
+    "noPrescriptionsDesc": "This patient has no registered prescriptions.",
+    "noAttachments": "No attachments",
+    "noAttachmentsDesc": "Upload documents such as orders, certificates or exam results.",
+    "medicalHistory": "Medical history",
+    "noMedicalHistory": "No medical history",
+    "noMedicalHistoryDesc": "This patient has no registered medical history.",
+    "historyStatus": "Status",
+    "historyActive": "Active",
+    "historyResolved": "Resolved",
+    "historyChronic": "Chronic",
+    "historyFamily": "Family",
+    "recordDoctor": "Dr. {{name}}",
+    "bookingDate": "{{date}} · {{time}}"
   },
   "lab_catalog": {
     "title": "Laboratory Test Catalog",
@@ -2690,7 +2996,10 @@
     "pending": "Pending",
     "requestNotes": "REQUEST NOTES:",
     "errorLoading": "Error loading result",
-    "notFound": "Result not found"
+    "notFound": "Result not found",
+    "anomalyBanner": "This report contains {{count}} out-of-range value(s)",
+    "high": "High",
+    "low": "Low"
   },
   "admin_lab_requests": {
     "title": "Lab Requests",
@@ -2858,7 +3167,8 @@
     "cancel": "Cancel",
     "created": "Record created successfully",
     "updated": "Record updated successfully",
-    "deleted": "Record deleted successfully"
+    "deleted": "Record deleted successfully",
+    "noVitals": "No vital signs recorded"
   },
   "clinical_record_detail": {
     "loading_record": "Loading record...",
@@ -3180,7 +3490,24 @@
     "cases": "cases",
     "top_diagnoses_chart": "Top Diagnoses",
     "doctor": "Doctor",
-    "noData": "No data"
+    "noData": "No data",
+    "csv": {
+      "metricsTitle": "Metrics",
+      "metric": "Metric",
+      "value": "Value",
+      "bookingsTitle": "Bookings by Month",
+      "month": "Month",
+      "bookings": "Bookings",
+      "statusTitle": "Booking Status",
+      "status": "Status",
+      "count": "Count",
+      "doctorsTitle": "Top Doctors",
+      "doctor": "Doctor",
+      "specialty": "Specialty",
+      "confirmed": "Confirmed"
+    },
+    "cie10": "CIE-10: ",
+    "cie10Prefix": "CIE-10: "
   },
   "register": {
     "title": "Create Account",
@@ -3257,9 +3584,20 @@
     "colDoctor": "Doctor",
     "colSpecialty": "Specialty",
     "colBookings": "Bookings",
-    "colConfirmed": "Confirmed"
+    "colConfirmed": "Confirmed",
+    "exportCSV": "Export CSV",
+    "csvMetrics": "Metrics",
+    "csvMetric": "Metric",
+    "csvValue": "Value",
+    "csvBookingsByMonth": "Bookings by month",
+    "csvMonth": "Month",
+    "csvBookings": "Bookings",
+    "csvBookingStatus": "Booking status",
+    "csvStatus": "Status",
+    "csvCount": "Count",
+    "csvTopDoctors": "Top doctors"
   },
-  "clinical_templates":{
+  "clinical_templates": {
     "created": "Template created successfully",
     "updated": "Template updated successfully",
     "deleted": "Template deleted successfully"

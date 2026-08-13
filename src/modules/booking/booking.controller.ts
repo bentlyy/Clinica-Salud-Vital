@@ -31,6 +31,16 @@ export const cancelBooking = asyncHandler(async (req: Request, res: Response) =>
   res.json(result);
 });
 
+export const rescheduleBooking = asyncHandler(async (req: Request, res: Response) => {
+  const result = await bookingService.rescheduleBooking(
+    Number(req.params.id),
+    req.user!.id,
+    req.tenant_id,
+    { date: req.body.date, time: req.body.time, duration: req.body.duration },
+  );
+  res.json(result);
+});
+
 export const confirmBooking = asyncHandler(async (req: Request, res: Response) => {
   const result = await bookingService.confirmBooking(String(req.params.token), req.tenant_id);
   res.json(result);
@@ -61,8 +71,10 @@ export const getAllBookingsAdmin = asyncHandler(async (req: Request, res: Respon
   const page = getQueryInt(req.query, 'page', 1);
   const limit = getQueryInt(req.query, 'limit', 100);
   const status = getQueryString(req.query, 'status', '');
+  const start_date = getQueryString(req.query, 'start_date', '');
+  const end_date = getQueryString(req.query, 'end_date', '');
   const tenantId = req.user!.role === 'superadmin' ? undefined : req.tenant_id;
-  const bookings = await bookingService.getAllBookings({ page, limit, status }, tenantId);
+  const bookings = await bookingService.getAllBookings({ page, limit, status, start_date, end_date }, tenantId);
   res.json(bookings);
 });
 
@@ -78,4 +90,40 @@ export const getDoctorBookings = asyncHandler(async (req: Request, res: Response
   const status = getQueryString(req.query, 'status', '');
   const bookings = await bookingService.getBookingsByDoctor(doctor.id, { page, limit, status }, req.tenant_id);
   res.json(bookings);
+});
+
+export const createBookingSeries = asyncHandler(async (req: Request, res: Response) => {
+  const series = await bookingService.createBookingSeries({
+    doctor_id: req.body.doctor_id,
+    user_id: req.body.user_id,
+    frequency: req.body.frequency,
+    interval_count: req.body.interval_count,
+    start_date: req.body.start_date,
+    time: req.body.time,
+    duration: req.body.duration,
+    occurrences: req.body.occurrences,
+  }, req.tenant_id);
+
+  res.status(201).json(series);
+});
+
+export const getMyBookingSeries = asyncHandler(async (req: Request, res: Response) => {
+  const role = req.user!.role;
+  if (role === 'doctor') {
+    const doctor = await doctorService.getDoctorByUserId(req.user!.id, req.tenant_id);
+    if (!doctor) throw new NotFoundError(E.DOCTOR_PROFILE_NOT_FOUND);
+    const series = await bookingService.getBookingSeriesByDoctor(doctor.id, req.tenant_id);
+    return res.json({ data: series });
+  }
+
+  const series = await bookingService.getBookingSeriesByUser(req.user!.id, req.tenant_id);
+  return res.json({ data: series });
+});
+export const cancelBookingSeries = asyncHandler(async (req: Request, res: Response) => {
+  const result = await bookingService.cancelBookingSeries(
+    Number(req.params.id),
+    { user_id: req.user!.id, role: req.user!.role },
+    req.tenant_id
+  );
+  res.json(result);
 });

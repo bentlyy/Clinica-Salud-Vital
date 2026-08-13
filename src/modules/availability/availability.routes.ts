@@ -4,6 +4,7 @@ import {
   getAvailabilityByDoctor,
   getMyAvailability,
   deleteAvailability,
+  bulkCreateAvailability,
   getMyExceptions,
   createException,
   deleteException
@@ -11,7 +12,7 @@ import {
 
 import { authMiddleware, authorize } from '../../middlewares/auth.middleware.js';
 import { validateZod } from '../../middlewares/validate.middleware.js';
-import { createAvailabilitySchema, availabilityIdSchema, createExceptionSchema, exceptionIdSchema } from './availability.schema.js';
+import { createAvailabilitySchema, availabilityIdSchema, createExceptionSchema, exceptionIdSchema, bulkAvailabilitySchema } from './availability.schema.js';
 
 const availabilityRouter = Router();
 
@@ -30,6 +31,14 @@ availabilityRouter.post(
   authorize('doctor'),
   validateZod(createAvailabilitySchema),
   createAvailability
+);
+
+availabilityRouter.post(
+  '/bulk',
+  authMiddleware,
+  authorize('doctor', 'admin', 'superadmin'),
+  validateZod(bulkAvailabilitySchema),
+  bulkCreateAvailability
 );
 
 availabilityRouter.delete(

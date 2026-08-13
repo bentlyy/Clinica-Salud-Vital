@@ -23,33 +23,34 @@ import type { LabQCRecord, LabArea, LabTest, LabEquipment } from '../../types/la
 
 // ── Schema ───────────────────────────────────────────────────────────────────
 
-const qcSchema = z
-  .object({
-    lab_area_id: z.number({ required_error: 'El área es requerida' }).min(1, 'Seleccione un área'),
-    lab_test_id: z.number({ required_error: 'El test es requerido' }).min(1, 'Seleccione un test'),
-    qc_type: z.enum(['internal', 'external', 'calibration', 'proficiency'], {
-      required_error: 'El tipo QC es requerido',
-    }),
-    control_name: z.string().min(1, 'El nombre del control es requerido'),
-    lot_number: z.string().min(1, 'El número de lote es requerido'),
-    expiration_date: z.string().min(1, 'La fecha de vencimiento es requerida'),
-    expected_min: z.coerce
-      .number({ required_error: 'Requerido' })
-      .min(0, 'Debe ser positivo'),
-    expected_max: z.coerce
-      .number({ required_error: 'Requerido' })
-      .min(0, 'Debe ser positivo'),
-    measured_value: z.coerce
-      .number({ required_error: 'El valor medido es requerido' }),
-    equipment_id: z.number().nullable().optional(),
-    notes: z.string().optional(),
-  })
-  .refine((data) => data.expected_min < data.expected_max, {
-    message: 'El mínimo debe ser menor que el máximo',
-    path: ['expected_max'],
-  });
+const qcSchema = (t: (key: string, fallback: string) => string) =>
+  z
+    .object({
+      lab_area_id: z.number({ required_error: t('lab:areaRequired', 'El área es requerida') }).min(1, t('lab:selectAreaRequired', 'Seleccione un área')),
+      lab_test_id: z.number({ required_error: t('lab:testRequired', 'El test es requerido') }).min(1, t('lab:selectTestRequired', 'Seleccione un test')),
+      qc_type: z.enum(['internal', 'external', 'calibration', 'proficiency'], {
+        required_error: t('lab:qcTypeRequired', 'El tipo QC es requerido'),
+      }),
+      control_name: z.string().min(1, t('lab:controlNameRequired', 'El nombre del control es requerido')),
+      lot_number: z.string().min(1, t('lab:lotNumberRequired', 'El número de lote es requerido')),
+      expiration_date: z.string().min(1, t('lab:expirationDateRequired', 'La fecha de vencimiento es requerida')),
+      expected_min: z.coerce
+        .number({ required_error: t('common:required', 'Requerido') })
+        .min(0, t('lab:mustBePositive', 'Debe ser positivo')),
+      expected_max: z.coerce
+        .number({ required_error: t('common:required', 'Requerido') })
+        .min(0, t('lab:mustBePositive', 'Debe ser positivo')),
+      measured_value: z.coerce
+        .number({ required_error: t('lab:measuredValueRequired', 'El valor medido es requerido') }),
+      equipment_id: z.number().nullable().optional(),
+      notes: z.string().optional(),
+    })
+    .refine((data) => data.expected_min < data.expected_max, {
+      message: t('lab:minLessThanMax', 'El mínimo debe ser menor que el máximo'),
+      path: ['expected_max'],
+    });
 
-type QCFormValues = z.infer<typeof qcSchema>;
+type QCFormValues = z.infer<ReturnType<typeof qcSchema>>;
 
 // ── Props ────────────────────────────────────────────────────────────────────
 
@@ -91,7 +92,7 @@ export const QCForm = memo(function QCForm({
     watch,
     formState: { errors, isSubmitting },
   } = useForm<QCFormValues>({
-    resolver: zodResolver(qcSchema),
+    resolver: zodResolver(qcSchema(t)),
     defaultValues: {
       lab_area_id: initialData?.lab_area_id ?? 0,
       lab_test_id: initialData?.lab_test_id ?? 0,
@@ -132,10 +133,10 @@ export const QCForm = memo(function QCForm({
   const autoStatus = useMemo(() => {
     if (!watchedMeasured || !watchedMin || !watchedMax) return null;
     if (watchedMeasured >= watchedMin && watchedMeasured <= watchedMax) {
-      return { label: 'Dentro de rango (Pasó)', color: theme.palette.success.dark, bgColor: theme.palette.custom.status.success.bg };
+      return { status: 'passed' as const, label: t('lab:qc.withinRange', 'Dentro de rango (Pasó)'), color: theme.palette.success.dark, bgColor: theme.palette.custom.status.success.bg };
     }
-    return { label: 'Fuera de rango (Falló)', color: theme.palette.error.dark, bgColor: theme.palette.custom.status.error.bg };
-  }, [watchedMeasured, watchedMin, watchedMax, theme]);
+    return { status: 'failed' as const, label: t('lab:qc.outOfRange', 'Fuera de rango (Falló)'), color: theme.palette.error.dark, bgColor: theme.palette.custom.status.error.bg };
+  }, [watchedMeasured, watchedMin, watchedMax, theme, t]);
 
   const handleFormSubmit = (data: QCFormValues) => {
     onSubmit({
@@ -151,9 +152,7 @@ export const QCForm = memo(function QCForm({
       equipment_id: data.equipment_id ?? null,
       notes: data.notes || null,
       status: autoStatus
-        ? autoStatus.label.includes('Pasó')
-          ? 'passed'
-          : 'failed'
+        ? autoStatus.status
         : 'review',
     });
   };

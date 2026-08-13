@@ -19,13 +19,12 @@ import type { LabRequestItem } from '../../types/lab.types';
 
 // ── Schema ───────────────────────────────────────────────────────────────────
 
-const resultEntrySchema = z.object({
-  result_value: z
-    .string()
-    .min(1, 'El valor del resultado es requerido'),
-  unit: z.string().optional(),
-  notes: z.string().optional(),
-});
+const resultEntrySchema = (t: (key: string, fallback?: string) => string) =>
+  z.object({
+    result_value: z.string().min(1, t('lab:validation.resultRequired', 'El valor del resultado es requerido')),
+    unit: z.string().optional(),
+    notes: z.string().optional(),
+  });
 
 type ResultEntryValues = z.infer<typeof resultEntrySchema>;
 
@@ -82,7 +81,7 @@ export const ResultEntryForm = memo(function ResultEntryForm({
     watch,
     formState: { errors, isSubmitting },
   } = useForm<ResultEntryValues>({
-    resolver: zodResolver(resultEntrySchema),
+    resolver: zodResolver(resultEntrySchema(t)),
     defaultValues: {
       result_value: item.result_value ?? '',
       unit: item.unit ?? '',
@@ -101,7 +100,7 @@ export const ResultEntryForm = memo(function ResultEntryForm({
     item.reference_range ||
     (item.test?.reference_min != null && item.test?.reference_max != null
       ? `${item.test.reference_min} – ${item.test.reference_max} ${item.test?.unit ?? ''}`
-      : 'Sin rango definido');
+      : t('lab:noRange', 'Sin rango definido'));
 
   const handleFormSubmit = (data: ResultEntryValues) => {
     onSubmit({

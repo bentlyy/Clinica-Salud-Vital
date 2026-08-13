@@ -99,8 +99,8 @@ export default function AuditPage() {
     const rows = logs.map((log) => [
       formatDateTime(log.created_at),
       log.user_name || t('userFallback', { id: log.user_id }),
-      AUDIT_ACTION_LABELS[log.action] || log.action,
-      AUDIT_ENTITY_LABELS[log.entity_type] || log.entity_type,
+      t(`actionLabels.${log.action}`, AUDIT_ACTION_LABELS[log.action] || log.action),
+      t(`entityLabels.${log.entity_type}`, AUDIT_ENTITY_LABELS[log.entity_type] || log.entity_type),
       log.entity_id?.toString() ?? '',
       log.ip_address ?? '',
     ]);
@@ -170,7 +170,7 @@ export default function AuditPage() {
           >
             {AUDIT_ACTION_OPTIONS.map((opt) => (
               <MenuItem key={opt.value} value={opt.value}>
-                {opt.label}
+                {t(`actionLabels.${opt.value}`, opt.label)}
               </MenuItem>
             ))}
           </TextField>
@@ -187,7 +187,7 @@ export default function AuditPage() {
           >
             {AUDIT_ENTITY_OPTIONS.map((opt) => (
               <MenuItem key={opt.value} value={opt.value}>
-                {opt.label}
+                {t(`entityLabels.${opt.value}`, opt.label)}
               </MenuItem>
             ))}
           </TextField>
@@ -237,8 +237,8 @@ export default function AuditPage() {
             </TableHead>
             <TableBody>
               {logs.map((log) => {
-                const actionLabel = AUDIT_ACTION_LABELS[log.action] || log.action;
-                const entityLabel = AUDIT_ENTITY_LABELS[log.entity_type] || log.entity_type;
+                const actionLabel = t(`actionLabels.${log.action}`, AUDIT_ACTION_LABELS[log.action] || log.action);
+                const entityLabel = t(`entityLabels.${log.entity_type}`, AUDIT_ENTITY_LABELS[log.entity_type] || log.entity_type);
                 return (
                   <TableRow key={log.id} hover>
                     <TableCell>
@@ -287,7 +287,7 @@ export default function AuditPage() {
                     </TableCell>
                     <TableCell>
                       <Box component="span" sx={{ color: theme.palette.text.secondary, maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block', fontSize: '0.875rem' }}>
-                        {log.entity_id ? `ID: ${log.entity_id}` : '—'}
+                        {log.entity_id ? t('idValue', 'ID: {{id}}', { id: log.entity_id }) : '—'}
                       </Box>
                     </TableCell>
                     <TableCell>

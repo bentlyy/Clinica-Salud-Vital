@@ -22,6 +22,7 @@ import CalendarToday from '@mui/icons-material/CalendarToday';
 import AccessTime from '@mui/icons-material/AccessTime';
 import NotesOutlined from '@mui/icons-material/NotesOutlined';
 import CancelOutlined from '@mui/icons-material/CancelOutlined';
+import EventAvailableOutlined from '@mui/icons-material/EventAvailableOutlined';
 import CircularProgress from '@mui/material/CircularProgress';
 import type { Booking } from '../types/booking.types';
 import { BOOKING_STATUS_CONFIG } from '../types/booking.types';
@@ -33,6 +34,8 @@ interface BookingDetailDrawerProps {
   booking: Booking | null;
   onCancel?: (id: number, reason?: string) => void;
   isCancelling?: boolean;
+  onReschedule?: (id: number, data: { date: string; time: string; duration?: number }) => void;
+  isRescheduling?: boolean;
 }
 
 export function BookingDetailDrawer({
@@ -41,22 +44,39 @@ export function BookingDetailDrawer({
   booking,
   onCancel,
   isCancelling = false,
+  onReschedule,
+  isRescheduling = false,
 }: BookingDetailDrawerProps) {
   const { t } = useTranslation('bookings');
   const theme = useTheme();
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
+  const [rescheduleOpen, setRescheduleOpen] = useState(false);
+  const [rescheduleDate, setRescheduleDate] = useState('');
+  const [rescheduleTime, setRescheduleTime] = useState('');
+  const [rescheduleDuration, setRescheduleDuration] = useState<number>(30);
 
   if (!booking) return null;
 
   const statusConfig = BOOKING_STATUS_CONFIG[booking.status];
   const canCancel = booking.status === 'pending' || booking.status === 'confirmed';
+  const canReschedule = booking.status === 'pending' || booking.status === 'confirmed';
   const patientLabel = booking.patient_name || booking.guest_name || t('without_name');
 
   const handleCancelConfirm = () => {
     onCancel?.(booking.id, cancelReason.trim() || undefined);
     setConfirmOpen(false);
     setCancelReason('');
+  };
+
+  const handleRescheduleConfirm = () => {
+    if (!rescheduleDate || !rescheduleTime) return;
+    onReschedule?.(booking.id, {
+      date: rescheduleDate,
+      time: rescheduleTime,
+      duration: rescheduleDuration,
+    });
+    setRescheduleOpen(false);
   };
 
   return (
@@ -203,6 +223,25 @@ export function BookingDetailDrawer({
               {t('cancelBooking')}
             </Button>
           )}
+
+          {/* Reschedule button */}
+          {canReschedule && onReschedule && (
+            <Button
+              fullWidth
+              variant="outlined"
+              startIcon={<EventAvailableOutlined />}
+              onClick={() => {
+                setRescheduleDate(booking.date);
+                setRescheduleTime(booking.time);
+                setRescheduleDuration(booking.duration);
+                setRescheduleOpen(true);
+              }}
+              disabled={isRescheduling}
+              sx={{ mt: 1.5, py: 1.5 }}
+            >
+              {t('reschedule', { defaultValue: 'Reprogramar' })}
+            </Button>
+          )}
         </Box>
       </Drawer>
 
@@ -253,6 +292,60 @@ export function BookingDetailDrawer({
             ) : (
               t('yes_cancel')
             )}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Reschedule dialog */}
+      <Dialog
+        open={rescheduleOpen}
+        onClose={() => setRescheduleOpen(false)}
+        PaperProps={{ sx: { borderRadius: '16px', border: `1px solid ${theme.palette.divider}` } }}
+      >
+        <DialogTitle>
+          <Typography variant="h6" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
+            {t('reschedule', { defaultValue: 'Reprogramar cita' })}
+          </Typography>
+        </DialogTitle>
+        <DialogContent>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
+            <TextField
+              type="date"
+              label={t('date')}
+              value={rescheduleDate}
+              onChange={(e) => setRescheduleDate(e.target.value)}
+              slotProps={{ inputLabel: { shrink: true } }}
+              fullWidth
+            />
+            <TextField
+              type="time"
+              label={t('time')}
+              value={rescheduleTime}
+              onChange={(e) => setRescheduleTime(e.target.value)}
+              slotProps={{ inputLabel: { shrink: true } }}
+              fullWidth
+            />
+            <TextField
+              type="number"
+              label={t('duration', { defaultValue: 'Duración (min)' })}
+              value={rescheduleDuration}
+              onChange={(e) => setRescheduleDuration(Number(e.target.value))}
+              inputProps={{ min: 5, step: 5 }}
+              fullWidth
+            />
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={() => setRescheduleOpen(false)} sx={{ color: theme.palette.text.secondary }}>
+            {t('no_keep')}
+          </Button>
+          <Button
+            onClick={handleRescheduleConfirm}
+            variant="contained"
+            disabled={isRescheduling || !rescheduleDate || !rescheduleTime}
+            sx={{ px: 3 }}
+          >
+            {isRescheduling ? <CircularProgress size={20} color="inherit" /> : t('confirm', { defaultValue: 'Confirmar' })}
           </Button>
         </DialogActions>
       </Dialog>

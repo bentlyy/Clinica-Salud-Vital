@@ -18,10 +18,13 @@ import {
   getReagentsCtrl, createReagentCtrl, updateReagentStockCtrl,
   getNotificationsCtrl, acknowledgeNotificationCtrl,
   validateItemByTechCtrl, validateItemByDoctorCtrl, signItemCtrl, deliverItemCtrl, getItemHistoryCtrl,
+  sendLabResultsEmailCtrl, getLabResultsByTokenCtrl,
   handleLabEvents,
 } from './laboratory.controller.js';
 
 const router = Router();
+
+router.get('/results/shared/:token', getLabResultsByTokenCtrl);
 
 router.use(authMiddleware);
 router.use(requireFeature('laboratory'));
@@ -87,6 +90,7 @@ router.patch('/notifications/:id/ack', authorize('admin', 'superadmin', 'lab_tec
 router.get('/events', authorize('admin', 'superadmin', 'lab_technician'), handleLabEvents);
 
 // === Lab Requests (parameterized routes must be LAST) ===
+router.post('/results/email', authorize('admin', 'superadmin', 'doctor', 'lab_technician'), sendLabResultsEmailCtrl);
 router.get('/', authorize('admin', 'superadmin', 'doctor', 'lab_technician', 'user', 'patient'), getLabRequests);
 router.get('/:id', authorize('admin', 'superadmin', 'doctor', 'lab_technician', 'user', 'patient'), validateZod(labRequestIdSchema, 'params'), getLabRequestById);
 router.post('/', authorize('admin', 'doctor'), validateZod(createLabRequestSchema), createLabRequest);

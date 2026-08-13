@@ -9,16 +9,22 @@ import {
   Alert,
   Paper,
   CircularProgress,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemSecondaryAction,
+  IconButton,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import Lock from '@mui/icons-material/Lock';
 import Shield from '@mui/icons-material/Shield';
 import VerifiedUser from '@mui/icons-material/VerifiedUser';
 import Devices from '@mui/icons-material/Devices';
+import Logout from '@mui/icons-material/Logout';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useChangePassword } from '../hooks/useSettings';
+import { useChangePassword, useSessions, useRevokeSession } from '../hooks/useSettings';
 import { useTwoFAStatus, useGenerateTwoFA, useVerifyTwoFA, useDisableTwoFA } from '@/modules/2fa/hooks/useTwoFA';
 import { useAuth } from '@/shared/providers/AuthProvider';
 import toast from 'react-hot-toast';
@@ -45,6 +51,8 @@ export function SecurityTab() {
   const verifyTwoFA = useVerifyTwoFA();
   const disableTwoFA = useDisableTwoFA();
   const { logoutAll } = useAuth();
+  const { data: sessions, isLoading: loadingSessions } = useSessions();
+  const revokeSession = useRevokeSession();
 
   const passwordSchema = useMemo(() => createPasswordSchema(t), [t]);
   type PasswordFormData = z.infer<typeof passwordSchema>;
@@ -283,6 +291,50 @@ export function SecurityTab() {
       >
         {revokingSessions ? t('revoking') : t('revoke_all_sessions')}
       </Button>
+
+      {loadingSessions ? (
+        <Box sx={{ display: 'flex', mt: 2 }}>
+          <CircularProgress size={20} />
+        </Box>
+      ) : (
+        <List sx={{ mt: 1 }}>
+          {(sessions ?? []).map((session) => (
+            <ListItem
+              key={session.id}
+              divider
+              sx={{ px: 0 }}
+            >
+              <ListItemText
+                primary={session.device || t('unknown_device', { defaultValue: 'Dispositivo desconocido' })}
+                secondary={
+                  `${session.ip_address || ''}${session.ip_address && session.last_activity ? ' · ' : ''}` +
+                  (session.last_activity
+                    ? t('active_on', { defaultValue: 'Activo el ' }) +
+                      new Date(session.last_activity).toLocaleString()
+                    : t('never_active', { defaultValue: 'Sin actividad reciente' }))
+                }
+              />
+              <ListItemSecondaryAction>
+                {session.revoked_at ? (
+                  <Typography variant="caption" sx={{ color: theme.palette.text.disabled }}>
+                    {t('revoked', { defaultValue: 'Revocada' })}
+                  </Typography>
+                ) : (
+                  <IconButton
+                    edge="end"
+                    size="small"
+                    color="error"
+                    disabled={revokeSession.isPending}
+                    onClick={() => revokeSession.mutate(session.id)}
+                  >
+                    <Logout fontSize="small" />
+                  </IconButton>
+                )}
+              </ListItemSecondaryAction>
+            </ListItem>
+          ))}
+        </List>
+      )}
     </Box>
   );
 }

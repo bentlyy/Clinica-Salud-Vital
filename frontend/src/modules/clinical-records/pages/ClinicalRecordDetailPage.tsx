@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Box, Paper, Typography, Button, Divider, Chip } from '@mui/material';
+import { Box, Paper, Typography, Button, Divider } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import ArrowBack from '@mui/icons-material/ArrowBack';
 import Edit from '@mui/icons-material/Edit';
@@ -17,6 +17,7 @@ import { useAuth } from '@/shared/providers/AuthProvider';
 import { getDateFnsLocale } from '@/shared/utils/localeUtils';
 import { useClinicalRecordDetail } from '../hooks/useClinicalRecords';
 import { VitalsDisplay } from '../components/VitalsDisplay';
+import { AttachmentsList } from '@/modules/attachments/components/AttachmentsList';
 
 export default function ClinicalRecordDetailPage() {
   const { t } = useTranslation('clinical_record_detail');
@@ -119,18 +120,9 @@ export default function ClinicalRecordDetailPage() {
         </Paper>
 
         {/* Attachments */}
-        {record.attachments && record.attachments.length > 0 && (
-          <Paper sx={{ p: 3, border: '1px solid #e5e7eb', boxShadow: 'none' }}>
-            <Typography variant="h6" sx={{ fontWeight: 600, color: theme.palette.text.primary, mb: 2 }}>
-              {t('section_attachments')}
-            </Typography>
-            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-              {record.attachments.map((attachment, i) => (
-                <Chip key={i} label={attachment} variant="outlined" size="small" />
-              ))}
-            </Box>
-          </Paper>
-        )}
+        <Paper sx={{ p: 3, border: '1px solid #e5e7eb', boxShadow: 'none' }}>
+          <AttachmentsList entityType="clinical_record" entityId={record.id} canManage={canEdit} />
+        </Paper>
       </MotionDiv>
     </Box>
   );

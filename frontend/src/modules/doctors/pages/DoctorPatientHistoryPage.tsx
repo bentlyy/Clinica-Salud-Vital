@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '@mui/material/styles';
@@ -8,50 +8,40 @@ import {
   Paper,
   Tabs,
   Tab,
-  Chip,
-  Divider,
-  List,
-  ListItem,
-  ListItemText,
   CircularProgress,
 } from '@mui/material';
 import Person from '@mui/icons-material/Person';
-import Science from '@mui/icons-material/Science';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { apiClient } from '@/shared/services/api-client';
-import { downloadLabOrderPdf } from '@/shared/utils/pdf';
+import { useAttachments } from '@/modules/attachments/hooks/useAttachments';
+import { SummaryTab, type SummaryTabId } from '../components/patient-ficha/SummaryTab';
+import { BookingsTab } from '../components/patient-ficha/BookingsTab';
+import { HistoryTab } from '../components/patient-ficha/HistoryTab';
+import { PrescriptionsTab } from '../components/patient-ficha/PrescriptionsTab';
+import { AttachmentsTab } from '../components/patient-ficha/AttachmentsTab';
+import { LabTab } from '../components/patient-ficha/LabTab';
+import type {
+  FichaPatient,
+  FichaClinicalRecord,
+  FichaLabRequest,
+  FichaMedicalHistoryEntry,
+  FichaPrescriptionRecord,
+  FichaBooking,
+} from '../components/patient-ficha/types';
 
-interface ClinicalRecord {
-  id: number;
-  doctor_name: string;
-  diagnosis: string;
-  chief_complaint: string;
-  anamnesis: string;
-  treatment_plan: string;
-  created_at: string;
-  status: string;
+type TabValue = 'summary' | 'bookings' | 'history' | 'prescriptions' | 'attachments' | 'lab';
+
+function extractItems(res: PromiseFulfilledResult<{ data: unknown }>): unknown[] {
+  const d = res.value.data as Record<string, unknown> | unknown[] | null | undefined;
+  if (Array.isArray(d)) return d;
+  if (d && typeof d === 'object') {
+    const obj = d as Record<string, unknown>;
+    if (Array.isArray(obj.items)) return obj.items;
+    if (Array.isArray(obj.data)) return obj.data as unknown[];
+  }
+  return [];
 }
-
-interface LabRequest {
-  id: number;
-  request_number: string;
-  test_type: string;
-  status: string;
-  priority: string;
-  results?: string;
-  created_at: string;
-}
-
-interface PatientInfo {
-  id: number;
-  name: string;
-  email: string;
-  rut: string;
-  phone: string;
-}
-
-type TabValue = 'records' | 'lab';
 
 export default function DoctorPatientHistoryPage() {
   const theme = useTheme();
@@ -59,19 +49,17 @@ export default function DoctorPatientHistoryPage() {
   const [searchParams] = useSearchParams();
   const patientId = searchParams.get('patientId');
 
-  const [tab, setTab] = useState<TabValue>('records');
-  const [records, setRecords] = useState<ClinicalRecord[]>([]);
-  const [labRequests, setLabRequests] = useState<LabRequest[]>([]);
-  const [patient, setPatient] = useState<PatientInfo | null>(null);
+  const [tab, setTab] = useState<TabValue>('summary');
+  const [records, setRecords] = useState<FichaClinicalRecord[]>([]);
+  const [labRequests, setLabRequests] = useState<FichaLabRequest[]>([]);
+  const [medicalHistory, setMedicalHistory] = useState<FichaMedicalHistoryEntry[]>([]);
+  const [prescriptions, setPrescriptions] = useState<FichaPrescriptionRecord[]>([]);
+  const [bookings, setBookings] = useState<FichaBooking[]>([]);
+  const [patient, setPatient] = useState<FichaPatient | null>(null);
   const [loading, setLoading] = useState(true);
-  const [selectedRecord, setSelectedRecord] = useState<ClinicalRecord | null>(null);
 
-  const STATUS_COLORS: Record<string, { bg: string; color: string }> = {
-    completed: { bg: theme.palette.success.light, color: theme.palette.success.main },
-    pending: { bg: theme.palette.warning.light, color: theme.palette.warning.main },
-    in_progress: { bg: theme.palette.info.light, color: theme.palette.info.main },
-    draft: { bg: theme.palette.grey[100], color: theme.palette.text.secondary },
-  };
+  const patientNumber = patientId ? Number(patientId) : null;
+  const { data: attachments } = useAttachments('patient', patientNumber);
 
   useEffect(() => {
     if (!patientId) {
@@ -82,31 +70,56 @@ export default function DoctorPatientHistoryPage() {
     (async () => {
       setLoading(true);
       try {
-        const [patientRes, recordsRes, labRes] = await Promise.allSettled([
+        const [patientRes, recordsRes, labRes, medRes, rxRes, bookingsRes] = await Promise.allSettled([
           apiClient.get(`/patients/${patientId}`),
           apiClient.get('/clinical-records', { params: { patient_id: patientId, limit: 100 } }),
           apiClient.get('/laboratory/requests', { params: { patient_id: patientId, limit: 100 } }),
+          apiClient.get(`/medical-history/patient/${patientId}`),
+          apiClient.get('/clinical-records/prescriptions/all'),
+          apiClient.get('/bookings/doctor', { params: { page: 1, limit: 100 } }),
         ]);
 
-        if (patientRes.status === 'fulfilled') setPatient(patientRes.value.data);
+        if (patientRes.status === 'fulfilled') {
+          setPatient(patientRes.value.data as FichaPatient);
+        }
 
-        const extractItems = (res: PromiseFulfilledResult<{ data: unknown }>) => {
-          const d = res.value.data as Record<string, unknown>;
-          if (Array.isArray(d)) return d;
-          if (d && typeof d === 'object' && Array.isArray((d as Record<string, unknown>).items)) return (d as Record<string, unknown>).items;
-          return [];
-        };
+        if (recordsRes.status === 'fulfilled') {
+          setRecords(extractItems(recordsRes) as FichaClinicalRecord[]);
+        }
 
-        if (recordsRes.status === 'fulfilled') setRecords(extractItems(recordsRes) as ClinicalRecord[]);
-        if (labRes.status === 'fulfilled') setLabRequests(extractItems(labRes) as LabRequest[]);
+        if (labRes.status === 'fulfilled') {
+          const all = extractItems(labRes) as FichaLabRequest[];
+          setLabRequests(all.filter((r) => Number(r.patient_id) === patientNumber));
+        }
+
+        if (medRes.status === 'fulfilled') {
+          setMedicalHistory(extractItems(medRes) as FichaMedicalHistoryEntry[]);
+        }
+
+        if (rxRes.status === 'fulfilled') {
+          const all = extractItems(rxRes) as FichaPrescriptionRecord[];
+          setPrescriptions(all.filter((r) => Number(r.patient_id) === patientNumber));
+        }
+
+        if (bookingsRes.status === 'fulfilled') {
+          const all = extractItems(bookingsRes) as FichaBooking[];
+          setBookings(all.filter((b) => Number(b.patient_id) === patientNumber));
+        }
       } catch {
         setRecords([]);
         setLabRequests([]);
+        setMedicalHistory([]);
+        setPrescriptions([]);
+        setBookings([]);
       } finally {
         setLoading(false);
       }
     })();
-  }, [patientId]);
+  }, [patientId, patientNumber]);
+
+  const handleNavigate = useCallback((target: SummaryTabId) => {
+    setTab(target);
+  }, []);
 
   if (!patientId) {
     return (
@@ -125,152 +138,75 @@ export default function DoctorPatientHistoryPage() {
     );
   }
 
+  const tabLabel = (key: string, count?: number) =>
+    count === undefined ? t(key) : t(key, { count });
+
   return (
     <Box>
       <PageHeader
-        title={t('patient_history:title')}
+        title={t('patient_ficha:title')}
         subtitle={patient ? `${patient.name} — ${patient.rut || ''}` : t('patient_history:patientLabel', { id: patientId })}
       />
 
       {patient && (
-        <Paper sx={{ p: 2, mb: 3, border: '1px solid #e5e7eb', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: 2 }}>
+        <Paper
+          sx={{
+            p: 2,
+            mb: 3,
+            border: '1px solid #e5e7eb',
+            borderRadius: '12px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 2,
+          }}
+        >
           <Person sx={{ fontSize: 40, color: theme.palette.primary.main }} />
           <Box>
-            <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>{patient.name}</Typography>
+            <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+              {patient.name}
+            </Typography>
             <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
-              {patient.email} · {patient.phone || '—'}
+              {[patient.email, patient.phone].filter(Boolean).join(' · ') || '—'}
             </Typography>
           </Box>
         </Paper>
       )}
 
-      <Tabs value={tab} onChange={(_, v) => { setTab(v); setSelectedRecord(null); }} sx={{ mb: 3, borderBottom: 1, borderColor: 'divider' }}>
-        <Tab value="records" label={t('patient_history:tabRecords', { count: records.length })} />
-        <Tab value="lab" label={t('patient_history:tabExams', { count: labRequests.length })} />
+      <Tabs
+        value={tab}
+        onChange={(_, v) => setTab(v)}
+        sx={{ mb: 3, borderBottom: 1, borderColor: 'divider' }}
+        variant="scrollable"
+        scrollButtons="auto"
+        allowScrollButtonsMobile
+      >
+        <Tab value="summary" label={t('patient_ficha:tabSummary')} />
+        <Tab value="bookings" label={tabLabel('patient_ficha:tabBookings', bookings.length)} />
+        <Tab value="history" label={t('patient_ficha:tabHistory')} />
+        <Tab value="prescriptions" label={tabLabel('patient_ficha:tabPrescriptions', prescriptions.length)} />
+        <Tab value="attachments" label={t('patient_ficha:tabAttachments')} />
+        <Tab value="lab" label={tabLabel('patient_ficha:tabLab', labRequests.length)} />
       </Tabs>
 
-      {/* Detail view */}
-      {selectedRecord && (
-        <Paper sx={{ p: 3, mb: 3, border: '1px solid #e5e7eb', borderRadius: '12px' }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-            <Typography variant="h6" sx={{ fontWeight: 600 }}>{t('patient_history:detailTitle', { date: selectedRecord.created_at?.split('T')[0] })}</Typography>
-            <Chip label={selectedRecord.status} size="small" sx={{ backgroundColor: STATUS_COLORS[selectedRecord.status]?.bg || theme.palette.grey[100], color: STATUS_COLORS[selectedRecord.status]?.color || theme.palette.text.secondary }} />
-          </Box>
-          <Divider sx={{ mb: 2 }} />
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-            <Box>
-              <Typography variant="caption" sx={{ color: theme.palette.text.secondary, fontWeight: 600 }}>{t('patient_history:chiefComplaint')}</Typography>
-              <Typography variant="body2">{selectedRecord.chief_complaint || '—'}</Typography>
-            </Box>
-            <Box>
-              <Typography variant="caption" sx={{ color: theme.palette.text.secondary, fontWeight: 600 }}>{t('patient_history:anamnesis')}</Typography>
-              <Typography variant="body2">{selectedRecord.anamnesis || '—'}</Typography>
-            </Box>
-            <Box>
-              <Typography variant="caption" sx={{ color: theme.palette.text.secondary, fontWeight: 600 }}>{t('patient_history:diagnosis')}</Typography>
-              <Typography variant="body2">{selectedRecord.diagnosis || '—'}</Typography>
-            </Box>
-            <Box>
-              <Typography variant="caption" sx={{ color: theme.palette.text.secondary, fontWeight: 600 }}>{t('patient_history:treatmentPlan')}</Typography>
-              <Typography variant="body2">{selectedRecord.treatment_plan || '—'}</Typography>
-            </Box>
-          </Box>
-          <Box sx={{ mt: 2 }}>
-            <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>Dr. {selectedRecord.doctor_name}</Typography>
-          </Box>
-          <Box sx={{ mt: 2 }}>
-            <Chip label={t('patient_history:backToList')} onClick={() => setSelectedRecord(null)} clickable size="small" sx={{ cursor: 'pointer' }} />
-          </Box>
-        </Paper>
+      {tab === 'summary' && patient && (
+        <SummaryTab
+          patient={patient}
+          counts={{
+            bookings: bookings.length,
+            records: records.length,
+            prescriptions: prescriptions.length,
+            lab: labRequests.length,
+            attachments: attachments?.length ?? 0,
+          }}
+          medicalHistory={medicalHistory}
+          onNavigate={handleNavigate}
+        />
       )}
-
-      {/* Records list */}
-      {!selectedRecord && tab === 'records' && (
-        <Paper sx={{ border: '1px solid #e5e7eb', borderRadius: '12px' }}>
-          {records.length === 0 ? (
-            <EmptyState title={t('patient_history:noRecords')} message={t('patient_history:noRecordsDesc')} />
-          ) : (
-            <List disablePadding>
-              {records.map((r, idx) => {
-                const st = STATUS_COLORS[r.status] || { bg: theme.palette.grey[100], color: theme.palette.text.secondary };
-                return (
-                  <Box key={r.id}>
-                    {idx > 0 && <Divider />}
-                    <ListItem
-                      sx={{ cursor: 'pointer', '&:hover': { backgroundColor: '#f0fdfa' } }}
-                      onClick={() => setSelectedRecord(r)}
-                    >
-                      <ListItemText
-                        primary={
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <Typography variant="body1" sx={{ fontWeight: 600 }}>{r.diagnosis || t('patient_history:noDiagnosis')}</Typography>
-                            <Chip label={r.status} size="small" sx={{ backgroundColor: st.bg, color: st.color, fontSize: 11 }} />
-                          </Box>
-                        }
-                        secondary={
-                          <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
-                            {r.created_at?.split('T')[0]} · Dr. {r.doctor_name}
-                          </Typography>
-                        }
-                      />
-                    </ListItem>
-                  </Box>
-                );
-              })}
-            </List>
-          )}
-        </Paper>
-      )}
-
-      {/* Lab list */}
-      {!selectedRecord && tab === 'lab' && (
-        <Paper sx={{ border: '1px solid #e5e7eb', borderRadius: '12px' }}>
-          {labRequests.length === 0 ? (
-            <EmptyState
-              icon={<Science sx={{ fontSize: 48, color: theme.palette.grey[300] }} />}
-              title={t('patient_history:noExams')}
-              message={t('patient_history:noExamsDesc')}
-            />
-          ) : (
-            <List disablePadding>
-              {labRequests.map((r, idx) => {
-                const st = STATUS_COLORS[r.status] || { bg: theme.palette.grey[100], color: theme.palette.text.secondary };
-                return (
-                  <Box key={r.id}>
-                    {idx > 0 && <Divider />}
-                    <ListItem
-                      secondaryAction={
-                        r.status === 'completed' ? (
-                          <Chip
-                            label={t('patient_history:downloadPdf')}
-                            size="small"
-                            onClick={() => downloadLabOrderPdf(r.id)}
-                            sx={{ cursor: 'pointer', backgroundColor: theme.palette.info.light, color: theme.palette.info.main }}
-                          />
-                        ) : undefined
-                      }
-                    >
-                      <ListItemText
-                        primary={
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <Typography variant="body1" sx={{ fontWeight: 600 }}>{r.test_type || r.request_number}</Typography>
-                            <Chip label={r.status} size="small" sx={{ backgroundColor: st.bg, color: st.color, fontSize: 11 }} />
-                          </Box>
-                        }
-                        secondary={
-                          <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
-                            {r.created_at?.split('T')[0]} · {t('patient_history:priority')}: {r.priority}
-                          </Typography>
-                        }
-                      />
-                    </ListItem>
-                  </Box>
-                );
-              })}
-            </List>
-          )}
-        </Paper>
-      )}
+      {tab === 'bookings' && <BookingsTab bookings={bookings} />}
+      {tab === 'history' && <HistoryTab records={records} medicalHistory={medicalHistory} />}
+      {tab === 'prescriptions' && <PrescriptionsTab prescriptions={prescriptions} />}
+      {tab === 'attachments' && patientNumber !== null && <AttachmentsTab patientId={patientNumber} />}
+      {tab === 'lab' && <LabTab labRequests={labRequests} />}
     </Box>
   );
 }

@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { bookingService } from '../services/booking.service';
-import type { BookingListParams, CreateBookingInput } from '../types/booking.types';
+import type { BookingListParams, CreateBookingInput, CreateBookingSeriesInput } from '../types/booking.types';
 import toast from 'react-hot-toast';
 import i18n from '@/i18n/i18n';
 
@@ -13,6 +13,7 @@ export const bookingKeys = {
     ['bookings', 'available-slots', doctorId, date] as const,
   dailyDensity: (start: string, end: string) =>
     ['bookings', 'daily-density', start, end] as const,
+  mySeries: () => ['bookings', 'series'] as const,
 };
 
 const STALE_TIME = 30_000;
@@ -77,6 +78,22 @@ export function useCancelBooking() {
   });
 }
 
+export function useRescheduleBooking() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, date, time, duration }: { id: number; date: string; time: string; duration?: number }) =>
+      bookingService.reschedule(id, { date, time, duration }),
+    onSuccess: () => {
+      toast.success(i18n.t('bookings:rescheduled'));
+      void queryClient.invalidateQueries({ queryKey: bookingKeys.all });
+    },
+    onError: () => {
+      toast.error(i18n.t('bookings:rescheduleError'));
+    },
+  });
+}
+
 export function useAvailableSlots(doctorId: number | null, date: string | null) {
   return useQuery({
     queryKey: bookingKeys.availableSlots(doctorId ?? 0, date ?? ''),
@@ -91,5 +108,45 @@ export function useDailyDensity(start: string, end: string) {
     queryKey: bookingKeys.dailyDensity(start, end),
     queryFn: ({ signal }) => bookingService.getDailyDensity(start, end, { signal }),
     staleTime: STALE_TIME,
+  });
+}
+
+export function useCreateBookingSeries() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: CreateBookingSeriesInput) => bookingService.createSeries(data),
+    onSuccess: () => {
+      toast.success(i18n.t('bookings:seriesCreated'));
+      void queryClient.invalidateQueries({ queryKey: bookingKeys.all });
+      void queryClient.invalidateQueries({ queryKey: bookingKeys.mySeries() });
+    },
+    onError: () => {
+      toast.error(i18n.t('bookings:createError'));
+    },
+  });
+}
+
+export function useMyBookingSeries() {
+  return useQuery({
+    queryKey: bookingKeys.mySeries(),
+    queryFn: ({ signal }) => bookingService.getMySeries({ signal }),
+    staleTime: STALE_TIME,
+  });
+}
+
+export function useCancelBookingSeries() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: number) => bookingService.cancelSeries(id),
+    onSuccess: () => {
+      toast.success(i18n.t('bookings:seriesCancelled'));
+      void queryClient.invalidateQueries({ queryKey: bookingKeys.all });
+      void queryClient.invalidateQueries({ queryKey: bookingKeys.mySeries() });
+    },
+    onError: () => {
+      toast.error(i18n.t('bookings:cancelError'));
+    },
   });
 }

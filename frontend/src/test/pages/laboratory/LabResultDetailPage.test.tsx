@@ -73,6 +73,7 @@ const request = {
       created_at: '2026-08-10T10:00:00.000Z',
       test_name: 'Hemograma',
       reference_range: '13.5 - 17.5',
+      reference_ranges: { hemoglobina: { min: 13.5, max: 17.5 } },
     },
   ],
 };
@@ -107,7 +108,7 @@ describe('LabResultDetailPage', () => {
     const matches = await screen.findAllByText('Hemograma');
     expect(matches.length).toBeGreaterThanOrEqual(2);
     expect(screen.getByText('14.2')).toBeInTheDocument();
-    expect(screen.getByText('13.5 - 17.5')).toBeInTheDocument();
+    expect(screen.getByText('13.5 – 17.5')).toBeInTheDocument();
     expect(screen.getByText('g/dL')).toBeInTheDocument();
     // Back action and status chip
     expect(screen.getByText('lab_result_detail:back')).toBeInTheDocument();

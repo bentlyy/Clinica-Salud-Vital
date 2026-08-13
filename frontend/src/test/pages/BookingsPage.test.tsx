@@ -99,6 +99,8 @@ vi.mock('@/modules/bookings/hooks/useBookings', () => ({
   useDoctorBookings: () => mockHookReturn,
   useCancelBooking: () => ({ mutate: vi.fn(), isPending: false }),
   useCreateBooking: () => ({ mutate: vi.fn(), isPending: false }),
+  useCreateBookingSeries: () => ({ mutate: vi.fn(), isPending: false }),
+  useRescheduleBooking: () => ({ mutate: vi.fn(), isPending: false }),
 }));
 
 vi.mock('@/modules/doctors/hooks/useDoctors', () => ({

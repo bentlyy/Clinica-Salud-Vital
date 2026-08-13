@@ -53,6 +53,9 @@ const SuperAdminBillingPage = lazy(() => import('@/modules/super-admin/pages/Sup
 // Specialties module
 const SpecialtiesPage = lazy(() => import('@/modules/specialties/pages/SpecialtiesPage'));
 
+// Holidays module
+const HolidaysPage = lazy(() => import('@/modules/holidays/pages/HolidaysPage'));
+
 // Clinical module
 const ClinicalPage = lazy(() => import('@/modules/clinical/pages/ClinicalPage'));
 
@@ -290,6 +293,11 @@ export function AppRouter() {
           <Route path="/specialties" element={
             <ProtectedRoute allowedRoles={ADMIN_STAFF}>
               <SpecialtiesPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/holidays" element={
+            <ProtectedRoute allowedRoles={ADMIN_STAFF}>
+              <HolidaysPage />
             </ProtectedRoute>
           } />
           <Route path="/panel" element={

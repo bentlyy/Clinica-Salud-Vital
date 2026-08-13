@@ -1,6 +1,7 @@
 import { pool } from '../../shared/db.js';
 import { NotFoundError, BadRequestError } from '../../utils/errors.js';
 import { E } from '../../utils/error-codes.js';
+import { createNotification } from '../notifications/notification.service.js';
 import crypto from 'crypto';
 
 const generateRequestNumber = () => {
@@ -741,10 +742,20 @@ export const deliverItem = async (itemId: number, tenantId: string, method?: str
     [requestId, tenantId]
   );
   if (Number(remaining.rows[0]?.count || 0) === 0) {
-    await pool.query(
-      `UPDATE lab_requests SET status = 'delivered', completed_at = NOW(), updated_at = NOW() WHERE id = $1 AND tenant_id = $2`,
+    const updated = await pool.query(
+      `UPDATE lab_requests SET status = 'delivered', completed_at = NOW(), updated_at = NOW() WHERE id = $1 AND tenant_id = $2 RETURNING patient_id, id`,
       [requestId, tenantId]
     );
+    if (updated.rows.length > 0 && updated.rows[0].patient_id) {
+      void createNotification({
+        tenant_id: tenantId,
+        user_id: updated.rows[0].patient_id,
+        type: 'success',
+        title: 'Resultados publicados',
+        message: 'Tu informe de laboratorio ya está disponible. Revisa tus resultados en el portal.',
+        link: `/my-laboratory/${updated.rows[0].id}`,
+      }).catch(() => undefined);
+    }
   }
 
   return item.rows[0];

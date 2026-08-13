@@ -47,11 +47,11 @@ export default function SuperAdminUsersPage() {
 
   const ROLES = [
     { value: '', label: tc('all') },
-    { value: 'admin', label: 'Admin' },
-    { value: 'doctor', label: 'Doctor' },
-    { value: 'patient', label: tc('patients') || 'Paciente' },
-    { value: 'lab_technician', label: 'Lab' },
-    { value: 'superadmin', label: 'Super Admin' },
+    { value: 'admin', label: tc('common:roles.admin', 'Admin') },
+    { value: 'doctor', label: tc('common:roles.doctor', 'Doctor') },
+    { value: 'patient', label: tc('common:roles.patient', 'Paciente') },
+    { value: 'lab_technician', label: tc('common:roles.lab_technician', 'Lab') },
+    { value: 'superadmin', label: tc('common:roles.superadmin', 'Super Admin') },
   ];
 
   const [users, setUsers] = useState<SuperAdminUser[]>([]);

@@ -65,6 +65,7 @@ beforeEach(() => {
   mockConnect.mockReturnValue(mockClient);
   mockClient.query.mockReset();
   mockQuery.mockImplementation((query) => {
+    if (query.includes('user_sessions')) return { rows: [{ id: 1 }] };
     if (query.includes('token_version')) return { rows: [{ token_version: 0 }] };
     if (query.includes('COUNT')) return { rows: [{ count: '0' }] };
     return { rows: [] };

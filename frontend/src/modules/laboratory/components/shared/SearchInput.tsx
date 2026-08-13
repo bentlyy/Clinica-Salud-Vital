@@ -19,7 +19,7 @@ interface SearchInputProps {
 export const SearchInput = memo(function SearchInput({
   value,
   onChange,
-  placeholder = 'Buscar...',
+  placeholder,
   debounceMs = 350,
   sx,
 }: SearchInputProps) {
@@ -70,7 +70,7 @@ export const SearchInput = memo(function SearchInput({
       size="small"
       variant="outlined"
       fullWidth
-      placeholder={placeholder}
+      placeholder={placeholder ?? t('lab:searchPlaceholder', 'Buscar...')}
       value={localValue}
       onChange={(e) => handleChange(e.target.value)}
       slotProps={{

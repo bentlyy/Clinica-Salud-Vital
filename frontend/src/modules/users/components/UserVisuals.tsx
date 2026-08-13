@@ -27,9 +27,10 @@ export function UserAvatar({
   size?: number;
 }) {
   const color = getRoleColor(role);
+  const { t } = useTranslation('common');
 
   return (
-    <Tooltip title={`${name || ''} · ${getRoleLabel(role)}`}>
+    <Tooltip title={`${name || ''} · ${getRoleLabel(role, t)}`}>
       <Avatar
         src={src}
         sx={{
@@ -54,11 +55,12 @@ export function RoleBadge({ role, size = 'small' }: { role: UserRole; size?: 'sm
   const theme = useTheme();
   const color = getRoleColor(role);
   const isDark = theme.palette.mode === 'dark';
+  const { t } = useTranslation('common');
 
   return (
     <Chip
       size={size}
-      label={getRoleLabel(role)}
+      label={getRoleLabel(role, t)}
       sx={{
         fontWeight: 600,
         fontSize: '0.75rem',

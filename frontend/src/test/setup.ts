@@ -51,7 +51,26 @@ const sessionStorageMock = {
 global.sessionStorage = sessionStorageMock;
 
 vi.mock('react-i18next', () => {
-  const t = (key: string, fallback?: string) => fallback ?? key;
+  const t = (
+    key: string,
+    fallback?: string | Record<string, unknown>,
+    options?: Record<string, unknown>,
+  ) => {
+    let base: string;
+    let opts: Record<string, unknown> | undefined;
+    if (typeof fallback === 'string') {
+      base = fallback;
+      opts = options;
+    } else if (fallback && typeof fallback === 'object') {
+      base = key;
+      opts = fallback;
+    } else {
+      base = key;
+      opts = undefined;
+    }
+    if (!opts) return base;
+    return base.replace(/\{\{(\w+)\}\}/g, (_, name: string) => String(opts![name] ?? `{{${name}}}`));
+  };
   return {
     useTranslation: () => ({
       t,

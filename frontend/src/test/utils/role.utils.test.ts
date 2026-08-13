@@ -72,18 +72,29 @@ describe('hasPermission', () => {
 });
 
 describe('getRoleLabel', () => {
+  const esDict: Record<string, string> = {
+    'common:roles.superadmin': 'Super Admin',
+    'common:roles.admin': 'Administrador',
+    'common:roles.doctor': 'Doctor',
+    'common:roles.lab_technician': 'Técnico de Laboratorio',
+    'common:roles.patient': 'Paciente',
+    'common:roles.guest': 'Invitado',
+    'common:roles.user': 'Usuario',
+  };
+  const t = (key: string) => esDict[key] ?? key;
+
   it('returns a human-readable label for each role', () => {
-    expect(getRoleLabel('superadmin')).toBe('Super Admin');
-    expect(getRoleLabel('admin')).toBe('Administrador');
-    expect(getRoleLabel('doctor')).toBe('Doctor');
-    expect(getRoleLabel('lab_technician')).toBe('Técnico de Laboratorio');
-    expect(getRoleLabel('patient')).toBe('Paciente');
-    expect(getRoleLabel('guest')).toBe('Invitado');
-    expect(getRoleLabel('user')).toBe('Usuario');
+    expect(getRoleLabel('superadmin', t)).toBe('Super Admin');
+    expect(getRoleLabel('admin', t)).toBe('Administrador');
+    expect(getRoleLabel('doctor', t)).toBe('Doctor');
+    expect(getRoleLabel('lab_technician', t)).toBe('Técnico de Laboratorio');
+    expect(getRoleLabel('patient', t)).toBe('Paciente');
+    expect(getRoleLabel('guest', t)).toBe('Invitado');
+    expect(getRoleLabel('user', t)).toBe('Usuario');
   });
 
   it('falls back to the raw role for unknown roles', () => {
-    expect(getRoleLabel('mystery' as never)).toBe('mystery');
+    expect(getRoleLabel('mystery' as never, t)).toBe('mystery');
   });
 });
 

@@ -31,7 +31,7 @@ vi.mock('react-i18next', () => ({
     };
     const translations = ns === 'common' ? common : users;
     return {
-      t: (key: string) => translations[key] ?? key,
+      t: (key: string, fallback?: string) => translations[key] ?? fallback ?? key,
       i18n: { language: 'es' },
     };
   },

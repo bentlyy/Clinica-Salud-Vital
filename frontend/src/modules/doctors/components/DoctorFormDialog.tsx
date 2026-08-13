@@ -177,7 +177,7 @@ export function DoctorFormDialog({ open, onClose, doctor, onSubmit, isPending }:
               render={({ field }) => (
                 <TextField
                   {...field}
-                  label="Email"
+                  label={tc('common:email', 'Email')}
                   type="email"
                   fullWidth
                   error={!!errors.email}

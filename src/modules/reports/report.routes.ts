@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { authMiddleware, authorize } from '../../middlewares/auth.middleware.js';
 import { validateZod } from '../../middlewares/validate.middleware.js';
-import { getAvailable, generate, getById } from './report.controller.js';
+import { getAvailable, generate, getById, downloadPdf } from './report.controller.js';
 import { z } from 'zod';
 
 const router = Router();
@@ -18,6 +18,7 @@ router.use(authorize('admin', 'superadmin'));
 
 router.get('/available', getAvailable);
 router.post('/generate', validateZod(generateReportSchema), generate);
+router.get('/:id/pdf', downloadPdf);
 router.get('/:id', getById);
 
 export default router;

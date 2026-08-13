@@ -35,6 +35,14 @@ export const createAvailability = asyncHandler(async (req, res) => {
   res.status(201).json(availability);
 });
 
+export const bulkCreateAvailability = asyncHandler(async (req, res) => {
+  const { doctor_id, days } = req.body;
+
+  const result = await availabilityService.bulkCreateAvailability({ doctor_id, days }, req.tenant_id);
+
+  res.status(201).json(result);
+});
+
 export const deleteAvailability = asyncHandler(async (req, res) => {
   const doctor = await doctorService.getDoctorByUserId(req.user!.id, req.tenant_id);
   if (!doctor) throw new NotFoundError(E.DOCTOR_PROFILE_NOT_FOUND);

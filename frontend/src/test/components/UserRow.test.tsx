@@ -8,27 +8,27 @@ vi.mock('@/i18n/i18n', () => ({
   default: { language: 'es', on: vi.fn() },
 }));
 
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    t: (key: string) => {
-      const translations: Record<string, string> = {
-        never: 'Nunca',
-        time_just_now: 'recién',
-        time_minutes: 'min',
-        time_hours: 'h',
-        time_days: 'días',
-        last_access: 'Último acceso:',
-        view_detail: 'Ver detalle',
-        deactivate: 'Desactivar',
-        activate: 'Activar',
-        status_active: 'Activo',
-        status_inactive: 'Inactivo',
-      };
-      return translations[key] ?? key;
-    },
-    i18n: { language: 'es' },
-  }),
-}));
+vi.mock('react-i18next', () => {
+  const translations: Record<string, string> = {
+    never: 'Nunca',
+    time_just_now: 'recién',
+    time_minutes: 'min',
+    time_hours: 'h',
+    time_days: 'días',
+    last_access: 'Último acceso:',
+    view_detail: 'Ver detalle',
+    deactivate: 'Desactivar',
+    activate: 'Activar',
+    status_active: 'Activo',
+    status_inactive: 'Inactivo',
+  };
+  return {
+    useTranslation: () => ({
+      t: (key: string, fallback?: string) => translations[key] ?? fallback ?? key,
+      i18n: { language: 'es' },
+    }),
+  };
+});
 
 vi.mock('framer-motion', () => {
   const PassThrough = (props: { children?: React.ReactNode }) => props.children ?? null;

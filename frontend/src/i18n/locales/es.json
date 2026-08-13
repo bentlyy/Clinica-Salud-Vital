@@ -225,7 +225,26 @@
       "fr": "Frances"
     },
     "doctor": "Médico",
-    "to": "a"
+    "to": "a",
+    "appName": "Clínica",
+    "rut": "RUT",
+    "tenant": "Tenant",
+    "unknown": "Desconocido",
+    "noOptions": "Sin resultados",
+    "comboboxPlaceholder": "Escribe o selecciona...",
+    "addOption": "Agregar \"{{value}}\"",
+    "activeTooltip": "Activo — Haz clic para desactivar",
+    "inactiveTooltip": "Inactivo — Haz clic para activar",
+    "clearSearch": "Limpiar búsqueda",
+    "roles": {
+      "superadmin": "Super Admin",
+      "admin": "Administrador",
+      "doctor": "Doctor",
+      "lab_technician": "Técnico de Laboratorio",
+      "patient": "Paciente",
+      "guest": "Invitado",
+      "user": "Usuario"
+    }
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -606,7 +625,15 @@
     "newRequest": "Nueva Solicitud",
     "requestDetail": "Detalle de Solicitud",
     "requestNumber": "Nro. Solicitud",
-    "patient": "Paciente",
+    "patient": {
+      "status": {
+        "completed": "Completado",
+        "in_progress": "En progreso",
+        "pending": "Pendiente",
+        "cancelled": "Cancelado",
+        "unknown": "Desconocido"
+      }
+    },
     "doctor": "Doctor",
     "tests": "Pruebas",
     "testCount": "pruebas",
@@ -617,7 +644,22 @@
     "area": "Area",
     "assignedTo": "Asignado a",
     "requestedAt": "Solicitado",
-    "results": "Resultados",
+    "results": {
+      "critical": "Crítico",
+      "alert": "Alerta",
+      "normal": "Normal",
+      "noStatus": "Sin estado",
+      "previous": "Anterior: ",
+      "noPrevious": "Sin valor previo",
+      "refRange": "Rango de ref: ",
+      "review": "Revisar",
+      "deltaTitle": "Verificación Delta — {{test}}",
+      "deltaMessage": "Paciente {{patient}}: resultado {{current}} vs anterior {{previous}}",
+      "trendTitle": "Tendencia del Resultado",
+      "noHistory": "No hay datos históricos disponibles.",
+      "insufficientHistory": "Historial insuficiente",
+      "needTwo": "Se requieren al menos 2 resultados…"
+    },
     "resultValue": "Valor",
     "resultUnit": "Unidad",
     "referenceRange": "Rango de Referencia",
@@ -643,7 +685,53 @@
     "qualityControl": "Control de Calidad",
     "qcRecords": "Registros QC",
     "controlChart": "Gráfico de Control",
-    "inventory": "Inventario",
+    "inventory": {
+      "equipmentTitle": "Inventario de Equipos",
+      "addEquipment": "Agregar Equipo",
+      "totalEquipment": "Total Equipos",
+      "online": "Online",
+      "maintSoon": "Mto. Próximo",
+      "noEquipment": "No hay equipos registrados",
+      "expired": "Vencido",
+      "equipmentCols": {
+        "name": "Nombre",
+        "model": "Modelo",
+        "serial": "Serial",
+        "area": "Área",
+        "status": "Estado",
+        "connection": "Conexión",
+        "lastMaint": "Último Mant.",
+        "nextMaint": "Próx. Mant.",
+        "actions": "Acciones"
+      },
+      "connectionLabels": {
+        "manual": "Manual",
+        "hl7": "HL7",
+        "astm": "ASTM",
+        "serial": "Serial",
+        "file": "Archivo"
+      },
+      "edit": "Editar",
+      "reagentTitle": "Inventario de Reactivos",
+      "addReagent": "Agregar Reactivo",
+      "totalReagents": "Total Reactivos",
+      "lowStock": "Stock Bajo",
+      "expiring": "Por Vencer",
+      "noReagents": "No hay reactivos registrados",
+      "reagentCols": {
+        "name": "Nombre",
+        "lot": "Lote",
+        "supplier": "Proveedor",
+        "stock": "Stock",
+        "minStock": "Stock Mín.",
+        "expiry": "Vencimiento",
+        "area": "Área",
+        "status": "Estado",
+        "actions": "Acciones"
+      },
+      "active": "Activo",
+      "inactive": "Inactivo"
+    },
     "reagents": "Reactivos",
     "equipment": "Equipamiento",
     "analytics": "Analítica",
@@ -804,7 +892,9 @@
     "samplesProcessedToday": "Muestras Hoy",
     "productivityPerHour": "Productividad por hora",
     "workload": "Carga de trabajo",
-    "validation": "Validación",
+    "validation": {
+      "resultRequired": "El valor del resultado es requerido"
+    },
     "online": "En línea",
     "offline": "Desconectado",
     "elapsedTime": "Tiempo transcurrido",
@@ -834,7 +924,12 @@
     "addReagent": "Agregar Reactivo",
     "editReagent": "Editar Reactivo",
     "equipmentName": "Nombre del Equipamiento",
-    "equipmentStatus": "Estado del Equipamiento",
+    "equipmentStatus": {
+      "online": "En Línea",
+      "offline": "Fuera de Línea",
+      "maintenance": "Mantenimiento",
+      "calibration": "Calibración"
+    },
     "equipmentStatuses.operational": "Operativo",
     "equipmentStatuses.maintenance": "Mantenimiento",
     "equipmentStatuses.out_of_service": "Fuera de servicio",
@@ -917,7 +1012,121 @@
     "equipmentUpdated": "Equipo actualizado",
     "reagentRegistered": "Reactivo registrado",
     "reagentUpdated": "Reactivo actualizado",
-    "notificationsRead": "Notificaciones marcadas como leídas"
+    "notificationsRead": "Notificaciones marcadas como leídas",
+    "areaLabels": {
+      "HEM": "Hematología",
+      "BIO": "Bioquímica",
+      "HOR": "Hormonas",
+      "INM": "Inmunología",
+      "MIC": "Microbiología",
+      "PAR": "Parasitología",
+      "URO": "Uroanálisis",
+      "COA": "Coagulación",
+      "SER": "Serología"
+    },
+    "sampleTypeLabels": {
+      "blood": "Sangre",
+      "urine": "Orina",
+      "feces": "Heces",
+      "sputum": "Esputo",
+      "swab": "Hisopo",
+      "csf": "LCR",
+      "other": "Otro"
+    },
+    "containerTypeLabels": {
+      "tube": "Tubo",
+      "flask": "Frasco",
+      "jar": "Recipiente",
+      "swab": "Hisopo",
+      "slide": "Placa"
+    },
+    "notificationTypeLabels": {
+      "critical_result": "Resultado Crítico",
+      "qc_failure": "Falla QC",
+      "equipment_alert": "Alerta Equipo",
+      "stock_alert": "Alerta Stock",
+      "sla_breach": "Incumplimiento SLA",
+      "repeated_result": "Resultado Repetido"
+    },
+    "noItems": "Sin elementos",
+    "drPrefix": "Dr. ",
+    "media": "Media",
+    "noRange": "Sin rango definido",
+    "qc": {
+      "withinRange": "Dentro de rango (Pasó)",
+      "outOfRange": "Fuera de rango (Falló)",
+      "validationTitle": "Lista de Validación Pendiente",
+      "techTab": "Validación Técnica",
+      "medTab": "Validación Médica",
+      "cols": {
+        "patient": "Paciente",
+        "test": "Test",
+        "result": "Resultado",
+        "reference": "Referencia",
+        "status": "Estado",
+        "actions": "Acciones"
+      },
+      "validateTech": "Validar Técnico",
+      "validateMed": "Validar Médico",
+      "noPending": "No hay resultados pendientes de validación"
+    },
+    "catalog": {
+      "categories": {
+        "HEM": "Hematología",
+        "GLU": "Glucosa",
+        "LIP": "Lípidos",
+        "CRE": "Riñón",
+        "TSH": "Tiroides",
+        "URO": "Orina",
+        "HBA": "HbA1c",
+        "PCR": "Inflamación",
+        "ALT": "Hígado",
+        "GENERAL": "General"
+      }
+    },
+    "statusLabels.completed": "Completado",
+    "statusLabels.in_progress": "En progreso",
+    "areaRequired": "El área es requerida",
+    "selectAreaRequired": "Seleccione un área",
+    "testRequired": "El test es requerido",
+    "selectTestRequired": "Seleccione un test",
+    "qcTypeRequired": "El tipo QC es requerido",
+    "controlNameRequired": "El nombre del control es requerido",
+    "lotNumberRequired": "El número de lote es requerido",
+    "expirationDateRequired": "La fecha de vencimiento es requerida",
+    "mustBePositive": "Debe ser positivo",
+    "measuredValueRequired": "El valor medido es requerido",
+    "minLessThanMax": "El mínimo debe ser menor que el máximo",
+    "testNameRequired": "Nombre del test requerido",
+    "valueRequired": "Valor requerido",
+    "atLeastOneResult": "Agrega al menos un resultado",
+    "locationRequired": "Ubicación requerida",
+    "maxChars100": "Máximo 100 caracteres",
+    "maxChars50": "Máximo 50 caracteres",
+    "sampleTypeRequired": "Tipo de muestra requerido",
+    "containerTypeRequired": "Tipo de contenedor requerido",
+    "volumeGreaterThanZero": "Volumen debe ser mayor a 0",
+    "labelRequired": "Etiqueta requerida",
+    "pendingValidation": "Validación Pendiente",
+    "withoutName": "Sin nombre",
+    "statusNormal": "Normal",
+    "statusUnknown": "Sin estado",
+ "statusCritical": "Crítico",
+ "statusWarning": "Alerta",
+ "previousLabel": "Anterior: {{value}}",
+ "noPreviousValue": "Sin valor previo",
+ "refRangeLabel": "Rango de ref: {{range}}",
+    "totalEquipment": "Total Equipos",
+    "totalReagents": "Total Reactivos",
+    "expiredPlural": "Vencidos",
+    "name": "Nombre",
+    "lastMaintenance": "Último Mant.",
+    "edit": "Editar",
+    "active": "Activo",
+    "inactive": "Inactivo",
+    "idTypeManual": "Manual",
+    "idTypeSerial": "Serial",
+    "idTypeFile": "Archivo"
   },
   "bookings": {
     "title": "Citas",
@@ -1052,7 +1261,16 @@
     "no_bookings_calendar": "No hay citas para mostrar en el calendario.",
     "createError": "Error al crear la cita",
     "cancelled": "Cita cancelada correctamente",
-    "cancelError": "Error al cancelar la cita"
+    "cancelError": "Error al cancelar la cita",
+    "recurring": "Cita recurrente",
+    "recurring_help": "Repetir esta cita automáticamente",
+    "frequency_daily": "Diaria",
+    "frequency_weekly": "Semanal",
+    "frequency_monthly": "Mensual",
+    "occurrences": "Número de citas",
+    "occurrences_help": "Total de citas a agendar",
+    "seriesCreated": "Serie de citas creada correctamente",
+    "seriesCancelled": "Serie de citas cancelada"
   },
   "clinicalRecords": {
     "title": "Expedientes",
@@ -1239,7 +1457,16 @@
     "created": "Receta creada correctamente",
     "updated": "Receta actualizada correctamente",
     "deleted": "Receta eliminada correctamente",
-    "downloadError": "Error al descargar el PDF"
+    "downloadError": "Error al descargar el PDF",
+    "validation": {
+      "medRequired": "El nombre del medicamento es requerido",
+      "doseRequired": "La dosis es requerida",
+      "freqRequired": "La frecuencia es requerida",
+      "durationRequired": "La duración es requerida",
+      "patientRequired": "El nombre del paciente es requerido",
+      "selectPatient": "Seleccione un paciente",
+      "addMedication": "Agregue al menos un medicamento"
+    }
   },
   "medicalHistory": {
     "title": "Historial Médico",
@@ -1758,7 +1985,26 @@
     "min_one_service": "Debe agregar al menos un servicio",
     "cancel": "Cancelar",
     "invoiceDeleted": "Factura eliminada exitosamente",
-    "invoicePaid": "Factura marcada como pagada"
+    "invoicePaid": "Factura marcada como pagada",
+    "summary": {
+      "totalRevenue": "Ingresos Totales",
+      "pending": "Pendientes de Pago",
+      "overdue": "Facturas Vencidas",
+      "last30Days": "Facturas Últimos 30 días",
+      "pendingPayment": "Pendientes de Pago",
+      "overdueInvoices": "Facturas Vencidas",
+      "invoicesLast30": "Facturas Últimos 30 días"
+    },
+    "validation": {
+      "descriptionRequired": "La descripción es requerida",
+      "quantityMin": "La cantidad debe ser al menos 1",
+      "unitPricePositive": "El precio unitario debe ser positivo",
+      "selectPatient": "Selecciona un paciente",
+      "dueDateRequired": "La fecha de vencimiento es requerida",
+      "taxPositive": "El impuesto debe ser positivo",
+      "taxMax": "El impuesto no puede superar el 100%",
+      "addService": "Debe agregar al menos un servicio"
+    }
   },
   "availability": {
     "title": "Horarios",
@@ -1968,6 +2214,24 @@
       "entity": "Entidad",
       "entityId": "ID Entidad",
       "ip": "IP"
+    },
+    "detailTitle": "Detalle de Auditoría",
+    "id": "ID",
+    "idValue": "ID: {{id}}",
+    "idEntidad": "ID Entidad",
+    "fechaHora": "Fecha/Hora",
+    "detallesAdicionales": "Detalles Adicionales",
+    "userValue": "Usuario #{{id}}",
+    "actionLabels": {
+      "approve": "Aprobación",
+      "reject": "Rechazo",
+      "assign": "Asignación",
+      "cancel": "Cancelación"
+    },
+    "entityLabels": {
+      "template": "Plantilla",
+      "tenant": "Clínica",
+      "billing": "Facturación"
     }
   },
   "notifications": {
@@ -2002,7 +2266,14 @@
     "total_notifications": "{{count}} notificaciones",
     "no_new_notifications": "No tienes notificaciones nuevas",
     "clinicFilter": "Filtrar por clínica",
-    "allClinics": "Todas las clínicas"
+    "allClinics": "Todas las clínicas",
+    "type": {
+      "info": "Info",
+      "warning": "Advertencia",
+      "success": "Éxito",
+      "error": "Error"
+    },
+    "bellTooltip": "Notificaciones ({{count}})"
   },
   "settings": {
     "title": "Configuración",
@@ -2107,7 +2378,8 @@
     "two_factor_auth": "Autenticación de dos factores",
     "active_sessions": "Sesiones activas",
     "revoke_all_sessions": "Revocar todas las sesiones",
-    "qrCode2fa": "Código QR 2FA"
+    "qrCode2fa": "Código QR 2FA",
+    "tenant_label": "Tenant"
   },
   "superAdmin": {
     "title": "Panel SaaS",
@@ -2351,7 +2623,10 @@
     "completed": "Completados",
     "pending": "Pendientes",
     "pending_section": "Pendientes",
-    "completed_section": "Completados"
+    "completed_section": "Completados",
+    "out_of_range": "Fuera de rango",
+    "new_badge": "Nuevo",
+    "anomaly_banner": "Este informe contiene {{count}} valores fuera de rango"
   },
   "doctor_calendar": {
     "title": "Mi Calendario",
@@ -2450,7 +2725,7 @@
     "lastYear": "Ano Pasado",
     "monday": "Lunes",
     "tuesday": "Martes",
-    "wednesday": "Miercoles",
+    "wednesday": "Miércoles",
     "thursday": "Jueves",
     "friday": "Viernes",
     "saturday": "Sábado",
@@ -2482,7 +2757,14 @@
     "last30Days": "Últimos 30 dias",
     "last90Days": "Últimos 90 dias",
     "customRange": "Rango personalizado",
-    "allTime": "Todo el tiempo"
+    "allTime": "Todo el tiempo",
+    "sundayShort": "Dom",
+    "mondayShort": "Lun",
+    "tuesdayShort": "Mar",
+    "wednesdayShort": "Mié",
+    "thursdayShort": "Jue",
+    "fridayShort": "Vie",
+    "saturdayShort": "Sáb"
   },
   "not_found": {
     "title": "Página no encontrada",
@@ -2546,7 +2828,9 @@
     "status.confirmed": "Confirmada",
     "status.completed": "Completada",
     "status.cancelled": "Cancelada",
-    "status.no_show": "No asistió"
+    "status.no_show": "No asistió",
+    "openFicha": "Ver ficha",
+    "todayGroup": "Agenda de hoy por estado"
   },
   "patient_history": {
     "title": "Historial del Paciente",
@@ -2568,6 +2852,37 @@
     "noExamsDesc": "Este paciente no tiene exámenes de laboratorio.",
     "downloadPdf": "Descargar PDF",
     "priority": "Prioridad"
+  },
+  "patient_ficha": {
+    "title": "Ficha del Paciente",
+    "subtitle": "Información clínica consolidada",
+    "tabSummary": "Resumen",
+    "tabBookings": "Citas ({{count}})",
+    "tabHistory": "Historial",
+    "tabPrescriptions": "Recetas ({{count}})",
+    "tabAttachments": "Adjuntos",
+    "tabLab": "Laboratorio ({{count}})",
+    "summaryRecords": "Registros clínicos",
+    "summaryBookings": "Citas",
+    "summaryPrescriptions": "Recetas",
+    "summaryLab": "Exámenes",
+    "summaryAttachments": "Adjuntos",
+    "noBookings": "Sin citas registradas",
+    "noBookingsDesc": "Este paciente no tiene citas asociadas a ti.",
+    "noPrescriptions": "Sin recetas",
+    "noPrescriptionsDesc": "Este paciente no tiene recetas registradas.",
+    "noAttachments": "Sin archivos adjuntos",
+    "noAttachmentsDesc": "Adjunta documentos como órdenes, certificados o resultados de exámenes.",
+    "medicalHistory": "Antecedentes médicos",
+    "noMedicalHistory": "Sin antecedentes médicos",
+    "noMedicalHistoryDesc": "Este paciente no tiene antecedentes registrados.",
+    "historyStatus": "Estado",
+    "historyActive": "Activo",
+    "historyResolved": "Resuelto",
+    "historyChronic": "Crónico",
+    "historyFamily": "Familiar",
+    "recordDoctor": "Dr. {{name}}",
+    "bookingDate": "{{date}} · {{time}}"
   },
   "lab_catalog": {
     "title": "Catálogo de Exámenes de Laboratorio",
@@ -2647,7 +2962,10 @@
     "pending": "Pendiente",
     "requestNotes": "NOTAS DE LA SOLICITUD:",
     "errorLoading": "Error al cargar resultado",
-    "notFound": "Resultado no encontrado"
+    "notFound": "Resultado no encontrado",
+    "anomalyBanner": "Este informe contiene {{count}} valor(es) fuera de rango",
+    "high": "Alto",
+    "low": "Bajo"
   },
   "admin_lab_requests": {
     "title": "Solicitudes de Laboratorio",
@@ -2815,7 +3133,8 @@
     "cancel": "Cancelar",
     "created": "Expediente creado correctamente",
     "updated": "Expediente actualizado correctamente",
-    "deleted": "Expediente eliminado correctamente"
+    "deleted": "Expediente eliminado correctamente",
+    "noVitals": "No hay signos vitales registrados"
   },
   "clinical_record_detail": {
     "loading_record": "Cargando expediente...",
@@ -3137,7 +3456,24 @@
     "cases": "casos",
     "top_diagnoses_chart": "Casos",
     "doctor": "Médico",
-    "noData": "Sin datos"
+    "noData": "Sin datos",
+    "csv": {
+      "metricsTitle": "Métricas",
+      "metric": "Métrica",
+      "value": "Valor",
+      "bookingsTitle": "Citas por mes",
+      "month": "Mes",
+      "bookings": "Citas",
+      "statusTitle": "Estado de citas",
+      "status": "Estado",
+      "count": "Cantidad",
+      "doctorsTitle": "Doctores más solicitados",
+      "doctor": "Doctor",
+      "specialty": "Especialidad",
+      "confirmed": "Confirmadas"
+    },
+    "cie10": "CIE-10: ",
+    "cie10Prefix": "CIE-10: "
   },
   "register": {
     "title": "Crear Cuenta",
@@ -3214,7 +3550,18 @@
     "colDoctor": "Médico",
     "colSpecialty": "Especialidad",
     "colBookings": "Citas",
-    "colConfirmed": "Confirmadas"
+    "colConfirmed": "Confirmadas",
+    "exportCSV": "Exportar CSV",
+    "csvMetrics": "Métricas",
+    "csvMetric": "Métrica",
+    "csvValue": "Valor",
+    "csvBookingsByMonth": "Reservas por mes",
+    "csvMonth": "Mes",
+    "csvBookings": "Reservas",
+    "csvBookingStatus": "Estado de reserva",
+    "csvStatus": "Estado",
+    "csvCount": "Cantidad",
+    "csvTopDoctors": "Mejores doctores"
   },
   "clinical_templates": {
     "created": "Plantilla creada correctamente",

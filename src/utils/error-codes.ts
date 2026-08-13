@@ -65,6 +65,11 @@ export const E = {
   BOOKING_INVALID_ID:           'BOOKING_INVALID_ID',
   BOOKING_NOT_FOUND:            'BOOKING_NOT_FOUND',
   BOOKING_UNAUTHORIZED:         'BOOKING_UNAUTHORIZED',
+  BOOKING_ALREADY_CANCELLED:    'BOOKING_ALREADY_CANCELLED',
+  BOOKING_SERIES_INVALID_FREQUENCY: 'BOOKING_SERIES_INVALID_FREQUENCY',
+  BOOKING_SERIES_INVALID_OCCURRENCES: 'BOOKING_SERIES_INVALID_OCCURRENCES',
+  BOOKING_SERIES_NOT_FOUND:     'BOOKING_SERIES_NOT_FOUND',
+  BOOKING_SERIES_UNAUTHORIZED:  'BOOKING_SERIES_UNAUTHORIZED',
 
   // ── Availability ────────────────────────────────────────────────
   AVAILABILITY_MISSING_FIELDS:  'AVAILABILITY_MISSING_FIELDS',
@@ -271,7 +276,11 @@ export const ERROR_MESSAGES: Record<ErrorCode, string> = {
   [E.BOOKING_INVALID_ID]:           'Invalid booking id',
   [E.BOOKING_NOT_FOUND]:            'Booking not found or unauthorized',
   [E.BOOKING_UNAUTHORIZED]:         'Booking not found or unauthorized',
-
+  [E.BOOKING_ALREADY_CANCELLED]:    'Cannot reschedule a cancelled booking',
+  [E.BOOKING_SERIES_INVALID_FREQUENCY]: 'Frequency must be daily, weekly or monthly',
+  [E.BOOKING_SERIES_INVALID_OCCURRENCES]: 'Occurrences must be between 1 and 52',
+  [E.BOOKING_SERIES_NOT_FOUND]:     'Booking series not found',
+  [E.BOOKING_SERIES_UNAUTHORIZED]:  'Not authorized to manage this booking series',
   // Availability
   [E.AVAILABILITY_MISSING_FIELDS]:  'Missing required fields',
   [E.AVAILABILITY_INVALID_DAY]:     'day_of_week must be an integer between 0 and 6',

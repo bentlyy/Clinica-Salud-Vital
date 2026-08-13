@@ -114,8 +114,8 @@ Cobertura frontend : lines 85.22% (≥80) · branch 74.15% (≥70) · funcs 79.6
 ### Pasos previos a cada PR
 
 - [ ] `npm run typecheck` (backend y frontend) sin errores
-- [ ] `npm test` backend → exit 0 (90 archivos / 1335 tests)
-- [ ] `cd frontend && npx vitest run` → exit 0 (177 archivos / 1212 tests)
+- [ ] `npm test` backend → exit 0 (104 archivos / 1498 tests)
+- [ ] `cd frontend && npx vitest run` → exit 0 (178 archivos / 1232 tests)
 - [ ] Ningún `key={i}` nuevo en listas de datos reordenables
 - [ ] Ningún `as any` nuevo; errores de negocio vía catálogo `E.*`
 - [ ] Sin `.only` en tests, sin `console.log`/`debugger`, sin secrets

@@ -1,7 +1,7 @@
 import { useState, memo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '@mui/material/styles';
-import { Box, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Avatar, Typography, Tabs, Tab, CircularProgress } from '@mui/material';
+import { Box, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Avatar, Typography, Tabs, Tab, CircularProgress, Button } from '@mui/material';
 import Star from '@mui/icons-material/Star';
 import People from '@mui/icons-material/People';
 import Event from '@mui/icons-material/Event';
@@ -13,6 +13,7 @@ import MonitorHeart from '@mui/icons-material/MonitorHeart';
 import QueryStats from '@mui/icons-material/QueryStats';
 import CalendarMonth from '@mui/icons-material/CalendarMonth';
 import Insights from '@mui/icons-material/Insights';
+import FileDownload from '@mui/icons-material/FileDownload';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { ErrorState } from '@/shared/components/ui/ErrorState';
 import {
@@ -27,6 +28,7 @@ import { DemandPanel } from '../components/DemandPanel';
 import { SchedulesPanel } from '../components/SchedulesPanel';
 import { VitalsPanel } from '../components/VitalsPanel';
 import { useAuth } from '@/shared/providers/AuthProvider';
+import type { AdminAnalytics } from '../types/analytics.types';
 
 const StatCard = memo(function StatCard({ icon, label, value, color }: { icon: React.ReactNode; label: string; value: number | string; color: string }) {
   const theme = useTheme();
@@ -50,6 +52,53 @@ function LoadingPanel() {
     </Box>
   );
 }
+
+const escapeCsv = (value: string | number) => {
+  const str = String(value ?? '');
+  return /[",\n;]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str;
+};
+
+const exportAnalyticsCsv = (analytics: AdminAnalytics | undefined, t: (key: string, fallback: string) => string) => {
+  const lines: string[] = [];
+  const pushSection = (title: string, headers: string[], rows: Array<Array<string | number>>) => {
+    lines.push(`# ${title}`);
+    if (rows.length > 0) {
+      lines.push(headers.map(escapeCsv).join(','));
+      rows.forEach((row) => lines.push(row.map(escapeCsv).join(',')));
+    }
+  };
+
+  pushSection(
+    t('csvMetrics', 'Metrics'),
+    [t('csvMetric', 'Metric'), t('csvValue', 'Value')],
+    Object.entries(analytics?.stats ?? {}).map(([key, value]) => [key, value as number]),
+  );
+  pushSection(
+    t('csvBookingsByMonth', 'Bookings by month'),
+    [t('csvMonth', 'Month'), t('csvBookings', 'Bookings')],
+    (analytics?.bookings_by_month ?? []).map((r) => [String(r.month ?? ''), Number(r.total ?? 0)]),
+  );
+  pushSection(
+    t('csvBookingStatus', 'Booking status'),
+    [t('csvStatus', 'Status'), t('csvCount', 'Count')],
+    (analytics?.bookings_by_status ?? []).map((r) => [String(r.status ?? ''), Number(r.count ?? 0)]),
+  );
+  pushSection(
+    t('csvTopDoctors', 'Top doctors'),
+    [t('colDoctor', 'Doctor'), t('colSpecialty', 'Specialty'), t('colBookings', 'Bookings'), t('colConfirmed', 'Confirmed')],
+    (analytics?.top_doctors ?? []).map((d) => [String(d.name ?? ''), String(d.specialty ?? ''), Number(d.appointments ?? 0), Number(d.confirmed_bookings ?? 0)]),
+  );
+
+  const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `analytics_${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+};
 
 function DoctorAnalytics() {
   const { t } = useTranslation('admin_analytics');
@@ -126,7 +175,17 @@ function AdminAnalytics() {
 
       {activeTab === 'overview' && (
         <Box>
-          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr 1fr', md: '1fr 1fr 1fr 1fr' }, gap: 2, mb: 3 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<FileDownload />}
+              onClick={() => exportAnalyticsCsv(analytics, t)}
+            >
+              {t('exportCSV')}
+            </Button>
+          </Box>
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr 1fr', md: '1fr 1fr 1fr 1fr' }, gap: 2.5, mb: 3 }}>
             <StatCard icon={<People sx={{ color: theme.palette.common.white }} />} label={t('totalPatients')} value={analytics?.stats?.total_patients ?? '—'} color={theme.palette.primary.main} />
             <StatCard icon={<LocalHospital sx={{ color: theme.palette.common.white }} />} label={t('totalDoctors')} value={analytics?.stats?.total_doctors ?? '—'} color={theme.palette.info.main} />
             <StatCard icon={<Event sx={{ color: theme.palette.common.white }} />} label={t('totalBookings')} value={analytics?.stats?.total_bookings ?? '—'} color={theme.palette.secondary.main} />

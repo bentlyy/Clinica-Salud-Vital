@@ -1,5 +1,6 @@
 import { Chip, Tooltip } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
+import { useTranslation } from 'react-i18next';
 import CheckCircle from '@mui/icons-material/CheckCircle';
 import Cancel from '@mui/icons-material/Cancel';
 
@@ -11,12 +12,13 @@ interface UserStatusChipProps {
 
 export function UserStatusChip({ isActive, onClick, size = 'small' }: UserStatusChipProps) {
   const theme = useTheme();
+  const { t } = useTranslation('common');
 
   return (
-    <Tooltip title={isActive ? 'Activo — Haz clic para desactivar' : 'Inactivo — Haz clic para activar'}>
+    <Tooltip title={isActive ? t('activeTooltip', 'Activo — Haz clic para desactivar') : t('inactiveTooltip', 'Inactivo — Haz clic para activar')}>
       <Chip
         icon={isActive ? <CheckCircle sx={{ fontSize: 14 }} /> : <Cancel sx={{ fontSize: 14 }} />}
-        label={isActive ? 'Activo' : 'Inactivo'}
+        label={isActive ? t('active', 'Activo') : t('inactive', 'Inactivo')}
         size={size}
         onClick={onClick}
         sx={{

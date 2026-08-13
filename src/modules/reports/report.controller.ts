@@ -28,3 +28,18 @@ export const getById = asyncHandler(async (req, res) => {
   const report = await reportService.getById(id, req.tenant_id);
   res.json(report);
 });
+
+export const downloadPdf = asyncHandler(async (req, res) => {
+  const id = Number(req.params.id);
+  if (isNaN(id)) throw new BadRequestError(E.REPORT_INVALID_ID);
+  const report = await reportService.getByIdParsed(id, req.tenant_id);
+
+  const { generateReportPDF } = await import('./report-pdf.service.js');
+  const pdfBuffer = await generateReportPDF(report, req.tenant_id);
+
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', `attachment; filename=report-${report.type}-${report.id}.pdf`);
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('Cache-Control', 'private, no-store, no-cache, must-revalidate');
+  res.send(pdfBuffer);
+});

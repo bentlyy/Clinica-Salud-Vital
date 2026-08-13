@@ -7,6 +7,10 @@ vi.mock('@/modules/bookings/hooks/useBookings', () => ({
   useAvailableSlots: () => ({ data: ['09:00', '09:30'], isLoading: false }),
 }));
 
+vi.mock('@/modules/waitlist/hooks/useWaitlist', () => ({
+  useJoinWaitlist: () => ({ mutate: vi.fn(), isPending: false }),
+}));
+
 const doctors = [
   { id: 1, name: 'Ana Torres', specialty: 'Cardiología' },
   { id: 2, name: 'Luis Gomez' },

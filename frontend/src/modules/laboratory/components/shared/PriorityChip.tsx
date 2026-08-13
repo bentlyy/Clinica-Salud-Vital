@@ -1,6 +1,7 @@
 import { memo } from 'react';
 import Chip from '@mui/material/Chip';
 import { useTheme, alpha } from '@mui/material/styles';
+import { useTranslation } from 'react-i18next';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import {
   LAB_PRIORITY_LABELS,
@@ -27,8 +28,9 @@ export const PriorityChip = memo(function PriorityChip({
   showIcon = false,
 }: PriorityChipProps) {
   const theme = useTheme();
+  const { t } = useTranslation('lab');
   const chipColor = LAB_PRIORITY_COLORS[priority as LabPriority] ?? theme.palette.text.secondary;
-  const displayLabel = LAB_PRIORITY_LABELS[priority as LabPriority] ?? priority;
+  const displayLabel = t(`lab:priorityLabels.${priority}`, LAB_PRIORITY_LABELS[priority as LabPriority] ?? priority);
   const muiColor = PRIORITY_MUI_COLOR_MAP[priority] ?? 'default';
   const isEmergency = priority === 'emergency';
 

@@ -30,6 +30,11 @@ vi.mock('../../src/utils/logger.js', () => ({
   logger: { info: vi.fn(), error: vi.fn(), warn: vi.fn(), debug: vi.fn() },
 }));
 
+vi.mock('../../src/shared/sessions.service.js', () => ({
+  createUserSession: vi.fn().mockResolvedValue({ sessionId: 1, sessionToken: 'mock-session-token' }),
+  touchUserSession: vi.fn(),
+}));
+
 import * as authService from '../../src/modules/auth/auth.service.js';
 import bcrypt from 'bcrypt';
 

@@ -187,6 +187,25 @@ describe('analytics.service', () => {
       expect(result[0].date).toBe('2026-05-26');
       expect(result[0].predicted).toBeNull();
       expect(result[1].predicted).toEqual(expect.any(Number));
+      expect(result[1].bookings).toBe(0);
+    });
+
+    it('projects forecast from SMA of historical data', async () => {
+      mockQuery.mockResolvedValue({
+        rows: [
+          { date: '2026-05-20', bookings: '4', avg_bookings: '6.00', std_bookings: '2.00' },
+          { date: '2026-05-21', bookings: '6', avg_bookings: '6.00', std_bookings: '2.00' },
+          { date: '2026-05-22', bookings: '8', avg_bookings: '6.00', std_bookings: '2.00' },
+        ],
+      });
+
+      const analytics = await import('../../src/modules/analytics/analytics.service.js');
+      const result = await analytics.getDemandForecast(30, 'tenant-1');
+
+      expect(result).toHaveLength(10);
+      expect(result[3].date).not.toBeNull();
+      expect(result[3].predicted).toBe(6);
+      result.slice(3).forEach(point => expect(point.predicted).toBe(6));
     });
 
     it('falls back on query error', async () => {
@@ -198,6 +217,48 @@ describe('analytics.service', () => {
 
       expect(result).toHaveLength(1);
       expect(result[0].predicted).toBeNull();
+    });
+  });
+
+  describe('smaForecast', () => {
+    it('is deterministic and uses the last N historical points', async () => {
+      const analytics = await import('../../src/modules/analytics/analytics.service.js');
+      const historical = [
+        { date: '2026-05-12', bookings: 100 },
+        { date: '2026-05-13', bookings: 100 },
+        { date: '2026-05-14', bookings: 6 },
+        { date: '2026-05-15', bookings: 6 },
+        { date: '2026-05-16', bookings: 6 },
+        { date: '2026-05-17', bookings: 6 },
+        { date: '2026-05-18', bookings: 6 },
+        { date: '2026-05-19', bookings: 6 },
+        { date: '2026-05-20', bookings: 6 },
+      ];
+
+      const first = analytics.smaForecast(historical, 3);
+      const second = analytics.smaForecast(historical, 3);
+
+      expect(first).toHaveLength(3);
+      expect(first).toEqual(second);
+      first.forEach(point => expect(point.predicted).toBe(6));
+    });
+
+    it('clamps predictions to a minimum of 0', async () => {
+      const analytics = await import('../../src/modules/analytics/analytics.service.js');
+      const historical = [{ date: '2026-05-20', bookings: -2 }];
+
+      const forecast = analytics.smaForecast(historical, 2);
+
+      expect(forecast).toHaveLength(2);
+      forecast.forEach(point => expect(point.predicted).toBe(0));
+    });
+
+    it('uses fallback value when no historical data exists', async () => {
+      const analytics = await import('../../src/modules/analytics/analytics.service.js');
+      const forecast = analytics.smaForecast([], 2, 8);
+
+      expect(forecast).toHaveLength(2);
+      forecast.forEach(point => expect(point.predicted).toBe(8));
     });
   });
 

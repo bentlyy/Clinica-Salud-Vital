@@ -5,10 +5,23 @@ import type { ScheduleRecord } from '../types/analytics.types';
 
 const HOURS = ['09:00', '10:00', '11:00', '14:00', '15:00', '16:00'];
 const DAYS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'];
+const DAY_TO_KEY: Record<string, string> = {
+  Domingo: 'sunday',
+  Lunes: 'monday',
+  Martes: 'tuesday',
+  Miércoles: 'wednesday',
+  Jueves: 'thursday',
+  Viernes: 'friday',
+  Sábado: 'saturday',
+};
 
 export function SchedulesPanel({ data }: { data: ScheduleRecord[] }) {
   const theme = useTheme();
   const { t } = useTranslation('analytics');
+
+  function translateDay(day: string): string {
+    return t(`dates:${DAY_TO_KEY[day] ?? 'monday'}`, day);
+  }
 
   function getScoreColor(score: number): string {
     if (score > 70) return theme.palette.success.main;
@@ -27,7 +40,7 @@ export function SchedulesPanel({ data }: { data: ScheduleRecord[] }) {
             const dayData = data.find(d => d.day === day);
             return (
               <Box key={day} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Typography variant="body2" sx={{ width: 80, fontWeight: 500 }}>{day}</Typography>
+                <Typography variant="body2" sx={{ width: 80, fontWeight: 500 }}>{translateDay(day)}</Typography>
                 <Box sx={{ display: 'flex', gap: 0.5, flex: 1 }}>
                   {HOURS.map((hour) => {
                     const hourData = dayData?.hours?.find(h => h.time === hour);
@@ -70,7 +83,7 @@ export function SchedulesPanel({ data }: { data: ScheduleRecord[] }) {
             <TableBody>
               {data.slice(0, 5).map((d) => (
                 <TableRow key={d.day}>
-                  <TableCell>{d.day}</TableCell>
+                  <TableCell>{translateDay(d.day)}</TableCell>
                   <TableCell>{d.bestTime}</TableCell>
                   <TableCell>
                     <Box

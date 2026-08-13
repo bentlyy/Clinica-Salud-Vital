@@ -11,4 +11,25 @@ export const settingsService = {
     const { data } = await apiClient.post<{ message: string }>('/auth/change-password', input, { signal: opts?.signal });
     return data;
   },
+
+  async getSessions(opts?: { signal?: AbortSignal }): Promise<Session[]> {
+    const { data } = await apiClient.get<{ data: Session[] }>('/auth/sessions', { signal: opts?.signal });
+    return data.data;
+  },
+
+  async revokeSession(id: number, opts?: { signal?: AbortSignal }): Promise<{ message: string }> {
+    const { data } = await apiClient.delete<{ message: string }>(`/auth/sessions/${id}`, { signal: opts?.signal });
+    return data;
+  },
 };
+
+export interface Session {
+  id: number;
+  tenant_id: string;
+  user_id: number;
+  device: string | null;
+  ip_address: string | null;
+  created_at: string;
+  last_activity: string | null;
+  revoked_at: string | null;
+}

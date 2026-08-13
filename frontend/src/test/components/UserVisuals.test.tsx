@@ -8,18 +8,18 @@ vi.mock('@/i18n/i18n', () => ({
 }));
 
 vi.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    t: (key: string) => {
-      const translations: Record<string, string> = {
-        status_active: 'Activo',
-        status_inactive: 'Inactivo',
-        status_active_hint: 'Usuario activo',
-        status_inactive_hint: 'Usuario inactivo',
-      };
-      return translations[key] ?? key;
-    },
-    i18n: { language: 'es' },
-  }),
+  useTranslation: () => {
+    const translations: Record<string, string> = {
+      status_active: 'Activo',
+      status_inactive: 'Inactivo',
+      status_active_hint: 'Usuario activo',
+      status_inactive_hint: 'Usuario inactivo',
+    };
+    return {
+      t: (key: string, fallback?: string) => translations[key] ?? fallback ?? key,
+      i18n: { language: 'es' },
+    };
+  },
 }));
 
 vi.mock('framer-motion', () => {

@@ -6,6 +6,7 @@ import {
   CircularProgress,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
+import { useTranslation } from 'react-i18next';
 import { useState, useEffect, useRef, useCallback, memo } from 'react';
 import ArrowDropDown from '@mui/icons-material/ArrowDropDown';
 import { apiClient } from '@/shared/services/api-client';
@@ -26,7 +27,7 @@ interface ComboboxProps {
 export const Combobox = memo(function Combobox({
   value,
   onChange,
-  placeholder = 'Escribe o selecciona...',
+  placeholder,
   required,
   label,
   fetchUrl,
@@ -36,6 +37,7 @@ export const Combobox = memo(function Combobox({
   helperText,
 }: ComboboxProps) {
   const theme = useTheme();
+  const { t } = useTranslation('common');
   const [options, setOptions] = useState<string[]>(staticOptions || []);
   const [open, setOpen] = useState(false);
   const [highlighted, setHighlighted] = useState(-1);
@@ -131,7 +133,7 @@ export const Combobox = memo(function Combobox({
         onChange={(e) => onChange(e.target.value)}
         onFocus={() => setOpen(true)}
         onKeyDown={handleKeyDown}
-        placeholder={placeholder}
+        placeholder={placeholder ?? t('comboboxPlaceholder', 'Escribe o selecciona...')}
         disabled={disabled}
         error={error}
         helperText={helperText}
@@ -207,7 +209,7 @@ export const Combobox = memo(function Combobox({
           }}
         >
           <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
-            Sin resultados
+            {t('noOptions', 'Sin resultados')}
           </Typography>
         </Paper>
       )}
@@ -238,7 +240,7 @@ export const Combobox = memo(function Combobox({
               '&:hover': { backgroundColor: theme.palette.custom?.brand?.lightest || theme.palette.action.hover },
             }}
           >
-            Agregar &quot;{value}&quot;
+            {t('addOption', 'Agregar "{{value}}"', { value })}
           </Box>
         </Paper>
       )}

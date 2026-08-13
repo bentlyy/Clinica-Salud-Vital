@@ -21,12 +21,18 @@ import NotesOutlined from '@mui/icons-material/NotesOutlined';
 import CalendarToday from '@mui/icons-material/CalendarToday';
 import AccessTime from '@mui/icons-material/AccessTime';
 import MedicalServices from '@mui/icons-material/MedicalServices';
+import Repeat from '@mui/icons-material/Repeat';
+import Add from '@mui/icons-material/Add';
+import Remove from '@mui/icons-material/Remove';
+import IconButton from '@mui/material/IconButton';
+import Checkbox from '@mui/material/Checkbox';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useTranslation } from 'react-i18next';
 import { useAvailableSlots } from '../hooks/useBookings';
-import type { CreateBookingInput } from '../types/booking.types';
+import { useJoinWaitlist } from '@/modules/waitlist/hooks/useWaitlist';
+import type { CreateBookingInput, CreateBookingSeriesInput, RecurrenceFrequency } from '../types/booking.types';
 
 function createBookingSchema(t: (key: string) => string) {
   return z.object({
@@ -38,6 +44,9 @@ function createBookingSchema(t: (key: string) => string) {
     guest_email: z.string().email(t('invalid_email')).optional().or(z.literal('')),
     guest_phone: z.string().optional(),
     notes: z.string().optional(),
+    is_recurring: z.boolean().optional(),
+    frequency: z.enum(['daily', 'weekly', 'monthly']).optional(),
+    occurrences: z.number().min(1).max(52).optional(),
   });
 }
 
@@ -51,6 +60,7 @@ interface CreateBookingDialogProps {
   open: boolean;
   onClose: () => void;
   onSubmit: (data: CreateBookingInput) => void;
+  onSubmitSeries?: (data: CreateBookingSeriesInput) => void;
   isSubmitting: boolean;
   doctors: Doctor[];
   isLoadingDoctors: boolean;
@@ -61,6 +71,7 @@ export function CreateBookingDialog({
   open,
   onClose,
   onSubmit,
+  onSubmitSeries,
   isSubmitting,
   doctors,
   isLoadingDoctors,
@@ -71,6 +82,7 @@ export function CreateBookingDialog({
   const { t } = useTranslation('bookings');
   const { t: tc } = useTranslation('common');
   const theme = useTheme();
+  const joinWaitlist = useJoinWaitlist();
 
   const bookingSchema = createBookingSchema(t);
   type BookingFormData = z.infer<typeof bookingSchema>;
@@ -92,11 +104,15 @@ export function CreateBookingDialog({
       guest_email: '',
       guest_phone: '',
       notes: '',
+      is_recurring: false,
+      frequency: 'weekly',
+      occurrences: 4,
     },
   });
 
   const watchedDoctorId = watch('doctor_id');
   const watchedDate = watch('date');
+  const watchedIsRecurring = watch('is_recurring');
 
   useEffect(() => {
     setSelectedDoctorId(watchedDoctorId || null);
@@ -114,6 +130,20 @@ export function CreateBookingDialog({
   const availableSlots: string[] = Array.isArray(slotsData) ? slotsData : [];
 
   const handleFormSubmit = (data: BookingFormData) => {
+    if (data.is_recurring && onSubmitSeries && data.frequency && data.time && data.date) {
+      const seriesInput: CreateBookingSeriesInput = {
+        doctor_id: data.doctor_id,
+        frequency: data.frequency,
+        interval_count: 1,
+        start_date: data.date,
+        time: data.time,
+        duration: data.duration ?? 30,
+        occurrences: data.occurrences ?? 4,
+      };
+      onSubmitSeries(seriesInput);
+      return;
+    }
+
     const input: CreateBookingInput = {
       doctor_id: data.doctor_id,
       date: data.date,
@@ -203,7 +233,7 @@ export function CreateBookingDialog({
                   renderInput={(params) => (
                     <TextField
                       {...params}
-                      label="Doctor"
+                      label={tc('common:doctor', 'Doctor')}
                       placeholder={t('search_doctor')}
                       error={!!errors.doctor_id}
                       helperText={errors.doctor_id?.message}
@@ -267,9 +297,26 @@ export function CreateBookingDialog({
                     <CircularProgress size={24} sx={{ color: theme.palette.primary.main }} />
                   </Box>
                 ) : availableSlots.length === 0 ? (
-                  <Typography variant="body2" sx={{ color: theme.palette.text.secondary, py: 1 }}>
-                    {t('no_slots_available')}
-                  </Typography>
+                  <Box>
+                    <Typography variant="body2" sx={{ color: theme.palette.text.secondary, py: 1 }}>
+                      {t('no_slots_available')}
+                    </Typography>
+                    {isAuthenticated && selectedDoctorId && selectedDate && (
+                      <Button
+                        variant="outlined"
+                        color="primary"
+                        disabled={joinWaitlist.isPending}
+                        onClick={() =>
+                          joinWaitlist.mutate({ doctorId: selectedDoctorId, date: selectedDate })
+                        }
+                        sx={{ textTransform: 'none' }}
+                      >
+                        {joinWaitlist.isPending
+                          ? tc('loading')
+                          : t('join_waitlist', { defaultValue: 'Unirme a lista de espera' })}
+                      </Button>
+                    )}
+                  </Box>
                 ) : (
                   <Controller
                     name="time"
@@ -301,6 +348,96 @@ export function CreateBookingDialog({
                   <Typography variant="caption" sx={{ color: theme.palette.error.main, mt: 0.5, display: 'block' }}>
                     {errors.time.message}
                   </Typography>
+                )}
+              </Box>
+            )}
+
+            {/* Recurring appointment */}
+            {isAuthenticated && selectedDoctorId && selectedDate && (
+              <Box>
+                <Typography
+                  variant="body2"
+                  sx={{ fontWeight: 500, color: theme.palette.text.secondary, mb: 1 }}
+                >
+                  <Repeat sx={{ fontSize: 16, verticalAlign: 'text-bottom', mr: 0.5 }} />
+                  {t('recurring')}
+                </Typography>
+                <Controller
+                  name="is_recurring"
+                  control={control}
+                  render={({ field }) => (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Checkbox
+                        checked={!!field.value}
+                        onChange={(e) => field.onChange(e.target.checked)}
+                        sx={{ p: 0.5 }}
+                      />
+                      <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
+                        {t('recurring_help')}
+                      </Typography>
+                    </Box>
+                  )}
+                />
+
+                {watchedIsRecurring && (
+                  <Box sx={{ mt: 1.5, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                    <Controller
+                      name="frequency"
+                      control={control}
+                      render={({ field }) => (
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                          {(['daily', 'weekly', 'monthly'] as RecurrenceFrequency[]).map((freq) => (
+                            <Chip
+                              key={freq}
+                              label={t(`frequency_${freq}`)}
+                              clickable
+                              color={field.value === freq ? 'primary' : 'default'}
+                              variant={field.value === freq ? 'filled' : 'outlined'}
+                              onClick={() => field.onChange(freq)}
+                              sx={{
+                                borderColor: theme.palette.grey[300],
+                                '&.MuiChip-colorPrimary': {
+                                  backgroundColor: theme.palette.primary.main,
+                                  color: theme.palette.common.white,
+                                },
+                              }}
+                            />
+                          ))}
+                        </Box>
+                      )}
+                    />
+                    <Controller
+                      name="occurrences"
+                      control={control}
+                      render={({ field }) => (
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Typography variant="body2" sx={{ color: theme.palette.text.secondary, mr: 1 }}>
+                            {t('occurrences')}
+                          </Typography>
+                          <IconButton
+                            size="small"
+                            onClick={() => field.onChange(Math.max(1, (field.value ?? 2) - 1))}
+                            sx={{ border: `1px solid ${theme.palette.grey[300]}`, borderRadius: '6px' }}
+                          >
+                            <Remove fontSize="small" />
+                          </IconButton>
+                          <Typography variant="body2" sx={{ minWidth: 24, textAlign: 'center', fontWeight: 600 }}>
+                            {field.value ?? 2}
+                          </Typography>
+                          <IconButton
+                            size="small"
+                            onClick={() => field.onChange(Math.min(52, (field.value ?? 2) + 1))}
+                            sx={{ border: `1px solid ${theme.palette.grey[300]}`, borderRadius: '6px' }}
+                          >
+                            <Add fontSize="small" />
+                          </IconButton>
+                          <Typography variant="caption" sx={{ color: theme.palette.text.secondary, ml: 1 }}>
+                            {t('occurrences_help')}
+                          </Typography>
+                        </Box>
+                      )}
+                    />
+                  </Box>
                 )}
               </Box>
             )}
@@ -339,7 +476,7 @@ export function CreateBookingDialog({
                   render={({ field }) => (
                     <TextField
                       {...field}
-                      label="Email"
+                      label={tc('common:email', 'Email')}
                       fullWidth
                       error={!!errors.guest_email}
                       helperText={errors.guest_email?.message}

@@ -43,6 +43,44 @@ export interface BookingListParams {
   date_to?: string;
 }
 
+export type RecurrenceFrequency = 'daily' | 'weekly' | 'monthly';
+
+export interface BookingSeries {
+  id: number;
+  doctor_id: number;
+  user_id: number;
+  frequency: RecurrenceFrequency;
+  interval_count: number;
+  start_date: string;
+  time: string;
+  duration: number;
+  occurrences: number;
+  created_count: number;
+  active: boolean;
+  created_at: string;
+  cancelled_at: string | null;
+  doctor_name?: string;
+  specialty?: string;
+  patient_name?: string;
+}
+
+export interface CreateBookingSeriesInput {
+  doctor_id: number;
+  user_id?: number;
+  frequency: RecurrenceFrequency;
+  interval_count?: number;
+  start_date: string;
+  time: string;
+  duration?: number;
+  occurrences: number;
+}
+
+export interface CreateBookingSeriesResult {
+  series: BookingSeries;
+  bookings: Booking[];
+  skipped: string[];
+}
+
 export type { PaginatedResponse };
 
 export const BOOKING_STATUS_CONFIG: Record<

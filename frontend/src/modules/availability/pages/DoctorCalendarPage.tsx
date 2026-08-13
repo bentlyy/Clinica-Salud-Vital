@@ -516,7 +516,7 @@ export default function DoctorCalendarPage() {
               <DetailRow label={t('doctor_calendar:patient')} value={selectedBooking.patient} />
               {selectedBooking.email && <DetailRow label={t('common:email')} value={selectedBooking.email} />}
               {selectedBooking.phone && <DetailRow label={t('common:phone')} value={selectedBooking.phone} />}
-              {selectedBooking.rut && <DetailRow label="RUT" value={selectedBooking.rut} />}
+              {selectedBooking.rut && <DetailRow label={t('common:rut', 'RUT')} value={selectedBooking.rut} />}
               <DetailRow label={t('common:date')} value={selectedBooking.date} />
               <DetailRow
                 label={t('common:time')}

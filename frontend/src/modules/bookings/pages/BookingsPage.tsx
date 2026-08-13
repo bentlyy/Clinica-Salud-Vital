@@ -13,14 +13,13 @@ import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { LoadingState } from '@/shared/components/ui/LoadingState';
 import { ErrorState } from '@/shared/components/ui/ErrorState';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
-import { useMyBookings, useDoctorBookings, useAllBookings, useCancelBooking } from '../hooks/useBookings';
+import { useMyBookings, useDoctorBookings, useAllBookings, useCancelBooking, useRescheduleBooking, useCreateBooking, useCreateBookingSeries } from '../hooks/useBookings';
 import { usePublicDoctorList } from '@/modules/doctors/hooks/useDoctors';
 import { BookingCalendar } from '../components/BookingCalendar';
 import { CreateBookingDialog } from '../components/CreateBookingDialog';
 import { BookingDetailDrawer } from '../components/BookingDetailDrawer';
-import type { Booking, BookingListParams, BookingStatus } from '../types/booking.types';
+import type { Booking, BookingListParams, BookingStatus, CreateBookingSeriesInput } from '../types/booking.types';
 import { BOOKING_STATUS_CONFIG, BOOKING_STATUS_OPTIONS } from '../types/booking.types';
-import { useCreateBooking } from '../hooks/useBookings';
 import { formatDate } from '@/shared/utils/localeUtils';
 
 const MotionBox = motion(Box);
@@ -94,7 +93,9 @@ export default function BookingsPage() {
 
   // Mutations
   const cancelMutation = useCancelBooking();
+  const rescheduleMutation = useRescheduleBooking();
   const createMutation = useCreateBooking();
+  const createSeriesMutation = useCreateBookingSeries();
 
   // Handlers
   const handleStatusFilter = useCallback((status: BookingStatus | 'all') => {
@@ -122,6 +123,21 @@ export default function BookingsPage() {
     [cancelMutation],
   );
 
+  const handleRescheduleBooking = useCallback(
+    (id: number, data: { date: string; time: string; duration?: number }) => {
+      rescheduleMutation.mutate(
+        { id, ...data },
+        {
+          onSuccess: () => {
+            setDrawerOpen(false);
+            setSelectedBooking(null);
+          },
+        },
+      );
+    },
+    [rescheduleMutation],
+  );
+
   const handleCreateBooking = useCallback(
     (data: Parameters<typeof createMutation.mutate>[0]) => {
       createMutation.mutate(data, {
@@ -131,6 +147,17 @@ export default function BookingsPage() {
       });
     },
     [createMutation],
+  );
+
+  const handleCreateBookingSeries = useCallback(
+    (data: CreateBookingSeriesInput) => {
+      createSeriesMutation.mutate(data, {
+        onSuccess: () => {
+          setCreateDialogOpen(false);
+        },
+      });
+    },
+    [createSeriesMutation],
   );
 
   // Page title based on role
@@ -338,7 +365,8 @@ export default function BookingsPage() {
         open={createDialogOpen}
         onClose={() => setCreateDialogOpen(false)}
         onSubmit={handleCreateBooking}
-        isSubmitting={createMutation.isPending}
+        onSubmitSeries={handleCreateBookingSeries}
+        isSubmitting={createMutation.isPending || createSeriesMutation.isPending}
         doctors={doctors}
         isLoadingDoctors={isLoadingDoctors}
         isAuthenticated={!!user}
@@ -354,6 +382,8 @@ export default function BookingsPage() {
         booking={selectedBooking}
         onCancel={handleCancelBooking}
         isCancelling={cancelMutation.isPending}
+        onReschedule={handleRescheduleBooking}
+        isRescheduling={rescheduleMutation.isPending}
       />
     </MotionBox>
   );

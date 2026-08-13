@@ -94,7 +94,7 @@ function LabAreaDashboardPage() {
       />
 
       {/* Metrics */}
-      <Grid container spacing={2} sx={{ mb: 3 }}>
+      <Grid container spacing={3} sx={{ mb: 3 }}>
         {metricCards.map((stat) => (
           <Grid xs={6} sm={4} md={2.4} key={stat.label}>
             <Paper

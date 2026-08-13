@@ -25,6 +25,30 @@ interface VitalSignRow {
   temperature: string;
 }
 
+export interface ForecastPoint {
+  date: string;
+  predicted: number;
+}
+
+export const smaForecast = (
+  historical: Array<{ date: string; bookings: number }>,
+  horizon: number,
+  fallback = 0,
+): ForecastPoint[] => {
+  const window = Math.min(7, historical.length);
+  const base = window > 0
+    ? Math.max(0, Math.round(historical.slice(-window).reduce((sum, row) => sum + row.bookings, 0) / window))
+    : Math.max(0, Math.round(fallback));
+  return Array.from({ length: horizon }, (_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() + i + 1);
+    return {
+      date: d.toISOString().split('T')[0],
+      predicted: base,
+    };
+  });
+};
+
 export const getDashboardStats = async (tenantId: string) => {
   const result = await pool.query(`
     SELECT
@@ -275,7 +299,6 @@ export const getDemandForecast = async (days = 30, tenantId: string) => {
 
     const rows = result.rows;
     const avg = parseFloat(rows[0]?.avg_bookings || '5');
-    const std = parseFloat(rows[0]?.std_bookings || '2');
 
     const historical = rows.map((row: BookingRow & { avg_bookings: string; std_bookings: string }) => ({
       date: row.date,
@@ -283,16 +306,11 @@ export const getDemandForecast = async (days = 30, tenantId: string) => {
       predicted: null,
     }));
 
-    const forecast = Array.from({ length: 7 }, (_, i) => {
-      const d = new Date();
-      d.setDate(d.getDate() + i + 1);
-      const dateStr = d.toISOString().split('T')[0];
-      return {
-        date: dateStr,
-        bookings: 0,
-        predicted: Math.max(0, Math.round(avg + (Math.random() - 0.5) * std)),
-      };
-    });
+    const forecast = smaForecast(historical, 7, avg).map(point => ({
+      date: point.date,
+      bookings: 0,
+      predicted: point.predicted,
+    }));
 
     return [...historical, ...forecast];
   } catch (err) {

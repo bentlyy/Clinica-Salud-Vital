@@ -90,7 +90,7 @@ export function UserDetailDialog({ user, open, onClose }: UserDetailDialogProps)
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               <DetailRow icon={<EmailOutlined sx={{ fontSize: 16 }} />} label={tc('email')} value={user.email} />
               <DetailRow icon={<PhoneOutlined sx={{ fontSize: 16 }} />} label={t('phone_optional')} value={user.phone} />
-              <DetailRow icon={<BadgeOutlined sx={{ fontSize: 16 }} />} label="RUT" value={user.rut} />
+              <DetailRow icon={<BadgeOutlined sx={{ fontSize: 16 }} />} label={t('common:rut', 'RUT')} value={user.rut} />
               <DetailRow
                 icon={<CalendarTodayOutlined sx={{ fontSize: 16 }} />}
                 label={t('createdAt')}

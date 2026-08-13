@@ -1,4 +1,5 @@
 import * as laboratoryService from './laboratory.service.js';
+import * as labResultEmailService from './lab-result-email.service.js';
 import * as doctorService from '../doctor/doctor.service.js';
 import { asyncHandler } from '../../middlewares/asyncHandler.middleware.js';
 import { NotFoundError, BadRequestError } from '../../utils/errors.js';
@@ -172,6 +173,30 @@ export const cancelLabRequest = asyncHandler(async (req, res) => {
   emitLabEvent(LAB_EVENTS.STATUS_CHANGE, { id: result.id, status: result.status });
   emitLabEvent(LAB_EVENTS.METRICS_UPDATE, {});
   res.json(result);
+});
+
+// === Results by Email ===
+export const sendLabResultsEmailCtrl = asyncHandler(async (req, res) => {
+  const lab_request_id = req.body?.lab_request_id ?? req.params.id;
+  if (!lab_request_id) throw new BadRequestError('lab_request_id is required');
+
+  let email = req.body?.email;
+  if (!email) {
+    const results = await labResultEmailService.getLabResultsByRequest(lab_request_id, req.tenant_id);
+    email = results.patient_email;
+    if (!email) throw new BadRequestError('Patient email not found');
+  }
+
+  const result = await labResultEmailService.sendLabResultsByEmail(lab_request_id, email, req.tenant_id);
+  res.json(result);
+});
+
+export const getLabResultsByTokenCtrl = asyncHandler(async (req, res) => {
+  const qToken = req.query.token;
+  const queryToken = typeof qToken === 'string' ? qToken : Array.isArray(qToken) ? String(qToken[0] ?? '') : '';
+  const token: string = String(req.params.token || '') || queryToken;
+  const data = await labResultEmailService.getLabResultsByToken(token);
+  res.json(data);
 });
 
 // === Dashboard ===

@@ -166,7 +166,7 @@ function LabAnalyticsPage() {
       />
 
       {/* Summary Metrics */}
-      <Grid container spacing={2} sx={{ mb: 3 }}>
+      <Grid container spacing={3} sx={{ mb: 3 }}>
         {SUMMARY_METRIC_KEYS.map((m) => (
           <Grid xs={6} sm={4} md={2} key={m.key}>
             <Paper

@@ -6,6 +6,7 @@ import Settings from '@mui/icons-material/Settings';
 import People from '@mui/icons-material/People';
 import Assessment from '@mui/icons-material/Assessment';
 import History from '@mui/icons-material/History';
+import CalendarToday from '@mui/icons-material/CalendarToday';
 import Description from '@mui/icons-material/Description';
 import Assignment from '@mui/icons-material/Assignment';
 import Badge from '@mui/icons-material/Badge';
@@ -53,6 +54,7 @@ const NAV_ITEMS_DEF: NavItemDef[] = [
   { labelKey: 'clinics', icon: <AccountBalance />, path: '/tenants', roles: ['superadmin'] },
   { labelKey: 'users', icon: <People />, path: '/users', roles: ['superadmin'] },
   { labelKey: 'specialties', icon: <MedicalServices />, path: '/specialties', roles: ['superadmin'] },
+  { labelKey: 'holidays', icon: <CalendarToday />, path: '/holidays', roles: ['superadmin', 'admin'] },
   { labelKey: 'bookings', icon: <CalendarMonth />, path: '/bookings', roles: ['patient'] },
   { labelKey: 'clinicalRecords', icon: <Description />, path: '/clinical-records', roles: ['patient'] },
   { labelKey: 'prescriptions', icon: <Assignment />, path: '/prescriptions', roles: ['patient'] },

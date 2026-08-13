@@ -25,6 +25,8 @@ const toastMock = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn() }));
 
 vi.mock('@/modules/settings/hooks/useSettings', () => ({
   useChangePassword: () => changePasswordMock,
+  useSessions: () => ({ data: [], isLoading: false }),
+  useRevokeSession: () => ({ mutate: vi.fn(), isPending: false }),
 }));
 
 vi.mock('@/modules/2fa/hooks/useTwoFA', () => ({

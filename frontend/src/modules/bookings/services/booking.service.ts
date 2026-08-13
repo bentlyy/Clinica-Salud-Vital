@@ -1,6 +1,6 @@
 import type { AxiosRequestConfig } from 'axios';
 import { apiClient } from '@/shared/services/api-client';
-import type { Booking, BookingListParams } from '../types/booking.types';
+import type { Booking, BookingListParams, BookingSeries, CreateBookingSeriesInput, CreateBookingSeriesResult } from '../types/booking.types';
 import type { PaginatedResponse } from '@/shared/types/api.types';
 
 function normalizeDate(raw: unknown): string {
@@ -71,6 +71,13 @@ export const bookingService = {
   cancel: (id: number, reason?: string, config?: AxiosRequestConfig): Promise<Booking> =>
     apiClient.patch(`/bookings/${id}/cancel`, reason ? { reason } : undefined, config).then((r) => r.data),
 
+  reschedule: (
+    id: number,
+    data: { date: string; time: string; duration?: number },
+    config?: AxiosRequestConfig,
+  ): Promise<Booking> =>
+    apiClient.patch(`/bookings/${id}/reschedule`, data, config).then((r) => normalizeBooking(r.data)),
+
   getAvailableSlots: (doctorId: number, date: string, config?: AxiosRequestConfig): Promise<string[]> =>
     apiClient
       .get('/bookings/available-slots', { params: { doctor_id: doctorId, date }, ...config })
@@ -84,4 +91,13 @@ export const bookingService = {
     apiClient
       .get('/bookings/doctor/daily-density', { params: { start, end }, ...config })
       .then((r) => r.data),
+
+  createSeries: (data: CreateBookingSeriesInput, config?: AxiosRequestConfig): Promise<CreateBookingSeriesResult> =>
+    apiClient.post('/bookings/series', data, config).then((r) => r.data),
+
+  getMySeries: (config?: AxiosRequestConfig): Promise<{ data: BookingSeries[] }> =>
+    apiClient.get('/bookings/series', config).then((r) => r.data),
+
+  cancelSeries: (id: number, config?: AxiosRequestConfig): Promise<{ message: string }> =>
+    apiClient.patch(`/bookings/series/${id}/cancel`, undefined, config).then((r) => r.data),
 };

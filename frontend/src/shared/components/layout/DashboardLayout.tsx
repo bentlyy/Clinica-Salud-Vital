@@ -138,7 +138,7 @@ export function DashboardLayout() {
                   C
                 </Box>
                 <Typography variant="h6" sx={{ fontWeight: 700, color: 'text.primary' }}>
-                  Clínica
+                  {tc('appName')}
                 </Typography>
               </Box>
             )}
@@ -152,7 +152,7 @@ export function DashboardLayout() {
           </Box>
 
           {/* Nav items */}
-          <Box sx={{ flex: 1, overflowY: 'auto', pb: 2, pt: 0.5 }}>
+          <Box sx={{ flex: 1, overflowY: 'auto', pb: 2.5, pt: 1.25 }}>
             {sidebarOpen && (
               <Typography
                 variant="caption"
@@ -192,7 +192,7 @@ export function DashboardLayout() {
               onClick={() => navigate('/settings')}
               sx={{
                 p: 1.5,
-                m: 1.25,
+                m: 1.5,
                 borderRadius: '12px',
                 border: `1px solid ${theme.palette.divider}`,
                 backgroundColor: theme.palette.custom?.surface?.muted || theme.palette.background.paper,
@@ -226,7 +226,7 @@ export function DashboardLayout() {
                   {user.name}
                 </Typography>
                 <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                  {getRoleLabel(user.role)}
+                  {getRoleLabel(user.role, tc)}
                 </Typography>
               </Box>
               <Tooltip title={tc('logout')}>

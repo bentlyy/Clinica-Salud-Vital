@@ -43,11 +43,17 @@ vi.mock('react-i18next', () => {
   };
   return {
     useTranslation: (ns?: string) => ({
-      t: (key: string, options?: Record<string, unknown>) => {
+      t: (key: string, options?: string | Record<string, unknown>, interp?: Record<string, unknown>) => {
         const map = ns === 'common' ? common : audit;
         const value = map[key];
-        if (value && options) return value.replace('{{id}}', String(options.id));
-        return value ?? key;
+        if (value && typeof options === 'object' && options) return value.replace('{{id}}', String(options.id));
+        if (value) return value;
+        if (typeof options === 'string') {
+          return interp
+            ? options.replace(/\{\{(\w+)\}\}/g, (_, name: string) => String(interp[name]))
+            : options;
+        }
+        return key;
       },
       i18n: { language: 'es' },
     }),

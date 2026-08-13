@@ -110,7 +110,7 @@ export default function PatientPrescriptionsPage() {
         subtitle={t('prescriptions:subtitle', 'Consulta tus recetas médicas')}
       />
 
-      <Grid container spacing={2} sx={{ mb: 3 }}>
+      <Grid container spacing={3} sx={{ mb: 3 }}>
         {statCards.map((stat) => (
           <Grid key={stat.label} xs={12} sm={4}>
             <Paper

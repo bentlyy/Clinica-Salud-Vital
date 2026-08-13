@@ -231,7 +231,7 @@ export default function SuperAdminAnalyticsPage() {
       />
 
       {/* ── KPI Row ──────────────────────────────────────────────────── */}
-      <Grid container spacing={2} sx={{ mb: 3 }}>
+      <Grid container spacing={3} sx={{ mb: 3 }}>
         {kpiStats.map((stat) => (
           <Grid key={stat.label} xs={12} sm={6} md={3}>
             <Paper
@@ -341,7 +341,7 @@ function OverviewTab({ revenue, growth, topTenants, formatMonth }: OverviewTabPr
   const { t } = useTranslation('super_admin_analytics');
   return (
     <>
-      <Grid container spacing={2} sx={{ mb: 3 }}>
+      <Grid container spacing={3} sx={{ mb: 3 }}>
         {/* MRR Evolution */}
         <Grid xs={12} md={6}>
           <Paper sx={{ p: 0, border: '1px solid #e5e7eb', borderRadius: '14px', overflow: 'hidden' }}>
@@ -468,7 +468,7 @@ function RevenueTab({ revenue, churn, formatMonth }: RevenueTabProps) {
       </Paper>
 
       {/* Revenue KPIs */}
-      <Grid container spacing={2} sx={{ mb: 3 }}>
+      <Grid container spacing={3} sx={{ mb: 3 }}>
         {[
           { value: `$${formatNumber(Number(churn.mrr ?? 0))}`, label: t('mrr_current', 'MRR Actual'), textAlign: 'center' as const },
           { value: `$${formatNumber(Number(churn.arr ?? 0))}`, label: t('arr_projected', 'ARR Proyectado'), color: '#3b82f6', textAlign: 'center' as const },
@@ -619,7 +619,7 @@ function OperationsTab({ operations }: OperationsTabProps) {
   return (
     <>
       {/* Operations KPIs */}
-      <Grid container spacing={2} sx={{ mb: 3 }}>
+      <Grid container spacing={3} sx={{ mb: 3 }}>
         {[
           { value: `${String(operations.cancellation_rate ?? 0)}%`, label: t('cancellation_rate', 'Tasa cancelación'), color: '#22c55e' },
           { value: `${String(operations.no_show_rate ?? 0)}%`, label: t('no_show_rate', 'No-show rate'), color: '#8b5cf6' },
@@ -640,7 +640,7 @@ function OperationsTab({ operations }: OperationsTabProps) {
       </Grid>
 
       {/* Specialties & Top Doctors */}
-      <Grid container spacing={2} sx={{ mb: 3 }}>
+      <Grid container spacing={3} sx={{ mb: 3 }}>
         {/* Specialties */}
         <Grid xs={12} md={6}>
           <Paper sx={{ p: 0, border: '1px solid #e5e7eb', borderRadius: '14px', overflow: 'hidden' }}>

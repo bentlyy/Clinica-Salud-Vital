@@ -22,9 +22,7 @@ const mockUser = vi.hoisted(() => ({
   role: 'doctor',
   name: 'Dr. Juan Perez',
   tenant_id: 1,
-}));
-
-// --- Mocks ---
+}));// --- Mocks ---
 
 vi.mock('framer-motion', () => {
   const PassThrough = (props: { children?: React.ReactNode }) => props.children ?? null;
@@ -70,6 +68,8 @@ vi.mock('react-i18next', () => ({
         'doctor_panel:status.completed': 'Completada',
         'doctor_panel:status.cancelled': 'Cancelada',
         'doctor_panel:status.no_show': 'No asistió',
+        'doctor_panel:openFicha': 'Ver ficha',
+        'doctor_panel:todayGroup': 'Agenda de hoy por estado',
         retry: 'Reintentar',
         error_default_title: 'Error',
         error_default_message: 'Ocurrió un error',
@@ -89,7 +89,7 @@ vi.mock('@/shared/providers/AuthProvider', () => ({
 }));
 
 vi.mock('@/modules/bookings/hooks/useBookings', () => ({
-  useMyBookings: () => myBookingsMock,
+  useDoctorBookings: () => myBookingsMock,
 }));
 
 function renderPage() {
@@ -166,12 +166,20 @@ describe('DoctorPanel', () => {
     expect(screen.getByText('Sin citas para hoy')).toBeInTheDocument();
   });
 
-  it('lists today\'s bookings in the agenda', () => {
+  it('lists today\'s bookings in the agenda grouped by status', () => {
     myBookingsMock.isLoading = false;
     myBookingsMock.data = { data: [makeBooking({})] };
     renderPage();
     expect(screen.getByText('Maria Garcia')).toBeInTheDocument();
-    expect(screen.getByText('Confirmada')).toBeInTheDocument();
+    expect(screen.getAllByText('Confirmada').length).toBeGreaterThan(0);
+  });
+
+  it('opens the patient ficha from the agenda', () => {
+    myBookingsMock.isLoading = false;
+    myBookingsMock.data = { data: [makeBooking({})] };
+    renderPage();
+    fireEvent.click(screen.getByLabelText('Ver ficha'));
+    expect(mockNavigate).toHaveBeenCalledWith('/patient-history?patientId=10');
   });
 
   it('shows the patients counter based on unique patient ids', () => {

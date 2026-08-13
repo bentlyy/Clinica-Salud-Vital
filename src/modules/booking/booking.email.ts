@@ -32,3 +32,30 @@ export const bookingConfirmationTemplate = ({ doctor, date, time, confirmToken, 
     ` : '<p>Gracias por confiar en nosotros.</p>'}
   `;
 };
+
+interface BookingRescheduledParams {
+  doctor: string;
+  oldDate: string;
+  oldTime: string;
+  date: string;
+  time: string;
+  frontendUrl?: string;
+}
+
+export const bookingRescheduledTemplate = ({ doctor, oldDate, oldTime, date, time, frontendUrl }: BookingRescheduledParams): string => {
+  const baseUrl = escapeHtml(frontendUrl || 'http://localhost:5173');
+  return `
+    <h2>Cita reprogramada</h2>
+    <p>Tu cita con el Dr./Dra. ${escapeHtml(doctor)} ha sido reprogramada:</p>
+
+    <table style="width:100%;border-collapse:collapse;margin:16px 0">
+      <tr><td style="padding:8px;background:#f5f5f5"><strong>Fecha anterior:</strong></td><td style="padding:8px">${escapeHtml(oldDate)} ${escapeHtml(oldTime)}</td></tr>
+      <tr><td style="padding:8px;background:#f5f5f5"><strong>Nueva fecha:</strong></td><td style="padding:8px">${escapeHtml(date)} ${escapeHtml(time)}</td></tr>
+    </table>
+
+    <p style="text-align:center;">
+      <a href="${baseUrl}/bookings">Ver mis citas</a>
+    </p>
+    <p>Gracias por confiar en nosotros.</p>
+  `;
+};

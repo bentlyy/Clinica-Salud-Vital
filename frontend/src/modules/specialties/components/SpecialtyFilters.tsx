@@ -51,7 +51,7 @@ export function SpecialtyFilters({
             ),
             endAdornment: search ? (
               <InputAdornment position="end">
-                <IconButton size="small" onClick={() => onSearchChange('')} aria-label="clear search">
+                <IconButton size="small" onClick={() => onSearchChange('')} aria-label={t('common:clearSearch', 'clear search')}>
                   <Close sx={{ fontSize: 16, color: theme.palette.grey[500] }} />
                 </IconButton>
               </InputAdornment>
