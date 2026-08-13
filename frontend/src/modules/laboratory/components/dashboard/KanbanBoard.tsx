@@ -291,7 +291,7 @@ function KanbanBoardBase({
                         mb: 0.5,
                       }}
                     >
-                      {request.patient_name ?? 'Sin nombre'}
+                      {request.patient_name ?? t('lab:withoutName', 'Sin nombre')}
                     </Typography>
 
                     {/* Request number + items count */}
@@ -368,7 +368,7 @@ function KanbanBoardBase({
           <VisibilityIcon fontSize="small" sx={{ color: theme.palette.primary.main }} />
         </ListItemIcon>
         <ListItemText
-          primary="Ver detalle"
+          primary={t('lab:viewDetail', 'Ver detalle')}
           primaryTypographyProps={{ fontSize: '0.875rem', fontWeight: 500 }}
         />
       </MenuItem>
@@ -414,7 +414,7 @@ function KanbanBoardBase({
                 <CancelIcon fontSize="small" sx={{ color: theme.palette.error.main }} />
               </ListItemIcon>
               <ListItemText
-                primary="Cancelar solicitud"
+                primary={t('lab:cancelRequest', 'Cancelar solicitud')}
                 primaryTypographyProps={{ fontSize: '0.875rem', fontWeight: 500 }}
               />
             </MenuItem>

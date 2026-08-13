@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import {
   Dialog,
   DialogTitle,
@@ -23,22 +24,24 @@ import { motion, AnimatePresence } from 'framer-motion';
 import type { InvoiceItem, CreateInvoiceInput } from '../types/billing.types';
 import { formatCurrency } from '@/shared/utils/localeUtils';
 
-const invoiceItemSchema = z.object({
-  description: z.string().min(1, 'La descripción es requerida'),
-  quantity: z.number().min(1, 'La cantidad debe ser al menos 1'),
-  unit_price: z.number().min(0, 'El precio unitario debe ser positivo'),
-  total: z.number(),
-});
+const invoiceItemSchema = (t: TFunction) =>
+  z.object({
+    description: z.string().min(1, t('billing:description_required', 'La descripción es requerida')),
+    quantity: z.number().min(1, t('billing:quantity_min', 'La cantidad debe ser al menos 1')),
+    unit_price: z.number().min(0, t('billing:price_positive', 'El precio unitario debe ser positivo')),
+    total: z.number(),
+  });
 
-const invoiceFormSchema = z.object({
-  patient_id: z.number().min(1, 'Selecciona un paciente'),
-  due_date: z.string().min(1, 'La fecha de vencimiento es requerida'),
-  tax: z.number().min(0, 'El impuesto debe ser positivo').max(100, 'El impuesto no puede superar el 100%'),
-  notes: z.string().optional(),
-  items: z.array(invoiceItemSchema).min(1, 'Debe agregar al menos un servicio'),
-});
+const invoiceFormSchema = (t: TFunction) =>
+  z.object({
+    patient_id: z.number().min(1, t('billing:patient_required', 'Selecciona un paciente')),
+    due_date: z.string().min(1, t('billing:due_date_required', 'La fecha de vencimiento es requerida')),
+    tax: z.number().min(0, t('billing:tax_positive', 'El impuesto debe ser positivo')).max(100, t('billing:tax_max', 'El impuesto no puede superar el 100%')),
+    notes: z.string().optional(),
+    items: z.array(invoiceItemSchema(t)).min(1, t('billing:min_one_service', 'Debe agregar al menos un servicio')),
+  });
 
-type InvoiceFormData = z.infer<typeof invoiceFormSchema>;
+type InvoiceFormData = z.infer<ReturnType<typeof invoiceFormSchema>>;
 
 interface InvoiceFormDialogProps {
   open: boolean;
@@ -59,7 +62,7 @@ export function InvoiceFormDialog({ open, onClose, onSubmit, isLoading }: Invoic
     reset,
     formState: { errors },
   } = useForm<InvoiceFormData>({
-    resolver: zodResolver(invoiceFormSchema),
+    resolver: zodResolver(invoiceFormSchema(t)),
     defaultValues: {
       patient_id: 0,
       due_date: '',

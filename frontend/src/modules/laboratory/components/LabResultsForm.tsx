@@ -11,6 +11,7 @@ import {
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import Add from '@mui/icons-material/Add';
 import Delete from '@mui/icons-material/Delete';
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
@@ -18,20 +19,22 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import type { AddLabResultsInput } from '../types/lab.types';
 
-const resultRowSchema = z.object({
-  test_name: z.string().min(1, 'Nombre del test requerido'),
-  value: z.string().min(1, 'Valor requerido'),
-  unit: z.string().optional(),
-  reference_range: z.string().optional(),
-  is_normal: z.boolean(),
-  notes: z.string().optional(),
-});
+const resultRowSchema = (t: TFunction) =>
+  z.object({
+    test_name: z.string().min(1, t('lab:testNameRequired', 'Nombre del test requerido')),
+    value: z.string().min(1, t('lab:valueRequired', 'Valor requerido')),
+    unit: z.string().optional(),
+    reference_range: z.string().optional(),
+    is_normal: z.boolean(),
+    notes: z.string().optional(),
+  });
 
-const resultsFormSchema = z.object({
-  results: z.array(resultRowSchema).min(1, 'Agrega al menos un resultado'),
-});
+const resultsFormSchema = (t: TFunction) =>
+  z.object({
+    results: z.array(resultRowSchema(t)).min(1, t('lab:atLeastOneResult', 'Agrega al menos un resultado')),
+  });
 
-type ResultsFormValues = z.infer<typeof resultsFormSchema>;
+type ResultsFormValues = z.infer<ReturnType<typeof resultsFormSchema>>;
 
 interface LabResultsFormProps {
   onSubmit: (data: AddLabResultsInput) => void;
@@ -55,7 +58,7 @@ export function LabResultsForm({ onSubmit, isLoading }: LabResultsFormProps) {
     handleSubmit,
     formState: { errors },
   } = useForm<ResultsFormValues>({
-    resolver: zodResolver(resultsFormSchema),
+    resolver: zodResolver(resultsFormSchema(t)),
     defaultValues: {
       results: [{ ...defaultRow }],
     },

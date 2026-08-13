@@ -51,6 +51,13 @@ import saasRoutes from './modules/saas/saas.routes.js';
 import superAdminRoutes from './modules/super-admin/super-admin.routes.js';
 import medicalHistoryRoutes from './modules/medical-history/medical-history.routes.js';
 import reportRoutes from './modules/reports/report.routes.js';
+import waitlistRoutes from './modules/waitlist/waitlist.routes.js';
+import holidaysRoutes from './modules/holidays/holidays.routes.js';
+import attachmentsRoutes from './modules/attachments/attachments.routes.js';
+import dataPortabilityRoutes from './modules/data-portability/data-portability.routes.js';
+import webhooksRoutes from './modules/webhooks/webhooks.routes.js';
+import calendarRoutes from './modules/calendar/calendar.routes.js';
+import notificationRoutes from './modules/notifications/notification.routes.js';
 
 const app: Express = express();
 
@@ -214,6 +221,13 @@ app.use(`${API_PREFIX}/saas`, saasRoutes);
 app.use(`${API_PREFIX}/super-admin`, superAdminRoutes);
 app.use(`${API_PREFIX}/medical-history`, medicalHistoryRoutes);
 app.use(`${API_PREFIX}/reports`, reportRoutes);
+app.use(`${API_PREFIX}/waitlist`, waitlistRoutes);
+app.use(`${API_PREFIX}/holidays`, holidaysRoutes);
+app.use(`${API_PREFIX}/attachments`, attachmentsRoutes);
+app.use(`${API_PREFIX}/export`, dataPortabilityRoutes);
+app.use(`${API_PREFIX}/webhooks`, webhooksRoutes);
+app.use(`${API_PREFIX}/calendar`, calendarRoutes);
+app.use(`${API_PREFIX}/notifications`, notificationRoutes);
 
 setupExpressErrorHandler(app);
 app.use(notFoundHandler);

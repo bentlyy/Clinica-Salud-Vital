@@ -35,21 +35,21 @@ vi.mock('@/shared/providers/AuthProvider', () => ({
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
-    t: (key: string) => {
-      const translations: Record<string, string> = {
-        loading_profile: 'Cargando perfil...',
-        full_name: 'Nombre completo',
-        email: 'Email',
-        phone: 'Teléfono',
-        role_label: 'Rol',
-        user_id: 'ID de usuario',
-        clinic: 'Clínica',
-        personal_info: 'Información personal',
-        account_info: 'Información de la cuenta',
-        tab_profile: 'Perfil',
-      };
-      return translations[key] ?? key;
-    },
+      t: (key: string, fallback?: string) => {
+        const translations: Record<string, string> = {
+          loading_profile: 'Cargando perfil...',
+          full_name: 'Nombre completo',
+          email: 'Email',
+          phone: 'Teléfono',
+          role_label: 'Rol',
+          user_id: 'ID de usuario',
+          clinic: 'Clínica',
+          personal_info: 'Información personal',
+          account_info: 'Información de la cuenta',
+          tab_profile: 'Perfil',
+        };
+        return translations[key] ?? fallback ?? key;
+      },
     i18n: { language: 'es' },
   }),
 }));

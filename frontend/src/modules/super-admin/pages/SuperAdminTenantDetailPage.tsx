@@ -104,7 +104,7 @@ export default function SuperAdminTenantDetailPage() {
       <Typography variant="subtitle2" sx={{ fontWeight: 600, color: theme.palette.text.secondary, mb: 2, letterSpacing: 1, fontSize: 11 }}>
         {t('statsTitle')}
       </Typography>
-      <Grid container spacing={2} sx={{ mb: 3 }}>
+      <Grid container spacing={3} sx={{ mb: 3 }}>
         {stats.map((s) => (
           <Grid xs={6} sm={4} md={2} key={s.label}>
             <Paper sx={{ p: 2, textAlign: 'center', border: '1px solid #f3f4f6', borderRadius: '12px' }}>

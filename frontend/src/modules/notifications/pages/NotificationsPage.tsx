@@ -30,7 +30,7 @@ import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { LoadingState } from '@/shared/components/ui/LoadingState';
 import { ErrorState } from '@/shared/components/ui/ErrorState';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
-import { useNotifications, useMarkAsRead } from '../hooks/useNotifications';
+import { useNotifications, useMarkAsRead, useMarkAllAsRead } from '../hooks/useNotifications';
 import { NOTIFICATION_TYPE_CONFIG } from '../types/notification.types';
 import type { Notification } from '../types/notification.types';
 import { formatDate } from '@/shared/utils/localeUtils';
@@ -76,6 +76,7 @@ export default function NotificationsPage({ embedded }: { embedded?: boolean }) 
     tenantId: isSuperAdmin ? clinicFilter || undefined : undefined,
   });
   const markAsRead = useMarkAsRead();
+  const markAllAsRead = useMarkAllAsRead();
 
   const handleNotificationClick = (notification: Notification) => {
     if (!notification.is_read) {
@@ -118,7 +119,7 @@ export default function NotificationsPage({ embedded }: { embedded?: boolean }) 
               <Button
                 variant="outlined"
                 startIcon={<MarkEmailRead />}
-                disabled
+                onClick={() => markAllAsRead.mutate()}
               >
                 {t('markAllRead')}
               </Button>
@@ -203,7 +204,7 @@ export default function NotificationsPage({ embedded }: { embedded?: boolean }) 
                           {notification.title}
                         </Typography>
                         <Chip
-                          label={typeConfig.label}
+                          label={t(`severityLabels.${notification.type}`, typeConfig.label)}
                           size="small"
                           sx={{
                             height: 20,

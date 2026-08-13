@@ -167,3 +167,11 @@ export const getById = async (id: number, tenantId: string): Promise<Report> => 
   if (!rows[0]) throw new NotFoundError(E.REPORT_NOT_FOUND);
   return rows[0];
 };
+
+export const getByIdParsed = async (id: number, tenantId: string) => {
+  const report = await getById(id, tenantId);
+  return {
+    ...report,
+    data: report.result_url ? JSON.parse(report.result_url) : null,
+  };
+};

@@ -1,17 +1,19 @@
 import { useNavigate } from 'react-router-dom';
 import { IconButton, Badge, Tooltip } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
+import { useTranslation } from 'react-i18next';
 import Notifications from '@mui/icons-material/Notifications';
 import { useNotifications } from '../hooks/useNotifications';
 
 export function NotificationBell() {
   const navigate = useNavigate();
   const theme = useTheme();
+  const { t } = useTranslation('notifications');
   const { data } = useNotifications({ page: 1, limit: 1 });
   const count = data?.total ?? 0;
 
   return (
-    <Tooltip title={`Notificaciones (${count})`}>
+    <Tooltip title={t('notifications:bellTooltip', 'Notificaciones ({{count}})', { count })}>
       <IconButton
         size="small"
         sx={{ color: theme.palette.text.secondary }}

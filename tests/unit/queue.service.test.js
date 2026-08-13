@@ -110,4 +110,74 @@ describe('queue.service', () => {
       expect.arrayContaining([expect.any(String), '30000', 3]),
     );
   });
+
+  it('processRow marks a job dead when no handler is registered', async () => {
+    mockQuery
+      .mockResolvedValueOnce({
+        rows: [{ id: 8, type: 'unregistered:type', data: {}, attempts: 1 }],
+      })
+      .mockResolvedValueOnce({ rows: [] });
+
+    const mod = await import('../../src/shared/queue.service.js');
+
+    await mod.queueService.startProcessor();
+    await new Promise((r) => setTimeout(r, 100));
+    mod.queueService.stopProcessor();
+
+    expect(mockQuery).toHaveBeenCalledWith(
+      expect.stringContaining("status = 'dead'"),
+      expect.arrayContaining([expect.stringContaining('No handler registered'), 8]),
+    );
+  });
+
+  it('processRow falls back to the longest backoff when attempts is 0', async () => {
+    mockQuery
+      .mockResolvedValueOnce({
+        rows: [{ id: 4, type: 'test:attempt0', data: {}, attempts: 0 }],
+      })
+      .mockResolvedValueOnce({ rows: [] });
+
+    const mod = await import('../../src/shared/queue.service.js');
+    const handler = vi.fn(async () => { throw new Error('transient'); });
+    mod.registerWorker('test:attempt0', handler);
+
+    await mod.queueService.startProcessor();
+    await new Promise((r) => setTimeout(r, 100));
+    mod.queueService.stopProcessor();
+
+    expect(mockQuery).toHaveBeenCalledWith(
+      expect.stringContaining("status = 'pending'"),
+      expect.arrayContaining([expect.any(String), '480000', 4]),
+    );
+  });
+
+  it('processRow stringifies a job error that has no message', async () => {
+    mockQuery
+      .mockResolvedValueOnce({
+        rows: [{ id: 6, type: 'test:emptymsg', data: {}, attempts: 1 }],
+      })
+      .mockResolvedValueOnce({ rows: [] });
+
+    const mod = await import('../../src/shared/queue.service.js');
+    const handler = vi.fn(async () => { throw new Error(''); });
+    mod.registerWorker('test:emptymsg', handler);
+
+    await mod.queueService.startProcessor();
+    await new Promise((r) => setTimeout(r, 100));
+    mod.queueService.stopProcessor();
+
+    expect(mockQuery).toHaveBeenCalledWith(
+      expect.stringContaining("status = 'pending'"),
+      expect.arrayContaining(['Error', 6]),
+    );
+  });
+
+  it('startProcessor is idempotent', async () => {
+    const mod = await import('../../src/shared/queue.service.js');
+    mod.queueService.startProcessor();
+    mod.queueService.startProcessor();
+    mod.queueService.stopProcessor();
+    await new Promise((r) => setTimeout(r, 20));
+    expect(() => mod.queueService.stopProcessor()).not.toThrow();
+  });
 });

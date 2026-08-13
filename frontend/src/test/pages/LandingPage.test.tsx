@@ -55,7 +55,7 @@ vi.mock('react-i18next', () => {
     loginGuestDashboard: 'Ver demo como invitado',
     loginGuestBooking: 'Reservar como invitado',
   };
-  const t = (key: string) => translations[key] ?? key;
+  const t = (key: string, fallback?: string) => translations[key] ?? fallback ?? key;
   return {
     useTranslation: () => ({ t, i18n: { language: 'es', changeLanguage: vi.fn() } }),
     Trans: ({ i18nKey }: { i18nKey: string }) => <>{translations[i18nKey] ?? i18nKey}</>,

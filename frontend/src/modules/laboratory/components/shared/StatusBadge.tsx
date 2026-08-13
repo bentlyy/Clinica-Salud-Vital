@@ -1,6 +1,7 @@
 import { memo } from 'react';
 import Chip from '@mui/material/Chip';
 import { useTheme, alpha } from '@mui/material/styles';
+import { useTranslation } from 'react-i18next';
 import {
   LAB_STATUS_LABELS,
   LAB_STATUS_COLORS,
@@ -29,8 +30,10 @@ export const StatusBadge = memo(function StatusBadge({
   label,
 }: StatusBadgeProps) {
   const theme = useTheme();
+  const { t } = useTranslation('lab');
   const chipColor = LAB_STATUS_COLORS[status as LabRequestStatus] ?? theme.palette.text.secondary;
-  const displayLabel = label ?? LAB_STATUS_LABELS[status as LabRequestStatus] ?? status;
+  const displayLabel =
+    label ?? t(`lab:statusLabels.${status}`, LAB_STATUS_LABELS[status as LabRequestStatus] ?? status);
   const muiColor = STATUS_MUI_COLOR_MAP[status] ?? 'default';
 
   return (

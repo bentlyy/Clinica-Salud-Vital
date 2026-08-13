@@ -64,6 +64,7 @@ vi.mock('@/shared/providers/AuthProvider', () => ({
 vi.mock('@/modules/notifications/hooks/useNotifications', () => ({
   useNotifications: () => mockHookReturn,
   useMarkAsRead: () => ({ mutate: vi.fn(), isPending: false }),
+  useMarkAllAsRead: () => ({ mutate: vi.fn(), isPending: false }),
 }));
 
 // --- Render helper ---

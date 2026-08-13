@@ -48,7 +48,7 @@ export function BookingCalendar({ bookings, onEventClick }: BookingCalendarProps
 
         return {
           id: String(booking.id),
-          title: `${patientLabel} - ${booking.doctor_name || 'Doctor'}`,
+          title: `${patientLabel} - ${booking.doctor_name || t('common:doctor', 'Doctor')}`,
           start: startDate.toISOString(),
           end: endDate.toISOString(),
           backgroundColor: STATUS_COLORS[booking.status] ?? theme.palette.text.secondary,

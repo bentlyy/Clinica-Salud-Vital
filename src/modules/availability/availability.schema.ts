@@ -44,3 +44,22 @@ export const createExceptionSchema = z.object({
 export const exceptionIdSchema = z.object({
   id: z.coerce.number().int().positive(),
 }).strict();
+
+export const bulkAvailabilitySchema = z.object({
+  doctor_id: z.coerce.number().int().positive('doctor_id is required'),
+  days: z.array(z.object({
+    day_of_week: z.coerce.number().int().min(0).max(6, 'Day must be 0-6'),
+    start_time: z.string().regex(/^\d{2}:\d{2}$/, 'Invalid time format, use HH:MM'),
+    end_time: z.string().regex(/^\d{2}:\d{2}$/, 'Invalid time format, use HH:MM'),
+  })).min(1, 'At least one day is required'),
+}).strict().superRefine((data, ctx) => {
+  data.days.forEach((day, index) => {
+    if (day.start_time >= day.end_time) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'start_time must be before end_time',
+        path: ['days', index, 'start_time'],
+      });
+    }
+  });
+});

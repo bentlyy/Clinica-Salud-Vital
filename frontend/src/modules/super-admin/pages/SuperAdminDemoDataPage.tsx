@@ -194,7 +194,7 @@ export default function SuperAdminDemoDataPage() {
                       <Box>
                         <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>{tenant.name}</Typography>
                         <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
-                          {tenant.plan || 'Básico'} · {tenant.total_users ?? 0} {t('users_suffix', 'usuarios')}
+                          {tenant.plan ? t(`superAdmin:planLabels.${tenant.plan}`, tenant.plan) : t('superAdmin:planLabels.basic', 'Básico')} · {tenant.total_users ?? 0} {t('users_suffix', 'usuarios')}
                         </Typography>
                       </Box>
                     </Box>

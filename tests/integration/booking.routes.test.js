@@ -65,6 +65,7 @@ describe('GET /api/bookings/available-slots', () => {
   it('returns available slots', async () => {
     mockClient.query
       .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [] })
       .mockResolvedValueOnce({ rows: [{ start_time: '09:00:00', end_time: '12:00:00' }] })
       .mockResolvedValueOnce({ rows: [{ slot_duration: 30 }] })
       .mockResolvedValueOnce({ rows: [] })

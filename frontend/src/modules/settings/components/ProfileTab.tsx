@@ -131,7 +131,7 @@ export function ProfileTab() {
               </Typography>
             </Box>
             <Chip
-              label={getRoleLabel(role)}
+              label={getRoleLabel(role, t)}
               sx={{
                 mb: 0.5,
                 bgcolor: `${roleColor}1a`,
@@ -207,7 +207,7 @@ export function ProfileTab() {
           <Divider />
           <InfoRow icon={<PhoneOutlined fontSize="small" />} label={t('phone')} value={phone ?? '—'} />
           <Divider />
-          <InfoRow icon={<PersonOutline fontSize="small" />} label={t('role_label')} value={getRoleLabel(role)} />
+          <InfoRow icon={<PersonOutline fontSize="small" />} label={t('role_label')} value={getRoleLabel(role, t)} />
         </Paper>
 
         <Paper
@@ -228,7 +228,7 @@ export function ProfileTab() {
           <Divider />
           <InfoRow icon={<EmailOutlined fontSize="small" />} label={t('email')} value={email} />
           <Divider />
-          <InfoRow icon={<BadgeOutlined fontSize="small" />} label="Tenant" value={tenantSlug || '—'} />
+          <InfoRow icon={<BadgeOutlined fontSize="small" />} label={t('tenant_label')} value={tenantSlug || '—'} />
         </Paper>
       </Box>
     </Box>

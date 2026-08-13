@@ -1,4 +1,5 @@
 import { memo, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Box,
   Typography,
@@ -54,16 +55,16 @@ function getDeltaColor(
   return { main: theme?.palette.success.main ?? '#10b981', bg: theme?.palette.success.light ?? '#ecfdf5', text: theme?.palette.success.dark ?? '#065f46' };
 }
 
-function getStatusLabel(status?: string): string {
+function getStatusLabel(status: string, t: (key: string, fallback?: string) => string): string {
   switch (status) {
     case 'critical':
-      return 'Crítico';
+      return t('lab:statusCritical', 'Crítico');
     case 'warning':
-      return 'Alerta';
+      return t('lab:statusWarning', 'Alerta');
     case 'normal':
-      return 'Normal';
+      return t('lab:statusNormal', 'Normal');
     default:
-      return 'Sin estado';
+      return t('lab:statusUnknown', 'Sin estado');
   }
 }
 
@@ -78,6 +79,7 @@ export const DeltaCheck = memo(function DeltaCheck({
   timestamp,
 }: DeltaCheckProps) {
   const theme = useTheme();
+  const { t } = useTranslation('lab');
 
   const currentNum = useMemo(
     () => parseFloat(String(currentValue)),
@@ -137,7 +139,7 @@ export const DeltaCheck = memo(function DeltaCheck({
             variant="body2"
             sx={{ color: theme.palette.text.secondary, fontWeight: 400 }}
           >
-            Anterior: {previousValue}
+            {t('lab:previousLabel', 'Anterior: {{value}}', { value: previousValue })}
           </Typography>
 
           {deltaPct !== null && (
@@ -173,7 +175,7 @@ export const DeltaCheck = memo(function DeltaCheck({
 
           {deltaCheckStatus && (
             <Chip
-              label={getStatusLabel(deltaCheckStatus)}
+              label={getStatusLabel(deltaCheckStatus, t)}
               size="small"
               sx={{
                 backgroundColor: colors.bg,
@@ -191,14 +193,14 @@ export const DeltaCheck = memo(function DeltaCheck({
           variant="body2"
           sx={{ color: theme.palette.text.disabled, fontStyle: 'italic' }}
         >
-          Sin valor previo
+          {t('lab:noPreviousValue', 'Sin valor previo')}
         </Typography>
       )}
 
       {/* Reference Range */}
       {referenceRange && (
         <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
-          Rango de ref: {referenceRange}
+          {t('lab:refRangeLabel', 'Rango de ref: {{range}}', { range: referenceRange })}
         </Typography>
       )}
 

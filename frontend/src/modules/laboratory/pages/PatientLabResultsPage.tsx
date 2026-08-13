@@ -19,6 +19,10 @@ import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { LoadingState } from '@/shared/components/ui/LoadingState';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { apiClient } from '@/shared/services/api-client';
+import {
+  getRangeStatus,
+  type ReferenceRanges,
+} from '../utils/labRange';
 
 // ── Interfaces ───────────────────────────────────────────────────────────────
 
@@ -27,6 +31,9 @@ interface LabItem {
   test_name: string;
   result_value?: string;
   test_id: number;
+  unit?: string | null;
+  reference_ranges?: ReferenceRanges | null;
+  result_notes?: string | null;
 }
 
 interface LabRequest {
@@ -46,6 +53,8 @@ interface StatusConfigEntry {
 
 const STATUS_CONFIG: Record<string, StatusConfigEntry> = {
   completed: { color: 'success', label: 'Completado' },
+  delivered: { color: 'success', label: 'Completado' },
+  signed: { color: 'success', label: 'Completado' },
   in_progress: { color: 'warning', label: 'En progreso' },
   pending: { color: 'warning', label: 'Pendiente' },
   cancelled: { color: 'default', label: 'Cancelado' },
@@ -53,8 +62,31 @@ const STATUS_CONFIG: Record<string, StatusConfigEntry> = {
 
 const DEFAULT_STATUS: StatusConfigEntry = { color: 'default', label: 'Desconocido' };
 
-function getStatusConfig(status: string): StatusConfigEntry {
-  return STATUS_CONFIG[status] ?? DEFAULT_STATUS;
+function getStatusConfig(status: string, t: (key: string, fallback: string) => string): StatusConfigEntry {
+  const cfg = STATUS_CONFIG[status] ?? DEFAULT_STATUS;
+  return { ...cfg, label: t(`lab:statusLabels.${status}`, cfg.label) };
+}
+
+function isCompletedStatus(status: string): boolean {
+  return status === 'delivered' || status === 'signed' || status === 'completed';
+}
+
+function isPendingStatus(status: string): boolean {
+  return status === 'pending' || status === 'in_progress';
+}
+
+function countOutOfRange(items: LabItem[]): number {
+  return items.filter((i) => {
+    const status = getRangeStatus(i.result_value, i.reference_ranges);
+    return status === 'high' || status === 'low';
+  }).length;
+}
+
+function isRecentlyPublished(request: LabRequest): boolean {
+  if (!isCompletedStatus(request.status)) return false;
+  return request.created_at
+    ? Date.now() - new Date(request.created_at).getTime() < 7 * 24 * 60 * 60 * 1000
+    : false;
 }
 
 // ── Stats card data ──────────────────────────────────────────────────────────
@@ -124,15 +156,14 @@ export default function PatientLabResultsPage() {
     );
   }
 
-  const completed = requests.filter((r) => r.status === 'completed');
-  const pending = requests.filter(
-    (r) => r.status === 'pending' || r.status === 'in_progress',
-  );
+  const completed = requests.filter((r) => isCompletedStatus(r.status));
+  const pending = requests.filter((r) => isPendingStatus(r.status));
   const totalItems = requests.reduce((s, r) => s + r.items.length, 0);
   const completedItems = requests.reduce(
     (s, r) => s + r.items.filter((i) => i.result_value).length,
     0,
   );
+  const outOfRangeCount = requests.reduce((s, r) => s + countOutOfRange(r.items), 0);
 
   const statCards: StatCard[] = [
     {
@@ -155,6 +186,13 @@ export default function PatientLabResultsPage() {
       bg: theme.palette.custom.status.warning.bg,
       color: theme.palette.warning.main,
     },
+    {
+      label: t('lab_results:out_of_range', 'Fuera de rango'),
+      value: outOfRangeCount,
+      icon: '⚠️',
+      bg: theme.palette.error.light,
+      color: theme.palette.error.main,
+    },
   ];
 
   return (
@@ -165,9 +203,9 @@ export default function PatientLabResultsPage() {
       />
 
       {/* ── Summary Stats ─────────────────────────────────────────────── */}
-      <Grid container spacing={2} sx={{ mb: 3 }}>
+      <Grid container spacing={3} sx={{ mb: 3 }}>
         {statCards.map((stat) => (
-          <Grid key={stat.label} xs={12} sm={4}>
+          <Grid key={stat.label} xs={12} sm={6} md={3}>
             <Paper
               sx={{
                 p: 2,
@@ -299,19 +337,22 @@ interface RequestCardProps {
 
 function RequestCard({ request, onClick }: RequestCardProps) {
   const theme = useTheme();
-  const statusCfg = getStatusConfig(request.status);
+  const { t } = useTranslation();
+  const statusCfg = getStatusConfig(request.status, t);
   const testNames = request.items
     .map((i) => i.test_name)
     .filter(Boolean)
     .join(', ');
 
   const withResult = request.items.filter((i) => i.result_value).length;
+  const outOfRange = countOutOfRange(request.items);
+  const isNew = isRecentlyPublished(request);
 
   return (
     <Card
       sx={{
         borderRadius: 2,
-        border: `1px solid ${theme.palette.divider}`,
+        border: `1px solid ${outOfRange > 0 ? theme.palette.error.light : theme.palette.divider}`,
         '&:hover': {
           boxShadow: 2,
           transform: 'translateY(-1px)',
@@ -327,9 +368,23 @@ function RequestCard({ request, onClick }: RequestCardProps) {
           gap={1}
         >
           <Box flex={1}>
-            <Typography fontWeight={600} gutterBottom>
-              {testNames || `Solicitud #${String(request.id)}`}
-            </Typography>
+            <Box display="flex" alignItems="center" gap={1} flexWrap="wrap">
+              <Typography fontWeight={600} gutterBottom>
+                {testNames || `Solicitud #${String(request.id)}`}
+              </Typography>
+              {isNew && (
+                <Chip
+                  size="small"
+                  label={t('lab_results:new_badge', 'Nuevo')}
+                  sx={{
+                    fontSize: 10,
+                    fontWeight: 700,
+                    bgcolor: theme.palette.primary.main,
+                    color: theme.palette.common.white,
+                  }}
+                />
+              )}
+            </Box>
             <Box display="flex" gap={2} color="text.secondary" fontSize={13}>
               <span>
                 📅 {request.created_at?.split('T')[0] ?? '-'}
@@ -339,20 +394,50 @@ function RequestCard({ request, onClick }: RequestCardProps) {
                 🧪 {withResult}/{request.items.length} resultados
               </span>
             </Box>
+            {outOfRange > 0 && (
+              <Box
+                mt={1}
+                p={1}
+                borderRadius={1}
+                sx={{
+                  bgcolor: theme.palette.error.light,
+                  color: theme.palette.error.dark,
+                  fontSize: 13,
+                  fontWeight: 600,
+                }}
+              >
+                ⚠️ {t('lab_results:anomaly_banner', 'Este informe contiene {{count}} valores fuera de rango', { count: outOfRange })}
+              </Box>
+            )}
             {request.items.length > 0 && (
               <Box display="flex" gap={0.5} flexWrap="wrap" mt={1}>
-                {request.items.slice(0, 4).map((item) => (
-                  <Chip
-                    key={item.id}
-                    size="small"
-                    label={`${item.test_name}${item.result_value ? `: ${item.result_value}` : ''}`}
-                    sx={{
-                      fontSize: 11,
-                      bgcolor: item.result_value ? theme.palette.custom.status.success.bg : theme.palette.custom.status.warning.bg,
-                      color: item.result_value ? theme.palette.custom.status.success.text : theme.palette.custom.status.warning.text,
-                    }}
-                  />
-                ))}
+                {request.items.slice(0, 4).map((item) => {
+                  const rangeStatus = getRangeStatus(item.result_value, item.reference_ranges);
+                  const isAbnormal = rangeStatus === 'high' || rangeStatus === 'low';
+                  const chipBg = isAbnormal
+                    ? theme.palette.error.light
+                    : item.result_value
+                      ? theme.palette.custom.status.success.bg
+                      : theme.palette.custom.status.warning.bg;
+                  const chipColor = isAbnormal
+                    ? theme.palette.error.dark
+                    : item.result_value
+                      ? theme.palette.custom.status.success.text
+                      : theme.palette.custom.status.warning.text;
+                  return (
+                    <Chip
+                      key={item.id}
+                      size="small"
+                      label={`${item.test_name}${item.result_value ? `: ${item.result_value}` : ''}`}
+                      sx={{
+                        fontSize: 11,
+                        fontWeight: isAbnormal ? 700 : 400,
+                        bgcolor: chipBg,
+                        color: chipColor,
+                      }}
+                    />
+                  );
+                })}
                 {request.items.length > 4 && (
                   <Chip
                     size="small"

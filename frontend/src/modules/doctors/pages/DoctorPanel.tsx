@@ -14,7 +14,8 @@ import {
   ListItemAvatar,
   ListItemText,
   Avatar,
-  Divider,
+  IconButton,
+  Tooltip,
 } from '@mui/material';
 import CalendarMonth from '@mui/icons-material/CalendarMonth';
 import Science from '@mui/icons-material/Science';
@@ -22,14 +23,17 @@ import History from '@mui/icons-material/History';
 import People from '@mui/icons-material/People';
 import AccessTime from '@mui/icons-material/AccessTime';
 import EventNote from '@mui/icons-material/EventNote';
+import FolderOpen from '@mui/icons-material/FolderOpen';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { LoadingState } from '@/shared/components/ui/LoadingState';
 import { ErrorState } from '@/shared/components/ui/ErrorState';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { formatDate } from '@/shared/utils/localeUtils';
 import { useAuth } from '@/shared/providers/AuthProvider';
-import { useMyBookings } from '@/modules/bookings/hooks/useBookings';
+import { useDoctorBookings } from '@/modules/bookings/hooks/useBookings';
 import type { Booking } from '@/modules/bookings/types/booking.types';
+
+const STATUS_ORDER = ['pending', 'confirmed', 'completed', 'no_show', 'cancelled'];
 
 function getStatusLabel(status: string, t: (key: string) => string) {
   const labels: Record<string, string> = {
@@ -70,7 +74,7 @@ export default function DoctorPanel() {
 
   const today = new Date().toISOString().split('T')[0] ?? '';
 
-  const { data, isLoading, error, refetch } = useMyBookings({
+  const { data, isLoading, error, refetch } = useDoctorBookings({
     page: 1,
     limit: 100,
   });
@@ -88,10 +92,19 @@ export default function DoctorPanel() {
     [scheduled, today],
   );
 
+  const groupedToday = useMemo(
+    () => STATUS_ORDER.map((status) => ({ status, items: todayBookings.filter((b) => b.status === status) })).filter((g) => g.items.length > 0),
+    [todayBookings],
+  );
+
   const patientCount = useMemo(() => {
-    const patientIds = new Set(bookings.map((b) => b.patient_id).filter(Boolean));
+    const patientIds = new Set(bookings.map((b) => b.patient_id).filter((id): id is number => id !== null && id !== undefined));
     return patientIds.size;
   }, [bookings]);
+
+  const openFicha = (patientId: number | null | undefined) => {
+    if (patientId) navigate(`/patient-history?patientId=${patientId}`);
+  };
 
   if (isLoading) return <LoadingState message={t('doctor_panel:loading')} />;
   if (error) return <ErrorState error={error as Error} onRetry={refetch} />;
@@ -104,7 +117,7 @@ export default function DoctorPanel() {
       />
 
       {/* Quick Links */}
-      <Grid container spacing={2} sx={{ mb: 3 }}>
+      <Grid container spacing={3} sx={{ mb: 3 }}>
         {QUICK_LINKS.map((link) => (
           <Grid xs={6} sm={4} md={2.4} key={link.path}>
             <Paper
@@ -155,6 +168,27 @@ export default function DoctorPanel() {
                 <Chip label={patientCount} size="small" sx={{ backgroundColor: '#7c3aed', color: '#fff', fontWeight: 600 }} />
               </Box>
             </Box>
+
+            {groupedToday.length > 0 && (
+              <Box sx={{ mt: 2, pt: 2, borderTop: `1px solid ${theme.palette.divider}` }}>
+                <Typography variant="caption" sx={{ fontWeight: 600, color: theme.palette.text.secondary }}>
+                  {t('doctor_panel:todayGroup')}
+                </Typography>
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 1 }}>
+                  {groupedToday.map((g) => {
+                    const st = getStatusColor(g.status);
+                    return (
+                      <Chip
+                        key={g.status}
+                        label={`${getStatusLabel(g.status, t)} · ${g.items.length}`}
+                        size="small"
+                        sx={{ backgroundColor: st.bg, color: st.color, fontWeight: 600, fontSize: 12 }}
+                      />
+                    );
+                  })}
+                </Box>
+              </Box>
+            )}
           </Paper>
         </Grid>
 
@@ -175,29 +209,46 @@ export default function DoctorPanel() {
               />
             ) : (
               <List disablePadding>
-                {todayBookings.map((booking, idx) => {
-                  const st = getStatusColor(booking.status);
+                {groupedToday.map((group) => {
+                  const st = getStatusColor(group.status);
                   return (
-                    <Box key={booking.id}>
-                      {idx > 0 && <Divider />}
-                      <ListItem
-                        sx={{ px: 0, py: 1.5 }}
-                        secondaryAction={
-                          <Chip label={getStatusLabel(booking.status, t)} size="small" sx={{ backgroundColor: st.bg, color: st.color, fontWeight: 500 }} />
-                        }
-                      >
-                        <ListItemAvatar>
-                          <Avatar sx={{ backgroundColor: '#0d948815', color: theme.palette.primary.main, width: 40, height: 40, fontSize: 14, fontWeight: 600 }}>
-                            {booking.time}
-                          </Avatar>
-                        </ListItemAvatar>
-                        <ListItemText
-                          primary={booking.patient_name || booking.guest_name || t('doctor_panel:patient')}
-                          secondary={`${booking.duration || 30} min${booking.doctor_name ? ` · ${booking.doctor_name}` : ''}`}
-                          primaryTypographyProps={{ fontWeight: 600, color: theme.palette.text.primary }}
-                          secondaryTypographyProps={{ color: theme.palette.text.secondary, fontSize: 13 }}
-                        />
-                      </ListItem>
+                    <Box key={group.status}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, py: 0.75 }}>
+                        <Typography variant="caption" sx={{ fontWeight: 700, color: st.color, textTransform: 'uppercase', fontSize: 11 }}>
+                          {getStatusLabel(group.status, t)}
+                        </Typography>
+                        <Chip label={group.items.length} size="small" sx={{ height: 18, fontSize: 10, backgroundColor: st.bg, color: st.color, fontWeight: 700 }} />
+                      </Box>
+                      {group.items.map((booking) => (
+                        <ListItem
+                          key={booking.id}
+                          sx={{ px: 0, py: 1.5 }}
+                          secondaryAction={
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <Chip label={getStatusLabel(booking.status, t)} size="small" sx={{ backgroundColor: st.bg, color: st.color, fontWeight: 500 }} />
+                              {booking.patient_id && (
+                                <Tooltip title={t('doctor_panel:openFicha')}>
+                                  <IconButton size="small" aria-label={t('doctor_panel:openFicha')} onClick={() => openFicha(booking.patient_id)} sx={{ color: theme.palette.primary.main }}>
+                                    <FolderOpen fontSize="small" />
+                                  </IconButton>
+                                </Tooltip>
+                              )}
+                            </Box>
+                          }
+                        >
+                          <ListItemAvatar>
+                            <Avatar sx={{ backgroundColor: '#0d948815', color: theme.palette.primary.main, width: 40, height: 40, fontSize: 14, fontWeight: 600 }}>
+                              {booking.time}
+                            </Avatar>
+                          </ListItemAvatar>
+                          <ListItemText
+                            primary={booking.patient_name || booking.guest_name || t('doctor_panel:patient')}
+                            secondary={`${booking.duration || 30} min${booking.doctor_name ? ` · ${booking.doctor_name}` : ''}`}
+                            primaryTypographyProps={{ fontWeight: 600, color: theme.palette.text.primary }}
+                            secondaryTypographyProps={{ color: theme.palette.text.secondary, fontSize: 13 }}
+                          />
+                        </ListItem>
+                      ))}
                     </Box>
                   );
                 })}

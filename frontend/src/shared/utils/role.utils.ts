@@ -37,8 +37,17 @@ export function hasPermission(role: JwtUser['role'], module: string, action?: st
   return false;
 }
 
-export function getRoleLabel(role: JwtUser['role']): string {
-  const labels: Record<JwtUser['role'], string> = {
+export function getRoleLabel(role: JwtUser['role'], t: (key: string, fallback?: string) => string): string {
+  const keys: Record<string, string> = {
+    superadmin: 'roles.superadmin',
+    admin: 'roles.admin',
+    doctor: 'roles.doctor',
+    lab_technician: 'roles.lab_technician',
+    patient: 'roles.patient',
+    guest: 'roles.guest',
+    user: 'roles.user',
+  };
+  const labels: Record<string, string> = {
     superadmin: 'Super Admin',
     admin: 'Administrador',
     doctor: 'Doctor',
@@ -47,7 +56,8 @@ export function getRoleLabel(role: JwtUser['role']): string {
     guest: 'Invitado',
     user: 'Usuario',
   };
-  return labels[role] || role;
+  const key = keys[role];
+  return key ? t(`common:${key}`, labels[role] ?? role) : role;
 }
 
 export function getRoleColor(role: JwtUser['role']): string {

@@ -35,14 +35,15 @@ import {
 
 // ── Schema ──────────────────────────────────────────────────────────────────
 
-const receptionSchema = z.object({
-  sample_type: z.string().min(1, 'Tipo de muestra requerido'),
-  container_type: z.string().min(1, 'Tipo de contenedor requerido'),
-  volume: z.number().min(0.1, 'Volumen debe ser mayor a 0').optional(),
-  notes: z.string().optional(),
-});
+const receptionSchema = (t: (key: string, fallback: string) => string) =>
+  z.object({
+    sample_type: z.string().min(1, t('lab:sampleTypeRequired', 'Tipo de muestra requerido')),
+    container_type: z.string().min(1, t('lab:containerTypeRequired', 'Tipo de contenedor requerido')),
+    volume: z.number().min(0.1, t('lab:volumeGreaterThanZero', 'Volumen debe ser mayor a 0')).optional(),
+    notes: z.string().optional(),
+  });
 
-type ReceptionFormValues = z.infer<typeof receptionSchema>;
+type ReceptionFormValues = z.infer<ReturnType<typeof receptionSchema>>;
 
 // ── Props ───────────────────────────────────────────────────────────────────
 
@@ -173,7 +174,7 @@ const SampleReceptionRow = memo(function SampleReceptionRow({
     reset,
     formState: { errors },
   } = useForm<ReceptionFormValues>({
-    resolver: zodResolver(receptionSchema),
+    resolver: zodResolver(receptionSchema(t)),
     defaultValues: {
       sample_type: item.test?.sample_type ?? '',
       container_type: item.test?.container_type ?? '',

@@ -63,9 +63,9 @@ vi.mock('react-i18next', () => ({
       error_not_found_message: 'El recurso no existe',
       retry: 'Reintentar',
     };
-    return { t: (key: string, opts?: Record<string, unknown>) => {
-      const value = translations[key] ?? key;
-      if (opts) return value.replace(/\{\{(\w+)\}\}/g, (_, name: string) => String(opts[name]));
+    return { t: (key: string, opts?: string | Record<string, unknown>) => {
+      let value = translations[key] ?? (typeof opts === 'string' ? opts : key);
+      if (opts && typeof opts === 'object') return value.replace(/\{\{(\w+)\}\}/g, (_, name: string) => String(opts[name]));
       return value;
     }, i18n: { language: 'es' } };
   },
@@ -85,6 +85,15 @@ vi.mock('@/shared/providers/AuthProvider', () => ({
 
 vi.mock('@/modules/clinical-records/hooks/useClinicalRecords', () => ({
   useClinicalRecordDetail: () => detailMock,
+}));
+
+vi.mock('@/modules/attachments/hooks/useAttachments', () => ({
+  useAttachments: () => ({
+    data: [{ id: 1, original_name: 'informe.pdf', size_bytes: 10 }],
+    isLoading: false,
+  }),
+  useUploadAttachment: () => ({ mutateAsync: vi.fn(), isPending: false }),
+  useDeleteAttachment: () => ({ mutate: vi.fn(), isPending: false }),
 }));
 
 const record: ClinicalRecord = {

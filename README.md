@@ -17,9 +17,9 @@ Plataforma integral para administrar clínicas, pacientes, médicos, citas, hist
 [![Render](https://img.shields.io/badge/Render-46E3B7?logo=render&logoColor=white)](https://render.com/)
 [![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
 [![CI](https://img.shields.io/github/actions/workflow/status/bentlyy/Clinica-Salud-Vital/ci.yml?branch=master&label=CI&logo=githubactions)](https://github.com/bentlyy/Clinica-Salud-Vital/actions)
-[![Tests](https://img.shields.io/badge/tests-2547%20passing-2ea043)](#-testing)
-[![Coverage](https://img.shields.io/badge/coverage-~91%25-2ea043)](#-testing)
-[![Audit](https://img.shields.io/badge/audit-2026--07--29-FF6B6B)](#-auditor%C3%ADa-y-mejora)
+[![Tests](https://img.shields.io/badge/tests-2730%20passing-2ea043)](#-testing)
+[![Coverage](https://img.shields.io/badge/coverage-~89%25-2ea043)](#-testing)
+[![Audit](https://img.shields.io/badge/audit-2026--08--13-FF6B6B)](#-auditor%C3%ADa-y-mejora)
 
 </div>
 
@@ -102,10 +102,10 @@ El submenú **Laboratorio** se bloquea con `featureKey: 'laboratory'` (feature g
 
 | Idioma | Estado | Namespaces | Claves |
 |--------|--------|------------|--------|
-| 🇪🇸 Español | Completo | 65 | 3.079 |
-| 🇺🇸 Inglés | Completo (paridad total) | 65 | 3.079 |
-| 🇧🇷 Portugués | Completo (paridad total) | 65 | 3.079 |
-| 🇫🇷 Francés | Completo (paridad total) | 65 | 3.079 |
+| 🇪🇸 Español | Completo | 66 | 3.377 |
+| 🇺🇸 Inglés | Completo (paridad total) | 66 | 3.377 |
+| 🇧🇷 Portugués | Completo (paridad total) | 66 | 3.377 |
+| 🇫🇷 Francés | Completo (paridad total) | 66 | 3.377 |
 
 Patrón `t('ns:clave')`, `fallbackLng: 'es'`, selector de idioma en la topbar, test automático de paridad de claves (`i18n-keys.test.ts`).
 
@@ -204,8 +204,8 @@ El proyecto sigue un patrón **monolito modular**: un solo deploy con módulos d
 │   └── src/
 │       ├── modules/               # Módulos por dominio (auth, bookings, doctors, laboratory, super-admin, clinical, management, notifications, etc.)
 │       ├── shared/                # Componentes compartidos, providers, constants (navigation), hooks, utils
-│       ├── test/                  # Tests frontend (177 archivos, 1212 tests)
-│       ├── i18n/                  # Traducciones (es, en, pt, fr — 65 namespaces)
+│       ├── test/                  # Tests frontend (178 archivos, 1232 tests)
+│   ├── i18n/                  # Traducciones (es, en, pt, fr — 66 namespaces)
 │       └── main.tsx               # Entry point
 ├── db/
 │   ├── init.sql                   # Schema completo + índices + triggers + seed
@@ -302,9 +302,9 @@ npm run test:coverage             # Reporte HTML
 | Métrica | Valor |
 |---------|-------|
 | **Framework** | Vitest 4 con pool forks (backend) / Vitest 3 (frontend) |
-| **Tests backend** | 1335 passing — 90 archivos |
-| **Tests frontend** | 1212 passing — 177 archivos |
-| **Cobertura** | Backend ~92% lines (threshold: 85%) · Frontend ~85% lines (threshold: 80%) |
+| **Tests backend** | 1498 passing — 104 archivos |
+| **Tests frontend** | 1232 passing — 178 archivos |
+| **Cobertura** | Backend ~89% lines (threshold: 85%) · Frontend ~84% lines (threshold: 80%) |
 | **Setup** | Mocks de DB, auth, email, JWT; storage funcional + i18n en frontend |
 | **CI** | GitHub Actions: typecheck → test → build |
 
@@ -377,13 +377,13 @@ Los datos de prueba se generan automáticamente al iniciar la app en desarrollo.
 | Aspecto | Estado |
 |---------|--------|
 | **Versión** | `1.0.0` — Producción |
-| **Backend** | 1335 passing tests — ~92% cobertura — typecheck sin errores |
-| **Frontend** | 1212 passing tests (177 archivos, suite completa en verde) — ~85% cobertura — ~50 páginas — lazy loading — tema claro/oscuro — sidebar por rol |
+| **Backend** | 1498 passing tests — ~89% cobertura — typecheck sin errores |
+| **Frontend** | 1232 passing tests (178 archivos, suite completa en verde) — ~84% cobertura — ~50 páginas — lazy loading — tema claro/oscuro — sidebar por rol |
 | **CI/CD** | GitHub Actions (typecheck + test + build) + deploy a Render |
 | **Seguridad** | Helmet, CORS, rate limiting, Zod, 2FA, auditoría HMAC, IDOR fixes, captcha fail-closed, CSRF double-submit en mutaciones sensibles |
 | **Multi-tenancy** | Implementado con planes SaaS auto-gestionables |
-| **i18n** | 🇪🇸 🇺🇸 🇧🇷 🇫🇷 completos — 3.079 claves c/u — paridad total verificada por test |
-| **Auditoría** | 2026-07-29 — Score ~75/100 — 30 corregidos — Mejoras de seguridad implementadas · 2026-08-11 suites completas en verde ✅ · 2547 tests, cobertura >85% backend y frontend · hallazgos 🔴 resueltos |
+| **i18n** | 🇪🇸 🇺🇸 🇧🇷 🇫🇷 completos — 3.377 claves c/u — paridad total verificada por test |
+| **Auditoría** | 2026-07-29 — Score ~75/100 — 30 corregidos — Mejoras de seguridad implementadas · 2026-08-11 suites completas en verde ✅ · 2026-08-13 auditoría QA final — 2730 tests (1498 backend + 1232 frontend), cobertura backend ~89% / frontend ~84%, hallazgos 🔴 resueltos · 2026-08-13 i18n: textos hardcodeados del módulo laboratorio migrados a `t()` (paridad 4 idiomas, 3.377 claves c/u) |
 | **Documentación** | API docs, ADR (monolito modular), Wiki Obsidian |
 | **Frontend** | Consolidado en `frontend/` (único) — `frontend-v3/` es solo un `node_modules` residual |
 

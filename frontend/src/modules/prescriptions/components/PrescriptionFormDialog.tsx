@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import {
   Dialog,
   DialogTitle,
@@ -21,22 +22,24 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import type { Prescription, CreatePrescriptionInput } from '../types/prescription.types';
 
-const medicationSchema = z.object({
-  name: z.string().min(1, 'El nombre del medicamento es requerido'),
-  dosage: z.string().min(1, 'La dosis es requerida'),
-  frequency: z.string().min(1, 'La frecuencia es requerida'),
-  duration: z.string().min(1, 'La duración es requerida'),
-  instructions: z.string().optional(),
-});
+const medicationSchema = (t: TFunction) =>
+  z.object({
+    name: z.string().min(1, t('prescriptions:medicationRequired', 'El nombre del medicamento es requerido')),
+    dosage: z.string().min(1, t('prescriptions:dosageRequired', 'La dosis es requerida')),
+    frequency: z.string().min(1, t('prescriptions:frequencyRequired', 'La frecuencia es requerida')),
+    duration: z.string().min(1, t('prescriptions:durationRequired', 'La duración es requerida')),
+    instructions: z.string().optional(),
+  });
 
-const prescriptionSchema = z.object({
-  patient_name: z.string().min(1, 'El nombre del paciente es requerido'),
-  patient_id: z.number().min(1, 'Seleccione un paciente'),
-  notes: z.string().optional(),
-  medications: z.array(medicationSchema).min(1, 'Agregue al menos un medicamento'),
-});
+const prescriptionSchema = (t: TFunction) =>
+  z.object({
+    patient_name: z.string().min(1, t('prescriptions:patient_name_required', 'El nombre del paciente es requerido')),
+    patient_id: z.number().min(1, t('prescriptions:patient_required', 'Seleccione un paciente')),
+    notes: z.string().optional(),
+    medications: z.array(medicationSchema(t)).min(1, t('prescriptions:at_least_one_medication', 'Agregue al menos un medicamento')),
+  });
 
-type PrescriptionFormData = z.infer<typeof prescriptionSchema>;
+type PrescriptionFormData = z.infer<ReturnType<typeof prescriptionSchema>>;
 
 interface PrescriptionFormDialogProps {
   open: boolean;
@@ -67,7 +70,7 @@ export function PrescriptionFormDialog({
     reset,
     formState: { errors },
   } = useForm<PrescriptionFormData>({
-    resolver: zodResolver(prescriptionSchema),
+    resolver: zodResolver(prescriptionSchema(t)),
     defaultValues: {
       patient_name: patientName || '',
       patient_id: patientId || 0,

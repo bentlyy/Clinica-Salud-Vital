@@ -33,11 +33,12 @@ import { SAMPLE_TYPE_OPTIONS } from '../../types/lab.types';
 
 // ── Schema ──────────────────────────────────────────────────────────────────
 
-const storageSchema = z.object({
-  storage_location: z.string().min(1, 'Ubicación requerida').max(100, 'Máximo 100 caracteres'),
-});
+const storageSchema = (t: (key: string, fallback: string) => string) =>
+  z.object({
+    storage_location: z.string().min(1, t('lab:locationRequired', 'Ubicación requerida')).max(100, t('lab:maxChars100', 'Máximo 100 caracteres')),
+  });
 
-type StorageFormValues = z.infer<typeof storageSchema>;
+type StorageFormValues = z.infer<ReturnType<typeof storageSchema>>;
 
 // ── Props ───────────────────────────────────────────────────────────────────
 
@@ -253,7 +254,7 @@ const UnlocatedRow = memo(function UnlocatedRow({
     handleSubmit,
     formState: { errors },
   } = useForm<StorageFormValues>({
-    resolver: zodResolver(storageSchema),
+    resolver: zodResolver(storageSchema(t)),
     defaultValues: { storage_location: '' },
   });
 
@@ -364,7 +365,7 @@ const LocatedRow = memo(function LocatedRow({
     handleSubmit,
     formState: { errors },
   } = useForm<StorageFormValues>({
-    resolver: zodResolver(storageSchema),
+    resolver: zodResolver(storageSchema(t)),
     defaultValues: { storage_location: sample.storage_location ?? '' },
   });
 

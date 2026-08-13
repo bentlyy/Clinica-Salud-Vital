@@ -31,6 +31,10 @@ vi.mock('../../src/utils/logger.js', () => ({
   logger: { info: vi.fn(), error: vi.fn(), warn: vi.fn() },
 }));
 
+vi.mock('../../src/shared/multi-tenant.service.js', () => ({
+  tenantService: { getById: vi.fn() },
+}));
+
 const OLD_ENV = process.env;
 
 beforeEach(() => {
@@ -174,6 +178,62 @@ describe('email.service', () => {
       const result = await sendEmail({ to: 'test@test.com', subject: 'Test', html: '<p>Test</p>' });
       expect(result.sent).toBe(false);
       expect(result.error).toBe('SMTP error');
+    });
+
+    it('uses tenant sender name and address when provided', async () => {
+      process.env.SENDGRID_API_KEY = 'sg_key';
+      const { tenantService } = await import('../../src/shared/multi-tenant.service.js');
+      vi.mocked(tenantService.getById).mockReturnValue({
+        id: 't1',
+        config: { email_from_name: 'Clinic X', email_from_address: 'noreply@clinicx.com' },
+      });
+
+      const { validateEmailConfig, sendEmail } = await import('../../src/shared/email.service.js');
+      validateEmailConfig();
+      mockSgSend.mockResolvedValue([{ statusCode: 202 }]);
+
+      await sendEmail({ to: 'test@test.com', subject: 'Test', html: '<p>Test</p>', tenantId: 't1' });
+
+      expect(mockSgSend).toHaveBeenCalledWith(expect.objectContaining({
+        from: { email: 'noreply@clinicx.com', name: 'Clinic X' },
+      }));
+    });
+
+    it('falls back to the default sender when tenant config is missing', async () => {
+      process.env.SENDGRID_API_KEY = 'sg_key';
+      process.env.EMAIL_USER = 'fallback@test.com';
+      const { tenantService } = await import('../../src/shared/multi-tenant.service.js');
+      vi.mocked(tenantService.getById).mockReturnValue({ id: 't1', config: undefined });
+
+      const { validateEmailConfig, sendEmail } = await import('../../src/shared/email.service.js');
+      validateEmailConfig();
+      mockSgSend.mockResolvedValue([{ statusCode: 202 }]);
+
+      await sendEmail({ to: 'test@test.com', subject: 'Test', html: '<p>Test</p>', tenantId: 't1' });
+
+      expect(mockSgSend).toHaveBeenCalledWith(expect.objectContaining({
+        from: { email: 'fallback@test.com', name: 'Clinic App' },
+      }));
+    });
+
+    it('uses tenant sender for SMTP too', async () => {
+      process.env.EMAIL_USER = 'user@gmail.com';
+      process.env.EMAIL_PASS = 'pass';
+      const { tenantService } = await import('../../src/shared/multi-tenant.service.js');
+      vi.mocked(tenantService.getById).mockReturnValue({
+        id: 't1',
+        config: { email_from_name: 'Clinic Y', email_from_address: 'y@clinic.com' },
+      });
+      mockSendMail.mockResolvedValue({ accepted: ['test@test.com'] });
+
+      const { validateEmailConfig, sendEmail } = await import('../../src/shared/email.service.js');
+      validateEmailConfig();
+
+      await sendEmail({ to: 'test@test.com', subject: 'Test', html: '<p>Test</p>', tenantId: 't1' });
+
+      expect(mockSendMail).toHaveBeenCalledWith(expect.objectContaining({
+        from: '"Clinic Y" <y@clinic.com>',
+      }));
     });
   });
 });

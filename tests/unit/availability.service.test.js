@@ -1,13 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const { mockQuery } = vi.hoisted(() => ({
+const { mockQuery, mockClient, mockConnect } = vi.hoisted(() => ({
   mockQuery: vi.fn(),
+  mockClient: { query: vi.fn(), release: vi.fn() },
+  mockConnect: vi.fn(),
 }));
 
 vi.mock('../../src/shared/db.js', () => ({
   pool: {
     query: mockQuery,
-    connect: vi.fn(),
+    connect: mockConnect,
     on: vi.fn(),
   },
 }));
@@ -16,6 +18,7 @@ import * as availabilityService from '../../src/modules/availability/availabilit
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mockConnect.mockReturnValue(mockClient);
 });
 
 describe('availabilityService.getAvailabilityByDoctor', () => {
@@ -137,5 +140,94 @@ describe('availabilityService.deleteAvailability', () => {
     expect(result.message).toBe('Availability deleted');
     expect(mockQuery.mock.calls[0][0]).toContain('tenant_id');
     expect(mockQuery.mock.calls[0][1]).toContain('tenant-1');
+  });
+});
+
+describe('availabilityService.bulkCreateAvailability', () => {
+  const mockBulkClient = ({ overlapDays = [] } = {}) => {
+    mockClient.query.mockImplementation((sql, params) => {
+      if (sql === 'BEGIN' || sql === 'COMMIT' || sql === 'ROLLBACK') return Promise.resolve({});
+      if (sql.includes('FROM doctors WHERE id')) return Promise.resolve({ rows: [{ id: 1 }] });
+      if (sql.includes('SELECT 1 FROM doctor_availability')) {
+        return Promise.resolve({ rows: overlapDays.includes(params[1]) ? [{ id: 1 }] : [] });
+      }
+      if (sql.includes('INSERT INTO doctor_availability')) return Promise.resolve({ rows: [{ id: 1 }] });
+      return Promise.resolve({ rows: [] });
+    });
+  };
+
+  it('throws if missing required fields', async () => {
+    await expect(availabilityService.bulkCreateAvailability({}, 'test-tenant')).rejects.toThrow('Missing required fields');
+    await expect(availabilityService.bulkCreateAvailability({ doctor_id: 1, days: [] }, 'test-tenant')).rejects.toThrow('Missing required fields');
+  });
+
+  it('throws if doctor not found in tenant', async () => {
+    mockClient.query.mockImplementation((sql) => {
+      if (sql === 'BEGIN' || sql === 'ROLLBACK') return Promise.resolve({});
+      if (sql.includes('FROM doctors WHERE id')) return Promise.resolve({ rows: [] });
+      return Promise.resolve({ rows: [] });
+    });
+
+    await expect(availabilityService.bulkCreateAvailability({
+      doctor_id: 999,
+      days: [{ day_of_week: 1, start_time: '09:00', end_time: '12:00' }],
+    }, 'test-tenant')).rejects.toThrow('Doctor profile not found');
+  });
+
+  it('inserts all days in a transaction', async () => {
+    mockBulkClient();
+
+    const result = await availabilityService.bulkCreateAvailability({
+      doctor_id: 1,
+      days: [
+        { day_of_week: 1, start_time: '09:00', end_time: '12:00' },
+        { day_of_week: 3, start_time: '14:00', end_time: '17:00' },
+      ],
+    }, 'test-tenant');
+
+    expect(result).toEqual({ inserted: 2, skipped: 0 });
+    expect(mockClient.query).toHaveBeenCalledWith('COMMIT');
+  });
+
+  it('skips days that overlap existing availability', async () => {
+    mockBulkClient({ overlapDays: [3] });
+
+    const result = await availabilityService.bulkCreateAvailability({
+      doctor_id: 1,
+      days: [
+        { day_of_week: 1, start_time: '09:00', end_time: '12:00' },
+        { day_of_week: 3, start_time: '14:00', end_time: '17:00' },
+      ],
+    }, 'test-tenant');
+
+    expect(result).toEqual({ inserted: 1, skipped: 1 });
+    expect(mockClient.query).toHaveBeenCalledWith('COMMIT');
+  });
+
+  it('throws on invalid day_of_week', async () => {
+    mockBulkClient();
+
+    await expect(availabilityService.bulkCreateAvailability({
+      doctor_id: 1,
+      days: [{ day_of_week: 7, start_time: '09:00', end_time: '12:00' }],
+    }, 'test-tenant')).rejects.toThrow('day_of_week must be an integer between 0 and 6');
+  });
+
+  it('throws on invalid time format', async () => {
+    mockBulkClient();
+
+    await expect(availabilityService.bulkCreateAvailability({
+      doctor_id: 1,
+      days: [{ day_of_week: 1, start_time: 'bad', end_time: '12:00' }],
+    }, 'test-tenant')).rejects.toThrow('Invalid time format');
+  });
+
+  it('throws if start_time >= end_time', async () => {
+    mockBulkClient();
+
+    await expect(availabilityService.bulkCreateAvailability({
+      doctor_id: 1,
+      days: [{ day_of_week: 1, start_time: '14:00', end_time: '09:00' }],
+    }, 'test-tenant')).rejects.toThrow('Invalid time range: start_time must be before end_time');
   });
 });

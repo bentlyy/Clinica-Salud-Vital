@@ -52,13 +52,16 @@ describe('register', () => {
 describe('login', () => {
   it('calls login service and returns data', async () => {
     vi.mocked(authService.login).mockResolvedValue({ token: 'abc', user: { id: 1 } });
-    const req = { body: { email: 'test@test.com', password: 'Pass1!' } };
+    const req = { body: { email: 'test@test.com', password: 'Pass1!' }, ip: '::1', get: vi.fn() };
     const res = mkRes();
 
     authController.login(req, res, vi.fn());
     await flush();
 
-    expect(authService.login).toHaveBeenCalledWith({ email: 'test@test.com', password: 'Pass1!' }, undefined);
+    expect(authService.login).toHaveBeenCalledWith(
+      { email: 'test@test.com', password: 'Pass1!', ip_address: '::1', user_agent: undefined },
+      undefined,
+    );
     expect(res.json).toHaveBeenCalledWith({ token: 'abc', user: { id: 1 } });
   });
 });

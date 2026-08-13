@@ -1,6 +1,6 @@
 # Estado Actual del Proyecto
 
-> Versión: 1.0.0 — Producción | Última auditoría: 2026-07-29 | QA completo: 2026-08-11
+> Versión: 1.0.0 — Producción | Última auditoría: 2026-07-29 | QA completo: 2026-08-11 · 2026-08-13
 
 ## Métricas del Proyecto
 
@@ -8,10 +8,10 @@
 |---------|-------|
 | Módulos backend | 15 activos |
 | Páginas frontend | ~50 |
-| Tests backend | 1330 passing — 89 archivos |
-| Tests frontend | 1211 passing — 177 archivos |
-| Cobertura | Backend ~92% líneas (threshold 85%) · Frontend ~85% líneas (threshold 80%) |
-| Idiomas | 4 activos (es, en, pt, fr) — 65 namespaces — 3.079 claves c/u — paridad total verificada |
+| Tests backend | 1498 passing — 104 archivos |
+| Tests frontend | 1232 passing — 178 archivos |
+| Cobertura | Backend ~89% líneas (threshold 85%) · Frontend ~84% líneas (threshold 80%) |
+| Idiomas | 4 activos (es, en, pt, fr) — 66 namespaces — 3.377 claves c/u — paridad total verificada |
 | Tablas DB | 20+ |
 | Endpoints API | ~163 |
 | Middlewares | 9 |
@@ -24,13 +24,13 @@
 
 | Área | Estado | Notas |
 |------|--------|-------|
-| Backend tests | ✅ 1330 tests, ~92% cobertura | Vitest + pool forks |
-| Frontend | ✅ ~50 páginas, 1211 tests (177 archivos), lazy loading, tema claro/oscuro, sidebar por rol | React 19 + Vite + MUI |
+| Backend tests | ✅ 1498 tests, ~89% cobertura | Vitest + pool forks |
+| Frontend | ✅ ~50 páginas, 1232 tests (178 archivos), lazy loading, tema claro/oscuro, sidebar por rol | React 19 + Vite + MUI |
 | API | ✅ ~163 endpoints documentados | Prefijo `/api`, paginación estándar |
 | CI/CD | ✅ GitHub Actions (typecheck + test + build) + deploy a Render | Webhook post-deploy |
 | Seguridad | ✅ Helmet, CORS, rate limiting, Zod, 2FA, auditoría HMAC | IDOR fixes + captcha fail-closed |
 | Multi-tenancy | ✅ Implementado con planes SaaS auto-gestionables | Shared DB con tenant_id |
-| i18n | ✅ 4 idiomas completos con paridad total | es/en/pt/fr — test `i18n-keys.test.ts` |
+| i18n | ✅ 4 idiomas completos con paridad total | es/en/pt/fr — 3.377 claves c/u — test `i18n-keys.test.ts` |
 | ML | ⬜ Stub/simulación | Sin modelos reales implementados |
 | Patient module | ✅ Módulo de pacientes funcional | Portal paciente con bottom-nav propia |
 | Sidebar por rol | ✅ Implementada | `navigation.tsx` — ver [[03-FRONTEND/Navegacion-por-Rol\|Navegación por Rol]] |

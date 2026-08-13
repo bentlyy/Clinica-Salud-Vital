@@ -91,4 +91,37 @@ describe('PatientLabResultsPage', () => {
     expect(screen.getByText('3 exámenes en total — 2 con resultados')).toBeInTheDocument();
     expect(screen.getByText('2/3 completados')).toBeInTheDocument();
   });
+
+  it('shows delivered/signed requests as completed and flags out-of-range values', async () => {
+    api.get.mockResolvedValue({
+      data: [
+        {
+          id: 1,
+          status: 'delivered',
+          created_at: new Date().toISOString(),
+          doctor_name: 'Dr. Perez',
+          items: [
+            { id: 1, test_name: 'Glucosa', result_value: '250', test_id: 1, reference_ranges: { glucose: { min: 70, max: 110 } } },
+          ],
+        },
+        {
+          id: 2,
+          status: 'signed',
+          created_at: '2025-01-01T10:00:00.000Z',
+          doctor_name: 'Dra. Gomez',
+          items: [
+            { id: 2, test_name: 'Colesterol', result_value: '200', test_id: 2, reference_ranges: { cholesterol: { min: 100, max: 200 } } },
+          ],
+        },
+      ],
+    });
+    renderPage();
+    expect(await screen.findByText('Glucosa: 250')).toBeInTheDocument();
+    // Both delivered and signed render as "Completado"
+    expect(screen.getAllByText('Completado').length).toBeGreaterThanOrEqual(2);
+    // Out-of-range banner (mock t returns the default string without interpolation)
+    expect(screen.getByText(/Este informe contiene .* fuera de rango/)).toBeInTheDocument();
+    // "Nuevo" badge for recently published results
+    expect(screen.getByText('Nuevo')).toBeInTheDocument();
+  });
 });

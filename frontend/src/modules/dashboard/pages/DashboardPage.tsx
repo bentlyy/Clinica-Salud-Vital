@@ -52,7 +52,7 @@ function DoctorDashboard() {
     <Box>
       <PageHeader
         title={t('welcome_doctor', { name: user?.name || '' })}
-        subtitle={t('role_subtitle', { role: user ? getRoleLabel(user.role) : '', tenant: user?.tenant_name || '' })}
+        subtitle={t('role_subtitle', { role: user ? getRoleLabel(user.role, t) : '', tenant: user?.tenant_name || '' })}
       />
 
       <Grid container spacing={3}>
@@ -97,7 +97,7 @@ function DoctorDashboard() {
               return (
                 <Box key={b.id}>
                   {i > 0 && <Divider />}
-                  <ListItem disablePadding sx={{ py: 1.5 }}>
+                  <ListItem disablePadding sx={{ py: 2 }}>
                     <ListItemAvatar>
                       <Avatar sx={{ width: 40, height: 40, backgroundColor: st.bg, color: st.color, fontSize: '0.75rem', fontWeight: 700 }}>
                         <CalendarMonth fontSize="small" />
@@ -162,7 +162,7 @@ function PatientDashboard() {
     <Box>
       <PageHeader
         title={t('welcome_user', { name: user?.name || t('default_user') })}
-        subtitle={t('role_subtitle', { role: user ? getRoleLabel(user.role) : '', tenant: user?.tenant_name || '' })}
+        subtitle={t('role_subtitle', { role: user ? getRoleLabel(user.role, t) : '', tenant: user?.tenant_name || '' })}
       />
 
       <Grid container spacing={3}>
@@ -206,7 +206,7 @@ function PatientDashboard() {
               return (
                 <Box key={b.id}>
                   {i > 0 && <Divider />}
-                  <ListItem disablePadding sx={{ py: 1.5 }}>
+                  <ListItem disablePadding sx={{ py: 2 }}>
                     <ListItemAvatar>
                       <Avatar sx={{ width: 40, height: 40, backgroundColor: st.bg, color: st.color, fontSize: '0.75rem', fontWeight: 700 }}>
                         <CalendarMonth fontSize="small" />
@@ -265,7 +265,7 @@ function AdminOverview() {
     <Box>
       <PageHeader
         title={t('welcome_user', { name: user?.name || t('default_user') })}
-        subtitle={t('role_subtitle', { role: user ? getRoleLabel(user.role) : '', tenant: user?.tenant_name || '' })}
+        subtitle={t('role_subtitle', { role: user ? getRoleLabel(user.role, t) : '', tenant: user?.tenant_name || '' })}
       />
 
       <Grid container spacing={3}>
@@ -310,7 +310,7 @@ function AdminOverview() {
               return (
                 <Box key={b.id}>
                   {i > 0 && <Divider />}
-                  <ListItem disablePadding sx={{ py: 1.5 }}>
+                  <ListItem disablePadding sx={{ py: 2 }}>
                     <ListItemAvatar>
                       <Avatar sx={{ width: 40, height: 40, backgroundColor: st.bg, color: st.color, fontSize: '0.75rem', fontWeight: 700 }}>
                         <CalendarMonth fontSize="small" />

@@ -33,8 +33,9 @@ const mockCtrl = Object.fromEntries([
   'getReagentsCtrl', 'createReagentCtrl', 'updateReagentStockCtrl',
   'getNotificationsCtrl', 'acknowledgeNotificationCtrl',
   'validateItemByTechCtrl', 'validateItemByDoctorCtrl', 'signItemCtrl', 'deliverItemCtrl', 'getItemHistoryCtrl',
+  'sendLabResultsEmailCtrl', 'getLabResultsByTokenCtrl',
   // availability
-  'createAvailability', 'getAvailabilityByDoctor', 'getMyAvailability', 'deleteAvailability',
+  'createAvailability', 'getAvailabilityByDoctor', 'getMyAvailability', 'deleteAvailability', 'bulkCreateAvailability',
   // exception
   'getMyExceptions', 'createException', 'deleteException',
   // saas

@@ -7,6 +7,7 @@ import { waitForSeed } from '../../shared/seed-status.js';
 import { logger } from '../../utils/logger.js';
 import { BadRequestError, NotFoundError, UnauthorizedError } from '../../utils/errors.js';
 import { E } from '../../utils/error-codes.js';
+import { listUserSessions, revokeUserSession } from '../../shared/sessions.service.js';
 
 const ACCESS_COOKIE = 'access_token';
 const REFRESH_COOKIE = 'refresh_token';
@@ -61,9 +62,33 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
   if (!seeded) {
     logger.warn('Login request arrived before seed completed — proceeding anyway');
   }
-  const data = await authService.login(req.body, req.body.tenant_id || req.tenant_id);
+  const data = await authService.login(
+    {
+      ...req.body,
+      ip_address: req.ip,
+      user_agent: req.get('user-agent'),
+    },
+    req.body.tenant_id || req.tenant_id,
+  );
   setAuthCookies(res, data.access_token, data.refresh_token);
   res.json(data);
+});
+
+export const getSessions = asyncHandler(async (req: Request, res: Response) => {
+  if (!req.user) throw new UnauthorizedError(E.AUTH_AUTHENTICATION_REQUIRED);
+  const sessions = await listUserSessions(req.user.id, req.tenant_id);
+  res.json({ data: sessions });
+});
+
+export const revokeSession = asyncHandler(async (req: Request, res: Response) => {
+  if (!req.user) throw new UnauthorizedError(E.AUTH_AUTHENTICATION_REQUIRED);
+  const sessionId = Number(req.params.id);
+  if (!Number.isInteger(sessionId) || sessionId <= 0) {
+    throw new BadRequestError('Invalid session id');
+  }
+  const revoked = await revokeUserSession(sessionId, req.user.id, req.tenant_id);
+  if (!revoked) throw new NotFoundError('Session not found');
+  res.json({ message: 'Session revoked successfully' });
 });
 
 export const refresh = asyncHandler(async (req: Request, res: Response) => {

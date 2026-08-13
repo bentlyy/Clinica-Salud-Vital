@@ -1,5 +1,6 @@
 import { Box, Paper, Typography, Avatar } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
+import { useTranslation } from 'react-i18next';
 import AttachMoney from '@mui/icons-material/AttachMoney';
 import PendingActions from '@mui/icons-material/PendingActions';
 import WarningAmber from '@mui/icons-material/WarningAmber';
@@ -15,31 +16,32 @@ interface BillingSummaryCardsProps {
 
 export function BillingSummaryCards({ stats, isLoading }: BillingSummaryCardsProps) {
   const theme = useTheme();
+  const { t } = useTranslation('billing');
 
   const cards = [
     {
-      label: 'Ingresos Totales',
+      label: t('billing:summary.totalRevenue', 'Ingresos Totales'),
       value: stats?.total_revenue ?? 0,
       icon: <AttachMoney />,
       color: theme.palette.primary.main,
       bgColor: theme.palette.custom.brand.lightest,
     },
     {
-      label: 'Pendientes de Pago',
+      label: t('billing:summary.pendingPayment', 'Pendientes de Pago'),
       value: stats?.pending_amount ?? 0,
       icon: <PendingActions />,
       color: theme.palette.warning.main,
       bgColor: theme.palette.custom.status.warning.bg,
     },
     {
-      label: 'Facturas Vencidas',
+      label: t('billing:summary.overdueInvoices', 'Facturas Vencidas'),
       value: stats?.overdue_amount ?? 0,
       icon: <WarningAmber />,
       color: theme.palette.error.main,
       bgColor: theme.palette.custom.status.error.bg,
     },
     {
-      label: 'Facturas Últimos 30 días',
+      label: t('billing:summary.invoicesLast30', 'Facturas Últimos 30 días'),
       value: stats?.invoices_last_30_days ?? 0,
       icon: <TrendingUp />,
       color: theme.palette.info.main,

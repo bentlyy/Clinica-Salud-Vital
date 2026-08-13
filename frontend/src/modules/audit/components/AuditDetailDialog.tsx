@@ -14,6 +14,7 @@ import {
   IconButton,
 } from '@mui/material';
 import Close from '@mui/icons-material/Close';
+import { useTranslation } from 'react-i18next';
 import type { AuditLog } from '../types/audit.types';
 import { AUDIT_ACTION_LABELS, AUDIT_ENTITY_LABELS } from '../types/audit.types';
 import { formatDateTime } from '@/shared/utils/localeUtils';
@@ -26,10 +27,11 @@ interface AuditDetailDialogProps {
 
 export function AuditDetailDialog({ open, onClose, log }: AuditDetailDialogProps) {
   const theme = useTheme();
+  const { t } = useTranslation('audit');
   if (!log) return null;
 
-  const actionLabel = AUDIT_ACTION_LABELS[log.action] || log.action;
-  const entityLabel = AUDIT_ENTITY_LABELS[log.entity_type] || log.entity_type;
+  const actionLabel = t(`actionLabels.${log.action}`, AUDIT_ACTION_LABELS[log.action] || log.action);
+  const entityLabel = t(`entityLabels.${log.entity_type}`, AUDIT_ENTITY_LABELS[log.entity_type] || log.entity_type);
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
@@ -41,7 +43,7 @@ export function AuditDetailDialog({ open, onClose, log }: AuditDetailDialogProps
           fontWeight: 600,
         }}
       >
-        Detalle de Auditoría
+        {t('detailTitle', 'Detalle de Auditoría')}
         <IconButton onClick={onClose} size="small" sx={{ color: theme.palette.text.secondary }}>
           <Close fontSize="small" />
         </IconButton>
@@ -68,7 +70,7 @@ export function AuditDetailDialog({ open, onClose, log }: AuditDetailDialogProps
             />
             {log.entity_id && (
               <Chip
-                label={`ID: ${log.entity_id}`}
+                label={t('idValue', 'ID: {{id}}', { id: log.entity_id })}
                 variant="outlined"
                 sx={{ fontWeight: 500 }}
               />
@@ -87,35 +89,35 @@ export function AuditDetailDialog({ open, onClose, log }: AuditDetailDialogProps
               <TableBody>
                 <TableRow>
                   <TableCell sx={{ fontWeight: 600, color: theme.palette.text.secondary, width: 140 }}>
-                    Usuario
+                    {t('user', 'Usuario')}
                   </TableCell>
                   <TableCell sx={{ color: theme.palette.text.primary }}>
-                    {log.user_name || `Usuario #${log.user_id}`}
+                    {log.user_name || t('userValue', 'Usuario #{{id}}', { id: log.user_id })}
                   </TableCell>
                 </TableRow>
                 <TableRow>
                   <TableCell sx={{ fontWeight: 600, color: theme.palette.text.secondary }}>
-                    Acción
+                    {t('action', 'Acción')}
                   </TableCell>
                   <TableCell sx={{ color: theme.palette.text.primary }}>{actionLabel}</TableCell>
                 </TableRow>
                 <TableRow>
                   <TableCell sx={{ fontWeight: 600, color: theme.palette.text.secondary }}>
-                    Entidad
+                    {t('entity', 'Entidad')}
                   </TableCell>
                   <TableCell sx={{ color: theme.palette.text.primary }}>{entityLabel}</TableCell>
                 </TableRow>
                 {log.entity_id && (
                   <TableRow>
                     <TableCell sx={{ fontWeight: 600, color: theme.palette.text.secondary }}>
-                      ID Entidad
+                      {t('idEntidad', 'ID Entidad')}
                     </TableCell>
                     <TableCell sx={{ color: theme.palette.text.primary }}>{log.entity_id}</TableCell>
                   </TableRow>
                 )}
                 <TableRow>
                   <TableCell sx={{ fontWeight: 600, color: theme.palette.text.secondary }}>
-                    Dirección IP
+                    {t('ipAddress', 'Dirección IP')}
                   </TableCell>
                   <TableCell sx={{ color: theme.palette.text.primary, fontFamily: 'monospace' }}>
                     {log.ip_address || '—'}
@@ -123,7 +125,7 @@ export function AuditDetailDialog({ open, onClose, log }: AuditDetailDialogProps
                 </TableRow>
                 <TableRow>
                   <TableCell sx={{ fontWeight: 600, color: theme.palette.text.secondary }}>
-                    Fecha/Hora
+                    {t('fechaHora', 'Fecha/Hora')}
                   </TableCell>
                   <TableCell sx={{ color: theme.palette.text.primary }}>
                     {formatDateTime(log.created_at)}
@@ -137,7 +139,7 @@ export function AuditDetailDialog({ open, onClose, log }: AuditDetailDialogProps
           {log.details && Object.keys(log.details).length > 0 && (
             <Box sx={{ mt: 2 }}>
               <Typography variant="caption" sx={{ color: theme.palette.text.secondary, textTransform: 'uppercase', fontWeight: 600 }}>
-                Detalles Adicionales
+                {t('detallesAdicionales', 'Detalles Adicionales')}
               </Typography>
               <Box
                 sx={{

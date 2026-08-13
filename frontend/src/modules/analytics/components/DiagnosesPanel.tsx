@@ -30,7 +30,7 @@ export function DiagnosesPanel({ data }: { data: DiagnosisRecord[] }) {
               <Typography variant="body2" sx={{ fontWeight: 600 }}>{d.diagnosis}</Typography>
               <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>{d.count} {t('cases')}</Typography>
               <Typography variant="caption" sx={{ display: 'block', color: theme.palette.success.main, mt: 0.5 }}>
-                CIE-10: {d.cie10 || 'N/A'}
+                {t('cie10Prefix', 'CIE-10: ')}{d.cie10 || 'N/A'}
               </Typography>
             </Paper>
           ))}

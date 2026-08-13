@@ -18,12 +18,12 @@ describe('notificationService', () => {
   });
 
   describe('list', () => {
-    it('calls GET /laboratory/notifications with the paging params', async () => {
+    it('calls GET /notifications with the paging params', async () => {
       apiClient.get.mockResolvedValue({ data: { data: [], total: 0 } });
 
       const result = await notificationService.list({ page: 2, limit: 10 });
 
-      expect(apiClient.get).toHaveBeenCalledWith('/laboratory/notifications', {
+      expect(apiClient.get).toHaveBeenCalledWith('/notifications', {
         params: { page: 2, limit: 10 },
         signal: undefined,
       });
@@ -35,7 +35,7 @@ describe('notificationService', () => {
 
       await notificationService.list({ page: 1, limit: 5, tenantId: 'tenant-9' });
 
-      expect(apiClient.get).toHaveBeenCalledWith('/laboratory/notifications', {
+      expect(apiClient.get).toHaveBeenCalledWith('/notifications', {
         params: { page: 1, limit: 5, tenant_id: 'tenant-9' },
         signal: undefined,
       });
@@ -46,7 +46,7 @@ describe('notificationService', () => {
 
       await notificationService.list();
 
-      expect(apiClient.get).toHaveBeenCalledWith('/laboratory/notifications', {
+      expect(apiClient.get).toHaveBeenCalledWith('/notifications', {
         params: {},
         signal: undefined,
       });
@@ -54,13 +54,28 @@ describe('notificationService', () => {
   });
 
   describe('markAsRead', () => {
-    it('patches the ack endpoint with an undefined body', async () => {
+    it('patches the read endpoint with an undefined body', async () => {
       apiClient.patch.mockResolvedValue({ data: { ok: true } });
 
       const result = await notificationService.markAsRead(42);
 
       expect(apiClient.patch).toHaveBeenCalledWith(
-        '/laboratory/notifications/42/ack',
+        '/notifications/42/read',
+        undefined,
+        { signal: undefined },
+      );
+      expect(result).toEqual({ ok: true });
+    });
+  });
+
+  describe('markAllAsRead', () => {
+    it('patches the read-all endpoint', async () => {
+      apiClient.patch.mockResolvedValue({ data: { ok: true } });
+
+      const result = await notificationService.markAllAsRead();
+
+      expect(apiClient.patch).toHaveBeenCalledWith(
+        '/notifications/read-all',
         undefined,
         { signal: undefined },
       );

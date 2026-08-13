@@ -11,6 +11,11 @@ import crypto from 'crypto';
 import { hashToken, encrypt, decrypt } from '../../shared/crypto.service.js';
 import { sendEmail } from '../../shared/email.service.js';
 import { base32Encode, base32Decode } from '../../shared/base32.js';
+import {
+  createUserSession,
+  touchUserSession,
+  revokeAllUserSessions as revokeAllSessions,
+} from '../../shared/sessions.service.js';
 
 interface RegisterParams {
   email: string;
@@ -27,6 +32,8 @@ interface LoginParams {
   password: string;
   totp_token?: string;
   captcha_token?: string;
+  ip_address?: string;
+  user_agent?: string;
 }
 
 interface RefreshParams {
@@ -68,23 +75,18 @@ const generateAccessToken = (user: { id: number; email: string; role: UserRole; 
   );
 };
 
-const generateRefreshToken = async (userId: number): Promise<string> => {
+const generateRefreshToken = async (userId: number, sessionId?: number | null): Promise<string> => {
   const token = crypto.randomBytes(40).toString('hex');
   const tokenHash = hashToken(token);
   const expiresAt = new Date();
   expiresAt.setDate(expiresAt.getDate() + REFRESH_TOKEN_EXPIRY_DAYS);
 
   await pool.query(
-    'INSERT INTO refresh_tokens (user_id, token, expires_at, token_version) VALUES ($1, $2, $3, (SELECT COALESCE(token_version, 0) FROM users WHERE id = $4))',
-    [userId, tokenHash, expiresAt, userId]
+    'INSERT INTO refresh_tokens (user_id, token, expires_at, token_version, session_id) VALUES ($1, $2, $3, (SELECT COALESCE(token_version, 0) FROM users WHERE id = $4), $5)',
+    [userId, tokenHash, expiresAt, userId, sessionId ?? null]
   );
 
   return token;
-};
-
-const revokeRefreshToken = async (token: string): Promise<void> => {
-  const tokenHash = hashToken(token);
-  await pool.query('UPDATE refresh_tokens SET revoked = true WHERE token = $1', [tokenHash]);
 };
 
 const revokeAllUserRefreshTokens = async (userId: number): Promise<void> => {
@@ -198,7 +200,7 @@ const verifyCaptcha = async (token: string): Promise<boolean> => {
   }
 };
 
-export const login = async ({ email, password, totp_token, captcha_token }: LoginParams, tenantId: string = 'default'): Promise<{
+export const login = async ({ email, password, totp_token, captcha_token, ip_address, user_agent }: LoginParams, tenantId: string = 'default'): Promise<{
   access_token: string;
   refresh_token: string;
   user: { id: number; email: string; name: string | null; role: UserRole; rut: string | null; phone: string | null; password_changed: boolean; totp_enabled: boolean; tenant_id: string };
@@ -273,7 +275,13 @@ export const login = async ({ email, password, totp_token, captcha_token }: Logi
     tenant_id: user.tenant_id || process.env.DEFAULT_TENANT_ID || 'default',
     token_version: user.token_version || 0,
   });
-  const refresh_token = await generateRefreshToken(user.id);
+  const { sessionId } = await createUserSession(
+    user.id,
+    user.tenant_id || process.env.DEFAULT_TENANT_ID || 'default',
+    ip_address,
+    user_agent,
+  );
+  const refresh_token = await generateRefreshToken(user.id, sessionId);
 
   return {
     access_token,
@@ -336,6 +344,7 @@ export const refreshToken = async ({ refresh_token }: RefreshParams): Promise<{
 
     await client.query('UPDATE refresh_tokens SET revoked = true WHERE token = $1', [tokenHash]);
     await client.query('UPDATE users SET last_activity_at = NOW() WHERE id = $1', [user.id]);
+    const sessionId = tokenRecord.session_id ?? null;
 
     const newAccessToken = generateAccessToken({
       id: user.id,
@@ -351,11 +360,13 @@ export const refreshToken = async ({ refresh_token }: RefreshParams): Promise<{
     expiresAt.setDate(expiresAt.getDate() + REFRESH_TOKEN_EXPIRY_DAYS);
 
     await client.query(
-      'INSERT INTO refresh_tokens (user_id, token, expires_at, token_version) VALUES ($1, $2, $3, $4)',
-      [user.id, newTokenHash, expiresAt, user.token_version || 0]
+      'INSERT INTO refresh_tokens (user_id, token, expires_at, token_version, session_id) VALUES ($1, $2, $3, $4, $5)',
+      [user.id, newTokenHash, expiresAt, user.token_version || 0, sessionId]
     );
 
     await client.query('COMMIT');
+
+    void touchUserSession(sessionId);
 
     return {
       access_token: newAccessToken,
@@ -383,17 +394,32 @@ export const refreshToken = async ({ refresh_token }: RefreshParams): Promise<{
 export const logout = async (refresh_token: string, userId?: number): Promise<void> => {
   const tokenHash = hashToken(refresh_token);
   if (userId) {
-    await pool.query(
-      'UPDATE refresh_tokens SET revoked = true WHERE token = $1 AND user_id = $2 AND revoked = false',
+    const result = await pool.query(
+      'UPDATE refresh_tokens SET revoked = true WHERE token = $1 AND user_id = $2 AND revoked = false RETURNING session_id',
       [tokenHash, userId]
     );
+    const sessionId = result.rows[0]?.session_id;
+    if (sessionId) {
+      await pool.query(
+        'UPDATE user_sessions SET revoked_at = NOW() WHERE id = $1 AND user_id = $2 AND revoked_at IS NULL',
+        [sessionId, userId]
+      );
+    }
   } else {
-    await revokeRefreshToken(refresh_token);
+    const result = await pool.query(
+      'UPDATE refresh_tokens SET revoked = true WHERE token = $1 AND revoked = false RETURNING session_id',
+      [tokenHash]
+    );
+    const sessionId = result.rows[0]?.session_id;
+    if (sessionId) {
+      await pool.query('UPDATE user_sessions SET revoked_at = NOW() WHERE id = $1 AND revoked_at IS NULL', [sessionId]);
+    }
   }
 };
 
 export const logoutAll = async (userId: number): Promise<void> => {
   await revokeAllUserRefreshTokens(userId);
+  await revokeAllSessions(userId);
 };
 
 export const changePassword = async ({ userId, currentPassword, newPassword }: ChangePasswordParams, tenantId: string = 'default'): Promise<void> => {

@@ -1,39 +1,42 @@
 import { Box, Typography, Paper, Chip, Avatar } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
+import { useTranslation } from 'react-i18next';
 import Science from '@mui/icons-material/Science';
 import { useNavigate } from 'react-router-dom';
 import { MotionDiv } from '@/shared/utils/animations';
 import type { LabRequest, LabRequestStatus } from '../types/lab.types';
-import { LAB_STATUS_CONFIG, LAB_PRIORITY_CONFIG } from '../types/lab.types';
+import { LAB_STATUS_LABELS, LAB_STATUS_CONFIG, LAB_PRIORITY_CONFIG } from '../types/lab.types';
 
 interface LabPipelineProps {
   requests: LabRequest[];
 }
 
-const PIPELINE_COLUMNS: { status: LabRequestStatus; key: LabRequestStatus; label: string }[] = [
-  { status: 'pending', key: 'pending', label: 'Pendiente' },
-  { status: 'received', key: 'received', label: 'Recibido' },
-  { status: 'processing', key: 'processing', label: 'En Proceso' },
-  { status: 'delivered', key: 'delivered', label: 'Entregado' },
-  { status: 'cancelled', key: 'cancelled', label: 'Cancelado' },
+const PIPELINE_COLUMNS: LabRequestStatus[] = [
+  'pending',
+  'received',
+  'processing',
+  'delivered',
+  'cancelled',
 ];
 
 export function LabPipeline({ requests }: LabPipelineProps) {
   const navigate = useNavigate();
   const theme = useTheme();
+  const { t } = useTranslation('lab');
 
-  const grouped = PIPELINE_COLUMNS.map((col) => ({
-    ...col,
-    items: requests.filter((r) => r.status === col.status),
+  const grouped = PIPELINE_COLUMNS.map((status) => ({
+    status,
+    label: t(`lab:statusLabels.${status}`, LAB_STATUS_LABELS[status]),
+    items: requests.filter((r) => r.status === status),
   }));
 
   return (
     <Box sx={{ display: 'flex', gap: 2, overflowX: 'auto', pb: 1 }}>
       {grouped.map((col) => {
-        const config = LAB_STATUS_CONFIG[col.key];
+        const config = LAB_STATUS_CONFIG[col.status];
         return (
           <Box
-            key={col.key}
+            key={col.status}
             sx={{
               minWidth: 260,
               flex: 1,
@@ -53,7 +56,7 @@ export function LabPipeline({ requests }: LabPipelineProps) {
                 }}
               />
               <Typography variant="body2" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
-                {config.label}
+                {col.label}
               </Typography>
               <Chip
                 label={col.items.length}
@@ -74,7 +77,7 @@ export function LabPipeline({ requests }: LabPipelineProps) {
                   variant="body2"
                   sx={{ color: theme.palette.text.secondary, textAlign: 'center', py: 3, fontSize: '0.75rem' }}
                 >
-                  Sin solicitudes
+                  {t('lab:noItems', 'Sin solicitudes')}
                 </Typography>
               )}
               {col.items.map((request, index) => (
@@ -133,7 +136,7 @@ export function LabPipeline({ requests }: LabPipelineProps) {
 
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 1 }}>
                       <Chip
-                        label={LAB_PRIORITY_CONFIG[request.priority].label}
+                        label={t(`lab:priorityLabels.${request.priority}`, LAB_PRIORITY_CONFIG[request.priority].label)}
                         size="small"
                         sx={{
                           height: 18,

@@ -19,6 +19,7 @@ vi.mock('../../src/shared/date.js', () => ({
 import {
   checkDoctorAvailability,
   checkDoctorExceptions,
+  checkHolidayBlock,
   checkSlotOverlap,
   validateBookingSlot,
 } from '../../src/shared/booking-utils.js';
@@ -144,7 +145,7 @@ describe('checkSlotOverlap', () => {
     await expect(checkSlotOverlap(1, '2030-06-17', '10:00', 30, undefined, 'tenant-1')).resolves.toBeUndefined();
     expect(mockQuery).toHaveBeenCalledWith(
       expect.any(String),
-      [1, '2030-06-17', '10:00', 30, 'tenant-1']
+      [1, '2030-06-17', '10:00', 30, 'tenant-1', null]
     );
   });
 
@@ -153,37 +154,93 @@ describe('checkSlotOverlap', () => {
     await expect(checkSlotOverlap(1, '2030-06-17', '10:00', 30, undefined, 'default')).resolves.toBeUndefined();
     expect(mockQuery).toHaveBeenCalledWith(
       expect.any(String),
-      [1, '2030-06-17', '10:00', 30, 'default']
+      [1, '2030-06-17', '10:00', 30, 'default', null]
     );
+  });
+
+  it('ignores the booking being rescheduled when checking overlap', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] });
+    await expect(checkSlotOverlap(1, '2030-06-17', '10:00', 30, undefined, 'default', 42)).resolves.toBeUndefined();
+    expect(mockQuery).toHaveBeenCalledWith(
+      expect.any(String),
+      [1, '2030-06-17', '10:00', 30, 'default', 42]
+    );
+  });
+});
+
+describe('checkHolidayBlock', () => {
+  it('passes when no holiday exists for the date', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] });
+    await expect(checkHolidayBlock('2030-06-17', 'default')).resolves.toBeUndefined();
+  });
+
+  it('throws when the date is a holiday', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [{ name: 'Fiestas Patrias' }] });
+    await expect(checkHolidayBlock('2030-06-17', 'default')).rejects.toThrow(BadRequestError);
   });
 });
 
 describe('validateBookingSlot', () => {
   it('delegates to all three checks with client', async () => {
     const mockDb = { query: mockQuery };
-    mockQuery.mockResolvedValue({ rows: [] });
+    mockQuery.mockResolvedValueOnce({ rows: [] });
     mockQuery.mockResolvedValueOnce({ rows: [{ start_time: '09:00', end_time: '17:00' }] });
+    mockQuery.mockResolvedValue({ rows: [] });
 
     await expect(validateBookingSlot({
       doctorId: 1,
       date: '2030-06-17',
       time: '10:00',
       duration: 30,
+      tenantId: 'test-tenant',
       client: mockDb,
     })).resolves.toBeUndefined();
     expect(mockQuery).toHaveBeenCalled();
   });
 
   it('falls back to pool when client not provided', async () => {
-    mockQuery.mockResolvedValue({ rows: [] });
+    mockQuery.mockResolvedValueOnce({ rows: [] });
     mockQuery.mockResolvedValueOnce({ rows: [{ start_time: '09:00', end_time: '17:00' }] });
+    mockQuery.mockResolvedValue({ rows: [] });
 
     await expect(validateBookingSlot({
       doctorId: 1,
       date: '2030-06-17',
       time: '10:00',
       duration: 30,
+      tenantId: 'test-tenant',
     })).resolves.toBeUndefined();
     expect(mockQuery).toHaveBeenCalled();
+  });
+
+  it('throws when the date is a holiday', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [{ name: 'Feriado' }] });
+
+    await expect(validateBookingSlot({
+      doctorId: 1,
+      date: '2030-06-17',
+      time: '10:00',
+      duration: 30,
+      tenantId: 'test-tenant',
+    })).rejects.toThrow(BadRequestError);
+  });
+
+  it('ignores the excluded booking when checking overlap', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] });
+    mockQuery.mockResolvedValueOnce({ rows: [{ start_time: '09:00', end_time: '17:00' }] });
+    mockQuery.mockResolvedValue({ rows: [] });
+
+    await expect(validateBookingSlot({
+      doctorId: 1,
+      date: '2030-06-17',
+      time: '10:00',
+      duration: 30,
+      tenantId: 'test-tenant',
+      excludeBookingId: 7,
+    })).resolves.toBeUndefined();
+    expect(mockQuery).toHaveBeenCalledWith(
+      expect.stringContaining('id != $6'),
+      [1, '2030-06-17', '10:00', 30, 'test-tenant', 7]
+    );
   });
 });

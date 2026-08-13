@@ -137,6 +137,9 @@ export function registerWorker(type: string, handler: JobHandler): void {
 }
 
 export function registerWorkers(): void {
+  const { registerWebhookWorker } = require('../modules/webhooks/webhooks.service.js') as typeof import('../modules/webhooks/webhooks.service.js');
+  registerWebhookWorker();
+
   registerWorker('email:send', async (job) => {
     const { type: emailType, to, subject, html, tenantId } = job.data as Record<string, any>;
 

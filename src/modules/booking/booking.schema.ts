@@ -20,3 +20,20 @@ export const cancelBookingSchema = z.object({
   reason: z.string().trim().max(255).optional(),
 }).strict();
 
+export const rescheduleBookingSchema = z.object({
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format, use YYYY-MM-DD'),
+  time: z.string().regex(/^\d{2}:\d{2}$/, 'Invalid time format, use HH:MM'),
+  duration: z.number().int().min(1).max(480).optional(),
+}).strict();
+
+export const createBookingSeriesSchema = z.object({
+  doctor_id: z.number().int().positive('doctor_id is required'),
+  user_id: z.number().int().positive('user_id is required'),
+  frequency: z.enum(['daily', 'weekly', 'monthly']),
+  interval_count: z.number().int().min(1).max(365).optional().default(1),
+  start_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format, use YYYY-MM-DD'),
+  time: z.string().regex(/^\d{2}:\d{2}$/, 'Invalid time format, use HH:MM'),
+  duration: z.number().int().min(1).max(480).optional().default(30),
+  occurrences: z.number().int().min(1).max(52),
+}).strict();
+

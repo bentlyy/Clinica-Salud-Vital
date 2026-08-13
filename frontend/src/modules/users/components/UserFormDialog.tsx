@@ -192,7 +192,7 @@ export function UserFormDialog({ open, onClose, onSubmit, isPending }: UserFormD
                   >
                     {CREATABLE_ROLES.map((role) => (
                       <MenuItem key={role} value={role}>
-                        {getRoleLabel(role)}
+                        {getRoleLabel(role, t)}
                       </MenuItem>
                     ))}
                   </TextField>

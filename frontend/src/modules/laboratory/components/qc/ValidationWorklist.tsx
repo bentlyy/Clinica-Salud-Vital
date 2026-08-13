@@ -1,4 +1,5 @@
 import { memo, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Box,
   Typography,
@@ -47,6 +48,7 @@ export const ValidationWorklist = memo(function ValidationWorklist({
   isLoading = false,
 }: ValidationWorklistProps) {
   const theme = useTheme();
+  const { t } = useTranslation('lab');
   const [tabIndex, setTabIndex] = useState(0);
 
   const techItems = useMemo(
@@ -199,7 +201,14 @@ export const ValidationWorklist = memo(function ValidationWorklist({
           <Table size="small">
             <TableHead>
               <TableRow>
-                {['Paciente', 'Test', 'Resultado', 'Referencia', 'Estado', 'Acciones'].map(
+                {[
+                  t('lab:patientLabel', 'Paciente'),
+                  t('lab:test', 'Test'),
+                  t('lab:resultValue', 'Resultado'),
+                  t('lab:referenceRange', 'Referencia'),
+                  t('lab:status', 'Estado'),
+                  t('lab:actions', 'Acciones'),
+                ].map(
                   (col) => (
                     <TableCell key={col}>{col}</TableCell>
                   ),

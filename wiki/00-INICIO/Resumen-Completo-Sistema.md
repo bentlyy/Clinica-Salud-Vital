@@ -213,7 +213,7 @@ frontend/src/
 ### Testing
 - **Framework**: Vitest 4 (backend) + Vitest 4 con jsdom (frontend)
 - **Librerías**: @testing-library/react + jest-dom
-- **Estado**: 1330 tests backend (89 archivos, ~92% líneas) + 1211 tests frontend (177 archivos, ~85% líneas) — todos pasando
+- **Estado**: 1498 tests backend (104 archivos, ~89% líneas) + 1232 tests frontend (178 archivos, ~84% líneas) — todos pasando
 
 ---
 

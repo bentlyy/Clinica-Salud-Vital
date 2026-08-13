@@ -31,13 +31,14 @@ import { SAMPLE_TYPE_OPTIONS, CONTAINER_TYPE_OPTIONS } from '../../types/lab.typ
 
 // ── Schema ──────────────────────────────────────────────────────────────────
 
-const aliquotSchema = z.object({
-  container_type: z.string().min(1, 'Tipo de contenedor requerido'),
-  volume: z.number().min(0.1, 'Volumen debe ser mayor a 0'),
-  label: z.string().min(1, 'Etiqueta requerida').max(50, 'Máximo 50 caracteres'),
-});
+const aliquotSchema = (t: (key: string, fallback: string) => string) =>
+  z.object({
+    container_type: z.string().min(1, t('lab:containerTypeRequired', 'Tipo de contenedor requerido')),
+    volume: z.number().min(0.1, t('lab:volumeGreaterThanZero', 'Volumen debe ser mayor a 0')),
+    label: z.string().min(1, t('lab:labelRequired', 'Etiqueta requerida')).max(50, t('lab:maxChars50', 'Máximo 50 caracteres')),
+  });
 
-type AliquotFormValues = z.infer<typeof aliquotSchema>;
+type AliquotFormValues = z.infer<ReturnType<typeof aliquotSchema>>;
 
 // ── Props ───────────────────────────────────────────────────────────────────
 
@@ -186,7 +187,7 @@ const AliquotRow = memo(function AliquotRow({
     watch,
     formState: { errors },
   } = useForm<AliquotFormValues>({
-    resolver: zodResolver(aliquotSchema),
+    resolver: zodResolver(aliquotSchema(t)),
     defaultValues: {
       container_type: '',
       volume: undefined as unknown as number,

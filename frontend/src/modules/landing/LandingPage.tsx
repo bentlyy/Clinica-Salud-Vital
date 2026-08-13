@@ -479,7 +479,7 @@ function LoginModal({ onClose }: { onClose: () => void }) {
 
         {/* Right form panel */}
         <div className="lm-form-panel">
-          <button className="lm-close" onClick={onClose} aria-label="Close">
+          <button className="lm-close" onClick={onClose} aria-label={t('common:close', 'Close')}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
           </button>
 
