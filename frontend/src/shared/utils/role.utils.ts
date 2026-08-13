@@ -1,5 +1,6 @@
 import { type JwtUser } from '@/shared/types/api.types';
 import { ROLE_PERMISSIONS } from '@/shared/constants/permissions';
+import type { TFunction } from 'i18next';
 
 export function getRedirectPath(role: JwtUser['role']): string {
   switch (role) {
@@ -37,7 +38,7 @@ export function hasPermission(role: JwtUser['role'], module: string, action?: st
   return false;
 }
 
-export function getRoleLabel(role: JwtUser['role'], t: (key: string, fallback?: string) => string): string {
+export function getRoleLabel(role: JwtUser['role'], t: TFunction): string {
   const keys: Record<string, string> = {
     superadmin: 'roles.superadmin',
     admin: 'roles.admin',
