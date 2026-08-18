@@ -189,13 +189,15 @@ const verifyCaptcha = async (token: string): Promise<boolean> => {
     const params = new URLSearchParams({ secret, response: token });
     const res = await fetch('https://www.google.com/recaptcha/api/siteverify', {
       method: 'POST',
-      body: params,
-      signal: AbortSignal.timeout(5000),
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: params.toString(),
+      signal: AbortSignal.timeout(10000),
     });
-    const data = await res.json() as { success: boolean };
+    const data = await res.json() as { success: boolean; 'error-codes'?: string[]; challenge_ts?: string; hostname?: string };
+    logger.info('reCAPTCHA verification result', { success: data.success, errorCodes: data['error-codes'], hostname: data.hostname, challengeTs: data.challenge_ts });
     return data.success === true;
   } catch (err) {
-    logger.error('reCAPTCHA verification failed, blocking login', { error: toError(err).message });
+    logger.error('reCAPTCHA verification error (network/timeout)', { error: toError(err).message });
     return false;
   }
 };
