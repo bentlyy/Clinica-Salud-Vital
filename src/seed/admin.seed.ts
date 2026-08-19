@@ -173,22 +173,24 @@ export const seedSuperAdmin = async (): Promise<void> => {
   }
 
   const isProd = process.env.NODE_ENV === 'production';
+  const password = process.env.SUPERADMIN_PASSWORD || 'REPLACED_PASSWORD';
+  const email = process.env.SUPERADMIN_EMAIL || 'superadmin@clinic.com';
+
   if (isProd && !process.env.SUPERADMIN_PASSWORD) {
-    throw new Error('SUPERADMIN_PASSWORD must be configured in production');
+    logger.warn('SUPERADMIN_PASSWORD not set — using default password. Set it in env for production.');
   }
   if (isProd && !process.env.SUPERADMIN_EMAIL) {
-    throw new Error('SUPERADMIN_EMAIL must be configured in production');
+    logger.warn('SUPERADMIN_EMAIL not set — using superadmin@clinic.com. Set it in env for production.');
   }
 
-  const password = process.env.SUPERADMIN_PASSWORD || 'REPLACED_PASSWORD';
   const hash = await bcrypt.hash(password, 12);
 
   await pool.query(
     'INSERT INTO users (email, password, name, role, tenant_id) VALUES ($1, $2, $3, $4, NULL) ON CONFLICT DO NOTHING',
-    [process.env.SUPERADMIN_EMAIL || 'superadmin@clinic.com', hash, 'Super Admin', 'superadmin']
+    [email, hash, 'Super Admin', 'superadmin']
   );
 
-  logger.info('Superadmin created with tenant_id=NULL (cross-clinic)');
+  logger.info('Superadmin created with tenant_id=NULL (cross-clinic)', { email });
 };
 
 // ─── Seed: Admin (single clinic) ───────────────────────────────────

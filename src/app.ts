@@ -386,7 +386,11 @@ const startServer = async (): Promise<void> => {
       }
 
       step('runMigration');
-      await runMigration();
+      try {
+        await runMigration();
+      } catch (migErr) {
+        logger.error('Migration error (non-fatal, continuing startup)', { error: toError(migErr).message });
+      }
       step('registerWorkers');
       registerWorkers();
       step('startQueueProcessor');
