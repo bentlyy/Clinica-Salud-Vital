@@ -16,20 +16,27 @@ const isInternalDb = (): boolean => {
 const poolMax = parseInt(process.env.DB_POOL_MAX || '25', 10);
 
 const dbCaCert = process.env.DB_CA_CERT;
-const isProd = process.env.NODE_ENV === 'production';
 const rejectUnauthorized = process.env.DB_SSL_REJECT_UNAUTHORIZED !== 'false';
-const sslConfig = !isInternalDb()
+const useSSL = !isInternalDb();
+const sslConfig = useSSL
   ? dbCaCert
     ? { ca: dbCaCert, rejectUnauthorized }
     : { rejectUnauthorized: false }
   : false;
 
-if (!sslConfig && !isInternalDb()) {
-  logger.warn('⚠️  DB SSL disabled — traffic is UNENCRYPTED. Set NODE_ENV=production to enable SSL.');
+if (!useSSL) {
+  logger.warn('⚠️  DB SSL disabled — traffic is UNENCRYPTED (internal DB detected).');
 }
 
+const buildConnectionString = (base: string | undefined): string | undefined => {
+  if (!base || !useSSL) return base;
+  const url = new URL(base);
+  url.searchParams.set('sslmode', 'require');
+  return url.toString();
+};
+
 export const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
+  connectionString: buildConnectionString(process.env.DATABASE_URL),
   ssl: sslConfig,
   client_encoding: 'UTF8',
   max: poolMax,
