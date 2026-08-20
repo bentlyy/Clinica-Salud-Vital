@@ -28,14 +28,8 @@ if (!useSSL) {
   logger.warn('⚠️  DB SSL disabled — traffic is UNENCRYPTED (internal DB detected).');
 }
 
-const buildConnectionString = (base: string | undefined): string | undefined => {
-  if (!base || !useSSL) return base;
-  const sep = base.includes('?') ? '&' : '?';
-  return base + sep + 'sslmode=require';
-};
-
 export const pool = new Pool({
-  connectionString: buildConnectionString(process.env.DATABASE_URL),
+  connectionString: process.env.DATABASE_URL,
   ssl: sslConfig,
   client_encoding: 'UTF8',
   max: poolMax,
