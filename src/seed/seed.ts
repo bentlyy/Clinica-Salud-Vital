@@ -1134,7 +1134,7 @@ export const backfillLabRequests = async (): Promise<void> => {
   const statuses = ['pending', 'in_progress', 'completed', 'completed', 'completed'];
 
   const maxReqResult = await pool.query(
-    `SELECT COALESCE(MAX(REGEXP_REPLACE(request_number, '^LAB-[0-9]+-', ''))::INTEGER, 0) AS seq FROM lab_requests WHERE request_number ~ '^LAB-'`
+    `SELECT COALESCE(MAX(REGEXP_REPLACE(request_number, '^LAB-[A-Z0-9]+-', ''))::INTEGER, 0) AS seq FROM lab_requests WHERE request_number ~ '^LAB-'`
   );
   let nextReqSeq = (maxReqResult.rows[0]?.seq ?? 0) + 1;
 
@@ -1273,7 +1273,7 @@ export const backfillInvoices = async (): Promise<void> => {
   const concepts = ['Consulta médica', 'Procedimiento', 'Urgencia', 'Control', 'Cirugía menor'];
 
   const maxResult = await pool.query(
-    `SELECT COALESCE(MAX(REGEXP_REPLACE(invoice_number, '^INV-[0-9]+-', ''))::INTEGER, 0) AS seq FROM invoices WHERE invoice_number ~ '^INV-'`
+    `SELECT COALESCE(MAX(REGEXP_REPLACE(invoice_number, '^INV-[A-Z0-9]+-', ''))::INTEGER, 0) AS seq FROM invoices WHERE invoice_number ~ '^INV-'`
   );
   let nextSeq = (maxResult.rows[0]?.seq ?? 0) + 1;
 
@@ -1458,12 +1458,12 @@ export const backfillUser1Data = async (): Promise<void> => {
     await pool.query('ALTER TABLE bookings DROP CONSTRAINT IF EXISTS check_future_date');
 
     const maxSeqRes = await pool.query(
-      `SELECT COALESCE(MAX(REGEXP_REPLACE(request_number, '^LAB-[0-9]+-', ''))::INTEGER, 0) AS seq FROM lab_requests WHERE request_number ~ '^LAB-'`
+    `SELECT COALESCE(MAX(REGEXP_REPLACE(request_number, '^LAB-[A-Z0-9]+-', ''))::INTEGER, 0) AS seq FROM lab_requests WHERE request_number ~ '^LAB-'`
     );
     let labSeq = (maxSeqRes.rows[0]?.seq ?? 0) + 1;
 
     const maxInvRes = await pool.query(
-      `SELECT COALESCE(MAX(REGEXP_REPLACE(invoice_number, '^INV-[0-9]+-', ''))::INTEGER, 0) AS seq FROM invoices WHERE invoice_number ~ '^INV-'`
+    `SELECT COALESCE(MAX(REGEXP_REPLACE(invoice_number, '^INV-[A-Z0-9]+-', ''))::INTEGER, 0) AS seq FROM invoices WHERE invoice_number ~ '^INV-'`
     );
     let invSeq = (maxInvRes.rows[0]?.seq ?? 0) + 1;
 

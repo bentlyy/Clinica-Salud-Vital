@@ -1,4 +1,4 @@
-import { pool } from '../../shared/db.js';
+import { pool, readPool } from '../../shared/db.js';
 import bcrypt from 'bcrypt';
 import { sendEmail } from '../../shared/email.service.js';
 import { doctorCredentialsEmail, invitationEmail } from './doctor.email.js';
@@ -35,7 +35,7 @@ interface Doctor {
 }
 
 export const getAllDoctors = async (tenantId: string): Promise<Doctor[]> => {
-  const result = await pool.query(`
+  const result = await readPool.query(`
     SELECT d.id, d.name, d.specialty, d.email, d.user_id
     FROM doctors d
     WHERE d.tenant_id = $1
@@ -99,13 +99,16 @@ export const registerDoctor = async ({ name, specialty, email, rut, phone }: Doc
 
     const doctor = doctorResult.rows[0] as Doctor;
 
-    for (let day = 1; day <= 5; day++) {
-      await client.query(
-        `INSERT INTO doctor_availability (doctor_id, day_of_week, start_time, end_time, tenant_id)
-         VALUES ($1, $2, $3, $4, $5)`,
-        [doctor.id, day, '09:00', '17:00', tenantId]
-      );
-    }
+    const availValues = [1, 2, 3, 4, 5].map((day, idx) => {
+      const base = idx * 5;
+      return `($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}, $${base + 5})`;
+    }).join(', ');
+    const availFlat = [1, 2, 3, 4, 5].flatMap(day => [doctor.id, day, '09:00', '17:00', tenantId]);
+    await client.query(
+      `INSERT INTO doctor_availability (doctor_id, day_of_week, start_time, end_time, tenant_id)
+       VALUES ${availValues}`,
+      availFlat
+    );
 
     await client.query('COMMIT');
 
@@ -171,13 +174,16 @@ export const createDoctor = async ({ name, specialty, email, user_id }: CreateDo
 
     const doctor = result.rows[0] as Doctor;
 
-    for (let day = 1; day <= 5; day++) {
-      await client.query(
-        `INSERT INTO doctor_availability (doctor_id, day_of_week, start_time, end_time, tenant_id)
-         VALUES ($1, $2, $3, $4, $5)`,
-        [doctor.id, day, '09:00', '17:00', tenantId]
-      );
-    }
+    const availValues = [1, 2, 3, 4, 5].map((day, idx) => {
+      const base = idx * 5;
+      return `($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}, $${base + 5})`;
+    }).join(', ');
+    const availFlat = [1, 2, 3, 4, 5].flatMap(day => [doctor.id, day, '09:00', '17:00', tenantId]);
+    await client.query(
+      `INSERT INTO doctor_availability (doctor_id, day_of_week, start_time, end_time, tenant_id)
+       VALUES ${availValues}`,
+      availFlat
+    );
 
     await client.query('COMMIT');
 
@@ -196,7 +202,7 @@ export const createDoctor = async ({ name, specialty, email, user_id }: CreateDo
 };
 
 export const getDoctorById = async (id: number, tenantId: string): Promise<Doctor | null> => {
-  const result = await pool.query<Doctor>(
+  const result = await readPool.query<Doctor>(
     'SELECT * FROM doctors WHERE id = $1 AND tenant_id = $2',
     [id, tenantId]
   );
@@ -205,7 +211,7 @@ export const getDoctorById = async (id: number, tenantId: string): Promise<Docto
 };
 
 export const getDoctorByUserId = async (user_id: number, tenantId: string): Promise<Doctor | null> => {
-  const result = await pool.query<Doctor>(
+  const result = await readPool.query<Doctor>(
     'SELECT * FROM doctors WHERE user_id = $1 AND tenant_id = $2',
     [user_id, tenantId]
   );
@@ -230,7 +236,7 @@ export const invitePerson = async (input: InvitePersonInput, tenantId: string): 
   if (role === 'doctor' && !specialty) throw new BadRequestError(E.DOCTOR_SPECIALTY_REQUIRED);
   if (role === 'lab_technician') specialty = undefined;
 
-  const existing = await pool.query('SELECT 1 FROM users WHERE email = $1 AND tenant_id = $2', [email, tenantId]);
+  const existing = await readPool.query('SELECT 1 FROM users WHERE email = $1 AND tenant_id = $2', [email, tenantId]);
   if (existing.rows.length > 0) throw new BadRequestError(E.DOCTOR_EMAIL_EXISTS);
 
   const inviteToken = jwtManager.signInvite(
@@ -285,7 +291,7 @@ export const listTenantUsers = async (
 
   const whereClause = conditions.join(' AND ');
 
-  const countResult = await pool.query(
+  const countResult = await readPool.query(
     `SELECT COUNT(*) as total FROM users u WHERE ${whereClause}`,
     params
   );
@@ -294,7 +300,7 @@ export const listTenantUsers = async (
   const offset = (page - 1) * limit;
   params.push(limit, offset);
 
-  const result = await pool.query(
+  const result = await readPool.query(
     `SELECT u.id, u.email, u.name, u.role, u.rut, u.phone, u.active, u.created_at
      FROM users u WHERE ${whereClause}
      ORDER BY u.created_at DESC LIMIT $${paramIdx} OFFSET $${paramIdx + 1}`,

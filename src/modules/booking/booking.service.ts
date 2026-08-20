@@ -1,4 +1,4 @@
-import { pool } from '../../shared/db.js';
+import { pool, readPool } from '../../shared/db.js';
 import * as doctorService from '../doctor/doctor.service.js';
 import { bookingConfirmationTemplate, bookingRescheduledTemplate } from './booking.email.js';
 import { enqueueJob } from '../../shared/queue.service.js';
@@ -193,7 +193,7 @@ export const createBookingSeries = async (
 };
 
 export const getBookingSeriesByUser = async (user_id: number, tenantId: string): Promise<unknown[]> => {
-  const result = await pool.query(
+  const result = await readPool.query(
     `SELECT bs.id, bs.doctor_id, bs.user_id, bs.frequency, bs.interval_count, bs.start_date, bs.time,
             bs.duration, bs.occurrences, bs.created_count, bs.active, bs.created_at, bs.cancelled_at,
             d.name AS doctor_name, d.specialty
@@ -207,7 +207,7 @@ export const getBookingSeriesByUser = async (user_id: number, tenantId: string):
 };
 
 export const getBookingSeriesByDoctor = async (doctor_id: number, tenantId: string): Promise<unknown[]> => {
-  const result = await pool.query(
+  const result = await readPool.query(
     `SELECT bs.id, bs.doctor_id, bs.user_id, bs.frequency, bs.interval_count, bs.start_date, bs.time,
             bs.duration, bs.occurrences, bs.created_count, bs.active, bs.created_at, bs.cancelled_at,
             u.name AS patient_name
@@ -229,53 +229,65 @@ export const cancelBookingSeries = async (
 
   const isStaff = requester.role === 'doctor' || requester.role === 'admin' || requester.role === 'superadmin';
 
-  const seriesResult = await pool.query(
-    'SELECT id, user_id, doctor_id, active FROM booking_series WHERE id = $1 AND tenant_id = $2',
-    [series_id, tenantId]
-  );
-  if (seriesResult.rows.length === 0) throw new NotFoundError(E.BOOKING_SERIES_NOT_FOUND);
-  const series = seriesResult.rows[0];
-
-  if (!isStaff && series.user_id !== requester.user_id) {
-    throw new BadRequestError(E.BOOKING_SERIES_UNAUTHORIZED);
-  }
-  if (!isStaff && series.active === false) {
-    throw new BadRequestError(E.BOOKING_ALREADY_CANCELLED);
-  }
-
-  await pool.query(
-    `UPDATE booking_series SET active = FALSE, cancelled_at = NOW() WHERE id = $1`,
-    [series_id]
-  );
-
-  const today = toDateString(new Date());
-  const upcoming = await pool.query(
-    `SELECT id FROM bookings WHERE series_id = $1 AND status != 'cancelled' AND date >= $2 AND tenant_id = $3`,
-    [series_id, today, tenantId]
-  );
-
-  for (const booking of upcoming.rows) {
-    await pool.query(
-      `UPDATE bookings SET status = 'cancelled' WHERE id = $1`,
-      [booking.id]
+  const client = await pool.connect();
+  try {
+    const seriesResult = await client.query(
+      'SELECT id, user_id, doctor_id, active FROM booking_series WHERE id = $1 AND tenant_id = $2',
+      [series_id, tenantId]
     );
-    await recordBookingStatusChange(booking.id, {
-      toStatus: 'cancelled',
-      fromStatus: 'pending',
-      actorType: isStaff ? 'admin' : 'user',
-      changedByUserId: requester.user_id,
-      reason: 'Serie de citas cancelada',
+    if (seriesResult.rows.length === 0) throw new NotFoundError(E.BOOKING_SERIES_NOT_FOUND);
+    const series = seriesResult.rows[0];
+
+    if (!isStaff && series.user_id !== requester.user_id) {
+      throw new BadRequestError(E.BOOKING_SERIES_UNAUTHORIZED);
+    }
+    if (!isStaff && series.active === false) {
+      throw new BadRequestError(E.BOOKING_ALREADY_CANCELLED);
+    }
+
+    await client.query('BEGIN');
+
+    await client.query(
+      `UPDATE booking_series SET active = FALSE, cancelled_at = NOW() WHERE id = $1`,
+      [series_id]
+    );
+
+    const today = toDateString(new Date());
+    const upcoming = await client.query(
+      `SELECT id FROM bookings WHERE series_id = $1 AND status != 'cancelled' AND date >= $2 AND tenant_id = $3`,
+      [series_id, today, tenantId]
+    );
+
+    for (const booking of upcoming.rows) {
+      await client.query(
+        `UPDATE bookings SET status = 'cancelled' WHERE id = $1`,
+        [booking.id]
+      );
+      await recordBookingStatusChange(booking.id, {
+        toStatus: 'cancelled',
+        fromStatus: 'pending',
+        actorType: isStaff ? 'admin' : 'user',
+        changedByUserId: requester.user_id,
+        reason: 'Serie de citas cancelada',
+      }, client);
+    }
+
+    await client.query('COMMIT');
+
+    notifyUserInApp(tenantId, series.user_id, {
+      type: 'warning',
+      title: 'Seguimiento cancelado',
+      message: `Se cancelaron las citas recurrentes pendientes (${upcoming.rows.length} citas futuras).`,
+      link: '/bookings',
     });
+
+    return { message: 'Booking series cancelled successfully' };
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
   }
-
-  notifyUserInApp(tenantId, series.user_id, {
-    type: 'warning',
-    title: 'Seguimiento cancelado',
-    message: `Se cancelaron las citas recurrentes pendientes (${upcoming.rows.length} citas futuras).`,
-    link: '/bookings',
-  });
-
-  return { message: 'Booking series cancelled successfully' };
 };
 
 export const getAllBookings = async ({ page = 1, limit = 100, status, start_date, end_date }: Partial<PaginationParams & { status?: string; start_date?: string; end_date?: string }> = {}, tenantId?: string): Promise<PaginatedResponse<unknown>> => {
@@ -303,7 +315,7 @@ export const getAllBookings = async ({ page = 1, limit = 100, status, start_date
   if (start_date) addRangeCondition('b.date', '>=', start_date);
   if (end_date) addRangeCondition('b.date', '<=', end_date);
 
-  const result = await pool.query(`
+  const result = await readPool.query(`
     SELECT b.id, b.date, b.time, b.duration, b.status, b.confirmed,
            d.name AS doctor_name, d.specialty,
            u.name AS patient_name, u.rut AS patient_rut, u.email AS patient_email,
@@ -339,7 +351,7 @@ export const getAllBookings = async ({ page = 1, limit = 100, status, start_date
   const countQuery = countConditions.length > 0
     ? `SELECT COUNT(*) FROM bookings WHERE ${countConditions.join(' AND ')}`
     : 'SELECT COUNT(*) FROM bookings';
-  const countResult = await pool.query(countQuery, countParams);
+  const countResult = await readPool.query(countQuery, countParams);
 
   return {
     data: result.rows,
@@ -465,7 +477,7 @@ export const getBookingsByUser = async (user_id: number, { page = 1, limit = 20,
     params.push(status);
   }
 
-  const result = await pool.query(`
+  const result = await readPool.query(`
     SELECT b.id, b.date, b.time, b.duration, b.status, b.confirmed,
            d.name AS doctor_name, d.specialty,
            ch.reason AS cancel_reason, ch.created_at AS cancelled_at
@@ -488,7 +500,7 @@ export const getBookingsByUser = async (user_id: number, { page = 1, limit = 20,
     countStatusClause = ' AND status = $3';
     countParams.push(status);
   }
-  const countResult = await pool.query(
+  const countResult = await readPool.query(
     `SELECT COUNT(*) FROM bookings WHERE user_id = $1 AND tenant_id = $2${countStatusClause}`,
     countParams
   );
@@ -507,7 +519,7 @@ export const cancelBooking = async (booking_id: number, user_id: number, tenantI
     throw new BadRequestError(E.BOOKING_INVALID_ID);
   }
 
-  const existing = await pool.query(
+  const existing = await readPool.query(
     'SELECT id, status, doctor_id, date FROM bookings WHERE id = $1 AND user_id = $2 AND tenant_id = $3',
     [booking_id, user_id, tenantId]
   );
@@ -571,7 +583,7 @@ export const rescheduleBooking = async (
   today.setHours(0, 0, 0, 0);
   if (bookingDate < today) throw new BadRequestError(E.BOOKING_PAST_DATE);
 
-  const existing = await pool.query(
+  const existing = await readPool.query(
     'SELECT id, doctor_id, status, date, time, duration, confirmation_token FROM bookings WHERE id = $1 AND user_id = $2 AND tenant_id = $3',
     [booking_id, user_id, tenantId]
   );
@@ -626,7 +638,7 @@ export const rescheduleBooking = async (
 
     await client.query('COMMIT');
 
-    const userResult = await pool.query('SELECT email FROM users WHERE id = $1 AND tenant_id = $2', [user_id, tenantId]);
+    const userResult = await readPool.query('SELECT email FROM users WHERE id = $1 AND tenant_id = $2', [user_id, tenantId]);
     const email = userResult.rows[0]?.email;
     if (email) {
       enqueueJob('email:send', {
@@ -700,7 +712,7 @@ export const confirmBooking = async (token: string, tenantId: string): Promise<{
     return { confirmed: true, alreadyConfirmed: false };
   }
 
-  const existing = await pool.query(
+  const existing = await readPool.query(
     'SELECT confirmed FROM bookings WHERE confirmation_token = $1 AND tenant_id = $2',
     [token, tenantId]
   );
@@ -804,7 +816,7 @@ export const getDailyBookingDensity = async (
   endDate: string,
   tenantId: string
 ): Promise<{ date: string; count: number }[]> => {
-  const result = await pool.query(
+  const result = await readPool.query(
     `SELECT date, COUNT(*)::int as count
      FROM bookings
      WHERE doctor_id = $1 AND date >= $2 AND date <= $3 AND status != 'cancelled' AND tenant_id = $4
@@ -826,7 +838,7 @@ export const getBookingsByDoctor = async (doctor_id: number, { page = 1, limit =
     params.push(status);
   }
 
-  const result = await pool.query(`
+  const result = await readPool.query(`
     SELECT b.id, b.date, b.time, b.duration, b.status, b.confirmed,
            b.user_id AS patient_id,
            COALESCE(u.name, '') AS patient_name,
@@ -856,7 +868,7 @@ export const getBookingsByDoctor = async (doctor_id: number, { page = 1, limit =
     countStatusClause = ' AND status = $3';
     countParams.push(status);
   }
-  const countResult = await pool.query(
+  const countResult = await readPool.query(
     `SELECT COUNT(*) FROM bookings WHERE doctor_id = $1 AND tenant_id = $2${countStatusClause}`,
     countParams
   );

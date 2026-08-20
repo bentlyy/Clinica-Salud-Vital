@@ -1,4 +1,4 @@
-import { pool } from '../../shared/db.js';
+import { pool, readPool } from '../../shared/db.js';
 import { NotFoundError, BadRequestError } from '../../utils/errors.js';
 import { E } from '../../utils/error-codes.js';
 import crypto from 'crypto';
@@ -9,7 +9,34 @@ const generateInvoiceNumber = () => {
   return 'INV-' + year + '-' + random;
 };
 
-const checkIdempotencyKey = async (_key: string): Promise<boolean> => {
+const idempotencyCache = new Map<string, number>();
+const IDEMPOTENCY_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
+const checkIdempotencyKey = async (key: string, tenantId: string): Promise<boolean> => {
+  const cacheKey = `${tenantId}:${key}`;
+  const cached = idempotencyCache.get(cacheKey);
+  if (cached && Date.now() - cached < IDEMPOTENCY_TTL_MS) {
+    return false; // Duplicate within TTL
+  }
+
+  const result = await readPool.query(
+    `SELECT 1 FROM invoices WHERE payment_reference = $1 AND tenant_id = $2 LIMIT 1`,
+    [key, tenantId]
+  );
+  if (result.rows.length > 0) {
+    return false; // Already exists in DB
+  }
+
+  idempotencyCache.set(cacheKey, Date.now());
+
+  // Cleanup old entries periodically
+  if (idempotencyCache.size > 1000) {
+    const now = Date.now();
+    for (const [k, v] of idempotencyCache) {
+      if (now - v > IDEMPOTENCY_TTL_MS) idempotencyCache.delete(k);
+    }
+  }
+
   return true;
 };
 
@@ -38,7 +65,7 @@ interface InvoiceInput {
 }
 
 export const createInvoice = async (data: InvoiceInput, tenantId: string, idempotencyKey?: string) => {
-  if (idempotencyKey && !(await checkIdempotencyKey(idempotencyKey))) {
+  if (idempotencyKey && !(await checkIdempotencyKey(idempotencyKey, tenantId))) {
     throw new BadRequestError(E.BILLING_IDEMPOTENCY_DUPLICATE);
   }
 
@@ -102,12 +129,22 @@ export const createInvoice = async (data: InvoiceInput, tenantId: string, idempo
     if (!inserted) throw new BadRequestError(E.BILLING_INVOICE_NUMBER_FAILED);
 
     if (items && items.length > 0) {
-      for (const item of items) {
-        await client.query(
-          `INSERT INTO invoice_items (invoice_id, description, quantity, unit_price, tenant_id) VALUES ($1, $2, $3, $4, $5)`,
-          [invoice!.id, item.description, String(item.quantity), String(item.unit_price), tenantId]
-        );
-      }
+      const itemColumns = ['invoice_id', 'description', 'quantity', 'unit_price', 'tenant_id'];
+      const itemValueRows = items.map((_, idx) => {
+        const base = idx * itemColumns.length;
+        return `(${itemColumns.map((_, colIdx) => '$' + (base + colIdx + 1)).join(', ')})`;
+      }).join(', ');
+      const itemFlatValues = items.flatMap(item => [
+        invoice!.id,
+        item.description,
+        String(item.quantity),
+        String(item.unit_price),
+        tenantId,
+      ]);
+      await client.query(
+        `INSERT INTO invoice_items (${itemColumns.join(', ')}) VALUES ${itemValueRows}`,
+        itemFlatValues
+      );
     }
 
     await client.query('COMMIT');
@@ -133,22 +170,22 @@ export const getInvoices = async ({ patient_id, doctor_id, status, start_date, e
   conditions.push(`tenant_id = $${paramCount++}`); params.push(tenantId);
 
   const whereClause = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : '';
-  const query = `SELECT * FROM invoices ${whereClause} ORDER BY created_at DESC LIMIT $${paramCount++} OFFSET $${paramCount++}`;
+  const query = `SELECT id, invoice_number, patient_id, doctor_id, booking_id, concept, description, amount, currency, tax_amount, discount_amount, total_amount, status, due_date, issued_at, paid_at, payment_method, payment_reference, notes, payment_data, created_at, updated_at, tenant_id FROM invoices ${whereClause} ORDER BY created_at DESC LIMIT $${paramCount++} OFFSET $${paramCount++}`;
   params.push(limit, offset);
 
-  const result = await pool.query(query, params);
+  const result = await readPool.query(query, params);
   return result.rows;
 };
 
 export const getInvoiceById = async (id: number, tenantId: string = 'default') => {
-  const result = await pool.query('SELECT * FROM invoices WHERE id = $1 AND tenant_id = $2', [id, tenantId]);
+  const result = await readPool.query('SELECT id, invoice_number, patient_id, doctor_id, booking_id, concept, description, amount, currency, tax_amount, discount_amount, total_amount, status, due_date, issued_at, paid_at, payment_method, payment_reference, notes, payment_data, created_at, updated_at, tenant_id FROM invoices WHERE id = $1 AND tenant_id = $2', [id, tenantId]);
   if (result.rows.length === 0) throw new NotFoundError(E.BILLING_INVOICE_NOT_FOUND);
   return result.rows[0];
 };
 
 export const updateInvoiceStatus = async (id: number, status: string, paymentData?: Record<string, unknown>, tenantId: string = 'default') => {
   const result = await pool.query(
-    'UPDATE invoices SET status = $1, payment_data = $2, updated_at = NOW() WHERE id = $3 AND tenant_id = $4 RETURNING *',
+    'UPDATE invoices SET status = $1, payment_data = $2, updated_at = NOW() WHERE id = $3 AND tenant_id = $4 RETURNING id, invoice_number, patient_id, doctor_id, booking_id, concept, description, amount, currency, tax_amount, discount_amount, total_amount, status, due_date, issued_at, paid_at, payment_method, payment_reference, notes, payment_data, created_at, updated_at, tenant_id',
     [status, paymentData ? JSON.stringify(paymentData) : null, id, tenantId]
   );
   if (result.rows.length === 0) throw new NotFoundError(E.BILLING_INVOICE_NOT_FOUND);
@@ -160,7 +197,7 @@ export const deleteInvoice = async (id: number, tenantId: string = 'default') =>
   try {
     await client.query('BEGIN');
     await client.query('DELETE FROM invoice_items WHERE invoice_id = $1 AND tenant_id = $2', [id, tenantId]);
-    const result = await client.query('DELETE FROM invoices WHERE id = $1 AND tenant_id = $2 RETURNING *', [id, tenantId]);
+    const result = await client.query('DELETE FROM invoices WHERE id = $1 AND tenant_id = $2 RETURNING id', [id, tenantId]);
     if (result.rows.length === 0) {
       await client.query('ROLLBACK');
       throw new NotFoundError(E.BILLING_INVOICE_NOT_FOUND);
@@ -177,9 +214,9 @@ export const deleteInvoice = async (id: number, tenantId: string = 'default') =>
 
 export const getBillingStats = async (tenantId: string = 'default') => {
   const [totalOutstanding, totalPaid, overdueCount] = await Promise.all([
-    pool.query('SELECT SUM(total_amount) AS total FROM invoices WHERE status = $1 AND tenant_id = $2', ['pending', tenantId]),
-    pool.query('SELECT SUM(total_amount) AS total FROM invoices WHERE status = $1 AND tenant_id = $2', ['paid', tenantId]),
-    pool.query('SELECT COUNT(*) AS count FROM invoices WHERE status = $1 AND due_date < CURRENT_DATE AND tenant_id = $2', ['pending', tenantId]),
+    readPool.query('SELECT SUM(total_amount) AS total FROM invoices WHERE status = $1 AND tenant_id = $2', ['pending', tenantId]),
+    readPool.query('SELECT SUM(total_amount) AS total FROM invoices WHERE status = $1 AND tenant_id = $2', ['paid', tenantId]),
+    readPool.query('SELECT COUNT(*) AS count FROM invoices WHERE status = $1 AND due_date < CURRENT_DATE AND tenant_id = $2', ['pending', tenantId]),
   ]);
 
   return {

@@ -24,6 +24,10 @@ const sslConfig = !isInternalDb() && isProd
     : { rejectUnauthorized }
   : false;
 
+if (!sslConfig && isProd) {
+  logger.warn('⚠️  DB SSL disabled — traffic is UNENCRYPTED. Set DATABASE_URL to a non-internal host to enable SSL.');
+}
+
 export const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: sslConfig,
@@ -39,8 +43,7 @@ export const pool = new Pool({
 pool.on('connect', (client: pg.PoolClient) => {
   logger.info('DB connected');
   const tenantId = process.env.DEFAULT_TENANT_ID || 'default';
-  const safeTenant = tenantId.replace(/[^a-zA-Z0-9_-]/g, '');
-  client.query(`SET SESSION app.tenant_id = '${safeTenant}'`).catch((err: Error) => {
+  client.query('SET SESSION app.tenant_id = $1', [tenantId]).catch((err: Error) => {
     logger.warn('Could not set app.tenant_id on new connection', { error: err.message });
   });
 });

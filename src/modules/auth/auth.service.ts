@@ -1,4 +1,4 @@
-import { pool } from '../../shared/db.js';
+import { pool, readPool } from '../../shared/db.js';
 import bcrypt from 'bcrypt';
 import { validateRut, cleanRut, formatRut } from '../../shared/rut.js';
 import { jwtManager } from '../../shared/jwt.service.js';
@@ -144,13 +144,16 @@ export const register = async ({ email, password, name, rut, phone, tenant_id, i
          VALUES ($1, $2, $3, $4, $5)`,
         [name || email, specialty, email, user.id, tid]
       );
-      for (let day = 1; day <= 5; day++) {
-        await client.query(
-          `INSERT INTO doctor_availability (doctor_id, day_of_week, start_time, end_time, tenant_id)
-           VALUES ($1, $2, $3, $4, $5)`,
-          [user.id, day, '09:00', '17:00', tid]
-        );
-      }
+      const availValues = [1, 2, 3, 4, 5].map((day, idx) => {
+        const base = idx * 5;
+        return `($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}, $${base + 5})`;
+      }).join(', ');
+      const availFlat = [1, 2, 3, 4, 5].flatMap(day => [user.id, day, '09:00', '17:00', tid]);
+      await client.query(
+        `INSERT INTO doctor_availability (doctor_id, day_of_week, start_time, end_time, tenant_id)
+         VALUES ${availValues}`,
+        availFlat
+      );
       await client.query('COMMIT');
       return user;
     } catch (error: unknown) {
@@ -215,7 +218,7 @@ export const login = async ({ email, password, totp_token, captcha_token, ip_add
 
   logger.debug('Login attempt', { email, tenantId });
 
-  const result = await pool.query<User>(
+  const result = await readPool.query<User>(
     `SELECT id, email, name, rut, phone, role, password, password_changed, totp_enabled, totp_secret, tenant_id, active, last_activity_at, failed_attempts, locked_until, token_version
      FROM users
      WHERE email = $1 AND (tenant_id = $2 OR (role = 'superadmin' AND tenant_id IS NULL))`,
@@ -255,7 +258,7 @@ export const login = async ({ email, password, totp_token, captcha_token, ip_add
   }
 
   await pool.query(
-    'UPDATE users SET failed_attempts = 0, locked_until = NULL WHERE id = $1',
+    'UPDATE users SET failed_attempts = 0, locked_until = NULL, last_activity_at = NOW() WHERE id = $1',
     [user.id]
   );
 
@@ -267,8 +270,6 @@ export const login = async ({ email, password, totp_token, captcha_token, ip_add
       throw new BadRequestError(E.AUTH_2FA_INVALID_TOKEN);
     }
   }
-
-  await pool.query('UPDATE users SET last_activity_at = NOW() WHERE id = $1', [user.id]);
 
   const access_token = generateAccessToken({
     id: user.id,
@@ -576,7 +577,7 @@ export const disable2FA = async (userId: number, password: string, totpToken?: s
 };
 
 export const is2FARequired = async (userId: number): Promise<boolean> => {
-  const result = await pool.query('SELECT totp_enabled FROM users WHERE id = $1', [userId]);
+  const result = await readPool.query('SELECT totp_enabled FROM users WHERE id = $1', [userId]);
   return result.rows[0]?.totp_enabled === true;
 };
 

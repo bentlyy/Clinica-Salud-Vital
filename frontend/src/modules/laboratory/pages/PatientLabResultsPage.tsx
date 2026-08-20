@@ -1,4 +1,3 @@
-import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '@mui/material/styles';
 import {
@@ -14,6 +13,7 @@ import ScienceIcon from '@mui/icons-material/Science';
 import PendingIcon from '@mui/icons-material/Pending';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import { useTranslation } from 'react-i18next';
+import { useQuery } from '@tanstack/react-query';
 import { MotionDiv } from '@/shared/utils/animations';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { LoadingState } from '@/shared/components/ui/LoadingState';
@@ -105,37 +105,21 @@ export default function PatientLabResultsPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const theme = useTheme();
-  const [requests, setRequests] = useState<LabRequest[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  const fetchRequests = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const { data } = await apiClient.get('/laboratory', {
-        params: { limit: 50 },
-      });
-      setRequests(
-        Array.isArray(data) ? data : (Array.isArray(data.data) ? data.data as LabRequest[] : []),
-      );
-    } catch {
-      setError(t('lab_results:error_loading', 'Error al cargar resultados'));
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { data: requests = [], isLoading, error } = useQuery<LabRequest[]>({
+    queryKey: ['laboratory', 'patient-results'],
+    queryFn: async () => {
+      const { data } = await apiClient.get('/laboratory', { params: { limit: 50 } });
+      return Array.isArray(data) ? data : (Array.isArray(data.data) ? data.data as LabRequest[] : []);
+    },
+  });
 
-  useEffect(() => {
-    void fetchRequests();
-  }, []);
-
-  if (loading) {
+  if (isLoading) {
     return <LoadingState message={t('lab_results:loading', 'Cargando resultados...')} />;
   }
 
   if (error) {
-    return <EmptyState title={error} message="" />;
+    return <EmptyState title={t('lab_results:error_loading', 'Error al cargar resultados')} message="" />;
   }
 
   if (requests.length === 0) {

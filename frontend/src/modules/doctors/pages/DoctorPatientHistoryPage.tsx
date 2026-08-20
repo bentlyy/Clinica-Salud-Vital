@@ -1,7 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '@mui/material/styles';
+import { useQueries } from '@tanstack/react-query';
 import {
   Box,
   Typography,
@@ -32,8 +33,8 @@ import type {
 
 type TabValue = 'summary' | 'bookings' | 'history' | 'prescriptions' | 'attachments' | 'lab';
 
-function extractItems(res: PromiseFulfilledResult<{ data: unknown }>): unknown[] {
-  const d = res.value.data as Record<string, unknown> | unknown[] | null | undefined;
+function extractItems(res: { data: unknown }): unknown[] {
+  const d = res.data as Record<string, unknown> | unknown[] | null | undefined;
   if (Array.isArray(d)) return d;
   if (d && typeof d === 'object') {
     const obj = d as Record<string, unknown>;
@@ -50,72 +51,31 @@ export default function DoctorPatientHistoryPage() {
   const patientId = searchParams.get('patientId');
 
   const [tab, setTab] = useState<TabValue>('summary');
-  const [records, setRecords] = useState<FichaClinicalRecord[]>([]);
-  const [labRequests, setLabRequests] = useState<FichaLabRequest[]>([]);
-  const [medicalHistory, setMedicalHistory] = useState<FichaMedicalHistoryEntry[]>([]);
-  const [prescriptions, setPrescriptions] = useState<FichaPrescriptionRecord[]>([]);
-  const [bookings, setBookings] = useState<FichaBooking[]>([]);
-  const [patient, setPatient] = useState<FichaPatient | null>(null);
-  const [loading, setLoading] = useState(true);
-
   const patientNumber = patientId ? Number(patientId) : null;
   const { data: attachments } = useAttachments('patient', patientNumber);
 
-  useEffect(() => {
-    if (!patientId) {
-      setLoading(false);
-      return;
-    }
+  const results = useQueries({
+    queries: [
+      { queryKey: ['patient', patientId], queryFn: () => apiClient.get(`/patients/${patientId}`), enabled: !!patientId },
+      { queryKey: ['clinical-records', 'by-patient', patientId], queryFn: () => apiClient.get('/clinical-records', { params: { patient_id: patientId, limit: 100 } }), enabled: !!patientId },
+      { queryKey: ['laboratory', 'requests', 'by-patient', patientId], queryFn: () => apiClient.get('/laboratory/requests', { params: { patient_id: patientId, limit: 100 } }), enabled: !!patientId },
+      { queryKey: ['medical-history', 'patient', patientId], queryFn: () => apiClient.get(`/medical-history/patient/${patientId}`), enabled: !!patientId },
+      { queryKey: ['prescriptions', 'all'], queryFn: () => apiClient.get('/clinical-records/prescriptions/all'), enabled: !!patientId },
+      { queryKey: ['bookings', 'doctor', 'list'], queryFn: () => apiClient.get('/bookings/doctor', { params: { page: 1, limit: 100 } }), enabled: !!patientId },
+    ],
+  });
 
-    (async () => {
-      setLoading(true);
-      try {
-        const [patientRes, recordsRes, labRes, medRes, rxRes, bookingsRes] = await Promise.allSettled([
-          apiClient.get(`/patients/${patientId}`),
-          apiClient.get('/clinical-records', { params: { patient_id: patientId, limit: 100 } }),
-          apiClient.get('/laboratory/requests', { params: { patient_id: patientId, limit: 100 } }),
-          apiClient.get(`/medical-history/patient/${patientId}`),
-          apiClient.get('/clinical-records/prescriptions/all'),
-          apiClient.get('/bookings/doctor', { params: { page: 1, limit: 100 } }),
-        ]);
+  const loading = results.some((r) => r.isLoading);
 
-        if (patientRes.status === 'fulfilled') {
-          setPatient(patientRes.value.data as FichaPatient);
-        }
-
-        if (recordsRes.status === 'fulfilled') {
-          setRecords(extractItems(recordsRes) as FichaClinicalRecord[]);
-        }
-
-        if (labRes.status === 'fulfilled') {
-          const all = extractItems(labRes) as FichaLabRequest[];
-          setLabRequests(all.filter((r) => Number(r.patient_id) === patientNumber));
-        }
-
-        if (medRes.status === 'fulfilled') {
-          setMedicalHistory(extractItems(medRes) as FichaMedicalHistoryEntry[]);
-        }
-
-        if (rxRes.status === 'fulfilled') {
-          const all = extractItems(rxRes) as FichaPrescriptionRecord[];
-          setPrescriptions(all.filter((r) => Number(r.patient_id) === patientNumber));
-        }
-
-        if (bookingsRes.status === 'fulfilled') {
-          const all = extractItems(bookingsRes) as FichaBooking[];
-          setBookings(all.filter((b) => Number(b.patient_id) === patientNumber));
-        }
-      } catch {
-        setRecords([]);
-        setLabRequests([]);
-        setMedicalHistory([]);
-        setPrescriptions([]);
-        setBookings([]);
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, [patientId, patientNumber]);
+  const patient = (results[0].data?.data as FichaPatient) ?? null;
+  const records = (extractItems(results[1]) as FichaClinicalRecord[]) ?? [];
+  const allLab = (extractItems(results[2]) as FichaLabRequest[]) ?? [];
+  const labRequests = allLab.filter((r) => Number(r.patient_id) === patientNumber);
+  const medicalHistory = (extractItems(results[3]) as FichaMedicalHistoryEntry[]) ?? [];
+  const allRx = (extractItems(results[4]) as FichaPrescriptionRecord[]) ?? [];
+  const prescriptions = allRx.filter((r) => Number(r.patient_id) === patientNumber);
+  const allBookings = (extractItems(results[5]) as FichaBooking[]) ?? [];
+  const bookings = allBookings.filter((b) => Number(b.patient_id) === patientNumber);
 
   const handleNavigate = useCallback((target: SummaryTabId) => {
     setTab(target);

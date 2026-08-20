@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react';
 import { useTheme } from '@mui/material/styles';
 import { Box, Typography, Paper, Chip } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import MedicationIcon from '@mui/icons-material/Medication';
 import Assignment from '@mui/icons-material/Assignment';
 import { useTranslation } from 'react-i18next';
+import { useQuery } from '@tanstack/react-query';
 import { MotionDiv } from '@/shared/utils/animations';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { LoadingState } from '@/shared/components/ui/LoadingState';
@@ -33,34 +33,21 @@ interface PatientPrescription {
 export default function PatientPrescriptionsPage() {
   const { t } = useTranslation();
   const theme = useTheme();
-  const [prescriptions, setPrescriptions] = useState<PatientPrescription[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    let active = true;
-    apiClient
-      .get<PatientPrescription[]>('/clinical-records/prescriptions/mine')
-      .then(({ data }) => {
-        if (active) setPrescriptions(Array.isArray(data) ? data : []);
-      })
-      .catch(() => {
-        if (active) setError(t('prescriptions:error_loading', 'Error al cargar las recetas'));
-      })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
-    return () => {
-      active = false;
-    };
-  }, [t]);
+  const { data: prescriptions = [], isLoading, error } = useQuery<PatientPrescription[]>({
+    queryKey: ['prescriptions', 'mine'],
+    queryFn: async () => {
+      const { data } = await apiClient.get<PatientPrescription[]>('/clinical-records/prescriptions/mine');
+      return Array.isArray(data) ? data : [];
+    },
+  });
 
-  if (loading) {
+  if (isLoading) {
     return <LoadingState message={t('prescriptions:loading', 'Cargando recetas...')} />;
   }
 
   if (error) {
-    return <EmptyState title={error} message="" />;
+    return <EmptyState title={t('prescriptions:error_loading', 'Error al cargar las recetas')} message="" />;
   }
 
   if (prescriptions.length === 0) {

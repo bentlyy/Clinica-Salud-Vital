@@ -72,13 +72,13 @@ export const exportPatientData = async (patientId: number, tenantId: string): Pr
   const patient = redactPatient(patientResult.rows[0] as Record<string, unknown>);
 
   const [bookingsResult, recordsResult, historyResult, labRequestsResult, invoicesResult, prescriptionsResult] = await Promise.all([
-    pool.query('SELECT * FROM bookings WHERE user_id = $1 AND tenant_id = $2 ORDER BY date, time', [patientId, tenantId]),
-    pool.query('SELECT * FROM clinical_records WHERE patient_id = $1 AND tenant_id = $2 ORDER BY created_at ASC', [patientId, tenantId]),
-    pool.query('SELECT * FROM medical_history WHERE patient_id = $1 AND tenant_id = $2 ORDER BY created_at ASC', [patientId, tenantId]),
-    pool.query('SELECT * FROM lab_requests WHERE patient_id = $1 AND tenant_id = $2 ORDER BY created_at ASC', [patientId, tenantId]),
-    pool.query('SELECT * FROM invoices WHERE patient_id = $1 AND tenant_id = $2 ORDER BY created_at ASC', [patientId, tenantId]),
+    pool.query('SELECT id, doctor_id, user_id, date, time, duration, status, confirmed, guest_rut, guest_name, guest_email, guest_phone, series_id, created_at, tenant_id FROM bookings WHERE user_id = $1 AND tenant_id = $2 ORDER BY date, time', [patientId, tenantId]),
+    pool.query('SELECT id, patient_id, doctor_id, booking_id, chief_complaint, anamnesis, vital_signs, physical_exam, diagnosis, cie10_codes, treatment_plan, notes, status, created_at, updated_at, tenant_id FROM clinical_records WHERE patient_id = $1 AND tenant_id = $2 ORDER BY created_at ASC', [patientId, tenantId]),
+    pool.query('SELECT id, patient_id, condition, onset_date, status, notes, created_at, updated_at, tenant_id FROM medical_history WHERE patient_id = $1 AND tenant_id = $2 ORDER BY created_at ASC', [patientId, tenantId]),
+    pool.query('SELECT id, request_number, patient_id, doctor_id, clinical_record_id, priority, status, notes, requested_at, collected_at, completed_at, lab_type, lab_area_id, received_at, received_by, verified_at, verified_by, urgency_reason, created_at, updated_at, tenant_id FROM lab_requests WHERE patient_id = $1 AND tenant_id = $2 ORDER BY created_at ASC', [patientId, tenantId]),
+    pool.query('SELECT id, invoice_number, patient_id, doctor_id, booking_id, concept, description, amount, currency, tax_amount, discount_amount, total_amount, status, due_date, issued_at, paid_at, payment_method, payment_reference, notes, created_at, updated_at, tenant_id FROM invoices WHERE patient_id = $1 AND tenant_id = $2 ORDER BY created_at ASC', [patientId, tenantId]),
     pool.query(
-      `SELECT p.* FROM prescriptions p
+      `SELECT p.id, p.clinical_record_id, p.medication, p.dosage, p.frequency, p.duration, p.instructions, p.route, p.created_at, p.tenant_id FROM prescriptions p
        JOIN clinical_records cr ON p.clinical_record_id = cr.id
        WHERE cr.patient_id = $1 AND p.tenant_id = $2 AND cr.tenant_id = $2
        ORDER BY p.created_at ASC`,
@@ -110,11 +110,11 @@ export const exportPatientData = async (patientId: number, tenantId: string): Pr
       [labRequestIds, tenantId],
     ),
     pool.query(
-      'SELECT * FROM invoice_items WHERE invoice_id = ANY($1::int[]) AND tenant_id = $2 ORDER BY id ASC',
+      'SELECT id, invoice_id, description, quantity, unit_price, tenant_id FROM invoice_items WHERE invoice_id = ANY($1::int[]) AND tenant_id = $2 ORDER BY id ASC',
       [invoiceIds, tenantId],
     ),
     pool.query(
-      'SELECT * FROM payments WHERE invoice_id = ANY($1::int[]) AND tenant_id = $2 ORDER BY created_at ASC',
+      'SELECT id, invoice_id, amount, method, reference, status, notes, created_at, tenant_id FROM payments WHERE invoice_id = ANY($1::int[]) AND tenant_id = $2 ORDER BY created_at ASC',
       [invoiceIds, tenantId],
     ),
     pool.query(
