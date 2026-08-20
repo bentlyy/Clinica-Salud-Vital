@@ -11,7 +11,7 @@ Plataforma integral para administrar clínicas, pacientes, médicos, citas, hist
 [![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white)](https://react.dev/)
 [![Express](https://img.shields.io/badge/Express-4-000000?logo=express&logoColor=white)](https://expressjs.com/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
-[![Vite](https://img.shields.io/badge/Vite-8-646CFF?logo=vite&logoColor=white)](https://vite.dev/)
+[![Vite](https://img.shields.io/badge/Vite-6-646CFF?logo=vite&logoColor=white)](https://vite.dev/)
 [![Vitest](https://img.shields.io/badge/Vitest-4-6E9F18?logo=vitest&logoColor=white)](https://vitest.dev/)
 [![Zod](https://img.shields.io/badge/Zod-4-3E67B1?logo=zod&logoColor=white)](https://zod.dev/)
 [![Render](https://img.shields.io/badge/Render-46E3B7?logo=render&logoColor=white)](https://render.com/)
@@ -19,7 +19,7 @@ Plataforma integral para administrar clínicas, pacientes, médicos, citas, hist
 [![CI](https://img.shields.io/github/actions/workflow/status/bentlyy/Clinica-Salud-Vital/ci.yml?branch=master&label=CI&logo=githubactions)](https://github.com/bentlyy/Clinica-Salud-Vital/actions)
 [![Tests](https://img.shields.io/badge/tests-2730%20passing-2ea043)](#-testing)
 [![Coverage](https://img.shields.io/badge/coverage-~89%25-2ea043)](#-testing)
-[![Audit](https://img.shields.io/badge/audit-2026--08--13-FF6B6B)](#-auditor%C3%ADa-y-mejora)
+[![Audit](https://img.shields.io/badge/audit-2026--08--20-4CAF50)](#-auditor%C3%ADa-y-mejora)
 
 </div>
 
@@ -34,11 +34,16 @@ Plataforma integral para administrar clínicas, pacientes, médicos, citas, hist
 - 2FA TOTP con secreto cifrado AES-256-GCM
 - bcrypt (12 rounds) para passwords
 - Rate limiting en 5 niveles: global, auth, PHI, guest, SaaS
-- Helmet (CSP, HSTS preload, frameguard), HPP, CORS
+- Helmet (CSP, HSTS preload, frameguard), HPP, CORS (orígenes explícitos)
 - Validación Zod 4 en todas las entradas
 - Sanitización de campos clínicos con `sanitize-html`
 - Auditoría encadenada con HMAC-SHA256 + verificación cada 6h
 - Advisory locks PostgreSQL para carrera crítica en reservas
+- DB SSL hardened (cert CA obligatorio en producción)
+- RLS multi-tenant con `set_config()` (compatible PgBouncer)
+- SSRF protection en webhooks (bloqueo IPs privadas)
+- `COOKIE_SECRET` validado al startup (≥32 chars, ≠ JWT_SECRET)
+- Health check mínimo en producción (sin info sensible)
 - Captura de errores con Sentry
 
 </details>
@@ -55,7 +60,7 @@ Plataforma integral para administrar clínicas, pacientes, médicos, citas, hist
 | `patient` | Sus propias citas, fichas clínicas, recetas, historial y resultados de laboratorio |
 | `guest` / `user` | Sin panel (reserva pública por RUT / mapeado a `patient` en la navegación) |
 
-Base de datos compartida con columna `tenant_id` en todas las tablas. Resolución automática via header `X-Tenant-Id` o JWT. Planes SaaS (`free`, `basic`, `pro`, `enterprise`) con límites configurables y self-service (onboarding, Stripe checkout, cambio de plan, cancelación).
+Base de datos compartida con columna `tenant_id` en todas las tablas. Row-Level Security (RLS) con `app.tenant_id` registrado via `set_config()` (compatible con PgBouncer/Oracle Cloud). Resolución automática via header `X-Tenant-Id` o JWT. Planes SaaS (`free`, `basic`, `pro`, `enterprise`) con límites configurables y self-service (onboarding, Stripe checkout, cambio de plan, cancelación).
 
 La **barra lateral** se genera dinámicamente según el rol (`getNavItems` en `frontend/src/shared/constants/navigation.tsx`):
 
@@ -128,7 +133,7 @@ Patrón `t('ns:clave')`, `fallbackLng: 'es'`, selector de idioma en la topbar, t
 
 | Capa | Tecnologías |
 |------|-------------|
-| <b>Frontend</b> | React 19, Vite 8, TypeScript 5.8, React Router 7, FullCalendar 6, Recharts 3, Axios |
+| <b>Frontend</b> | React 19, Vite 6, TypeScript 5.7, React Router 7, FullCalendar 6, Recharts 3, Axios |
 | <b>Backend</b> | Express 4, TypeScript 5.8, Zod 4, node-cron, Winston |
 | <b>Base de datos</b> | PostgreSQL 15, pg (raw SQL) con pool y replicación de lectura |
 | <b>Infraestructura</b> | Docker Compose, Render (cloud), Ubuntu |
@@ -205,11 +210,12 @@ El proyecto sigue un patrón **monolito modular**: un solo deploy con módulos d
 │       ├── modules/               # Módulos por dominio (auth, bookings, doctors, laboratory, super-admin, clinical, management, notifications, etc.)
 │       ├── shared/                # Componentes compartidos, providers, constants (navigation), hooks, utils
 │       ├── test/                  # Tests frontend (178 archivos, 1232 tests)
-│   ├── i18n/                  # Traducciones (es, en, pt, fr — 66 namespaces)
+│       └── i18n/                  # Traducciones (es, en, pt, fr — 66 namespaces)
 │       └── main.tsx               # Entry point
 ├── db/
 │   ├── init.sql                   # Schema completo + índices + triggers + seed
-│   └── migrations/                # Migraciones SQL (8 archivos)
+│   ├── security.sql               # RLS policies, roles, permisos mínimos
+│   └── migrations/                # Migraciones SQL (20 archivos)
 ├── docker-compose.yml             # PostgreSQL 15 + Backend + Frontend (dev)
 ├── docker-compose.prod.yml        # Backend + Frontend (producción)
 ├── Dockerfile                     # Build + deploy backend
@@ -301,7 +307,7 @@ npm run test:coverage             # Reporte HTML
 
 | Métrica | Valor |
 |---------|-------|
-| **Framework** | Vitest 4 con pool forks (backend) / Vitest 3 (frontend) |
+| **Framework** | Vitest 4 (backend) / Vitest 3 (frontend) |
 | **Tests backend** | 1498 passing — 104 archivos |
 | **Tests frontend** | 1232 passing — 178 archivos |
 | **Cobertura** | Backend ~89% lines (threshold: 85%) · Frontend ~84% lines (threshold: 80%) |
@@ -319,10 +325,18 @@ npm run test:coverage             # Reporte HTML
 | **Autenticación** | JWT HS256 (15 min), refresh tokens (30 días con rotación y revocación) |
 | **2FA** | TOTP con secreto cifrado AES-256-GCM |
 | **Rate Limiting** | Global (500/15min), Auth (10/15min), PHI (30/15min), Guest (5/hora), SaaS (3/hora) |
-| **CORS** | Solo orígenes autorizados |
+| **CORS** | Solo orígenes explícitos; rechaza `origin: undefined` en producción |
+| **Cookies** | `COOKIE_SECRET` validado al startup (mín. 32 chars, distinto de `JWT_SECRET`) |
 | **Sanitización** | `sanitize-html` en campos clínicos, redacción de datos sensibles en logs |
 | **Anti-fraude** | Advisory locks PostgreSQL para condiciones de carrera |
 | **Auditoría** | Logs encadenados HMAC-SHA256, verificación de integridad cada 6h |
+| **DB SSL** | Conexión SSL con cert CA (verificación `rejectUnauthorized` en producción) |
+| **DB Credentials** | Rol `clinic_app` con `NOINHERIT`, sin password hardcodeado |
+| **RLS** | Row-Level Security por `app.tenant_id` (GUC registrado via `set_config()`, compatible con PgBouncer) |
+| **SSRF** | Webhook URLs bloqueadas para IPs privadas/internal (127.x, 10.x, 192.168.x, 169.254.x) |
+| **Health Check** | Info mínima en producción (sin pool stats, memory, ni Stripe info) |
+| **Secrets** | `SUPERADMIN_PASSWORD` vacío en `.env.example` con instrucciones de generación |
+| **CI Audit** | `npm audit --audit-level=critical` en GitHub Actions |
 | **Monitoreo** | Sentry para errores no manejados en producción |
 
 ---
@@ -380,10 +394,10 @@ Los datos de prueba se generan automáticamente al iniciar la app en desarrollo.
 | **Backend** | 1498 passing tests — ~89% cobertura — typecheck sin errores |
 | **Frontend** | 1232 passing tests (178 archivos, suite completa en verde) — ~84% cobertura — ~50 páginas — lazy loading — tema claro/oscuro — sidebar por rol |
 | **CI/CD** | GitHub Actions (typecheck + test + build) + deploy a Render |
-| **Seguridad** | Helmet, CORS, rate limiting, Zod, 2FA, auditoría HMAC, IDOR fixes, captcha fail-closed, CSRF double-submit en mutaciones sensibles |
+| **Seguridad** | SSL hardened, CORS/SSRF/Cookie hardening, RLS multi-tenant (GUC set_config), health check mínimo en prod, secret rotation, npm audit critical |
 | **Multi-tenancy** | Implementado con planes SaaS auto-gestionables |
 | **i18n** | 🇪🇸 🇺🇸 🇧🇷 🇫🇷 completos — 3.377 claves c/u — paridad total verificada por test |
-| **Auditoría** | 2026-07-29 — Score ~75/100 — 30 corregidos — Mejoras de seguridad implementadas · 2026-08-11 suites completas en verde ✅ · 2026-08-13 auditoría QA final — 2730 tests (1498 backend + 1232 frontend), cobertura backend ~89% / frontend ~84%, hallazgos 🔴 resueltos · 2026-08-13 i18n: textos hardcodeados del módulo laboratorio migrados a `t()` (paridad 4 idiomas, 3.377 claves c/u) |
+| **Auditoría** | 2026-07-29 — Score ~75/100 — 30 corregidos · 2026-08-11 suites completas en verde ✅ · 2026-08-13 auditoría QA final — 2730 tests (1498 backend + 1232 frontend), cobertura backend ~89% / frontend ~84% · 2026-08-20 auditoría seguridad — SSL hardened, GUC tenant isolation, CORS/SSRF/Cookie hardening, secret rotation, health check minimizado · 20 migraciones SQL |
 | **Documentación** | API docs, ADR (monolito modular), Wiki Obsidian |
 | **Frontend** | Consolidado en `frontend/` (único) — `frontend-v3/` es solo un `node_modules` residual |
 
