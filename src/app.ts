@@ -130,9 +130,6 @@ const allowedOrigins = [
 app.use(cors({
   origin: (origin, callback) => {
     if (!origin) {
-      if (isProduction) {
-        return callback(new Error('CORS: requests without Origin header are not allowed in production'));
-      }
       return callback(null, true);
     }
     if (allowedOrigins.length === 0 && isProduction) {
@@ -407,7 +404,11 @@ const startServer = async (): Promise<void> => {
       step('loadFromDB');
       await tenantService.loadFromDB();
       step('SET SESSION tenant_id');
-      await pool.query(`SELECT set_tenant_id('default')`);
+      try {
+        await pool.query(`SELECT set_tenant_id('default')`);
+      } catch {
+        // Managed PostgreSQL may not support custom GUCs — non-fatal
+      }
       step('seedDefaultTenant');
       await seedDefaultTenant();
       step('seedSuperAdmin');

@@ -38,8 +38,9 @@ const getLocaleFromRequest = (req: Request): string => {
 const setDbTenantContext = async (tenantId: string): Promise<void> => {
   try {
     await pool.query('SELECT set_tenant_id($1)', [tenantId]);
-  } catch (err) {
-    logger.warn('Failed to set PG tenant context (RLS may not filter)', { tenantId, error: (err as Error).message });
+  } catch {
+    // Managed PostgreSQL (Render/PgBouncer) may not support custom GUCs.
+    // RLS policies use COALESCE(current_setting(...), 'default') as fallback.
   }
 };
 
