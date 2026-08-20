@@ -22,25 +22,23 @@ const dbCaCert = process.env.DB_CA_CERT;
 const rejectUnauthorized = process.env.DB_SSL_REJECT_UNAUTHORIZED !== 'false';
 const useSSL = !isInternalDb();
 
-if (isProduction && useSSL && !dbCaCert) {
-  logger.warn('DB_CA_CERT no configurada — usando CA pública del sistema');
+if (isProduction && useSSL && !dbCaCert && rejectUnauthorized) {
+  logger.warn('DB_CA_CERT no configurada y DB_SSL_REJECT_UNAUTHORIZED no es false — SSL verificará certificados');
 }
 
 const sslConfig = useSSL
   ? dbCaCert
     ? { ca: dbCaCert, rejectUnauthorized }
-    : isProduction
-      ? { rejectUnauthorized: true }
-      : { rejectUnauthorized: false }
+    : { rejectUnauthorized }
   : false;
 
 if (useSSL) {
   if (dbCaCert) {
     logger.info('DB SSL enabled with CA certificate verification');
-  } else if (isProduction) {
-    logger.warn('DB SSL enabled WITHOUT CA cert — DB_CA_CERT is mandatory in production');
+  } else if (rejectUnauthorized) {
+    logger.warn('DB SSL enabled WITHOUT CA cert — DB_CA_CERT recommended or set DB_SSL_REJECT_UNAUTHORIZED=false');
   } else {
-    logger.info('DB SSL enabled (dev mode, CA verification disabled)');
+    logger.info('DB SSL enabled (self-signed cert accepted)');
   }
 } else {
   logger.warn('DB SSL disabled — internal DB detected');
