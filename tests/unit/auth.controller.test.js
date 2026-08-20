@@ -4,6 +4,7 @@ const mockQuery = vi.hoisted(() => vi.fn());
 
 vi.mock('../../src/shared/db.js', () => ({
   pool: { query: mockQuery },
+  readPool: { query: mockQuery },
 }));
 
 vi.mock('../../src/modules/auth/auth.service.js', () => ({

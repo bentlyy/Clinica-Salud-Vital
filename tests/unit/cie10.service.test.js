@@ -4,6 +4,7 @@ const mockQuery = vi.hoisted(() => vi.fn());
 
 vi.mock('../../src/shared/db.js', () => ({
   pool: { query: mockQuery },
+  readPool: { query: mockQuery },
 }));
 
 import { searchCie10, getCie10ByCode, createCie10Entry, updateCie10Entry, deleteCie10Entry, getCie10Categories } from '../../src/modules/clinical-record/cie10.service.js';

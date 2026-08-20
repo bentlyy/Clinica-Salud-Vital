@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 const mockQuery = vi.fn().mockResolvedValue({ rows: [] });
 vi.mock('../../src/shared/db.js', () => ({
   pool: { query: mockQuery },
+  readPool: { query: mockQuery },
 }));
 
 beforeEach(() => {

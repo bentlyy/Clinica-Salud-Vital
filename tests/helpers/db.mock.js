@@ -1,44 +1,45 @@
 import { vi } from 'vitest';
 
 /**
- * Creates FRESH DB mock instances for use inside vi.hoisted() blocks.
+ * Shared DB mock factory that mirrors the real exports of src/shared/db.ts.
  *
- * Due to Vitest's hoisting mechanism, calling this function directly
- * inside vi.hoisted(() => createDbMocks()) does NOT work because
- * dynamic imports are async and vi.hoisted runs synchronously.
+ * The real module exports: pool, query, readPool.
+ * - pool:       main read/write connection pool
+ * - query:      pool.query.bind(pool) — convenience alias
+ * - readPool:   read-replica pool (falls back to pool when DATABASE_URL_READ_ONLY is unset)
  *
- * Instead, inline the factory manually in each test file:
+ * Usage inside vi.hoisted():
  *
- *   const { mockQuery, mockClient, mockConnect } = vi.hoisted(() => ({
- *     mockQuery: vi.fn(),
- *     mockClient: { query: vi.fn(), release: vi.fn() },
- *     mockConnect: vi.fn(() => mockClient),
- *   }));
+ *   const mocks = vi.hoisted(() => {
+ *     const mockQuery = vi.fn();
+ *     const mockClient = { query: vi.fn(), release: vi.fn() };
+ *     const mockConnect = vi.fn(() => mockClient);
+ *     return { mockQuery, mockClient, mockConnect };
+ *   });
  *
- * Then mock the db module:
+ *   vi.mock('../../src/shared/db.js', () => createMockDbModule(mocks));
  *
- *   vi.mock('../../src/shared/db.js', () => ({
- *     pool: { query: mockQuery, connect: mockConnect, on: vi.fn() },
- *   }));
+ * For simpler tests that don't need vi.hoisted, use the singleton exports below.
  */
-export function createDbMocks() {
-  const mockQuery = vi.fn();
-  const mockClient = { query: vi.fn(), release: vi.fn() };
-  const mockConnect = vi.fn(() => mockClient);
-  return { mockQuery, mockClient, mockConnect };
-}
 
 /**
- * Pre-created SINGLETON mock references for simpler tests
- * (schema tests, pure logic tests) that don't need vi.hoisted.
- *
- *   vi.mock('../../src/shared/db.js', () => ({
- *     pool: { query: mockQuery, connect: vi.fn(() => mockClient), on: vi.fn() },
- *   }));
- *
- * WARNING: These are shared across all test files that import them.
- * Always call vi.clearAllMocks() in beforeEach() to reset state.
+ * Creates a complete vi.mock factory object matching src/shared/db.ts exports.
+ * @param {{ mockQuery: vi.Mock, mockConnect?: vi.Mock, mockClient?: object }} refs
+ * @returns {object} Module mock for vi.mock factory
  */
+export function createMockDbModule({ mockQuery, mockConnect, mockClient }) {
+  const connect = mockConnect || vi.fn(() => mockClient || { query: vi.fn(), release: vi.fn() });
+  return {
+    pool: { query: mockQuery, connect, on: vi.fn() },
+    readPool: { query: mockQuery },
+    query: mockQuery,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Singleton mocks for simple tests that don't need vi.hoisted.
+// Call vi.clearAllMocks() in beforeEach() to reset state between tests.
+// ---------------------------------------------------------------------------
 export const mockQuery = vi.fn();
 export const mockClient = {
   query: vi.fn(),
@@ -49,4 +50,8 @@ export const mockPool = {
   query: mockQuery,
   connect: vi.fn(() => mockClient),
   on: vi.fn(),
+};
+
+export const mockReadPool = {
+  query: mockQuery,
 };

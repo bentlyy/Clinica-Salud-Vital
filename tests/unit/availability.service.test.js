@@ -12,6 +12,7 @@ vi.mock('../../src/shared/db.js', () => ({
     connect: mockConnect,
     on: vi.fn(),
   },
+  readPool: { query: mockQuery },
 }));
 
 import * as availabilityService from '../../src/modules/availability/availability.service.js';

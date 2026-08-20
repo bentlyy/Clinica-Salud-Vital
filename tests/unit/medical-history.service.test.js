@@ -6,6 +6,7 @@ const { mockQuery } = vi.hoisted(() => ({
 
 vi.mock('../../src/shared/db.js', () => ({
   pool: { query: mockQuery },
+  readPool: { query: mockQuery },
 }));
 
 import * as mhService from '../../src/modules/medical-history/medical-history.service.js';

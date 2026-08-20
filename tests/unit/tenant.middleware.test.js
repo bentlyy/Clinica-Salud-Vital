@@ -6,6 +6,7 @@ vi.mock('../../src/utils/logger.js', () => ({
 
 vi.mock('../../src/shared/db.js', () => ({
   pool: { query: vi.fn().mockResolvedValue({ rows: [] }), connect: vi.fn(), on: vi.fn() },
+  readPool: { query: vi.fn().mockResolvedValue({ rows: [] }) },
   setTenantContext: vi.fn().mockResolvedValue(undefined),
   verifyTenantContext: vi.fn().mockResolvedValue(true),
   tenantAls: { run: vi.fn((_store, fn) => fn()), getStore: vi.fn(() => null) },

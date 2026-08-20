@@ -9,6 +9,7 @@ const { mockQuery, mockMkdir, mockWriteFile, mockUnlink } = vi.hoisted(() => ({
 
 vi.mock('../../src/shared/db.js', () => ({
   pool: { query: mockQuery },
+  readPool: { query: mockQuery },
 }));
 
 vi.mock('fs', () => ({

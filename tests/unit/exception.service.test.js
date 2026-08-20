@@ -10,6 +10,7 @@ vi.mock('../../src/shared/db.js', () => ({
     connect: vi.fn(),
     on: vi.fn(),
   },
+  readPool: { query: mockQuery },
 }));
 
 import * as exceptionService from '../../src/modules/availability/availability.service.js';

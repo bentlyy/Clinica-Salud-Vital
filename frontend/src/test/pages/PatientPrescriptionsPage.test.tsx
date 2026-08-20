@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AppThemeProvider } from '@/shared/providers/ThemeProvider';
 import PatientPrescriptionsPage from '@/modules/prescriptions/pages/PatientPrescriptionsPage';
 
@@ -64,10 +65,15 @@ const prescriptions = [
 ];
 
 function renderPage() {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
   return render(
-    <AppThemeProvider>
-      <PatientPrescriptionsPage />
-    </AppThemeProvider>,
+    <QueryClientProvider client={queryClient}>
+      <AppThemeProvider>
+        <PatientPrescriptionsPage />
+      </AppThemeProvider>
+    </QueryClientProvider>,
   );
 }
 

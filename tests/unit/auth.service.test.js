@@ -17,6 +17,7 @@ vi.mock('../../src/shared/db.js', () => ({
     })),
     on: vi.fn(),
   },
+  readPool: { query: mockQuery },
 }));
 
 vi.mock('bcrypt', () => ({

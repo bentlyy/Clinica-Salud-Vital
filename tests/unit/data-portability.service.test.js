@@ -6,6 +6,7 @@ const { mockQuery } = vi.hoisted(() => ({
 
 vi.mock('../../src/shared/db.js', () => ({
   pool: { query: mockQuery },
+  readPool: { query: mockQuery },
 }));
 
 import { exportPatientData } from '../../src/modules/data-portability/data-portability.service.js';

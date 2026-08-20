@@ -12,6 +12,7 @@ vi.mock('../../src/shared/db.js', () => ({
     connect: mockConnect,
     on: vi.fn(),
   },
+  readPool: { query: mockQuery },
 }));
 
 import * as labService from '../../src/modules/laboratory/laboratory.service.js';
@@ -516,14 +517,19 @@ describe('labService.signItem', () => {
 
 describe('labService.deliverItem', () => {
   it('delivers item and updates request if all items delivered', async () => {
-    mockQuery.mockResolvedValueOnce({ rows: [{ id: 1, status: 'delivered', lab_request_id: 1 }] });
-    mockQuery.mockResolvedValueOnce({ rows: [{ count: 0 }] });
-    mockQuery.mockResolvedValueOnce({ rows: [] });
+    mockClient.query.mockImplementation((sql) => {
+      if (sql === 'BEGIN') return Promise.resolve({});
+      if (sql.includes('UPDATE lab_request_items')) return Promise.resolve({ rows: [{ id: 1, status: 'delivered', lab_request_id: 1 }] });
+      if (sql.includes('SELECT COUNT')) return Promise.resolve({ rows: [{ count: 0 }] });
+      if (sql.includes('UPDATE lab_requests')) return Promise.resolve({ rows: [{ patient_id: 1 }] });
+      if (sql === 'COMMIT') return Promise.resolve({});
+      return Promise.resolve({ rows: [] });
+    });
 
     const result = await labService.deliverItem(1, 'test-tenant', 'print');
 
     expect(result.status).toBe('delivered');
-    expect(mockQuery).toHaveBeenCalledWith(expect.stringContaining('UPDATE lab_requests SET status'), expect.any(Array));
+    expect(mockClient.query).toHaveBeenCalledWith('COMMIT');
   });
 });
 

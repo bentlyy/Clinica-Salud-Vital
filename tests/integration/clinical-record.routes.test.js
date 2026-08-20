@@ -15,6 +15,7 @@ vi.mock('../../src/shared/db.js', () => ({
     connect: mockConnect,
     on: vi.fn(),
   },
+  readPool: { query: mockQuery },
   logPhiAccess: vi.fn().mockResolvedValue(undefined),
   setTenantContext: vi.fn().mockResolvedValue(undefined),
   verifyTenantContext: vi.fn().mockResolvedValue(true),

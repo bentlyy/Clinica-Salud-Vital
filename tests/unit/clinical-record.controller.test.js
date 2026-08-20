@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 vi.mock('../../src/shared/db.js', () => ({
   pool: { query: vi.fn().mockResolvedValue({ rows: [] }), connect: vi.fn() },
+  readPool: { query: vi.fn().mockResolvedValue({ rows: [] }) },
   logPhiAccess: vi.fn().mockResolvedValue(undefined),
   setTenantContext: vi.fn().mockResolvedValue(undefined),
   verifyTenantContext: vi.fn().mockResolvedValue(true),

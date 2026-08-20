@@ -10,6 +10,7 @@ vi.mock('../../src/shared/db.js', () => ({
     connect: vi.fn(),
     on: vi.fn(),
   },
+  readPool: { query: mockQuery },
 }));
 
 vi.mock('bcrypt', () => ({
@@ -83,7 +84,7 @@ describe('seedSuperAdmin', () => {
 
     await seedSuperAdmin();
 
-    expect(mockLogger.info).toHaveBeenCalledWith('Superadmin created with tenant_id=NULL (cross-clinic)');
+    expect(mockLogger.info).toHaveBeenCalledWith('Superadmin created with tenant_id=NULL (cross-clinic)', { email: 'superadmin@clinic.com' });
     const insertCall = mockQuery.mock.calls.find(c => c[0].includes('INSERT INTO users'));
     expect(insertCall).toBeDefined();
     expect(insertCall[1]).toContain('superadmin');

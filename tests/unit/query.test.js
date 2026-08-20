@@ -4,6 +4,7 @@ const mockPoolQuery = vi.fn();
 
 vi.mock('../../src/shared/db.js', () => ({
   pool: { query: mockPoolQuery },
+  readPool: { query: mockPoolQuery },
 }));
 
 beforeEach(() => {

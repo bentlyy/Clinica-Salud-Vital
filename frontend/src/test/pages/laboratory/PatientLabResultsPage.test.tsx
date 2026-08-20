@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AppThemeProvider } from '@/shared/providers/ThemeProvider';
 import PatientLabResultsPage from '@/modules/laboratory/pages/PatientLabResultsPage';
 
@@ -36,11 +37,16 @@ const requests = [
 ];
 
 function renderPage() {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
   return render(
     <MemoryRouter>
-      <AppThemeProvider>
-        <PatientLabResultsPage />
-      </AppThemeProvider>
+      <QueryClientProvider client={queryClient}>
+        <AppThemeProvider>
+          <PatientLabResultsPage />
+        </AppThemeProvider>
+      </QueryClientProvider>
     </MemoryRouter>,
   );
 }
