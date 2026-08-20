@@ -84,12 +84,18 @@ const healthHandler = async (_req: Request, res: Response) => {
     let stripeStatus = 'configured';
     if (global.stripeWarning) stripeStatus = 'stub_mode';
 
+    const poolStatus = {
+      total: pool.totalCount,
+      idle: pool.idleCount,
+      waiting: pool.waitingCount,
+    };
+
     res.json({
       status: dbStatus === 'ok' ? 'ok' : 'degraded',
       timestamp: new Date().toISOString(),
       version: pkg.version,
       checks: {
-        database: { status: dbStatus, latency_ms: dbLatency },
+        database: { status: dbStatus, latency_ms: dbLatency, pool: poolStatus },
         stripe: { status: stripeStatus },
         memory: { status: 'ok', heap_used_mb: memUsed, heap_total_mb: memTotal },
       },

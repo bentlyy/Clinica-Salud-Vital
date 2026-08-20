@@ -1,4 +1,4 @@
-import { pool } from '../../shared/db.js';
+import { pool, readPool } from '../../shared/db.js';
 import { NotFoundError, BadRequestError } from '../../utils/errors.js';
 import { E } from '../../utils/error-codes.js';
 import { sanitizeTextStrict } from '../../shared/sanitize.js';
@@ -67,8 +67,8 @@ export const getAllClinicalRecords = async ({ patient_id, doctor_id, status, lim
            d.name AS doctor_name, d.specialty,
            u.name AS patient_name, u.email AS patient_email, u.rut AS patient_rut
     FROM clinical_records cr
-    JOIN doctors d ON cr.doctor_id = d.id
-    JOIN users u ON cr.patient_id = u.id
+    JOIN doctors d ON cr.doctor_id = d.id AND d.tenant_id = cr.tenant_id
+    JOIN users u ON cr.patient_id = u.id AND u.tenant_id = cr.tenant_id
   `;
   const params: (number | string)[] = [];
   let paramCount = 1;
@@ -101,20 +101,20 @@ export const getAllClinicalRecords = async ({ patient_id, doctor_id, status, lim
   query += ` ORDER BY cr.created_at DESC LIMIT $${paramCount++} OFFSET $${paramCount++}`;
   params.push(limit, offset);
 
-  const result = await pool.query(query, params);
+  const result = await readPool.query(query, params);
   return sanitizeRows(result.rows);
 };
 
 export const getClinicalRecordById = async (id: string | number, tenantId: string) => {
-  const result = await pool.query(`
+  const result = await readPool.query(`
     SELECT cr.*, 
            d.name AS doctor_name, d.specialty,
            u.email AS patient_email, u.rut AS patient_rut,
            b.date AS booking_date, b.time AS booking_time
     FROM clinical_records cr
-    JOIN doctors d ON cr.doctor_id = d.id
-    JOIN users u ON cr.patient_id = u.id
-    LEFT JOIN bookings b ON cr.booking_id = b.id
+    JOIN doctors d ON cr.doctor_id = d.id AND d.tenant_id = cr.tenant_id
+    JOIN users u ON cr.patient_id = u.id AND u.tenant_id = cr.tenant_id
+    LEFT JOIN bookings b ON cr.booking_id = b.id AND b.tenant_id = cr.tenant_id
     WHERE cr.id = $1 AND cr.tenant_id = $2
   `, [id, tenantId]);
 
@@ -123,11 +123,11 @@ export const getClinicalRecordById = async (id: string | number, tenantId: strin
 };
 
 export const getClinicalRecordsByPatient = async (patient_id: number, tenantId: string) => {
-  const result = await pool.query(`
+  const result = await readPool.query(`
     SELECT cr.*, 
            d.name AS doctor_name, d.specialty
     FROM clinical_records cr
-    JOIN doctors d ON cr.doctor_id = d.id
+    JOIN doctors d ON cr.doctor_id = d.id AND d.tenant_id = cr.tenant_id
     WHERE cr.patient_id = $1 AND cr.tenant_id = $2 AND cr.status != 'cancelled'
     ORDER BY cr.created_at DESC
   `, [patient_id, tenantId]);
@@ -348,7 +348,7 @@ export const deleteClinicalRecord = async (id: string | number, doctor_id: numbe
 };
 
 export const doesDoctorHaveBookingWithPatient = async (doctorId: number, patientId: number, tenantId: string): Promise<boolean> => {
-  const result = await pool.query(
+  const result = await readPool.query(
     `SELECT 1 FROM bookings WHERE doctor_id = $1 AND user_id = $2 AND tenant_id = $3 LIMIT 1`,
     [doctorId, patientId, tenantId]
   );
@@ -356,7 +356,7 @@ export const doesDoctorHaveBookingWithPatient = async (doctorId: number, patient
 };
 
 export const getLabResultsByClinicalRecord = async (recordId: number, tenantId: string) => {
-  const result = await pool.query(`
+  const result = await readPool.query(`
     SELECT lr.id AS request_id, lr.request_number, lr.priority, lr.status AS request_status,
            lr.notes AS request_notes, lr.created_at AS request_created_at,
            lri.id AS item_id, lri.lab_test_id, lri.status AS item_status,

@@ -1,4 +1,4 @@
-import { pool } from '../../shared/db.js';
+import { pool, readPool } from '../../shared/db.js';
 import { NotFoundError, BadRequestError, toError } from '../../utils/errors.js';
 import { E } from '../../utils/error-codes.js';
 import { logger } from '../../utils/logger.js';
@@ -41,7 +41,7 @@ export const getAvailable = async () => {
 };
 
 const generateAppointments = async (config: ReportConfig, tenantId: string) => {
-  const { rows } = await pool.query(
+  const { rows } = await readPool.query(
     `SELECT
        b.id, b.date, b.time, b.status,
        p.name AS patient_name, p.email AS patient_email,
@@ -59,7 +59,7 @@ const generateAppointments = async (config: ReportConfig, tenantId: string) => {
 };
 
 const generateRevenue = async (config: ReportConfig, tenantId: string) => {
-  const { rows } = await pool.query(
+  const { rows } = await readPool.query(
     `SELECT
        i.id, i.total_amount, i.status AS payment_status, i.created_at,
        p.name AS patient_name,
@@ -78,7 +78,7 @@ const generateRevenue = async (config: ReportConfig, tenantId: string) => {
 };
 
 const generatePatients = async (config: ReportConfig, tenantId: string) => {
-  const { rows } = await pool.query(
+  const { rows } = await readPool.query(
     `SELECT
        p.id, p.name, p.email, p.phone,
        COUNT(b.id) AS total_appointments,
@@ -96,7 +96,7 @@ const generatePatients = async (config: ReportConfig, tenantId: string) => {
 };
 
 const generateLaboratory = async (config: ReportConfig, tenantId: string) => {
-  const { rows } = await pool.query(
+  const { rows } = await readPool.query(
     `SELECT
        lr.id, lr.status, lr.created_at, lr.updated_at,
        lr.notes, lr.request_number,
@@ -160,8 +160,8 @@ export const generateReport = async (type: string, config: ReportConfig, userId:
 };
 
 export const getById = async (id: number, tenantId: string): Promise<Report> => {
-  const { rows } = await pool.query(
-    `SELECT * FROM reports WHERE id = $1 AND tenant_id = $2`,
+  const { rows } = await readPool.query(
+    `SELECT id, tenant_id, user_id, type, status, config, result_url, created_at FROM reports WHERE id = $1 AND tenant_id = $2`,
     [id, tenantId]
   );
   if (!rows[0]) throw new NotFoundError(E.REPORT_NOT_FOUND);

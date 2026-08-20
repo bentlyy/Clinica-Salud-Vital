@@ -42,7 +42,7 @@ CREATE TABLE users (
   token_version INTEGER DEFAULT 0,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  tenant_id TEXT NOT NULL DEFAULT 'default'
+  tenant_id TEXT DEFAULT 'default'
 );
 
 CREATE UNIQUE INDEX idx_users_tenant_email ON users (tenant_id, email);
@@ -78,7 +78,7 @@ CREATE TABLE bookings (
   date DATE NOT NULL,
   time TIME NOT NULL,
   duration INT DEFAULT 30,
-  status TEXT DEFAULT 'pending',
+  status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'confirmed', 'cancelled', 'completed', 'no_show')),
   confirmed BOOLEAN DEFAULT FALSE,
   confirmation_token TEXT UNIQUE,
   guest_rut TEXT,
@@ -87,6 +87,7 @@ CREATE TABLE bookings (
   guest_phone TEXT,
   reminder_1h_sent BOOLEAN DEFAULT FALSE,
   reminder_24h_sent BOOLEAN DEFAULT FALSE,
+  series_id INT,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT fk_doctor FOREIGN KEY (doctor_id) REFERENCES doctors(id) ON DELETE CASCADE,
   CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
@@ -110,7 +111,8 @@ CREATE TABLE doctor_availability (
   CONSTRAINT fk_doctor_availability FOREIGN KEY (doctor_id) REFERENCES doctors(id) ON DELETE CASCADE,
   CONSTRAINT check_time_range CHECK (start_time < end_time),
   CONSTRAINT check_day_of_week_range CHECK (day_of_week >= 1 AND day_of_week <= 7),
-  tenant_id TEXT NOT NULL DEFAULT 'default'
+  tenant_id TEXT NOT NULL DEFAULT 'default',
+  active BOOLEAN DEFAULT true
 );
 
 CREATE TABLE doctor_exceptions (
@@ -264,6 +266,20 @@ CREATE TABLE IF NOT EXISTS insurance_claims (
 -- ============================================================
 -- 8. LABORATORY
 -- ============================================================
+CREATE TABLE IF NOT EXISTS lab_areas (
+  id SERIAL PRIMARY KEY,
+  tenant_id TEXT NOT NULL DEFAULT 'default',
+  name VARCHAR(255) NOT NULL,
+  code VARCHAR(50) UNIQUE NOT NULL,
+  description TEXT,
+  icon VARCHAR(10),
+  color VARCHAR(7),
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  active BOOLEAN NOT NULL DEFAULT true,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
 CREATE TABLE IF NOT EXISTS lab_tests (
   id SERIAL PRIMARY KEY,
   name VARCHAR(255) NOT NULL,
@@ -275,6 +291,20 @@ CREATE TABLE IF NOT EXISTS lab_tests (
   reference_max NUMERIC(10, 2),
   price NUMERIC(10, 2) NOT NULL DEFAULT 0,
   reference_ranges JSONB,
+  lab_area_id INTEGER REFERENCES lab_areas(id) ON DELETE SET NULL,
+  result_type VARCHAR(20) DEFAULT 'numeric' CHECK (result_type IN ('numeric', 'text', 'select', 'multiselect', 'graph', 'image')),
+  result_options JSONB,
+  decimals INTEGER DEFAULT 1,
+  unit_alt VARCHAR(50),
+  conversion_factor NUMERIC(10, 4),
+  critical_min NUMERIC(10, 2),
+  critical_max NUMERIC(10, 2),
+  delta_check_pct NUMERIC(5, 2) DEFAULT 20,
+  turnaround_time_min INTEGER,
+  preparation_instructions TEXT,
+  sample_type VARCHAR(50),
+  container_type VARCHAR(50),
+  volume_ml NUMERIC(10, 2),
   active BOOLEAN DEFAULT true,
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW(),
@@ -289,11 +319,18 @@ CREATE TABLE IF NOT EXISTS lab_requests (
   doctor_id INTEGER REFERENCES doctors(id) ON DELETE SET NULL,
   clinical_record_id INTEGER REFERENCES clinical_records(id) ON DELETE SET NULL,
   priority VARCHAR(20) DEFAULT 'routine' CHECK (priority IN ('routine', 'urgent', 'emergency')),
-  status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'collected', 'in_progress', 'completed', 'cancelled')),
+  status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'received', 'verified', 'assigned', 'processing', 'qc_review', 'result_entered', 'validated_tech', 'validated_doctor', 'signed', 'delivered', 'cancelled', 'rejected', 'repeated')),
   notes TEXT,
   requested_at TIMESTAMP DEFAULT NOW(),
   collected_at TIMESTAMP,
   completed_at TIMESTAMP,
+  lab_type VARCHAR(10),
+  lab_area_id INTEGER REFERENCES lab_areas(id) ON DELETE SET NULL,
+  received_at TIMESTAMP,
+  received_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  verified_at TIMESTAMP,
+  verified_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  urgency_reason TEXT,
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW(),
   tenant_id TEXT NOT NULL DEFAULT 'default'
@@ -310,6 +347,21 @@ CREATE TABLE IF NOT EXISTS lab_request_items (
   result_notes TEXT,
   notes TEXT,
   completed_at TIMESTAMP,
+  lab_area_id INTEGER REFERENCES lab_areas(id) ON DELETE SET NULL,
+  validated_by_tech INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  validated_at_tech TIMESTAMP,
+  validated_by_doctor INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  validated_at_doctor TIMESTAMP,
+  signed_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  signed_at TIMESTAMP,
+  delivered_at TIMESTAMP,
+  delivery_method VARCHAR(50),
+  is_critical BOOLEAN DEFAULT false,
+  is_repeated BOOLEAN DEFAULT false,
+  delta_check_status VARCHAR(20),
+  previous_result_id INTEGER REFERENCES lab_request_items(id) ON DELETE SET NULL,
+  assigned_tech_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  unit VARCHAR(50),
   created_at TIMESTAMP DEFAULT NOW(),
   tenant_id TEXT NOT NULL DEFAULT 'default'
 );
@@ -324,6 +376,7 @@ CREATE TABLE IF NOT EXISTS refresh_tokens (
   expires_at TIMESTAMPTZ NOT NULL,
   revoked BOOLEAN DEFAULT false,
   token_version INTEGER DEFAULT 0,
+  session_id INT,
   created_at TIMESTAMP DEFAULT NOW(),
   tenant_id TEXT NOT NULL DEFAULT 'default'
 );
@@ -433,9 +486,331 @@ CREATE TABLE IF NOT EXISTS tenant_usage (
 -- 12. MIGRATION TRACKING
 -- ============================================================
 CREATE TABLE IF NOT EXISTS _migrations (
-  name TEXT PRIMARY KEY,
-  applied_at TIMESTAMPTZ DEFAULT NOW()
+  id SERIAL PRIMARY KEY,
+  name VARCHAR(255) UNIQUE NOT NULL,
+  applied_at TIMESTAMP DEFAULT NOW()
 );
+
+-- ============================================================
+-- 13. BOOKING SERIES (recurring bookings)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS booking_series (
+  id SERIAL PRIMARY KEY,
+  tenant_id TEXT NOT NULL DEFAULT 'default',
+  doctor_id INTEGER NOT NULL REFERENCES doctors(id) ON DELETE CASCADE,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  frequency VARCHAR(20) NOT NULL CHECK (frequency IN ('daily', 'weekly', 'monthly')),
+  interval_count INTEGER NOT NULL DEFAULT 1,
+  start_date DATE NOT NULL,
+  time TIME NOT NULL,
+  duration INTEGER NOT NULL DEFAULT 30,
+  occurrences INTEGER NOT NULL,
+  created_count INTEGER NOT NULL DEFAULT 0,
+  active BOOLEAN NOT NULL DEFAULT true,
+  cancelled_at TIMESTAMPTZ,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- ============================================================
+-- 14. BOOKING STATUS HISTORY
+-- ============================================================
+CREATE TABLE IF NOT EXISTS booking_status_history (
+  id SERIAL PRIMARY KEY,
+  tenant_id TEXT NOT NULL DEFAULT 'default',
+  booking_id INTEGER NOT NULL REFERENCES bookings(id) ON DELETE CASCADE,
+  from_status VARCHAR(50),
+  to_status VARCHAR(50) NOT NULL,
+  actor_type VARCHAR(50) NOT NULL DEFAULT 'system',
+  changed_by_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  changed_by_role VARCHAR(50),
+  reason TEXT,
+  notes TEXT,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- ============================================================
+-- 15. NOTIFICATIONS (in-app)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS notifications (
+  id SERIAL PRIMARY KEY,
+  tenant_id TEXT NOT NULL DEFAULT 'default',
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  type VARCHAR(20) NOT NULL DEFAULT 'info' CHECK (type IN ('info', 'warning', 'success', 'error')),
+  title VARCHAR(255) NOT NULL,
+  message TEXT,
+  is_read BOOLEAN NOT NULL DEFAULT false,
+  link TEXT,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- ============================================================
+-- 16. WAITLIST
+-- ============================================================
+CREATE TABLE IF NOT EXISTS waitlist (
+  id SERIAL PRIMARY KEY,
+  tenant_id TEXT NOT NULL DEFAULT 'default',
+  doctor_id INTEGER NOT NULL REFERENCES doctors(id) ON DELETE CASCADE,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  requested_date DATE NOT NULL,
+  status VARCHAR(50) NOT NULL DEFAULT 'waiting' CHECK (status IN ('waiting', 'notified', 'booked', 'removed')),
+  notified_at TIMESTAMPTZ,
+  created_at TIMESTAMP DEFAULT NOW(),
+  UNIQUE(doctor_id, user_id, requested_date)
+);
+
+-- ============================================================
+-- 17. CLINIC HOLIDAYS
+-- ============================================================
+CREATE TABLE IF NOT EXISTS clinic_holidays (
+  id SERIAL PRIMARY KEY,
+  tenant_id TEXT NOT NULL DEFAULT 'default',
+  holiday_date DATE NOT NULL,
+  name VARCHAR(255) NOT NULL,
+  notice_days INTEGER NOT NULL DEFAULT 15,
+  cancel_bookings BOOLEAN NOT NULL DEFAULT true,
+  created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  created_at TIMESTAMP DEFAULT NOW(),
+  UNIQUE(tenant_id, holiday_date)
+);
+
+-- ============================================================
+-- 18. MEDICAL HISTORY
+-- ============================================================
+CREATE TABLE IF NOT EXISTS medical_history (
+  id SERIAL PRIMARY KEY,
+  tenant_id TEXT NOT NULL DEFAULT 'default',
+  patient_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  condition VARCHAR(255) NOT NULL,
+  onset_date DATE,
+  status VARCHAR(50) NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'resolved', 'chronic', 'family')),
+  notes TEXT,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- ============================================================
+-- 19. USER SESSIONS
+-- ============================================================
+CREATE TABLE IF NOT EXISTS user_sessions (
+  id SERIAL PRIMARY KEY,
+  tenant_id TEXT NOT NULL DEFAULT 'default',
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  session_token TEXT NOT NULL,
+  ip_address VARCHAR(45),
+  user_agent TEXT,
+  last_seen_at TIMESTAMPTZ DEFAULT NOW(),
+  expires_at TIMESTAMPTZ NOT NULL,
+  revoked_at TIMESTAMPTZ,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- ============================================================
+-- 20. ATTACHMENTS
+-- ============================================================
+CREATE TABLE IF NOT EXISTS attachments (
+  id SERIAL PRIMARY KEY,
+  tenant_id TEXT NOT NULL DEFAULT 'default',
+  entity_type VARCHAR(50) NOT NULL,
+  entity_id INTEGER NOT NULL,
+  original_name VARCHAR(255) NOT NULL,
+  stored_name VARCHAR(255) NOT NULL,
+  mime_type VARCHAR(100) NOT NULL,
+  size_bytes INTEGER NOT NULL,
+  uploaded_by INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- ============================================================
+-- 21. REPORTS
+-- ============================================================
+CREATE TABLE IF NOT EXISTS reports (
+  id SERIAL PRIMARY KEY,
+  tenant_id TEXT NOT NULL DEFAULT 'default',
+  user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  type VARCHAR(50) NOT NULL,
+  status VARCHAR(50) NOT NULL DEFAULT 'generating' CHECK (status IN ('generating', 'completed', 'failed')),
+  config JSONB NOT NULL DEFAULT '{}',
+  result_url TEXT,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- ============================================================
+-- 22. WEBHOOKS
+-- ============================================================
+CREATE TABLE IF NOT EXISTS webhook_subscriptions (
+  id SERIAL PRIMARY KEY,
+  tenant_id TEXT NOT NULL DEFAULT 'default',
+  url TEXT NOT NULL,
+  secret TEXT NOT NULL,
+  events TEXT[] NOT NULL DEFAULT '{}',
+  active BOOLEAN NOT NULL DEFAULT true,
+  created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS webhook_deliveries (
+  id SERIAL PRIMARY KEY,
+  tenant_id TEXT NOT NULL DEFAULT 'default',
+  subscription_id INTEGER NOT NULL REFERENCES webhook_subscriptions(id) ON DELETE CASCADE,
+  event VARCHAR(100) NOT NULL,
+  payload JSONB,
+  status VARCHAR(50) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'delivered', 'failed')),
+  attempts INTEGER NOT NULL DEFAULT 0,
+  last_attempt_at TIMESTAMPTZ,
+  next_attempt_at TIMESTAMPTZ,
+  response_status INTEGER,
+  response_body TEXT,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- ============================================================
+-- 23. LABORATORY EXTENDED TABLES
+-- ============================================================
+CREATE TABLE IF NOT EXISTS lab_samples (
+  id SERIAL PRIMARY KEY,
+  tenant_id TEXT NOT NULL DEFAULT 'default',
+  lab_request_item_id INTEGER REFERENCES lab_request_items(id) ON DELETE SET NULL,
+  lab_request_id INTEGER REFERENCES lab_requests(id) ON DELETE CASCADE,
+  sample_type VARCHAR(100) NOT NULL,
+  sample_code VARCHAR(50) NOT NULL,
+  container_type VARCHAR(100),
+  volume DECIMAL(10,2),
+  received_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  reception_time TIMESTAMPTZ DEFAULT NOW(),
+  verification_time TIMESTAMPTZ,
+  verified_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  assigned_tech_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  assigned_equipment_id INTEGER,
+  qc_status VARCHAR(50),
+  qc_notes TEXT,
+  status VARCHAR(50) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'received', 'verified', 'assigned', 'processing', 'completed', 'rejected', 'disposed')),
+  rejection_reason TEXT,
+  notes TEXT,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS lab_qc_records (
+  id SERIAL PRIMARY KEY,
+  tenant_id TEXT NOT NULL DEFAULT 'default',
+  lab_test_id INTEGER REFERENCES lab_tests(id) ON DELETE SET NULL,
+  lab_area_id INTEGER REFERENCES lab_areas(id) ON DELETE SET NULL,
+  sample_id INTEGER REFERENCES lab_samples(id) ON DELETE SET NULL,
+  equipment_id INTEGER,
+  reagent_id INTEGER,
+  qc_type VARCHAR(50) NOT NULL,
+  control_name VARCHAR(255) NOT NULL,
+  lot_number VARCHAR(100),
+  expiration_date DATE,
+  measured_value NUMERIC(10,4),
+  expected_min NUMERIC(10,4),
+  expected_max NUMERIC(10,4),
+  status VARCHAR(50) NOT NULL CHECK (status IN ('passed', 'failed', 'warning', 'review')),
+  performed_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  notes TEXT,
+  performed_at TIMESTAMPTZ DEFAULT NOW(),
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS lab_equipment (
+  id SERIAL PRIMARY KEY,
+  tenant_id TEXT NOT NULL DEFAULT 'default',
+  name VARCHAR(255) NOT NULL,
+  model VARCHAR(255),
+  serial_number VARCHAR(255),
+  lab_area_id INTEGER REFERENCES lab_areas(id) ON DELETE SET NULL,
+  connection_type VARCHAR(50) DEFAULT 'manual',
+  ip_address VARCHAR(45),
+  port INTEGER,
+  status VARCHAR(50) DEFAULT 'online' CHECK (status IN ('online', 'offline', 'maintenance', 'calibration')),
+  last_calibration TIMESTAMPTZ,
+  next_calibration TIMESTAMPTZ,
+  active BOOLEAN NOT NULL DEFAULT true,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS lab_reagents (
+  id SERIAL PRIMARY KEY,
+  tenant_id TEXT NOT NULL DEFAULT 'default',
+  name VARCHAR(255) NOT NULL,
+  catalog_number VARCHAR(100),
+  lot_number VARCHAR(100),
+  supplier VARCHAR(255),
+  stock_quantity INTEGER DEFAULT 0,
+  unit VARCHAR(50) DEFAULT 'u',
+  min_stock INTEGER DEFAULT 0,
+  current_stock INTEGER DEFAULT 0,
+  expiration_date DATE,
+  storage_conditions TEXT,
+  lab_test_id INTEGER REFERENCES lab_tests(id) ON DELETE SET NULL,
+  lab_area_id INTEGER REFERENCES lab_areas(id) ON DELETE SET NULL,
+  active BOOLEAN DEFAULT true,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS lab_notifications (
+  id SERIAL PRIMARY KEY,
+  tenant_id TEXT NOT NULL DEFAULT 'default',
+  type VARCHAR(50) NOT NULL,
+  title VARCHAR(255) NOT NULL,
+  message TEXT NOT NULL,
+  severity VARCHAR(20) DEFAULT 'info' CHECK (severity IN ('info', 'warning', 'critical')),
+  lab_request_id INTEGER REFERENCES lab_requests(id) ON DELETE CASCADE,
+  acknowledged BOOLEAN DEFAULT false,
+  acknowledged_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  acknowledged_at TIMESTAMPTZ,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS lab_result_history (
+  id SERIAL PRIMARY KEY,
+  lab_request_item_id INTEGER REFERENCES lab_request_items(id) ON DELETE SET NULL,
+  patient_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  lab_test_id INTEGER REFERENCES lab_tests(id) ON DELETE SET NULL,
+  result_value TEXT,
+  previous_result_value TEXT,
+  delta_percentage DECIMAL(10, 2),
+  delta_check_status VARCHAR(20) CHECK (delta_check_status IN ('normal', 'warning', 'critical')),
+  checked_at TIMESTAMP DEFAULT NOW(),
+  tenant_id TEXT NOT NULL DEFAULT 'default'
+);
+
+-- ============================================================
+-- 24. JOBS (background task queue)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS jobs (
+  id            SERIAL PRIMARY KEY,
+  type          VARCHAR(100)  NOT NULL,
+  data          JSONB         NOT NULL DEFAULT '{}',
+  status        VARCHAR(20)   NOT NULL DEFAULT 'pending',
+  attempts      INTEGER       NOT NULL DEFAULT 0,
+  max_attempts  INTEGER       NOT NULL DEFAULT 3,
+  last_error    TEXT,
+  created_at    TIMESTAMPTZ   NOT NULL DEFAULT NOW(),
+  started_at    TIMESTAMPTZ,
+  completed_at  TIMESTAMPTZ,
+  next_retry_at TIMESTAMPTZ   NOT NULL DEFAULT NOW()
+);
+
+-- ============================================================
+-- 25. ML DEMAND FORECAST (referenced in seed.ts)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS ml_demand_forecast (
+  id SERIAL PRIMARY KEY,
+  tenant_id TEXT NOT NULL DEFAULT 'default',
+  date DATE NOT NULL,
+  predicted_demand INTEGER,
+  actual_demand INTEGER,
+  confidence INTEGER,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- ============================================================
+-- 25. SUBSCRIPTION INVOICES (referenced in saas.service.ts)
+-- ============================================================
 
 -- ============================================================
 -- INDEXES
@@ -456,9 +831,7 @@ CREATE INDEX IF NOT EXISTS idx_availability_doctor_day ON doctor_availability(do
 CREATE INDEX IF NOT EXISTS idx_exceptions_doctor_date ON doctor_exceptions(doctor_id, date, tenant_id);
 
 CREATE INDEX IF NOT EXISTS idx_users_rut ON users(rut);
-CREATE INDEX IF NOT EXISTS idx_users_rut_clean_lookup ON users(REPLACE(rut, '.', ''), tenant_id) WHERE rut IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_users_email_tenant ON users(email, tenant_id);
-CREATE INDEX IF NOT EXISTS idx_users_tenant_email ON users(tenant_id, email);
 CREATE INDEX IF NOT EXISTS idx_users_role_tenant ON users(role, tenant_id);
 CREATE INDEX IF NOT EXISTS idx_users_tenant ON users(tenant_id, id);
 
@@ -470,7 +843,6 @@ CREATE INDEX IF NOT EXISTS idx_clinical_records_doctor_tenant ON clinical_record
 CREATE INDEX IF NOT EXISTS idx_prescriptions_record ON prescriptions(clinical_record_id);
 
 CREATE INDEX IF NOT EXISTS idx_audit_logs_tenant_created ON audit_logs(tenant_id, created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_audit_logs_resource ON audit_logs(resource_type, resource_id);
 
 CREATE INDEX IF NOT EXISTS idx_invoices_patient_tenant ON invoices(patient_id, tenant_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_payments_tenant ON payments(tenant_id, invoice_id);
@@ -488,6 +860,95 @@ CREATE INDEX IF NOT EXISTS idx_tenant_features_tenant ON tenant_features(tenant_
 CREATE INDEX IF NOT EXISTS idx_tenant_usage_tenant ON tenant_usage(tenant_id, recorded_at);
 
 CREATE INDEX IF NOT EXISTS idx_tenants_domain ON tenants(domain);
+
+-- ============================================================
+-- NEW INDEXES (backend query optimization)
+-- ============================================================
+
+-- Notifications: filtered by tenant_id + user_id + is_read
+CREATE INDEX IF NOT EXISTS idx_notifications_user_read ON notifications(tenant_id, user_id, is_read);
+
+-- Waitlist: filtered by doctor_id + requested_date + tenant_id + status
+CREATE INDEX IF NOT EXISTS idx_waitlist_doctor_date_status ON waitlist(doctor_id, requested_date, tenant_id, status);
+
+-- Booking series: filtered by tenant_id + user_id or tenant_id + doctor_id
+CREATE INDEX IF NOT EXISTS idx_booking_series_tenant_user ON booking_series(tenant_id, user_id);
+CREATE INDEX IF NOT EXISTS idx_booking_series_tenant_doctor ON booking_series(tenant_id, doctor_id);
+
+-- Booking status history: filtered by booking_id + to_status
+CREATE INDEX IF NOT EXISTS idx_booking_status_history_booking_status ON booking_status_history(booking_id, to_status);
+
+-- Lab request items: filtered by lab_request_id + tenant_id
+CREATE INDEX IF NOT EXISTS idx_lab_request_items_request ON lab_request_items(lab_request_id, tenant_id);
+
+-- Lab samples: filtered by tenant_id + reception_time
+CREATE INDEX IF NOT EXISTS idx_lab_samples_tenant_time ON lab_samples(tenant_id, reception_time);
+
+-- Attachments: filtered by tenant_id + entity_type + entity_id
+CREATE INDEX IF NOT EXISTS idx_attachments_entity ON attachments(tenant_id, entity_type, entity_id);
+
+-- User sessions: filtered by user_id + tenant_id + revoked_at
+CREATE INDEX IF NOT EXISTS idx_user_sessions_user_tenant ON user_sessions(user_id, tenant_id, revoked_at);
+
+-- Clinic holidays: filtered by tenant_id + holiday_date
+CREATE INDEX IF NOT EXISTS idx_clinic_holidays_tenant_date ON clinic_holidays(tenant_id, holiday_date);
+
+-- Medical history: filtered by patient_id + tenant_id
+CREATE INDEX IF NOT EXISTS idx_medical_history_patient_tenant ON medical_history(patient_id, tenant_id);
+
+-- Reports: filtered by tenant_id + user_id
+CREATE INDEX IF NOT EXISTS idx_reports_tenant_user ON reports(tenant_id, user_id);
+
+-- Webhook subscriptions: filtered by tenant_id + active
+CREATE INDEX IF NOT EXISTS idx_webhook_subscriptions_tenant_active ON webhook_subscriptions(tenant_id, active);
+
+-- Webhook deliveries: filtered by subscription_id
+CREATE INDEX IF NOT EXISTS idx_webhook_deliveries_subscription ON webhook_deliveries(subscription_id);
+
+-- Lab QC records: filtered by tenant_id + lab_area_id
+CREATE INDEX IF NOT EXISTS idx_lab_qc_records_tenant_area ON lab_qc_records(tenant_id, lab_area_id);
+
+-- Lab equipment: filtered by tenant_id + lab_area_id
+CREATE INDEX IF NOT EXISTS idx_lab_equipment_tenant_area ON lab_equipment(tenant_id, lab_area_id);
+
+-- Lab reagents: filtered by tenant_id + lab_area_id
+CREATE INDEX IF NOT EXISTS idx_lab_reagents_tenant_area ON lab_reagents(tenant_id, lab_area_id);
+
+-- Lab notifications: filtered by tenant_id + acknowledged + severity
+CREATE INDEX IF NOT EXISTS idx_lab_notifications_tenant_status ON lab_notifications(tenant_id, acknowledged, severity);
+
+-- ML demand forecast: filtered by tenant_id + date
+CREATE INDEX IF NOT EXISTS idx_ml_demand_forecast_tenant_date ON ml_demand_forecast(tenant_id, date);
+
+-- Lab result history: filtered by patient_id + lab_test_id
+CREATE INDEX IF NOT EXISTS idx_lab_result_history_patient ON lab_result_history(patient_id, lab_test_id);
+
+-- Jobs: pending queue + type
+CREATE INDEX IF NOT EXISTS idx_jobs_pending ON jobs (next_retry_at) WHERE status = 'pending';
+CREATE INDEX IF NOT EXISTS idx_jobs_type ON jobs (type);
+CREATE INDEX IF NOT EXISTS idx_jobs_status ON jobs (status);
+
+-- Lab samples: filtered by lab_request_id
+CREATE INDEX IF NOT EXISTS idx_lab_samples_request ON lab_samples(lab_request_id);
+CREATE INDEX IF NOT EXISTS idx_lab_samples_code ON lab_samples(sample_code);
+
+-- Bookings: series_id (migration 019)
+CREATE INDEX IF NOT EXISTS idx_bookings_series ON bookings(series_id);
+
+-- Refresh tokens: session_id (migration 013)
+CREATE INDEX IF NOT EXISTS idx_rt_session ON refresh_tokens(session_id);
+
+-- ============================================================
+-- MISSING TENANT_ID INDEXES (multi-tenant query optimization)
+-- ============================================================
+CREATE INDEX IF NOT EXISTS idx_prescriptions_tenant ON prescriptions(tenant_id, clinical_record_id);
+CREATE INDEX IF NOT EXISTS idx_invoice_items_tenant ON invoice_items(tenant_id, invoice_id);
+CREATE INDEX IF NOT EXISTS idx_refresh_tokens_tenant ON refresh_tokens(tenant_id, user_id);
+CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_tenant ON password_reset_tokens(tenant_id, user_id);
+CREATE INDEX IF NOT EXISTS idx_booking_status_history_tenant ON booking_status_history(tenant_id, booking_id);
+CREATE INDEX IF NOT EXISTS idx_webhook_deliveries_tenant ON webhook_deliveries(tenant_id, subscription_id);
+CREATE INDEX IF NOT EXISTS idx_lab_result_history_tenant ON lab_result_history(tenant_id, patient_id);
+CREATE INDEX IF NOT EXISTS idx_lab_areas_tenant ON lab_areas(tenant_id, active);
 
 -- ============================================================
 -- TRIGGERS (updated_at)
@@ -549,6 +1010,36 @@ CREATE TRIGGER update_plans_updated_at
 DROP TRIGGER IF EXISTS update_subscriptions_updated_at ON subscriptions;
 CREATE TRIGGER update_subscriptions_updated_at
   BEFORE UPDATE ON subscriptions
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+DROP TRIGGER IF EXISTS update_lab_areas_updated_at ON lab_areas;
+CREATE TRIGGER update_lab_areas_updated_at
+  BEFORE UPDATE ON lab_areas
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+DROP TRIGGER IF EXISTS update_medical_history_updated_at ON medical_history;
+CREATE TRIGGER update_medical_history_updated_at
+  BEFORE UPDATE ON medical_history
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+DROP TRIGGER IF EXISTS update_webhook_subscriptions_updated_at ON webhook_subscriptions;
+CREATE TRIGGER update_webhook_subscriptions_updated_at
+  BEFORE UPDATE ON webhook_subscriptions
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+DROP TRIGGER IF EXISTS update_lab_samples_updated_at ON lab_samples;
+CREATE TRIGGER update_lab_samples_updated_at
+  BEFORE UPDATE ON lab_samples
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+DROP TRIGGER IF EXISTS update_lab_equipment_updated_at ON lab_equipment;
+CREATE TRIGGER update_lab_equipment_updated_at
+  BEFORE UPDATE ON lab_equipment
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+DROP TRIGGER IF EXISTS update_lab_reagents_updated_at ON lab_reagents;
+CREATE TRIGGER update_lab_reagents_updated_at
+  BEFORE UPDATE ON lab_reagents
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- ============================================================

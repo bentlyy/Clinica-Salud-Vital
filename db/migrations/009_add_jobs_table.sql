@@ -12,9 +12,9 @@ CREATE TABLE IF NOT EXISTS jobs (
   next_retry_at TIMESTAMPTZ   NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_jobs_pending ON jobs (next_retry_at)
+CREATE INDEX IF NOT EXISTS idx_jobs_pending ON jobs (next_retry_at)
   WHERE status = 'pending';
 
-CREATE INDEX idx_jobs_type ON jobs (type);
+CREATE INDEX IF NOT EXISTS idx_jobs_type ON jobs (type);
 
-CREATE INDEX idx_jobs_status ON jobs (status);
+CREATE INDEX IF NOT EXISTS idx_jobs_status ON jobs (status);

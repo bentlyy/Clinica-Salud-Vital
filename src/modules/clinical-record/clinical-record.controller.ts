@@ -192,6 +192,8 @@ export const deletePrescription = asyncHandler(async (req: Request, res: Respons
 
 export const getAllPrescriptions = asyncHandler(async (req: Request, res: Response) => {
   const tenantId = req.user!.role === 'superadmin' ? undefined : req.tenant_id;
+  const limit = Math.min(parseInt(req.query.limit as string) || 100, 200);
+  const offset = parseInt(req.query.offset as string) || 0;
 
   let prescriptions;
   if (req.user!.role === 'doctor') {
@@ -222,10 +224,11 @@ export const getAllPrescriptions = asyncHandler(async (req: Request, res: Respon
       WHERE cr.doctor_id = $1 AND cr.tenant_id = $2
       GROUP BY cr.id, u.name, d.name, cr.created_at
       ORDER BY cr.created_at DESC
-    `, [doctor.id, req.tenant_id]);
+      LIMIT $3 OFFSET $4
+    `, [doctor.id, req.tenant_id, limit, offset]);
     prescriptions = result.rows;
   } else {
-    prescriptions = await prescriptionService.getAllPrescriptions(tenantId!);
+    prescriptions = await prescriptionService.getAllPrescriptions(tenantId!, limit, offset);
   }
 
   res.json(prescriptions);

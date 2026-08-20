@@ -1,4 +1,4 @@
-import { pool } from '../../shared/db.js';
+import { pool, readPool } from '../../shared/db.js';
 import { BadRequestError, NotFoundError } from '../../utils/errors.js';
 import { E } from '../../utils/error-codes.js';
 import { logger } from '../../utils/logger.js';
@@ -37,7 +37,7 @@ export const listTenants = async (
 
   const whereClause = conditions.join(' AND ');
 
-  const countResult = await pool.query(
+  const countResult = await readPool.query(
     `SELECT COUNT(*) as total FROM tenants t WHERE ${whereClause}`,
     params
   );
@@ -46,12 +46,12 @@ export const listTenants = async (
   const offset = (page - 1) * limit;
   params.push(limit, offset);
 
-  const result = await pool.query(
-    `SELECT t.*,
+  const result = await readPool.query(
+    `SELECT t.id, t.name, t.domain, t.locale, t.timezone, t.active, t.created_at,
         p.name AS plan_name, p.code AS plan_code,
-        (SELECT COUNT(*) FROM bookings b WHERE b.tenant_id = t.id)::int AS total_bookings,
-        (SELECT COUNT(*) FROM users u WHERE u.tenant_id = t.id)::int AS total_users,
-        (SELECT COUNT(*) FROM doctors d WHERE d.tenant_id = t.id)::int AS total_doctors
+        COALESCE(b.total_bookings, 0)::int AS total_bookings,
+        COALESCE(u.total_users, 0)::int AS total_users,
+        COALESCE(d.total_doctors, 0)::int AS total_doctors
      FROM tenants t
      LEFT JOIN LATERAL (
        SELECT s.plan_id FROM subscriptions s
@@ -59,6 +59,9 @@ export const listTenants = async (
        ORDER BY s.current_period_start DESC LIMIT 1
      ) sub ON true
      LEFT JOIN plans p ON p.id = sub.plan_id
+     LEFT JOIN (SELECT tenant_id, COUNT(*) AS total_bookings FROM bookings GROUP BY tenant_id) b ON b.tenant_id = t.id
+     LEFT JOIN (SELECT tenant_id, COUNT(*) AS total_users FROM users GROUP BY tenant_id) u ON u.tenant_id = t.id
+     LEFT JOIN (SELECT tenant_id, COUNT(*) AS total_doctors FROM doctors GROUP BY tenant_id) d ON d.tenant_id = t.id
      WHERE ${whereClause}
      ORDER BY t.created_at DESC LIMIT $${paramIdx} OFFSET $${paramIdx + 1}`,
     params
@@ -84,21 +87,27 @@ export const listTenants = async (
 };
 
 export const getTenantDetail = async (tenantId: string): Promise<Record<string, unknown>> => {
-  const tenantResult = await pool.query<TenantRow>('SELECT * FROM tenants WHERE id = $1', [tenantId]);
+  const tenantResult = await readPool.query<TenantRow>(
+    'SELECT id, name, domain, locale, timezone, config, active, created_at, updated_at FROM tenants WHERE id = $1', [tenantId]
+  );
   if (tenantResult.rows.length === 0) throw new NotFoundError(E.SA_TENANT_NOT_FOUND);
   const tenant = tenantResult.rows[0];
-  const statsResult = await pool.query(`
+  const statsResult = await readPool.query(`
     SELECT
-      (SELECT COUNT(*) FROM users WHERE tenant_id = $1 AND role IN ('user', 'patient')) as total_patients,
-      (SELECT COUNT(*) FROM doctors WHERE tenant_id = $1) as total_doctors,
-      (SELECT COUNT(*) FROM users WHERE tenant_id = $1) as total_users,
-      (SELECT COUNT(*) FROM bookings WHERE tenant_id = $1) as total_bookings,
-      (SELECT COUNT(*) FROM bookings WHERE tenant_id = $1 AND status != 'cancelled') as confirmed_bookings,
-      (SELECT COUNT(*) FROM invoices WHERE tenant_id = $1) as invoice_count,
-      (SELECT COUNT(*) FROM lab_requests WHERE tenant_id = $1) as lab_request_count
+      COALESCE(SUM(CASE WHEN u.role IN ('user', 'patient') THEN 1 ELSE 0 END), 0) AS total_patients,
+      COUNT(DISTINCT d.id) AS total_doctors,
+      COUNT(DISTINCT u.id) AS total_users,
+      COUNT(DISTINCT b.id) AS total_bookings,
+      COUNT(DISTINCT b.id) FILTER (WHERE b.status != 'cancelled') AS confirmed_bookings,
+      COALESCE((SELECT COUNT(*) FROM invoices i WHERE i.tenant_id = $1), 0) AS invoice_count,
+      COALESCE((SELECT COUNT(*) FROM lab_requests lr WHERE lr.tenant_id = $1), 0) AS lab_request_count
+    FROM users u
+    LEFT JOIN doctors d ON d.tenant_id = u.tenant_id
+    LEFT JOIN bookings b ON b.tenant_id = u.tenant_id
+    WHERE u.tenant_id = $1
   `, [tenantId]);
 
-  const subResult = await pool.query(
+  const subResult = await readPool.query(
     `SELECT p.name AS plan_name, p.code AS plan_code
      FROM subscriptions s
      JOIN plans p ON p.id = s.plan_id
@@ -224,7 +233,7 @@ export const listUsers = async (
 
   const whereClause = conditions.join(' AND ');
 
-  const countResult = await pool.query(
+  const countResult = await readPool.query(
     `SELECT COUNT(*) as total FROM users u WHERE ${whereClause}`,
     params
   );
@@ -233,7 +242,7 @@ export const listUsers = async (
   const offset = (page - 1) * limit;
   params.push(limit, offset);
 
-  const result = await pool.query(
+  const result = await readPool.query(
     `SELECT u.id, u.email, u.name, u.role, u.rut, u.phone, u.tenant_id, u.active,
             u.password_changed, u.totp_enabled, u.created_at, u.last_activity_at
      FROM users u WHERE ${whereClause}
@@ -271,7 +280,7 @@ export const getGlobalStats = async (): Promise<{
   total_bookings: number;
   total_revenue: number;
 }> => {
-  const result = await pool.query(`
+  const result = await readPool.query(`
     SELECT
       (SELECT COUNT(*) FROM tenants) as total_tenants,
       (SELECT COUNT(*) FROM tenants WHERE active = true) as active_tenants,
@@ -284,7 +293,7 @@ export const getGlobalStats = async (): Promise<{
 };
 
 export const getGlobalDashboard = async (): Promise<Record<string, unknown>> => {
-  const result = await pool.query(`
+  const result = await readPool.query(`
     SELECT
       (SELECT COUNT(*) FROM tenants)::int AS total_tenants,
       (SELECT COUNT(*) FROM tenants WHERE active = true)::int AS active_tenants,
@@ -317,7 +326,7 @@ export const getGlobalDashboard = async (): Promise<Record<string, unknown>> => 
 };
 
 export const getPlanDistribution = async (): Promise<{ plan: string; code: string; count: string }[]> => {
-  const result = await pool.query(`
+  const result = await readPool.query(`
     SELECT p.name AS plan, p.code, COUNT(*)::text AS count
     FROM subscriptions s
     JOIN plans p ON p.id = s.plan_id
@@ -340,7 +349,7 @@ export const getTopTenants = async (
   };
   const metricSql = metricMap[metric] || metricMap.bookings;
 
-  const result = await pool.query(`
+  const result = await readPool.query(`
     SELECT
       t.id, t.name, t.domain, t.active, t.created_at,
       ${metricSql} AS metric_value,
@@ -355,7 +364,7 @@ export const getTopTenants = async (
 };
 
 export const getRevenueAnalytics = async (months: number = 12): Promise<Record<string, unknown>[]> => {
-  const result = await pool.query(`
+  const result = await readPool.query(`
     SELECT
       TO_CHAR(paid_at, 'YYYY-MM') AS month,
       COUNT(*)::int AS invoices,
@@ -369,7 +378,7 @@ export const getRevenueAnalytics = async (months: number = 12): Promise<Record<s
 };
 
 export const getTenantGrowthMetrics = async (tenantId: string, months: number = 12): Promise<Record<string, unknown>[]> => {
-  const result = await pool.query(`
+  const result = await readPool.query(`
     SELECT
       m.month,
       COALESCE(u.new_users, 0)::int AS new_users,
@@ -401,7 +410,7 @@ export const getTenantGrowthMetrics = async (tenantId: string, months: number = 
 };
 
 export const getGrowthMetrics = async (months: number = 12): Promise<Record<string, unknown>[]> => {
-  const result = await pool.query(`
+  const result = await readPool.query(`
     SELECT
       m.month,
       COALESCE(t.new_tenants, 0)::int AS new_tenants,
@@ -428,7 +437,7 @@ export const getGrowthMetrics = async (months: number = 12): Promise<Record<stri
 };
 
 export const getTenantHealthScores = async (): Promise<Record<string, unknown>[]> => {
-  const result = await pool.query(`
+  const result = await readPool.query(`
     WITH tenant_activity AS (
       SELECT
         t.id, t.name, t.active, t.created_at,
@@ -491,7 +500,7 @@ export const getTenantHealthDetail = async (tenantId: string): Promise<Record<st
 };
 
 export const getOperationMetrics = async (months: number = 6): Promise<Record<string, unknown>> => {
-  const specialtiesResult = await pool.query(`
+  const specialtiesResult = await readPool.query(`
     SELECT s.name, COUNT(b.id)::int AS total
     FROM specialties s
     JOIN doctors d ON d.specialty = s.name
@@ -500,7 +509,7 @@ export const getOperationMetrics = async (months: number = 6): Promise<Record<st
     ORDER BY total DESC
   `, [months]);
 
-  const cancellationRate = await pool.query(`
+  const cancellationRate = await readPool.query(`
     SELECT
       ROUND(
         (COUNT(*) FILTER (WHERE status = 'cancelled')::numeric /
@@ -512,7 +521,7 @@ export const getOperationMetrics = async (months: number = 6): Promise<Record<st
     WHERE date >= NOW() - INTERVAL '1 month' * $1
   `, [months]);
 
-  const noShowResult = await pool.query(`
+  const noShowResult = await readPool.query(`
     SELECT
       ROUND(
         (COUNT(*) FILTER (WHERE b.status = 'confirmed' AND cr.id IS NULL)::numeric /
@@ -523,14 +532,14 @@ export const getOperationMetrics = async (months: number = 6): Promise<Record<st
     WHERE b.date >= NOW() - INTERVAL '1 month' * $1 AND b.date <= CURRENT_DATE
   `, [months]);
 
-  const avgLeadTime = await pool.query(`
+  const avgLeadTime = await readPool.query(`
     SELECT
       ROUND(AVG(EXTRACT(DAY FROM (b.date + b.time) - b.created_at))::numeric, 1) AS avg_lead_days
     FROM bookings b
     WHERE b.created_at >= NOW() - INTERVAL '1 month' * $1
   `, [months]);
 
-  const topDoctors = await pool.query(`
+  const topDoctors = await readPool.query(`
     SELECT d.name, COUNT(b.id)::int AS total_bookings,
       ROW_NUMBER() OVER (ORDER BY COUNT(b.id) DESC) AS rank
     FROM doctors d
@@ -540,7 +549,7 @@ export const getOperationMetrics = async (months: number = 6): Promise<Record<st
     LIMIT 10
   `, [months]);
 
-  const hourlyDemand = await pool.query(`
+  const hourlyDemand = await readPool.query(`
     SELECT EXTRACT(DOW FROM date)::int AS day_of_week, EXTRACT(HOUR FROM time)::int AS hour, COUNT(*)::int AS bookings
     FROM bookings
     WHERE date >= NOW() - INTERVAL '1 month' * $1 AND status != 'cancelled'
@@ -561,7 +570,7 @@ export const getOperationMetrics = async (months: number = 6): Promise<Record<st
 };
 
 export const getChurnMetrics = async (months: number = 12): Promise<Record<string, unknown>> => {
-  const result = await pool.query(`
+  const result = await readPool.query(`
     WITH months AS (
       SELECT TO_CHAR(generate_series(NOW() - INTERVAL '1 month' * $1, NOW(), '1 month'), 'YYYY-MM') AS month
     ),
@@ -598,7 +607,7 @@ export const getChurnMetrics = async (months: number = 12): Promise<Record<strin
   const retentionRate = Math.round((1 - (churnRate / 100)) * 100 * 10) / 10;
   const annualRetention = Math.round(Math.pow(retentionRate / 100, 12) * 100 * 10) / 10;
 
-  const mrrResult = await pool.query(`
+  const mrrResult = await readPool.query(`
     SELECT COALESCE(SUM(amount), 0) AS mrr
     FROM subscription_invoices
     WHERE status = 'paid' AND paid_at >= NOW() - INTERVAL '30 days'
@@ -616,7 +625,7 @@ export const getChurnMetrics = async (months: number = 12): Promise<Record<strin
 };
 
 export const getComparisonTable = async (): Promise<Record<string, unknown>[]> => {
-  const result = await pool.query(`
+  const result = await readPool.query(`
     SELECT
       t.id, t.name, t.active, t.created_at,
       p.name AS plan_name, p.code AS plan_code,
@@ -647,7 +656,7 @@ export const getComparisonTable = async (): Promise<Record<string, unknown>[]> =
 };
 
 export const getOccupancyMetrics = async (): Promise<Record<string, unknown>[]> => {
-  const result = await pool.query(`
+  const result = await readPool.query(`
     SELECT
       t.id, t.name,
       COUNT(DISTINCT da.id)::int AS total_slots,
@@ -668,7 +677,7 @@ export const getOccupancyMetrics = async (): Promise<Record<string, unknown>[]> 
 };
 
 export const getActivityMetrics = async (): Promise<Record<string, unknown>[]> => {
-  const result = await pool.query(`
+  const result = await readPool.query(`
     SELECT
       t.id, t.name, t.active,
       MAX(b.created_at) AS last_booking,
@@ -851,7 +860,7 @@ export const getBillingSummary = async (options: { tenantId?: string; search?: s
 
   const whereClause = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : '';
 
-  const result = await pool.query(
+  const result = await readPool.query(
     `SELECT
        t.id,
        t.name,

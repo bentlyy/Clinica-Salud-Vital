@@ -1,4 +1,4 @@
-import { pool } from '../../shared/db.js';
+import { pool, readPool } from '../../shared/db.js';
 import { NotFoundError, BadRequestError } from '../../utils/errors.js';
 import { E } from '../../utils/error-codes.js';
 
@@ -22,8 +22,8 @@ interface PrescriptionUpdate {
 }
 
 export const getPrescriptionsByClinicalRecord = async (clinical_record_id: number, tenantId: string) => {
-  const result = await pool.query(`
-    SELECT * FROM prescriptions 
+  const result = await readPool.query(`
+    SELECT id, clinical_record_id, medication, dosage, frequency, duration, instructions, route, created_at, tenant_id FROM prescriptions 
     WHERE clinical_record_id = $1 AND tenant_id = $2
     ORDER BY created_at DESC
   `, [clinical_record_id, tenantId]);
@@ -32,8 +32,8 @@ export const getPrescriptionsByClinicalRecord = async (clinical_record_id: numbe
 };
 
 export const getPrescriptionById = async (id: string | number, tenantId: string) => {
-  const result = await pool.query(`
-    SELECT p.*, cr.patient_id, cr.doctor_id
+  const result = await readPool.query(`
+    SELECT p.id, p.clinical_record_id, p.medication, p.dosage, p.frequency, p.duration, p.instructions, p.route, p.created_at, p.tenant_id, cr.patient_id, cr.doctor_id
     FROM prescriptions p
     JOIN clinical_records cr ON p.clinical_record_id = cr.id
     WHERE p.id = $1 AND p.tenant_id = $2
@@ -80,7 +80,7 @@ export const createPrescription = async (data: PrescriptionData, doctor_id: numb
     const result = await client.query(`
       INSERT INTO prescriptions (${columns.join(', ')})
       VALUES (${values.map((_, i) => '$' + (i + 1)).join(', ')})
-      RETURNING *
+      RETURNING id, clinical_record_id, medication, dosage, frequency, duration, instructions, route, created_at, tenant_id
     `, values);
 
     await client.query('COMMIT');
@@ -105,15 +105,15 @@ export const updatePrescription = async (id: string | number, data: Prescription
       route = COALESCE($6, route)
     FROM clinical_records cr
     WHERE p.id = $7 AND p.clinical_record_id = cr.id AND cr.doctor_id = $8 AND p.tenant_id = $9
-    RETURNING p.*
+    RETURNING p.id, p.clinical_record_id, p.medication, p.dosage, p.frequency, p.duration, p.instructions, p.route, p.created_at, p.tenant_id
   `, [data.medication, data.dosage, data.frequency, data.duration, data.instructions, data.route, id, doctor_id, tenantId]);
 
   if (result.rows.length === 0) throw new NotFoundError(E.PRESCRIPTION_UNAUTHORIZED);
   return result.rows[0];
 };
 
-export const getAllPrescriptions = async (tenantId: string) => {
-  const result = await pool.query(`
+export const getAllPrescriptions = async (tenantId: string, limit: number = 100, offset: number = 0) => {
+  const result = await readPool.query(`
     SELECT cr.id AS clinical_record_id, cr.patient_id, cr.doctor_id,
            u.name AS patient_name,
            d.name AS doctor_name,
@@ -137,12 +137,13 @@ export const getAllPrescriptions = async (tenantId: string) => {
     WHERE cr.tenant_id = $1
     GROUP BY cr.id, u.name, d.name, cr.created_at
     ORDER BY cr.created_at DESC
-  `, [tenantId]);
+    LIMIT $2 OFFSET $3
+  `, [tenantId, limit, offset]);
   return result.rows;
 };
 
 export const getMyPrescriptions = async (patientId: number, tenantId: string) => {
-  const result = await pool.query(`
+  const result = await readPool.query(`
     SELECT cr.id AS clinical_record_id, cr.patient_id, cr.doctor_id,
            u.name AS patient_name,
            d.name AS doctor_name,
@@ -175,7 +176,7 @@ export const deletePrescription = async (id: string | number, doctor_id: number,
     DELETE FROM prescriptions p
     USING clinical_records cr
     WHERE p.id = $1 AND p.clinical_record_id = cr.id AND cr.doctor_id = $2 AND p.tenant_id = $3
-    RETURNING p.*
+    RETURNING p.id
   `, [id, doctor_id, tenantId]);
 
   if (result.rows.length === 0) throw new NotFoundError(E.PRESCRIPTION_UNAUTHORIZED);

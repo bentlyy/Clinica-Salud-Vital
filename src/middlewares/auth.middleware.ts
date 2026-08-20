@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { jwtManager } from '../shared/jwt.service.js';
 import { UserRole } from '../types/index.js';
 import { UnauthorizedError, ForbiddenError, toError } from '../utils/errors.js';
-import { pool } from '../shared/db.js';
+import { readPool } from '../shared/db.js';
 import { logger } from '../utils/logger.js';
 
 export interface JwtUser {
@@ -75,11 +75,11 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
 
   try {
     const result = user.role === 'superadmin'
-      ? await pool.query(
+      ? await readPool.query(
           'SELECT token_version, active FROM users WHERE id = $1',
           [user.id]
         )
-      : await pool.query(
+      : await readPool.query(
           'SELECT token_version, active FROM users WHERE id = $1 AND tenant_id = $2',
           [user.id, user.tenant_id]
         );
@@ -97,7 +97,9 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
       return;
     }
   } catch (err) {
-    logger.warn('Token version verification failed (non-critical)', { error: toError(err).message });
+    logger.error('Token version verification failed', { error: toError(err).message, userId: user.id });
+    next(new UnauthorizedError('Token verification failed'));
+    return;
   }
 
   req.user = user;

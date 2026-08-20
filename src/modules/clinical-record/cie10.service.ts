@@ -21,7 +21,7 @@ interface Cie10Update {
 }
 
 export const searchCie10 = async ({ query, category, limit = 50, offset = 0 }: Cie10Query = {}) => {
-  let sql = `SELECT * FROM cie10_catalog WHERE 1=1`;
+  let sql = `SELECT id, code, description, category, created_at FROM cie10_catalog WHERE 1=1`;
   const params: (string | number)[] = [];
   let paramCount = 1;
 
@@ -45,7 +45,7 @@ export const searchCie10 = async ({ query, category, limit = 50, offset = 0 }: C
 };
 
 export const getCie10ByCode = async (code: string) => {
-  const result = await pool.query('SELECT * FROM cie10_catalog WHERE code = $1', [code]);
+  const result = await pool.query('SELECT id, code, description, category, created_at FROM cie10_catalog WHERE code = $1', [code]);
 
   if (result.rows.length === 0) throw new NotFoundError(E.CIE10_NOT_FOUND);
   return result.rows[0];
@@ -53,7 +53,7 @@ export const getCie10ByCode = async (code: string) => {
 
 export const createCie10Entry = async ({ code, description, category }: Cie10Data) => {
   const result = await pool.query(
-    `INSERT INTO cie10_catalog (code, description, category) VALUES ($1, $2, $3) RETURNING *`,
+    `INSERT INTO cie10_catalog (code, description, category) VALUES ($1, $2, $3) RETURNING id, code, description, category, created_at`,
     [code, description, category || null]
   );
 
@@ -62,7 +62,7 @@ export const createCie10Entry = async ({ code, description, category }: Cie10Dat
 
 export const updateCie10Entry = async (id: number, { description, category }: Cie10Update) => {
   const result = await pool.query(
-    `UPDATE cie10_catalog SET description = COALESCE($1, description), category = COALESCE($2, category), updated_at = NOW() WHERE id = $3 RETURNING *`,
+    `UPDATE cie10_catalog SET description = COALESCE($1, description), category = COALESCE($2, category), updated_at = NOW() WHERE id = $3 RETURNING id, code, description, category, created_at`,
     [description, category, id]
   );
 
@@ -71,7 +71,7 @@ export const updateCie10Entry = async (id: number, { description, category }: Ci
 };
 
 export const deleteCie10Entry = async (id: number) => {
-  const result = await pool.query('DELETE FROM cie10_catalog WHERE id = $1 RETURNING *', [id]);
+  const result = await pool.query('DELETE FROM cie10_catalog WHERE id = $1 RETURNING id', [id]);
 
   if (result.rows.length === 0) throw new NotFoundError(E.CIE10_NOT_FOUND);
   return { message: 'CIE-10 entry deleted successfully' };

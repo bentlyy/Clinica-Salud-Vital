@@ -1,4 +1,4 @@
-import { pool } from '../../shared/db.js';
+import { pool, readPool } from '../../shared/db.js';
 import { NotFoundError, BadRequestError } from '../../utils/errors.js';
 import { E } from '../../utils/error-codes.js';
 import { createNotification } from '../notifications/notification.service.js';
@@ -44,7 +44,7 @@ export interface LabTestInput {
 }
 
 export const getLabTests = async ({ category, active = true, areaId, limit = 50, offset = 0 }: LabTestFilters = {}, tenantId?: string) => {
-  let query = 'SELECT * FROM lab_tests WHERE 1=1';
+  let query = 'SELECT id, name, description, code, category, unit, reference_min, reference_max, price, reference_ranges, lab_area_id, result_type, result_options, decimals, unit_alt, conversion_factor, critical_min, critical_max, delta_check_pct, turnaround_time_min, preparation_instructions, sample_type, container_type, volume_ml, active, created_at, updated_at, tenant_id FROM lab_tests WHERE 1=1';
   const params: any[] = [];
   let paramCount = 1;
 
@@ -71,7 +71,7 @@ export const getLabTests = async ({ category, active = true, areaId, limit = 50,
   query += ' ORDER BY name LIMIT $' + paramCount++ + ' OFFSET $' + paramCount++;
   params.push(limit, offset);
 
-  const result = await pool.query(query, params);
+  const result = await readPool.query(query, params);
   return result.rows;
 };
 
@@ -256,7 +256,7 @@ export const getLabRequests = async ({ patient_id, doctor_id, status, start_date
   params.push(offset);
   query += ' OFFSET $' + params.length;
 
-  const result = await pool.query(query, params);
+  const result = await readPool.query(query, params);
   return result.rows;
 };
 
@@ -270,7 +270,7 @@ export const updateLabRequestStatus = async (requestId: number | string, status:
 };
 
 export const getLabRequestById = async (requestId: number | string, tenantId: string) => {
-  const result = await pool.query(`
+  const result = await readPool.query(`
     SELECT lr.*,
            d.name AS doctor_name, d.specialty AS doctor_specialty,
            u.name AS patient_name,
@@ -330,7 +330,7 @@ export const getAllLabRequestsForLab = async (statusFilter: string | undefined, 
 
   query += ' GROUP BY lr.id, d.id, u.id ORDER BY lr.created_at DESC';
 
-  const result = await pool.query(query, params);
+  const result = await readPool.query(query, params);
   return result.rows;
 };
 
@@ -372,71 +372,68 @@ export const getDashboardMetrics = async (tenantId: string, areaId?: number | nu
   const areaFilter = areaId ? ' AND lr.lab_area_id = $2' : '';
   const areaParam = areaId ? [tenantId, areaId] : [tenantId];
 
-  const statusCounts = await pool.query(`
-    SELECT
-      COUNT(*) FILTER (WHERE lr.status = 'pending') AS pending,
-      COUNT(*) FILTER (WHERE lr.status = 'received') AS received,
-      COUNT(*) FILTER (WHERE lr.status IN ('verified', 'assigned', 'processing', 'qc_review', 'result_entered')) AS in_progress,
-      COUNT(*) FILTER (WHERE lr.status IN ('validated_tech', 'validated_doctor')) AS pending_validation,
-      COUNT(*) FILTER (WHERE lr.status = 'signed') AS validated,
-      COUNT(*) FILTER (WHERE lr.status = 'delivered') AS delivered,
-      COUNT(*) FILTER (WHERE lr.status IN ('cancelled', 'rejected')) AS rejected,
-      COUNT(*) FILTER (WHERE lr.status = 'repeated') AS repeated,
-      COUNT(*) FILTER (WHERE lr.priority IN ('urgent', 'emergency') AND lr.status NOT IN ('delivered', 'cancelled')) AS urgent,
-      COUNT(*) FILTER (WHERE lri.is_critical = true AND lri.status NOT IN ('validated_tech', 'validated_doctor', 'signed', 'delivered')) AS critical_unvalidated
-    FROM lab_requests lr
-    LEFT JOIN lab_request_items lri ON lri.lab_request_id = lr.id
-    WHERE lr.tenant_id = $1${areaFilter}
-  `, areaParam);
-
-  const avgTime = await pool.query(`
-    SELECT COALESCE(AVG(EXTRACT(EPOCH FROM (lri.completed_at - lr.created_at)) / 60), 0) AS avg_minutes
-    FROM lab_request_items lri
-    JOIN lab_requests lr ON lr.id = lri.lab_request_id
-    WHERE lr.tenant_id = $1
-      AND lri.completed_at IS NOT NULL
-      AND lr.created_at >= NOW() - INTERVAL '30 days'
-      ${areaId ? 'AND lr.lab_area_id = $2' : ''}
-  `, areaParam);
-
-  const today = await pool.query(`
-    SELECT COUNT(*) AS count
-    FROM lab_samples
-    WHERE tenant_id = $1 AND reception_time >= NOW() - INTERVAL '24 hours'
-      ${areaId ? 'AND lab_request_id IN (SELECT id FROM lab_requests WHERE lab_area_id = $2)' : ''}
-  `, areaParam);
-
-  const productivity = await pool.query(`
-    SELECT
-      COUNT(*) FILTER (WHERE reception_time >= NOW() - INTERVAL '1 hour') AS per_hour
-    FROM lab_samples
-    WHERE tenant_id = $1 AND reception_time >= NOW() - INTERVAL '24 hours'
-  `, [tenantId]);
-
-  const slaBreached = await pool.query(`
-    SELECT COUNT(*) AS count
-    FROM lab_request_items lri
-    JOIN lab_requests lr ON lr.id = lri.lab_request_id
-    JOIN lab_tests lt ON lt.id = lri.lab_test_id
-    WHERE lr.tenant_id = $1
-      AND lt.turnaround_time_min IS NOT NULL
-      AND lri.completed_at IS NOT NULL
-      AND EXTRACT(EPOCH FROM (lri.completed_at - lr.created_at)) / 60 > lt.turnaround_time_min
-      ${areaId ? 'AND lr.lab_area_id = $2' : ''}
-  `, areaParam);
-
-  const slaAtRisk = await pool.query(`
-    SELECT COUNT(*) AS count
-    FROM lab_request_items lri
-    JOIN lab_requests lr ON lr.id = lri.lab_request_id
-    JOIN lab_tests lt ON lt.id = lri.lab_test_id
-    WHERE lr.tenant_id = $1
-      AND lt.turnaround_time_min IS NOT NULL
-      AND lri.completed_at IS NULL
-      AND lr.status NOT IN ('delivered', 'cancelled', 'rejected')
-      AND EXTRACT(EPOCH FROM (NOW() - lr.created_at)) / 60 > lt.turnaround_time_min * 0.8
-      ${areaId ? 'AND lr.lab_area_id = $2' : ''}
-  `, areaParam);
+  const [statusCounts, avgTime, today, productivity, slaBreached, slaAtRisk] = await Promise.all([
+    readPool.query(`
+      SELECT
+        COUNT(*) FILTER (WHERE lr.status = 'pending') AS pending,
+        COUNT(*) FILTER (WHERE lr.status = 'received') AS received,
+        COUNT(*) FILTER (WHERE lr.status IN ('verified', 'assigned', 'processing', 'qc_review', 'result_entered')) AS in_progress,
+        COUNT(*) FILTER (WHERE lr.status IN ('validated_tech', 'validated_doctor')) AS pending_validation,
+        COUNT(*) FILTER (WHERE lr.status = 'signed') AS validated,
+        COUNT(*) FILTER (WHERE lr.status = 'delivered') AS delivered,
+        COUNT(*) FILTER (WHERE lr.status IN ('cancelled', 'rejected')) AS rejected,
+        COUNT(*) FILTER (WHERE lr.status = 'repeated') AS repeated,
+        COUNT(*) FILTER (WHERE lr.priority IN ('urgent', 'emergency') AND lr.status NOT IN ('delivered', 'cancelled')) AS urgent,
+        COUNT(*) FILTER (WHERE lri.is_critical = true AND lri.status NOT IN ('validated_tech', 'validated_doctor', 'signed', 'delivered')) AS critical_unvalidated
+      FROM lab_requests lr
+      LEFT JOIN lab_request_items lri ON lri.lab_request_id = lr.id
+      WHERE lr.tenant_id = $1${areaFilter}
+    `, areaParam),
+    readPool.query(`
+      SELECT COALESCE(AVG(EXTRACT(EPOCH FROM (lri.completed_at - lr.created_at)) / 60), 0) AS avg_minutes
+      FROM lab_request_items lri
+      JOIN lab_requests lr ON lr.id = lri.lab_request_id
+      WHERE lr.tenant_id = $1
+        AND lri.completed_at IS NOT NULL
+        AND lr.created_at >= NOW() - INTERVAL '30 days'
+        ${areaId ? 'AND lr.lab_area_id = $2' : ''}
+    `, areaParam),
+    readPool.query(`
+      SELECT COUNT(*) AS count
+      FROM lab_samples
+      WHERE tenant_id = $1 AND reception_time >= NOW() - INTERVAL '24 hours'
+        ${areaId ? 'AND lab_request_id IN (SELECT id FROM lab_requests WHERE lab_area_id = $2)' : ''}
+    `, areaParam),
+    readPool.query(`
+      SELECT
+        COUNT(*) FILTER (WHERE reception_time >= NOW() - INTERVAL '1 hour') AS per_hour
+      FROM lab_samples
+      WHERE tenant_id = $1 AND reception_time >= NOW() - INTERVAL '24 hours'
+    `, [tenantId]),
+    readPool.query(`
+      SELECT COUNT(*) AS count
+      FROM lab_request_items lri
+      JOIN lab_requests lr ON lr.id = lri.lab_request_id
+      JOIN lab_tests lt ON lt.id = lri.lab_test_id
+      WHERE lr.tenant_id = $1
+        AND lt.turnaround_time_min IS NOT NULL
+        AND lri.completed_at IS NOT NULL
+        AND EXTRACT(EPOCH FROM (lri.completed_at - lr.created_at)) / 60 > lt.turnaround_time_min
+        ${areaId ? 'AND lr.lab_area_id = $2' : ''}
+    `, areaParam),
+    readPool.query(`
+      SELECT COUNT(*) AS count
+      FROM lab_request_items lri
+      JOIN lab_requests lr ON lr.id = lri.lab_request_id
+      JOIN lab_tests lt ON lt.id = lri.lab_test_id
+      WHERE lr.tenant_id = $1
+        AND lt.turnaround_time_min IS NOT NULL
+        AND lri.completed_at IS NULL
+        AND lr.status NOT IN ('delivered', 'cancelled', 'rejected')
+        AND EXTRACT(EPOCH FROM (NOW() - lr.created_at)) / 60 > lt.turnaround_time_min * 0.8
+        ${areaId ? 'AND lr.lab_area_id = $2' : ''}
+    `, areaParam),
+  ]);
 
   const s = statusCounts.rows[0];
   const avg = avgTime.rows[0];
@@ -462,12 +459,12 @@ export const getDashboardMetrics = async (tenantId: string, areaId?: number | nu
 export const getAreaDashboard = async (tenantId: string, areaId: number) => {
   const [metrics, area] = await Promise.all([
     getDashboardMetrics(tenantId, areaId),
-    pool.query('SELECT * FROM lab_areas WHERE id = $1 AND tenant_id = $2', [areaId, tenantId]),
+    readPool.query('SELECT id, tenant_id, name, code, description, icon, color, sort_order, active, created_at FROM lab_areas WHERE id = $1 AND tenant_id = $2', [areaId, tenantId]),
   ]);
 
   if (area.rows.length === 0) throw new NotFoundError(E.LAB_AREA_NOT_FOUND);
 
-  const recentItems = await pool.query(`
+  const recentItems = await readPool.query(`
     SELECT lri.*, lt.name AS test_name
     FROM lab_request_items lri
     JOIN lab_tests lt ON lt.id = lri.lab_test_id
@@ -484,73 +481,68 @@ export const getAreaDashboard = async (tenantId: string, areaId: number) => {
 };
 
 export const getAnalyticsData = async (tenantId: string) => {
-  const daily = await pool.query(`
-    SELECT DATE(created_at) AS date, COUNT(*) AS count,
-           COUNT(*) FILTER (WHERE status = 'delivered') AS completed
-    FROM lab_requests
-    WHERE tenant_id = $1 AND created_at >= NOW() - INTERVAL '30 days'
-    GROUP BY DATE(created_at) ORDER BY date
-  `, [tenantId]);
-
-  const monthly = await pool.query(`
-    SELECT TO_CHAR(created_at, 'YYYY-MM') AS month, COUNT(*) AS count,
-           COUNT(*) FILTER (WHERE status = 'delivered') AS completed
-    FROM lab_requests
-    WHERE tenant_id = $1 AND created_at >= NOW() - INTERVAL '12 months'
-    GROUP BY month ORDER BY month
-  `, [tenantId]);
-
-  const byDoctor = await pool.query(`
-    SELECT d.name AS doctor_name, COUNT(*) AS count
-    FROM lab_requests lr
-    JOIN doctors d ON d.id = lr.doctor_id
-    WHERE lr.tenant_id = $1 AND lr.created_at >= NOW() - INTERVAL '6 months'
-    GROUP BY d.name ORDER BY count DESC
-  `, [tenantId]);
-
-  const byArea = await pool.query(`
-    SELECT la.name AS area_name, COUNT(*) AS count,
-           COALESCE(AVG(EXTRACT(EPOCH FROM (lri.completed_at - lr.created_at)) / 60), 0) AS avg_time_min
-    FROM lab_requests lr
-    JOIN lab_areas la ON la.id = lr.lab_area_id
-    LEFT JOIN lab_request_items lri ON lri.lab_request_id = lr.id AND lri.completed_at IS NOT NULL
-    WHERE lr.tenant_id = $1 AND lr.created_at >= NOW() - INTERVAL '6 months'
-    GROUP BY la.name ORDER BY count DESC
-  `, [tenantId]);
-
-  const topTests = await pool.query(`
-    SELECT lt.name AS test_name, COUNT(*) AS count
-    FROM lab_request_items lri
-    JOIN lab_tests lt ON lt.id = lri.lab_test_id
-    JOIN lab_requests lr ON lr.id = lri.lab_request_id
-    WHERE lr.tenant_id = $1 AND lr.created_at >= NOW() - INTERVAL '6 months'
-    GROUP BY lt.name ORDER BY count DESC LIMIT 20
-  `, [tenantId]);
-
-  const revenue = await pool.query(`
-    SELECT COALESCE(SUM(lt.price), 0) AS total
-    FROM lab_request_items lri
-    JOIN lab_tests lt ON lt.id = lri.lab_test_id
-    JOIN lab_requests lr ON lr.id = lri.lab_request_id
-    WHERE lr.tenant_id = $1 AND lr.created_at >= NOW() - INTERVAL '6 months'
-  `, [tenantId]);
-
-  const repeatRate = await pool.query(`
-    SELECT COUNT(*) FILTER (WHERE is_repeated = true) AS repeats, COUNT(*) AS total
-    FROM lab_request_items lri
-    JOIN lab_requests lr ON lr.id = lri.lab_request_id
-    WHERE lr.tenant_id = $1 AND lr.created_at >= NOW() - INTERVAL '6 months'
-  `, [tenantId]);
-
-  const slaData = await pool.query(`
-    SELECT
-      COUNT(*) FILTER (WHERE lt.turnaround_time_min IS NOT NULL AND EXTRACT(EPOCH FROM (lri.completed_at - lr.created_at)) / 60 <= lt.turnaround_time_min) AS met,
-      COUNT(*) FILTER (WHERE lt.turnaround_time_min IS NOT NULL) AS total
-    FROM lab_request_items lri
-    JOIN lab_requests lr ON lr.id = lri.lab_request_id
-    JOIN lab_tests lt ON lt.id = lri.lab_test_id
-    WHERE lr.tenant_id = $1 AND lri.completed_at IS NOT NULL AND lr.created_at >= NOW() - INTERVAL '6 months'
-  `, [tenantId]);
+  const [daily, monthly, byDoctor, byArea, topTests, revenue, repeatRate, slaData] = await Promise.all([
+    readPool.query(`
+      SELECT DATE(created_at) AS date, COUNT(*) AS count,
+             COUNT(*) FILTER (WHERE status = 'delivered') AS completed
+      FROM lab_requests
+      WHERE tenant_id = $1 AND created_at >= NOW() - INTERVAL '30 days'
+      GROUP BY DATE(created_at) ORDER BY date
+    `, [tenantId]),
+    readPool.query(`
+      SELECT TO_CHAR(created_at, 'YYYY-MM') AS month, COUNT(*) AS count,
+             COUNT(*) FILTER (WHERE status = 'delivered') AS completed
+      FROM lab_requests
+      WHERE tenant_id = $1 AND created_at >= NOW() - INTERVAL '12 months'
+      GROUP BY month ORDER BY month
+    `, [tenantId]),
+    readPool.query(`
+      SELECT d.name AS doctor_name, COUNT(*) AS count
+      FROM lab_requests lr
+      JOIN doctors d ON d.id = lr.doctor_id
+      WHERE lr.tenant_id = $1 AND lr.created_at >= NOW() - INTERVAL '6 months'
+      GROUP BY d.name ORDER BY count DESC
+    `, [tenantId]),
+    readPool.query(`
+      SELECT la.name AS area_name, COUNT(*) AS count,
+             COALESCE(AVG(EXTRACT(EPOCH FROM (lri.completed_at - lr.created_at)) / 60), 0) AS avg_time_min
+      FROM lab_requests lr
+      JOIN lab_areas la ON la.id = lr.lab_area_id
+      LEFT JOIN lab_request_items lri ON lri.lab_request_id = lr.id AND lri.completed_at IS NOT NULL
+      WHERE lr.tenant_id = $1 AND lr.created_at >= NOW() - INTERVAL '6 months'
+      GROUP BY la.name ORDER BY count DESC
+    `, [tenantId]),
+    readPool.query(`
+      SELECT lt.name AS test_name, COUNT(*) AS count
+      FROM lab_request_items lri
+      JOIN lab_tests lt ON lt.id = lri.lab_test_id
+      JOIN lab_requests lr ON lr.id = lri.lab_request_id
+      WHERE lr.tenant_id = $1 AND lr.created_at >= NOW() - INTERVAL '6 months'
+      GROUP BY lt.name ORDER BY count DESC LIMIT 20
+    `, [tenantId]),
+    readPool.query(`
+      SELECT COALESCE(SUM(lt.price), 0) AS total
+      FROM lab_request_items lri
+      JOIN lab_tests lt ON lt.id = lri.lab_test_id
+      JOIN lab_requests lr ON lr.id = lri.lab_request_id
+      WHERE lr.tenant_id = $1 AND lr.created_at >= NOW() - INTERVAL '6 months'
+    `, [tenantId]),
+    readPool.query(`
+      SELECT COUNT(*) FILTER (WHERE is_repeated = true) AS repeats, COUNT(*) AS total
+      FROM lab_request_items lri
+      JOIN lab_requests lr ON lr.id = lri.lab_request_id
+      WHERE lr.tenant_id = $1 AND lr.created_at >= NOW() - INTERVAL '6 months'
+    `, [tenantId]),
+    readPool.query(`
+      SELECT
+        COUNT(*) FILTER (WHERE lt.turnaround_time_min IS NOT NULL AND EXTRACT(EPOCH FROM (lri.completed_at - lr.created_at)) / 60 <= lt.turnaround_time_min) AS met,
+        COUNT(*) FILTER (WHERE lt.turnaround_time_min IS NOT NULL) AS total
+      FROM lab_request_items lri
+      JOIN lab_requests lr ON lr.id = lri.lab_request_id
+      JOIN lab_tests lt ON lt.id = lri.lab_test_id
+      WHERE lr.tenant_id = $1 AND lri.completed_at IS NOT NULL AND lr.created_at >= NOW() - INTERVAL '6 months'
+    `, [tenantId]),
+  ]);
 
   const rr = repeatRate.rows[0];
   const sla = slaData.rows[0];
@@ -596,7 +588,7 @@ const generateSampleCode = (tenantId: string) => {
 };
 
 export const getSamples = async (tenantId: string, query: any = {}) => {
-  let sql = 'SELECT * FROM lab_samples WHERE tenant_id = $1';
+  let sql = 'SELECT id, lab_request_item_id, lab_request_id, sample_type, sample_code, container_type, volume, received_by, reception_time, status, notes, created_at, updated_at, tenant_id FROM lab_samples WHERE tenant_id = $1';
   const params: any[] = [tenantId];
   let count = 2;
 
@@ -604,12 +596,12 @@ export const getSamples = async (tenantId: string, query: any = {}) => {
   if (query.lab_request_id) { sql += ` AND lab_request_id = $${count++}`; params.push(Number(query.lab_request_id)); }
 
   sql += ' ORDER BY created_at DESC LIMIT 100';
-  const result = await pool.query(sql, params);
+  const result = await readPool.query(sql, params);
   return result.rows;
 };
 
 export const getSampleById = async (id: number, tenantId: string) => {
-  const result = await pool.query('SELECT * FROM lab_samples WHERE id = $1 AND tenant_id = $2', [id, tenantId]);
+  const result = await readPool.query('SELECT id, lab_request_item_id, lab_request_id, sample_type, sample_code, container_type, volume, received_by, reception_time, status, notes, created_at, updated_at, tenant_id FROM lab_samples WHERE id = $1 AND tenant_id = $2', [id, tenantId]);
   if (result.rows.length === 0) throw new NotFoundError(E.LAB_SAMPLE_NOT_FOUND);
   return result.rows[0];
 };
@@ -727,43 +719,61 @@ export const signItem = async (itemId: number, userId: number, tenantId: string)
 };
 
 export const deliverItem = async (itemId: number, tenantId: string, method?: string) => {
-  const item = await pool.query(
-    `UPDATE lab_request_items SET status = 'delivered', delivered_at = NOW(), delivery_method = $1, updated_at = NOW()
-     WHERE id = $2 AND tenant_id = $3 RETURNING *`,
-    [method || null, itemId, tenantId]
-  );
-  if (item.rows.length === 0) throw new NotFoundError(E.LAB_ITEM_NOT_FOUND);
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
 
-  // Check if all items in request are delivered, update request status
-  const requestId = item.rows[0].lab_request_id;
-  const remaining = await pool.query(
-    `SELECT COUNT(*) AS count FROM lab_request_items
-     WHERE lab_request_id = $1 AND tenant_id = $2 AND status != 'delivered' AND status != 'cancelled'`,
-    [requestId, tenantId]
-  );
-  if (Number(remaining.rows[0]?.count || 0) === 0) {
-    const updated = await pool.query(
-      `UPDATE lab_requests SET status = 'delivered', completed_at = NOW(), updated_at = NOW() WHERE id = $1 AND tenant_id = $2 RETURNING patient_id, id`,
+    const item = await client.query(
+      `UPDATE lab_request_items SET status = 'delivered', delivered_at = NOW(), delivery_method = $1, updated_at = NOW()
+       WHERE id = $2 AND tenant_id = $3 RETURNING *`,
+      [method || null, itemId, tenantId]
+    );
+    if (item.rows.length === 0) throw new NotFoundError(E.LAB_ITEM_NOT_FOUND);
+
+    const requestId = item.rows[0].lab_request_id;
+    const remaining = await client.query(
+      `SELECT COUNT(*) AS count FROM lab_request_items
+       WHERE lab_request_id = $1 AND tenant_id = $2 AND status != 'delivered' AND status != 'cancelled'`,
       [requestId, tenantId]
     );
-    if (updated.rows.length > 0 && updated.rows[0].patient_id) {
-      void createNotification({
-        tenant_id: tenantId,
-        user_id: updated.rows[0].patient_id,
-        type: 'success',
-        title: 'Resultados publicados',
-        message: 'Tu informe de laboratorio ya está disponible. Revisa tus resultados en el portal.',
-        link: `/my-laboratory/${updated.rows[0].id}`,
-      }).catch(() => undefined);
-    }
-  }
 
-  return item.rows[0];
+    let notificationPayload: { tenant_id: string; user_id: number; type: 'success'; title: string; message: string; link: string } | null = null;
+
+    if (Number(remaining.rows[0]?.count || 0) === 0) {
+      const updated = await client.query(
+        `UPDATE lab_requests SET status = 'delivered', completed_at = NOW(), updated_at = NOW() WHERE id = $1 AND tenant_id = $2 RETURNING patient_id, id`,
+        [requestId, tenantId]
+      );
+      if (updated.rows.length > 0 && updated.rows[0].patient_id) {
+        notificationPayload = {
+          tenant_id: tenantId,
+          user_id: Number(updated.rows[0].patient_id),
+          type: 'success',
+          title: 'Resultados publicados',
+          message: 'Tu informe de laboratorio ya está disponible. Revisa tus resultados en el portal.',
+          link: `/my-laboratory/${updated.rows[0].id}`,
+        };
+      }
+    }
+
+    await client.query('COMMIT');
+
+    if (notificationPayload) {
+      void createNotification(notificationPayload).catch(() => undefined);
+    }
+
+    return item.rows[0];
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
+  }
 };
 
 export const getItemHistory = async (itemId: number, tenantId: string) => {
   // Get the test and patient from the current item
-  const item = await pool.query(
+  const item = await readPool.query(
     `SELECT lri.lab_test_id, lr.patient_id FROM lab_request_items lri
      JOIN lab_requests lr ON lr.id = lri.lab_request_id
      WHERE lri.id = $1 AND lr.tenant_id = $2`,
@@ -773,7 +783,7 @@ export const getItemHistory = async (itemId: number, tenantId: string) => {
 
   const { lab_test_id, patient_id } = item.rows[0];
 
-  const history = await pool.query(
+  const history = await readPool.query(
     `SELECT lri.id, lri.result_value, lr.created_at AS checked_at,
             LAG(lri.result_value) OVER (ORDER BY lr.created_at) AS previous_result_value
      FROM lab_request_items lri
@@ -813,8 +823,8 @@ export const getItemHistory = async (itemId: number, tenantId: string) => {
 // AREAS
 // ============================================================
 export const getLabAreas = async (tenantId: string) => {
-  const result = await pool.query(
-    'SELECT * FROM lab_areas WHERE tenant_id = $1 AND active = true ORDER BY sort_order',
+  const result = await readPool.query(
+    'SELECT id, tenant_id, name, code, description, icon, color, sort_order, active, created_at FROM lab_areas WHERE tenant_id = $1 AND active = true ORDER BY sort_order',
     [tenantId]
   );
   return result.rows;
@@ -833,7 +843,7 @@ export const createLabArea = async (data: any, tenantId: string) => {
 // QC RECORDS
 // ============================================================
 export const getQCRecords = async (tenantId: string, query: any = {}) => {
-  let sql = 'SELECT * FROM lab_qc_records WHERE tenant_id = $1';
+  let sql = 'SELECT id, lab_test_id, lab_area_id, sample_id, equipment_id, reagent_id, qc_type, control_name, lot_number, expiration_date, measured_value, expected_min, expected_max, status, performed_by, notes, created_at, updated_at, tenant_id FROM lab_qc_records WHERE tenant_id = $1';
   const params: any[] = [tenantId];
   let count = 2;
 
@@ -841,7 +851,7 @@ export const getQCRecords = async (tenantId: string, query: any = {}) => {
   if (query.status) { sql += ` AND status = $${count++}`; params.push(query.status); }
 
   sql += ' ORDER BY performed_at DESC LIMIT 50';
-  const result = await pool.query(sql, params);
+  const result = await readPool.query(sql, params);
   return result.rows;
 };
 
@@ -880,7 +890,7 @@ export const getQCStatistics = async (tenantId: string, areaId?: number | null) 
 
   if (areaId) { sql += ' AND lab_area_id = $2'; params.push(areaId); }
 
-  const result = await pool.query(sql, params);
+  const result = await readPool.query(sql, params);
   return result.rows[0] || { total: 0, passed: 0, failed: 0, warning: 0 };
 };
 
@@ -896,7 +906,7 @@ export const getEquipment = async (tenantId: string, query: any = {}) => {
   if (query.active !== undefined) { sql += ` AND le.active = $${count++}`; params.push(query.active === 'true'); }
 
   sql += ' ORDER BY le.name';
-  const result = await pool.query(sql, params);
+  const result = await readPool.query(sql, params);
   return result.rows;
 };
 
@@ -937,7 +947,7 @@ export const updateEquipment = async (id: number, data: any, tenantId: string) =
 // REAGENTS
 // ============================================================
 export const getReagents = async (tenantId: string, query: any = {}) => {
-  let sql = 'SELECT * FROM lab_reagents WHERE tenant_id = $1';
+  let sql = 'SELECT id, name, catalog_number, lot_number, supplier, stock_quantity, unit, min_stock, current_stock, expiration_date, storage_conditions, lab_test_id, lab_area_id, active, created_at, updated_at, tenant_id FROM lab_reagents WHERE tenant_id = $1';
   const params: any[] = [tenantId];
   let count = 2;
 
@@ -945,7 +955,7 @@ export const getReagents = async (tenantId: string, query: any = {}) => {
   if (query.active !== undefined) { sql += ` AND active = $${count++}`; params.push(query.active === 'true'); }
 
   sql += ' ORDER BY name';
-  const result = await pool.query(sql, params);
+  const result = await readPool.query(sql, params);
   return result.rows;
 };
 
@@ -987,7 +997,7 @@ export const updateReagentStock = async (id: number, quantity: number, tenantId:
 // ============================================================
 export const getNotifications = async (tenantId: string, query: any = {}) => {
   const limit = Number(query.limit) || 50;
-  let sql = 'SELECT * FROM lab_notifications WHERE tenant_id = $1';
+  let sql = 'SELECT id, type, title, message, severity, lab_request_id, acknowledged, acknowledged_by, acknowledged_at, created_at, tenant_id FROM lab_notifications WHERE tenant_id = $1';
   const params: any[] = [tenantId];
   let count = 2;
 
@@ -997,7 +1007,7 @@ export const getNotifications = async (tenantId: string, query: any = {}) => {
   sql += ' ORDER BY created_at DESC LIMIT $' + count++;
   params.push(limit);
 
-  const result = await pool.query(sql, params);
+  const result = await readPool.query(sql, params);
   return result.rows;
 };
 
