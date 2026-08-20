@@ -18,14 +18,14 @@ const poolMax = parseInt(process.env.DB_POOL_MAX || '25', 10);
 const dbCaCert = process.env.DB_CA_CERT;
 const isProd = process.env.NODE_ENV === 'production';
 const rejectUnauthorized = process.env.DB_SSL_REJECT_UNAUTHORIZED !== 'false';
-const sslConfig = !isInternalDb() && isProd
+const sslConfig = !isInternalDb()
   ? dbCaCert
     ? { ca: dbCaCert, rejectUnauthorized }
-    : { rejectUnauthorized }
+    : { rejectUnauthorized: false }
   : false;
 
-if (!sslConfig && isProd) {
-  logger.warn('⚠️  DB SSL disabled — traffic is UNENCRYPTED. Set DATABASE_URL to a non-internal host to enable SSL.');
+if (!sslConfig && !isInternalDb()) {
+  logger.warn('⚠️  DB SSL disabled — traffic is UNENCRYPTED. Set NODE_ENV=production to enable SSL.');
 }
 
 export const pool = new Pool({
