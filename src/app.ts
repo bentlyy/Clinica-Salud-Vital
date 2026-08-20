@@ -77,39 +77,37 @@ const healthHandler = async (_req: Request, res: Response) => {
       dbStatus = 'error';
     }
 
-    const mem = process.memoryUsage();
-    const memUsed = Math.round(mem.heapUsed / 1024 / 1024);
-    const memTotal = Math.round(mem.heapTotal / 1024 / 1024);
+    const statusCode = dbStatus === 'ok' ? 200 : 503;
 
-    let stripeStatus = 'configured';
-    if (global.stripeWarning) stripeStatus = 'stub_mode';
-
-    const poolStatus = {
-      total: pool.totalCount,
-      idle: pool.idleCount,
-      waiting: pool.waitingCount,
-    };
-
-    res.json({
+    const body: Record<string, unknown> = {
       status: dbStatus === 'ok' ? 'ok' : 'degraded',
       timestamp: new Date().toISOString(),
       version: pkg.version,
-      checks: {
-        database: { status: dbStatus, latency_ms: dbLatency, pool: poolStatus },
+    };
+
+    if (!isProduction) {
+      const mem = process.memoryUsage();
+      const memUsed = Math.round(mem.heapUsed / 1024 / 1024);
+      const memTotal = Math.round(mem.heapTotal / 1024 / 1024);
+      let stripeStatus = 'configured';
+      if (global.stripeWarning) stripeStatus = 'stub_mode';
+      body.checks = {
+        database: { status: dbStatus, latency_ms: dbLatency, pool: { total: pool.totalCount, idle: pool.idleCount, waiting: pool.waitingCount } },
         stripe: { status: stripeStatus },
         memory: { status: 'ok', heap_used_mb: memUsed, heap_total_mb: memTotal },
-      },
-    });
+      };
+    } else {
+      body.checks = {
+        database: { status: dbStatus },
+      };
+    }
+
+    res.status(statusCode).json(body);
   } catch {
     res.status(500).json({
       status: 'error',
       timestamp: new Date().toISOString(),
       version: pkg.version,
-      checks: {
-        database: { status: 'error', latency_ms: 0 },
-        stripe: { status: 'unknown' },
-        memory: { status: 'unknown', heap_used_mb: 0, heap_total_mb: 0 },
-      },
     });
   }
 };
@@ -119,6 +117,8 @@ app.get('/api/health', healthHandler);
 
 app.use('/api', securityMiddleware);
 app.use(compression());
+
+const isProduction = process.env.NODE_ENV === 'production';
 
 const frontendUrl = process.env.FRONTEND_URL || process.env.RENDER_EXTERNAL_URL || 'http://localhost:5173';
 const allowedOrigins = [
@@ -130,9 +130,12 @@ const allowedOrigins = [
 app.use(cors({
   origin: (origin, callback) => {
     if (!origin) {
+      if (isProduction) {
+        return callback(new Error('CORS: requests without Origin header are not allowed in production'));
+      }
       return callback(null, true);
     }
-    if (allowedOrigins.length === 0 && process.env.NODE_ENV === 'production') {
+    if (allowedOrigins.length === 0 && isProduction) {
       return callback(new Error('CORS misconfigured: no allowed origins in production'));
     }
     if (allowedOrigins.includes(origin)) {
@@ -404,7 +407,7 @@ const startServer = async (): Promise<void> => {
       step('loadFromDB');
       await tenantService.loadFromDB();
       step('SET SESSION tenant_id');
-      await pool.query(`SET SESSION app.tenant_id = 'default'`);
+      await pool.query(`SELECT set_tenant_id('default')`);
       step('seedDefaultTenant');
       await seedDefaultTenant();
       step('seedSuperAdmin');

@@ -6,14 +6,25 @@
 -- ============================================================
 -- 1. APPLICATION ROLE (least privilege)
 -- ============================================================
--- LOCAL DEV ONLY: password is hardcoded for convenience.
--- PRODUCTION: use ALTER ROLE ... PASSWORD '...' from env var
--- or set via Docker secrets / Vault.
+-- PRODUCTION: The password MUST be set via environment variable
+-- or Docker secrets BEFORE running this script.
+-- NEVER hardcode passwords in SQL files committed to git.
+--
+-- To set the password externally before applying this script:
+--   ALTER ROLE clinic_app PASSWORD 'your-secure-password-here';
+--
+-- For Docker/Render, use the DB_APP_PASSWORD env var in your
+-- connection string or set it via:
+--   ALTER ROLE clinic_app PASSWORD current_setting('app.db_password');
 DO $$
 BEGIN
   IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'clinic_app') THEN
-    CREATE ROLE clinic_app LOGIN PASSWORD 'clinic_app_dev_2026';
-    RAISE NOTICE 'Role clinic_app created';
+    -- Password is intentionally NOT set here.
+    -- The connection string (DATABASE_URL) should authenticate the app role.
+    -- If you need a password, set it externally:
+    --   ALTER ROLE clinic_app PASSWORD 'SECURE_RANDOM_PASSWORD';
+    CREATE ROLE clinic_app LOGIN NOINHERIT;
+    RAISE NOTICE 'Role clinic_app created WITHOUT password — set password externally before use';
   END IF;
 END $$;
 

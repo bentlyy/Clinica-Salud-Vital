@@ -71,13 +71,16 @@ export const validateEnvSecurity = (): void => {
      throw new UnauthorizedError('JWT_SECRET debe tener al menos 32 caracteres.');
    }
 
-   // COOKIE_SECRET validation (MANDATORY — cookie signing must use its own secret)
-   const cookieSecret = process.env.COOKIE_SECRET;
-   if (!cookieSecret) {
-     throw new UnauthorizedError('COOKIE_SECRET no está definida en las variables de entorno');
-   }
-   if (cookieSecret.length < 32) {
-     throw new UnauthorizedError('COOKIE_SECRET debe tener al menos 32 caracteres.');
+  // COOKIE_SECRET validation (MANDATORY — cookie signing must use its own secret)
+  const cookieSecret = process.env.COOKIE_SECRET;
+  if (!cookieSecret) {
+    throw new UnauthorizedError('COOKIE_SECRET no esta definida en las variables de entorno');
+  }
+  if (cookieSecret.length < 32) {
+    throw new UnauthorizedError('COOKIE_SECRET debe tener al menos 32 caracteres.');
+  }
+  if (cookieSecret === process.env.JWT_SECRET) {
+    throw new UnauthorizedError('COOKIE_SECRET debe ser distinto a JWT_SECRET.');
   }
 
   // AUDIT_HMAC_SECRET validation (MANDATORY — audit chain integrity)
