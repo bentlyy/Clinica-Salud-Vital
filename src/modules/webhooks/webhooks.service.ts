@@ -33,6 +33,18 @@ const parseSubscription = (row: Record<string, unknown>): WebhookSubscription =>
 
 const isWebhookEvent = (value: string): boolean => (WEBHOOK_EVENTS as readonly string[]).includes(value);
 
+const PRIVATE_IP_PATTERNS = [
+  /^127\./,
+  /^10\./,
+  /^172\.(1[6-9]|2\d|3[01])\./,
+  /^192\.168\./,
+  /^169\.254\./,
+  /^0\./,
+  /^localhost$/i,
+  /^::1$/,
+  /^\[::1\]$/,
+];
+
 const assertValidUrl = (url: string): void => {
   let parsed: URL;
   try {
@@ -42,6 +54,13 @@ const assertValidUrl = (url: string): void => {
   }
   if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
     throw new BadRequestError('url must use http or https');
+  }
+
+  const hostname = parsed.hostname;
+  for (const pattern of PRIVATE_IP_PATTERNS) {
+    if (pattern.test(hostname)) {
+      throw new BadRequestError('url must not point to private/internal addresses (SSRF protection)');
+    }
   }
 };
 
