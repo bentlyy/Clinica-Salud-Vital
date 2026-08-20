@@ -23,10 +23,7 @@ const rejectUnauthorized = process.env.DB_SSL_REJECT_UNAUTHORIZED !== 'false';
 const useSSL = !isInternalDb();
 
 if (isProduction && useSSL && !dbCaCert) {
-  logger.error('CRITICAL: DB_CA_CERT no configurada en produccion');
-  logger.error('Sin el certificado CA, la conexion SSL no verifica el servidor');
-  logger.error('Esto permite man-in-the-middle. Configure DB_CA_CERT.');
-  throw new Error('DB_CA_CERT is required in production for secure SSL connections to Oracle Cloud');
+  logger.warn('DB_CA_CERT no configurada — usando CA pública del sistema');
 }
 
 const sslConfig = useSSL
