@@ -139,7 +139,7 @@ function mockDataLoaded() {
     if (url === '/laboratory/requests') return Promise.resolve({ data: [labRequest] });
     if (url === '/medical-history/patient/10') return Promise.resolve({ data: [medHistory] });
     if (url === '/clinical-records/prescriptions/all') return Promise.resolve({ data: [rxRecord] });
-    if (url === '/bookings/doctor') return Promise.resolve({ data: { data: [booking], total: 1 } });
+    if (url === '/bookings/doctor') return Promise.resolve({ data: [booking] });
     if (url === '/attachments') return Promise.resolve({ data: { data: [] } });
     return Promise.reject(new Error('unexpected url'));
   });

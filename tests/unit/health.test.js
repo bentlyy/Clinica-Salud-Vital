@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 const mockQuery = vi.hoisted(() => vi.fn());
 const mockLogger = vi.hoisted(() => ({ info: vi.fn(), error: vi.fn(), warn: vi.fn(), debug: vi.fn() }));
 
-vi.mock('../../src/shared/db.js', () => ({ pool: { query: mockQuery } }));
+vi.mock('../../src/shared/db.js', () => ({ pool: { query: mockQuery }, readPool: { query: mockQuery } }));
 vi.mock('../../src/utils/logger.js', () => ({ logger: mockLogger }));
 
 describe('Health endpoint logic', () => {

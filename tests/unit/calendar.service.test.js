@@ -10,6 +10,7 @@ vi.mock('../../src/shared/db.js', () => ({
     connect: vi.fn(),
     on: vi.fn(),
   },
+  readPool: { query: mockQuery },
 }));
 
 import { formatDateUTC, escapeText, buildVEvent, buildCalendar } from '../../src/modules/calendar/ics.util.js';

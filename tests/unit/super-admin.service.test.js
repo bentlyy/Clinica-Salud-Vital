@@ -13,6 +13,7 @@ const { mockQuery, mockClient, mockConnect, mockLogger, mockLoadFromDB } = vi.ho
 
 vi.mock('../../src/shared/db.js', () => ({
   pool: { query: mockQuery, connect: mockConnect, on: vi.fn() },
+  readPool: { query: mockQuery },
 }));
 
 vi.mock('../../src/utils/logger.js', () => ({

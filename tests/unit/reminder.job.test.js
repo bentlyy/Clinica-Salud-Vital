@@ -14,6 +14,7 @@ vi.mock('../../src/shared/db.js', () => ({
     connect: mockConnect,
     on: vi.fn(),
   },
+  readPool: { query: mockQuery },
 }));
 
 vi.mock('../../src/shared/email.service.js', () => ({

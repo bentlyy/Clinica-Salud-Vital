@@ -6,6 +6,7 @@ const mockConnect = vi.hoisted(() => vi.fn(() => Promise.resolve({ query: mockQu
 
 vi.mock('../../src/shared/db.js', () => ({
   pool: { query: mockQuery, connect: mockConnect },
+  readPool: { query: mockQuery },
 }));
 
 import { createInvoice, getInvoices, getInvoiceById, updateInvoiceStatus, deleteInvoice, getBillingStats } from '../../src/modules/billing/billing.service.js';

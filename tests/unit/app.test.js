@@ -5,6 +5,7 @@ vi.mock('../../src/shared/db.js', () => {
   const mockQuery = vi.fn();
   return {
     pool: { query: mockQuery, on: vi.fn() },
+    readPool: { query: mockQuery },
     __mockQuery: mockQuery,
   };
 });
@@ -70,7 +71,7 @@ describe('Health endpoint', () => {
   it('returns degraded status when DB fails', async () => {
     mockQuery.mockRejectedValue(new Error('DB timeout'));
     const res = await request(app).get('/health');
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(503);
     expect(res.body.status).toBe('degraded');
     expect(res.body.checks.database.status).toBe('error');
   });

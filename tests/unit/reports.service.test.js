@@ -6,6 +6,7 @@ const { mockQuery } = vi.hoisted(() => ({
 
 vi.mock('../../src/shared/db.js', () => ({
   pool: { query: mockQuery },
+  readPool: { query: mockQuery },
 }));
 
 vi.mock('../../src/utils/logger.js', () => ({

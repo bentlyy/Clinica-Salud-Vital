@@ -9,7 +9,8 @@ vi.mock('../../src/shared/jwt.service.js', () => ({
 }));
 
 vi.mock('../../src/shared/db.js', () => ({
-  pool: { query: vi.fn().mockResolvedValue({ rows: [{ token_version: 0 }] }), connect: vi.fn(), on: vi.fn() },
+  pool: { query: vi.fn().mockResolvedValue({ rows: [{ token_version: 0, active: true }] }), connect: vi.fn(), on: vi.fn() },
+  readPool: { query: vi.fn().mockResolvedValue({ rows: [{ token_version: 0, active: true }] }) },
 }));
 
 import { authMiddleware, authorize, optionalAuth } from '../../src/middlewares/auth.middleware.js';
