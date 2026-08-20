@@ -96,8 +96,8 @@ END $$;
 -- 7. RLS POLICIES — tenant_id session variable pattern
 -- ============================================================
 
--- The app sets: SET app.current_tenant = 'tenant_id';
--- All RLS policies check current_setting('app.current_tenant')
+-- The app sets: SET app.tenant_id = 'tenant_id';
+-- All RLS policies check current_setting('app.tenant_id')
 
 DO $$
 DECLARE
@@ -123,8 +123,8 @@ BEGIN
     -- Create tenant isolation policy (USING + WITH CHECK)
     EXECUTE format(
       'CREATE POLICY tenant_isolation ON %I
-       USING (tenant_id = current_setting(''app.current_tenant'', false)::text)
-       WITH CHECK (tenant_id = current_setting(''app.current_tenant'', false)::text)',
+       USING (tenant_id = current_setting(''app.tenant_id'', false)::text)
+        WITH CHECK (tenant_id = current_setting(''app.tenant_id'', false)::text)',
       tbl
     );
     RAISE NOTICE 'RLS policy created for %', tbl;
@@ -135,18 +135,18 @@ END $$;
 DROP POLICY IF EXISTS tenant_isolation ON users;
 CREATE POLICY tenant_isolation ON users
   USING (
-    tenant_id = current_setting('app.current_tenant', false)::text
+    tenant_id = current_setting('app.tenant_id', false)::text
     OR (role = 'superadmin' AND tenant_id IS NULL)
   )
   WITH CHECK (
-    tenant_id = current_setting('app.current_tenant', false)::text
+    tenant_id = current_setting('app.tenant_id', false)::text
   );
 
 -- Special: doctors table — no bypass for anyone
 DROP POLICY IF EXISTS tenant_isolation ON doctors;
 CREATE POLICY tenant_isolation ON doctors
-  USING (tenant_id = current_setting('app.current_tenant', false)::text)
-  WITH CHECK (tenant_id = current_setting('app.current_tenant', false)::text);
+  USING (tenant_id = current_setting('app.tenant_id', false)::text)
+  WITH CHECK (tenant_id = current_setting('app.tenant_id', false)::text);
 
 -- Special: tenants table — read-only for app (writes via admin only)
 DROP POLICY IF EXISTS tenant_isolation ON tenants;
@@ -184,8 +184,8 @@ BEGIN
     -- Writes: blocked by default (admin operations use postgres role)
     EXECUTE format(
       'CREATE POLICY restrict_writes ON %I FOR ALL
-       USING (current_setting(''app.current_tenant'', true) IS NOT NULL)
-       WITH CHECK (current_setting(''app.current_tenant'', true) IS NOT NULL)',
+        USING (current_setting(''app.tenant_id'', true) IS NOT NULL)
+         WITH CHECK (current_setting(''app.tenant_id'', true) IS NOT NULL)',
       tbl
     );
 
