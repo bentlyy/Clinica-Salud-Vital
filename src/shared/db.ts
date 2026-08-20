@@ -30,9 +30,8 @@ if (!useSSL) {
 
 const buildConnectionString = (base: string | undefined): string | undefined => {
   if (!base || !useSSL) return base;
-  const url = new URL(base);
-  url.searchParams.set('sslmode', 'require');
-  return url.toString();
+  const sep = base.includes('?') ? '&' : '?';
+  return base + sep + 'sslmode=require';
 };
 
 export const pool = new Pool({
