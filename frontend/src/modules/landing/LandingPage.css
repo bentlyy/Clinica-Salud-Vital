@@ -1483,8 +1483,8 @@
 }
 
 .lp-tech-category {
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.08);
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
   border-radius: 16px;
   padding: 28px 24px;
   transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
@@ -1492,8 +1492,8 @@
 
 .lp-tech-category:hover {
   transform: translateY(-4px);
-  box-shadow: 0 12px 40px rgba(0,0,0,0.25);
-  border-color: rgba(45,212,191,0.3);
+  box-shadow: 0 12px 40px rgba(33,140,144,0.1);
+  border-color: #2ad4bf;
 }
 
 .lp-tech-cat-icon {
@@ -1505,7 +1505,7 @@
   font-size: 1.125rem;
   font-weight: 700;
   margin: 0 0 16px;
-  color: #e2e8f0;
+  color: #0d3d38;
 }
 
 .lp-tech-items {
@@ -1518,29 +1518,29 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: rgba(45,212,191,0.1);
-  border: 1px solid rgba(45,212,191,0.2);
+  background: #f0fdfa;
+  border: 1px solid #ccfbf1;
   border-radius: 8px;
   padding: 6px 12px;
   font-size: 0.8125rem;
-  color: #cbd5e1;
+  color: #374151;
   transition: background 0.2s ease, border-color 0.2s ease;
 }
 
 .lp-tech-item:hover {
-  background: rgba(45,212,191,0.18);
-  border-color: rgba(45,212,191,0.4);
+  background: #ccfbf1;
+  border-color: #2ad4bf;
 }
 
 .lp-tech-name {
   font-weight: 600;
-  color: #f1f5f9;
+  color: #0d3d38;
 }
 
 .lp-tech-version {
   font-size: 0.6875rem;
-  color: #94a3b8;
-  background: rgba(255,255,255,0.06);
+  color: #6b7280;
+  background: #f3f4f6;
   padding: 2px 6px;
   border-radius: 4px;
 }
