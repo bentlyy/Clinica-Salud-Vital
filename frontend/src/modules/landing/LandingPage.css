@@ -1469,3 +1469,90 @@
     right: 16px;
   }
 }
+
+/* ==========================================================================
+   Tech Stack Section
+   ========================================================================== */
+
+.lp-tech-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.lp-tech-category {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px;
+  padding: 28px 24px;
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+}
+
+.lp-tech-category:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.25);
+  border-color: rgba(45,212,191,0.3);
+}
+
+.lp-tech-cat-icon {
+  font-size: 2rem;
+  margin-bottom: 12px;
+}
+
+.lp-tech-cat-title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  margin: 0 0 16px;
+  color: #e2e8f0;
+}
+
+.lp-tech-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.lp-tech-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(45,212,191,0.1);
+  border: 1px solid rgba(45,212,191,0.2);
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 0.8125rem;
+  color: #cbd5e1;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.lp-tech-item:hover {
+  background: rgba(45,212,191,0.18);
+  border-color: rgba(45,212,191,0.4);
+}
+
+.lp-tech-name {
+  font-weight: 600;
+  color: #f1f5f9;
+}
+
+.lp-tech-version {
+  font-size: 0.6875rem;
+  color: #94a3b8;
+  background: rgba(255,255,255,0.06);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+@media (max-width: 960px) {
+  .lp-tech-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .lp-tech-grid {
+    grid-template-columns: 1fr;
+  }
+}
