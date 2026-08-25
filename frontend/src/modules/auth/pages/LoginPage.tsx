@@ -73,125 +73,144 @@ export default function LoginPage() {
       sx={{
         minHeight: '100vh',
         display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: theme.palette.custom.surface.muted,
-        p: 2,
       }}
     >
-      <Paper
-        elevation={0}
+      <Box
         sx={{
-          width: '100%',
-          maxWidth: 420,
-          p: 4,
-          borderRadius: '16px',
-          border: `1px solid ${theme.palette.divider}`,
+          flex: 1,
+          display: { xs: 'none', md: 'flex' },
+          backgroundImage: 'url(/login.png)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+          backgroundColor: theme.palette.primary.dark,
+        }}
+      />
+
+      <Box
+        sx={{
+          flex: 1,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: theme.palette.custom.surface.muted,
+          p: 2,
         }}
       >
-        <Box sx={{ textAlign: 'center', mb: 4 }}>
-          <Box
-            sx={{
-              width: 48,
-              height: 48,
-              borderRadius: '12px',
-              background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.main} 100%)`,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: theme.palette.background.paper,
-              fontWeight: 700,
-              fontSize: '1.25rem',
-              mx: 'auto',
-              mb: 2,
-            }}
-          >
-            C
+        <Paper
+          elevation={0}
+          sx={{
+            width: '100%',
+            maxWidth: 420,
+            p: 4,
+            borderRadius: '16px',
+            border: `1px solid ${theme.palette.divider}`,
+          }}
+        >
+          <Box sx={{ textAlign: 'center', mb: 4 }}>
+            <Box
+              sx={{
+                width: 48,
+                height: 48,
+                borderRadius: '12px',
+                background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.main} 100%)`,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: theme.palette.background.paper,
+                fontWeight: 700,
+                fontSize: '1.25rem',
+                mx: 'auto',
+                mb: 2,
+              }}
+            >
+              V
+            </Box>
+            <Typography variant="h4" sx={{ fontWeight: 700, color: theme.palette.text.primary }}>
+              {t('title')}
+            </Typography>
+            <Typography variant="body2" sx={{ color: theme.palette.text.secondary, mt: 0.5 }}>
+              {t('subtitle')}
+            </Typography>
           </Box>
-          <Typography variant="h4" sx={{ fontWeight: 700, color: theme.palette.text.primary }}>
-            {t('title')}
-          </Typography>
-          <Typography variant="body2" sx={{ color: theme.palette.text.secondary, mt: 0.5 }}>
-            {t('subtitle')}
-          </Typography>
-        </Box>
 
-        {error && (
-          <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }}>
-            {error}
-          </Alert>
-        )}
+          {error && (
+            <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }}>
+              {error}
+            </Alert>
+          )}
 
-        <Box component="form" onSubmit={handleSubmit(onSubmit)} noValidate>
-          <TextField
-            {...register('email')}
-            fullWidth
-            label={t('email_label')}
-            type="email"
-            error={!!errors.email}
-            helperText={errors.email?.message}
-            slotProps={{
-              input: {
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Email sx={{ color: theme.palette.text.secondary, fontSize: 20 }} />
-                  </InputAdornment>
-                ),
-              },
-            }}
-            sx={{ mb: 2 }}
-          />
+          <Box component="form" onSubmit={handleSubmit(onSubmit)} noValidate>
+            <TextField
+              {...register('email')}
+              fullWidth
+              label={t('email_label')}
+              type="email"
+              error={!!errors.email}
+              helperText={errors.email?.message}
+              slotProps={{
+                input: {
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Email sx={{ color: theme.palette.text.secondary, fontSize: 20 }} />
+                    </InputAdornment>
+                  ),
+                },
+              }}
+              sx={{ mb: 2 }}
+            />
 
-          <TextField
-            {...register('password')}
-            fullWidth
-            label={t('password_label')}
-            type={showPassword ? 'text' : 'password'}
-            error={!!errors.password}
-            helperText={errors.password?.message}
-            slotProps={{
-              input: {
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Lock sx={{ color: theme.palette.text.secondary, fontSize: 20 }} />
-                  </InputAdornment>
-                ),
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton
-                      onClick={() => setShowPassword(!showPassword)}
-                      edge="end"
-                      size="small"
-                    >
-                      {showPassword ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              },
-            }}
-            sx={{ mb: 3 }}
-          />
+            <TextField
+              {...register('password')}
+              fullWidth
+              label={t('password_label')}
+              type={showPassword ? 'text' : 'password'}
+              error={!!errors.password}
+              helperText={errors.password?.message}
+              slotProps={{
+                input: {
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Lock sx={{ color: theme.palette.text.secondary, fontSize: 20 }} />
+                    </InputAdornment>
+                  ),
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        onClick={() => setShowPassword(!showPassword)}
+                        edge="end"
+                        size="small"
+                      >
+                        {showPassword ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                },
+              }}
+              sx={{ mb: 3 }}
+            />
 
-          <Button
-            type="submit"
-            fullWidth
-            variant="contained"
-            size="large"
-            disabled={isSubmitting}
-            sx={{
-              py: 1.5,
-              fontSize: '0.9375rem',
-              fontWeight: 600,
-              background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
-              '&:hover': {
-                background: `linear-gradient(135deg, ${theme.palette.primary.dark} 0%, ${theme.palette.custom.brand.darker} 100%)`,
-              },
-            }}
-          >
-            {isSubmitting ? <CircularProgress size={24} color="inherit" /> : t('login_button')}
-          </Button>
-        </Box>
-      </Paper>
+            <Button
+              type="submit"
+              fullWidth
+              variant="contained"
+              size="large"
+              disabled={isSubmitting}
+              sx={{
+                py: 1.5,
+                fontSize: '0.9375rem',
+                fontWeight: 600,
+                background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+                '&:hover': {
+                  background: `linear-gradient(135deg, ${theme.palette.primary.dark} 0%, ${theme.palette.custom.brand.darker} 100%)`,
+                },
+              }}
+            >
+              {isSubmitting ? <CircularProgress size={24} color="inherit" /> : t('login_button')}
+            </Button>
+          </Box>
+        </Paper>
+      </Box>
     </Box>
   );
 }
