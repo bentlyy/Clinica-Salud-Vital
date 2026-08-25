@@ -9,7 +9,7 @@ Archivo: `render.yaml`
 ```yaml
 services:
   - type: web
-    name: clinic-api
+    name: vitaria-api
     env: node
     region: oregon
     plan: free

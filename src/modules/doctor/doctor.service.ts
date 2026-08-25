@@ -119,7 +119,7 @@ export const registerDoctor = async ({ name, specialty, email, rut, phone }: Doc
 
     sendEmail({
       to: email,
-      subject: 'Bienvenido a Clínica Salud Vital — Establece tu contraseña',
+      subject: 'Bienvenido a Vitaria — Establece tu contraseña',
       html: doctorCredentialsEmail({
         name,
         email,

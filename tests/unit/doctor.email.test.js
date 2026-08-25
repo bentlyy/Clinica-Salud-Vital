@@ -45,7 +45,7 @@ describe('invitationEmail', () => {
     inviteToken: 'invite-xyz-789',
     frontendUrl: 'https://clinic.example.com',
     role: 'doctor',
-    tenantName: 'Clínica Salud Vital',
+    tenantName: 'Vitaria',
   };
 
   it('includes recipient name', () => {

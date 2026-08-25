@@ -161,7 +161,7 @@ export const notifyWaitlistForSlot = async (doctorId: number, date: string, tena
   enqueueJob('email:send', {
     type: 'waitlist-slot-available',
     to: user.email,
-    subject: '¡Hay un horario disponible! - Salud Vital',
+    subject: '¡Hay un horario disponible! - Vitaria',
     html: `
       <h2>Horario disponible</h2>
       <p>Se ha liberado un horario con el Dr./Dra. ${String(user.doctor_name)} para el ${date}.</p>

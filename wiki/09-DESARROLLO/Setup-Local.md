@@ -13,7 +13,7 @@
 ```bash
 # 1. Clonar repositorio
 git clone <repo-url>
-cd clinic-backend
+cd vitaria-backend
 
 # 2. Instalar dependencias
 npm install

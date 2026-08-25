@@ -6,13 +6,13 @@
 
 ```mermaid
 C4Context
-    title Diagrama de Contenedores - Clínica Salud Vital
+    title Diagrama de Contenedores - Vitaria
 
     Person(patient, "Paciente", "Usuario que reserva citas y ve su historial")
     Person(doctor, "Médico", "Usuario que gestiona agenda y registros clínicos")
     Person(admin, "Administrador", "Gestiona clínicas, usuarios y configuración")
 
-    System_Boundary(clinic, "Sistema Clínica Salud Vital") {
+    System_Boundary(clinic, "Sistema Vitaria") {
         Container(web, "Frontend Web", "React 19, Vite 8", "Interfaz de usuario SPA")
         Container(api, "API Backend", "Express 4, TypeScript", "API REST monolito modular")
         ContainerDb(db, "Base de Datos", "PostgreSQL 15", "Almacenamiento persistente")

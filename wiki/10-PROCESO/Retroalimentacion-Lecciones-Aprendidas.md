@@ -4,7 +4,7 @@ tags: [proceso, retrospectiva, calidad, testing, lecciones]
 
 # Proceso de 5 Prompts — Retroalimentación y Lecciones Aprendidas
 
-> Proceso secuencial de auditoría, corrección y testing sobre Clínica Salud Vital. 5 prompts encadenados que transformaron el sistema completo: 160 hallazgos auditados, 74 archivos modificados, y 1058 tests pasando.
+> Proceso secuencial de auditoría, corrección y testing sobre Vitaria. 5 prompts encadenados que transformaron el sistema completo: 160 hallazgos auditados, 74 archivos modificados, y 1058 tests pasando.
 
 ---
 

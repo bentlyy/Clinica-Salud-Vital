@@ -47,7 +47,7 @@ export const buildCalendar = (events: string[]): string => {
   const lines: string[] = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
-    'PRODID:-//Salud Vital//Clinic Calendar//ES',
+    'PRODID:-//Vitaria//Clinic Calendar//ES',
     'CALSCALE:GREGORIAN',
     ...events,
     'END:VCALENDAR',

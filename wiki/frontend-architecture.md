@@ -1,4 +1,4 @@
-# Frontend Architecture — Salud Vital Clinic SaaS
+# Frontend Architecture — Vitaria
 
 > Generated from exhaustive backend analysis. 14 modules, 111 endpoints, 32 tables, 62 indexes.
 

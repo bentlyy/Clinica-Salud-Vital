@@ -29,7 +29,7 @@ const pick = <T>(arr: T[]): T => arr[randomInt(0, arr.length - 1)];
 const TEST_TENANTS = [
   {
     id: 'clinica-norte',
-    name: 'Clínica del Norte',
+    name: 'Vitaria Norte',
     domain: 'norte',
     adminEmail: 'admin@norte.clinic.com',
     adminRut: '11111111-1',
@@ -38,7 +38,7 @@ const TEST_TENANTS = [
   },
   {
     id: 'clinica-sur',
-    name: 'Clínica del Sur',
+    name: 'Vitaria Sur',
     domain: 'sur',
     adminEmail: 'admin@sur.clinic.com',
     adminRut: '22222222-2',
@@ -134,11 +134,11 @@ export const seedDefaultTenant = async (): Promise<void> => {
        ON CONFLICT (id) DO NOTHING`,
       [
         DEFAULT_TENANT_ID,
-        'Default Clinic',
+        'Default Vitaria',
         'default',
         process.env.APP_LOCALE || 'es',
         'America/Santiago',
-        JSON.stringify({ company: 'Mi Clínica', contact_email: 'admin@clinic.com' }),
+        JSON.stringify({ company: 'Vitaria', contact_email: 'admin@clinic.com' }),
       ]
     );
 

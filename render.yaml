@@ -1,7 +1,7 @@
 services:
   # ─── Backend API ───────────────────────────────────────────
   - type: web
-    name: clinic-api
+    name: vitaria-api
     env: node
     region: oregon
     plan: free
@@ -24,7 +24,7 @@ services:
       - key: EMAIL_PASS
         sync: false
       - key: TOTP_ISSUER
-        value: ClinicApp
+        value: Vitaria
       - key: SMS_PROVIDER
         value: log
       - key: SENDGRID_API_KEY
@@ -58,7 +58,7 @@ services:
 
   # ─── Frontend (Static Site) ───────────────────────────────
   - type: static_site
-    name: clinic-frontend
+    name: vitaria-frontend
     env: static
     region: oregon
     plan: free

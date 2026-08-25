@@ -1,6 +1,6 @@
 # Inicio
 
-Bienvenido a la documentación del proyecto **Clínica Salud Vital**.
+Bienvenido a la documentación del proyecto **Vitaria**.
 
 ## Páginas
 

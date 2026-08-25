@@ -2,7 +2,7 @@
 tags: [sistema, arquitectura, resumen]
 ---
 
-# 🏥 Clínica Salud Vital — Resumen Completo del Sistema
+# 🏥 Vitaria — Resumen Completo del Sistema
 
 > Sistema SaaS de gestión clínica multi-tenant. Monolito modular backend con Node.js + Express + React + PostgreSQL.
 

@@ -2,7 +2,7 @@
 tags: [auditoria, seguridad, calidad, frontend, backend]
 ---
 
-# Auditoría Técnica Completa — Clínica Salud Vital
+# Auditoría Técnica Completa — Vitaria
 
 > Score de Salud: **45/100** | Criticidad alta: 7 | Criticidad media: 55 | Criticidad baja: 12
 

@@ -1,5 +1,5 @@
 -- ============================================================
--- SCHEMA COMPLETO — Clínica Salud Vital
+-- SCHEMA COMPLETO — Vitaria
 -- Single source of truth (sin migrations)
 -- ============================================================
 
