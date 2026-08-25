@@ -106,6 +106,69 @@ const FAQS = [
   { qKey: 'faq5Q', aKey: 'faq5A' },
 ];
 
+const TECH_STACK = [
+  {
+    icon: '🧑‍💻', titleKey: 'techCatBackend',
+    items: [
+      { name: 'TypeScript', version: '5.8' },
+      { name: 'Node.js', version: '20.x' },
+      { name: 'Express', version: '4.21' },
+      { name: 'PostgreSQL', version: '15' },
+      { name: 'pg', version: '8.18' },
+    ],
+  },
+  {
+    icon: '🎨', titleKey: 'techCatFrontend',
+    items: [
+      { name: 'React', version: '19' },
+      { name: 'Vite', version: '6.0' },
+      { name: 'MUI', version: '6.4' },
+      { name: 'React Router', version: '7.1' },
+      { name: 'Framer Motion', version: '11.15' },
+    ],
+  },
+  {
+    icon: '🔐', titleKey: 'techCatSecurity',
+    items: [
+      { name: 'JWT (HS256)' },
+      { name: 'bcrypt', version: '6.0' },
+      { name: 'Helmet', version: '8.1' },
+      { name: 'Rate Limiting' },
+      { name: 'reCAPTCHA' },
+      { name: 'AES-256-GCM' },
+    ],
+  },
+  {
+    icon: '🧪', titleKey: 'techCatTesting',
+    items: [
+      { name: 'Vitest', version: '4.1' },
+      { name: 'Testing Library' },
+      { name: 'Supertest', version: '7.2' },
+      { name: 'Coverage V8' },
+    ],
+  },
+  {
+    icon: '📧', titleKey: 'techCatComms',
+    items: [
+      { name: 'SendGrid' },
+      { name: 'Nodemailer', version: '8.0' },
+      { name: 'Twilio' },
+      { name: 'node-cron', version: '4.2' },
+    ],
+  },
+  {
+    icon: '🐳', titleKey: 'techCatDevops',
+    items: [
+      { name: 'Docker' },
+      { name: 'Docker Compose' },
+      { name: 'GitHub Actions' },
+      { name: 'Render' },
+      { name: 'Sentry', version: '10.56' },
+      { name: 'Winston', version: '3.19' },
+    ],
+  },
+];
+
 /* ==========================================================================
    LandingPage
    ========================================================================== */
@@ -127,6 +190,7 @@ function LandingPage() {
         </a>
         <ul className="lp-nav-links">
           <li><a href="#features">{t('navFeatures')}</a></li>
+          <li><a href="#tech">{t('navTech')}</a></li>
           <li><a href="#how">{t('navHowItWorks')}</a></li>
           <li><a href="#pricing">{t('navPricing')}</a></li>
           <li><a href="#testimonials">{t('navTestimonials')}</a></li>
@@ -236,6 +300,31 @@ function LandingPage() {
               <div className="lp-step-num">{s.num}</div>
               <div className="lp-step-title">{t(s.titleKey)}</div>
               <div className="lp-step-desc">{t(s.descKey)}</div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ---------- TECH STACK ---------- */}
+      <section id="tech" className="lp-section">
+        <div className="lp-section-header">
+          <div className="lp-section-label">{t('techLabel')}</div>
+          <h2 className="lp-section-title">{t('techTitle')}</h2>
+          <p className="lp-section-desc">{t('techDesc')}</p>
+        </div>
+        <div className="lp-tech-grid">
+          {TECH_STACK.map((cat) => (
+            <div key={cat.titleKey} className="lp-tech-category">
+              <div className="lp-tech-cat-icon">{cat.icon}</div>
+              <h3 className="lp-tech-cat-title">{t(cat.titleKey)}</h3>
+              <div className="lp-tech-items">
+                {cat.items.map((item) => (
+                  <div key={item.name} className="lp-tech-item">
+                    <span className="lp-tech-name">{item.name}</span>
+                    {item.version && <span className="lp-tech-version">{item.version}</span>}
+                  </div>
+                ))}
+              </div>
             </div>
           ))}
         </div>
