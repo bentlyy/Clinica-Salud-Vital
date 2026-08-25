@@ -11,8 +11,6 @@ export const errorHandler = (
   _next: NextFunction,
 ): void => {
   const statusCode = err.statusCode || 500;
-  const isDev = process.env.NODE_ENV === 'development' || process.env.EXPOSE_ERRORS === 'true';
-  const isProd = process.env.NODE_ENV === 'production';
 
   if (isInternalError(statusCode)) {
     logger.error('Unhandled error', { error: err.message, stack: err.stack, url: req.originalUrl, method: req.method });
@@ -20,11 +18,10 @@ export const errorHandler = (
     logger.warn('Client error', { error: err.message, statusCode, url: req.originalUrl, method: req.method });
   }
 
-  const message = (isDev && !isProd) || !isInternalError(statusCode) ? err.message : 'Internal server error';
+  const message = !isInternalError(statusCode) ? err.message : 'Internal server error';
 
   const body: Record<string, unknown> = { error: message };
   if (err.code) body.code = err.code;
-  if (isDev && !isProd && err.stack) body.stack = err.stack;
 
   res.status(statusCode).json(body);
 };
