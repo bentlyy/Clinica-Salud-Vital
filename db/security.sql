@@ -59,8 +59,9 @@ REVOKE TRIGGER ON ALL TABLES IN SCHEMA public FROM clinic_app;
 -- 4. REVOKE ACCESS TO TABLES APP SHOULD NOT TOUCH
 -- ============================================================
 
--- App must never modify migrations
-REVOKE ALL ON TABLE _migrations FROM clinic_app;
+-- App needs SELECT/INSERT to track migrations, but no DELETE/UPDATE/TRUNCATE
+REVOKE ALL ON TABLE _migrations FROM PUBLIC;
+GRANT SELECT, INSERT ON TABLE _migrations TO clinic_app;
 
 -- ============================================================
 -- 5. REVOKE EXECUTE ON SECURITY DEFINER FUNCTIONS
@@ -151,6 +152,7 @@ CREATE POLICY tenant_isolation ON users
   )
   WITH CHECK (
     tenant_id = current_setting('app.tenant_id', false)::text
+    OR (role = 'superadmin' AND tenant_id IS NULL)
   );
 
 -- Special: doctors table — no bypass for anyone
