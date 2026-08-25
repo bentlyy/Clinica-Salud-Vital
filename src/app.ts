@@ -410,13 +410,29 @@ const startServer = async (): Promise<void> => {
         // Managed PostgreSQL may not support custom GUCs — non-fatal
       }
       step('seedDefaultTenant');
-      await seedDefaultTenant();
+      try {
+        await seedDefaultTenant();
+      } catch (seedErr) {
+        logger.error('seedDefaultTenant failed (non-fatal, continuing startup)', { error: String(seedErr) });
+      }
       step('seedSuperAdmin');
-      await seedSuperAdmin();
+      try {
+        await seedSuperAdmin();
+      } catch (seedErr) {
+        logger.error('seedSuperAdmin failed (non-fatal, continuing startup)', { error: String(seedErr) });
+      }
       step('seedTestTenants');
-      await seedTestTenants();
+      try {
+        await seedTestTenants();
+      } catch (seedErr) {
+        logger.error('seedTestTenants failed (non-fatal, continuing startup)', { error: String(seedErr) });
+      }
       step('seed');
-      await seed();
+      try {
+        await seed();
+      } catch (seedErr) {
+        logger.error('seed failed (non-fatal, continuing startup)', { error: String(seedErr) });
+      }
       await backfillInvoices();
       await backfillMedicalHistory();
       await backfillLabRequests();
