@@ -1334,6 +1334,19 @@
   transition: border-color 0.2s, color 0.2s, background 0.2s, transform 0.2s;
 }
 
+.lm-guest-secondary {
+  margin-top: 8px;
+}
+
+.lp-hero-btn-block {
+  width: 100%;
+  justify-content: center;
+}
+
+.lm-input-has-toggle {
+  padding-right: 40px;
+}
+
 .lm-guest:hover {
   border-color: #2ad4bf;
   color: #1a6b5a;

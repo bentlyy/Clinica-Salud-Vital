@@ -8,6 +8,7 @@ import {
 } from '@mui/material';
 import type { ReactNode } from 'react';
 import { useTheme } from '@mui/material/styles';
+import Typography from '@mui/material/Typography';
 import WarningAmber from '@mui/icons-material/WarningAmber';
 import ErrorOutline from '@mui/icons-material/ErrorOutline';
 import InfoOutlined from '@mui/icons-material/InfoOutlined';
@@ -80,7 +81,7 @@ export function ConfirmDialog({
     >
       <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1.5, pb: 1 }}>
         {config.icon}
-        <span style={{ fontWeight: 600, color: theme.palette.text.primary }}>{title}</span>
+        <Typography component="span" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>{title}</Typography>
       </DialogTitle>
       <DialogContent>
         <DialogContentText sx={{ color: theme.palette.text.secondary, lineHeight: 1.6 }}>

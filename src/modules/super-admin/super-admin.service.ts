@@ -787,7 +787,10 @@ export const adminCreateTenant = async (data: {
 
   const domain = data.domain || `${tenantId}.clinic.app`;
   const adminEmail = data.adminEmail || `admin@${tenantId}.clinic.app`;
-  const adminPassword = data.adminPassword || 'Admin123!@#';
+  const adminPassword = data.adminPassword;
+  if (!adminPassword) {
+    throw new Error('adminPassword is required for tenant onboarding');
+  }
   const planCode = data.planCode || data.plan || 'free';
 
   const client = await pool.connect();

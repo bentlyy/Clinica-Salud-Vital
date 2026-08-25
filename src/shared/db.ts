@@ -58,7 +58,7 @@ export const pool = new Pool({
 
 pool.on('connect', (client: pg.PoolClient) => {
   const defaultTenant = process.env.DEFAULT_TENANT_ID || 'default';
-  client.query(`SELECT set_config('app.tenant_id', '${defaultTenant}', false)`).catch(() => {
+  client.query('SELECT set_config(\'app.tenant_id\', $1, false)', [defaultTenant]).catch(() => {
     // Managed PostgreSQL (Render/PgBouncer) may reject custom GUCs — non-fatal
   });
 });

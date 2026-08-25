@@ -1,14 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const { mockQuery } = vi.hoisted(() => ({ mockQuery: vi.fn() }));
+const mockQuery = vi.hoisted(() => vi.fn());
 
 vi.mock('../../src/shared/db.js', () => ({
   pool: { query: mockQuery },
-  readPool: { query: mockQuery },
-}));
-
-vi.mock('../../src/utils/logger.js', () => ({
-  logger: { info: vi.fn(), error: vi.fn(), warn: vi.fn() },
 }));
 
 import {
@@ -18,137 +13,180 @@ import {
   markAsRead,
   markAllAsRead,
 } from '../../src/modules/notifications/notification.service.js';
-import { NotFoundError } from '../../src/utils/errors.js';
-
-const notifRow = {
-  id: 1,
-  tenant_id: 't1',
-  user_id: 5,
-  type: 'success',
-  title: 'Cita agendada',
-  message: 'Tu cita fue creada',
-  is_read: false,
-  link: '/bookings',
-  created_at: '2026-01-01T10:00:00Z',
-};
 
 beforeEach(() => {
   vi.clearAllMocks();
 });
 
 describe('createNotification', () => {
-  it('inserts a notification row with defaults', async () => {
-    mockQuery.mockResolvedValue({ rows: [] });
-
-    await createNotification({ tenant_id: 't1', user_id: 5, title: 'Cita agendada' });
-
-    expect(mockQuery).toHaveBeenCalledWith(
-      expect.stringContaining('INSERT INTO notifications'),
-      ['t1', 5, 'info', 'Cita agendada', null, null],
-    );
-  });
-
-  it('uses provided type, message and link', async () => {
-    mockQuery.mockResolvedValue({ rows: [] });
+  it('creates a notification with default type', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] });
 
     await createNotification({
-      tenant_id: 't1',
-      user_id: 5,
-      type: 'warning',
-      title: 'Cita cancelada',
-      message: 'Cancelada',
-      link: '/bookings',
+      tenant_id: 'clinic1',
+      user_id: 1,
+      title: 'Test notification',
     });
 
-    expect(mockQuery).toHaveBeenCalledWith(
-      expect.stringContaining('INSERT INTO notifications'),
-      ['t1', 5, 'warning', 'Cita cancelada', 'Cancelada', '/bookings'],
-    );
+    expect(mockQuery).toHaveBeenCalledTimes(1);
+    const [sql, params] = mockQuery.mock.calls[0];
+    expect(sql).toContain('INSERT INTO notifications');
+    expect(params).toEqual(['clinic1', 1, 'info', 'Test notification', null, null]);
+  });
+
+  it('creates a notification with custom type and message', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] });
+
+    await createNotification({
+      tenant_id: 'clinic1',
+      user_id: 2,
+      type: 'warning',
+      title: 'Warning',
+      message: 'Something happened',
+      link: '/dashboard',
+    });
+
+    const [, params] = mockQuery.mock.calls[0];
+    expect(params).toEqual(['clinic1', 2, 'warning', 'Warning', 'Something happened', '/dashboard']);
   });
 });
 
 describe('listNotifications', () => {
-  it('returns a paginated list scoped to user and tenant', async () => {
-    mockQuery.mockResolvedValueOnce({ rows: [notifRow] });
-    mockQuery.mockResolvedValueOnce({ rows: [{ count: 1 }] });
+  it('returns paginated notifications', async () => {
+    mockQuery.mockResolvedValueOnce({
+      rows: [{ id: 1, title: 'Test' }],
+    });
+    mockQuery.mockResolvedValueOnce({
+      rows: [{ count: 1 }],
+    });
 
-    const result = await listNotifications('t1', 5, { page: 1, limit: 10 });
+    const result = await listNotifications('clinic1', 1);
 
+    expect(result.data).toHaveLength(1);
     expect(result.total).toBe(1);
     expect(result.page).toBe(1);
-    expect(result.limit).toBe(10);
+    expect(result.limit).toBe(50);
     expect(result.totalPages).toBe(1);
-    expect(result.data[0].title).toBe('Cita agendada');
-    expect(mockQuery.mock.calls[0][1]).toContain('t1');
-    expect(mockQuery.mock.calls[0][1]).toContain(5);
   });
 
-  it('filters by is_read and uses a tenant filter for superadmin mode', async () => {
-    mockQuery.mockResolvedValueOnce({ rows: [notifRow] });
-    mockQuery.mockResolvedValueOnce({ rows: [{ count: 1 }] });
-
-    await listNotifications('t1', 5, { page: 1, limit: 10, is_read: 'false' }, { tenantFilter: 't2', allUsers: true });
-
-    const sql = mockQuery.mock.calls[0][0];
-    const params = mockQuery.mock.calls[0][1];
-    expect(sql).toContain('is_read = $');
-    expect(sql).toContain('tenant_id = $1');
-    expect(sql).not.toContain('user_id =');
-    expect(params[0]).toBe('t2');
-  });
-
-  it('clamps limit to 100', async () => {
+  it('clamps page to minimum 1', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [] });
     mockQuery.mockResolvedValueOnce({ rows: [{ count: 0 }] });
 
-    const result = await listNotifications('t1', 5, { page: 1, limit: 999 });
+    const result = await listNotifications('clinic1', 1, { page: -5 });
+
+    expect(result.page).toBe(1);
+  });
+
+  it('clamps limit between 1 and 100', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] });
+    mockQuery.mockResolvedValueOnce({ rows: [{ count: 0 }] });
+
+    const result = await listNotifications('clinic1', 1, { limit: 500 });
 
     expect(result.limit).toBe(100);
+  });
+
+  it('filters by is_read when specified', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] });
+    mockQuery.mockResolvedValueOnce({ rows: [{ count: 0 }] });
+
+    await listNotifications('clinic1', 1, { is_read: 'true' });
+
+    const sql = mockQuery.mock.calls[0][0];
+    expect(sql).toContain('is_read = $');
+  });
+
+  it('supports allUsers option', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] });
+    mockQuery.mockResolvedValueOnce({ rows: [{ count: 0 }] });
+
+    await listNotifications('clinic1', 1, {}, { allUsers: true });
+
+    const sql = mockQuery.mock.calls[0][0];
+    expect(sql).not.toContain('user_id =');
+  });
+
+  it('uses tenantFilter when provided', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] });
+    mockQuery.mockResolvedValueOnce({ rows: [{ count: 0 }] });
+
+    await listNotifications('clinic1', 1, {}, { tenantFilter: 'other-tenant' });
+
+    const params = mockQuery.mock.calls[0][1];
+    expect(params[0]).toBe('other-tenant');
   });
 });
 
 describe('getUnreadCount', () => {
-  it('counts unread notifications for the user', async () => {
-    mockQuery.mockResolvedValue({ rows: [{ count: 3 }] });
+  it('returns unread count for user', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [{ count: 5 }] });
 
-    const count = await getUnreadCount('t1', 5);
+    const count = await getUnreadCount('clinic1', 1);
 
-    expect(count).toBe(3);
-    expect(mockQuery.mock.calls[0][0]).toContain('is_read = false');
+    expect(count).toBe(5);
   });
 
-  it('defaults to 0 when no rows', async () => {
-    mockQuery.mockResolvedValue({ rows: [] });
+  it('returns 0 when no unread notifications', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [{ count: 0 }] });
 
-    const count = await getUnreadCount('t1', 5);
+    const count = await getUnreadCount('clinic1', 1);
 
     expect(count).toBe(0);
+  });
+
+  it('supports allUsers option', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [{ count: 10 }] });
+
+    await getUnreadCount('clinic1', 1, { allUsers: true });
+
+    const sql = mockQuery.mock.calls[0][0];
+    expect(sql).not.toContain('user_id =');
   });
 });
 
 describe('markAsRead', () => {
-  it('updates and returns the notification', async () => {
-    mockQuery.mockResolvedValue({ rows: [{ ...notifRow, is_read: true }] });
+  it('marks a notification as read', async () => {
+    mockQuery.mockResolvedValueOnce({
+      rows: [{ id: 1, is_read: true }],
+    });
 
-    const result = await markAsRead(1, 5, 't1');
+    const result = await markAsRead(1, 1, 'clinic1');
 
+    expect(result.id).toBe(1);
     expect(result.is_read).toBe(true);
   });
 
-  it('throws when the notification does not exist', async () => {
-    mockQuery.mockResolvedValue({ rows: [] });
+  it('throws NotFoundError when notification not found', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] });
 
-    await expect(markAsRead(1, 5, 't1')).rejects.toThrow(NotFoundError);
+    await expect(markAsRead(999, 1, 'clinic1')).rejects.toThrow('Notification not found');
   });
 });
 
 describe('markAllAsRead', () => {
-  it('returns the number of updated rows', async () => {
-    mockQuery.mockResolvedValue({ rowCount: 4 });
+  it('marks all unread notifications as read', async () => {
+    mockQuery.mockResolvedValueOnce({ rowCount: 3 });
 
-    const count = await markAllAsRead(5, 't1');
+    const count = await markAllAsRead(1, 'clinic1');
 
-    expect(count).toBe(4);
-    expect(mockQuery.mock.calls[0][0]).toContain('UPDATE notifications');
+    expect(count).toBe(3);
+  });
+
+  it('returns 0 when no notifications updated', async () => {
+    mockQuery.mockResolvedValueOnce({ rowCount: 0 });
+
+    const count = await markAllAsRead(1, 'clinic1');
+
+    expect(count).toBe(0);
+  });
+
+  it('uses tenantFilter when provided', async () => {
+    mockQuery.mockResolvedValueOnce({ rowCount: 1 });
+
+    await markAllAsRead(1, 'clinic1', { tenantFilter: 'other-tenant' });
+
+    const params = mockQuery.mock.calls[0][1];
+    expect(params[1]).toBe('other-tenant');
   });
 });

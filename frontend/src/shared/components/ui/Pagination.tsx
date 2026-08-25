@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Box, Button, Typography } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
@@ -9,7 +10,7 @@ interface PaginationProps {
   onPageChange: (page: number) => void;
 }
 
-export function Pagination({ page, totalPages, total, onPageChange }: PaginationProps) {
+export const Pagination = memo(function Pagination({ page, totalPages, total, onPageChange }: PaginationProps) {
   const { t } = useTranslation('common');
   const theme = useTheme();
 
@@ -86,4 +87,4 @@ export function Pagination({ page, totalPages, total, onPageChange }: Pagination
       )}
     </Box>
   );
-}
+});

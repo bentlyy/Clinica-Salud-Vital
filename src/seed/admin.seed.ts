@@ -173,17 +173,22 @@ export const seedSuperAdmin = async (): Promise<void> => {
   }
 
   const isProd = process.env.NODE_ENV === 'production';
-  const password = process.env.SUPERADMIN_PASSWORD || 'REPLACED_PASSWORD';
+  const password = process.env.SUPERADMIN_PASSWORD;
   const email = process.env.SUPERADMIN_EMAIL || 'superadmin@clinic.com';
 
-  if (isProd && !process.env.SUPERADMIN_PASSWORD) {
-    logger.warn('SUPERADMIN_PASSWORD not set — using default password. Set it in env for production.');
+  if (!password) {
+    if (isProd) {
+      logger.error('SUPERADMIN_PASSWORD is required in production. Aborting superadmin seed.');
+      return;
+    }
+    logger.warn('SUPERADMIN_PASSWORD not set — using dev fallback. Set it in env for production.');
   }
+  const effectivePassword = password || 'REPLACED_PASSWORD';
   if (isProd && !process.env.SUPERADMIN_EMAIL) {
     logger.warn('SUPERADMIN_EMAIL not set — using superadmin@clinic.com. Set it in env for production.');
   }
 
-  const hash = await bcrypt.hash(password, 12);
+  const hash = await bcrypt.hash(effectivePassword, 12);
 
   await pool.query(
     'INSERT INTO users (email, password, name, role, tenant_id) VALUES ($1, $2, $3, $4, NULL) ON CONFLICT DO NOTHING',
@@ -202,8 +207,17 @@ export const seedAdmin = async (): Promise<void> => {
     return;
   }
 
-  const password = process.env.ADMIN_PASSWORD || 'REPLACED_PASSWORD';
-  const hash = await bcrypt.hash(password, 12);
+  const isProd = process.env.NODE_ENV === 'production';
+  const adminPassword = process.env.ADMIN_PASSWORD;
+  if (!adminPassword) {
+    if (isProd) {
+      logger.error('ADMIN_PASSWORD is required in production. Aborting admin seed.');
+      return;
+    }
+    logger.warn('ADMIN_PASSWORD not set — using dev fallback. Set it in env for production.');
+  }
+  const effectiveAdminPassword = adminPassword || 'REPLACED_PASSWORD';
+  const hash = await bcrypt.hash(effectiveAdminPassword, 12);
 
   await pool.query(
     'INSERT INTO users (email, password, name, role, tenant_id) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (tenant_id, email) DO NOTHING RETURNING id',
