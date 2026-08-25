@@ -270,8 +270,7 @@ function LandingPage() {
                 ))}
               </ul>
               <button
-                className={`lp-hero-btn ${plan.popular ? 'lp-hero-btn-primary' : 'lp-hero-btn-secondary'}`}
-                style={{ width: '100%', justifyContent: 'center' }}
+                className={`lp-hero-btn lp-hero-btn-block ${plan.popular ? 'lp-hero-btn-primary' : 'lp-hero-btn-secondary'}`}
                 onClick={openLogin}
               >
                 {t('pricingCta')}
@@ -552,12 +551,11 @@ function LoginModal({ onClose }: { onClose: () => void }) {
                     <svg className="lm-input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
                     <input
                       id="lm-password"
-                      className="lm-input"
+                      className="lm-input lm-input-has-toggle"
                       type={showPassword ? 'text' : 'password'}
                       placeholder={t('loginPasswordPlaceholder')}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      style={{ paddingRight: 40 }}
                     />
                     <button
                       type="button"
@@ -610,7 +608,7 @@ function LoginModal({ onClose }: { onClose: () => void }) {
             {t('loginGuestDashboard')}
           </button>
 
-          <button className="lm-guest" type="button" onClick={handleGuest} style={{ marginTop: 8 }}>
+          <button className="lm-guest lm-guest-secondary" type="button" onClick={handleGuest}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
             {t('loginGuestBooking')}
           </button>

@@ -3,7 +3,7 @@ import { useTheme } from '@mui/material/styles';
 import LockIcon from '@mui/icons-material/Lock';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import ChevronRight from '@mui/icons-material/ChevronRight';
-import React, { useState } from 'react';
+import React, { memo, useState } from 'react';
 
 interface NavChild {
   label: string;
@@ -22,7 +22,7 @@ interface SidebarItemProps {
   locked?: boolean;
 }
 
-export function SidebarItem({ icon, label, path, active, collapsed, onClick, subItems, locked }: SidebarItemProps) {
+export const SidebarItem = memo(function SidebarItem({ icon, label, path, active, collapsed, onClick, subItems, locked }: SidebarItemProps) {
   const theme = useTheme();
   const hasChildren = Boolean(subItems && subItems.length > 0);
   const [expanded, setExpanded] = useState(false);
@@ -217,4 +217,4 @@ export function SidebarItem({ icon, label, path, active, collapsed, onClick, sub
       {renderSubItems()}
     </>
   );
-}
+});
