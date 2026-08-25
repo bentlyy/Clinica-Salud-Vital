@@ -73,7 +73,7 @@ describe('errorHandler', () => {
     expect(mockLogger.warn).toHaveBeenCalled();
   });
 
-  it('includes stack in development mode', () => {
+  it('never exposes stack trace in response body', () => {
     const originalEnv = process.env.NODE_ENV;
     process.env.NODE_ENV = 'development';
     const err = new Error('Dev error');
@@ -84,9 +84,37 @@ describe('errorHandler', () => {
     errorHandler(err, req, res, next);
 
     expect(res.json).toHaveBeenCalledWith(
-      expect.objectContaining({ error: 'Dev error', stack: expect.any(String) })
+      expect.not.objectContaining({ stack: expect.any(String) })
     );
     process.env.NODE_ENV = originalEnv;
+  });
+
+  it('shows original message for client errors (4xx)', () => {
+    const err = new Error('Not found');
+    err.statusCode = 404;
+    const req = mockReq();
+    const res = mockRes();
+    const next = vi.fn();
+
+    errorHandler(err, req, res, next);
+
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({ error: 'Not found' })
+    );
+  });
+
+  it('masks internal error message for server errors (5xx)', () => {
+    const err = new Error('Database connection failed');
+    err.statusCode = 500;
+    const req = mockReq();
+    const res = mockRes();
+    const next = vi.fn();
+
+    errorHandler(err, req, res, next);
+
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({ error: 'Internal server error' })
+    );
   });
 });
 

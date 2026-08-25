@@ -112,11 +112,11 @@ const healthHandler = async (_req: Request, res: Response) => {
   }
 };
 
+app.use(securityMiddleware);
+app.use(compression());
+
 app.get('/health', healthHandler);
 app.get('/api/health', healthHandler);
-
-app.use('/api', securityMiddleware);
-app.use(compression());
 
 const isProduction = process.env.NODE_ENV === 'production';
 
