@@ -1,7 +1,7 @@
 # 🔄 Retrospectiva — Auditoría y Mejora del Sistema
 
 > **Fecha:** 2026-07-08
-> **Proyecto:** Clínica Salud Vital (clinic-backendcopia)
+> **Proyecto:** Vitaria (clinic-backendcopia)
 > **Tags:** #retrospectiva #auditoria #calidad #testing
 
 ---

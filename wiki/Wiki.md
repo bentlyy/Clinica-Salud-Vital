@@ -1,4 +1,4 @@
-# 🏥 Clínica Salud Vital — Wiki del Proyecto
+# 🏥 Vitaria — Wiki del Proyecto
 
 > Sistema SaaS de gestión clínica multi-tenant. Monolito modular con Node.js + Express + React + PostgreSQL.
 

@@ -13,7 +13,7 @@ export const doctorCredentialsEmail = ({ name, email, setupToken, loginUrl }: Do
   return `
     <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto;">
       <h2 style="color: #1976d2;">Bienvenido/a, ${escapeHtml(name)}</h2>
-      <p>Tu cuenta de doctor ha sido creada en <strong>Cl\u00ednica Salud Vital</strong>.</p>
+      <p>Tu cuenta de doctor ha sido creada en <strong>Vitaria</strong>.</p>
 
       <p><strong>Email:</strong> ${escapeHtml(email)}</p>
 
@@ -80,7 +80,7 @@ export const invitationEmail = ({ name, email, inviteToken, frontendUrl, role, t
       <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;">
 
       <p style="font-size: 12px; color: #aaa; text-align: center;">
-        Cl\u00ednica Salud Vital
+        Vitaria
       </p>
     </div>
   `;

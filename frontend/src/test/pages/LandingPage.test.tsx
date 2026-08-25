@@ -30,7 +30,7 @@ vi.mock('@/shared/providers/AuthProvider', () => ({
 
 vi.mock('react-i18next', () => {
   const translations: Record<string, string> = {
-    brandName: 'ClinicApp',
+    brandName: 'Vitaria',
     navFeatures: 'Características',
     navHowItWorks: 'Cómo funciona',
     navPricing: 'Precios',
@@ -77,7 +77,7 @@ describe('LandingPage', () => {
 
   it('renders the hero section with brand and title without crashing', () => {
     renderPage();
-    expect(screen.getByText('ClinicApp')).toBeInTheDocument();
+    expect(screen.getByText('Vitaria')).toBeInTheDocument();
     expect(screen.getByText('La plataforma de salud moderna')).toBeInTheDocument();
   });
 

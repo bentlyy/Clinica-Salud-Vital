@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🏥 Clínica Salud Vital
+# 🏥 Vitaria
 
 **SaaS de Gestión Clínica Multi-Tenant**  
 Plataforma integral para administrar clínicas, pacientes, médicos, citas, historiales clínicos, facturación, laboratorio y análisis.
@@ -331,7 +331,7 @@ npm run test:coverage             # Reporte HTML
 | **Anti-fraude** | Advisory locks PostgreSQL para condiciones de carrera |
 | **Auditoría** | Logs encadenados HMAC-SHA256, verificación de integridad cada 6h |
 | **DB SSL** | Conexión SSL con cert CA (verificación `rejectUnauthorized` en producción) |
-| **DB Credentials** | Rol `clinic_app` con `NOINHERIT`, sin password hardcodeado |
+| **DB Credentials** | Rol `vitaria_app` con `NOINHERIT`, sin password hardcodeado |
 | **RLS** | Row-Level Security por `app.tenant_id` (GUC registrado via `set_config()`, compatible con PgBouncer) |
 | **SSRF** | Webhook URLs bloqueadas para IPs privadas/internal (127.x, 10.x, 192.168.x, 169.254.x) |
 | **Health Check** | Info mínima en producción (sin pool stats, memory, ni Stripe info) |
@@ -354,8 +354,8 @@ npm run dev
 
 ```bash
 npm run build
-docker build -t clinic-api .
-docker run -p 3000:3000 --env-file .env clinic-api
+docker build -t vitaria-api .
+docker run -p 3000:3000 --env-file .env vitaria-api
 ```
 
 ### Render (cloud)

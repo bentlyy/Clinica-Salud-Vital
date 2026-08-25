@@ -82,7 +82,7 @@ export const createGuestBooking = async ({ doctor_id, date, time, duration = 30,
 
     sendEmail({
       to: email,
-      subject: 'Cita agendada - Salud Vital',
+      subject: 'Cita agendada - Vitaria',
       html: guestConfirmationEmail({
         name: name || 'Paciente',
         doctor: doctor.name,

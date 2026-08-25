@@ -20,8 +20,8 @@ main ─────────────────────────
 
 | Branch | Render Service | Purpose |
 |--------|---------------|---------|
-| `main` | `clinic-api` + `clinic-frontend` | Production |
-| `develop` | `clinic-api-staging` + `clinic-frontend-staging` | Staging/QA |
+| `main` | `vitaria-api` + `vitaria-frontend` | Production |
+| `develop` | `vitaria-api-staging` + `vitaria-frontend-staging` | Staging/QA |
 | `feature/*` | Local Docker only | Development |
 
 ### How to Deploy
@@ -47,7 +47,7 @@ docker compose up -d
 
 Set these in the Render dashboard under each service:
 
-**Backend (`clinic-api`)**:
+**Backend (`vitaria-api`)**:
 ```
 DATABASE_URL=postgresql://user:password@your-rds-host:5432/clinic
 JWT_SECRET=<your-production-secret>
@@ -61,7 +61,7 @@ RECAPTCHA_SECRET_KEY=<your-recaptcha-secret>
 DB_CA_CERT=<aws-rds-ca-cert>
 ```
 
-**Frontend (`clinic-frontend`)**:
+**Frontend (`vitaria-frontend`)**:
 ```
 VITE_API_URL=/api
 ```
@@ -123,7 +123,7 @@ Ensure your RDS security group allows:
 ```
 ┌──────────────────┐     ┌──────────────────┐
 │  Static Site      │────►│  Web Service      │
-│  (clinic-frontend)│     │  (clinic-api)     │
+│  (vitaria-frontend)│     │  (vitaria-api)     │
 │  *.onrender.com   │     │  *.onrender.com   │
 └──────────────────┘     └──────────────────┘
                                 │

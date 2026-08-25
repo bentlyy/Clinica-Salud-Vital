@@ -1,7 +1,7 @@
 services:
   db:
     image: postgres:15-alpine
-    container_name: clinic-db
+    container_name: vitaria-db
     restart: unless-stopped
     command: postgres -c config_file=/etc/postgresql/postgresql.conf
     ports:
@@ -27,7 +27,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.dev
-    container_name: clinic-backend
+    container_name: vitaria-backend
     restart: unless-stopped
     ports:
       - "127.0.0.1:3000:3000"
@@ -43,7 +43,7 @@ services:
       APP_LOCALE: es
       DEFAULT_TENANT_ID: default
       SMS_PROVIDER: log
-      TOTP_ISSUER: ClinicApp
+      TOTP_ISSUER: Vitaria
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
       PHI_MASTER_KEY: ${PHI_MASTER_KEY}
       AUDIT_HMAC_SECRET: ${AUDIT_HMAC_SECRET}
@@ -68,7 +68,7 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile.dev
-    container_name: clinic-frontend
+    container_name: vitaria-frontend
     restart: unless-stopped
     ports:
       - "127.0.0.1:5173:5173"

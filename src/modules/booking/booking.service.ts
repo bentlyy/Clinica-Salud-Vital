@@ -433,7 +433,7 @@ export const createBooking = async ({ doctor_id, user_id, date, time, duration =
     enqueueJob('email:send', {
       type: 'booking-confirmation',
       to: user.email,
-      subject: 'Cita agendada - Salud Vital',
+      subject: 'Cita agendada - Vitaria',
       html: bookingConfirmationTemplate({
         doctor: doctor.name,
         date,
@@ -644,7 +644,7 @@ export const rescheduleBooking = async (
       enqueueJob('email:send', {
         type: 'booking-rescheduled',
         to: email,
-        subject: 'Cita reprogramada - Salud Vital',
+        subject: 'Cita reprogramada - Vitaria',
         html: bookingRescheduledTemplate({
           doctor: doctor.name,
           oldDate: booking.date,

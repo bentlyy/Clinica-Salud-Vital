@@ -7,11 +7,11 @@ beforeEach(() => {
 
 describe('i18n.t()', () => {
   it('returns Spanish translation by default', () => {
-    expect(t('app.name')).toBe('Salud Vital');
+    expect(t('app.name')).toBe('Vitaria');
   });
 
   it('returns English translation when locale specified', () => {
-    expect(t('app.name', 'en')).toBe('Salud Vital');
+    expect(t('app.name', 'en')).toBe('Vitaria');
   });
 
   it('replaces params in translation', () => {
@@ -24,20 +24,20 @@ describe('i18n.t()', () => {
   });
 
   it('falls back to es when locale not found', () => {
-    expect(t('app.name', 'fr')).toBe('Salud Vital');
+    expect(t('app.name', 'fr')).toBe('Vitaria');
   });
 
   it('handles deprecated pt locale', () => {
     setLocale('pt');
-    expect(t('app.name')).toBe('Salud Vital');
+    expect(t('app.name')).toBe('Vitaria');
   });
 });
 
 describe('i18n.tAll()', () => {
   it('returns translations for all active locales', () => {
     const result = tAll('app.name');
-    expect(result.es).toBe('Salud Vital');
-    expect(result.en).toBe('Salud Vital');
+    expect(result.es).toBe('Vitaria');
+    expect(result.en).toBe('Vitaria');
   });
 
   it('returns key when not found in any locale', () => {

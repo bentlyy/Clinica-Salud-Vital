@@ -1,4 +1,4 @@
-# Retrospectiva de Auditoría — Clínica Salud Vital
+# Retrospectiva de Auditoría — Vitaria
 
 > Proceso de auditoría y mejora continua mediante 6 prompts secuenciales (0–5) que evaluaron y fortalecieron la calidad, seguridad y testing del sistema SaaS multi-tenant.
 

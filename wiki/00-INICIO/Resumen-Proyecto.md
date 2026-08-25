@@ -1,4 +1,4 @@
-# Resumen del Proyecto — Clínica Salud Vital
+# Resumen del Proyecto — Vitaria
 
 > **Versión:** 1.0.0 — Producción  
 > **Stack:** Node.js 20 + Express 4 + React 19 + Vite 8 + PostgreSQL 15  
