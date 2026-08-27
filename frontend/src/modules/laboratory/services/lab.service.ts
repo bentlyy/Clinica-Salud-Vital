@@ -47,14 +47,12 @@ export async function getAreaMetrics(areaId: number, opts?: { signal?: AbortSign
 
 export async function getMyPending(opts?: { signal?: AbortSignal }): Promise<LabRequest[]> {
   const { data } = await apiClient.get<LabRequest[]>(BASE, { params: { status: 'pending' }, signal: opts?.signal });
-  if (Array.isArray(data)) return data;
-  return data.data ?? [];
+  return Array.isArray(data) ? data : (data as any).data ?? [];
 }
 
 export async function getUrgentRequests(opts?: { signal?: AbortSignal }): Promise<LabRequest[]> {
   const { data } = await apiClient.get<LabRequest[]>(BASE, { params: { priority: 'urgent' }, signal: opts?.signal });
-  if (Array.isArray(data)) return data;
-  return data.data ?? [];
+  return Array.isArray(data) ? data : (data as any).data ?? [];
 }
 
 // ── Requests CRUD ────────────────────────────────────────────────────────────
