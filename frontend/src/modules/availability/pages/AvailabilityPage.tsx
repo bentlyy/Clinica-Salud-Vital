@@ -169,7 +169,7 @@ export default function AvailabilityPage() {
   const onSubmitException = useCallback(
     (data: ExceptionFormData) => {
       createExceptionMutation.mutate(
-        { date: data.date, reason: data.reason },
+        { date: data.date, is_full_day: true, reason: data.reason },
         {
           onSuccess: () => {
             resetException();

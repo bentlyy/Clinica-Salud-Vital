@@ -19,8 +19,8 @@ export function FeatureProvider({ children }: { children: ReactNode }) {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const { data } = await apiClient.get<Record<string, boolean>>('/saas/features');
-      setFeatures(data);
+      const { data } = await apiClient.get<{ features: Record<string, boolean> }>('/saas/features');
+      setFeatures(data.features);
     } catch {
       setFeatures({});
     } finally {

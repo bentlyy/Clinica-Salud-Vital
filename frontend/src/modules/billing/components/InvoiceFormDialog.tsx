@@ -112,7 +112,7 @@ export function InvoiceFormDialog({ open, onClose, onSubmit, isLoading }: Invoic
     onSubmit({
       patient_id: data.patient_id,
       items,
-      tax: data.tax,
+      tax_amount: data.tax,
       due_date: data.due_date,
       notes: data.notes,
     });

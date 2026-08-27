@@ -9,15 +9,9 @@ vi.mock('@/i18n/i18n', () => ({
 }));
 
 const stats: BillingStats = {
-  total_invoices: 5,
-  pending_invoices: 2,
-  paid_invoices: 3,
+  total_outstanding: 200,
+  total_paid: 300,
   overdue_invoices: 1,
-  total_revenue: 500,
-  pending_amount: 200,
-  paid_amount: 300,
-  overdue_amount: 50,
-  invoices_last_30_days: 4,
 };
 
 function renderCards(overrides: { stats?: BillingStats | undefined; isLoading?: boolean } = {}) {
@@ -34,19 +28,18 @@ describe('BillingSummaryCards', () => {
     expect(screen.getByText('Ingresos Totales')).toBeInTheDocument();
     expect(screen.getByText('Pendientes de Pago')).toBeInTheDocument();
     expect(screen.getByText('Facturas Vencidas')).toBeInTheDocument();
-    expect(screen.getByText('Facturas Últimos 30 días')).toBeInTheDocument();
+    expect(screen.getByText('Total Pagado')).toBeInTheDocument();
   });
 
   it('formats revenue values as currency', () => {
     renderCards({ stats });
-    expect(screen.getByText('$500')).toBeInTheDocument();
+    expect(screen.getAllByText('$300')).toHaveLength(2);
     expect(screen.getByText('$200')).toBeInTheDocument();
-    expect(screen.getByText('$50')).toBeInTheDocument();
   });
 
-  it('formats the 30-day count as a plain number', () => {
+  it('formats the overdue count as a plain number', () => {
     renderCards({ stats });
-    expect(screen.getByText('4')).toBeInTheDocument();
+    expect(screen.getByText('1')).toBeInTheDocument();
   });
 
   it('shows placeholders while loading', () => {

@@ -110,7 +110,7 @@ export default function ClinicalRecordDetailPage() {
           <Divider sx={{ my: 2 }} />
           <ClinicalSection title={t('section_diagnosis')} content={record.diagnosis} />
           <Divider sx={{ my: 2 }} />
-          <ClinicalSection title={t('section_treatment')} content={record.treatment} />
+          <ClinicalSection title={t('section_treatment')} content={record.treatment_plan} />
           {record.notes && (
             <>
               <Divider sx={{ my: 2 }} />

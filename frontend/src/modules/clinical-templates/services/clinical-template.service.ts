@@ -8,7 +8,10 @@ import type {
 
 export const clinicalTemplateService = {
   async list(opts?: { signal?: AbortSignal }): Promise<PaginatedResponse<ClinicalTemplate>> {
-    const { data } = await apiClient.get<PaginatedResponse<ClinicalTemplate>>('/clinical-templates', { signal: opts?.signal });
+    const { data } = await apiClient.get<ClinicalTemplate[] | PaginatedResponse<ClinicalTemplate>>('/clinical-templates', { signal: opts?.signal });
+    if (Array.isArray(data)) {
+      return { data, total: data.length, page: 1, limit: data.length, totalPages: 1 };
+    }
     return data;
   },
 

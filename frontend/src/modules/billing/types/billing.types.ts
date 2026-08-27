@@ -11,25 +11,40 @@ export interface Invoice {
   id: number;
   tenant_id: number;
   patient_id: number;
+  doctor_id?: number;
   booking_id?: number;
   invoice_number: string;
   amount: number;
-  tax: number;
-  total: number;
+  tax_amount: number;
+  discount_amount: number;
+  total_amount: number;
+  concept?: string;
+  description?: string;
+  currency?: string;
   status: InvoiceStatus;
   due_date: string;
+  issued_at?: string;
   paid_at?: string;
+  payment_method?: string;
+  payment_reference?: string;
+  payment_data?: Record<string, unknown>;
   notes?: string;
   patient_name?: string;
   items: InvoiceItem[];
   created_at: string;
+  updated_at?: string;
 }
 
 export interface CreateInvoiceInput {
   patient_id: number;
+  doctor_id?: number;
   booking_id?: number;
+  concept?: string;
+  description?: string;
+  amount?: number;
+  tax_amount?: number;
+  discount_amount?: number;
   items: InvoiceItem[];
-  tax?: number;
   due_date: string;
   notes?: string;
 }
@@ -43,15 +58,9 @@ export interface UpdateInvoiceInput {
 }
 
 export interface BillingStats {
-  total_invoices: number;
-  pending_invoices: number;
-  paid_invoices: number;
+  total_outstanding: number;
+  total_paid: number;
   overdue_invoices: number;
-  total_revenue: number;
-  pending_amount: number;
-  paid_amount: number;
-  overdue_amount: number;
-  invoices_last_30_days: number;
 }
 
 export interface InvoiceListParams {

@@ -342,7 +342,7 @@ export default function ClinicalRecordsPage() {
 
               <DetailSection title={t('section_chief_complaint')} content={detailRecord.chief_complaint} />
               <DetailSection title={t('section_diagnosis')} content={detailRecord.diagnosis} />
-              <DetailSection title={t('section_treatment')} content={detailRecord.treatment} />
+              <DetailSection title={t('section_treatment')} content={detailRecord.treatment_plan} />
 
               {detailRecord.vitals && Object.keys(detailRecord.vitals).length > 0 && (
                 <Box sx={{ mb: 3 }}>

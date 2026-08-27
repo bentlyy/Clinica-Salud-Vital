@@ -112,7 +112,7 @@ describe('superAdminService', () => {
   describe('listTenants', () => {
     it('calls GET /super-admin/tenants with params and returns normalized rows', async () => {
       mockedApi.get.mockResolvedValue({
-        data: { data: [tenant], total: 25, page: 2, limit: 10, totalPages: 3 },
+        data: { data: [tenant], pagination: { total: 25, page: 2, limit: 10, totalPages: 3 } },
       });
       const result = await superAdminService.listTenants({ page: 2, limit: 10, search: 'norte' });
       expect(mockedApi.get).toHaveBeenCalledWith('/super-admin/tenants', {

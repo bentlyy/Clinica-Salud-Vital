@@ -8,7 +8,6 @@ export function useClinicalTemplates() {
   return useQuery({
     queryKey: ['clinical-templates'],
     queryFn: ({ signal }) => clinicalTemplateService.list({ signal }),
-    enabled: false,
   });
 }
 

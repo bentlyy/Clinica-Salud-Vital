@@ -10,7 +10,10 @@ import type {
 
 export const billingService = {
   async list(params: InvoiceListParams = {}, opts?: { signal?: AbortSignal }): Promise<PaginatedResponse<Invoice>> {
-    const { data } = await apiClient.get<PaginatedResponse<Invoice>>('/billing', { params, signal: opts?.signal });
+    const { data } = await apiClient.get<Invoice[] | PaginatedResponse<Invoice>>('/billing', { params, signal: opts?.signal });
+    if (Array.isArray(data)) {
+      return { data, total: data.length, page: params.page ?? 1, limit: params.limit ?? 50, totalPages: 1 };
+    }
     return data;
   },
 

@@ -60,7 +60,7 @@ const record: ClinicalRecord = {
   doctor_id: 3,
   chief_complaint: 'Dolor abdominal',
   diagnosis: 'Gastritis',
-  treatment: 'Omeprazol 20mg',
+  treatment_plan: 'Omeprazol 20mg',
   notes: 'Seguimiento en 2 semanas',
   vitals: { temperature: '36.5', blood_pressure: '' },
   patient_name: 'Maria Garcia',
@@ -117,9 +117,13 @@ describe('ClinicalRecordFormDialog', () => {
   it('pre-fills fields in edit mode and submits the sanitized input', async () => {
     renderDialog({ record });
     expect(screen.getByText('Editar Registro')).toBeInTheDocument();
+
+    await vi.waitFor(() => {
+      expect(screen.getByLabelText(/Tratamiento/)).toHaveValue('Omeprazol 20mg');
+    });
+
     expect(screen.getByLabelText(/Motivo de consulta/)).toHaveValue('Dolor abdominal');
     expect(screen.getByLabelText(/Diagnóstico/)).toHaveValue('Gastritis');
-    expect(screen.getByLabelText(/Tratamiento/)).toHaveValue('Omeprazol 20mg');
     expect(screen.getByLabelText(/Temperatura/)).toHaveValue('36.5');
 
     fireEvent.click(screen.getByRole('button', { name: 'Actualizar' }));
@@ -129,7 +133,7 @@ describe('ClinicalRecordFormDialog', () => {
       patient_id: 10,
       chief_complaint: 'Dolor abdominal',
       diagnosis: 'Gastritis',
-      treatment: 'Omeprazol 20mg',
+  treatment_plan: 'Omeprazol 20mg',
       notes: 'Seguimiento en 2 semanas',
       template_id: undefined,
       vitals: { temperature: '36.5' },
