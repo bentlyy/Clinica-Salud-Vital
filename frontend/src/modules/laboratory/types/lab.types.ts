@@ -18,7 +18,7 @@ export type LabRequestStatus =
   | 'rejected'
   | 'repeated';
 
-export type LabPriority = 'low' | 'normal' | 'urgent' | 'emergency';
+export type LabPriority = 'low' | 'normal' | 'routine' | 'urgent' | 'emergency';
 
 export type LabAreaCode =
   | 'HEM'
@@ -413,6 +413,7 @@ export const LAB_STATUS_COLORS: Record<LabRequestStatus, string> = {
 export const LAB_PRIORITY_LABELS: Record<LabPriority, string> = {
   low: 'Baja',
   normal: 'Normal',
+  routine: 'Normal',
   urgent: 'Urgente',
   emergency: 'Emergencia',
 };
@@ -420,6 +421,7 @@ export const LAB_PRIORITY_LABELS: Record<LabPriority, string> = {
 export const LAB_PRIORITY_COLORS: Record<LabPriority, string> = {
   low: '#6b7280',
   normal: '#3b82f6',
+  routine: '#3b82f6',
   urgent: '#f59e0b',
   emergency: '#ef4444',
 };
@@ -522,6 +524,7 @@ export const LAB_STATUS_OPTIONS: { value: LabRequestStatus | 'all'; label: strin
 export const LAB_PRIORITY_CONFIG: Record<LabPriority, PriorityConfig> = {
   low:       { label: 'Baja',       color: '#6b7280', bgColor: '#f3f4f6' },
   normal:    { label: 'Normal',     color: '#3b82f6', bgColor: '#eff6ff' },
+  routine:   { label: 'Normal',     color: '#3b82f6', bgColor: '#eff6ff' },
   urgent:    { label: 'Urgente',    color: '#d97706', bgColor: '#fffbeb' },
   emergency: { label: 'Emergencia', color: '#ef4444', bgColor: '#fef2f2' },
 };
@@ -530,6 +533,7 @@ export const LAB_PRIORITY_OPTIONS: { value: LabPriority | 'all'; label: string }
   { value: 'all',       label: 'Todas' },
   { value: 'low',       label: 'Baja' },
   { value: 'normal',    label: 'Normal' },
+  { value: 'routine',   label: 'Normal' },
   { value: 'urgent',    label: 'Urgente' },
   { value: 'emergency', label: 'Emergencia' },
 ];

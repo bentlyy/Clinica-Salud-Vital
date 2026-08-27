@@ -1,27 +1,29 @@
 import { Component, Fragment, type ReactNode } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { withTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import { Box, Button, Typography, Paper } from '@mui/material';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 
-interface ErrorBoundaryProps {
+interface ErrorBoundaryInnerProps {
   children: ReactNode;
   t: TFunction;
+  navigate: (path: string) => void;
 }
 
-interface ErrorBoundaryState {
+interface ErrorBoundaryInnerState {
   hasError: boolean;
   error: Error | null;
   resetKey: number;
 }
 
-class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  constructor(props: ErrorBoundaryProps) {
+class ErrorBoundaryInner extends Component<ErrorBoundaryInnerProps, ErrorBoundaryInnerState> {
+  constructor(props: ErrorBoundaryInnerProps) {
     super(props);
     this.state = { hasError: false, error: null, resetKey: 0 };
   }
 
-  static getDerivedStateFromError(error: Error): Partial<ErrorBoundaryState> {
+  static getDerivedStateFromError(error: Error): Partial<ErrorBoundaryInnerState> {
     return { hasError: true, error };
   }
 
@@ -34,7 +36,7 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   };
 
   handleGoHome = () => {
-    window.location.href = '/';
+    this.props.navigate('/dashboard');
   };
 
   render() {
@@ -87,6 +89,15 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
     }
     return <Fragment key={this.state.resetKey}>{this.props.children}</Fragment>;
   }
+}
+
+function ErrorBoundary({ children, t }: { children: ReactNode; t: TFunction }) {
+  const navigate = useNavigate();
+  return (
+    <ErrorBoundaryInner t={t} navigate={navigate}>
+      {children}
+    </ErrorBoundaryInner>
+  );
 }
 
 export default withTranslation()(ErrorBoundary);
