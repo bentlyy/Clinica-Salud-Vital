@@ -1,6 +1,16 @@
 import { render, screen, fireEvent } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { useNavigate } from 'react-router-dom';
 import ErrorBoundary from '@/shared/components/ErrorBoundary';
+
+vi.mock('react-router-dom', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('react-router-dom')>();
+  return {
+    ...actual,
+    useNavigate: vi.fn(),
+  };
+});
 
 function ThrowError({ message = 'Test error' }: { message?: string }): never {
   throw new Error(message);
@@ -11,12 +21,20 @@ function SafeChild() {
 }
 
 function renderBoundary(children: React.ReactNode = <SafeChild />) {
-  return render(<ErrorBoundary>{children}</ErrorBoundary>);
+  return render(
+    <MemoryRouter>
+      <ErrorBoundary>{children}</ErrorBoundary>
+    </MemoryRouter>
+  );
 }
 
 describe('ErrorBoundary', () => {
+  const mockNavigate = vi.fn();
+
   beforeEach(() => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.mocked(useNavigate).mockReturnValue(mockNavigate);
+    mockNavigate.mockClear();
   });
 
   afterEach(() => {
@@ -74,10 +92,10 @@ describe('ErrorBoundary', () => {
   });
 
   describe('goHome behavior', () => {
-    it('navigates to root on go home click', () => {
+    it('navigates to dashboard on go home click', () => {
       renderBoundary(<ThrowError />);
       fireEvent.click(screen.getByRole('button', { name: /Ir al inicio/i }));
-      expect(window.location.pathname).toBe('/');
+      expect(mockNavigate).toHaveBeenCalledWith('/dashboard');
     });
   });
 });

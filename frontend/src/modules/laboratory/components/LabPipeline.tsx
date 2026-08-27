@@ -136,14 +136,14 @@ export function LabPipeline({ requests }: LabPipelineProps) {
 
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 1 }}>
                       <Chip
-                        label={t(`lab:priorityLabels.${request.priority}`, LAB_PRIORITY_CONFIG[request.priority].label)}
+                        label={t(`lab:priorityLabels.${request.priority}`, LAB_PRIORITY_CONFIG[request.priority]?.label ?? request.priority)}
                         size="small"
                         sx={{
                           height: 18,
                           fontSize: '0.65rem',
                           fontWeight: 500,
-                          backgroundColor: LAB_PRIORITY_CONFIG[request.priority].bgColor,
-                          color: LAB_PRIORITY_CONFIG[request.priority].color,
+                          backgroundColor: LAB_PRIORITY_CONFIG[request.priority]?.bgColor ?? '#f3f4f6',
+                          color: LAB_PRIORITY_CONFIG[request.priority]?.color ?? '#6b7280',
                         }}
                       />
                       {request.doctor_name && (

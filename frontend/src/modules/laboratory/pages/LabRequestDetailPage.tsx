@@ -103,7 +103,7 @@ function LabRequestDetailPageInner() {
   if (!request) return <ErrorState variant="notFound" />;
 
   const statusCfg = LAB_STATUS_CONFIG[request.status];
-  const priorityCfg = LAB_PRIORITY_CONFIG[request.priority];
+  const priorityCfg = LAB_PRIORITY_CONFIG[request.priority] ?? { label: request.priority, color: '#6b7280', bgColor: '#f3f4f6' };
 
   const canAddResults = user && (user.role === 'doctor' || user.role === 'lab_technician' || user.role === 'admin' || user.role === 'superadmin');
   const canValidateTech = user && (user.role === 'lab_technician' || user.role === 'admin' || user.role === 'superadmin');

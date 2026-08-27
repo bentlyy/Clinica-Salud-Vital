@@ -236,7 +236,7 @@ function LabRequestsPageInner() {
             <TableBody>
               {requests.map((req) => {
                 const statusCfg = LAB_STATUS_CONFIG[req.status];
-                const priorityCfg = LAB_PRIORITY_CONFIG[req.priority];
+                const priorityCfg = LAB_PRIORITY_CONFIG[req.priority] ?? { label: req.priority, color: '#6b7280', bgColor: '#f3f4f6' };
                 return (
                   <TableRow
                     key={req.id}
