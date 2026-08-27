@@ -52,16 +52,20 @@ export const superAdminService = {
   },
 
   async listTenants(params: TenantListParams = {}, opts?: { signal?: AbortSignal }): Promise<PaginatedResponse<Tenant>> {
-    const { data } = await apiClient.get<{ data: Tenant[]; total: number; page: number; limit: number; totalPages: number }>(
+    const { data } = await apiClient.get<{
+      data: Tenant[];
+      pagination: { total: number; page: number; limit: number; totalPages: number };
+    }>(
       '/super-admin/tenants',
       { params, signal: opts?.signal },
     );
+    const pagination = data.pagination || { total: 0, page: 1, limit: 20, totalPages: 1 };
     return {
       data: data.data || [],
-      total: data.total || 0,
-      page: data.page || 1,
-      limit: data.limit || 20,
-      totalPages: data.totalPages || 1,
+      total: pagination.total,
+      page: pagination.page,
+      limit: pagination.limit,
+      totalPages: pagination.totalPages,
     };
   },
 

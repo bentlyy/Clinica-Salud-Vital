@@ -9,7 +9,6 @@ export interface Doctor {
   phone?: string;
   bio?: string;
   avatar_url?: string;
-  is_active: boolean;
   consultation_fee?: number;
   created_at: string;
   updated_at?: string;
@@ -48,7 +47,6 @@ export interface DoctorListParams {
   limit?: number;
   search?: string;
   specialty_id?: number;
-  is_active?: boolean;
 }
 
 export interface DoctorScheduleSlot {

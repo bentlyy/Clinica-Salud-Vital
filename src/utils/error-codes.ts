@@ -195,6 +195,10 @@ export const E = {
   // ── CIE-10 ──────────────────────────────────────────────────────
   CIE10_NOT_FOUND:              'CIE10_NOT_FOUND',
 
+  // ── Clinical Templates ─────────────────────────────────────────
+  TEMPLATE_NOT_FOUND:           'TEMPLATE_NOT_FOUND',
+  TEMPLATE_UNAUTHORIZED:        'TEMPLATE_UNAUTHORIZED',
+
   // ── Validation ──────────────────────────────────────────────────
   VALIDATION_FAILED:            'VALIDATION_FAILED',
 
@@ -404,6 +408,10 @@ export const ERROR_MESSAGES: Record<ErrorCode, string> = {
 
   // CIE-10
   [E.CIE10_NOT_FOUND]:              'CIE-10 entry not found',
+
+  // Clinical Templates
+  [E.TEMPLATE_NOT_FOUND]:           'Clinical template not found',
+  [E.TEMPLATE_UNAUTHORIZED]:        'Clinical template not found or unauthorized',
 
   // Validation
   [E.VALIDATION_FAILED]:            'Validation failed',

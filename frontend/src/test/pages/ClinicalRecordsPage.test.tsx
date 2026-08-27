@@ -138,7 +138,7 @@ const record: ClinicalRecord = {
   doctor_id: 3,
   chief_complaint: 'Dolor abdominal',
   diagnosis: 'Gastritis',
-  treatment: 'Omeprazol 20mg',
+  treatment_plan: 'Omeprazol 20mg',
   notes: 'Seguimiento en 2 semanas',
   vitals: { temperature: '36.5' },
   patient_name: 'Maria Garcia',

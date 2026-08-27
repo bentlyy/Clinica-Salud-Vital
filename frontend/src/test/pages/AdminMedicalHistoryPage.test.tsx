@@ -48,7 +48,7 @@ const record: ClinicalRecord = {
   doctor_id: 3,
   chief_complaint: 'Dolor abdominal',
   diagnosis: 'Gastritis',
-  treatment: 'Omeprazol',
+  treatment_plan: 'Omeprazol',
   status: 'completed',
   patient_name: 'Maria Garcia',
   doctor_name: 'Dr. Perez',

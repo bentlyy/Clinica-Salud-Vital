@@ -54,11 +54,12 @@ describe('useClinicalTemplates hooks', () => {
     vi.clearAllMocks();
   });
 
-  it('useClinicalTemplates: query is disabled by default (does not fetch on mount)', async () => {
+  it('useClinicalTemplates: fetches templates on mount', async () => {
+    clinicalTemplateService.list.mockResolvedValue({ data: [template], total: 1, page: 1, limit: 10, totalPages: 1 });
     const { result } = renderHook(() => useClinicalTemplates(), { wrapper: createWrapper() });
-    await waitFor(() => expect(result.current.isFetching).toBe(false));
-    expect(clinicalTemplateService.list).not.toHaveBeenCalled();
-    expect(result.current.isEnabled).toBe(false);
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(clinicalTemplateService.list).toHaveBeenCalled();
+    expect(result.current.data).toEqual({ data: [template], total: 1, page: 1, limit: 10, totalPages: 1 });
   });
 
   it('useClinicalTemplateDetail: fetches the template when id is valid', async () => {

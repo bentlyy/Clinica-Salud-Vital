@@ -179,7 +179,7 @@ export default function BillingPage() {
                   >
                     <TableCell sx={{ fontWeight: 600 }}>{invoice.invoice_number}</TableCell>
                     <TableCell>{invoice.patient_name || t('patient_id', { id: invoice.patient_id })}</TableCell>
-                    <TableCell sx={{ fontWeight: 600 }}>{formatCurrency(invoice.total)}</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>{formatCurrency(invoice.total_amount)}</TableCell>
                     <TableCell>
                       <Chip
                         label={t(`statusLabels.${STATUS_CONFIG[invoice.status]?.labelKey || invoice.status}`)}

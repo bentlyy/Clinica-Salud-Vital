@@ -21,32 +21,32 @@ export function BillingSummaryCards({ stats, isLoading }: BillingSummaryCardsPro
   const cards = [
     {
       label: t('billing:summary.totalRevenue', 'Ingresos Totales'),
-      value: stats?.total_revenue ?? 0,
+      value: stats?.total_paid ?? 0,
       icon: <AttachMoney />,
       color: theme.palette.primary.main,
       bgColor: theme.palette.custom.brand.lightest,
     },
     {
       label: t('billing:summary.pendingPayment', 'Pendientes de Pago'),
-      value: stats?.pending_amount ?? 0,
+      value: stats?.total_outstanding ?? 0,
       icon: <PendingActions />,
       color: theme.palette.warning.main,
       bgColor: theme.palette.custom.status.warning.bg,
     },
     {
       label: t('billing:summary.overdueInvoices', 'Facturas Vencidas'),
-      value: stats?.overdue_amount ?? 0,
+      value: stats?.overdue_invoices ?? 0,
       icon: <WarningAmber />,
       color: theme.palette.error.main,
       bgColor: theme.palette.custom.status.error.bg,
+      format: 'number' as const,
     },
     {
-      label: t('billing:summary.invoicesLast30', 'Facturas Últimos 30 días'),
-      value: stats?.invoices_last_30_days ?? 0,
+      label: t('billing:summary.totalPaid', 'Total Pagado'),
+      value: stats?.total_paid ?? 0,
       icon: <TrendingUp />,
       color: theme.palette.info.main,
       bgColor: theme.palette.custom.status.info.bg,
-      format: 'number' as const,
     },
   ];
 

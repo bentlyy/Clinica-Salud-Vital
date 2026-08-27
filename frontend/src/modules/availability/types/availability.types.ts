@@ -19,7 +19,8 @@ export interface AvailabilityException {
   date: string; // YYYY-MM-DD
   start_time: string | null;
   end_time: string | null;
-  reason: string;
+  is_full_day: boolean;
+  reason?: string;
   created_at: string;
 }
 
@@ -27,7 +28,8 @@ export interface CreateAvailabilityExceptionInput {
   date: string;
   start_time?: string | null;
   end_time?: string | null;
-  reason: string;
+  is_full_day: boolean;
+  reason?: string;
 }
 
 export const DAY_NAMES = [

@@ -54,7 +54,7 @@ describe('FeatureProvider', () => {
 
   it('fetches features when a user is present', async () => {
     mockAuth.user = { id: 1, role: 'admin' };
-    mockGet.mockResolvedValue({ data: { laboratory: true, analytics: false } });
+    mockGet.mockResolvedValue({ data: { features: { laboratory: true, analytics: false } } });
     renderProvider();
     await waitFor(() => {
       expect(screen.getByTestId('features').textContent).toBe('{"laboratory":true,"analytics":false}');
@@ -76,13 +76,13 @@ describe('FeatureProvider', () => {
 
   it('reloads features when reload is called', async () => {
     mockAuth.user = { id: 1, role: 'admin' };
-    mockGet.mockResolvedValue({ data: { laboratory: true } });
+    mockGet.mockResolvedValue({ data: { features: { laboratory: true } } });
     renderProvider();
     await waitFor(() => {
       expect(screen.getByTestId('has-laboratory').textContent).toBe('true');
     });
     expect(mockGet).toHaveBeenCalledTimes(1);
-    mockGet.mockResolvedValue({ data: { laboratory: false } });
+    mockGet.mockResolvedValue({ data: { features: { laboratory: false } } });
     screen.getByTestId('btn-reload').click();
     await waitFor(() => {
       expect(screen.getByTestId('has-laboratory').textContent).toBe('false');

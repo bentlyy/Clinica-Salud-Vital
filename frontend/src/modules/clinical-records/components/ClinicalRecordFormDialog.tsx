@@ -38,7 +38,7 @@ function createClinicalRecordSchema(t: (key: string) => string) {
     template_id: z.number().optional(),
     chief_complaint: z.string().min(1, t('chief_complaint_required')),
     diagnosis: z.string().min(1, t('diagnosis_required')),
-    treatment: z.string().min(1, t('treatment_required')),
+    treatment_plan: z.string().min(1, t('treatment_required')),
     notes: z.string().optional(),
     vitals: vitalsSchema,
   });
@@ -100,7 +100,7 @@ export function ClinicalRecordFormDialog({
       template_id: undefined,
       chief_complaint: '',
       diagnosis: '',
-      treatment: '',
+      treatment_plan: '',
       notes: '',
       vitals: {},
     },
@@ -116,7 +116,7 @@ export function ClinicalRecordFormDialog({
           template_id: record.template_id,
           chief_complaint: record.chief_complaint,
           diagnosis: record.diagnosis,
-          treatment: record.treatment,
+          treatment_plan: record.treatment_plan,
           notes: record.notes || '',
           vitals: record.vitals || {},
         });
@@ -128,7 +128,7 @@ export function ClinicalRecordFormDialog({
           template_id: undefined,
           chief_complaint: '',
           diagnosis: '',
-          treatment: '',
+          treatment_plan: '',
           notes: '',
           vitals: {},
         });
@@ -155,7 +155,7 @@ export function ClinicalRecordFormDialog({
       patient_id: data.patient_id,
       chief_complaint: data.chief_complaint,
       diagnosis: data.diagnosis,
-      treatment: data.treatment,
+      treatment_plan: data.treatment_plan,
       notes: data.notes || undefined,
       template_id: data.template_id || undefined,
       vitals: data.vitals && Object.values(data.vitals).some((v) => v)
@@ -300,14 +300,14 @@ export function ClinicalRecordFormDialog({
 
           {/* Treatment */}
           <Controller
-            name="treatment"
+            name="treatment_plan"
             control={control}
             render={({ field }) => (
               <TextField
                 {...field}
                 label={t('treatment')}
-                error={!!errors.treatment}
-                helperText={errors.treatment?.message}
+                error={!!errors.treatment_plan}
+                helperText={errors.treatment_plan?.message}
                 fullWidth
                 multiline
                 rows={2}

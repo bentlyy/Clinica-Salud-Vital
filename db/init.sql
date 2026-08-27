@@ -1105,6 +1105,21 @@ INSERT INTO specialties (name, icon, description, department, procedures, color)
   ('Reumatología', '🦋', 'Enfermedades autoinmunes e inflamatorias del sistema musculoesquelético', 'Departamento de Reumatología', '["Perfil Reumatológico", "Artritis Reumatoide", "Lupus Eritematoso", "Osteoporosis", "Gota", "Espondilitis Anquilosante"]'::jsonb, '#e11d48')
 ON CONFLICT (tenant_id, name) DO NOTHING;
 
+-- ============================================================
+-- 18. CLINICAL TEMPLATES
+-- ============================================================
+CREATE TABLE clinical_templates (
+  id SERIAL PRIMARY KEY,
+  name TEXT NOT NULL,
+  specialty TEXT,
+  fields JSONB NOT NULL DEFAULT '[]'::jsonb,
+  tenant_id TEXT NOT NULL DEFAULT 'default',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_clinical_templates_tenant ON clinical_templates (tenant_id);
+
 -- SaaS plans
 INSERT INTO plans (name, code, description, price_monthly, price_yearly, max_doctors, max_patients, storage_gb, features, sort_order) VALUES
   ('Gratuito', 'free', 'Plan básico para clínicas pequeñas', 0, 0, 1, 50, 1,

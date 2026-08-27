@@ -42,6 +42,7 @@ import { availabilityRouter, exceptionRouter } from './modules/availability/avai
 import guestRoutes from './modules/guest/guest.routes.js';
 
 import clinicalRecordRoutes from './modules/clinical-record/clinical-record.routes.js';
+import clinicalTemplateRoutes from './modules/clinical-templates/clinical-template.routes.js';
 import auditRoutes from './modules/audit/audit.routes.js';
 import analyticsRoutes from './modules/analytics/analytics.routes.js';
 import billingRoutes from './modules/billing/billing.routes.js';
@@ -218,6 +219,7 @@ app.use(`${API_PREFIX}/guest`, guestRoutes);
 
 app.use(`${API_PREFIX}/clinical-records`, phiWriteLimiter);
 app.use(`${API_PREFIX}/clinical-records`, clinicalRecordRoutes);
+app.use(`${API_PREFIX}/clinical-templates`, clinicalTemplateRoutes);
 app.use(`${API_PREFIX}/audit`, auditRoutes);
 app.use(`${API_PREFIX}/analytics`, analyticsRoutes);
 app.use(`${API_PREFIX}/billing`, billingRoutes);

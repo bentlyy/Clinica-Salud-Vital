@@ -20,7 +20,10 @@ export const prescriptionService = {
   },
 
   async listByRecord(recordId: number, opts?: { signal?: AbortSignal }): Promise<PaginatedResponse<Prescription>> {
-    const { data } = await apiClient.get<PaginatedResponse<Prescription>>(`/clinical-records/${recordId}/prescriptions`, { signal: opts?.signal });
+    const { data } = await apiClient.get<Prescription[] | PaginatedResponse<Prescription>>(`/clinical-records/${recordId}/prescriptions`, { signal: opts?.signal });
+    if (Array.isArray(data)) {
+      return { data, total: data.length, page: 1, limit: data.length, totalPages: 1 };
+    }
     return data;
   },
 

@@ -109,8 +109,9 @@ const invoice: Invoice = {
   patient_id: 10,
   invoice_number: 'INV-001',
   amount: 100,
-  tax: 19,
-  total: 119,
+  tax_amount: 19,
+  discount_amount: 0,
+  total_amount: 119,
   status: 'pending',
   due_date: '2026-08-15',
   items: [],
@@ -151,21 +152,15 @@ describe('BillingPage', () => {
     mockHookReturn.data = { data: [], total: 0 };
     mockStatsReturn.isLoading = false;
     mockStatsReturn.data = {
-      total_invoices: 5,
-      pending_invoices: 2,
-      paid_invoices: 3,
+      total_outstanding: 200,
+      total_paid: 300,
       overdue_invoices: 1,
-      total_revenue: 500,
-      pending_amount: 200,
-      paid_amount: 300,
-      overdue_amount: 50,
-      invoices_last_30_days: 4,
     };
     renderPage();
     expect(screen.getByText('Ingresos Totales')).toBeInTheDocument();
     expect(screen.getByText('Pendientes de Pago')).toBeInTheDocument();
     expect(screen.getByText('Facturas Vencidas')).toBeInTheDocument();
-    expect(screen.getByText('Facturas Últimos 30 días')).toBeInTheDocument();
+    expect(screen.getByText('Total Pagado')).toBeInTheDocument();
   });
 
   it('renders status filter chips', () => {

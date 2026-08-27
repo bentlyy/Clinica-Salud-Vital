@@ -7,8 +7,7 @@ export interface ClinicalRecord {
   template_id?: number;
   chief_complaint: string;
   diagnosis: string;
-  treatment: string;
-  treatment_plan?: string;
+  treatment_plan: string;
   notes?: string;
   vitals?: Record<string, string>;
   vital_signs?: Record<string, string>;
@@ -33,7 +32,7 @@ export interface CreateClinicalRecordInput {
   template_id?: number;
   chief_complaint: string;
   diagnosis: string;
-  treatment: string;
+  treatment_plan: string;
   notes?: string;
   vitals?: Record<string, string>;
 }
