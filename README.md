@@ -1,9 +1,10 @@
-<div align="center">
+﻿<div align="center">
 
 # 🏥 Vitaria
 
-**SaaS de Gestión Clínica Multi-Tenant**  
-Plataforma integral para administrar clínicas, pacientes, médicos, citas, historiales clínicos, facturación, laboratorio y análisis.
+**Gestión clínica simple, centralizada y escalable**
+
+Vitaria es una plataforma SaaS orientada a centros de salud, consultas y profesionales que necesitan centralizar la gestión de sus operaciones en un solo lugar.
 
 <br>
 
@@ -19,396 +20,347 @@ Plataforma integral para administrar clínicas, pacientes, médicos, citas, hist
 [![CI](https://img.shields.io/github/actions/workflow/status/bentlyy/Clinica-Salud-Vital/ci.yml?branch=master&label=CI&logo=githubactions)](https://github.com/bentlyy/Clinica-Salud-Vital/actions)
 [![Tests](https://img.shields.io/badge/tests-2730%20passing-2ea043)](#-testing)
 [![Coverage](https://img.shields.io/badge/coverage-~89%25-2ea043)](#-testing)
-[![Audit](https://img.shields.io/badge/audit-2026--08--20-4CAF50)](#-auditor%C3%ADa-y-mejora)
+
+<br>
+
+**Estado:** Producto tecnológico funcional · Etapa de validación y preparación comercial
 
 </div>
 
 ---
 
-## ✨ Funcionalidades
-
-<details open>
-<summary><b>🔐 Autenticación y Seguridad</b></summary>
-
-- JWT (15 min) + Refresh Tokens (30 días) con rotación
-- 2FA TOTP con secreto cifrado AES-256-GCM
-- bcrypt (12 rounds) para passwords
-- Rate limiting en 5 niveles: global, auth, PHI, guest, SaaS
-- Helmet (CSP, HSTS preload, frameguard), HPP, CORS (orígenes explícitos)
-- Validación Zod 4 en todas las entradas
-- Sanitización de campos clínicos con `sanitize-html`
-- Auditoría encadenada con HMAC-SHA256 + verificación cada 6h
-- Advisory locks PostgreSQL para carrera crítica en reservas
-- DB SSL hardened (cert CA obligatorio en producción)
-- RLS multi-tenant con `set_config()` (compatible PgBouncer)
-- SSRF protection en webhooks (bloqueo IPs privadas)
-- `COOKIE_SECRET` validado al startup (≥32 chars, ≠ JWT_SECRET)
-- Health check mínimo en producción (sin info sensible)
-- Captura de errores con Sentry
-
-</details>
-
-<details open>
-<summary><b>👥 Roles y Multi-tenancy</b></summary>
-
-| Rol | Acceso |
-|-----|--------|
-| `superadmin` | Panel global SaaS: tenants, usuarios, facturación, especialidades, auditoría y analytics del sistema |
-| `admin` | Gestión completa de su clínica (dashboard, clínica, gestión, laboratorio) |
-| `doctor` | Agenda, pacientes, fichas clínicas, recetas, laboratorio, analytics y disponibilidad |
-| `lab_technician` | Panel completo de laboratorio, analytics y reportes |
-| `patient` | Sus propias citas, fichas clínicas, recetas, historial y resultados de laboratorio |
-| `guest` / `user` | Sin panel (reserva pública por RUT / mapeado a `patient` en la navegación) |
-
-Base de datos compartida con columna `tenant_id` en todas las tablas. Row-Level Security (RLS) con `app.tenant_id` registrado via `set_config()` (compatible con PgBouncer/Oracle Cloud). Resolución automática via header `X-Tenant-Id` o JWT. Planes SaaS (`free`, `basic`, `pro`, `enterprise`) con límites configurables y self-service (onboarding, Stripe checkout, cambio de plan, cancelación).
-
-La **barra lateral** se genera dinámicamente según el rol (`getNavItems` en `frontend/src/shared/constants/navigation.tsx`):
-
-| Rol | Secciones en la barra lateral |
-|-----|-------------------------------|
-| 🔷 `superadmin` | Panel SaaS · Clínicas · Usuarios · Especialidades · Auditoría · Cobros · Configuración |
-| 🟢 `admin` | Dashboard · Clínica · Gestión · Laboratorio (panel, solicitudes, catálogo, control de calidad, analytics, resultados) · Configuración |
-| 🟡 `doctor` | Dashboard · Clínica · Gestión · Laboratorio (mismo submenú que admin) · Configuración |
-| 🔬 `lab_technician` | Dashboard · Laboratorio · Analytics · Reportes · Configuración |
-| ⚪ `patient` | Dashboard · Mis Citas · Fichas Clínicas · Recetas · Historial Médico · Mis Resultados de Laboratorio · Configuración |
-
-El submenú **Laboratorio** se bloquea con `featureKey: 'laboratory'` (feature gate por plan SaaS). Los hubs `/clinical` y `/management` agrupan pestañas condicionadas por rol. El paciente usa además un portal con bottom-nav propio (`PatientLayout`).
-
-</details>
-
-<details open>
-<summary><b>📋 Módulos del Sistema</b></summary>
-
-| Módulo | Descripción |
-|--------|------------|
-| **Auth** | Registro, login, refresh, logout, 2FA, cambio/recuperación de password, reset-admin, JWKS |
-| **Doctors** | CRUD, listado público, invitación por email, toggle activo, listado de usuarios |
-| **Booking** | Creación/cancelación de citas, slots disponibles, densidad diaria, agenda del doctor |
-| **Availability** | Disponibilidad semanal + excepciones (días completos o parciales), calendario del doctor |
-| **Guest** | Reserva sin login mediante RUT chileno |
-| **Clinical Records** | Historia clínica electrónica (SOAP), recetas/prescripciones, búsqueda CIE-10, descarga PDF |
-| **Billing** | Facturas, pagos, seguros, integración Stripe |
-| **Laboratory** | Catálogo de exámenes, solicitudes, muestras, workflow (recepción→QC→validación→entrega), resultados, equipos, reactivos, QC, dashboard por área y eventos SSE en tiempo real |
-| **Analytics** | Dashboard con KPIs, gráficos Recharts, demanda, no-shows, diagnósticos, signos vitales, estadísticas por rol |
-| **Audit** | Logs de auditoría encadenados con verificación de integridad |
-| **Specialties** | Catálogo público de especialidades |
-| **SaaS** | Planes, onboarding multi-tenant, webhook Stripe, suscripción, uso, límites, features |
-| **Super Admin** | Panel global: KPIs, tenants, usuarios, billing, analytics (health scores, churn, ocupación, alertas), demo data |
-| **Medical History** | Historial clínico y antecedentes por paciente |
-| **Reports** | Generación de reportes (citas, revenue, pacientes, laboratorio, doctores) con descarga CSV |
-| **Notifications** | Bandeja de notificaciones con filtros, paginación y leído/no leído |
-| **Clinical (hub)** | Pestañas de bookings, fichas clínicas, recetas, historial, pacientes y disponibilidad |
-| **Management (hub)** | Pestañas de analytics, reportes, auditoría y billing |
-
-</details>
-
-<details open>
-<summary><b>🌐 Internacionalización</b></summary>
-
-| Idioma | Estado | Namespaces | Claves |
-|--------|--------|------------|--------|
-| 🇪🇸 Español | Completo | 66 | 3.377 |
-| 🇺🇸 Inglés | Completo (paridad total) | 66 | 3.377 |
-| 🇧🇷 Portugués | Completo (paridad total) | 66 | 3.377 |
-| 🇫🇷 Francés | Completo (paridad total) | 66 | 3.377 |
-
-Patrón `t('ns:clave')`, `fallbackLng: 'es'`, selector de idioma en la topbar, test automático de paridad de claves (`i18n-keys.test.ts`).
-
-</details>
-
-<details open>
-<summary><b>📬 Notificaciones</b></summary>
-
-- Email transaccional (SendGrid + fallback Gmail SMTP)
-- SMS / WhatsApp (Twilio)
-- Recordatorios automáticos de citas cada 5 minutos via job interno
-
-</details>
+El proyecto busca simplificar procesos como la gestión de pacientes, agenda, fichas clínicas, recetas, laboratorio, facturación y análisis, reduciendo la dependencia de herramientas fragmentadas y tareas administrativas manuales.
 
 ---
 
-## 🧱 Stack Tecnológico
+## 🎯 El problema
 
-<div align="center">
+La gestión de un centro de salud puede involucrar múltiples herramientas y procesos separados:
 
-| Capa | Tecnologías |
-|------|-------------|
-| <b>Frontend</b> | React 19, Vite 6, TypeScript 5.7, React Router 7, FullCalendar 6, Recharts 3, Axios |
-| <b>Backend</b> | Express 4, TypeScript 5.8, Zod 4, node-cron, Winston |
-| <b>Base de datos</b> | PostgreSQL 15, pg (raw SQL) con pool y replicación de lectura |
-| <b>Infraestructura</b> | Docker Compose, Render (cloud), Ubuntu |
-| <b>CI/CD</b> | GitHub Actions — typecheck, test, build, deploy automático a Render |
-| <b>Monitoreo</b> | Sentry, logs estructurados Winston |
-| <b>Email</b> | SendGrid + Nodemailer (Gmail SMTP) |
-| <b>SMS</b> | Twilio (SMS + WhatsApp) |
-| <b>Pagos</b> | Stripe (con stub simulado en desarrollo) |
+- Agenda y reservas
+- Información de pacientes
+- Historias clínicas
+- Recetas
+- Resultados de laboratorio
+- Facturación y pagos
+- Reportes y métricas
+- Comunicación y recordatorios
 
-</div>
+Esta fragmentación puede aumentar el trabajo administrativo, dificultar el acceso a la información y hacer más compleja la operación diaria. Vitaria busca centralizar estos procesos en una única plataforma.
 
 ---
 
-## 🏗️ Arquitectura
+## 💡 La solución
 
-El proyecto sigue un patrón **monolito modular**: un solo deploy con módulos débilmente acoplados dentro de `src/modules/`. Cada módulo contiene rutas, controladores, servicios y esquemas de validación propios.
+Vitaria funciona bajo un modelo **SaaS (Software as a Service)**, permitiendo que distintos centros de salud puedan utilizar la plataforma mediante planes de suscripción.
+
+La arquitectura **multi-tenant** permite separar la información de cada organización dentro de una misma plataforma, haciendo posible escalar el servicio a múltiples clientes.
+
+### Principales áreas de la plataforma
+
+| Área | Funcionalidades |
+|------|----------------|
+| 📅 Agenda | Reservas, disponibilidad y gestión de citas |
+| 👥 Pacientes | Gestión de pacientes y antecedentes |
+| 🩺 Atención clínica | Historias clínicas, recetas y diagnósticos |
+| 🧪 Laboratorio | Solicitudes, muestras, resultados y seguimiento |
+| 💳 Gestión | Facturación, pagos y reportes |
+| 📊 Analytics | Indicadores y métricas de operación |
+| 🔔 Notificaciones | Recordatorios y comunicaciones |
+| 🏢 Multi-tenant | Soporte para múltiples centros de salud |
+| 🔐 Seguridad | Autenticación, roles, auditoría y aislamiento de datos |
+
+---
+
+## 🚀 Modelo de negocio
+
+Vitaria está diseñado como un servicio SaaS mediante suscripción mensual. El modelo permite:
+
+- Incorporar nuevos centros de salud sin desarrollar una plataforma independiente para cada uno.
+- Ofrecer diferentes planes según las necesidades del cliente.
+- Escalar progresivamente la cantidad de organizaciones utilizando la plataforma.
+- Generar ingresos recurrentes mediante suscripciones.
+
+El foco inicial es validar la propuesta de valor con centros de salud y profesionales, obtener los primeros clientes y desarrollar un proceso comercial repetible.
+
+---
+
+## 📈 Estado actual
+
+Vitaria cuenta actualmente con una base tecnológica avanzada que permite continuar el proceso de validación y comercialización.
+
+### Producto
+
+- ✅ Plataforma web funcional
+- ✅ Backend API REST
+- ✅ Arquitectura multi-tenant
+- ✅ Gestión de usuarios y roles
+- ✅ Agenda y reservas
+- ✅ Gestión clínica
+- ✅ Laboratorio
+- ✅ Facturación
+- ✅ Analytics
+- ✅ Notificaciones
+- ✅ Planes SaaS
+- ✅ Panel administrativo
+
+### Calidad
+
+- ✅ Suite automatizada de pruebas backend y frontend
+- ✅ Validación TypeScript
+- ✅ CI/CD
+- ✅ Controles de seguridad
+- ✅ Auditoría de operaciones
+- ✅ Monitoreo de errores
+
+El proyecto cuenta con más de **2.700 pruebas automatizadas** entre backend y frontend, utilizadas para mantener la estabilidad de la plataforma durante su evolución.
+
+---
+
+## 🛣️ Próxima etapa
+
+El principal desafío de Vitaria ya no consiste únicamente en desarrollar nuevas funcionalidades. La siguiente etapa está enfocada en convertir el producto tecnológico en un negocio sostenible.
+
+### 1. Validación comercial
+
+- Contactar centros de salud y profesionales
+- Realizar demostraciones
+- Recoger feedback de usuarios
+- Identificar necesidades prioritarias
+
+### 2. Primeros clientes
+
+- Implementar pilotos
+- Ajustar la experiencia de incorporación
+- Validar disposición de pago
+- Obtener primeros ingresos recurrentes
+
+### 3. Comercialización
+
+- Definir estrategia de adquisición de clientes
+- Implementar acciones de marketing
+- Optimizar los planes de suscripción
+- Crear procesos de soporte y onboarding
+
+### 4. Escalamiento
+
+- Incorporar nuevos centros
+- Mejorar automatización
+- Ampliar funcionalidades según necesidades reales
+- Explorar nuevos mercados
+
+---
+
+## 🧱 Arquitectura
+
+Vitaria utiliza una arquitectura de **monolito modular**, separando las principales áreas funcionales en módulos independientes.
 
 ```
-                    ┌─────────────────────────┐
-                    │      React 19 SPA        │
-                    │      Frontend :5173       │
-                    └──────────┬──────────────┘
-                               │  /api
-                    ┌──────────▼──────────────┐
-                    │    Express 4 API         │
-                    │    Backend :3000          │
-                    │                          │
-                    │  ┌─ auth ─ booking ─┐   │
-                    │  │ doctor clinical  │   │
-                    │  │ billing  lab     │   │
-                    │  │ analytics  saas  │   │
-                    │  │ super-admin      │   │
-                    │  └──────────────────┘   │
-                    └──────────┬──────────────┘
-                               │  SQL
-                    ┌──────────▼──────────────┐
-                    │    PostgreSQL 15         │
-                    │    (shared-db multi-     │
-                    │     tenant con tenant_id)│
-                    └─────────────────────────┘
+┌─────────────────────────────┐
+│        React + Vite         │
+│          Frontend            │
+└──────────────┬──────────────┘
+               │ REST API
+┌──────────────▼──────────────┐
+│       Express + Node        │
+│           Backend            │
+│                             │
+│ Auth · Booking · Clinical   │
+│ Laboratory · Billing        │
+│ Analytics · SaaS · Reports  │
+└──────────────┬──────────────┘
+               │ SQL
+┌──────────────▼──────────────┐
+│        PostgreSQL            │
+│       Multi-tenant DB        │
+└─────────────────────────────┘
 ```
 
 ---
 
-## 📁 Estructura del Proyecto
+## 🛠️ Stack tecnológico
 
-```
-├── src/                           # Backend
-│   ├── app.ts                     # Entry point, middlewares globales, rutas
-│   ├── modules/
-│   │   ├── auth/                  # Autenticación, 2FA, recuperación
-│   │   ├── doctor/                # CRUD doctores, invitaciones
-│   │   ├── booking/               # Reservas, slots, agenda
-│   │   ├── availability/          # Disponibilidad semanal + excepciones
-│   │   ├── guest/                 # Booking invitado por RUT
-│   │   ├── clinical-record/       # EHR, recetas, CIE-10, PDF
-│   │   ├── billing/               # Facturación, pagos, seguros
-│   │   ├── laboratory/            # Exámenes, solicitudes, resultados
-│   │   ├── analytics/             # Dashboard, KPIs, pronóstico
-│   │   ├── audit/                 # Logs de auditoría
-│   │   ├── specialties/           # Catálogo de especialidades
-│   │   ├── saas/                  # Planes, suscripciones, onboarding
-│   │   ├── super-admin/           # Panel global multi-tenant
-│   │   ├── medical-history/       # Historial clínico por paciente
-│   │   └── reports/               # Generación de reportes
-│   ├── middlewares/               # auth, tenant, security, validate, errorHandler, etc.
-│   ├── shared/                    # DB pool, JWT, crypto, email, queue, i18n, RUT
-│   ├── jobs/                      # recordatorios (5min), auditoría (6h)
-│   ├── seed/                      # Seed datos de prueba
-│   └── types/                     # Definiciones globales TypeScript
-├── frontend/                      # Frontend React + Vite (consolidado, único)
-│   ├── public/                    # Estáticos (clinicafoto.jpg)
-│   └── src/
-│       ├── modules/               # Módulos por dominio (auth, bookings, doctors, laboratory, super-admin, clinical, management, notifications, etc.)
-│       ├── shared/                # Componentes compartidos, providers, constants (navigation), hooks, utils
-│       ├── test/                  # Tests frontend (178 archivos, 1232 tests)
-│       └── i18n/                  # Traducciones (es, en, pt, fr — 66 namespaces)
-│       └── main.tsx               # Entry point
-├── db/
-│   ├── init.sql                   # Schema completo + índices + triggers + seed
-│   ├── security.sql               # RLS policies, roles, permisos mínimos
-│   └── migrations/                # Migraciones SQL (20 archivos)
-├── docker-compose.yml             # PostgreSQL 15 + Backend + Frontend (dev)
-├── docker-compose.prod.yml        # Backend + Frontend (producción)
-├── Dockerfile                     # Build + deploy backend
-├── render.yaml                    # Config Render
-└── .env.example                   # Template variables de entorno
-```
+### Frontend
+
+- React
+- TypeScript
+- Vite
+- React Router
+- FullCalendar
+- Recharts
+- Axios
+
+### Backend
+
+- Node.js
+- Express
+- TypeScript
+- Zod
+- Winston
+- node-cron
+
+### Base de datos
+
+- PostgreSQL
+- SQL
+- Row-Level Security
+- Multi-tenancy
+
+### Infraestructura
+
+- Docker
+- Docker Compose
+- Render
+- GitHub Actions
+- Sentry
+
+### Integraciones
+
+- Stripe
+- SendGrid
+- Twilio
 
 ---
 
-## 🚀 Inicio Rápido
+## 🔐 Seguridad
 
-```bash
-# 1. Clonar e instalar
-git clone https://github.com/bentlyy/Clinica-Salud-Vital.git
-cd Clinica-Salud-Vital
-npm install
+La plataforma incorpora diferentes capas de seguridad orientadas a proteger la información y separar los datos entre organizaciones:
 
-# 2. Base de datos (PostgreSQL 15)
-docker compose up -d db
-
-# 3. Variables de entorno
-cp .env.example .env
-# Editar .env con tus credenciales
-
-# 4. Iniciar desarrollo
-npm run dev
-```
-
-Frontend en [`http://localhost:5173`](http://localhost:5173), API en [`http://localhost:3000`](http://localhost:3000).
-
-### Scripts Disponibles
-
-| Comando | Descripción |
-|---------|-------------|
-| `npm run dev` | Servidor de desarrollo con hot-reload (tsx watch) |
-| `npm start` | Producción (`node dist/app.js`) |
-| `npm test` | Tests con cobertura (Vitest) |
-| `npm run typecheck` | Verificación TypeScript |
-| `npm run build:backend` | Compilar TypeScript |
-| `npm run build:frontend` | Build frontend React |
-| `npm run build` | Build completo (backend + frontend) |
-
----
-
-## 🔌 API
-
-La API REST usa el prefijo `/api`. Las respuestas siguen el formato `{ data, pagination }` para listas y objeto directo para recursos individuales.
-
-### Convenciones
-
-| Aspecto | Formato |
-|---------|---------|
-| **Autenticación** | `Authorization: Bearer <jwt>` |
-| **Multi-tenancy** | Header `X-Tenant-Id` o desde el JWT |
-| **Paginación** | `?page=1&limit=20` (máx. 100) |
-| **Roles** | `superadmin`, `admin`, `doctor`, `patient` |
-
-### Endpoints Principales
-
-| Módulo | Prefijo | Propósito |
-|--------|---------|-----------|
-| Auth | `/api/auth` | register, login, refresh, logout, 2FA, change-password, forgot/reset, invite-info, reset-admin, jwks |
-| Doctors | `/api/doctors` | CRUD, listar público, invitar, toggle activo, users |
-| Bookings | `/api/bookings` | CRUD, available-slots, daily-density, agenda |
-| Availability | `/api/availability` | Disponibilidad semanal |
-| Exceptions | `/api/availability-exceptions` | Excepciones (full/partial day) |
-| Guest | `/api/guest` | Booking sin login por RUT |
-| Clinical Records | `/api/clinical-records` | EHR, CIE-10, recetas, PDF |
-| Billing | `/api/billing` | Facturas, pagos, seguros, stats |
-| Laboratory | `/api/laboratory` | Tests, solicitudes, muestras, QC, equipos, reactivos, eventos SSE |
-| Analytics | `/api/analytics` | Dashboard, KPIs, demanda, no-shows, vitals |
-| Audit | `/api/audit` | Logs (admin/superadmin) |
-| Specialties | `/api/specialties` | Catálogo público |
-| SaaS | `/api/saas` | Planes, onboarding, webhook Stripe, subscription, usage, limits |
-| Super Admin | `/api/super-admin` | Tenants, usuarios globales, stats, analytics global |
-| Medical History | `/api/medical-history` | Historiales por paciente |
-| Reports | `/api/reports` | Tipos disponibles, generación y descarga |
+- JWT + refresh tokens
+- Autenticación de dos factores
+- Hashing seguro de contraseñas
+- Validación de entradas
+- Rate limiting
+- CORS
+- Helmet
+- Sanitización de información
+- Auditoría de operaciones
+- Row-Level Security
+- Protección SSRF
+- Conexiones SSL a PostgreSQL
+- Gestión de secretos mediante variables de entorno
+- Monitoreo de errores
 
 ---
 
 ## 🧪 Testing
 
+La calidad del software se valida mediante pruebas automatizadas.
+
 ```bash
-npm test                          # Suite completa (backend)
-cd frontend && npm test           # Suite frontend
-npm run test:watch                # Modo watch
-npm run test:coverage             # Reporte HTML
+npm test
+npm run test:coverage
 ```
 
-| Métrica | Valor |
-|---------|-------|
-| **Framework** | Vitest 4 (backend) / Vitest 3 (frontend) |
-| **Tests backend** | 1498 passing — 104 archivos |
-| **Tests frontend** | 1232 passing — 178 archivos |
-| **Cobertura** | Backend ~89% lines (threshold: 85%) · Frontend ~84% lines (threshold: 80%) |
-| **Setup** | Mocks de DB, auth, email, JWT; storage funcional + i18n en frontend |
-| **CI** | GitHub Actions: typecheck → test → build |
+La suite contempla pruebas de backend y frontend, además de validaciones de integración, autenticación, módulos de negocio y componentes de interfaz.
 
 ---
 
-## 🔒 Seguridad
+## 💻 Desarrollo local
 
-| Capa | Implementación |
-|------|---------------|
-| **Headers** | Helmet (CSP con reCAPTCHA + Google Fonts, HSTS preload, frameguard deny) |
-| **Validación** | Zod 4 en body, params y query de todos los endpoints |
-| **Autenticación** | JWT HS256 (15 min), refresh tokens (30 días con rotación y revocación) |
-| **2FA** | TOTP con secreto cifrado AES-256-GCM |
-| **Rate Limiting** | Global (500/15min), Auth (10/15min), PHI (30/15min), Guest (5/hora), SaaS (3/hora) |
-| **CORS** | Solo orígenes explícitos; rechaza `origin: undefined` en producción |
-| **Cookies** | `COOKIE_SECRET` validado al startup (mín. 32 chars, distinto de `JWT_SECRET`) |
-| **Sanitización** | `sanitize-html` en campos clínicos, redacción de datos sensibles en logs |
-| **Anti-fraude** | Advisory locks PostgreSQL para condiciones de carrera |
-| **Auditoría** | Logs encadenados HMAC-SHA256, verificación de integridad cada 6h |
-| **DB SSL** | Conexión SSL con cert CA (verificación `rejectUnauthorized` en producción) |
-| **DB Credentials** | Rol `vitaria_app` con `NOINHERIT`, sin password hardcodeado |
-| **RLS** | Row-Level Security por `app.tenant_id` (GUC registrado via `set_config()`, compatible con PgBouncer) |
-| **SSRF** | Webhook URLs bloqueadas para IPs privadas/internal (127.x, 10.x, 192.168.x, 169.254.x) |
-| **Health Check** | Info mínima en producción (sin pool stats, memory, ni Stripe info) |
-| **Secrets** | `SUPERADMIN_PASSWORD` vacío en `.env.example` con instrucciones de generación |
-| **CI Audit** | `npm audit --audit-level=critical` en GitHub Actions |
-| **Monitoreo** | Sentry para errores no manejados en producción |
+### Requisitos
 
----
+- Node.js
+- npm
+- Docker
+- PostgreSQL
 
-## 🐳 Despliegue
+### Instalación
 
-### Docker Compose (desarrollo local)
+```bash
+git clone https://github.com/bentlyy/Clinica-Salud-Vital.git
+cd Clinica-Salud-Vital
+npm install
+```
+
+Iniciar PostgreSQL:
 
 ```bash
 docker compose up -d db
+```
+
+Configurar variables de entorno:
+
+```bash
+cp .env.example .env
+```
+
+Iniciar el proyecto:
+
+```bash
 npm run dev
 ```
 
-### Docker (producción)
+---
 
-```bash
-npm run build
-docker build -t vitaria-api .
-docker run -p 3000:3000 --env-file .env vitaria-api
+## 📂 Estructura
+
+```
+src/
+├── modules/
+│   ├── auth/
+│   ├── booking/
+│   ├── doctor/
+│   ├── clinical-record/
+│   ├── laboratory/
+│   ├── billing/
+│   ├── analytics/
+│   ├── saas/
+│   ├── reports/
+│   └── ...
+│
+├── middlewares/
+├── shared/
+├── jobs/
+└── types/
+
+frontend/
+├── src/
+│   ├── modules/
+│   ├── shared/
+│   ├── i18n/
+│   └── test/
+
+db/
+├── init.sql
+├── security.sql
+└── migrations/
 ```
 
-### Render (cloud)
+---
 
-El archivo `render.yaml` contiene la configuración. El CI/CD despliega automáticamente al hacer push a `master`:
+## 🌐 Visión
 
-1. ✅ TypeScript check
-2. ✅ Tests + cobertura
-3. ✅ Build backend + frontend
-4. 🚀 Deploy a Render via webhook
-5. 💚 Health check post-deploy
+La visión de Vitaria es convertirse en una herramienta accesible para la gestión digital de centros de salud, permitiendo que establecimientos de distintos tamaños puedan centralizar su operación sin tener que depender de múltiples sistemas desconectados.
+
+El proyecto parte desde una base tecnológica propia y busca evolucionar mediante la validación directa con usuarios y clientes reales.
 
 ---
 
-## 👤 Usuarios de Prueba (Seed)
+## 👨‍💻 Proyecto
 
-| Rol | Email | Password |
-|-----|-------|----------|
-| 🔷 Super Admin | superadmin@clinic.com | `REPLACED_PASSWORD` |
-| 🟢 Admin | admin@clinic.com | `REPLACED_PASSWORD` |
-| 🟡 Doctor | juan@clinic.com | `REPLACED_PASSWORD` |
-| ⚪ Patient | user1@clinic.com | `REPLACED_PASSWORD` |
-| 🔬 Laboratorio | lab@clinic.com | `REPLACED_PASSWORD` |
+Vitaria es desarrollado como un proyecto independiente de software y emprendimiento tecnológico. La evolución del producto combina desarrollo de software, infraestructura cloud, seguridad, automatización y diseño de producto.
 
-Los datos de prueba se generan automáticamente al iniciar la app en desarrollo.
+### 📌 Estado del proyecto
+
+| Campo | Valor |
+|-------|-------|
+| **Producto** | Vitaria |
+| **Modelo** | SaaS B2B |
+| **Sector** | Tecnología / Salud digital |
+| **Etapa** | Validación y preparación comercial |
 
 ---
 
-## 📊 Estado del Proyecto
+## 🔗 Enlaces
 
-<div align="center">
-
-| Aspecto | Estado |
-|---------|--------|
-| **Versión** | `1.0.0` — Producción |
-| **Backend** | 1498 passing tests — ~89% cobertura — typecheck sin errores |
-| **Frontend** | 1232 passing tests (178 archivos, suite completa en verde) — ~84% cobertura — ~50 páginas — lazy loading — tema claro/oscuro — sidebar por rol |
-| **CI/CD** | GitHub Actions (typecheck + test + build) + deploy a Render |
-| **Seguridad** | SSL hardened, CORS/SSRF/Cookie hardening, RLS multi-tenant (GUC set_config), health check mínimo en prod, secret rotation, npm audit critical |
-| **Multi-tenancy** | Implementado con planes SaaS auto-gestionables |
-| **i18n** | 🇪🇸 🇺🇸 🇧🇷 🇫🇷 completos — 3.377 claves c/u — paridad total verificada por test |
-| **Auditoría** | 2026-07-29 — Score ~75/100 — 30 corregidos · 2026-08-11 suites completas en verde ✅ · 2026-08-13 auditoría QA final — 2730 tests (1498 backend + 1232 frontend), cobertura backend ~89% / frontend ~84% · 2026-08-20 auditoría seguridad — SSL hardened, GUC tenant isolation, CORS/SSRF/Cookie hardening, secret rotation, health check minimizado · 20 migraciones SQL |
-| **Documentación** | API docs, ADR (monolito modular), Wiki Obsidian |
-| **Frontend** | Consolidado en `frontend/` (único) — `frontend-v3/` es solo un `node_modules` residual |
-
-</div>
+- **Repositorio:** [https://github.com/bentlyy/Clinica-Salud-Vital](https://github.com/bentlyy/Clinica-Salud-Vital)
+- **Demo:** [https://clinica-salud-vital.onrender.com](https://clinica-salud-vital.onrender.com)
 
 ---
 
 <div align="center">
 
-**Hecho con ❤️ para la salud digital**
-
-[Reportar Bug](https://github.com/bentlyy/Clinica-Salud-Vital/issues) · [Solicitar Feature](https://github.com/bentlyy/Clinica-Salud-Vital/issues) · [Ir al Sitio](https://clinica-salud-vital.onrender.com)
+**Hecho con ❤️ y tecnología para simplificar la gestión de la salud.**
 
 </div>
