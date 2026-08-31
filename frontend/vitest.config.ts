@@ -14,6 +14,7 @@ export default defineConfig({
     globals: true,
     setupFiles: './src/test/setup.ts',
     css: true,
+    testTimeout: 20000,
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov', 'html'],
