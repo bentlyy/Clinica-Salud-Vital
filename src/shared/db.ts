@@ -48,7 +48,7 @@ if (isProduction) {
 
 const sslConfig = useSSL
   ? dbCaCert
-    ? { ca: dbCaCert, rejectUnauthorized }
+    ? { ca: dbCaCert, rejectUnauthorized, checkServerIdentity: () => undefined }
     : { rejectUnauthorized }
   : false;
 
