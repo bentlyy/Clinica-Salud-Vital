@@ -198,8 +198,8 @@ export const createClinicalRecord = async (data: ClinicalRecordData, tenantId: s
 
     if (data.lab_test_ids && data.lab_test_ids.length > 0) {
       const testResult = await client.query(
-        'SELECT id FROM lab_tests WHERE id = ANY($1) AND active = true',
-        [data.lab_test_ids]
+        'SELECT id FROM lab_tests WHERE id = ANY($1) AND active = true AND tenant_id = $2',
+        [data.lab_test_ids, tenantId]
       );
       if (testResult.rows.length !== data.lab_test_ids.length) {
         const found = new Set(testResult.rows.map(r => r.id));
@@ -300,8 +300,8 @@ export const updateClinicalRecord = async (id: string | number, data: ClinicalRe
 
     if (data.lab_test_ids && data.lab_test_ids.length > 0) {
       const testResult = await client.query(
-        'SELECT id FROM lab_tests WHERE id = ANY($1) AND active = true',
-        [data.lab_test_ids]
+        'SELECT id FROM lab_tests WHERE id = ANY($1) AND active = true AND tenant_id = $2',
+        [data.lab_test_ids, tenantId]
       );
       if (testResult.rows.length !== data.lab_test_ids.length) {
         const found = new Set(testResult.rows.map(r => r.id));

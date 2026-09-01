@@ -5,9 +5,20 @@ import { toError } from '../utils/errors.js';
 
 const DEFAULT_TENANT_ID = process.env.DEFAULT_TENANT_ID || 'default';
 
+const getSeedPasswordOrFail = (): string => {
+  const password = process.env.SEED_PASSWORD;
+  if (!password) {
+    throw new Error(
+      'SEED_PASSWORD is not set. Refusing to seed users with a weak default password. ' +
+      'Define SEED_PASSWORD in your environment (e.g. a strong random value) before running the seed.',
+    );
+  }
+  return password;
+};
+
 let _HASH: string | null = null;
 const getHash = async (): Promise<string> => {
-  if (!_HASH) _HASH = await bcrypt.hash(process.env.SEED_PASSWORD || 'REPLACED_PASSWORD', 12);
+  if (!_HASH) _HASH = await bcrypt.hash(getSeedPasswordOrFail(), 12);
   return _HASH!;
 };
 
@@ -96,6 +107,16 @@ export const seed = async (): Promise<void> => {
   await pool.query(`ALTER TABLE refresh_tokens ADD COLUMN IF NOT EXISTS token_version INTEGER DEFAULT 0`);
   await pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS idx_doctors_tenant_email ON doctors (tenant_id, email)`);
 
+  // Seed data / password refreshes only run in non-production (dev/test).
+  // In production we never generate users with a weak default password and we
+  // never overwrite the admin password already configured by the operator.
+  const seedOnStartup = process.env.SEED_ON_STARTUP !== 'false' && process.env.NODE_ENV !== 'production';
+
+  if (!seedOnStartup) {
+    logger.info('[SEED SKIPPED] SEED_ON_STARTUP is disabled in production — not overwriting credentials');
+    return;
+  }
+
   const HASH = await getHash();
   const exists = await pool.query('SELECT 1 FROM users WHERE email = $1 LIMIT 1', ['admin@clinic.com']);
   logger.info('Seed: admin exists check', { exists: exists.rows.length > 0, tenantId: DEFAULT_TENANT_ID });
@@ -117,9 +138,8 @@ export const seed = async (): Promise<void> => {
   const adminInTenant = await pool.query('SELECT id, email, tenant_id FROM users WHERE email = $1 AND tenant_id = $2', ['admin@clinic.com', DEFAULT_TENANT_ID]);
   logger.info('Seed: admin in default tenant', { found: adminInTenant.rows.length > 0, id: adminInTenant.rows[0]?.id });
 
-  // Reset passwords on every deploy so REPLACED_PASSWORD always works
+  // Reset passwords on every deploy so the seed credentials always work
   // Only when SEED_ON_STARTUP=true (default: true in dev, false in prod)
-  const seedOnStartup = process.env.SEED_ON_STARTUP !== 'false' && process.env.NODE_ENV !== 'production';
   if (seedOnStartup) {
     const seedEmails = [
       'admin@clinic.com',
@@ -155,12 +175,8 @@ export const seed = async (): Promise<void> => {
   );
 
   // Si ya existe admin, solo resetea passwords y asegura doctores (sin duplicar bookings/records)
-  if (exists.rows.length > 0 || !seedOnStartup) {
-    if (!seedOnStartup) {
-      logger.info('[SEED SKIPPED] SEED_ON_STARTUP is disabled — skipping heavy seed data');
-    } else {
-      logger.info('Seed passwords refreshed');
-    }
+  if (exists.rows.length > 0) {
+    logger.info('Seed passwords refreshed');
     await ensureDoctorsExist(HASH);
     return;
   }

@@ -44,12 +44,14 @@ cd frontend && npm install && npm run dev
 
 ## Usuarios de Prueba (Seed)
 
-| Rol | Email | Password |
-|-----|-------|----------|
-| Super Admin | superadmin@clinic.com | REPLACED_PASSWORD |
-| Admin | admin@clinic.com | REPLACED_PASSWORD |
-| Doctor | juan@clinic.com | REPLACED_PASSWORD |
-| Patient | user1@clinic.com | REPLACED_PASSWORD |
+Las contraseñas de los usuarios seed se definen mediante la variable de entorno `SEED_PASSWORD` (NUNCA se usa una contraseña por defecto hardcodeada). Si `SEED_PASSWORD` no está definida, el seed falla deliberadamente para evitar crear usuarios con contraseñas débiles.
+
+| Rol | Email |
+|-----|-------|
+| Super Admin | superadmin@clinic.com |
+| Admin | admin@clinic.com |
+| Doctor | juan@clinic.com |
+| Patient | user1@clinic.com |
 
 ---
 

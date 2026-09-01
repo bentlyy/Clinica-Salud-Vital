@@ -142,6 +142,9 @@ export const E = {
   BILLING_INVOICE_NOT_FOUND:    'BILLING_INVOICE_NOT_FOUND',
   BILLING_INVALID_ID:           'BILLING_INVALID_ID',
   BILLING_ACCESS_DENIED:        'BILLING_ACCESS_DENIED',
+  BILLING_PATIENT_NOT_FOUND:    'BILLING_PATIENT_NOT_FOUND',
+  BILLING_DOCTOR_NOT_FOUND:     'BILLING_DOCTOR_NOT_FOUND',
+  BILLING_BOOKING_INVALID:      'BILLING_BOOKING_INVALID',
 
   // ── Guest ───────────────────────────────────────────────────────
   GUEST_TENANT_REQUIRED:        'GUEST_TENANT_REQUIRED',
@@ -356,6 +359,9 @@ export const ERROR_MESSAGES: Record<ErrorCode, string> = {
   [E.BILLING_INVOICE_NOT_FOUND]:    'Invoice not found',
   [E.BILLING_INVALID_ID]:           'Invalid invoice ID',
   [E.BILLING_ACCESS_DENIED]:        'Access denied',
+  [E.BILLING_PATIENT_NOT_FOUND]:    'Patient not found',
+  [E.BILLING_DOCTOR_NOT_FOUND]:     'Doctor not found',
+  [E.BILLING_BOOKING_INVALID]:      'Booking is not valid for this invoice',
 
   // Guest
   [E.GUEST_TENANT_REQUIRED]:        'Tenant ID is required',

@@ -38,7 +38,19 @@ export const createAvailability = asyncHandler(async (req, res) => {
 export const bulkCreateAvailability = asyncHandler(async (req, res) => {
   const { doctor_id, days } = req.body;
 
-  const result = await availabilityService.bulkCreateAvailability({ doctor_id, days }, req.tenant_id);
+  let targetDoctorId = Number(doctor_id);
+  if (req.user!.role === 'doctor') {
+    const doctor = await doctorService.getDoctorByUserId(req.user!.id, req.tenant_id);
+    if (!doctor) throw new NotFoundError(E.DOCTOR_PROFILE_NOT_FOUND);
+    targetDoctorId = doctor.id;
+  } else if (targetDoctorId > 0) {
+    const doctor = await doctorService.getDoctorById(targetDoctorId, req.tenant_id);
+    if (!doctor) throw new NotFoundError(E.DOCTOR_PROFILE_NOT_FOUND);
+  } else {
+    throw new NotFoundError(E.DOCTOR_PROFILE_NOT_FOUND);
+  }
+
+  const result = await availabilityService.bulkCreateAvailability({ doctor_id: targetDoctorId, days }, req.tenant_id);
 
   res.status(201).json(result);
 });

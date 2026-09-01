@@ -98,6 +98,8 @@ export const getClinicalRecordLabResults = asyncHandler(async (req: Request, res
 export const getClinicalRecordsByPatient = asyncHandler(async (req: Request, res: Response) => {
   const patientId = parseInt(String(req.params.patient_id));
 
+  if (Number.isNaN(patientId)) throw new BadRequestError(E.ACCESS_DENIED);
+
   if ((req.user!.role === 'user' || req.user!.role === 'patient') && req.user!.id !== patientId) {
     throw new BadRequestError(E.ACCESS_DENIED);
   }
@@ -106,12 +108,15 @@ export const getClinicalRecordsByPatient = asyncHandler(async (req: Request, res
     const doctor = await doctorService.getDoctorByUserId(req.user!.id, req.tenant_id);
     if (!doctor) throw new NotFoundError(E.DOCTOR_PROFILE_NOT_FOUND);
 
-    const hasRelationship = await clinicalRecordService.getClinicalRecordsByPatient(patientId, req.tenant_id);
-    if (hasRelationship.length === 0) {
-      const hasBooking = await clinicalRecordService.doesDoctorHaveBookingWithPatient(doctor.id, patientId, req.tenant_id);
-      if (!hasBooking) throw new BadRequestError(E.ACCESS_DENIED);
-    }
-    const records = await clinicalRecordService.getClinicalRecordsByPatient(patientId, req.tenant_id);
+    const existingRecords = await clinicalRecordService.getClinicalRecordsByPatient(patientId, req.tenant_id);
+    const hasRelationship = existingRecords.some((r) => r.doctor_id === doctor.id);
+    const hasBooking = await clinicalRecordService.doesDoctorHaveBookingWithPatient(doctor.id, patientId, req.tenant_id);
+    if (!hasRelationship && !hasBooking) throw new BadRequestError(E.ACCESS_DENIED);
+
+    const records = await clinicalRecordService.getAllClinicalRecords({
+      doctor_id: doctor.id,
+      patient_id: patientId,
+    }, req.tenant_id);
 
     return res.json(records);
   }
