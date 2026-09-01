@@ -1,6 +1,7 @@
 import pg from 'pg';
 import { logger } from '../utils/logger.js';
-// DB connection pool with SSL/TLS verification against custom CA
+// DB connection pool with SSL/TLS + custom CA verification
+// All 22 migrations registered in _migrations table
 
 const { Pool } = pg;
 
