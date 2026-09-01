@@ -1,5 +1,6 @@
 import pg from 'pg';
 import { logger } from '../utils/logger.js';
+// DB connection pool with SSL verification
 
 const { Pool } = pg;
 
