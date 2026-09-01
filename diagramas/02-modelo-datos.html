@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vitaria · Modelo de datos</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --color-paper:   #f5f5f5;
+      --color-ink:     #2d3142;
+      --color-muted:   #4f5d75;
+      --color-accent:  #eb6c36;
+      --font-sans:     'Geist', system-ui, sans-serif;
+      --font-serif:    'Instrument Serif', serif;
+      --font-mono:     'Geist Mono', ui-monospace, monospace;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background: var(--color-paper);
+      color: var(--color-ink);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem 2rem;
+    }
+
+    .frame { max-width: 1280px; width: 100%; }
+
+    .eyebrow {
+      font-family: var(--font-mono);
+      font-size: 0.66rem;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--color-muted);
+      margin-bottom: 0.5rem;
+    }
+
+    h1 {
+      font-family: var(--font-serif);
+      font-size: clamp(1.5rem, 2.4vw + 0.75rem, 2rem);
+      font-weight: 400;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+      color: var(--color-ink);
+      margin-bottom: 1.5rem;
+    }
+
+    svg { width: 100%; min-width: 1000px; display: block; }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <p class="eyebrow">Entidad-Relación · Modelo de datos</p>
+    <h1>Vitaria — modelo de datos principal</h1>
+
+    <svg viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="er-modelo-title er-modelo-desc">
+      <title id="er-modelo-title">Modelo entidad-relación de Vitaria</title>
+      <desc id="er-modelo-desc">Modelo de datos mostrando tenants, usuarios, médicos, reservas, facturas, historias clínicas y recetas con sus cardinalidades.</desc>
+      <defs>
+        <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+        <marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/></marker>
+      </defs>
+
+      <rect width="100%" height="100%" fill="#f5f5f5"/>
+
+      <!-- ============ RELATIONSHIP LINES (behind boxes) ============ -->
+      <!-- 1. tenants 1--N users (vertical x=160) -->
+      <line x1="160" y1="276" x2="160" y2="484" stroke="#4f5d75" stroke-width="1.2"/>
+      <!-- 2. tenants 1--N doctors (horizontal y=216) -->
+      <line x1="264" y1="216" x2="380" y2="216" stroke="#4f5d75" stroke-width="1.2"/>
+      <!-- 3. doctors 1--N bookings (horizontal y=216) -->
+      <line x1="588" y1="216" x2="704" y2="216" stroke="#4f5d75" stroke-width="1.2"/>
+      <!-- 4. bookings 1--0..1 invoices (horizontal y=216) -->
+      <line x1="912" y1="216" x2="980" y2="216" stroke="#4f5d75" stroke-width="1.2"/>
+      <!-- 5. bookings 1--0..1 clinical_records (vertical x=808) -->
+      <line x1="808" y1="356" x2="808" y2="484" stroke="#4f5d75" stroke-width="1.2"/>
+      <!-- 6. clinical_records 1--N prescriptions (horizontal y=560) -->
+      <line x1="912" y1="560" x2="980" y2="560" stroke="#4f5d75" stroke-width="1.2"/>
+      <!-- 7. users N--0..1 bookings (elbow via right edge of users) -->
+      <path d="M 264,520 H 636 Q 644,520 644,512 V 384 Q 644,376 652,376 H 732 Q 740,376 740,384 V 356" fill="none" stroke="#4f5d75" stroke-width="1.2"/>
+      <!-- 8. users N--1 clinical_records (horizontal y=560) -->
+      <line x1="264" y1="560" x2="704" y2="560" stroke="#4f5d75" stroke-width="1.2"/>
+
+      <!-- ============ CARDINALITY LABELS ============ -->
+      <text x="172" y="298" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace">1</text>
+      <text x="172" y="470" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace">N</text>
+
+      <text x="272" y="212" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace">1</text>
+      <text x="368" y="212" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace">N</text>
+
+      <text x="596" y="212" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace">1</text>
+      <text x="696" y="212" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace">N</text>
+
+      <text x="900" y="212" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace">1</text>
+      <text x="988" y="212" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace">0..1</text>
+
+      <text x="816" y="344" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace">1</text>
+      <text x="816" y="502" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace">0..1</text>
+
+      <text x="922" y="556" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace">1</text>
+      <text x="966" y="556" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace">N</text>
+
+      <text x="276" y="510" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace">N</text>
+      <text x="750" y="340" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace">0..1</text>
+
+      <text x="278" y="556" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace">N</text>
+      <text x="686" y="556" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace">1</text>
+
+      <!-- ============ ENTITY: tenants ============ -->
+      <g>
+        <rect x="56" y="140" width="208" height="136" rx="6" fill="#f5f5f5"/>
+        <rect x="56" y="140" width="208" height="136" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+        <rect x="68" y="150" width="56" height="14" rx="2" fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+        <text x="96" y="160" fill="#2d3142" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">ENTITY</text>
+        <text x="160" y="178" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">tenants</text>
+        <line x1="68" y1="190" x2="252" y2="190" stroke="rgba(45,49,66,0.12)" stroke-width="0.8"/>
+        <text x="72" y="210" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace"># id</text>
+        <text x="72" y="230" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace">name</text>
+        <text x="72" y="250" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace">domain</text>
+        <text x="72" y="270" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace">active</text>
+      </g>
+
+      <!-- ============ ENTITY: users ============ -->
+      <g>
+        <rect x="56" y="484" width="208" height="196" rx="6" fill="#f5f5f5"/>
+        <rect x="56" y="484" width="208" height="196" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+        <rect x="68" y="494" width="56" height="14" rx="2" fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+        <text x="96" y="504" fill="#2d3142" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">ENTITY</text>
+        <text x="160" y="522" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">users</text>
+        <line x1="68" y1="534" x2="252" y2="534" stroke="rgba(45,49,66,0.12)" stroke-width="0.8"/>
+        <text x="72" y="554" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace"># id</text>
+        <text x="72" y="574" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace">email</text>
+        <text x="72" y="594" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace">password · bcrypt</text>
+        <text x="72" y="614" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace">role</text>
+        <text x="72" y="634" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace">rut</text>
+        <text x="72" y="654" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace">totp_enabled</text>
+        <text x="72" y="674" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace">→ tenant_id</text>
+      </g>
+
+      <!-- ============ ENTITY: doctors ============ -->
+      <g>
+        <rect x="380" y="140" width="208" height="156" rx="6" fill="#f5f5f5"/>
+        <rect x="380" y="140" width="208" height="156" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+        <rect x="392" y="150" width="56" height="14" rx="2" fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+        <text x="420" y="160" fill="#2d3142" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">ENTITY</text>
+        <text x="484" y="178" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">doctors</text>
+        <line x1="392" y1="190" x2="576" y2="190" stroke="rgba(45,49,66,0.12)" stroke-width="0.8"/>
+        <text x="396" y="210" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace"># id</text>
+        <text x="396" y="230" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace">name</text>
+        <text x="396" y="250" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace">specialty</text>
+        <text x="396" y="270" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace">slot_duration</text>
+        <text x="396" y="290" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace">→ user_id</text>
+      </g>
+
+      <!-- ============ ENTITY: bookings (focal coral) ============ -->
+      <g>
+        <rect x="704" y="140" width="208" height="216" rx="6" fill="#f5f5f5"/>
+        <rect x="704" y="140" width="208" height="216" rx="6" fill="rgba(235,108,54,0.08)" stroke="#eb6c36" stroke-width="1"/>
+        <rect x="716" y="150" width="56" height="14" rx="2" fill="transparent" stroke="rgba(235,108,54,0.50)" stroke-width="0.8"/>
+        <text x="744" y="160" fill="#eb6c36" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">ENTITY</text>
+        <text x="790" y="308" fill="rgba(235,108,54,0.10)" font-size="28" font-weight="600" font-family="'Geist Mono', monospace" text-anchor="end">01</text>
+        <text x="808" y="178" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">bookings</text>
+        <text x="808" y="192" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">agenda · núcleo del sistema</text>
+        <line x1="716" y1="202" x2="900" y2="202" stroke="rgba(235,108,54,0.25)" stroke-width="0.8"/>
+        <text x="720" y="222" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace"># id</text>
+        <text x="720" y="242" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace">→ doctor_id</text>
+        <text x="720" y="262" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace">→ user_id</text>
+        <text x="720" y="282" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace">date · time</text>
+        <text x="720" y="302" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace">status</text>
+        <text x="720" y="322" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace">confirmation_token</text>
+        <text x="720" y="342" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace">→ tenant_id</text>
+      </g>
+
+      <!-- ============ ENTITY: invoices ============ -->
+      <g>
+        <rect x="980" y="140" width="208" height="136" rx="6" fill="#f5f5f5"/>
+        <rect x="980" y="140" width="208" height="136" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+        <rect x="992" y="150" width="56" height="14" rx="2" fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+        <text x="1020" y="160" fill="#2d3142" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">ENTITY</text>
+        <text x="1084" y="178" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">invoices</text>
+        <line x1="992" y1="190" x2="1176" y2="190" stroke="rgba(45,49,66,0.12)" stroke-width="0.8"/>
+        <text x="996" y="210" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace"># id</text>
+        <text x="996" y="230" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace">→ booking_id</text>
+        <text x="996" y="250" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace">total · state</text>
+        <text x="996" y="270" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace">stripe_ref</text>
+      </g>
+
+      <!-- ============ ENTITY: clinical_records ============ -->
+      <g>
+        <rect x="704" y="484" width="208" height="156" rx="6" fill="#f5f5f5"/>
+        <rect x="704" y="484" width="208" height="156" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+        <rect x="716" y="494" width="56" height="14" rx="2" fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+        <text x="744" y="504" fill="#2d3142" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">ENTITY</text>
+        <text x="808" y="522" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">clinical_records</text>
+        <line x1="716" y1="534" x2="900" y2="534" stroke="rgba(45,49,66,0.12)" stroke-width="0.8"/>
+        <text x="720" y="554" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace"># id</text>
+        <text x="720" y="574" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace">→ patient_id</text>
+        <text x="720" y="594" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace">→ doctor_id</text>
+        <text x="720" y="614" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace">diagnosis · cie10</text>
+        <text x="720" y="634" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace">status</text>
+      </g>
+
+      <!-- ============ ENTITY: prescriptions ============ -->
+      <g>
+        <rect x="980" y="484" width="208" height="116" rx="6" fill="#f5f5f5"/>
+        <rect x="980" y="484" width="208" height="116" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+        <rect x="992" y="494" width="56" height="14" rx="2" fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+        <text x="1020" y="504" fill="#2d3142" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">ENTITY</text>
+        <text x="1084" y="522" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">prescriptions</text>
+        <line x1="992" y1="534" x2="1176" y2="534" stroke="rgba(45,49,66,0.12)" stroke-width="0.8"/>
+        <text x="996" y="554" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace"># id</text>
+        <text x="996" y="574" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace">→ clinical_record_id</text>
+        <text x="996" y="594" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace">medication</text>
+      </g>
+
+      <!-- ============ LEGEND ============ -->
+      <line x1="56" y1="728" x2="1144" y2="728" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+      <text x="56" y="744" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.18em">LEGEND</text>
+
+      <rect x="56" y="764" width="14" height="10" rx="2" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <text x="76" y="772" fill="#4f5d75" font-size="8.5" font-family="'Geist', sans-serif">Entidad</text>
+
+      <rect x="160" y="764" width="14" height="10" rx="2" fill="rgba(235,108,54,0.08)" stroke="#eb6c36" stroke-width="1"/>
+      <text x="180" y="772" fill="#4f5d75" font-size="8.5" font-family="'Geist', sans-serif">Entidad focal / agregado</text>
+
+      <text x="360" y="772" fill="#4f5d75" font-size="8.5" font-family="'Geist Mono', monospace"># = PK · → = FK</text>
+
+      <text x="520" y="772" fill="#4f5d75" font-size="8.5" font-family="'Geist Mono', monospace">1 · N · 0..1 = cardinalidad</text>
+    </svg>
+  </div>
+</body>
+</html>

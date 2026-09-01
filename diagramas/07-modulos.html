@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vitaria · Mapa de módulos</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --color-paper:   #f5f5f5;
+      --color-ink:     #2d3142;
+      --color-muted:   #4f5d75;
+      --color-accent:  #eb6c36;
+      --font-sans:     'Geist', system-ui, sans-serif;
+      --font-serif:    'Instrument Serif', serif;
+      --font-mono:     'Geist Mono', ui-monospace, monospace;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background: var(--color-paper);
+      color: var(--color-ink);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem 2rem;
+    }
+
+    .frame { max-width: 1200px; width: 100%; }
+
+    .eyebrow {
+      font-family: var(--font-mono);
+      font-size: 0.66rem;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--color-muted);
+      margin-bottom: 0.5rem;
+    }
+
+    h1 {
+      font-family: var(--font-serif);
+      font-size: clamp(1.5rem, 2.4vw + 0.75rem, 2rem);
+      font-weight: 400;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+      color: var(--color-ink);
+      margin-bottom: 1.5rem;
+    }
+
+    svg { width: 100%; min-width: 1100px; display: block; }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <p class="eyebrow">Módulos · Vitaria</p>
+    <h1>Mapa de módulos — frontend ↔ backend</h1>
+
+    <svg viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="mod-title mod-desc">
+      <title id="mod-title">Mapa de módulos de Vitaria</title>
+      <desc id="mod-desc">Cinco secciones alineadas por dominio: frontend React arriba, gateway de middlewares focal, backend Express, banda de servicios compartidos y jobs, y abajo datos y servicios externos; los contratos REST cruzan el gateway y cada servicio externo recibe flecha desde su chip de origen.</desc>
+      <defs>
+        <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+      </defs>
+
+      <rect width="100%" height="100%" fill="#f5f5f5"/>
+
+      <!-- ============ ZONES (drawn first) ============ -->
+      <!-- FRONTEND -->
+      <rect x="24" y="88" width="1152" height="216" rx="8" fill="rgba(45,49,66,0.02)" stroke="rgba(45,49,66,0.20)" stroke-width="0.8" stroke-dasharray="4,4"/>
+      <rect x="150" y="92" width="200" height="12" fill="#f5f5f5"/>
+      <text x="250" y="101" fill="rgba(45,49,66,0.40)" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.14em">FRONTEND · REACT 19 + VITE + TS</text>
+
+      <!-- BACKEND -->
+      <rect x="24" y="388" width="1152" height="176" rx="8" fill="rgba(45,49,66,0.02)" stroke="rgba(45,49,66,0.20)" stroke-width="0.8" stroke-dasharray="4,4"/>
+      <rect x="150" y="392" width="200" height="12" fill="#f5f5f5"/>
+      <text x="250" y="401" fill="rgba(45,49,66,0.40)" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.14em">BACKEND · EXPRESS + TYPESCRIPT</text>
+
+      <!-- COMPARTIDOS & JOBS -->
+      <rect x="24" y="580" width="1152" height="84" rx="8" fill="rgba(45,49,66,0.02)" stroke="rgba(45,49,66,0.20)" stroke-width="0.8" stroke-dasharray="4,4"/>
+      <rect x="180" y="584" width="140" height="12" fill="#f5f5f5"/>
+      <text x="250" y="593" fill="rgba(45,49,66,0.40)" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.14em">COMPARTIDOS &amp; JOBS</text>
+
+      <!-- DATOS & SERVICIOS EXTERNOS -->
+      <rect x="24" y="680" width="1152" height="52" rx="8" fill="rgba(45,49,66,0.02)" stroke="rgba(45,49,66,0.20)" stroke-width="0.8" stroke-dasharray="4,4"/>
+      <rect x="900" y="684" width="170" height="12" fill="#f5f5f5"/>
+      <text x="985" y="693" fill="rgba(45,49,66,0.40)" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.14em">DATOS &amp; SERVICIOS EXTERNOS</text>
+
+      <!-- ============ CONTRACTS FE -> BE (paths behind gateway) ============ -->
+      <line x1="140" y1="300" x2="140" y2="404" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <line x1="366" y1="300" x2="366" y2="404" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <line x1="592" y1="300" x2="592" y2="404" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <line x1="818" y1="300" x2="818" y2="404" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <line x1="1044" y1="300" x2="1044" y2="404" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+
+      <!-- ============ GATEWAY (focal) ============ -->
+      <rect x="40" y="316" width="1120" height="56" rx="6" fill="#f5f5f5"/>
+      <rect x="40" y="316" width="1120" height="56" rx="6" fill="rgba(235,108,54,0.08)" stroke="#eb6c36" stroke-width="1"/>
+      <rect x="48" y="324" width="92" height="12" rx="2" fill="transparent" stroke="rgba(235,108,54,0.50)" stroke-width="0.8"/>
+      <text x="94" y="333" fill="#eb6c36" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">GATEWAY · EXPRESS</text>
+
+      <rect x="156" y="332" width="70" height="20" rx="2" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="0.8"/>
+      <text x="191" y="346" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">correlationId</text>
+      <text x="236" y="348" fill="#4f5d75" font-size="10" font-family="'Geist Mono', monospace">→</text>
+      <rect x="238" y="332" width="47" height="20" rx="2" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="0.8"/>
+      <text x="261" y="346" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">security</text>
+      <text x="295" y="348" fill="#4f5d75" font-size="10" font-family="'Geist Mono', monospace">→</text>
+      <rect x="297" y="332" width="36" height="20" rx="2" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="0.8"/>
+      <text x="315" y="346" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">tenant</text>
+      <text x="343" y="348" fill="#4f5d75" font-size="10" font-family="'Geist Mono', monospace">→</text>
+      <rect x="345" y="332" width="25" height="20" rx="2" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="0.8"/>
+      <text x="357" y="346" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">auth</text>
+      <text x="380" y="348" fill="#4f5d75" font-size="10" font-family="'Geist Mono', monospace">→</text>
+      <rect x="382" y="332" width="42" height="20" rx="2" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="0.8"/>
+      <text x="403" y="346" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">feature</text>
+      <text x="434" y="348" fill="#4f5d75" font-size="10" font-family="'Geist Mono', monospace">→</text>
+      <rect x="436" y="332" width="47" height="20" rx="2" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="0.8"/>
+      <text x="459" y="346" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">validate</text>
+      <text x="493" y="348" fill="#4f5d75" font-size="10" font-family="'Geist Mono', monospace">→</text>
+      <rect x="495" y="332" width="25" height="20" rx="2" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="0.8"/>
+      <text x="507" y="346" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">csrf</text>
+      <text x="530" y="348" fill="#4f5d75" font-size="10" font-family="'Geist Mono', monospace">→</text>
+      <rect x="532" y="332" width="36" height="20" rx="2" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="0.8"/>
+      <text x="550" y="346" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">router</text>
+
+      <text x="1140" y="346" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" text-anchor="end" letter-spacing="0.08em">REST · /api/v1</text>
+
+      <!-- ============ FRONTEND MODULE GROUPS (y124 h176 -> bottom 300) ============ -->
+      <!-- IDENTIDAD -->
+      <rect x="40" y="124" width="200" height="176" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <rect x="48" y="132" width="52" height="12" rx="2" fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+      <text x="74" y="141" fill="#2d3142" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">IDENTIDAD</text>
+      <text x="48" y="168" fill="#2d3142" font-size="9" font-weight="500" font-family="'Geist Mono', monospace">auth</text>
+      <text x="48" y="184" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace">2fa</text>
+      <text x="48" y="200" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace">settings</text>
+      <text x="48" y="216" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace">landing</text>
+
+      <!-- AGENDA & RESERVAS -->
+      <rect x="266" y="124" width="200" height="176" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <rect x="274" y="132" width="116" height="12" rx="2" fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+      <text x="332" y="141" fill="#2d3142" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">AGENDA &amp; RESERVAS</text>
+      <text x="274" y="168" fill="#2d3142" font-size="9" font-weight="500" font-family="'Geist Mono', monospace">bookings</text>
+      <text x="274" y="184" fill="#2d3142" font-size="9" font-weight="500" font-family="'Geist Mono', monospace">availability</text>
+      <text x="274" y="200" fill="#2d3142" font-size="9" font-weight="500" font-family="'Geist Mono', monospace">holidays</text>
+      <text x="274" y="216" fill="#2d3142" font-size="9" font-weight="500" font-family="'Geist Mono', monospace">waitlist</text>
+
+      <!-- SALUD -->
+      <rect x="492" y="124" width="200" height="176" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <rect x="500" y="132" width="40" height="12" rx="2" fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+      <text x="520" y="141" fill="#2d3142" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">SALUD</text>
+      <text x="500" y="168" fill="#2d3142" font-size="9" font-weight="500" font-family="'Geist Mono', monospace">clinical-records</text>
+      <text x="500" y="184" fill="#2d3142" font-size="9" font-weight="500" font-family="'Geist Mono', monospace">clinical-templates</text>
+      <text x="500" y="200" fill="#2d3142" font-size="9" font-weight="500" font-family="'Geist Mono', monospace">medical-history</text>
+      <text x="500" y="216" fill="#2d3142" font-size="9" font-weight="500" font-family="'Geist Mono', monospace">laboratory</text>
+      <text x="500" y="232" fill="#2d3142" font-size="9" font-weight="500" font-family="'Geist Mono', monospace">doctors</text>
+      <text x="500" y="248" fill="#2d3142" font-size="9" font-weight="500" font-family="'Geist Mono', monospace">specialties</text>
+      <text x="500" y="264" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace">patients</text>
+      <text x="500" y="280" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace">prescriptions</text>
+      <text x="500" y="296" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace">clinical</text>
+
+      <!-- NEGOCIO & FINANZAS -->
+      <rect x="718" y="124" width="200" height="176" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <rect x="726" y="132" width="108" height="12" rx="2" fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+      <text x="780" y="141" fill="#2d3142" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">NEGOCIO &amp; FINANZAS</text>
+      <text x="726" y="168" fill="#2d3142" font-size="9" font-weight="500" font-family="'Geist Mono', monospace">billing</text>
+      <text x="726" y="184" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace">dashboard</text>
+      <text x="726" y="200" fill="#2d3142" font-size="9" font-weight="500" font-family="'Geist Mono', monospace">analytics</text>
+      <text x="726" y="216" fill="#2d3142" font-size="9" font-weight="500" font-family="'Geist Mono', monospace">reports</text>
+      <text x="726" y="232" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace">management</text>
+
+      <!-- PLATAFORMA & SISTEMA -->
+      <rect x="944" y="124" width="200" height="176" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <rect x="952" y="132" width="116" height="12" rx="2" fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+      <text x="1010" y="141" fill="#2d3142" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">PLATAFORMA &amp; SISTEMA</text>
+      <text x="952" y="168" fill="#2d3142" font-size="9" font-weight="500" font-family="'Geist Mono', monospace">super-admin</text>
+      <text x="952" y="184" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace">admin</text>
+      <text x="952" y="200" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace">tenants</text>
+      <text x="952" y="216" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace">users</text>
+      <text x="952" y="232" fill="#2d3142" font-size="9" font-weight="500" font-family="'Geist Mono', monospace">audit</text>
+      <text x="952" y="248" fill="#2d3142" font-size="9" font-weight="500" font-family="'Geist Mono', monospace">attachments</text>
+      <text x="952" y="264" fill="#2d3142" font-size="9" font-weight="500" font-family="'Geist Mono', monospace">notifications</text>
+
+      <!-- ============ BACKEND MODULE GROUPS (y404 h148 -> bottom 552) ============ -->
+      <!-- IDENTIDAD -->
+      <rect x="40" y="404" width="200" height="148" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <rect x="48" y="412" width="52" height="12" rx="2" fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+      <text x="74" y="421" fill="#2d3142" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">IDENTIDAD</text>
+      <text x="48" y="452" fill="#2d3142" font-size="9" font-weight="500" font-family="'Geist Mono', monospace">auth</text>
+
+      <!-- AGENDA & RESERVAS -->
+      <rect x="266" y="404" width="200" height="148" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <rect x="274" y="412" width="116" height="12" rx="2" fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+      <text x="332" y="421" fill="#2d3142" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">AGENDA &amp; RESERVAS</text>
+      <text x="274" y="452" fill="#2d3142" font-size="9" font-weight="500" font-family="'Geist Mono', monospace">booking</text>
+      <text x="274" y="468" fill="#2d3142" font-size="9" font-weight="500" font-family="'Geist Mono', monospace">availability</text>
+      <text x="274" y="484" fill="#2d3142" font-size="9" font-weight="500" font-family="'Geist Mono', monospace">holidays</text>
+      <text x="274" y="500" fill="#2d3142" font-size="9" font-weight="500" font-family="'Geist Mono', monospace">waitlist</text>
+      <text x="274" y="516" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace">calendar</text>
+      <text x="274" y="532" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace">guest</text>
+
+      <!-- SALUD -->
+      <rect x="492" y="404" width="200" height="148" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <rect x="500" y="412" width="40" height="12" rx="2" fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+      <text x="520" y="421" fill="#2d3142" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">SALUD</text>
+      <text x="500" y="452" fill="#2d3142" font-size="9" font-weight="500" font-family="'Geist Mono', monospace">clinical-record</text>
+      <text x="500" y="468" fill="#2d3142" font-size="9" font-weight="500" font-family="'Geist Mono', monospace">clinical-templates</text>
+      <text x="500" y="484" fill="#2d3142" font-size="9" font-weight="500" font-family="'Geist Mono', monospace">medical-history</text>
+      <text x="500" y="500" fill="#2d3142" font-size="9" font-weight="500" font-family="'Geist Mono', monospace">laboratory</text>
+      <text x="500" y="516" fill="#2d3142" font-size="9" font-weight="500" font-family="'Geist Mono', monospace">doctor</text>
+      <text x="500" y="532" fill="#2d3142" font-size="9" font-weight="500" font-family="'Geist Mono', monospace">specialties</text>
+
+      <!-- NEGOCIO & FINANZAS -->
+      <rect x="718" y="404" width="200" height="148" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <rect x="726" y="412" width="108" height="12" rx="2" fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+      <text x="780" y="421" fill="#2d3142" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">NEGOCIO &amp; FINANZAS</text>
+      <text x="726" y="452" fill="#2d3142" font-size="9" font-weight="500" font-family="'Geist Mono', monospace">billing</text>
+      <text x="726" y="468" fill="#2d3142" font-size="9" font-weight="500" font-family="'Geist Mono', monospace">analytics</text>
+      <text x="726" y="484" fill="#2d3142" font-size="9" font-weight="500" font-family="'Geist Mono', monospace">reports</text>
+
+      <!-- PLATAFORMA & SISTEMA -->
+      <rect x="944" y="404" width="200" height="148" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <rect x="952" y="412" width="116" height="12" rx="2" fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+      <text x="1010" y="421" fill="#2d3142" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">PLATAFORMA &amp; SISTEMA</text>
+      <text x="952" y="452" fill="#2d3142" font-size="9" font-weight="500" font-family="'Geist Mono', monospace">super-admin</text>
+      <text x="952" y="468" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace">saas</text>
+      <text x="952" y="484" fill="#2d3142" font-size="9" font-weight="500" font-family="'Geist Mono', monospace">audit</text>
+      <text x="952" y="500" fill="#2d3142" font-size="9" font-weight="500" font-family="'Geist Mono', monospace">attachments</text>
+      <text x="952" y="516" fill="#2d3142" font-size="9" font-weight="500" font-family="'Geist Mono', monospace">notifications</text>
+      <text x="952" y="532" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace">webhooks</text>
+      <text x="952" y="540" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace">data-portability</text>
+
+      <!-- ============ SHARED SERVICES & JOBS CARD (y596 h64 -> bottom 660) ============ -->
+      <rect x="40" y="596" width="1120" height="64" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+
+      <!-- JOBS ARROWS (from job chips up to platform modules) -->
+      <line x1="907" y1="608" x2="907" y2="552" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <line x1="989" y1="608" x2="989" y2="552" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+
+      <!-- SHARED ARROWS (from source chips down to external services) -->
+      <line x1="135" y1="652" x2="135" y2="700" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <line x1="363" y1="652" x2="363" y2="700" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <line x1="591" y1="652" x2="591" y2="700" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <line x1="819" y1="652" x2="819" y2="700" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+
+      <!-- Row 1: utilities + jobs (y608 h20) -->
+      <rect x="192" y="608" width="28" height="20" rx="2" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="0.8"/>
+      <text x="206" y="622" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">jwt</text>
+      <rect x="228" y="608" width="39" height="20" rx="2" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="0.8"/>
+      <text x="247" y="622" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">queue</text>
+      <rect x="275" y="608" width="66" height="20" rx="2" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="0.8"/>
+      <text x="308" y="622" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">crypto · PHI</text>
+      <rect x="349" y="608" width="55" height="20" rx="2" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="0.8"/>
+      <text x="377" y="622" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">sessions</text>
+      <rect x="412" y="608" width="34" height="20" rx="2" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="0.8"/>
+      <text x="429" y="622" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">i18n</text>
+      <rect x="454" y="608" width="77" height="20" rx="2" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="0.8"/>
+      <text x="493" y="622" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">multi-tenant</text>
+      <rect x="539" y="608" width="30" height="20" rx="2" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="0.8"/>
+      <text x="554" y="622" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">query</text>
+      <rect x="577" y="608" width="20" height="20" rx="2" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="0.8"/>
+      <text x="587" y="622" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">rut</text>
+      <rect x="605" y="608" width="44" height="20" rx="2" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="0.8"/>
+      <text x="627" y="622" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">sanitize</text>
+      <rect x="657" y="608" width="36" height="20" rx="2" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="0.8"/>
+      <text x="675" y="622" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">escape</text>
+      <rect x="701" y="608" width="40" height="20" rx="2" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="0.8"/>
+      <text x="721" y="622" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">base32</text>
+      <rect x="749" y="608" width="26" height="20" rx="2" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="0.8"/>
+      <text x="762" y="622" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">date</text>
+      <rect x="783" y="608" width="40" height="20" rx="2" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="0.8"/>
+      <text x="803" y="622" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">logger</text>
+      <rect x="831" y="608" width="40" height="20" rx="2" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="0.8"/>
+      <text x="851" y="622" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">errors</text>
+
+      <text x="957" y="601" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.14em">JOBS</text>
+      <rect x="879" y="608" width="55" height="20" rx="2" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="0.8"/>
+      <text x="907" y="622" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">reminder</text>
+      <rect x="942" y="608" width="93" height="20" rx="2" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="0.8"/>
+      <text x="989" y="622" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">audit-integrity</text>
+
+      <!-- Row 2: source chips (y632 h20) aligned above external services -->
+      <rect x="123" y="632" width="23" height="20" rx="2" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="0.8"/>
+      <text x="135" y="646" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">db</text>
+      <rect x="343" y="632" width="39" height="20" rx="2" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="0.8"/>
+      <text x="363" y="646" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">email</text>
+      <rect x="569" y="632" width="44" height="20" rx="2" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="0.8"/>
+      <text x="591" y="646" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">stripe</text>
+      <rect x="797" y="632" width="44" height="20" rx="2" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="0.8"/>
+      <text x="819" y="646" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">sentry</text>
+
+      <!-- ============ DATOS & SERVICIOS EXTERNOS (y700 h32) ============ -->
+      <!-- PostgreSQL (store) -->
+      <rect x="40" y="700" width="190" height="32" rx="6" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="1"/>
+      <rect x="48" y="704" width="56" height="12" rx="2" fill="transparent" stroke="rgba(79,93,117,0.50)" stroke-width="0.8"/>
+      <text x="76" y="713" fill="#4f5d75" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">MANAGED DB</text>
+      <text x="135" y="722" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">PostgreSQL</text>
+
+      <!-- SendGrid (external) -->
+      <rect x="268" y="700" width="190" height="32" rx="6" fill="rgba(45,49,66,0.03)" stroke="rgba(45,49,66,0.30)" stroke-width="1"/>
+      <rect x="276" y="704" width="26" height="12" rx="2" fill="transparent" stroke="rgba(45,49,66,0.22)" stroke-width="0.8"/>
+      <text x="289" y="713" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">SMTP</text>
+      <text x="363" y="722" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">SendGrid</text>
+
+      <!-- Stripe (external) -->
+      <rect x="496" y="700" width="190" height="32" rx="6" fill="rgba(45,49,66,0.03)" stroke="rgba(45,49,66,0.30)" stroke-width="1"/>
+      <rect x="504" y="704" width="44" height="12" rx="2" fill="transparent" stroke="rgba(45,49,66,0.22)" stroke-width="0.8"/>
+      <text x="526" y="713" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">PAYMENTS</text>
+      <text x="591" y="722" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Stripe</text>
+
+      <!-- Sentry (external) -->
+      <rect x="724" y="700" width="190" height="32" rx="6" fill="rgba(45,49,66,0.03)" stroke="rgba(45,49,66,0.30)" stroke-width="1"/>
+      <rect x="732" y="704" width="34" height="12" rx="2" fill="transparent" stroke="rgba(45,49,66,0.22)" stroke-width="0.8"/>
+      <text x="749" y="713" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">ERRORS</text>
+      <text x="819" y="722" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Sentry</text>
+
+      <!-- ============ LEGEND ============ -->
+      <line x1="40" y1="744" x2="1160" y2="744" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+      <text x="40" y="760" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.18em">LEGEND</text>
+
+      <rect x="40" y="774" width="14" height="10" rx="2" fill="rgba(235,108,54,0.08)" stroke="#eb6c36" stroke-width="1"/>
+      <text x="60" y="784" fill="#4f5d75" font-size="8.5" font-family="'Geist', sans-serif">Focal</text>
+
+      <rect x="170" y="774" width="14" height="10" rx="2" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <text x="190" y="784" fill="#4f5d75" font-size="8.5" font-family="'Geist', sans-serif">Módulo · FE+BE</text>
+
+      <rect x="310" y="774" width="14" height="10" rx="2" fill="#7a8399"/>
+      <text x="330" y="784" fill="#4f5d75" font-size="8.5" font-family="'Geist', sans-serif">Módulo · un solo lado</text>
+
+      <rect x="490" y="774" width="14" height="10" rx="2" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="1"/>
+      <text x="510" y="784" fill="#4f5d75" font-size="8.5" font-family="'Geist', sans-serif">Compartido · job</text>
+
+      <rect x="650" y="774" width="14" height="10" rx="2" fill="rgba(45,49,66,0.03)" stroke="rgba(45,49,66,0.30)" stroke-width="1"/>
+      <text x="670" y="784" fill="#4f5d75" font-size="8.5" font-family="'Geist', sans-serif">Servicio externo</text>
+
+      <line x1="810" y1="779" x2="838" y2="779" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <text x="846" y="784" fill="#4f5d75" font-size="8.5" font-family="'Geist', sans-serif">Flujo REST · vía gateway</text>
+
+      <rect x="1010" y="774" width="14" height="10" rx="2" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="1"/>
+      <text x="1030" y="784" fill="#4f5d75" font-size="8.5" font-family="'Geist', sans-serif">Datos gestionados</text>
+    </svg>
+  </div>
+</body>
+</html>

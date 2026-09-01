@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vitaria · Seguridad por capas</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --color-paper:   #f5f5f5;
+      --color-ink:     #2d3142;
+      --color-muted:   #4f5d75;
+      --color-accent:  #eb6c36;
+      --font-sans:     'Geist', system-ui, sans-serif;
+      --font-serif:    'Instrument Serif', serif;
+      --font-mono:     'Geist Mono', ui-monospace, monospace;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background: var(--color-paper);
+      color: var(--color-ink);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem 2rem;
+    }
+
+    .frame { max-width: 1500px; width: 100%; }
+
+    .eyebrow {
+      font-family: var(--font-mono);
+      font-size: 0.66rem;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--color-muted);
+      margin-bottom: 0.5rem;
+    }
+
+    h1 {
+      font-family: var(--font-serif);
+      font-size: clamp(1.5rem, 2.4vw + 0.75rem, 2rem);
+      font-weight: 400;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+      color: var(--color-ink);
+      margin-bottom: 1.5rem;
+    }
+
+    svg { width: 100%; min-width: 1320px; display: block; }
+
+    /* ===== Interactive security boxes ===== */
+    .sec-box { cursor: pointer; transition: transform 0.15s ease; }
+    .sec-box:hover { transform: translateY(-3px); }
+    .sec-box.hovered .box-main { stroke-width: 2; }
+    .sec-box .box-main { transition: stroke-width 0.15s ease, fill 0.15s ease; }
+    .sec-box.hovered .box-main { filter: drop-shadow(0 6px 12px rgba(45,49,66,0.14)); }
+    .hint {
+      font-family: var(--font-mono);
+      font-size: 0.6rem;
+      color: var(--color-muted);
+      opacity: 0.75;
+      letter-spacing: 0.08em;
+    }
+
+    /* ===== Popover ===== */
+    .popover {
+      position: fixed;
+      width: 360px;
+      max-width: 90vw;
+      background: #ffffff;
+      border-radius: 10px;
+      box-shadow: 0 18px 48px rgba(45,49,66,0.22), 0 4px 12px rgba(45,49,66,0.12);
+      border: 1px solid rgba(45,49,66,0.12);
+      padding: 18px 20px;
+      color: var(--color-ink);
+      opacity: 0;
+      transform: translateY(8px) scale(0.97);
+      pointer-events: none;
+      transition: opacity 0.18s ease, transform 0.18s ease;
+      z-index: 50;
+    }
+    .popover.open {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      pointer-events: auto;
+    }
+    .popover.tag {
+      display: inline-block;
+      font-family: var(--font-mono);
+      font-size: 0.62rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      border-radius: 4px;
+      margin-bottom: 8px;
+    }
+    .popover h3 {
+      font-family: var(--font-serif);
+      font-size: 1.05rem;
+      font-weight: 400;
+      letter-spacing: -0.01em;
+      margin: 0 0 6px 0;
+    }
+    .popover .txt {
+      font-family: var(--font-sans);
+      font-size: 0.82rem;
+      line-height: 1.5;
+      color: #3a4152;
+      margin-bottom: 10px;
+    }
+    .popover .meta { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+    .popover .chip {
+      font-family: var(--font-mono);
+      font-size: 0.64rem;
+      background: rgba(45,49,66,0.06);
+      border: 1px solid rgba(45,49,66,0.12);
+      padding: 2px 7px;
+      border-radius: 20px;
+      color: #4f5d75;
+    }
+    .popover .tab { font-size: 0.94rem; }
+    .popover .close {
+      position: absolute;
+      top: 10px;
+      right: 12px;
+      border: none;
+      background: rgba(45,49,66,0.06);
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 0.85rem;
+      color: var(--color-muted);
+      line-height: 1;
+    }
+    .popover .close:hover { background: rgba(45,49,66,0.14); }
+    .popover .foot { font-family: var(--font-mono); font-size: 0.6rem; color: #9aa3b5; letter-spacing: 0.06em; border-top: 1px solid rgba(45,49,66,0.08); padding-top: 8px; }
+
+    rect[data-id] { cursor: pointer; }
+    rect[data-id].interactive:hover { opacity: 0.86; }
+
+    /* ===== Fullscreen modal ===== */
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(45,49,66,0.55);
+      backdrop-filter: blur(3px);
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.22s ease, visibility 0.22s ease;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .overlay.open { opacity: 1; visibility: visible; }
+    .modal {
+      background: #ffffff;
+      border-radius: 14px;
+      max-width: 720px;
+      width: 100%;
+      max-height: 86vh;
+      overflow-y: auto;
+      box-shadow: 0 28px 80px rgba(45,49,66,0.35);
+      padding: 30px 34px 26px;
+      transform: translateY(16px) scale(0.97);
+      transition: transform 0.22s ease;
+      position: relative;
+    }
+    .overlay.open .modal { transform: translateY(0) scale(1); }
+    .modal .m-tag {
+      font-family: var(--font-mono);
+      font-size: 0.66rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      border-radius: 5px;
+      display: inline-block;
+      margin-bottom: 12px;
+    }
+    .modal h2 {
+      font-family: var(--font-serif);
+      font-size: 1.7rem;
+      font-weight: 400;
+      letter-spacing: -0.015em;
+      margin: 0 0 6px 0;
+      color: var(--color-ink);
+    }
+    .modal .m-eyebrow { font-family: var(--font-mono); font-size: 0.6rem; letter-spacing: 0.14em; text-transform: uppercase; color: #9aa3b5; margin-bottom: 14px; }
+    .modal .m-chips { display: flex; flex-wrap: wrap; gap: 7px; margin: 0 0 18px 0; }
+    .modal .m-chip {
+      font-family: var(--font-mono);
+      font-size: 0.66rem;
+      background: rgba(45,49,66,0.06);
+      border: 1px solid rgba(45,49,66,0.12);
+      padding: 4px 10px;
+      border-radius: 20px;
+      color: #4f5d75;
+    }
+    .modal .m-body { font-family: var(--font-sans); font-size: 0.93rem; line-height: 1.65; color: #333b4e; }
+    .modal .m-body p { margin: 0 0 12px 0; }
+    .modal .m-body strong { color: var(--color-ink); }
+    .modal .m-how { margin-top: 16px; }
+    .modal .m-how h4 {
+      font-family: var(--font-serif); font-weight: 400; font-size: 1.02rem; color: var(--color-ink);
+      margin: 0 0 8px 0;
+    }
+    .modal .m-how p { font-size: 0.9rem; color: #4a5266; }
+    .modal .m-applied {
+      margin-top: 18px;
+      background: rgba(235,108,54,0.07);
+      border-left: 3px solid var(--color-accent);
+      border-radius: 6px;
+      padding: 12px 16px;
+      font-family: var(--font-sans); font-size: 0.85rem; line-height: 1.55; color: #4a4150;
+    }
+    .modal .m-applied code {
+      font-family: var(--font-mono); font-size: 0.78rem;
+      background: rgba(45,49,66,0.06); padding: 1px 6px; border-radius: 4px;
+    }
+    .modal .m-close {
+      position: absolute; top: 16px; right: 18px;
+      border: none; background: rgba(45,49,66,0.07);
+      width: 30px; height: 30px; border-radius: 50%;
+      cursor: pointer; font-size: 1.1rem; color: var(--color-muted); line-height: 1;
+    }
+    .modal .m-close:hover { background: rgba(45,49,66,0.15); }
+    .modal::-webkit-scrollbar { width: 8px; }
+    .modal::-webkit-scrollbar-thumb { background: rgba(45,49,66,0.18); border-radius: 8px; }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <p class="eyebrow">Arquitectura · Vitaria</p>
+    <h1>Vitaria — sistema de defensa en profundidad por vulnerabilidad</h1>
+    <p class="hint">Pasa el cursor para un resumen · haz clic para abrir el detalle completo en pantalla</p>
+
+    <svg viewBox="0 0 1440 1020" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="sec-title sec-desc">
+      <title id="sec-title">Sistema de seguridad de Vitaria</title>
+      <desc id="sec-desc">Mapea cada vulnerabilidad a su sistema de defensa a lo largo de las capas: borde Cloudflare, reverse proxy nginx, API Express, frontend React y PostgreSQL en Oracle Cloud, con firewall de OCI.</desc>
+      <defs>
+        <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+        <marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/></marker>
+        <marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2e5aa8"/></marker>
+        <marker id="arrow-attack" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#c0392b"/></marker>
+      </defs>
+
+      <rect width="100%" height="100%" fill="#f5f5f5"/>
+
+      <!-- =================================================================
+           BOUNDARY ZONES (5 lanes) drawn first
+           ================================================================= -->
+      <text x="24" y="60" fill="rgba(45,49,66,0.35)" font-size="9" font-family="'Geist Mono', monospace" letter-spacing="0.2em">ATACANTE</text>
+
+      <rect x="24" y="80" width="280" height="852" rx="10" fill="rgba(192,57,43,0.03)" stroke="rgba(192,57,43,0.25)" stroke-width="0.9" stroke-dasharray="6,5"/>
+      <text x="164" y="238" fill="rgba(192,57,43,0.5)" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.18em" transform="rotate(-90 164 238)">SUPERFICIE DE ATAQUE</text>
+
+      <rect x="332" y="80" width="330" height="852" rx="10" fill="rgba(45,49,66,0.02)" stroke="rgba(45,49,66,0.18)" stroke-width="0.9" stroke-dasharray="6,5"/>
+      <rect x="344" y="84" width="130" height="14" fill="#f5f5f5"/>
+      <text x="409" y="95" fill="rgba(45,49,66,0.38)" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.14em">EDGE · CLOUDFLARE</text>
+
+      <rect x="690" y="80" width="470" height="852" rx="10" fill="rgba(235,108,54,0.03)" stroke="rgba(235,108,54,0.20)" stroke-width="0.9" stroke-dasharray="6,5"/>
+      <rect x="702" y="84" width="180" height="14" fill="#f5f5f5"/>
+      <text x="792" y="95" fill="rgba(235,108,54,0.55)" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.14em">API EXPRESS · CONTEXTO</text>
+
+      <rect x="1188" y="80" width="228" height="852" rx="10" fill="rgba(45,49,66,0.04)" stroke="rgba(45,49,66,0.22)" stroke-width="0.9" stroke-dasharray="6,5"/>
+      <rect x="1200" y="84" width="150" height="14" fill="#f5f5f5"/>
+      <text x="1275" y="95" fill="rgba(45,49,66,0.42)" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.14em">DB · ORACLE CLOUD</text>
+
+      <!-- =================================================================
+           ATTACK LANE (left) — each vulnerability as a system box
+           ================================================================= -->
+      <g font-family="'Geist Mono', monospace">
+        <!-- SQL Injection -->
+        <rect x="40" y="112" width="248" height="124" rx="8" fill="#f5f5f5"/>
+        <rect x="40" y="112" width="248" height="124" rx="8" data-id="tool01" class="box-main" fill="#ffffff" stroke="#c0392b" stroke-width="1" />
+        <rect x="48" y="120" width="76" height="16" rx="3" fill="rgba(192,57,43,0.10)"/>
+        <text x="86" y="132" fill="#c0392b" font-size="7.5" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.12em">SISTEMA 01</text>
+        <text x="56" y="158" fill="#2d3142" font-size="13" font-weight="600" font-family="'Geist', sans-serif">SQL Injection</text>
+        <text x="56" y="176" fill="#4f5d75" font-size="9.5" font-family="'Geist', sans-serif">' OR 1=1 -- · UNION SELECT</text>
+        <text x="56" y="192" fill="#4f5d75" font-size="9.5" font-family="'Geist', sans-serif">exfiltración de PHI · RLS bypass</text>
+
+        <!-- XSS -->
+        <rect x="40" y="252" width="248" height="124" rx="8" fill="#f5f5f5"/>
+        <rect x="40" y="252" width="248" height="124" rx="8" data-id="tool02" class="box-main" fill="#ffffff" stroke="#c0392b" stroke-width="1" />
+        <rect x="48" y="260" width="76" height="16" rx="3" fill="rgba(192,57,43,0.10)"/>
+        <text x="86" y="272" fill="#c0392b" font-size="7.5" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.12em">SISTEMA 02</text>
+        <text x="56" y="298" fill="#2d3142" font-size="13" font-weight="600" font-family="'Geist', sans-serif">Cross-Site Scripting</text>
+        <text x="56" y="316" fill="#4f5d75" font-size="9.5" font-family="'Geist', sans-serif">&lt;script&gt; · iframe · harvest</text>
+        <text x="56" y="332" fill="#4f5d75" font-size="9.5" font-family="'Geist', sans-serif">robo de sesión · cookie theft</text>
+
+        <!-- Login / Brute force -->
+        <rect x="40" y="392" width="248" height="124" rx="8" fill="#f5f5f5"/>
+        <rect x="40" y="392" width="248" height="124" rx="8" data-id="tool03" class="box-main" fill="#ffffff" stroke="#c0392b" stroke-width="1" />
+        <rect x="48" y="400" width="76" height="16" rx="3" fill="rgba(192,57,43,0.10)"/>
+        <text x="86" y="412" fill="#c0392b" font-size="7.5" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.12em">SISTEMA 03</text>
+        <text x="56" y="438" fill="#2d3142" font-size="13" font-weight="600" font-family="'Geist', sans-serif">Login · Credential Stuffing</text>
+        <text x="56" y="456" fill="#4f5d75" font-size="9.5" font-family="'Geist', sans-serif">fuerza bruta · relleno de credenciales</text>
+        <text x="56" y="472" fill="#4f5d75" font-size="9.5" font-family="'Geist', sans-serif">2FA bypass · token replay</text>
+
+        <!-- Code injection -->
+        <rect x="40" y="532" width="248" height="124" rx="8" fill="#f5f5f5"/>
+        <rect x="40" y="532" width="248" height="124" rx="8" data-id="tool04" class="box-main" fill="#ffffff" stroke="#c0392b" stroke-width="1" />
+        <rect x="48" y="540" width="76" height="16" rx="3" fill="rgba(192,57,43,0.10)"/>
+        <text x="86" y="552" fill="#c0392b" font-size="7.5" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.12em">SISTEMA 04</text>
+        <text x="56" y="578" fill="#2d3142" font-size="13" font-weight="600" font-family="'Geist', sans-serif">Code Injection</text>
+        <text x="56" y="596" fill="#4f5d75" font-size="9.5" font-family="'Geist', sans-serif">ejs · eval · objetos no deseados</text>
+        <text x="56" y="612" fill="#4f5d75" font-size="9.5" font-family="'Geist', sans-serif">prototype pollution · RCE</text>
+
+        <!-- SSRF / Server side -->
+        <rect x="40" y="672" width="248" height="124" rx="8" fill="#f5f5f5"/>
+        <rect x="40" y="672" width="248" height="124" rx="8" data-id="tool05" class="box-main" fill="#ffffff" stroke="#c0392b" stroke-width="1" />
+        <rect x="48" y="680" width="76" height="16" rx="3" fill="rgba(192,57,43,0.10)"/>
+        <text x="86" y="692" fill="#c0392b" font-size="7.5" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.12em">SISTEMA 05</text>
+        <text x="56" y="718" fill="#2d3142" font-size="13" font-weight="600" font-family="'Geist', sans-serif">SSRF · Inyección NoSQL</text>
+        <text x="56" y="736" fill="#4f5d75" font-size="9.5" font-family="'Geist', sans-serif">acceso a metadata 169.254.169.254</text>
+        <text x="56" y="752" fill="#4f5d75" font-size="9.5" font-family="'Geist', sans-serif">intranet · payloads deserializados</text>
+
+        <!-- Lateral / supply -->
+        <rect x="40" y="812" width="248" height="104" rx="8" fill="#f5f5f5"/>
+        <rect x="40" y="812" width="248" height="104" rx="8" data-id="tool06" class="box-main" fill="#ffffff" stroke="#c0392b" stroke-width="1" />
+        <rect x="48" y="820" width="76" height="16" rx="3" fill="rgba(192,57,43,0.10)"/>
+        <text x="86" y="832" fill="#c0392b" font-size="7.5" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.12em">SISTEMA 06</text>
+        <text x="56" y="858" fill="#2d3142" font-size="13" font-weight="600" font-family="'Geist', sans-serif">Supply chain · Lateral</text>
+        <text x="56" y="876" fill="#4f5d75" font-size="9.5" font-family="'Geist', sans-serif">dependencias · subida de archivos</text>
+      </g>
+
+      <!-- =================================================================
+           CLOUDFLARE EDGE LANE
+           ================================================================= -->
+      <g font-family="'Geist Mono', monospace">
+        <!-- Edge node -->
+        <rect x="352" y="112" width="290" height="92" rx="8" fill="#f5f5f5"/>
+        <rect x="352" y="112" width="290" height="92" rx="8" data-id="tool07" class="box-main" fill="#ffffff" stroke="#2e5aa8" stroke-width="1" />
+        <rect x="360" y="120" width="52" height="16" rx="3" fill="rgba(46,90,168,0.10)"/>
+        <text x="386" y="132" fill="#2e5aa8" font-size="7.5" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.12em">EDGE</text>
+        <text x="368" y="160" fill="#2d3142" font-size="13" font-weight="600" font-family="'Geist', sans-serif">Cloudflare proxy (naranja)</text>
+        <text x="368" y="178" fill="#4f5d75" font-size="9.5" font-family="'Geist', sans-serif">SSL/TLS · oculta IP origen · DDoS</text>
+
+        <!-- Rate limit + WAF -->
+        <rect x="352" y="228" width="290" height="96" rx="8" fill="#f5f5f5"/>
+        <rect x="352" y="228" width="290" height="96" rx="8" data-id="tool08" class="box-main" fill="#ffffff" stroke="#4f5d75" stroke-width="1" />
+        <rect x="360" y="236" width="64" height="16" rx="3" fill="rgba(79,93,117,0.10)"/>
+        <text x="392" y="248" fill="#4f5d75" font-size="7.5" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.12em">CF RULES</text>
+        <text x="368" y="272" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif">Rate limit + WAF managed</text>
+        <text x="368" y="290" fill="#4f5d75" font-size="9" font-family="'Geist', sans-serif">bloquea bots · OWASP · DDoS L3/L7</text>
+
+        <!-- Bot management -->
+        <rect x="352" y="344" width="290" height="96" rx="8" fill="#f5f5f5"/>
+        <rect x="352" y="344" width="290" height="96" rx="8" data-id="tool09" class="box-main" fill="#ffffff" stroke="#4f5d75" stroke-width="1" />
+        <rect x="360" y="352" width="40" height="16" rx="3" fill="rgba(79,93,117,0.10)"/>
+        <text x="380" y="364" fill="#4f5d75" font-size="7.5" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.12em">BOTS</text>
+        <text x="368" y="388" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif">Bot fight + reCAPTCHA</text>
+        <text x="368" y="406" fill="#4f5d75" font-size="9" font-family="'Geist', sans-serif">challenge login · bloqueo scraping</text>
+
+        <!-- TLS 1.2+ -->
+        <rect x="352" y="460" width="290" height="96" rx="8" fill="#f5f5f5"/>
+        <rect x="352" y="460" width="290" height="96" rx="8" data-id="tool10" class="box-main" fill="#ffffff" stroke="#4f5d75" stroke-width="1" />
+        <rect x="360" y="468" width="64" height="16" rx="3" fill="rgba(79,93,117,0.10)"/>
+        <text x="392" y="480" fill="#4f5d75" font-size="7.5" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.12em">TLS 1.2+</text>
+        <text x="368" y="504" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif">Only TLS v1.2 / v1.3</text>
+        <text x="368" y="522" fill="#4f5d75" font-size="9" font-family="'Geist', sans-serif">HSTS preload · AEAD ciphers</text>
+
+        <!-- DNS security -->
+        <rect x="352" y="576" width="290" height="96" rx="8" fill="#f5f5f5"/>
+        <rect x="352" y="576" width="290" height="96" rx="8" data-id="tool11" class="box-main" fill="#ffffff" stroke="#4f5d75" stroke-width="1" />
+        <rect x="360" y="584" width="52" height="16" rx="3" fill="rgba(79,93,117,0.10)"/>
+        <text x="386" y="596" fill="#4f5d75" font-size="7.5" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.12em">DNS</text>
+        <text x="368" y="620" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif">DNSSEC + records crítica</text>
+        <text x="368" y="638" fill="#4f5d75" font-size="9" font-family="'Geist', sans-serif">A Transporte → 146.181.55.59</text>
+
+        <!-- nginx reverse proxy -->
+        <rect x="352" y="696" width="290" height="108" rx="8" fill="#f5f5f5"/>
+        <rect x="352" y="696" width="290" height="108" rx="8" data-id="tool12" class="box-main" fill="#ffffff" stroke="#2e5aa8" stroke-width="1.2" />
+        <rect x="360" y="704" width="70" height="16" rx="3" fill="rgba(46,90,168,0.10)"/>
+        <text x="395" y="716" fill="#2e5aa8" font-size="7.5" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.12em">REVERSE PROXY</text>
+        <text x="368" y="740" fill="#2d3142" font-size="13" font-weight="600" font-family="'Geist', sans-serif">nginx origin (80·443)</text>
+        <text x="368" y="758" fill="#4f5d75" font-size="9.5" font-family="'Geist', sans-serif">Let's Encrypt · headers de seguridad</text>
+        <text x="368" y="774" fill="#4f5d75" font-size="9.5" font-family="'Geist', sans-serif">limit_req zona general · 301→HTTPS</text>
+
+        <!-- OCI firewall -->
+        <rect x="352" y="824" width="290" height="92" rx="8" fill="#f5f5f5"/>
+        <rect x="352" y="824" width="290" height="92" rx="8" data-id="tool13" class="box-main" fill="#ffffff" stroke="#4f5d75" stroke-width="1" />
+        <rect x="360" y="832" width="52" height="16" rx="3" fill="rgba(79,93,117,0.10)"/>
+        <text x="386" y="844" fill="#4f5d75" font-size="7.5" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.12em">OCI</text>
+        <text x="368" y="868" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif">Security List · 22,80,443</text>
+        <text x="368" y="886" fill="#4f5d75" font-size="9" font-family="'Geist', sans-serif">5432 solo a 74.220.48.30 (Render)</text>
+      </g>
+
+      <!-- =================================================================
+           API EXPRESS LANE
+           ================================================================= -->
+      <g font-family="'Geist Mono', monospace">
+        <!-- Frameworks / headers -->
+        <rect x="712" y="112" width="426" height="116" rx="8" fill="#f5f5f5"/>
+        <rect x="712" y="112" width="426" height="116" rx="8" data-id="tool14" class="box-main api" fill="rgba(235,108,54,0.06)" stroke="#eb6c36" stroke-width="1.1"/>
+        <rect x="720" y="120" width="96" height="16" rx="3" fill="rgba(235,108,54,0.12)"/>
+        <text x="768" y="132" fill="#eb6c36" font-size="7.5" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.12em">SISTEMA 07 · HTTP</text>
+        <text x="728" y="160" fill="#2d3142" font-size="13" font-weight="600" font-family="'Geist', sans-serif">Headers + Content Security Policy</text>
+        <text x="728" y="179" fill="#4f5d75" font-size="9.5" font-family="'Geist', sans-serif">helmet · CSP estricto · HSTS · X-Frame-Options deny</text>
+        <text x="728" y="195" fill="#4f5d75" font-size="9.5" font-family="'Geist', sans-serif">nosniff · Permissions-Policy · frame-ancestors none</text>
+        <text x="728" y="211" fill="#4f5d75" font-size="9.5" font-family="'Geist', sans-serif">→ neutraliza XSS (sistema 02) y clickjacking</text>
+
+        <!-- SQLi defense -->
+        <rect x="712" y="252" width="426" height="116" rx="8" fill="#f5f5f5"/>
+        <rect x="712" y="252" width="426" height="116" rx="8" data-id="tool15" class="box-main api" fill="rgba(235,108,54,0.06)" stroke="#eb6c36" stroke-width="1.1"/>
+        <rect x="720" y="260" width="96" height="16" rx="3" fill="rgba(235,108,54,0.12)"/>
+        <text x="768" y="272" fill="#eb6c36" font-size="7.5" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.12em">SISTEMA 08 · SQLI</text>
+        <text x="728" y="300" fill="#2d3142" font-size="13" font-weight="600" font-family="'Geist', sans-serif">Consultas parametrizadas + RLS</text>
+        <text x="728" y="319" fill="#4f5d75" font-size="9.5" font-family="'Geist', sans-serif">pg $1 parámetros · nunca concatenar input</text>
+        <text x="728" y="335" fill="#4f5d75" font-size="9.5" font-family="'Geist', sans-serif">readPool SELECT · SELECT explícito · tenant_id</text>
+        <text x="728" y="351" fill="#4f5d75" font-size="9.5" font-family="'Geist', sans-serif">→ neutraliza SQL Injection (sistema 01)</text>
+
+        <!-- Input validation / zod -->
+        <rect x="712" y="392" width="426" height="116" rx="8" fill="#f5f5f5"/>
+        <rect x="712" y="392" width="426" height="116" rx="8" data-id="tool16" class="box-main api" fill="rgba(235,108,54,0.06)" stroke="#eb6c36" stroke-width="1.1"/>
+        <rect x="720" y="400" width="96" height="16" rx="3" fill="rgba(235,108,54,0.12)"/>
+        <text x="768" y="412" fill="#eb6c36" font-size="7.5" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.12em">SISTEMA 09 · INPUT</text>
+        <text x="728" y="440" fill="#2d3142" font-size="13" font-weight="600" font-family="'Geist', sans-serif">Validación zod + sanitización</text>
+        <text x="728" y="459" fill="#4f5d75" font-size="9.5" font-family="'Geist', sans-serif">zod body/params/query · hpp · límite 100kb</text>
+        <text x="728" y="475" fill="#4f5d75" font-size="9.5" font-family="'Geist', sans-serif">sanitize-html strip · whitelist campos</text>
+        <text x="728" y="491" fill="#4f5d75" font-size="9.5" font-family="'Geist', sans-serif">→ previene inyección y desbordamiento</text>
+
+        <!-- Login system -->
+        <rect x="712" y="532" width="426" height="116" rx="8" fill="#f5f5f5"/>
+        <rect x="712" y="532" width="426" height="116" rx="8" data-id="tool17" class="box-main api" fill="rgba(235,108,54,0.08)" stroke="#eb6c36" stroke-width="1.2"/>
+        <rect x="720" y="540" width="96" height="16" rx="3" fill="rgba(235,108,54,0.14)"/>
+        <text x="768" y="552" fill="#eb6c36" font-size="7.5" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.12em">SISTEMA 10 · AUTHN</text>
+        <text x="728" y="580" fill="#2d3142" font-size="13" font-weight="600" font-family="'Geist', sans-serif">Login · bcrypt · 2FA TOTP · JWT</text>
+        <text x="728" y="599" fill="#4f5d75" font-size="9.5" font-family="'Geist', sans-serif">bcrypt 12 rounds · cookies Secure/SameSite</text>
+        <text x="728" y="615" fill="#4f5d75" font-size="9.5" font-family="'Geist', sans-serif">2FA TOTP · JWT firmado · session activity</text>
+        <text x="728" y="631" fill="#4f5d75" font-size="9.5" font-family="'Geist', sans-serif">→ defiende Login / brute force (sistema 03)</text>
+
+        <!-- AuthZ + tenant -->
+        <rect x="712" y="672" width="426" height="116" rx="8" fill="#f5f5f5"/>
+        <rect x="712" y="672" width="426" height="116" rx="8" data-id="tool18" class="box-main api" fill="rgba(235,108,54,0.06)" stroke="#eb6c36" stroke-width="1.1"/>
+        <rect x="720" y="680" width="96" height="16" rx="3" fill="rgba(235,108,54,0.12)"/>
+        <text x="768" y="692" fill="#eb6c36" font-size="7.5" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.12em">SISTEMA 11 · AUTHZ</text>
+        <text x="728" y="720" fill="#2d3142" font-size="13" font-weight="600" font-family="'Geist', sans-serif">Roles + multi-tenant + CSRF</text>
+        <text x="728" y="739" fill="#4f5d75" font-size="9.5" font-family="'Geist', sans-serif">authorize(rol) · tenant middleware</text>
+        <text x="728" y="755" fill="#4f5d75" font-size="9.5" font-family="'Geist', sans-serif">CSRF token · cross-tenant JOIN check</text>
+        <text x="728" y="771" fill="#4f5d75" font-size="9.5" font-family="'Geist', sans-serif">→ defiende acceso lateral y CSRF</text>
+
+        <!-- Rate limit + audit -->
+        <rect x="712" y="812" width="426" height="104" rx="8" fill="#f5f5f5"/>
+        <rect x="712" y="812" width="426" height="104" rx="8" data-id="tool19" class="box-main api" fill="rgba(235,108,54,0.06)" stroke="#eb6c36" stroke-width="1.1"/>
+        <rect x="720" y="820" width="96" height="16" rx="3" fill="rgba(235,108,54,0.12)"/>
+        <text x="768" y="832" fill="#eb6c36" font-size="7.5" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.12em">SISTEMA 12 · DURA</text>
+        <text x="728" y="860" fill="#2d3142" font-size="13" font-weight="600" font-family="'Geist', sans-serif">Rate limiting + Audit chain</text>
+        <text x="728" y="879" fill="#4f5d75" font-size="9.5" font-family="'Geist', sans-serif">global 500/15min · auth 10/15min · PHI write</text>
+        <text x="728" y="895" fill="#4f5d75" font-size="9.5" font-family="'Geist', sans-serif">audit log firmado HMAC · phi_audit triggers</text>
+      </g>
+
+      <!-- =================================================================
+           DB LANE
+           ================================================================= -->
+      <g font-family="'Geist Mono', monospace">
+        <rect x="1208" y="112" width="188" height="196" rx="10" fill="#f5f5f5"/>
+        <rect x="1208" y="112" width="188" height="196" rx="10" data-id="tool20" class="box-main" fill="#ffffff" stroke="#4f5d75" stroke-width="1.2" />
+        <rect x="1216" y="120" width="72" height="16" rx="3" fill="rgba(79,93,117,0.10)"/>
+        <text x="1252" y="132" fill="#4f5d75" font-size="7.5" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.12em">SISTEMA 13</text>
+        <text x="1224" y="162" fill="#2d3142" font-size="13" font-weight="600" font-family="'Geist', sans-serif">PostgreSQL 15</text>
+        <text x="1224" y="181" fill="#4f5d75" font-size="9.5" font-family="'Geist', sans-serif">Oracle Cloud · puerto 5432</text>
+        <text x="1224" y="197" fill="#4f5d75" font-size="9.5" font-family="'Geist', sans-serif">solo 74.220.48.30</text>
+        <text x="1224" y="228" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif">SSL hostssl obligatorio</text>
+        <text x="1224" y="246" fill="#4f5d75" font-size="9" font-family="'Geist', sans-serif">ca/server certs · cipher AEAD</text>
+        <text x="1224" y="276" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif">Statement timeout</text>
+        <text x="1224" y="294" fill="#4f5d75" font-size="9" font-family="'Geist', sans-serif">30s · idle 60s · pool max 25</text>
+
+        <rect x="1208" y="332" width="188" height="196" rx="10" fill="#f5f5f5"/>
+        <rect x="1208" y="332" width="188" height="196" rx="10" data-id="tool21" class="box-main" fill="#ffffff" stroke="#4f5d75" stroke-width="1.2" />
+        <rect x="1216" y="340" width="72" height="16" rx="3" fill="rgba(79,93,117,0.10)"/>
+        <text x="1252" y="352" fill="#4f5d75" font-size="7.5" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.12em">SISTEMA 14</text>
+        <text x="1224" y="382" fill="#2d3142" font-size="13" font-weight="600" font-family="'Geist', sans-serif">RLS multi-tenant</text>
+        <text x="1224" y="401" fill="#4f5d75" font-size="9.5" font-family="'Geist', sans-serif">45 policies · app.tenant_id</text>
+        <text x="1224" y="417" fill="#4f5d75" font-size="9.5" font-family="'Geist', sans-serif">bypass superadmin</text>
+        <text x="1224" y="448" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif">REVOKE destructive</text>
+        <text x="1224" y="466" fill="#4f5d75" font-size="9" font-family="'Geist', sans-serif">no DELETE users/PHI · RESTRICT</text>
+        <text x="1224" y="500" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif">Least privilege</text>
+        <text x="1224" y="518" fill="#4f5d75" font-size="9" font-family="'Geist', sans-serif">clinic_user limitado · owner admin</text>
+
+        <rect x="1208" y="552" width="188" height="196" rx="10" fill="#f5f5f5"/>
+        <rect x="1208" y="552" width="188" height="196" rx="10" data-id="tool22" class="box-main" fill="#ffffff" stroke="#4f5d75" stroke-width="1.2" />
+        <rect x="1216" y="560" width="72" height="16" rx="3" fill="rgba(79,93,117,0.10)"/>
+        <text x="1252" y="572" fill="#4f5d75" font-size="7.5" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.12em">SISTEMA 15</text>
+        <text x="1224" y="602" fill="#2d3142" font-size="13" font-weight="600" font-family="'Geist', sans-serif">Cifrado PHI at-rest</text>
+        <text x="1224" y="621" fill="#4f5d75" font-size="9.5" font-family="'Geist', sans-serif">ENCRYPTION_KEY · PHI_MASTER</text>
+        <text x="1224" y="637" fill="#4f5d75" font-size="9.5" font-family="'Geist', sans-serif">cifrado de campos sensibles</text>
+        <text x="1224" y="668" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif">Audit chain HMAC</text>
+        <text x="1224" y="686" fill="#4f5d75" font-size="9" font-family="'Geist', sans-serif">security_audit · integrity job</text>
+        <text x="1224" y="720" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif">Logging</text>
+        <text x="1224" y="738" fill="#4f5d75" font-size="9" font-family="'Geist', sans-serif">log_connections · slow queries</text>
+
+        <rect x="1208" y="776" width="188" height="140" rx="10" fill="#f5f5f5"/>
+        <rect x="1208" y="776" width="188" height="140" rx="10" data-id="tool23" class="box-main" fill="#ffffff" stroke="#4f5d75" stroke-width="1.2" />
+        <rect x="1216" y="784" width="72" height="16" rx="3" fill="rgba(79,93,117,0.10)"/>
+        <text x="1252" y="796" fill="#4f5d75" font-size="7.5" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.12em">SISTEMA 16</text>
+        <text x="1224" y="826" fill="#2d3142" font-size="13" font-weight="600" font-family="'Geist', sans-serif">Backup cifrado</text>
+        <text x="1224" y="845" fill="#4f5d75" font-size="9.5" font-family="'Geist', sans-serif">dumps pg_dump periódicos</text>
+        <text x="1224" y="861" fill="#4f5d75" font-size="9.5" font-family="'Geist', sans-serif">permisos 600 · restauración</text>
+        <text x="1224" y="895" fill="#4f5d75" font-size="9" font-family="'Geist', sans-serif">punto de recuperación ante RCE</text>
+      </g>
+
+      <!-- =================================================================
+           FE / FRONTEND lane — top strip showing React security
+           ================================================================= -->
+      <!-- Frontend system row: placed in a strip above the main lanes -->
+      <g font-family="'Geist Mono', monospace">
+        <rect x="332" y="50" width="252" height="20" rx="4" fill="rgba(46,90,168,0.10)" stroke="#2e5aa8" stroke-width="1"/>
+        <text x="344" y="64" fill="#2d3142" font-size="10" font-weight="600" font-family="'Geist', sans-serif">Frontend React · VITE_API_URL=/api</text>
+
+        <rect x="604" y="50" width="278" height="20" rx="4" fill="rgba(46,90,168,0.10)" stroke="#2e5aa8" stroke-width="1"/>
+        <text x="616" y="64" fill="#2d3142" font-size="10" font-weight="600" font-family="'Geist', sans-serif">SameSite cookies · no secrets en SPA</text>
+
+        <rect x="902" y="50" width="286" height="20" rx="4" fill="rgba(46,90,168,0.10)" stroke="#4f5d75" stroke-width="1"/>
+        <text x="914" y="64" fill="#2d3142" font-size="10" font-weight="600" font-family="'Geist', sans-serif">Escapado de salida · reCAPTCHA en login</text>
+
+        <rect x="1208" y="50" width="208" height="20" rx="4" fill="rgba(46,90,168,0.10)" stroke="#4f5d75" stroke-width="1"/>
+        <text x="1220" y="64" fill="#2d3142" font-size="10" font-weight="600" font-family="'Geist', sans-serif">CSP dictada por backend</text>
+      </g>
+
+      <!-- Frontend strip label -->
+      <text x="332" y="42" fill="rgba(45,49,66,0.35)" font-size="9" font-family="'Geist Mono', monospace" letter-spacing="0.2em">FRONTEND · REACT SPA</text>
+
+      <!-- =================================================================
+           EDGE → API connection (the single ingress to origin)
+           ================================================================= -->
+      <line x1="642" y1="196" x2="704" y2="196" stroke="#2e5aa8" stroke-width="1.4" marker-end="url(#arrow-link)"/>
+      <rect x="640" y="180" width="70" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="675" y="190" fill="#2e5aa8" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">HTTPS</text>
+
+      <!-- API → DB connection -->
+      <line x1="1138" y1="240" x2="1200" y2="240" stroke="#2e5aa8" stroke-width="1.4" marker-end="url(#arrow-link)"/>
+      <rect x="1138" y="224" width="66" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="1171" y="234" fill="#2e5aa8" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">SSL:5432</text>
+
+      <!-- Attack path: attacker → edge (with attack color) -->
+      <line x1="288" y1="300" x2="344" y2="300" stroke="#c0392b" stroke-width="1.4" stroke-dasharray="6,4" marker-end="url(#arrow-attack)"/>
+      <rect x="248" y="284" width="54" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="275" y="294" fill="#c0392b" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">INPUT</text>
+
+      <line x1="24" y1="950" x2="1416" y2="950" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+      <text x="24" y="966" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.18em">LEGEND</text>
+
+      <rect x="24" y="988" width="14" height="10" rx="2" fill="rgba(192,57,43,0.10)" stroke="#c0392b" stroke-width="1"/>
+      <text x="44" y="997" fill="#4f5d75" font-size="8.5" font-family="'Geist', sans-serif">Superficie de ataque</text>
+
+      <rect x="190" y="988" width="14" height="10" rx="2" class="box-main" fill="#ffffff" stroke="#2e5aa8" stroke-width="1" />
+      <text x="210" y="997" fill="#4f5d75" font-size="8.5" font-family="'Geist', sans-serif">Borde / red</text>
+
+      <rect x="330" y="988" width="14" height="10" rx="2" fill="rgba(235,108,54,0.06)" stroke="#eb6c36" stroke-width="1"/>
+      <text x="350" y="997" fill="#4f5d75" font-size="8.5" font-family="'Geist', sans-serif">Aplicación (API Express)</text>
+
+      <rect x="540" y="988" width="14" height="10" rx="2" class="box-main" fill="#ffffff" stroke="#4f5d75" stroke-width="1" />
+      <text x="560" y="997" fill="#4f5d75" font-size="8.5" font-family="'Geist', sans-serif">Datos (PostgreSQL)</text>
+
+      <line x1="720" y1="994" x2="756" y2="994" stroke="#c0392b" stroke-width="1.4" stroke-dasharray="6,4" marker-end="url(#arrow-attack)"/>
+      <text x="764" y="997" fill="#4f5d75" font-size="8.5" font-family="'Geist', sans-serif">Vector de ataque</text>
+
+      <line x1="920" y1="994" x2="956" y2="994" stroke="#eb6c36" stroke-width="1.4" marker-end="url(#arrow-accent)"/>
+      <text x="964" y="997" fill="#4f5d75" font-size="8.5" font-family="'Geist', sans-serif">Control de defensa</text>
+
+      <text x="1120" y="997" fill="#4f5d75" font-size="8.5" font-family="'Geist', sans-serif">Defensa en profundidad</text>
+    </svg>
+  </div>
+
+  <div id="popover" class="popover" aria-hidden="true">
+    <button class="close" aria-label="Cerrar">&times;</button>
+    <span id="pop-tag" class="tag"></span>
+    <h3 id="pop-title"></h3>
+    <div class="meta" id="pop-chips"></div>
+    <div class="txt tab" id="pop-desc"></div>
+    <div class="foot" id="pop-foot"></div>
+  </div>
+
+  <div id="overlay" class="overlay" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="m-title">
+      <button class="m-close" id="m-close" aria-label="Cerrar">&times;</button>
+      <span id="m-tag" class="m-tag"></span>
+      <h2 id="m-title"></h2>
+      <div class="m-eyebrow" id="m-eyebrow"></div>
+      <div class="m-chips" id="m-chips"></div>
+      <div class="m-body" id="m-body"></div>
+      <div class="m-applied" id="m-applied"></div>
+    </div>
+  </div>
+
+  <script>
+  (function () {
+    var DETAILS = {
+      tool01: {
+        tag: 'SISTEMA 01 · Superficie',
+        title: 'SQL Injection',
+        chips: ['OWASP A03', 'data exfiltration', 'RLS bypass'],
+        desc: 'Payloads del tipo \' OR 1=1 --, UNION SELECT o consultas en boolean-blind buscan filtrar, modificar o eliminar registros clínicos (PHI). En un sistema multi-tenant esto puede escalar a saltarse el aislamiento entre clínicas.',
+        foot: 'Mitigado por Sistema 08 (SQLi) y Sistema 14 (RLS)',
+        wh: 'La inyección SQL aprovecha que el input del usuario se concatena como texto dentro de una consulta SQL. Si el atacante descubre dónde se arma la consulta, puede cerrar la cadena y añadir su propio SQL para leer o modificar datos. La idea de la contramedida es simple: nunca mezclar el dato con la instrucción. En vez de escribir "SELECT * FROM users WHERE email = \' + input + \'", se envía la plantilla SQL por un lado y el valor por otro como parámetro separado.',
+        applied: 'En el backend se usa la librería pg, que permite mandar la consulta con marcadores ($1, $2) y el valor por separado. El motor de PostgreSQL los trata como datos, no como código, así que un intento de inyección queda neutralizado. Además se separó un readPool para las lecturas y se evita el SELECT * para reducir superficie.'
+      },
+      tool02: {
+        tag: 'SISTEMA 02 · Superficie',
+        title: 'Cross-Site Scripting (XSS)',
+        chips: ['OWASP A03', 'cookie theft', 'harvesting'],
+        desc: 'Inyección de <script>, iframes o vectores de canvas permiten robar cookies de sesión, tokenizar contraseñas o redirigir a phishing.',
+        foot: 'Mitigado por Sistema 07 (CSP/headers) + frontend (escapado)',
+        wh: 'El XSS ocurre cuando el navegador ejecuta código que en realidad era texto escrito por un usuario. Si una aplicación imprime contenido sin escapar, un atacante puede incrustar <script> que robe la sesión de quien lo visite. Se defiende en dos frentes: primero, al guardar, se limpian los texto; segundo, y más importante, se impide que el navegador ejecute scripts que no debiera mediante una Política de Seguridad de Contenido (CSP).',
+        applied: 'El backend limpia el contenido introducido por usuarios (sanitize-html elimina tags) y la cabecera CSP limita de dónde puede venir el JavaScript: solo del propio sitio, sin unsafe-inline ni unsafe-eval en producción. El frontend también escapa la salida antes de pintarla.'
+      },
+      tool03: {
+        tag: 'SISTEMA 03 · Superficie',
+        title: 'Login · Credential Stuffing',
+        chips: ['OWASP A07', 'brute force', '2FA bypass'],
+        desc: 'Ataques de fuerza bruta, relleno de credenciales robadas y replay de tokens buscan comprometer cuentas de pacientes y profesionales.',
+        foot: 'Mitigado por Sistema 10 (AUTHN) y Sistema 12 (rate limit)',
+        wh: 'La autenticación es la puerta del sistema. Un atacante puede probar miles de contraseñas (fuerza bruta), usar combinaciones robadas de otros sitios (credential stuffing) o aprovechar la misma contraseña en todos sitios (reuso). La defensa combina tres ideas: hacer lento probar contraseñas (hash costoso), exigir una segunda prueba (2FA) y limitar cuántos intentos se permiten por IP y por cuenta.',
+        applied: 'Las contraseñas se guardan con bcrypt (coste 12 rounds, muy lento de forzar). El login habilita autenticación de dos factores con códigos TOTP y un reCAPTCHA en el cliente. Además, el rate limiting limita a 10 intentos por 15 minutos por IP+email.'
+      },
+      tool04: {
+        tag: 'SISTEMA 04 · Superficie',
+        title: 'Code Injection',
+        chips: ['OWASP A03', 'RCE', 'prototype pollution'],
+        desc: 'Ejecución remota de código vía eval, plantillas inseguras, deserialización o manipulación del objeto de request (__proto__).',
+        foot: 'Mitigado por Sistema 09 (validación zod) + límite 100kb',
+        wh: 'La inyección de código ocurre cuando la aplicación interpreta como programa algo que el usuario envió como dato. Funciones como eval(), plantillas que interpolan HTML crudo o librerías que fusionan objetos pueden permitir ejecutar comandos o contaminar el objeto global (prototype pollution). La regla de oro es tratar toda entrada como dato opaco y validarla contra un esquema cerrado.',
+        applied: 'Cada petición se valida con zod: solo pasan los campos esperados con el tipo correcto. El tamaño del cuerpo se limita a 100 kB y no se usa eval ni plantillas peligrosas: el frontend es una SPA de React que escapa la salida por diseño.'
+      },
+      tool05: {
+        tag: 'SISTEMA 05 · Superficie',
+        title: 'SSRF · Inyección NoSQL',
+        chips: ['OWASP A10', 'metadata 169.254', 'intranet'],
+        desc: 'El servidor puede ser inducido a hacer peticiones a 169.254.169.254 (metadata de OCI/Cloudflare), a la red interna o a endpoints desprotegidos.',
+        foot: 'Mitigado por Sistema 13 (firewall OCI/nginx) + validación de URL',
+        wh: 'El Server-Side Request Forgery (SSRF) engaña al servidor para que haga peticiones a lugares que no debería: su propio metadata service (169.254.169.254, que contiene credenciales de la nube), la red interna o servicios locales. Se combate validando las URLs que el usuario puede indicar, prohibiendo rangos privados y, sobre todo, cerrando el egress de la red para que, aunque intente salir, no tenga a dónde.',
+        applied: 'El firewall y la Security List de Oracle solo permiten los puertos 22, 80 y 443, y PostgreSQL solo acepta la IP de Render. Así, una petición SSRF malintencionada no encuentra servicios internos expuestos a los que conectarse.'
+      },
+      tool06: {
+        tag: 'SISTEMA 06 · Superficie',
+        title: 'Supply chain · Lateral',
+        chips: ['OWASP A06', 'dependencias', 'upload'],
+        desc: 'Compromiso de dependencias npm, archivos subidos maliciosos o escalada horizontal entre tenants.',
+        foot: 'Mitigado por Sistema 11 (authz) + REVOKE en DB (Sistema 14)',
+        wh: 'A veces el ataque no va contra el código propio sino contra lo que se usa por debajo: una librería comprometida en npm, un paquete con el mismo nombre (typosquatting) o un archivo subido que en realidad es un ejecutable. La defensa es la cadena de confianza: fijar versiones con lockfiles, escanear dependencias en CI y validar el tipo de archivo. Y para lo lateral, aplicar el principio de mínimo privilegio: cada pieza solo puede hacer lo suyo.',
+        applied: 'Se usan lockfile y engine pinning de Node. A nivel de base de datos, el usuario de la app (clinic_user) tiene permisos limitados, se revocó el DELETE sobre los registros clínicos y se restringieron las cascadas a RESTRICT.'
+      },
+
+      tool07: {
+        tag: 'EDGE · Cloudflare',
+        title: 'Proxy Cloudflare (naranja)',
+        chips: ['record A → 146.181.55.59', 'oculta IP origen', 'anti-DDoS'],
+        desc: 'El registro DNS usa proxy naranja, de modo que el tráfico resuelve a IPs de Cloudflare y nunca se expone la IP del servidor Oracle (146.181.55.59).',
+        foot: 'Herramienta: Cloudflare · proxy_mode = on',
+        wh: 'Cuando un dominio usa el "proxy naranja" de Cloudflare, el DNS no responde con la IP real del servidor, sino con las IPs de Cloudflare. Todo el tráfico pasa primero por su red: filtra ataques, mitiga DDoS y solo reenvía peticiones legítimas al origen. Es una capa de anonimato y protección del origen que se configura simplemente activando el naranja en el registro.',
+        applied: 'Los dominios como transporte.amgdeveloper.cl tienen el registro A con proxy naranja apuntando a la IP del servidor Oracle 146.181.55.59. La IP real queda oculta y recibe la mitigación L3/L7 de Cloudflare.'
+      },
+      tool08: {
+        tag: 'EDGE · Cloudflare',
+        title: 'WAF managed + Rate Limits',
+        chips: ['OWASP CRS', 'managed rules', 'bloqueo de bots'],
+        desc: 'Reglas de WAF gestionadas aplican el Core Rule Set de OWASP y los rate limits frenan scraping y fuerza bruta antes de llegar al origen.',
+        foot: 'Herramienta: Cloudflare WAF + Rules · OWASP CRS',
+        wh: 'Un Web Application Firewall inspecta cada petición y la compara contra reglas de ataques conocidos (el Core Rule Set de OWASP cubre inyección SQL, XSS, etc.) antes de que llegue a la aplicación. Los rate limits, por su parte, cuentan peticiones por IP o ASN y bloquean a quien exceda un umbral, frenando scraping y fuerza bruta en el borde.',
+        applied: 'En Cloudflare está activo el WAF gestionado con el Core Rule Set y reglas de rate limiting. Esto complementa a nginx y a express-rate-limit como primera barrera que ni siquiera llega a la app.'
+      },
+      tool09: {
+        tag: 'EDGE · Cloudflare',
+        title: 'Bot fight + reCAPTCHA',
+        chips: ['challenge en login', 'Browser Integrity', 'bloqueo scraping'],
+        desc: 'Los ataques automatizados se frenan con el motor anti-bot de Cloudflare y, en el login, con reCAPTCHA v3.',
+        foot: 'Herramienta: Cloudflare Bot Management + Google reCAPTCHA v3',
+        wh: 'Muchos ataques son automatizados: programas que prueban contraseñas o copian datos sin parar. Para distinguir máquinas de humanos se usan pruebas. El motor anti-bot de Cloudflare analiza el navegador y su comportamiento; Google reCAPTCHA v3 asigna una puntuación (0 a 1) a cada interacción sin molestar al usuario, y las peticiones por debajo de un umbral se bloquean.',
+        applied: 'En el login se integra reCAPTCHA v3: el cliente obtiene un token y el backend lo valida con RECAPTCHA_SECRET_KEY. Cloudflare complementa con challenge anti-bot para bloquear el tráfico no humano.'
+      },
+      tool10: {
+        tag: 'EDGE · Cloudflare',
+        title: 'TLS 1.2 / 1.3 + HSTS',
+        chips: ['min TLS 1.2', 'HSTS preload', 'cipher AEAD'],
+        desc: 'El borde solo negocia TLS 1.2+ con suites AEAD y emite HSTS para forzar cifrado.',
+        foot: 'Herramienta: Cloudflare SSL/TLS + Let\u2019s Encrypt origin',
+        wh: 'TLS es el cifrado que protege el tráfico mientras viaja por internet. No basta con tenerlo: hay que exigir versiones modernas y algoritmos seguros. Forzar un mínimo de TLS 1.2 o 1.3 evita ataques de downgrade a versiones vulnerables. La cabecera HSTS le dice al navegador "usa siempre HTTPS", evitando que un atacante degrade la conexión a HTTP inseguro.',
+        applied: 'Cloudflare está configurado para mínimo TLS 1.2 con suites AEAD, y se emiten cabeceras HSTS de un año con preload. En el origen, nginx redirige cualquier HTTP a HTTPS (301).'
+      },
+      tool11: {
+        tag: 'EDGE · Cloudflare',
+        title: 'DNSSEC',
+        chips: ['firma de registros', 'anti-cache poisoning', 'A Transporte'],
+        desc: 'DNSSEC firma los registros DNS para prevenir envenenamiento de caché.',
+        foot: 'Herramienta: Cloudflare DNS · DNSSEC activado',
+        wh: 'El DNS es la agenda telefónica de internet: traduce un nombre a una IP. Si un atacante falsifica esa respuesta, el usuario termina en un servidor falso sin darse cuenta. DNSSEC añade una firma criptográfica a cada pregunta de DNS para que el navegador sepa que la respuesta es auténtica y no ha sido manipulada.',
+        applied: 'DNSSEC está activado para los dominios gestionados en Cloudflare. Así el registro A que apunta al servidor Oracle queda firmado y no se puede envenenar la resolución.'
+      },
+      tool12: {
+        tag: 'EDGE · Reverse proxy',
+        title: 'nginx origin (80·443)',
+        chips: ['Let\u2019s Encrypt', '301→HTTPS', 'limit_req'],
+        desc: 'nginx hace de reverse proxy publicando solo 80/443 con certificados Let\u2019s Encrypt y limit_req.',
+        foot: 'Herramienta: nginx + certbot · /etc/nginx/conf.d/*.conf',
+        wh: 'Un reverse proxy es un intermediario que recibe las peticiones y las reenvía a las aplicaciones internas. Permite concentrar en un solo punto: cifrado TLS con certificados automáticos (Let\u2019s Encrypt), añadir cabeceras de seguridad, limitar la velocidad de peticiones y mantener a los backends ocultos en 127.0.0.1, sin puertos públicos.',
+        applied: 'nginx expone solo 80/443 en el servidor Oracle, con certificados Let\u2019s Encrypt renovados por certbot y limit_req (zona general, burst 20). Reenvía a los backends en localhost y añade cabeceras sameorigin, nosniff y HSTS.'
+      },
+      tool13: {
+        tag: 'EDGE · Oracle Cloud',
+        title: 'Firewall / Security List OCI',
+        chips: ['solo 22, 80, 443', '5432 → 74.220.48.30', 'egress restringido'],
+        desc: 'La Security List de OCI y el firewall del SO exponen únicamente SSH(22), HTTP(80) y HTTPS(443).',
+        foot: 'Herramienta: OCI Security List + firewalld · puertos mínimos',
+        wh: 'El firewall es la frontera física de la red. La buena práctica es exponer el mínimo absoluto: solo los puertos que el público y el administrador necesitan. Cada puerto extra es una puerta que un atacante puede probar. La base de datos, por ejemplo, casi nunca debe estar en internet: solo el servidor de la aplicación debería poder conectarse.',
+        applied: 'La Security List de Oracle solo abre 22, 80 y 443. PostgreSQL (5432) acepta únicamente la IP de egress estática de Render (74.220.48.30) y la IP del administrador; el resto se descarta.'
+      },
+
+      tool14: {
+        tag: 'SISTEMA 07 · API Express',
+        title: 'Headers + Content Security Policy',
+        chips: ['helmet ^8.1.0', 'CSP estricto', 'HSTS 1 año preload'],
+        desc: 'helmet configura CSP, X-Frame-Options deny, nosniff, referrer-policy y Permissions-Policy.',
+        foot: 'Herramienta: helmet 8 · src/middlewares/security.middleware.ts',
+        wh: 'Las cabeceras HTTP son metadatos que el navegador respeta para endurecerse. La Content Security Policy (CSP) es la más poderosa: le dice al navegador de qué orígenes puede cargar scripts, estilos o imágenes. Con una CSP estricta, aunque un atacante logre inyectar código, el navegador se niega a ejecutarlo. Otras cabeceras bloquean que la página se muestre en un iframe ajeno (clickjacking) o que se sniffee el tipo de un archivo.',
+        applied: 'El middleware security.middleware.ts centraliza helmet: CSP estricta (sin unsafe-* en producción), X-Frame-Options deny, frame-ancestors none, nosniff, referrer-policy y Permissions-Policy que bloquea cámara, micrófono y geolocalización.'
+      },
+      tool15: {
+        tag: 'SISTEMA 08 · API Express',
+        title: 'Consultas parametrizadas',
+        chips: ['pg ^8.18.0', '$1 placeholders', 'readPool SELECT'],
+        desc: 'Todas las consultas usan parámetros $1 de la librería pg — nunca se concatena input dentro de SQL.',
+        foot: 'Herramienta: node-postgres · src/shared/db.ts + query.ts',
+        wh: 'La consulta parametrizada es la defensa definitiva contra inyección SQL. En lugar de armar la consulta como una cadena de texto con el input incrustado, se separa la estructura (la plantilla SQL) de los valores. El motor de la base de datos compila la consulta sabiendo qué partes son código y cuáles datos, por lo que un input malicioso nunca puede convertirse en instrucción.',
+        applied: 'La capa de datos (db.ts y query.ts) usa siempre parámetros $1, $2... para cualquier valor que venga del usuario, y se mantiene un readPool dedicado a las consultas de lectura para distribuir la carga.'
+      },
+      tool16: {
+        tag: 'SISTEMA 09 · API Express',
+        title: 'Validación zod + sanitización',
+        chips: ['zod ^4.4.3', 'sanitize-html ^2.17.4', 'hpp ^0.2.3'],
+        desc: 'zod valida body, params y query; sanitize-html elimina tags; hpp limpia duplicados; límite 100kb.',
+        foot: 'Herramienta: zod + sanitize-html + hpp · validate.middleware.ts',
+        wh: 'Validar es decidir si la entrada es aceptable antes de usarla. Sobre validar ni se discute: todo dato del usuario debe comprobarse contra un esquema estricto de campos, tipos y tamaños. La sanitización es el paso extra de limpiar el contenido para quitar cualquier resto peligroso (tags HTML, comandos). Ambas juntas reducen drásticamente lo que un atacante puede colar.',
+        applied: 'Cada ruta declara su esquema en zod y el middleware validate solo deja pasar lo que cumple. El texto se limpia con sanitize-html, los parámetros duplicados se descartan con hpp y el cuerpo se limita a 100kB.'
+      },
+      tool17: {
+        tag: 'SISTEMA 10 · API Express',
+        title: 'Login · bcrypt · 2FA · JWT',
+        chips: ['bcrypt 6', 'TOTP', 'jsonwebtoken ^9.0.3'],
+        desc: 'Contraseñas con bcrypt (12 rounds), 2FA TOTP, JWT en cookies Secure y SameSite.',
+        foot: 'Herramienta: bcrypt + jsonwebtoken + hi-base32 · auth.service.ts',
+        wh: 'Autenticarse es demostrar quién eres. El flujo combina varias piezas: la contraseña nunca se guarda en claro, sino un hash calculado con un algoritmo deliberadamente lento (bcrypt) para que forzarla cueste eternidades. El segundo factor (TOTP, tipo Google Authenticator) añade una prueba que cambia cada 30 segundos. Y la sesión se entrega como un token firmado (JWT) que el servidor puede verificar sin guardar estado.',
+        applied: 'El backend usa bcrypt a coste 12, genera códigos TOTP con hi-base32 y emite JWT firma en cookies Secure y SameSite, con un COOKIE_SECRET independiente de JWT_SECRET y un token_version para invalidar sesiones en cualquier momento.'
+      },
+      tool18: {
+        tag: 'SISTEMA 11 · API Express',
+        title: 'Roles + Multi-tenant + CSRF',
+        chips: ['authorize(rol)', 'tenant middleware', 'csrf token'],
+        desc: 'authorize() limita cada ruta por rol; tenant middleware alimenta la RLS; protección CSRF.',
+        foot: 'Herramienta: express middleware · csrf.middleware.ts + auth.middleware.ts',
+        wh: 'La autorización decide qué puede hacer cada quien una vez autenticado. Se basa en dos ideas: por roles (solo ciertos roles ejecutan ciertas acciones) y por recurso (cada usuario solo ve lo suyo). En un SaaS multi-tenant, esa segunda parte es crítica: un tenant no debe ver datos de otro. El CSRF, aparte, impide que un sitio malicioso haga acciones en nombre del usuario aprovechando su sesión.',
+        applied: 'authorize(rol) protege cada ruta. El middleware de tenant fija req.tenant_id que alimenta la RLS de la BD (aislamiento a nivel de fila). La protección CSRF usa un token en cookie SameSite=Lax verificado por cabecera en métodos que cambian estado.'
+      },
+      tool19: {
+        tag: 'SISTEMA 12 · API Express',
+        title: 'Rate limiting + Audit chain',
+        chips: ['express-rate-limit ^7.5.0', 'HMAC audit', 'cron 6h'],
+        desc: 'Rate limit global 500/15min, auth 10/15min, PHI write 30/15min; audit firmado con HMAC.',
+        foot: 'Herramienta: express-rate-limit + audit-integrity.job.ts',
+        wh: 'El rate limiting pone un freno a cuántas veces se puede llamar a un endpoint en un lapso, frustrando fuerza bruta y abuso. La cadena de auditoría es distinta: cada evento sensible (acceso a datos clínicos, borrados) se registra y se encadena de forma que si alguien manipula un registro antiguo, la cadena se rompe y se detecta. Es la garantía de que "lo que pasó, quedó escrito y nadie lo borró".',
+        applied: 'express-rate-limit configura límites por tenant+IP (500 global, 10 en login, 30 en escrituras de PHI). El audit se firma con HMAC (AUDIT_HMAC_SECRET) y un job cada 6 horas verifica que la cadena no esté rota.'
+      },
+
+      tool20: {
+        tag: 'SISTEMA 13 · PostgreSQL',
+        title: 'PostgreSQL 15 · SSL',
+        chips: ['Oracle Cloud :5432', 'hostssl', 'statement_timeout 30s'],
+        desc: 'Base en Oracle Cloud con SSL obligatorio (hostssl) y cifrado AEAD, con timeouts y pool acotado.',
+        foot: 'Herramienta: PostgreSQL 15 · db.ts + postgresql.conf',
+        wh: 'El cifrado en tránsito (SSL/TLS) protege los datos mientras viajan entre la aplicación y la base. Exigir hostssl significa que el motor rechaza cualquier conexión que no vaya cifrada. Los timeout evitan que una consulta o transacción congelada consuma recursos para siempre, y limitar el pool controla cuántas conexiones simultáneas puede abrir la app.',
+        applied: 'PostgreSQL en Oracle Cloud tiene SSL obligatorio con certificados (ca/server), statement_timeout de 30s, idle-in-transaction de 60s y un pool de hasta 25 conexiones. El puerto 5432 solo admite la IP de Render.'
+      },
+      tool21: {
+        tag: 'SISTEMA 14 · PostgreSQL',
+        title: 'RLS multi-tenant + REVOKE',
+        chips: ['45 policies', 'app.tenant_id', 'no DELETE PHI'],
+        desc: 'Row-Level Security con 45 policies usando app.tenant_id, REVOKE DELETE y privilegio mínimo.',
+        foot: 'Herramienta: PostgreSQL RLS · db/security.sql',
+        wh: 'La Row-Level Security (RLS) es el aislamiento dentro de la propia base de datos: cada fila pertenece a un tenant, y el motor solo devuelve al usuario las filas de su tenant, sin importar la aplicación que haga la consulta. Es una red de seguridad que funciona incluso si la capa de aplicación falla. Complementar con REVOKE de operaciones peligrosas reduce daño posible.',
+        applied: 'Se habilitó RLS en ~40 tablas con 45 policies basadas en app.tenant_id (con bypass para superadmin). Se revocó el DELETE sobre PHI, los CASCADE se cambiaron a RESTRICT y las funciones con privilegios especiales quedaron en manos del administrador.'
+      },
+      tool22: {
+        tag: 'SISTEMA 15 · PostgreSQL',
+        title: 'Cifrado PHI + Audit triggers',
+        chips: ['ENCRYPTION_KEY', 'PHI_MASTER_KEY', 'phi_audit'],
+        desc: 'Campos clínicos sensibles cifrados y disparadores de auditoría sobre la PHI.',
+        foot: 'Herramienta: AES en app + triggers · crypto.service.ts',
+        wh: 'El cifrado en reposo protege los datos aunque alguien acceda físicamente al almacenamiento: sin la clave, los datos cifrados son ilegibles. Conviene cifrar especialmente la PHI (datos clínicos identificables). Los disparadores (triggers) de auditoría, por su lado, se ejecutan automáticamente dentro de la base cada vez que alguien lee o toca datos sensibles, dejando constancia.',
+        applied: 'Los campos clínicos sensibles se cifran en la aplicación con claves separadas (ENCRYPTION_KEY y PHI_MASTER_KEY). Los triggers security_audit y phi_audit registran el acceso a PHI para alimentar la cadena de auditoría.'
+      },
+      tool23: {
+        tag: 'SISTEMA 16 · PostgreSQL',
+        title: 'Backup cifrado',
+        chips: ['pg_dump', 'permisos 600', 'punto de recuperación'],
+        desc: 'Dumps periódicos de pg_dump con permisos 600 y cifrado, garantizando un punto de recuperación.',
+        foot: 'Herramienta: pg_dump · ~/projects/clinic-db/backups/',
+        wh: 'Un backup es el último recurso cuando todo lo demás falla: un borrado accidental, un ransomware o una mala migración. La disciplina es hacer copias periódicas (pg_dump), protegerlas con permisos restringidos y cifrado, y —lo más importante— probar que se pueden restaurar. Sin esa prueba, un backup es solo una esperanza.',
+        applied: 'Se generan dumps periódicos hacia ~/projects/clinic-db/backups/ con permisos 600 y cifrado, configurando el punto de recuperación ante cualquier incidente destructivo.'
+      }
+    };
+
+    var pop = document.getElementById('popover');
+    var popTag = document.getElementById('pop-tag');
+    var popTitle = document.getElementById('pop-title');
+    var popChips = document.getElementById('pop-chips');
+    var popDesc = document.getElementById('pop-desc');
+    var popFoot = document.getElementById('pop-foot');
+
+    var overlay = document.getElementById('overlay');
+    var mTag = document.getElementById('m-tag');
+    var mTitle = document.getElementById('m-title');
+    var mEyebrow = document.getElementById('m-eyebrow');
+    var mChips = document.getElementById('m-chips');
+    var mBody = document.getElementById('m-body');
+    var mApplied = document.getElementById('m-applied');
+
+    var activeId = null;
+
+    function fillChips(container, chips, cls) {
+      container.innerHTML = '';
+      (chips || []).forEach(function (c) {
+        var s = document.createElement('span');
+        s.className = cls;
+        s.textContent = c;
+        container.appendChild(s);
+      });
+    }
+
+    function showPopup(id) {
+      var d = DETAILS[id];
+      if (!d) return;
+      popTag.textContent = d.tag;
+      popTitle.textContent = d.title;
+      fillChips(popChips, d.chips, 'chip');
+      popDesc.textContent = d.desc;
+      popFoot.textContent = d.foot || '';
+      pop.setAttribute('aria-hidden', 'false');
+      pop.classList.add('open');
+    }
+
+    function placePopup(rect) {
+      var r = rect.getBoundingClientRect();
+      var w = pop.offsetWidth || 360;
+      var left = r.left + (r.width / 2) - (w / 2);
+      left = Math.max(12, Math.min(left, window.innerWidth - w - 12));
+      var top = r.top - pop.offsetHeight - 12;
+      if (top < 12) top = r.bottom + 12;
+      pop.style.left = left + 'px';
+      pop.style.top = top + 'px';
+    }
+
+    function closePopup() {
+      pop.classList.remove('open');
+      pop.setAttribute('aria-hidden', 'true');
+    }
+
+    function openModal(id) {
+      var d = DETAILS[id];
+      if (!d) return;
+      activeId = id;
+      closePopup();
+      mTag.textContent = d.tag;
+      mTitle.textContent = d.title;
+      mEyebrow.textContent = d.foot || 'Herramienta del sistema';
+      fillChips(mChips, d.chips, 'm-chip');
+
+      var sb = [];
+      if (d.title) sb.push('<p><strong>' + d.title + '</strong> ' + (d.wh || '') + '</p>');
+      else if (d.wh) sb.push('<p>' + d.wh + '</p>');
+      sb.push('<div class="m-how"><h4>Cómo se aplica en el proyecto</h4><p>' + (d.applied || '') + '</p></div>');
+      mBody.innerHTML = sb.join('');
+
+      mApplied.innerHTML = (d.desc || '');
+      mApplied.setAttribute('data-desc', d.desc || '');
+
+      overlay.setAttribute('aria-hidden', 'false');
+      overlay.classList.add('open');
+      document.body.style.overflow = 'hidden';
+      mTitle.focus();
+    }
+
+    function closeModal() {
+      overlay.classList.remove('open');
+      overlay.setAttribute('aria-hidden', 'true');
+      activeId = null;
+      document.body.style.overflow = '';
+    }
+
+    var hoverTimer = null;
+    document.querySelectorAll('rect[data-id]').forEach(function (rect) {
+      rect.addEventListener('mouseenter', function () {
+        clearTimeout(hoverTimer);
+        if (overlay.classList.contains('open')) return;
+        hoverTimer = setTimeout(function () {
+          showPopup(rect.getAttribute('data-id'));
+          placePopup(rect);
+        }, 220);
+      });
+      rect.addEventListener('mouseleave', function () {
+        clearTimeout(hoverTimer);
+        setTimeout(closePopup, 350);
+      });
+      rect.addEventListener('click', function () {
+        clearTimeout(hoverTimer);
+        openModal(rect.getAttribute('data-id'));
+      });
+      rect.classList.add('interactive');
+    });
+
+    document.querySelector('.popover .close').addEventListener('click', closePopup);
+    document.addEventListener('click', function (e) {
+      if (!e.target.closest('rect[data-id]') && !e.target.closest('.popover')) closePopup();
+    });
+
+    document.getElementById('m-close').addEventListener('click', closeModal);
+    overlay.addEventListener('click', function (e) {
+      if (e.target === overlay) closeModal();
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && overlay.classList.contains('open')) closeModal();
+    });
+  })();
+  </script>
+</body>
+</html>
