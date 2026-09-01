@@ -18,7 +18,7 @@ const isInternalDb = (): boolean => {
 
 const poolMax = parseInt(process.env.DB_POOL_MAX || '25', 10);
 
-const dbCaCert = process.env.DB_CA_CERT;
+const dbCaCert = process.env.DB_CA_CERT?.replace(/^["']|["']$/g, '').trim() || undefined;
 const rejectUnauthorized = process.env.DB_SSL_REJECT_UNAUTHORIZED !== 'false';
 const useSSL = !isInternalDb();
 
