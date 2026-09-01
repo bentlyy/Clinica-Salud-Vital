@@ -9,6 +9,8 @@ build/
 .env
 .env.local
 .env.*.local
+.env.bak
+.env.*.bak
 
 # Logs
 logs/

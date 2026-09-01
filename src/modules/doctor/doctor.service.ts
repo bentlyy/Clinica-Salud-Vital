@@ -153,11 +153,15 @@ export const createDoctor = async ({ name, specialty, email, user_id }: CreateDo
     await ensureSpecialty(specialty);
 
     const user = await client.query(
-      'SELECT id, role FROM users WHERE id = $1 FOR UPDATE',
+      'SELECT id, role, tenant_id FROM users WHERE id = $1 FOR UPDATE',
       [user_id]
     );
 
     if (user.rows.length === 0) {
+      throw new BadRequestError(E.DOCTOR_USER_NOT_FOUND);
+    }
+
+    if (user.rows[0].tenant_id !== tenantId) {
       throw new BadRequestError(E.DOCTOR_USER_NOT_FOUND);
     }
 

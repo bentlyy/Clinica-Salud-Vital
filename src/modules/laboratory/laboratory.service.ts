@@ -168,8 +168,8 @@ export const createLabRequest = async (data: { patient_id: number; doctor_id?: n
 
     if (test_ids && test_ids.length > 0) {
       const testResult = await client.query(
-        'SELECT id FROM lab_tests WHERE id = ANY($1) AND active = true',
-        [test_ids]
+        'SELECT id FROM lab_tests WHERE id = ANY($1) AND active = true AND tenant_id = $2',
+        [test_ids, tenantId]
       );
       if (testResult.rows.length !== test_ids.length) {
         const found = new Set(testResult.rows.map(r => r.id));

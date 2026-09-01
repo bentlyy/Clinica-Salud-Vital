@@ -323,7 +323,11 @@ export const seedTestTenants = async (): Promise<void> => {
   }
 
   await pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS idx_users_tenant_email ON users (tenant_id, email)`);
-  const hash = await bcrypt.hash(process.env.SEED_PASSWORD || 'REPLACED_PASSWORD', 12);
+  const seedPassword = process.env.SEED_PASSWORD;
+  if (!seedPassword) {
+    throw new Error('SEED_PASSWORD is not set. Refusing to seed users with a weak default password.');
+  }
+  const hash = await bcrypt.hash(seedPassword, 12);
   const today = new Date();
 
   for (const t of TEST_TENANTS) {

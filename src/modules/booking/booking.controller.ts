@@ -93,9 +93,16 @@ export const getDoctorBookings = asyncHandler(async (req: Request, res: Response
 });
 
 export const createBookingSeries = asyncHandler(async (req: Request, res: Response) => {
+  const role = req.user!.role;
+  const isOwnAccount = role === 'patient' || role === 'user';
+
+  if (isOwnAccount && Number(req.body.user_id) !== req.user!.id) {
+    throw new BadRequestError(E.ACCESS_DENIED);
+  }
+
   const series = await bookingService.createBookingSeries({
     doctor_id: req.body.doctor_id,
-    user_id: req.body.user_id,
+    user_id: isOwnAccount ? req.user!.id : Number(req.body.user_id),
     frequency: req.body.frequency,
     interval_count: req.body.interval_count,
     start_date: req.body.start_date,

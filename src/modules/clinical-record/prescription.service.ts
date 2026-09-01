@@ -56,8 +56,8 @@ export const createPrescription = async (data: PrescriptionData, doctor_id: numb
     );
 
     const record = await client.query(
-      'SELECT id, doctor_id, status FROM clinical_records WHERE id = $1',
-      [data.clinical_record_id]
+      'SELECT id, doctor_id, status FROM clinical_records WHERE id = $1 AND tenant_id = $2',
+      [data.clinical_record_id, tenantId]
     );
 
     if (record.rows.length === 0) throw new NotFoundError(E.CLINICAL_RECORD_NOT_FOUND);

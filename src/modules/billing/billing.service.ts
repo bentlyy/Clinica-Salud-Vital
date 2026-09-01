@@ -82,6 +82,31 @@ export const createInvoice = async (data: InvoiceInput, tenantId: string, idempo
       [`create_invoice:${booking_id || 0}`, tenantId]
     );
 
+    // Fail-closed cross-tenant / cross-entity validation
+    if (patient_id) {
+      const patientRow = await client.query(
+        'SELECT id FROM users WHERE id = $1 AND tenant_id = $2 AND role IN (\'user\', \'patient\')',
+        [patient_id, tenantId]
+      );
+      if (patientRow.rows.length === 0) throw new BadRequestError(E.BILLING_PATIENT_NOT_FOUND);
+    }
+    if (doctor_id) {
+      const doctorRow = await client.query(
+        'SELECT id FROM doctors WHERE id = $1 AND tenant_id = $2',
+        [doctor_id, tenantId]
+      );
+      if (doctorRow.rows.length === 0) throw new BadRequestError(E.BILLING_DOCTOR_NOT_FOUND);
+    }
+    if (booking_id) {
+      const bookingRow = await client.query(
+        'SELECT id, user_id FROM bookings WHERE id = $1 AND tenant_id = $2',
+        [booking_id, tenantId]
+      );
+      if (bookingRow.rows.length === 0 || (patient_id && bookingRow.rows[0].user_id !== patient_id)) {
+        throw new BadRequestError(E.BILLING_BOOKING_INVALID);
+      }
+    }
+
     const total = Number(data.amount) + Number(data.tax_amount || 0) - Number(data.discount_amount || 0);
 
     // Verificar que no exista ya una factura para este booking (dentro del lock)
