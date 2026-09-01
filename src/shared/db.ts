@@ -18,7 +18,17 @@ const isInternalDb = (): boolean => {
 
 const poolMax = parseInt(process.env.DB_POOL_MAX || '25', 10);
 
-const dbCaCert = process.env.DB_CA_CERT?.replace(/^["']|["']$/g, '').trim() || undefined;
+const dbCaCert = (() => {
+  const raw = process.env.DB_CA_CERT;
+  if (!raw) return undefined;
+  let cert = raw.replace(/^["']|["']$/g, '').trim();
+  cert = cert.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  if (!cert.includes('-----BEGIN CERTIFICATE-----')) {
+    logger.error('DB_CA_CERT does not contain valid PEM header');
+    return undefined;
+  }
+  return cert;
+})();
 const rejectUnauthorized = process.env.DB_SSL_REJECT_UNAUTHORIZED !== 'false';
 const useSSL = !isInternalDb();
 
