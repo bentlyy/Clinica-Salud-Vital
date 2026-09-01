@@ -26,6 +26,16 @@ if (isProduction && useSSL && !dbCaCert && rejectUnauthorized) {
   logger.warn('DB_CA_CERT no configurada y DB_SSL_REJECT_UNAUTHORIZED no es false — SSL verificará certificados');
 }
 
+if (isProduction) {
+  const raw = process.env.DB_CA_CERT;
+  logger.info(`[SSL-DIAG] DB_CA_CERT raw length=${raw?.length ?? 'UNDEFINED'}, starts="${raw?.substring(0, 20) ?? ''}", ends="${raw?.slice(-20) ?? ''}"`);
+  logger.info(`[SSL-DIAG] cleaned length=${dbCaCert?.length ?? 'UNDEFINED'}, starts="${dbCaCert?.substring(0, 20) ?? ''}", ends="${dbCaCert?.slice(-20) ?? ''}"`);
+  logger.info(`[SSL-DIAG] rejectUnauthorized=${rejectUnauthorized}, useSSL=${useSSL}`);
+  const hasBegin = dbCaCert?.includes('-----BEGIN CERTIFICATE-----');
+  const hasEnd = dbCaCert?.includes('-----END CERTIFICATE-----');
+  logger.info(`[SSL-DIAG] hasBegin=${hasBegin}, hasEnd=${hasEnd}`);
+}
+
 const sslConfig = useSSL
   ? dbCaCert
     ? { ca: dbCaCert, rejectUnauthorized }
