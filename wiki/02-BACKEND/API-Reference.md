@@ -1,6 +1,7 @@
 # Referencia de API
 
 > Todos los endpoints expuestos por el backend. Prefijo base: `/api`.
+> ~204 endpoints en total (202 routers de módulos + `/health` y `/api/health`).
 
 ## Auth — `/api/auth`
 
@@ -13,6 +14,8 @@
 | POST | `refresh` | ❌ | - | Refresh token |
 | POST | `logout` | ❌ | - | Logout |
 | POST | `logout-all` | ✅ | - | Logout en todos los dispositivos |
+| GET | `sessions` | ✅ | - | Listar sesiones activas |
+| DELETE | `sessions/:id` | ✅ | - | Revocar una sesión |
 | POST | `change-password` | ✅ | - | Cambio de contraseña |
 | POST | `2fa/enable` | ✅ | - | Activar 2FA |
 | POST | `2fa/verify` | ✅ | - | Verificar código 2FA |
@@ -185,6 +188,91 @@
 | DELETE | `tenants/:id` | superadmin |
 | GET | `users` | superadmin |
 | PATCH | `users/:userId/active` | superadmin |
+
+## Calendar — `/api/calendar`
+
+| Método | Ruta | Roles |
+|--------|------|-------|
+| GET | `doctor/:doctorId/ics` | ❌ Público (exportación ICS de agenda) |
+
+## Clinical Templates — `/api/clinical-templates`
+
+| Método | Ruta | Roles |
+|--------|------|-------|
+| GET | `/` | doctor, admin |
+| GET | `:id` | doctor, admin |
+| POST | `/` | doctor, admin |
+| PUT | `:id` | doctor, admin |
+| DELETE | `:id` | doctor, admin |
+
+## Data Portability / Export — `/api/export`
+
+| Método | Ruta | Roles |
+|--------|------|-------|
+| GET | `me` | Authenticated (exporta los propios datos GDPR) |
+| GET | `patients/:patientId` | admin, doctor, superadmin, patient |
+
+## Holidays — `/api/holidays`
+
+| Método | Ruta | Roles |
+|--------|------|-------|
+| GET | `/` | admin, doctor, superadmin |
+| POST | `/` | admin, superadmin |
+| DELETE | `:id` | admin, superadmin |
+
+## Medical History — `/api/medical-history`
+
+| Método | Ruta | Roles |
+|--------|------|-------|
+| GET | `patient/:patientId` | doctor, admin, user, patient, superadmin |
+| GET | `/` | doctor, admin, user, patient, superadmin |
+| POST | `/` | doctor, admin, superadmin |
+| PATCH | `:id` | doctor, admin, superadmin |
+
+## Notifications — `/api/notifications`
+
+| Método | Ruta | Roles |
+|--------|------|-------|
+| GET | `/` | Authenticated |
+| GET | `unread-count` | Authenticated |
+| PATCH | `read-all` | Authenticated |
+| PATCH | `:id/read` | Authenticated |
+
+## Reports — `/api/reports`
+
+| Método | Ruta | Roles |
+|--------|------|-------|
+| GET | `available` | Público |
+| POST | `generate` | Autenticado |
+| GET | `:id/pdf` | Autenticado |
+| GET | `:id` | Autenticado |
+
+## Waitlist — `/api/waitlist`
+
+| Método | Ruta | Roles |
+|--------|------|-------|
+| POST | `/` | Authenticated |
+| GET | `me` | Authenticated |
+| DELETE | `:id` | Authenticated (salir de la lista) |
+| GET | `/` | admin, doctor, superadmin |
+
+## Webhooks — `/api/webhooks`
+
+| Método | Ruta | Roles |
+|--------|------|-------|
+| GET | `/` | Cliente autenticado |
+| POST | `/` | Cliente autenticado |
+| PUT | `:id` | Cliente autenticado |
+| DELETE | `:id` | Cliente autenticado |
+
+## Attachments — `/api/attachments`
+
+| Método | Ruta | Roles |
+|--------|------|-------|
+| POST | `/` | doctor, admin, superadmin, patient, user |
+| GET | `/` | doctor, admin, superadmin, patient, user |
+| GET | `:id/download` | doctor, admin, superadmin, patient, user |
+| DELETE | `:id` | doctor, admin, superadmin, patient, user |
 
 ---
 

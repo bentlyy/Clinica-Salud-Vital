@@ -1,55 +1,74 @@
 # Middlewares
 
-> Pipeline de middlewares Express en orden de ejecución.
+> Pipeline de middlewares Express en orden de ejecución (según `src/app.ts`).
 
-## Pipeline Completo
+## Pipeline Completo (orden real)
 
 ```mermaid
 graph LR
-    A[Request] --> B[Security: Helmet + HPP]
-    B --> C[CORS]
-    C --> D[Compression]
-    D --> E[Request Logger]
-    E --> F[Rate Limit Global]
-    F --> G[Body Parser JSON]
-    G --> H[Cookie Parser]
-    H --> I[Tenant Middleware]
-    I --> J[Auth JWT]
+    A[Request] --> B[Security: Helmet + HPP + Permissions-Policy]
+    B --> C[Compression gzip]
+    C --> D[GET /health]
+    D --> E[CORS whitelist]
+    E --> F[Cookie Parser COOKIE_SECRET]
+    F --> G[JSON body 100KB]
+    G --> H[CSRF double-submit]
+    H --> I[Optional Auth JWT]
+    I --> J[Tenant Middleware + RLS]
     J --> K[Session Activity]
-    K --> L[Role Authorization]
-    L --> M[Feature Flag]
-    M --> N[Validate Zod]
-    N --> O[Audit Log]
-    O --> P[Handler]
-    P --> Q[Error Handler]
+    K --> L[CorrelationId X-Request-ID]
+    L --> M[Request Logger]
+    M --> N[Rate Limit Global]
+    N --> O[Rate Limit Auth]
+    O --> P[Rate Limit PHI]
+    P --> Q[Routers de módulos]
+    Q --> R[Feature Flag + Validate Zod + RBAC]
+    R --> S[Handler]
+    S --> T[Error Handler]
 ```
 
 ## Middlewares por Orden
 
 | # | Archivo | Propósito |
 |---|---------|-----------|
-| 1 | `security.middleware.ts` | Helmet (CSP, HSTS, frameguard), HPP |
-| 2 | CORS | Lista blanca de orígenes |
-| 3 | Compression | Respuestas gzip |
-| 4 | `requestLogger.middleware.ts` | Logging Winston con duración |
-| 5 | Rate Limit | Global 500/15min, Auth 5/15min |
-| 6 | `tenant.middleware.ts` | Resuelve tenant desde header/JWT |
-| 7 | `auth.middleware.ts` | Verifica JWT, inyecta `req.user` |
-| 8 | `sessionActivity.middleware.ts` | Actualiza `last_activity_at` |
-| 9 | `feature.middleware.ts` | Gating de features por plan SaaS |
-| 10 | `validate.middleware.ts` | Validación Zod de body/params/query |
-| 11 | `asyncHandler.middleware.ts` | Wrapper try/catch para async handlers |
-| 12 | `errorHandler.middleware.ts` | Manejo centralizado de errores |
+| 1 | `security.middleware.ts` | Helmet (CSP, HSTS, frameguard) + HPP + Permissions-Policy + `validateEnvSecurity` |
+| 2 | `compression` | Respuestas gzip |
+| 3 | `healthHandler` | `GET /health` y `GET /api/health` (DB, pool, stripe) |
+| 4 | `cors` | Whitelist localhost:5173 + FRONTEND_URL + RENDER_EXTERNAL_URL, `credentials: true` |
+| 5 | `cookieParser(COOKIE_SECRET)` | Parsea cookies firmadas |
+| 6 | `express.json` | Body size limit 100KB |
+| 7 | `csrf.middleware.ts` | CSRF double-submit: emite cookie `csrf_token`, verifica `x-csrf-token` |
+| 8 | `auth.middleware.ts` | `optionalAuth` (extrae JWT sin rechazar), `authMiddleware`, `authorize(...roles)` |
+| 9 | `tenant.middleware.ts` | Resuelve tenant (header/JWT) y ejecuta `set_tenant_id()` para RLS |
+| 10 | `sessionActivity.middleware.ts` | `trackActivity` updates `last_activity_at` (throttle 5 min, purge 10 min) |
+| 11 | `correlationId.middleware.ts` | Genera/reutiliza `X-Request-ID` |
+| 12 | `requestLogger.middleware.ts` | Log `método ruta status duración` con body saneado |
+| 13 | `globalLimiter` | 500 req / 15 min (skip `/health`) |
+| 14 | `authLimiter` | 10 req / 15 min en `/api/auth` |
+| 15 | `phiWriteLimiter` | 30 req / 15 min en `/api/clinical-records` |
+| 16 | Routers | 23 módulos montados bajo `/api` |
+| 17 | `errorHandler.middleware.ts` | `notFoundHandler` (404) + `errorHandler` (sin stack en prod) |
 
 ## Rate Limiting Detallado
 
 | Nivel | Ventana | Máx | Rutas |
 |-------|---------|-----|-------|
 | Global | 15 min | 500 | Todas excepto /health |
-| Auth | 15 min | 5 | `/api/auth/login`, `/api/auth/register` |
+| Auth | 15 min | 10 | `/api/auth/*` |
+| PHI Write | 15 min | 30 | `/api/clinical-records/*` |
 | Guest booking | 1 hora | 5 | `/api/guest/booking` |
-| Guest lookup | 15 min | 3 | `/api/guest/bookings/:rut` |
+| Guest lookup (RUT) | 15 min | 3 | `/api/guest/bookings/:rut` |
 | SaaS onboard | 1 hora | 3 | `/api/saas/onboard` |
+
+## Middlewares de Autorización (por ruta)
+
+| Middleware | Propósito |
+|------------|-----------|
+| `authMiddleware` | Valida JWT + token_version + active + tenant; inyecta `req.user` |
+| `optionalAuth` | Igual pero no falla sin token (rutas públicas parciales) |
+| `authorize('admin', 'doctor')` | RBAC por lista blanca de roles |
+| `requireFeature('laboratory')` | Gating por feature flag del plan SaaS (403 + PremiumLocked) |
+| `validateZod(schema, source)` | Validación y parseo de body/params/query |
 
 ---
 

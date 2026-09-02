@@ -1,6 +1,6 @@
 # Frontend
 
-> Documentación del frontend React 19 + Vite 8 + TypeScript 6.
+> Documentación del frontend React 19 + Vite 6 + TypeScript 5.7 (strict).
 
 ## Páginas
 
@@ -17,16 +17,32 @@
 | Componente | Tecnología |
 |------------|-----------|
 | Framework | React 19 |
-| Build tool | Vite 8 |
-| Lenguaje | TypeScript 5.8 |
-| Routing | React Router 7 |
-| UI | MUI (Material UI components) |
-| Gráficos | Recharts 3 |
+| Build tool | Vite 6 |
+| Lenguaje | TypeScript 5.7 (`strict: true`, `noUncheckedIndexedAccess`) |
+| Routing | React Router 7 (lazy loading total) |
+| UI | MUI 6 (@mui/material + @emotion) |
+| Estado servidor | TanStack Query 5 + TanStack Table 8 |
+| Gráficos | Recharts 2 |
 | Calendario | FullCalendar 6 |
-| HTTP | Axios + TanStack Query |
-| Forms | react-hook-form + zod |
-| i18n | react-i18next (es/en/pt/fr) |
-| Testing | Vitest + Testing Library |
+| Animaciones | framer-motion 11 |
+| Formularios | react-hook-form 7 + zod 3 |
+| HTTP | Axios |
+| Notificaciones UI | react-hot-toast |
+| CAPTCHA | react-google-recaptcha |
+| i18n | i18next / react-i18next (es/en/pt/fr) |
+| Testing | Vitest 3 + Testing Library (jsdom) |
+
+## Frontend en números
+
+| Métrica | Valor |
+|---------|-------|
+| Archivos `src/` | 431 (303 `.tsx`) |
+| Páginas | 53 (lazy) |
+| Componentes compartidos | 18 |
+| Módulos por feature | 27 |
+| Providers | 4 + QueryClientProvider |
+| Archivos de test | 178 |
+| Idiomas / namespaces | 4 / 66 |
 
 ---
 

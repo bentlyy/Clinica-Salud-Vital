@@ -161,6 +161,20 @@ CREATE POLICY tenant_isolation ON doctors
   USING (tenant_id = current_setting('app.tenant_id', false)::text)
   WITH CHECK (tenant_id = current_setting('app.tenant_id', false)::text);
 
+-- Special: audit_logs — allow audit triggers to write cross-tenant/'system' rows.
+-- FORCE RLS makes even the owner subject to RLS, so the SECURITY DEFINER audit
+-- triggers would fail inserting tenant_id='system' (superadmin, tenant NULL)
+-- unless we add a permissive INSERT policy allowing the current tenant or 'system'.
+-- Reads remain isolated by tenant_isolation; integrity is protected by the
+-- HMAC chain verified by audit-integrity.job.ts.
+DROP POLICY IF EXISTS audit_write ON audit_logs;
+CREATE POLICY audit_write ON audit_logs
+  FOR INSERT
+  WITH CHECK (
+    tenant_id = current_setting('app.tenant_id', true)::text
+    OR tenant_id = 'system'
+  );
+
 -- Special: tenants table — read-only for app (writes via admin only)
 DROP POLICY IF EXISTS tenant_isolation ON tenants;
 CREATE POLICY tenant_isolation ON tenants
