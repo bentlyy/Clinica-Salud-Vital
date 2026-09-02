@@ -1,37 +1,35 @@
 # Resumen del Proyecto — Vitaria
 
-> **Versión:** 1.0.0 — Producción  
-> **Stack:** Node.js 20 + Express 4 + React 19 + Vite 8 + PostgreSQL 15  
-> **Patrón:** Monolito modular — 14 módulos en `src/modules/`
+> **Versión:** 1.0.0 — Producción
+> **Stack:** Node.js 20 + Express 4 + React 19 + Vite 6 + PostgreSQL 15
+> **Patrón:** Monolito modular — 23 módulos en `src/modules/` + frontend por módulos
 
 ---
 
 ## Arquitectura General
 
 ```
-Frontend React :5173  ──/api──►  Express Backend :3000  ──SQL──►  PostgreSQL 15
+Frontend React :5173  ──/api──►  Express Backend :3000  ──SQL──►  PostgreSQL 15 (RLS)
                                       │
-                               SendGrid / SMTP
-                               Twilio (SMS/WhatsApp)
-                               Stripe (pagos)
-                               Sentry (monitoreo)
+                               SendGrid / SMTP · Twilio · Stripe (stub) · Sentry
 ```
 
-Pipeline de middlewares: Helmet → CORS → Compression → Logger → Rate Limit → Auth JWT → RBAC → Feature Flag → Zod Validation → Handler
+Pipeline de middlewares: Security (Helmet+HPP) → Compression → Health → CORS → Cookie/JSON → CSRF → Auth → Tenant (RLS) → Activity → CorrelationId → Logger → Rate Limit → Routers → Error Handler
 
 ---
 
 ## Estructura del Backend
 
-**`src/` (~92 archivos)**
+**`src/` (140 archivos `.ts`)**
 
 | Carpeta | Contenido |
 |---------|-----------|
-| `modules/` (13 activos + 1 vacío) | `analytics`, `audit`, `auth`, `availability`, `billing`, `booking`, `clinical-record`, `doctor`, `guest`, `laboratory`, `saas`, `specialties`, `super-admin` — y `patient/` vacío |
-| `middlewares/` (9) | auth, tenant, security, validate, errorHandler, requestLogger, sessionActivity, feature, asyncHandler |
-| `shared/` (17) | db (pg pool), jwt, i18n, email, crypto, stripe, queue, multi-tenant, rut, sanitize, date, etc. |
-| `jobs/` (2) | `reminder.job` (cada 5 min), `audit-integrity.job` (cada 6h) |
-| `seed/` (2) | `admin.seed.ts` (tenant default + superadmin), `seed.ts` (datos realistas) |
+| `modules/` (23) | `analytics`, `attachments`, `audit`, `auth`, `availability`, `billing`, `booking`, `calendar`, `clinical-record`, `clinical-templates`, `data-portability`, `doctor`, `guest`, `holidays`, `laboratory`, `medical-history`, `notifications`, `reports`, `saas`, `specialties`, `super-admin`, `waitlist`, `webhooks` |
+| `middlewares/` (11) | auth, tenant, security, validate, errorHandler, requestLogger, sessionActivity, feature, asyncHandler, csrf, correlationId |
+| `shared/` (20) | db (pg pool), jwt, i18n, email, crypto, stripe, queue (tabla jobs), multi-tenant, rut, sanitize, ownership, sessions, booking-utils, booking-history, query, escape, date, base32, seed-status, sentry |
+| `jobs/` (2) | `reminder.job` (recordatorios 1h/24h), `audit-integrity.job` (verificación HMAC cada 6h) |
+| `seed/` (2) | `admin.seed.ts` (tenant default + superadmin + admins), `seed.ts` (datos realistas + backfills) |
+| `utils/` (3) | `logger.ts` (Winston), `errors.ts` (jerarquía AppError), `error-codes.ts` (catálogo central) |
 
 Cada módulo sigue: `*.controller.ts` → `*.service.ts` → `*.routes.ts` → `*.schema.ts` (opcional)
 
@@ -43,22 +41,23 @@ Cada módulo sigue: `*.controller.ts` → `*.service.ts` → `*.routes.ts` → `
 |---------|---------|
 | Motor | PostgreSQL 15 |
 | Driver | `pg` (SQL raw, sin ORM) |
-| Tablas | 12+ (init.sql) + migraciones |
-| Migraciones | `db/migrations/001_*.sql`, `002_*.sql` |
-| Multi-tenancy | Columna `tenant_id` en todas las tablas, filtros automáticos via middleware |
+| Tablas | **47** (init.sql consolidado) |
+| Migraciones | **23** (`db/migrations/001_*` … `023_*`, tracking `_migrations`) |
+| Multi-tenancy | `tenant_id` en todas las tablas + **RLS FORCE** por sesión (`app.tenant_id`) |
+| Seguridad | `audit_logs` HMAC encadenado, secrets 2FA AES-256-GCM, bcrypt 12, CHECK constraints |
 
 ---
 
 ## Frontend
 
-- **React 19** + **Vite 8** + **TypeScript**
-- 29 páginas con lazy loading
-- Tema claro/oscuro (ThemeContext)
-- Autenticación via AuthContext (JWT)
-- i18n: es/en completos (~478 claves); pt/fr parciales/deprecados
-- Gráficos: Recharts 3
-- Calendario: FullCalendar 6
-- API layer con Axios
+- **React 19** + **Vite 6** + **TypeScript 5.7** (`strict: true`)
+- **MUI 6** + TanStack Query/Table + Recharts 2 + FullCalendar 6 + framer-motion + react-hook-form
+- **53 páginas** con lazy loading total + **18 componentes compartidos**
+- **431 archivos** en `frontend/src/`
+- Tema claro/oscuro (AppThemeProvider)
+- Autenticación via AuthProvider (JWT) + FeatureProvider (feature flags SaaS)
+- **i18n: 4 idiomas completos** (es/en/pt/fr) — 66 namespaces — ~3.500 claves c/u, paridad verificada
+- API layer central: `shared/services/api-client.ts` + 24 services
 
 ---
 
@@ -66,29 +65,41 @@ Cada módulo sigue: `*.controller.ts` → `*.service.ts` → `*.routes.ts` → `
 
 | Módulo | Prefijo | Endpoints clave |
 |--------|---------|-----------------|
-| Auth | `/api/auth` | register, login, refresh, 2FA, change-password, forgot/reset |
-| Doctors | `/api/doctors` | CRUD, listar público, invitar, toggle activo |
-| Booking | `/api/bookings` | CRUD, available-slots, daily-density, agenda doctor |
-| Availability | `/api/availability` | CRUD disponibilidad semanal |
-| Exceptions | `/api/exceptions` | CRUD excepciones (full/partial day) |
+| Auth | `/api/auth` | register, login, refresh, 2FA, sessions, change-password, forgot/reset (17) |
+| Doctors | `/api/doctors` | CRUD, público, invitar, toggle activo |
+| Booking | `/api/bookings` | CRUD, available-slots, daily-density, series |
+| Availability | `/api/availability` (+ `/api/availability-exceptions`) | Bloques semanales + excepciones |
 | Guest | `/api/guest` | Booking sin login por RUT |
 | Clinical Records | `/api/clinical-records` | EHR SOAP, recetas, CIE-10, PDF |
+| Clinical Templates | `/api/clinical-templates` | Plantillas clínicas |
+| Medical History | `/api/medical-history` | Historial médico del paciente |
+| Calendar | `/api/calendar` | Exportación ICS |
 | Billing | `/api/billing` | Facturas, pagos, seguros |
-| Laboratory | `/api/laboratory` | Tests, solicitudes, resultados |
-| Analytics | `/api/analytics` | Dashboard, KPIs, pronóstico demanda |
+| Laboratory | `/api/laboratory` | Tests, solicitudes, resultados, QC, muestras (46) |
+| Analytics | `/api/analytics` | Dashboard, KPIs, demanda (SMA), vitals |
+| Reports | `/api/reports` | Reportes + PDF |
+| Notifications | `/api/notifications` | Notificaciones in-app |
+| Waitlist | `/api/waitlist` | Lista de espera |
+| Holidays | `/api/holidays` | Feriados de clínica |
+| Attachments | `/api/attachments` | Adjuntos |
+| Data Portability | `/api/export` | Exportar historia del paciente |
+| Webhooks | `/api/webhooks` | Suscripciones y entregas |
 | Audit | `/api/audit` | Logs de auditoría (admin) |
 | Specialties | `/api/specialties` | Catálogo público |
-| SaaS | `/api/saas` | Planes, onboarding, Stripe webhook |
-| Super Admin | `/api/super-admin` | Tenants, usuarios, estadísticas globales |
+| SaaS | `/api/saas` | Planes, onboarding, webhook Stripe |
+| Super Admin | `/api/super-admin` | Tenants, usuarios, estadísticas globales (22) |
+
+Total: **~204 endpoints** (202 routers + 2 health)
 
 ---
 
 ## Testing
 
-- **Framework:** Vitest 4 con pool forks
-- **Tests:** ~1,122 (53 unitarios, 7 integración, 93 archivos)
-- **Cobertura:** ~89% líneas (threshold: 50%)
-- **Setup:** `tests/setup.js` con mocks de DB, auth, email
+- **Framework:** Vitest (backend 4, frontend 3) — backend con pool forks, frontend con jsdom
+- **Backend:** ~111 archivos (~102 unit + 9 integración Supertest), ~1.5k casos, ~89% líneas
+- **Frontend:** 178 archivos de test, ~1.2k casos, ~84% líneas
+- **Cobertura límites:** backend 85/80/85/85 · frontend 80/70/70/80 (lines/branches/functions/statements)
+- **Setup:** `tests/setup.js` (mocks de DB, auth, email, fetch) · `frontend/src/test/setup.ts`
 
 ---
 
@@ -96,24 +107,26 @@ Cada módulo sigue: `*.controller.ts` → `*.service.ts` → `*.routes.ts` → `
 
 | Medida | Detalle |
 |--------|---------|
-| Helmet | CSP (reCAPTCHA + fonts), HSTS preload, frameguard deny |
-| CORS | Solo origen `FRONTEND_URL` |
-| Rate limiting | Global (500/15m), Auth (10/15m), PHI (30/15m), Guest (5/h), SaaS (3/h) |
-| Validación | Zod 4 en body, params, query |
-| JWT | HS256, 15 min exp, versionados para revocación |
+| Helmet | CSP, HSTS, frameguard deny + HPP + Permissions-Policy |
+| CORS | whitelist localhost:5173 + FRONTEND_URL + RENDER_EXTERNAL_URL |
+| Rate limiting | Global (500/15m), Auth (10/15m), PHI (30/15m), Guest (5/h), RUT (3/15m), SaaS (3/h) |
+| Validación | Zod 4 backend / zod 3 frontend (body, params, query) |
+| JWT | HS256, 15 min exp, versión de token para revocación |
 | Refresh tokens | 30 días con rotación, almacenados en DB |
 | 2FA | TOTP con secreto cifrado AES-256-GCM |
+| Sesiones | Tabla `user_sessions`, revocables, timeout de inactividad |
 | Auditoría | HMAC-SHA256 encadenado, verificación cada 6h |
-| Advisory locks | PostgreSQL para concurrencia en reservas |
-| Sentry | Captura errores no manejados |
+| Multi-tenant | RLS FORCE + BOLA checks (`ownership.ts`) |
+| CSRF | Double-submit cookie + header `X-CSRF-Token` |
+| Sentry | Captura errores no manejados (opcional) |
 
 ---
 
 ## CI/CD
 
-- **GitHub Actions:** typecheck → test → build → deploy a Render
-- **Docker:** `Dockerfile` multi-stage, `docker-compose.yml` para PostgreSQL 15
-- **Render:** `render.yaml` con health check post-deploy
+- **GitHub Actions:** `npm audit` → typecheck → test (coverage) → build (backend + frontend)
+- **Docker:** `Dockerfile` multi-stage (node:20-alpine, non-root), `docker-compose.yml` + `docker-compose.prod.yml`
+- **Render:** `render.yaml` con health check `/health`; frontend estático con rewrite SPA
 
 ---
 
@@ -121,15 +134,15 @@ Cada módulo sigue: `*.controller.ts` → `*.service.ts` → `*.routes.ts` → `
 
 | Aspecto | Estado |
 |---------|--------|
-| Backend tests | ✅ ~1,122 tests, ~89% cobertura |
-| Frontend | ✅ 29 páginas, lazy loading, tema claro/oscuro |
-| API | ✅ Documentada |
-| CI/CD | ✅ GitHub Actions + Render |
-| Seguridad | ✅ Helmet, CORS, rate limiting, Zod, 2FA, auditoría |
-| Multi-tenancy | ✅ Implementado con planes SaaS |
-| i18n | ⚠️ Solo es/en activos |
-| ML | ⬜ Solo en `dist/`, fuente no presente en `src/` |
-| Patient module | ⬜ Directorio vacío |
+| Backend tests | ✅ ~1.5k tests, ~89% cobertura |
+| Frontend | ✅ 53 páginas, ~1.2k tests, TS strict, lazy loading |
+| API | ✅ ~204 endpoints |
+| CI/CD | ✅ GitHub Actions (audit + typecheck + test + build) + Render |
+| Seguridad | ✅ Helmet, CORS, rate limiting, Zod, 2FA, auditoría, RLS, BOLA |
+| Multi-tenancy | ✅ Implementado con planes SaaS auto-gestionables |
+| i18n | ✅ 4 idiomas completos con paridad |
+| ML | ⬜ Stub — `smaForecast()` (media móvil), sin TF.js |
+| Patient module | ✅ Portal paciente funcional |
 
 ---
 
@@ -137,20 +150,19 @@ Cada módulo sigue: `*.controller.ts` → `*.service.ts` → `*.routes.ts` → `
 
 | Item | Prioridad |
 |------|-----------|
-| Módulo `patient/` vacío | Alta |
-| ML solo en `dist/` sin fuente | Media |
-| pt/fr i18n incompletos | Baja |
-| Sin ORM (SQL raw manual) | Media (intencional) |
-| Sin tests de frontend | Media |
-| Sin convención de commits | Baja |
+| Seed/backfills en cada startup | Media |
+| Tests backend en JS (no TS) | Media |
+| @types en dependencies | Media |
+| CI sin lint / sin coverage upload | Media |
+| frontend-v3/ residual | Baja |
 
 ---
 
 ## Roadmap
 
-**Corto plazo:** Módulo patient, restaurar ML fuente, limpiar i18n, tests frontend, conventional commits  
-**Mediano plazo:** Express 5, migraciones automatizadas, rate limiting por tenant  
-**Largo plazo:** Microservicio facturación, portal paciente, app mobile, FHIR R4, Stripe real
+**Corto plazo:** depurar seed en producción, lint (ESLint), tests backend en TS, limpiar `frontend-v3/`
+**Mediano plazo:** Express 5, migraciones versionadas robustas, rate limiting por tenant, coverage upload
+**Largo plazo:** portal de autoservicio avanzado, app mobile, FHIR R4, Stripe real
 
 ---
 

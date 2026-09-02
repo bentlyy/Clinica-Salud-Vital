@@ -28,11 +28,13 @@ Request → authMiddleware (JWT) → authorizeRoles() → requireFeature()
 
 | Middleware | Propósito |
 |------------|-----------|
-| `authMiddleware` | Verifica JWT → inyecta `req.user` |
-| `optionalAuth` | Igual pero no falla sin token |
-| `authorizeRoles('admin', 'doctor')` | Verifica rol del usuario |
-| `requireFeature('laboratory')` | Gating por plan SaaS |
-| `requireLimit('doctors')` | Verifica límites del plan |
+| `authMiddleware` | Verifica JWT + `token_version` + active + tenant → inyecta `req.user` |
+| `optionalAuth` | Igual pero no falla sin token (rutas públicas parciales) |
+| `authorize('admin', 'doctor')` | RBAC por lista blanca de roles |
+| `requireFeature('laboratory')` | Gating por feature flag del plan SaaS (403 + `PremiumLocked`) |
+| `ownership.ts` | Chequeos BOLA fail-closed (médico ↔ paciente) |
+
+> API de autorización: `authorize(...roles)`. No existe `requireLimit` ni `authorizeRoles` en el código real.
 
 ---
 

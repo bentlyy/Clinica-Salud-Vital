@@ -6,23 +6,33 @@
 
 ```
 src/
-├── app.ts                    # Entry point, middlewares, rutas
-├── modules/                  # 14 módulos (monolito modular)
+├── app.ts                    # Entry point, middlewares, rutas, migraciones, seed, jobs
+├── @types/                   # Type augmentations (Express)
+├── modules/                  # 23 módulos (monolito modular)
 │   ├── analytics/
+│   ├── attachments/
 │   ├── audit/
 │   ├── auth/
 │   ├── availability/
 │   ├── billing/
 │   ├── booking/
-│   ├── clinical-record/
+│   ├── calendar/
+│   ├── clinical-record/      # + cie10, prescription, prescription-pdf
+│   ├── clinical-templates/
+│   ├── data-portability/
 │   ├── doctor/
 │   ├── guest/
-│   ├── laboratory/
-│   ├── patient/              # (vacío)
+│   ├── holidays/
+│   ├── laboratory/           # + lab-events, lab-order-pdf, lab-result-email
+│   ├── medical-history/
+│   ├── notifications/
+│   ├── reports/              # + report-pdf
 │   ├── saas/
 │   ├── specialties/
-│   └── super-admin/
-├── middlewares/               # Pipeline Express (9)
+│   ├── super-admin/
+│   ├── waitlist/
+│   └── webhooks/
+├── middlewares/              # Pipeline Express (11)
 │   ├── auth.middleware.ts
 │   ├── tenant.middleware.ts
 │   ├── security.middleware.ts
@@ -31,17 +41,22 @@ src/
 │   ├── requestLogger.middleware.ts
 │   ├── sessionActivity.middleware.ts
 │   ├── feature.middleware.ts
-│   └── asyncHandler.middleware.ts
-├── shared/                    # Servicios compartidos (17)
-│   ├── db.ts                  # Pool PostgreSQL
-│   ├── jwt.service.ts         # JWT secret getter
-│   ├── i18n.service.ts        # Traducciones
-│   ├── email.service.ts       # Nodemailer
+│   ├── asyncHandler.middleware.ts
+│   ├── csrf.middleware.ts
+│   └── correlationId.middleware.ts
+├── shared/                    # Servicios compartidos (20)
+│   ├── db.ts                  # Pool PostgreSQL + read replica + RLS session
+│   ├── jwt.service.ts         # JWT HS256
+│   ├── i18n.service.ts        # Traducciones server-side
+│   ├── email.service.ts       # SendGrid > SMTP > log
 │   ├── multi-tenant.service.ts
-│   ├── crypto.service.ts
+│   ├── crypto.service.ts      # AES-256-GCM
 │   ├── stripe.service.ts
-│   ├── queue.service.ts
+│   ├── queue.service.ts       # Cola sobre tabla jobs
+│   ├── sessions.service.ts
+│   ├── ownership.ts           # Checks BOLA
 │   ├── booking-utils.ts
+│   ├── booking-history.ts
 │   ├── query.ts
 │   ├── rut.ts
 │   ├── sanitize.ts
@@ -56,9 +71,13 @@ src/
 ├── seed/
 │   ├── admin.seed.ts
 │   └── seed.ts
-└── types/
-    ├── index.ts
-    └── modules.d.ts
+├── types/
+│   ├── index.ts
+│   └── modules.d.ts
+└── utils/
+    ├── logger.ts
+    ├── errors.ts
+    └── error-codes.ts
 ```
 
 ## Patrón por Módulo
@@ -68,18 +87,19 @@ src/
 // module.service.ts     → Business logic + DB
 // module.routes.ts      → Router
 // module.schema.ts      → Zod (opcional)
+// module.email.ts       → Plantillas de email (opcional)
 ```
 
 ## Entry Point (`src/app.ts`)
 
 El archivo `app.ts`:
-1. Carga variables de entorno (dotenv)
-2. Valida configuración de seguridad
-3. Configura middlewares globales
-4. Monta rutas de cada módulo bajo `/api/<prefijo>`
-5. Inicia cron jobs
-6. Ejecuta seed automático en desarrollo
-7. Inicia servidor en puerto configurado
+1. Carga variables de entorno (dotenv) y valida la configuración de seguridad
+2. Configura middlewares globales (Helmet, compression, CORS, cookie, JSON, CSRF, auth, tenant, activity, log, rate limits)
+3. Monta rutas de los 23 módulos bajo `/api/<prefijo>`
+4. Ejecuta migraciones SQL (init.sql si `users` no existe + 23 migraciones con tracking `_migrations`)
+5. Inicia cron jobs (reminders, audit integrity)
+6. Ejecuta seeds/backfills
+7. Inicia servidor en puerto configurado (shutdown graceful sobre SIGTERM/SIGINT)
 
 ---
 

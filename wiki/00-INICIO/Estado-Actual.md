@@ -1,21 +1,23 @@
 # Estado Actual del Proyecto
 
-> Versión: 1.0.0 — Producción | Última auditoría: 2026-07-29 | QA completo: 2026-08-11 · 2026-08-13
+> Versión: 1.0.0 — Producción | Última auditoría: 2026-07-29 | Última sincronización del wiki con el código real: 2026-09-01
 
 ## Métricas del Proyecto
 
 | Métrica | Valor |
 |---------|-------|
-| Módulos backend | 15 activos |
-| Páginas frontend | ~50 |
-| Tests backend | 1498 passing — 104 archivos |
-| Tests frontend | 1232 passing — 178 archivos |
+| Módulos backend | 23 activos (`src/modules/`) |
+| Páginas frontend | 53 (+ 18 componentes compartidos) |
+| Tests backend | ~1.5k casos — 111 archivos (102 unit + 9 integración) |
+| Tests frontend | ~1.2k casos — 178 archivos |
 | Cobertura | Backend ~89% líneas (threshold 85%) · Frontend ~84% líneas (threshold 80%) |
-| Idiomas | 4 activos (es, en, pt, fr) — 66 namespaces — 3.377 claves c/u — paridad total verificada |
-| Tablas DB | 20+ |
-| Endpoints API | ~163 |
-| Middlewares | 9 |
-| Shared services | 17 |
+| Idiomas | 4 activos (es, en, pt, fr) — 66 namespaces — ~3.500 claves c/u — paridad total verificada |
+| Tablas DB | 47 (init.sql consolidado) |
+| Migraciones | 23 (001–023) |
+| Endpoints API | ~204 (202 routers + 2 health) |
+| Middlewares | 11 |
+| Shared services | 20 |
+| Archivos frontend `src/` | 431 (303 `.tsx`) |
 | Despliegue | Render + Docker |
 | Roles | 7 (superadmin, admin, doctor, lab_technician, patient, guest, user) |
 | Frontend | Único (frontend/) — sidebar dinámica por rol |
@@ -24,46 +26,57 @@
 
 | Área | Estado | Notas |
 |------|--------|-------|
-| Backend tests | ✅ 1498 tests, ~89% cobertura | Vitest + pool forks |
-| Frontend | ✅ ~50 páginas, 1232 tests (178 archivos), lazy loading, tema claro/oscuro, sidebar por rol | React 19 + Vite + MUI |
-| API | ✅ ~163 endpoints documentados | Prefijo `/api`, paginación estándar |
-| CI/CD | ✅ GitHub Actions (typecheck + test + build) + deploy a Render | Webhook post-deploy |
-| Seguridad | ✅ Helmet, CORS, rate limiting, Zod, 2FA, auditoría HMAC | IDOR fixes + captcha fail-closed |
-| Multi-tenancy | ✅ Implementado con planes SaaS auto-gestionables | Shared DB con tenant_id |
-| i18n | ✅ 4 idiomas completos con paridad total | es/en/pt/fr — 3.377 claves c/u — test `i18n-keys.test.ts` |
-| ML | ⬜ Stub/simulación | Sin modelos reales implementados |
-| Patient module | ✅ Módulo de pacientes funcional | Portal paciente con bottom-nav propia |
+| Backend tests | ✅ ~1.5k tests, ~89% cobertura | Vitest + pool forks, Supertest integración |
+| Frontend | ✅ 53 páginas, 178 archivos de test, lazy loading total | React 19 + Vite 6 + MUI 6 + TS strict |
+| API | ✅ ~204 endpoints | Prefijo `/api`, paginación estándar |
+| CI/CD | ✅ GitHub Actions (audit + typecheck + test + build) | Deploy a Render fuera del pipeline |
+| Seguridad | ✅ Helmet, CORS, rate limiting (6 niveles), Zod, 2FA, auditoría HMAC, RLS FORCE | IDOR/BOLA hardening + captcha fail-closed |
+| Multi-tenancy | ✅ RLS por sesión + planes SaaS auto-gestionables | Shared DB con `tenant_id` + GUC `app.tenant_id` |
+| i18n | ✅ 4 idiomas completos con paridad total | es/en/pt/fr — 66 namespaces — test `i18n-keys.test.ts` |
+| ML | ⬜ Stub/simulación | `smaForecast()` (media móvil 7 días) sobre `ml_demand_forecast`; sin TF.js |
+| Patient module | ✅ Portal paciente funcional | `PatientLayout` con bottom-nav propia |
+| Clinical templates | ✅ Módulo agregado (2026-08-27) | Backend `/api/clinical-templates` + frontend `modules/clinical-templates` |
+| Sesiones de usuario | ✅ Implementadas | Tabla `user_sessions`, endpoints `/api/auth/sessions` |
+| BOLA/Ownership | ✅ Hardening aplicado (2026-08-31) | `src/shared/ownership.ts`, fail-closed |
 | Sidebar por rol | ✅ Implementada | `navigation.tsx` — ver [[03-FRONTEND/Navegacion-por-Rol\|Navegación por Rol]] |
 
 ## Frontend Consolidado
 
-El proyecto tiene un **único frontend** en `frontend/`. Las versiones anteriores (v1, v2 y `login-options`) fueron eliminadas. `frontend-v3/` permanece en el repo solo como un `node_modules` residual (no se usa, no compila).
+El proyecto tiene un **único frontend** en `frontend/`. Las versiones anteriores (v1, v2 y `login-options`) fueron eliminadas. `frontend-v3/` permanece en el repo solo como un `node_modules` residual vacío (no se usa, no compila) — candidato a eliminar.
+
+> ⚠️ Nota 2026-09-01: el wiki fue sincronizado con el código real. Antes citaba `frontend/src/api/` con archivos `axios.js`; hoy todo el consumo de API centraliza en `frontend/src/shared/services/api-client.ts` + 24 services por módulo.
 
 ## Convenciones Actuales
 
 - **Commit**: Sin convención estricta (mejora posible)
 - **Versionado API**: Prefijo `/api` (sin versión explícita)
-- **Errores**: Formato `{ error, details, stack }`
+- **Errores**: Formato `{ error, details, stack }` (stack solo en dev)
 - **Paginación**: `{ data, pagination: { page, limit, total, totalPages } }`
-- **Base de datos**: SQL raw con pg (sin ORM)
-- **Migraciones**: Archivos SQL en `db/migrations/`, runner automático en startup
+- **Base de datos**: SQL raw con pg (sin ORM), RLS por sesión
+- **Migraciones**: Archivos SQL en `db/migrations/` (23), runner automático en startup con tracking `_migrations`
+- **TypeScript**: `strict: true` en backend y frontend (frontend además `noUncheckedIndexedAccess`)
 - **i18n**: Patrón `t('ns:clave')`, `fallbackLng: 'es'`
 
 ## Deuda Técnica Identificada
 
 | Item | Prioridad | Estado |
 |------|-----------|--------|
-| Secret HMAC hardcodeado como fallback | 🔴 Alta | Pendiente |
-| Session activity Map sin eviction (memory leak) | 🔴 Alta | Pendiente |
-| Queue in-memory sin persistencia | 🔴 Alta | Pendiente |
-| Seed en cada startup (lento en prod) | 🟡 Media | Pendiente |
-| TypeScript strict gradual | 🟡 Media | Pendiente |
-| Tests en JS (no TS) | 🟡 Media | Pendiente |
-| @types/* en dependencies (no devDeps) | 🟡 Media | Pendiente |
-| docs/ excluido de .gitignore | 🟡 Media | Pendiente |
-| CI sin lint, security audit | 🟡 Media | Pendiente |
+| Seed/backfills en cada startup | 🟡 Media | Pendiente |
+| Tests backend en JS (no TS) | 🟡 Media | Pendiente |
+| `@types/*` en `dependencies` (no devDeps) | 🟡 Media | Pendiente |
+| `docs/` no excluido en `.gitignore` | 🟡 Media | Pendiente |
+| CI sin lint (ESLint) | 🟡 Media | Pendiente (`npm audit` ya implementado) |
+| CI sin subida de coverage | 🟡 Media | Pendiente |
 | Render plan free insuficiente | 🟡 Media | Pendiente |
-| frontend-v3/ residual (node_modules) | 🟢 Baja | Pendiente (candidato a eliminar) |
+| `frontend-v3/` residual (node_modules vacío) | 🟢 Baja | Pendiente (candidato a eliminar) |
+
+### Items resueltos desde la auditoría anterior
+| Item | Prioridad | Resolución |
+|------|-----------|-----------|
+| Secret HMAC hardcodeado como fallback | 🔴 → ✅ | `validateEnvSecurity()` ahora exige `AUDIT_HMAC_SECRET` (sin fallback); seed usa env y aborta en producción (2026-08-31) |
+| Session activity Map sin eviction (memory leak) | 🔴 → ✅ | Limpieza del mapa cada 10 min en `sessionActivity.middleware.ts` |
+| Queue in-memory sin persistencia | 🔴 → ✅ | Cola sobre tabla `jobs` con retry/backoff en `queue.service.ts` |
+| TypeScript strict (gradual) | 🟡 → ✅ | Backend y frontend en `strict: true` |
 
 ---
 

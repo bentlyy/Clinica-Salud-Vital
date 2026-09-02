@@ -1,29 +1,45 @@
 # Modelos
 
-> Modelos de TensorFlow.js disponibles.
+> Modelos de ML activos en el sistema.
 
-## Arquitectura
+## Modelo Activo
 
-- Framework: TensorFlow.js (carga lazy bajo demanda)
-- Modelos entrenados en servidor con datos del tenant
-- Cache LRU para inferencia rápida
-- Locks de entrenamiento para evitar concurrencia
+### SMA Forecast (Pronóstico de Demanda)
 
-## Modelos (4)
+| Aspecto | Detalle |
+|---------|---------|
+| Tipo | Estadístico (media móvil simple), NO red neuronal |
+| Ubicación | `src/modules/analytics/analytics.service.ts:33` |
+| Endpoint | `GET /api/analytics/demand` |
+| Parámetro | `days` (días históricos a considerar) |
+| Horizontes | 7 días hacia adelante |
+| Ventana | Min(7, históricos disponibles) |
+| Fallback | Promedio global de bookings si no hay datos |
+| Unidad | Reservas esperadas por día |
 
-| Modelo | Propósito | Input | Output |
-|--------|-----------|-------|--------|
-| NoShow | Predicción de inasistencias | Datos paciente, historial | Probabilidad |
-| Demand | Pronóstico de demanda | Histórico de reservas | Demanda esperada |
-| ... | ... | ... | ... |
-| ... | ... | ... | ... |
+## Algoritmo
 
-> Nota: La documentación detallada está pendiente de restaurar junto con el código fuente.
+```text
+window  = min(7, historical.length)
+base    = avg(últimos 'window' días de bookings) → redondeado, mím. 0
+output  = base, base, ..., base  (horizon=7)
+```
 
-## Modo Simplificado
+- El valor predicho es **constante** (promedio simple), sin tendencia ni estacionalidad.
+- Frontend: `modules/analytics` despliega `date` vs `predicted` junto al histórico real.
 
-Si `ML_SIMPLIFIED=true`, se usan estadísticas básicas sin TensorFlow.js.
+## Modelos Planificados / No Existentes
+
+| Modelo | Estado |
+|--------|--------|
+| Redes neuronales (TF.js) | ❌ No existe (eliminado/documentado como falso en docs antiguos) |
+| Registro/MLOps | ❌ No hay serving, entrenamiento ni pipelines |
+| Suavizado exponencial | 🟡 Candidato a futuro |
+
+## Tabla de soporte
+
+`ml_demand_forecast` (tenant_id, date, predicted_demand, actual_demand, confidence) — diseñada para persistir pronósticos; hoy solo recibe backfill de seed.
 
 ---
 
-Tags: #ml #modelos #tensorflow
+Tags: #ml #modelos #forecast
