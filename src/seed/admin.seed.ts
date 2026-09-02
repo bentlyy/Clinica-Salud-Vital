@@ -340,37 +340,31 @@ export const seedTestTenants = async (): Promise<void> => {
     logger.info(`\n━━━ Seeding tenant: ${t.id} (${t.name}) ━━━`);
 
     const exists = await pool.query('SELECT 1 FROM tenants WHERE id = $1', [t.id]);
-    if (exists.rows.length > 0) {
-      logger.info(`Tenant ${t.id} already exists — ensuring data seed`);
+    if (exists.rows.length === 0) {
+      logger.info(`Tenant ${t.id} no existe (RLS impide crearlo desde la app) — saltando`);
+      continue;
     }
+    logger.info(`Tenant ${t.id} already exists — ensuring data seed`);
 
-    // ── Tenant + Subscription ──────────────────────────────────────────────
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      await client.query('SET LOCAL app.tenant_id = $1', [t.id]);
+      const q = client.query.bind(client);
 
-    await pool.query(
-      `INSERT INTO tenants (id, name, domain, locale, timezone, config, active)
-       VALUES ($1, $2, $3, $4, $5, $6, true)
-       ON CONFLICT (id) DO NOTHING`,
-      [
-        t.id,
-        t.name,
-        t.domain,
-        process.env.APP_LOCALE || 'es',
-        'America/Santiago',
-        JSON.stringify({ company: t.name, contact_email: t.adminEmail }),
-      ]
-    );
+      // ── Subscription ─────────────────────────────────────────────────────
 
-    await pool.query(
-      `INSERT INTO subscriptions (tenant_id, plan_id, status, current_period_start, current_period_end)
-       SELECT $1, id, 'active', NOW(), NOW() + INTERVAL '1 year'
-       FROM plans WHERE code = $2
-       ON CONFLICT DO NOTHING`,
-      [t.id, t.planCode]
-    );
+      await q(
+        `INSERT INTO subscriptions (tenant_id, plan_id, status, current_period_start, current_period_end)
+         SELECT $1, id, 'active', NOW(), NOW() + INTERVAL '1 year'
+         FROM plans WHERE code = $2
+         ON CONFLICT DO NOTHING`,
+        [t.id, t.planCode]
+      );
 
     // ── Admin user ─────────────────────────────────────────────────────────
 
-    await pool.query(
+    await q(
       'INSERT INTO users (email, password, name, role, rut, gender, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (tenant_id, email) DO UPDATE SET name = EXCLUDED.name',
       [t.adminEmail, await hash(t.adminEmail), t.name, 'admin', t.adminRut, 'M', t.id]
     );
@@ -398,13 +392,13 @@ export const seedTestTenants = async (): Promise<void> => {
 
     for (const doc of tenantSpecialties) {
       const fullEmail = `${doc.email}@${t.domain}.clinic.com`;
-      const userResult = await pool.query(
+      const userResult = await q(
         'INSERT INTO users (email, password, name, role, rut, gender, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (tenant_id, email) DO UPDATE SET name = EXCLUDED.name RETURNING id',
         [fullEmail, await hash(fullEmail), doc.name, 'doctor', doc.rut, doc.gender, t.id]
       );
       const userId: number = userResult.rows[0].id;
 
-      const doctorResult = await pool.query(
+      const doctorResult = await q(
         'INSERT INTO doctors (name, specialty, email, user_id, tenant_id) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (tenant_id, email) DO UPDATE SET name = EXCLUDED.name RETURNING id',
         [doc.name, doc.specialty, fullEmail, userId, t.id]
       );
@@ -413,11 +407,11 @@ export const seedTestTenants = async (): Promise<void> => {
 
       // Mon-Fri availability: morning + afternoon
       for (let day = 1; day <= 5; day++) {
-        await pool.query(
+        await q(
           'INSERT INTO doctor_availability (doctor_id, day_of_week, start_time, end_time, tenant_id) VALUES ($1, $2, $3, $4, $5) ON CONFLICT DO NOTHING',
           [doctorId, day, '09:00', '13:00', t.id]
         );
-        await pool.query(
+        await q(
           'INSERT INTO doctor_availability (doctor_id, day_of_week, start_time, end_time, tenant_id) VALUES ($1, $2, $3, $4, $5) ON CONFLICT DO NOTHING',
           [doctorId, day, '14:00', '18:00', t.id]
         );
@@ -428,12 +422,12 @@ export const seedTestTenants = async (): Promise<void> => {
 
     for (const doctorId of doctorIds) {
       const vacationDate = addDays(today, -randomInt(10, 60));
-      await pool.query(
+      await q(
         'INSERT INTO doctor_exceptions (doctor_id, date, is_full_day, tenant_id) VALUES ($1, $2, true, $3) ON CONFLICT DO NOTHING',
         [doctorId, formatDate(vacationDate), t.id]
       );
       const futureDate = addDays(today, randomInt(5, 30));
-      await pool.query(
+      await q(
         "INSERT INTO doctor_exceptions (doctor_id, date, start_time, end_time, is_full_day, tenant_id) VALUES ($1, $2, '09:00', '12:00', false, $3) ON CONFLICT DO NOTHING",
         [doctorId, formatDate(futureDate), t.id]
       );
@@ -459,7 +453,7 @@ export const seedTestTenants = async (): Promise<void> => {
     for (const pName of patientNames) {
       const email = `${pName.toLowerCase().replace(/\s+/g, '.')}@${t.domain}.clinic.com`;
       const rutSuffix = pick(['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'K']);
-      const result = await pool.query(
+      const result = await q(
         'INSERT INTO users (email, password, name, role, rut, phone, gender, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT (tenant_id, email) DO NOTHING RETURNING id',
         [
           email, await hash(email), pName, 'user',
@@ -477,7 +471,7 @@ export const seedTestTenants = async (): Promise<void> => {
 
     for (const domain of ['norte', 'sur']) {
       const tenantId = domain === 'norte' ? 'clinica-norte' : 'clinica-sur';
-      await pool.query(
+      await q(
         'INSERT INTO users (email, password, name, role, rut, phone, gender, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT (tenant_id, email) DO NOTHING',
         [
           'compartido@clinic.com', await hash('compartido@clinic.com'), 'Usuario Compartido', 'user',
@@ -492,7 +486,7 @@ export const seedTestTenants = async (): Promise<void> => {
     // ── Lab technician (pro plan only) ─────────────────────────────────────
 
     if (t.labTechnicianEmail) {
-      await pool.query(
+      await q(
         'INSERT INTO users (email, password, name, role, rut, gender, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (tenant_id, email) DO UPDATE SET name = EXCLUDED.name',
         [t.labTechnicianEmail, await hash(t.labTechnicianEmail), 'Encargado de Laboratorio', 'lab_technician', `${randomInt(10000000, 99999999)}-K`, 'M', t.id]
       );
@@ -517,7 +511,7 @@ export const seedTestTenants = async (): Promise<void> => {
     ];
 
     for (const s of specialtyData) {
-      await pool.query(
+      await q(
         `INSERT INTO specialties (name, icon, description, department, procedures, color, tenant_id)
          VALUES ($1, $2, $3, $4, $5, $6, $7)
          ON CONFLICT (tenant_id, name) DO NOTHING`,
@@ -544,7 +538,7 @@ export const seedTestTenants = async (): Promise<void> => {
 
     if (t.planCode === 'pro') {
       for (const area of labAreaData) {
-        const areaResult = await pool.query(
+        const areaResult = await q(
           `INSERT INTO lab_areas (name, code, description, icon, color, sort_order, tenant_id)
            VALUES ($1, $2, $3, $4, $5, $6, $7)
            ON CONFLICT DO NOTHING RETURNING id`,
@@ -553,7 +547,7 @@ export const seedTestTenants = async (): Promise<void> => {
         if (areaResult.rows.length > 0) {
           labAreaIds[area.code] = areaResult.rows[0].id;
         } else {
-          const existing = await pool.query('SELECT id FROM lab_areas WHERE code = $1 AND tenant_id = $2', [area.code, t.id]);
+          const existing = await q('SELECT id FROM lab_areas WHERE code = $1 AND tenant_id = $2', [area.code, t.id]);
           if (existing.rows.length > 0) labAreaIds[area.code] = existing.rows[0].id;
         }
       }
@@ -579,7 +573,7 @@ export const seedTestTenants = async (): Promise<void> => {
     if (t.planCode === 'pro') {
       for (const test of labTestData) {
         const areaId = labAreaIds[test.areaCode];
-        const testResult = await pool.query(
+        const testResult = await q(
           `INSERT INTO lab_tests (name, code, price, lab_area_id, reference_ranges, unit, category, sample_type, container_type, turnaround_time_min, tenant_id)
            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
            ON CONFLICT (tenant_id, code) DO NOTHING RETURNING id`,
@@ -588,7 +582,7 @@ export const seedTestTenants = async (): Promise<void> => {
         if (testResult.rows.length > 0) {
           labTestIds[test.code] = testResult.rows[0].id;
         } else {
-          const existing = await pool.query('SELECT id FROM lab_tests WHERE code = $1 AND tenant_id = $2', [test.code, t.id]);
+          const existing = await q('SELECT id FROM lab_tests WHERE code = $1 AND tenant_id = $2', [test.code, t.id]);
           if (existing.rows.length > 0) labTestIds[test.code] = existing.rows[0].id;
         }
       }
@@ -609,7 +603,7 @@ export const seedTestTenants = async (): Promise<void> => {
 
     if (t.planCode === 'pro') {
       for (const eq of equipmentData) {
-        const eqResult = await pool.query(
+        const eqResult = await q(
           `INSERT INTO lab_equipment (name, model, serial_number, lab_area_id, connection_type, status, tenant_id)
            VALUES ($1, $2, $3, $4, $5, $6, $7)
            ON CONFLICT DO NOTHING RETURNING id`,
@@ -635,7 +629,7 @@ export const seedTestTenants = async (): Promise<void> => {
 
     if (t.planCode === 'pro') {
       for (const re of reagentData) {
-        const reResult = await pool.query(
+        const reResult = await q(
           `INSERT INTO lab_reagents (name, catalog_number, lot_number, supplier, stock_quantity, unit, min_stock, current_stock, storage_conditions, lab_area_id, tenant_id)
            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
            ON CONFLICT DO NOTHING RETURNING id`,
@@ -652,13 +646,13 @@ export const seedTestTenants = async (): Promise<void> => {
       const qcTypes = ['internal', 'internal', 'internal', 'external', 'calibration', 'proficiency', 'internal', 'external'];
       const qcStatuses = ['passed', 'passed', 'passed', 'failed', 'passed', 'passed', 'warning', 'passed'];
 
-      const labTechResult = await pool.query(
+      const labTechResult = await q(
         "SELECT id FROM users WHERE tenant_id = $1 AND role = 'lab_technician' LIMIT 1",
         [t.id]
       );
       let qcUserId: number = labTechResult.rows.length > 0 ? labTechResult.rows[0].id : 1;
       if (labTechResult.rows.length === 0) {
-        const adminForQc = await pool.query('SELECT id FROM users WHERE tenant_id = $1 AND role = $2 LIMIT 1', [t.id, 'admin']);
+        const adminForQc = await q('SELECT id FROM users WHERE tenant_id = $1 AND role = $2 LIMIT 1', [t.id, 'admin']);
         if (adminForQc.rows.length > 0) qcUserId = adminForQc.rows[0].id;
       }
 
@@ -669,7 +663,7 @@ export const seedTestTenants = async (): Promise<void> => {
       for (let i = 0; i < 8; i++) {
         if (allLabTestIds.length === 0 || allLabAreaIds.length === 0) break;
         try {
-          await pool.query(
+          await q(
             `INSERT INTO lab_qc_records (lab_test_id, lab_area_id, equipment_id, reagent_id, qc_type, status, performed_by, performed_at, results, notes, tenant_id)
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
             [
@@ -694,11 +688,11 @@ export const seedTestTenants = async (): Promise<void> => {
 
     // ── Bookings (past + future) ───────────────────────────────────────────
 
-    const bookingCheck = await pool.query('SELECT COUNT(*) FROM bookings WHERE tenant_id = $1', [t.id]);
+    const bookingCheck = await q('SELECT COUNT(*) FROM bookings WHERE tenant_id = $1', [t.id]);
     const bookingCount = parseInt(bookingCheck.rows[0].count, 10);
 
     if (bookingCount === 0 && patientIds.length > 0 && doctorIds.length > 0) {
-      await pool.query('ALTER TABLE bookings DROP CONSTRAINT IF EXISTS check_future_date');
+      await q('ALTER TABLE bookings DROP CONSTRAINT IF EXISTS check_future_date');
 
       // Past bookings (15+ completed)
       const pastBookingIds: number[] = [];
@@ -711,7 +705,7 @@ export const seedTestTenants = async (): Promise<void> => {
         const time = `${String(hour).padStart(2, '0')}:${pick(['00', '15', '30', '45'])}`;
         const status = pick(['completed', 'completed', 'completed', 'no_show', 'cancelled']);
         try {
-          const result = await pool.query(
+          const result = await q(
             `INSERT INTO bookings (doctor_id, user_id, date, time, duration, status, confirmed, tenant_id, created_at)
              VALUES ($1, $2, $3, $4, $5, $6, true, $7, $8)
              ON CONFLICT (doctor_id, date, time) DO NOTHING
@@ -732,7 +726,7 @@ export const seedTestTenants = async (): Promise<void> => {
         const time = `${String(hour).padStart(2, '0')}:${pick(['00', '15', '30', '45'])}`;
         const confirmed = Math.random() > 0.3;
         try {
-          await pool.query(
+          await q(
             `INSERT INTO bookings (doctor_id, user_id, date, time, duration, status, confirmed, tenant_id)
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
              ON CONFLICT (doctor_id, date, time) DO NOTHING`,
@@ -741,12 +735,12 @@ export const seedTestTenants = async (): Promise<void> => {
         } catch { /* skip on constraint violation */ }
       }
 
-      await pool.query('ALTER TABLE bookings ADD CONSTRAINT check_future_date CHECK (date >= CURRENT_DATE - INTERVAL \'1 day\') NOT VALID');
+      await q('ALTER TABLE bookings ADD CONSTRAINT check_future_date CHECK (date >= CURRENT_DATE - INTERVAL \'1 day\') NOT VALID');
       logger.info(`  Bookings: ${pastBookingIds.length} pasadas + 7 futuras`);
 
       // ── Clinical records (from ~65% of completed bookings) ───────────────
 
-      const completedBookings = await pool.query(
+      const completedBookings = await q(
         'SELECT id, doctor_id, user_id FROM bookings WHERE tenant_id = $1 AND status = $2',
         [t.id, 'completed']
       );
@@ -765,7 +759,7 @@ export const seedTestTenants = async (): Promise<void> => {
         const treatmentPlan = `Se indica control de ${diag.diagnosis.toLowerCase()}. Se entrega receta médica. Próximo control en ${pick(['1', '2', '3'])} meses.`;
 
         try {
-          const result = await pool.query(
+          const result = await q(
             `INSERT INTO clinical_records (patient_id, doctor_id, booking_id, chief_complaint, anamnesis, vital_signs, physical_exam, diagnosis, cie10_codes, treatment_plan, notes, status, tenant_id)
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'completed', $12)
              ON CONFLICT DO NOTHING RETURNING id`,
@@ -799,7 +793,7 @@ export const seedTestTenants = async (): Promise<void> => {
           pickedMeds.add(medIdx);
           const med = medications[medIdx];
           try {
-            await pool.query(
+            await q(
               `INSERT INTO prescriptions (clinical_record_id, medication, dosage, frequency, duration, instructions, route, tenant_id)
                VALUES ($1, $2, $3, $4, $5, $6, 'oral', $7)`,
               [crId, med.medication, med.dosage, med.frequency, med.duration, med.instructions, t.id]
@@ -830,7 +824,7 @@ export const seedTestTenants = async (): Promise<void> => {
         for (let i = 0; i < crIds.length; i++) {
           if (Math.random() > 0.4) continue;
           const crId = crIds[i];
-          const crResult = await pool.query(
+          const crResult = await q(
             'SELECT patient_id, doctor_id FROM clinical_records WHERE id = $1',
             [crId]
           );
@@ -841,7 +835,7 @@ export const seedTestTenants = async (): Promise<void> => {
           const priority = pick(['routine', 'routine', 'urgent']);
           const labStatus = pick(['delivered', 'result_entered', 'validated_tech']);
 
-          const requestResult = await pool.query(
+          const requestResult = await q(
             `INSERT INTO lab_requests (request_number, patient_id, doctor_id, clinical_record_id, priority, status, notes, requested_at, tenant_id, lab_type)
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'internal')
              ON CONFLICT (request_number) DO NOTHING RETURNING id`,
@@ -868,7 +862,7 @@ export const seedTestTenants = async (): Promise<void> => {
               const resultsJson = labResultSets[testId] || {};
 
               try {
-                await pool.query(
+                await q(
                   `INSERT INTO lab_request_items (lab_request_id, lab_test_id, priority, status, results, result_notes, notes, completed_at, tenant_id)
                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
                   [
@@ -901,7 +895,7 @@ export const seedTestTenants = async (): Promise<void> => {
         let notifCount = 0;
         for (const notif of labNotifTypes) {
           try {
-            await pool.query(
+            await q(
               `INSERT INTO lab_notifications (type, title, message, severity, tenant_id)
                VALUES ($1, $2, $3, $4, $5)`,
               [notif.type, notif.title, notif.message, notif.severity, t.id]
@@ -914,7 +908,7 @@ export const seedTestTenants = async (): Promise<void> => {
 
       // ── Invoices (from ~50% of past bookings) ────────────────────────────
 
-      const pastBookingsForInvoice = await pool.query(
+      const pastBookingsForInvoice = await q(
         'SELECT id, doctor_id, user_id, date FROM bookings WHERE tenant_id = $1 AND status = $2',
         [t.id, 'completed']
       );
@@ -932,7 +926,7 @@ export const seedTestTenants = async (): Promise<void> => {
         const dueDate = addDays(b.date, 15);
 
         try {
-          const invResult = await pool.query(
+          const invResult = await q(
             `INSERT INTO invoices (invoice_number, patient_id, doctor_id, booking_id, concept, description, amount, currency, tax_amount, total_amount, status, due_date, issued_at, paid_at, payment_method, tenant_id)
              VALUES ($1, $2, $3, $4, $5, $6, $7, 'CLP', $8, $9, $10, $11, $12, $13, $14, $15)
              ON CONFLICT (invoice_number) DO NOTHING RETURNING id`,
@@ -954,16 +948,16 @@ export const seedTestTenants = async (): Promise<void> => {
 
       // ── Subscription invoices (6 months) ─────────────────────────────────
 
-      const invCheck = await pool.query('SELECT COUNT(*) FROM subscription_invoices WHERE tenant_id = $1', [t.id]);
+      const invCheck = await q('SELECT COUNT(*) FROM subscription_invoices WHERE tenant_id = $1', [t.id]);
       if (parseInt(invCheck.rows[0].count, 10) === 0) {
-        const subResult = await pool.query('SELECT id FROM subscriptions WHERE tenant_id = $1 LIMIT 1', [t.id]);
+        const subResult = await q('SELECT id FROM subscriptions WHERE tenant_id = $1 LIMIT 1', [t.id]);
         if (subResult.rows.length > 0) {
           const subId = subResult.rows[0].id;
           const planAmount = t.planCode === 'pro' ? 79 : 29;
           for (let m = 1; m <= 6; m++) {
             const paidAt = addDays(today, -(m * 30));
             try {
-              await pool.query(
+              await q(
                 `INSERT INTO subscription_invoices (tenant_id, subscription_id, amount, currency, status, period_start, period_end, paid_at)
                  VALUES ($1, $2, $3, 'USD', 'paid', $4, $5, $6)
                  ON CONFLICT DO NOTHING`,
@@ -976,7 +970,7 @@ export const seedTestTenants = async (): Promise<void> => {
 
       // ── Audit logs (30+) ─────────────────────────────────────────────────
 
-      const adminResult = await pool.query(
+      const adminResult = await q(
         'SELECT id FROM users WHERE tenant_id = $1 AND role = $2 LIMIT 1',
         [t.id, 'admin']
       );
@@ -992,7 +986,7 @@ export const seedTestTenants = async (): Promise<void> => {
         const ipOctet4 = randomInt(1, 254);
 
         try {
-          await pool.query(
+          await q(
             `INSERT INTO audit_logs (user_id, action, resource_type, resource_id, ip_address, user_agent, tenant_id, created_at)
              VALUES ($1, $2, $3, $4, $5::inet, $6, $7, $8)`,
             [
@@ -1022,7 +1016,7 @@ export const seedTestTenants = async (): Promise<void> => {
         const onsetDay = randomInt(1, 28);
 
         try {
-          await pool.query(
+          await q(
             `INSERT INTO medical_history (patient_id, condition, onset_date, status, notes, tenant_id)
              VALUES ($1, $2, $3, $4, $5, $6)`,
             [
@@ -1044,6 +1038,13 @@ export const seedTestTenants = async (): Promise<void> => {
       logger.info(`  ✓ Tenant ${t.id} completado`);
     } else {
       logger.info(`  Tenant ${t.id} ya tiene datos de bookings — saltando seed detallado`);
+    }
+      await client.query('COMMIT');
+    } catch (err) {
+      await client.query('ROLLBACK').catch(() => {});
+      logger.error(`seedTestTenants failed for tenant ${t.id} (non-fatal, continuing startup)`, err);
+    } finally {
+      client.release();
     }
   }
 };
