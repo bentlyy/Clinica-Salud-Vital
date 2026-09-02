@@ -26,9 +26,7 @@ export const loginSchema = z.object({
   tenant_id: z.string().optional(),
 }).strict();
 
-export const refreshSchema = z.object({
-  refresh_token: z.string().min(1, 'Refresh token required').optional(),
-}).strict();
+export const refreshSchema = z.object({}).strict();
 
 export const changePasswordSchema = z.object({
   current_password: z.string().min(1, 'Current password required'),

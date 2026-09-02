@@ -251,7 +251,7 @@ describe('getClinicalRecordsByPatient', () => {
     vi.mocked(doctorService.getDoctorByUserId).mockResolvedValue({ id: 1 });
     vi.mocked(clinicalRecordService.getClinicalRecordsByPatient).mockResolvedValueOnce([]);
     vi.mocked(clinicalRecordService.doesDoctorHaveBookingWithPatient).mockResolvedValue(true);
-    vi.mocked(clinicalRecordService.getClinicalRecordsByPatient).mockResolvedValueOnce([{ id: 2 }]);
+    vi.mocked(clinicalRecordService.getAllClinicalRecords).mockResolvedValue([{ id: 2 }]);
     const req = { params: { patient_id: '5' }, user: { role: 'doctor', id: 1 }, tenant_id: 'test' };
     const res = { json: vi.fn() };
     const next = vi.fn();

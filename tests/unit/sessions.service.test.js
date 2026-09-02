@@ -24,13 +24,12 @@ beforeEach(() => {
 });
 
 describe('createUserSession', () => {
-  it('inserts a session and returns id + token', async () => {
+  it('inserts a session and returns the session id', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [{ id: 7 }] });
 
     const result = await createUserSession(3, 'tenant-1', '1.2.3.4', 'Agent/1.0');
 
     expect(result.sessionId).toBe(7);
-    expect(result.sessionToken).toBeTruthy();
     expect(mockQuery).toHaveBeenCalledWith(
       expect.stringContaining('INSERT INTO user_sessions'),
       [3, 'tenant-1', expect.any(String), '1.2.3.4', 'Agent/1.0', expect.any(Date)]

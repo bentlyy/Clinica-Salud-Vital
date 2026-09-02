@@ -80,10 +80,12 @@ const generateRefreshToken = async (userId: number, sessionId?: number | null): 
   const tokenHash = hashToken(token);
   const expiresAt = new Date();
   expiresAt.setDate(expiresAt.getDate() + REFRESH_TOKEN_EXPIRY_DAYS);
+  const family = crypto.randomBytes(16).toString('hex');
 
   await pool.query(
-    'INSERT INTO refresh_tokens (user_id, token, expires_at, token_version, session_id) VALUES ($1, $2, $3, (SELECT COALESCE(token_version, 0) FROM users WHERE id = $4), $5)',
-    [userId, tokenHash, expiresAt, userId, sessionId ?? null]
+    `INSERT INTO refresh_tokens (user_id, token, expires_at, token_version, session_id, tenant_id, token_family)
+     VALUES ($1, $2, $3, (SELECT COALESCE(token_version, 0) FROM users WHERE id = $4), $5, (SELECT COALESCE(tenant_id, 'default') FROM users WHERE id = $4), $6)`,
+    [userId, tokenHash, expiresAt, userId, sessionId ?? null, family]
   );
 
   return token;
@@ -314,12 +316,30 @@ export const refreshToken = async ({ refresh_token }: RefreshParams): Promise<{
 
     const tokenHash = hashToken(refresh_token);
     const result = await client.query(
-      'SELECT * FROM refresh_tokens WHERE token = $1 AND revoked = false AND expires_at > NOW() FOR UPDATE',
+      'SELECT * FROM refresh_tokens WHERE token = $1 AND expires_at > NOW() FOR UPDATE',
       [tokenHash]
     );
     const tokenRecord = result.rows[0];
     if (!tokenRecord) {
       await client.query('ROLLBACK');
+      return null;
+    }
+
+    if (tokenRecord.revoked === true) {
+      // REUSE DETECTION: this token was already rotated/revoked.
+      // Attacker may have stolen it (or a second tab raced the rotation).
+      // Revoke the entire family so any stolen sibling becomes useless.
+      if (tokenRecord.token_family) {
+        await client.query(
+          'UPDATE refresh_tokens SET revoked = true WHERE token_family = $1 AND revoked = false',
+          [tokenRecord.token_family]
+        );
+        await client.query(
+          'UPDATE user_sessions SET revoked_at = NOW() WHERE id = $1 AND revoked_at IS NULL',
+          [tokenRecord.session_id]
+        );
+      }
+      await client.query('COMMIT');
       return null;
     }
 
@@ -362,9 +382,11 @@ export const refreshToken = async ({ refresh_token }: RefreshParams): Promise<{
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + REFRESH_TOKEN_EXPIRY_DAYS);
 
+    const family = tokenRecord.token_family || crypto.randomBytes(16).toString('hex');
+
     await client.query(
-      'INSERT INTO refresh_tokens (user_id, token, expires_at, token_version, session_id) VALUES ($1, $2, $3, $4, $5)',
-      [user.id, newTokenHash, expiresAt, user.token_version || 0, sessionId]
+      'INSERT INTO refresh_tokens (user_id, token, expires_at, token_version, session_id, tenant_id, token_family) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+      [user.id, newTokenHash, expiresAt, user.token_version || 0, sessionId, user.tenant_id || 'default', family]
     );
 
     await client.query('COMMIT');

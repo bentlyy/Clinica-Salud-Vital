@@ -18,49 +18,63 @@ beforeEach(() => {
 describe('createInvoice', () => {
   const baseData = { patient_id: 1, concept: 'Consulta', amount: 50000, due_date: '2026-06-01' };
 
+  // Real createInvoice flow includes BEGIN, advisory lock, cross-tenant
+  // validation of patient/doctor/booking, INSERT, optional items, COMMIT.
+  const defaultFlow = () => {
+    mockQuery.mockImplementation((sql, args) => {
+      if (sql === 'BEGIN') return Promise.resolve({});
+      if (sql.includes('pg_advisory_xact_lock')) return Promise.resolve({});
+      if (sql.includes('FROM users WHERE id')) return Promise.resolve({ rows: [{ id: 1 }] });
+      if (sql.includes('FROM doctors WHERE id')) return Promise.resolve({ rows: [{ id: 1 }] });
+      if (sql.includes('SELECT id FROM invoices')) return Promise.resolve({ rows: [] });
+      if (sql.includes('INSERT INTO invoices')) return Promise.resolve({ rows: [{ id: 1, invoice_number: 'INV-2026-123456' }] });
+      if (sql.includes('INSERT INTO invoice_items')) return Promise.resolve({ rows: [{ id: 10 }] });
+      if (sql === 'COMMIT') return Promise.resolve({});
+      return Promise.resolve({ rows: [], rowCount: 0 });
+    });
+  };
+
   it('creates invoice with tenant', async () => {
-    mockQuery
-      .mockResolvedValueOnce({ rows: [] })                              // BEGIN
-      .mockResolvedValueOnce({ rows: [] })                              // advisory lock
-      .mockResolvedValueOnce({ rows: [{ id: 1, invoice_number: 'INV-2026-123456' }] }) // INSERT
-      .mockResolvedValueOnce({ rows: [] });                             // COMMIT
+    defaultFlow();
 
     const result = await createInvoice(baseData, 'tenant-1');
     expect(result.id).toBe(1);
-    expect(mockQuery.mock.calls[2][1]).toContain('tenant-1');
+    expect(mockQuery).toHaveBeenCalledWith(
+      expect.stringContaining('INSERT INTO invoices'),
+      expect.arrayContaining(['tenant-1'])
+    );
   });
 
-  it('creates invoice with tenant_id', async () => {
-    mockQuery
-      .mockResolvedValueOnce({ rows: [] })                    // BEGIN
-      .mockResolvedValueOnce({ rows: [] })                    // advisory lock
-      .mockResolvedValueOnce({ rows: [{ id: 1 }] })           // INSERT
-      .mockResolvedValueOnce({ rows: [] });                   // COMMIT
+  it('validates the patient belongs to the tenant', async () => {
+    mockQuery.mockImplementation((sql, args) => {
+      if (sql === 'BEGIN') return Promise.resolve({});
+      if (sql.includes('pg_advisory_xact_lock')) return Promise.resolve({});
+      if (sql.includes('FROM users WHERE id')) return Promise.resolve({ rows: [], rowCount: 0 });
+      if (sql === 'ROLLBACK') return Promise.resolve({});
+      return Promise.resolve({ rows: [], rowCount: 0 });
+    });
 
-    await createInvoice(baseData, 'tenant-1');
-    expect(mockQuery.mock.calls[2][0]).toContain('tenant_id');
-    expect(mockQuery.mock.calls[2][1]).toContain('tenant-1');
+    await expect(createInvoice(baseData, 'tenant-1')).rejects.toThrow('Patient not found');
+    expect(mockQuery).toHaveBeenCalledWith('ROLLBACK');
   });
 
   it('creates invoice with items', async () => {
-    mockQuery
-      .mockResolvedValueOnce({ rows: [] })                    // BEGIN
-      .mockResolvedValueOnce({ rows: [] })                    // advisory lock
-      .mockResolvedValueOnce({ rows: [{ id: 1 }] })           // INSERT invoice
-      .mockResolvedValueOnce({ rows: [{ id: 10 }] })          // INSERT item
-      .mockResolvedValueOnce({ rows: [] });                   // COMMIT
+    defaultFlow();
 
     const data = { ...baseData, items: [{ description: 'Radiografia', quantity: 1, unit_price: 20000 }] };
     const result = await createInvoice(data, 'tenant-1');
     expect(result.id).toBe(1);
-    expect(mockQuery.mock.calls[3][0]).toContain('INSERT INTO invoice_items');
+    expect(mockQuery).toHaveBeenCalledWith(
+      expect.stringContaining('INSERT INTO invoice_items'),
+      expect.arrayContaining(['Radiografia'])
+    );
   });
 
   it('rolls back on error', async () => {
     mockQuery
       .mockResolvedValueOnce({ rows: [] })                    // BEGIN
       .mockResolvedValueOnce({ rows: [] })                    // advisory lock
-      .mockRejectedValueOnce(new Error('DB error'));          // INSERT fails
+      .mockRejectedValueOnce(new Error('DB error'));          // patient validation fails
 
     await expect(createInvoice(baseData, 'tenant-1')).rejects.toThrow('DB error');
     expect(mockQuery).toHaveBeenCalledWith('ROLLBACK');

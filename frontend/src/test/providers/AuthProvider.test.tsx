@@ -70,14 +70,14 @@ describe('AuthProvider', () => {
     });
   });
 
-  it('restores user from localStorage when refresh fails', async () => {
+  it('does not trust stale localStorage on refresh network failure (no phantom session)', async () => {
     const savedUser = { id: 1, role: 'admin' };
     localStorage.setItem('auth_user', JSON.stringify(savedUser));
     mockAxiosPost.mockRejectedValue(new Error('No session'));
     renderWithProviders(<TestConsumer />);
     await waitFor(() => {
       expect(screen.getByTestId('loading').textContent).toBe('false');
-      expect(screen.getByTestId('user').textContent).toContain('"role":"admin"');
+      expect(screen.getByTestId('user').textContent).toBe('null');
     });
   });
 

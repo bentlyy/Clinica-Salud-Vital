@@ -48,21 +48,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (!cancelled) {
           setAccessToken(null);
           const status = (err as { response?: { status?: number } })?.response?.status;
-          if (status === 401 || status === 400) {
+          const isAuthError = status === 401 || status === 400;
+          if (isAuthError) {
+            // Server definitively rejected the stale refresh token: clear local state
             setUser(null);
             localStorage.removeItem('auth_user');
           } else {
-            const saved = localStorage.getItem('auth_user');
-            if (saved) {
-              try {
-                setUser(normalizeUser(JSON.parse(saved)));
-              } catch {
-                setUser(null);
-                localStorage.removeItem('auth_user');
-              }
-            } else {
-              setUser(null);
-            }
+            // Network/5xx error: the session may still be valid server-side.
+            // Surface an offline-style state so the UI does not silently show
+            // stale phantom data. We deliberately do NOT trust localStorage here.
+            setUser(null);
           }
         }
       } finally {

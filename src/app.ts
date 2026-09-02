@@ -14,6 +14,7 @@ import { tenantService } from './shared/multi-tenant.service.js';
 import { seedDefaultTenant, seedSuperAdmin, seedTestTenants, spreadSeedDates } from './seed/admin.seed.js';
 import { startReminderJob } from './jobs/reminder.job.js';
 import { verifyAuditChain } from './jobs/audit-integrity.job.js';
+import { runFullCleanup } from './shared/cleanup.service.js';
 import { securityMiddleware, validateEnvSecurity } from './middlewares/security.middleware.js';
 import { tenantMiddleware } from './middlewares/tenant.middleware.js';
 import { optionalAuth } from './middlewares/auth.middleware.js';
@@ -458,6 +459,15 @@ const startServer = async (): Promise<void> => {
         }
       });
       logger.info('Audit chain integrity cron scheduled (every 6 hours)');
+
+      cron.schedule('0 3 * * *', async () => {
+        try {
+          await runFullCleanup();
+        } catch (error) {
+          logger.error('Session/token cleanup cron job failed', { error: toError(error).message });
+        }
+      });
+      logger.info('Session/token cleanup cron scheduled (daily at 03:00)');
     } catch (error) {
       logger.error('Post-boot initialization failed', { error: toError(error).message, stack: toError(error).stack });
       markSeedFailed(toError(error));
