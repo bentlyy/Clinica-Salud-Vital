@@ -365,7 +365,7 @@ export const seedTestTenants = async (): Promise<void> => {
     // ── Admin user ─────────────────────────────────────────────────────────
 
     await q(
-      'INSERT INTO users (email, password, name, role, rut, gender, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (tenant_id, email) DO UPDATE SET name = EXCLUDED.name',
+      'INSERT INTO users (email, password, name, role, rut, gender, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (tenant_id, email) DO UPDATE SET name = EXCLUDED.name, password = EXCLUDED.password',
       [t.adminEmail, await hash(t.adminEmail), t.name, 'admin', t.adminRut, 'M', t.id]
     );
 
@@ -393,7 +393,7 @@ export const seedTestTenants = async (): Promise<void> => {
     for (const doc of tenantSpecialties) {
       const fullEmail = `${doc.email}@${t.domain}.clinic.com`;
       const userResult = await q(
-        'INSERT INTO users (email, password, name, role, rut, gender, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (tenant_id, email) DO UPDATE SET name = EXCLUDED.name RETURNING id',
+        'INSERT INTO users (email, password, name, role, rut, gender, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (tenant_id, email) DO UPDATE SET name = EXCLUDED.name, password = EXCLUDED.password RETURNING id',
         [fullEmail, await hash(fullEmail), doc.name, 'doctor', doc.rut, doc.gender, t.id]
       );
       const userId: number = userResult.rows[0].id;
@@ -454,7 +454,7 @@ export const seedTestTenants = async (): Promise<void> => {
       const email = `${pName.toLowerCase().replace(/\s+/g, '.')}@${t.domain}.clinic.com`;
       const rutSuffix = pick(['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'K']);
       const result = await q(
-        'INSERT INTO users (email, password, name, role, rut, phone, gender, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT (tenant_id, email) DO NOTHING RETURNING id',
+        'INSERT INTO users (email, password, name, role, rut, phone, gender, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT (tenant_id, email) DO UPDATE SET name = EXCLUDED.name, password = EXCLUDED.password RETURNING id',
         [
           email, await hash(email), pName, 'user',
           `${randomInt(10000000, 99999999)}-${rutSuffix}`,
@@ -472,7 +472,7 @@ export const seedTestTenants = async (): Promise<void> => {
     for (const domain of ['norte', 'sur']) {
       const tenantId = domain === 'norte' ? 'clinica-norte' : 'clinica-sur';
       await q(
-        'INSERT INTO users (email, password, name, role, rut, phone, gender, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT (tenant_id, email) DO NOTHING',
+        'INSERT INTO users (email, password, name, role, rut, phone, gender, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT (tenant_id, email) DO UPDATE SET name = EXCLUDED.name, password = EXCLUDED.password',
         [
           'compartido@clinic.com', await hash('compartido@clinic.com'), 'Usuario Compartido', 'user',
           `${randomInt(10000000, 99999999)}-${pick(['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'K'])}`,
@@ -487,7 +487,7 @@ export const seedTestTenants = async (): Promise<void> => {
 
     if (t.labTechnicianEmail) {
       await q(
-        'INSERT INTO users (email, password, name, role, rut, gender, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (tenant_id, email) DO UPDATE SET name = EXCLUDED.name',
+        'INSERT INTO users (email, password, name, role, rut, gender, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (tenant_id, email) DO UPDATE SET name = EXCLUDED.name, password = EXCLUDED.password',
         [t.labTechnicianEmail, await hash(t.labTechnicianEmail), 'Encargado de Laboratorio', 'lab_technician', `${randomInt(10000000, 99999999)}-K`, 'M', t.id]
       );
       logger.info(`  Lab technician: ${t.labTechnicianEmail}`);

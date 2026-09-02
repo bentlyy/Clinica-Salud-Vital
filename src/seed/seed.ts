@@ -72,7 +72,7 @@ const ensureDoctorsExist = async (): Promise<void> => {
   ];
   for (const doc of doctorsData) {
     const userResult = await pool.query(
-      'INSERT INTO users (email, password, name, role, rut, phone, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (tenant_id, email) DO NOTHING RETURNING id',
+      'INSERT INTO users (email, password, name, role, rut, phone, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (tenant_id, email) DO UPDATE SET name = EXCLUDED.name, password = EXCLUDED.password RETURNING id',
       [doc.email, await getHash(doc.email), doc.name, 'doctor', generateRut(), '+56987654321', DEFAULT_TENANT_ID]
     );
     if (userResult.rows.length === 0) continue;
@@ -95,7 +95,7 @@ const ensureDoctorsExist = async (): Promise<void> => {
   for (const pName of patientNames) {
     const email = pName.toLowerCase().replace(/\s+/g, '.') + '@clinic.com';
     await pool.query(
-      'INSERT INTO users (email, password, name, role, rut, phone, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (tenant_id, email) DO NOTHING',
+      'INSERT INTO users (email, password, name, role, rut, phone, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (tenant_id, email) DO UPDATE SET name = EXCLUDED.name, password = EXCLUDED.password',
       [email, await getHash(email), pName, 'user', generateRut(), '+56987654321', DEFAULT_TENANT_ID]
     );
   }
@@ -151,14 +151,14 @@ export const seed = async (): Promise<void> => {
   ];
   for (const p of simplePatients) {
     await pool.query(
-      'INSERT INTO users (email, password, name, role, rut, phone, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (tenant_id, email) DO NOTHING',
+      'INSERT INTO users (email, password, name, role, rut, phone, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (tenant_id, email) DO UPDATE SET name = EXCLUDED.name, password = EXCLUDED.password',
       [p.email, await getHash(p.email), p.email.split('@')[0], 'user', p.rut, p.phone, DEFAULT_TENANT_ID]
     );
   }
 
   // ==================== LAB TECHNICIAN ====================
   await pool.query(
-    'INSERT INTO users (email, password, name, role, rut, phone, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (tenant_id, email) DO NOTHING',
+    'INSERT INTO users (email, password, name, role, rut, phone, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (tenant_id, email) DO UPDATE SET name = EXCLUDED.name, password = EXCLUDED.password',
     ['lab@clinic.com', await getHash('lab@clinic.com'), 'Técnico de Laboratorio', 'lab_technician', generateRut(), '+56944444444', DEFAULT_TENANT_ID]
   );
 
@@ -197,7 +197,7 @@ export const seed = async (): Promise<void> => {
 
   for (const doc of doctorsData) {
     const userResult = await pool.query(
-      'INSERT INTO users (email, password, name, role, rut, phone, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (tenant_id, email) DO NOTHING RETURNING id',
+      'INSERT INTO users (email, password, name, role, rut, phone, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (tenant_id, email) DO UPDATE SET name = EXCLUDED.name, password = EXCLUDED.password RETURNING id',
       [doc.email, await getHash(doc.email), doc.name, 'doctor', generateRut(), '+569' + String(randomInt(10000000, 99999999)), DEFAULT_TENANT_ID]
     );
     if (userResult.rows.length === 0) continue;
@@ -246,7 +246,7 @@ export const seed = async (): Promise<void> => {
   for (const pName of patientNames) {
     const email = pName.toLowerCase().replace(/\s+/g, '.') + '@clinic.com';
     const userResult = await pool.query(
-      'INSERT INTO users (email, password, name, role, rut, phone, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (tenant_id, email) DO NOTHING RETURNING id',
+      'INSERT INTO users (email, password, name, role, rut, phone, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (tenant_id, email) DO UPDATE SET name = EXCLUDED.name, password = EXCLUDED.password RETURNING id',
       [email, await getHash(email), pName, 'user', generateRut(), '+569' + String(randomInt(10000000, 99999999)), DEFAULT_TENANT_ID]
     );
     if (userResult.rows.length > 0) patients.push({ id: userResult.rows[0].id, name: pName, email });
