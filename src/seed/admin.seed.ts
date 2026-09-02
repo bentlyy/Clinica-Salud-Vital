@@ -1,6 +1,7 @@
 import { pool } from '../shared/db.js';
 import bcrypt from 'bcrypt';
 import { logger } from '../utils/logger.js';
+import { deriveSeedPassword } from './seed-credentials.js';
 
 const DEFAULT_TENANT_ID = process.env.DEFAULT_TENANT_ID || 'default';
 
@@ -317,17 +318,22 @@ export const seedAdmin = async (): Promise<void> => {
 // ─── Seed: Test tenants (comprehensive) ─────────────────────────────────────
 
 export const seedTestTenants = async (): Promise<void> => {
-  if (process.env.NODE_ENV === 'production') {
-    logger.info('[SEED SKIPPED] No se ejecutan tenants de prueba en producción');
+  if (process.env.NODE_ENV === 'production' && process.env.SEED_ON_STARTUP !== 'true') {
+    logger.info('[SEED SKIPPED] No se ejecutan tenants de prueba en producción sin SEED_ON_STARTUP=true');
     return;
   }
 
   await pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS idx_users_tenant_email ON users (tenant_id, email)`);
-  const seedPassword = process.env.SEED_PASSWORD;
-  if (!seedPassword) {
-    throw new Error('SEED_PASSWORD is not set. Refusing to seed users with a weak default password.');
-  }
-  const hash = await bcrypt.hash(seedPassword, 12);
+
+  const _seedHashCache = new Map<string, string>();
+  const hashFor = async (email: string): Promise<string> => {
+    const cached = _seedHashCache.get(email);
+    if (cached) return cached;
+    const h = await bcrypt.hash(deriveSeedPassword(email), 12);
+    _seedHashCache.set(email, h);
+    return h;
+  };
+  const hash = hashFor;
   const today = new Date();
 
   for (const t of TEST_TENANTS) {
@@ -366,7 +372,7 @@ export const seedTestTenants = async (): Promise<void> => {
 
     await pool.query(
       'INSERT INTO users (email, password, name, role, rut, gender, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (tenant_id, email) DO UPDATE SET name = EXCLUDED.name',
-      [t.adminEmail, hash, t.name, 'admin', t.adminRut, 'M', t.id]
+      [t.adminEmail, await hash(t.adminEmail), t.name, 'admin', t.adminRut, 'M', t.id]
     );
 
     // ── Doctors (5-6 per tenant, unique specialties) ───────────────────────
@@ -394,7 +400,7 @@ export const seedTestTenants = async (): Promise<void> => {
       const fullEmail = `${doc.email}@${t.domain}.clinic.com`;
       const userResult = await pool.query(
         'INSERT INTO users (email, password, name, role, rut, gender, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (tenant_id, email) DO UPDATE SET name = EXCLUDED.name RETURNING id',
-        [fullEmail, hash, doc.name, 'doctor', doc.rut, doc.gender, t.id]
+        [fullEmail, await hash(fullEmail), doc.name, 'doctor', doc.rut, doc.gender, t.id]
       );
       const userId: number = userResult.rows[0].id;
 
@@ -456,7 +462,7 @@ export const seedTestTenants = async (): Promise<void> => {
       const result = await pool.query(
         'INSERT INTO users (email, password, name, role, rut, phone, gender, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT (tenant_id, email) DO NOTHING RETURNING id',
         [
-          email, hash, pName, 'user',
+          email, await hash(email), pName, 'user',
           `${randomInt(10000000, 99999999)}-${rutSuffix}`,
           `+569${randomInt(10000000, 99999999)}`,
           pick(['M', 'F']),
@@ -474,7 +480,7 @@ export const seedTestTenants = async (): Promise<void> => {
       await pool.query(
         'INSERT INTO users (email, password, name, role, rut, phone, gender, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT (tenant_id, email) DO NOTHING',
         [
-          'compartido@clinic.com', hash, 'Usuario Compartido', 'user',
+          'compartido@clinic.com', await hash('compartido@clinic.com'), 'Usuario Compartido', 'user',
           `${randomInt(10000000, 99999999)}-${pick(['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'K'])}`,
           `+569${randomInt(10000000, 99999999)}`,
           pick(['M', 'F']),
@@ -488,7 +494,7 @@ export const seedTestTenants = async (): Promise<void> => {
     if (t.labTechnicianEmail) {
       await pool.query(
         'INSERT INTO users (email, password, name, role, rut, gender, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (tenant_id, email) DO UPDATE SET name = EXCLUDED.name',
-        [t.labTechnicianEmail, hash, 'Encargado de Laboratorio', 'lab_technician', `${randomInt(10000000, 99999999)}-K`, 'M', t.id]
+        [t.labTechnicianEmail, await hash(t.labTechnicianEmail), 'Encargado de Laboratorio', 'lab_technician', `${randomInt(10000000, 99999999)}-K`, 'M', t.id]
       );
       logger.info(`  Lab technician: ${t.labTechnicianEmail}`);
     }
