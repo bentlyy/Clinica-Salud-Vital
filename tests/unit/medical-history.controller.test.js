@@ -6,6 +6,11 @@ vi.mock('../../src/modules/medical-history/medical-history.service.js', () => ({
   updateMedicalHistory: vi.fn(),
 }));
 
+vi.mock('../../src/shared/ownership.js', () => ({
+  assertDoctorPatientRelationship: vi.fn().mockResolvedValue(undefined),
+  assertPatientInTenant: vi.fn().mockResolvedValue(undefined),
+}));
+
 import * as mhService from '../../src/modules/medical-history/medical-history.service.js';
 import * as mhController from '../../src/modules/medical-history/medical-history.controller.js';
 
@@ -151,14 +156,14 @@ describe('mhController.createMedicalHistory', () => {
 
   it('uses default tenant for superadmin', async () => {
     vi.mocked(mhService.createMedicalHistory).mockResolvedValue({ id: 2 });
-    const req = { user: { role: 'superadmin' }, body: { condition: 'X' } };
+    const req = { user: { role: 'superadmin' }, body: { patient_id: 2, condition: 'X' } };
     const res = { status: vi.fn().mockReturnThis(), json: vi.fn() };
     const next = vi.fn();
 
     mhController.createMedicalHistory(req, res, next);
     await flush();
 
-    expect(mhService.createMedicalHistory).toHaveBeenCalledWith({ condition: 'X' }, 'default');
+    expect(mhService.createMedicalHistory).toHaveBeenCalledWith({ patient_id: 2, condition: 'X' }, 'default');
     expect(res.status).toHaveBeenCalledWith(201);
   });
 });

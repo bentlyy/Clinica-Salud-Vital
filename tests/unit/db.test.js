@@ -21,20 +21,20 @@ describe('db pool', () => {
     expect(pool).toBeDefined();
   });
 
-  it('handles connect event', async () => {
+  it('logs info when a client connects', async () => {
     const { pool } = await import('../../src/shared/db.js');
     const client = { query: vi.fn().mockResolvedValue({}) };
     pool.emit('connect', client);
     const { logger } = await import('../../src/utils/logger.js');
-    expect(logger.info).toHaveBeenCalled();
+    await vi.waitFor(() => expect(logger.info).toHaveBeenCalled());
   });
 
-  it('handles connect event query failure', async () => {
+  it('handles connect event query failure without crashing', async () => {
     const { pool } = await import('../../src/shared/db.js');
-    const client = { query: vi.fn().mockResolvedValue({}) };
+    const client = { query: vi.fn().mockRejectedValue(new Error('GUC rejected')) };
     pool.emit('connect', client);
     const { logger } = await import('../../src/utils/logger.js');
-    expect(logger.info).toHaveBeenCalled();
+    await vi.waitFor(() => expect(logger.warn).toHaveBeenCalled());
   });
 
   it('handles error event', async () => {

@@ -22,7 +22,9 @@ export const createUserSession = async (
   tenantId: string,
   ip?: string | null,
   userAgent?: string | null,
-): Promise<{ sessionId: number; sessionToken: string }> => {
+): Promise<{ sessionId: number }> => {
+  // session_token column is NOT NULL in the schema but is not used anywhere
+  // for device tracking. Keep it populated with a random hash for integrity.
   const token = crypto.randomBytes(40).toString('hex');
   const expiresAt = new Date();
   expiresAt.setDate(expiresAt.getDate() + SESSION_TTL_DAYS);
@@ -41,7 +43,7 @@ export const createUserSession = async (
     ]
   );
 
-  return { sessionId: result.rows[0].id as number, sessionToken: token };
+  return { sessionId: result.rows[0].id as number };
 };
 
 export const touchUserSession = async (sessionId: number | null): Promise<void> => {

@@ -25,6 +25,8 @@ vi.mock('../../src/utils/logger.js', () => ({ logger: mockLogger }));
 beforeEach(() => {
   vi.clearAllMocks();
   process.env.DEFAULT_TENANT_ID = 'default';
+  delete process.env.SEED_PASSWORD;
+  delete process.env.ADMIN_PASSWORD;
 });
 
 import {
@@ -116,6 +118,7 @@ describe('seedTestTenants', () => {
 
   it('creates test tenants with data', async () => {
     process.env.NODE_ENV = 'development';
+    process.env.SEED_PASSWORD = 'StrongSeedPass1!';
     const rowWithId = (id) => ({ rows: [{ id }] });
     mockQuery.mockImplementation((sql) => {
       if (sql.includes('CREATE UNIQUE INDEX')) return Promise.resolve({});

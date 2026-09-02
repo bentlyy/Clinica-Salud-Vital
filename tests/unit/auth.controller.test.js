@@ -81,7 +81,7 @@ describe('refresh', () => {
 
   it('returns 401 when refresh_token invalid', async () => {
     vi.mocked(authService.refreshToken).mockResolvedValue(null);
-    const req = { body: { refresh_token: 'bad' } };
+    const req = { body: {}, cookies: { refresh_token: 'bad' } };
     const res = mkRes();
     const next = vi.fn();
 
@@ -92,14 +92,15 @@ describe('refresh', () => {
   });
 
   it('returns new tokens when valid', async () => {
-    vi.mocked(authService.refreshToken).mockResolvedValue({ access_token: 'new', refresh_token: 'new-r' });
-    const req = { body: { refresh_token: 'valid' } };
+    vi.mocked(authService.refreshToken).mockResolvedValue({ access_token: 'new', refresh_token: 'new-r', user: { id: 1 } });
+    const req = { body: {}, cookies: { refresh_token: 'valid' } };
     const res = mkRes();
 
     authController.refresh(req, res, vi.fn());
     await flush();
 
-    expect(res.json).toHaveBeenCalledWith({ access_token: 'new', refresh_token: 'new-r' });
+    expect(authService.refreshToken).toHaveBeenCalledWith({ refresh_token: 'valid' });
+    expect(res.json).toHaveBeenCalledWith({ access_token: 'new', refresh_token: 'new-r', user: { id: 1 } });
   });
 });
 

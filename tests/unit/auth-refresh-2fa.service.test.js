@@ -67,6 +67,46 @@ describe('authService.refreshToken', () => {
     expect(mockClient.query).toHaveBeenCalledWith('COMMIT');
   }, 10000);
 
+  it('revokes the whole token family when a revoked token is reused (reuse detection)', async () => {
+    mockClient.query.mockImplementation((sql) => {
+      if (sql === 'BEGIN') return Promise.resolve({});
+      if (sql.includes('FOR UPDATE')) return Promise.resolve({ rows: [{ id: 10, user_id: 1, revoked: true, token_family: 'fam-1', session_id: 5 }] });
+      if (sql.includes('WHERE token_family')) return Promise.resolve({});
+      if (sql.includes('UPDATE user_sessions SET revoked_at')) return Promise.resolve({});
+      if (sql === 'COMMIT') return Promise.resolve({});
+      return Promise.resolve({ rows: [] });
+    });
+
+    const { refreshToken } = await import('../../src/modules/auth/auth.service.js');
+    const result = await refreshToken({ refresh_token: 'stolen-token' });
+    expect(result).toBeNull();
+    expect(mockClient.query).toHaveBeenCalledWith(
+      expect.stringContaining('UPDATE refresh_tokens SET revoked = true WHERE token_family = $1'),
+      ['fam-1']
+    );
+    expect(mockClient.query).toHaveBeenCalledWith('COMMIT');
+  });
+
+  it('does not trigger reuse detection for a fresh (non-revoked) token', async () => {
+    mockClient.query.mockImplementation((sql) => {
+      if (sql === 'BEGIN') return Promise.resolve({});
+      if (sql.includes('FOR UPDATE')) return Promise.resolve({ rows: [{ id: 10, user_id: 1, revoked: false, token_family: 'fam-1', session_id: 5, token_version: 0 }] });
+      if (sql.includes('FROM users WHERE id')) return Promise.resolve({ rows: [{ id: 1, email: 'u@t.com', role: 'user', tenant_id: 'default', token_version: 0 }] });
+      if (sql.includes('UPDATE refresh_tokens SET revoked')) return Promise.resolve({});
+      if (sql.includes('INSERT INTO refresh_tokens')) return Promise.resolve({});
+      if (sql === 'COMMIT') return Promise.resolve({});
+      return Promise.resolve({ rows: [] });
+    });
+
+    const { refreshToken } = await import('../../src/modules/auth/auth.service.js');
+    const result = await refreshToken({ refresh_token: 'fresh-token' });
+    expect(result).not.toBeNull();
+    expect(mockClient.query).not.toHaveBeenCalledWith(
+      expect.stringContaining('WHERE token_family'),
+      expect.anything()
+    );
+  });
+
   it('returns null for invalid token', async () => {
     mockClient.query.mockImplementation((sql) => {
       if (sql === 'BEGIN') return Promise.resolve({});

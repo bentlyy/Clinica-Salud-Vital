@@ -253,7 +253,7 @@ describe('doctorService.createDoctor', () => {
   it('throws if user not found', async () => {
     mockClient.query.mockImplementation((sql) => {
       if (sql === 'BEGIN') return Promise.resolve({});
-      if (sql.includes('SELECT id, role FROM users')) return Promise.resolve({ rows: [] });
+      if (sql.includes('SELECT id, role, tenant_id FROM users')) return Promise.resolve({ rows: [] });
       return Promise.resolve({ rows: [] });
     });
 
@@ -262,10 +262,22 @@ describe('doctorService.createDoctor', () => {
     }, 'test-tenant')).rejects.toThrow('User not found');
   });
 
+  it('throws if user belongs to another tenant', async () => {
+    mockClient.query.mockImplementation((sql) => {
+      if (sql === 'BEGIN') return Promise.resolve({});
+      if (sql.includes('SELECT id, role, tenant_id FROM users')) return Promise.resolve({ rows: [{ id: 1, role: 'doctor', tenant_id: 'other-tenant' }] });
+      return Promise.resolve({ rows: [] });
+    });
+
+    await expect(doctorService.createDoctor({
+      name: 'Dr. Test', specialty: 'Medicina General', email: 'doc@test.com', user_id: 1,
+    }, 'test-tenant')).rejects.toThrow('User not found');
+  });
+
   it('throws if user role is not doctor', async () => {
     mockClient.query.mockImplementation((sql) => {
       if (sql === 'BEGIN') return Promise.resolve({});
-      if (sql.includes('SELECT id, role FROM users')) return Promise.resolve({ rows: [{ id: 1, role: 'user' }] });
+      if (sql.includes('SELECT id, role, tenant_id FROM users')) return Promise.resolve({ rows: [{ id: 1, role: 'user', tenant_id: 'test-tenant' }] });
       return Promise.resolve({ rows: [] });
     });
 
@@ -277,7 +289,7 @@ describe('doctorService.createDoctor', () => {
   it('creates doctor successfully', async () => {
     mockClient.query.mockImplementation((sql) => {
       if (sql === 'BEGIN') return Promise.resolve({});
-      if (sql.includes('SELECT id, role FROM users')) return Promise.resolve({ rows: [{ id: 1, role: 'doctor' }] });
+      if (sql.includes('SELECT id, role, tenant_id FROM users')) return Promise.resolve({ rows: [{ id: 1, role: 'doctor', tenant_id: 'test-tenant' }] });
       if (sql.includes('INSERT INTO doctors')) return Promise.resolve({ rows: [{ id: 1, name: 'Dr. Test' }] });
       if (sql.includes('INSERT INTO doctor_availability')) return Promise.resolve({ rows: [] });
       if (sql === 'COMMIT') return Promise.resolve({});
@@ -294,7 +306,7 @@ describe('doctorService.createDoctor', () => {
   it('throws on duplicate doctor (unique constraint)', async () => {
     mockClient.query.mockImplementation((sql) => {
       if (sql === 'BEGIN') return Promise.resolve({});
-      if (sql.includes('SELECT id, role FROM users')) return Promise.resolve({ rows: [{ id: 1, role: 'doctor' }] });
+      if (sql.includes('SELECT id, role, tenant_id FROM users')) return Promise.resolve({ rows: [{ id: 1, role: 'doctor', tenant_id: 'test-tenant' }] });
       if (sql.includes('INSERT INTO doctors')) {
         const err = new Error('Duplicate');
         err.code = '23505';

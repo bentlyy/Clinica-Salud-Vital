@@ -70,8 +70,10 @@ export const pool = new Pool({
 
 pool.on('connect', (client: pg.PoolClient) => {
   const defaultTenant = process.env.DEFAULT_TENANT_ID || 'default';
-  client.query('SELECT set_config(\'app.tenant_id\', $1, false)', [defaultTenant]).catch(() => {
-    // Managed PostgreSQL (Render/PgBouncer) may reject custom GUCs — non-fatal
+  client.query('SELECT set_config(\'app.tenant_id\', $1, false)', [defaultTenant]).then(() => {
+    logger.info(`DB client connected (tenant context: ${defaultTenant})`);
+  }).catch(() => {
+    logger.warn('DB client connected but failed to set tenant context (non-fatal)');
   });
 });
 

@@ -120,19 +120,19 @@ describe('loginSchema', () => {
 });
 
 describe('refreshSchema', () => {
-  it('accepts valid refresh token', () => {
+  it('rejects refresh_token in body (cookie-based refresh only)', () => {
     const result = refreshSchema.safeParse({ refresh_token: 'some-refresh-token-value' });
-    expect(result.success).toBe(true);
-  });
-
-  it('rejects empty refresh_token', () => {
-    const result = refreshSchema.safeParse({ refresh_token: '' });
     expect(result.success).toBe(false);
   });
 
-  it('accepts missing refresh_token (cookie-based refresh)', () => {
+  it('accepts empty body (cookie-based refresh)', () => {
     const result = refreshSchema.safeParse({});
     expect(result.success).toBe(true);
+  });
+
+  it('rejects extra fields due to .strict()', () => {
+    const result = refreshSchema.safeParse({ refresh_token: '' });
+    expect(result.success).toBe(false);
   });
 });
 
