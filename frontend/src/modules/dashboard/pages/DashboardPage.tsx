@@ -55,32 +55,29 @@ function DoctorDashboard() {
         subtitle={t('role_subtitle', { role: user ? getRoleLabel(user.role, t) : '', tenant: user?.tenant_name || '' })}
       />
 
-      <Grid container spacing={2.5}>
+      <Grid container spacing={4}>
         {statCards.map((stat) => (
-          <Grid xs={12} sm={6} md={3} key={stat.label}>
+          <Grid item xs={12} sm={6} md={3} key={stat.label}>
             <Paper
               sx={{
-                p: 2,
+                p: 2.5,
                 display: 'flex',
                 alignItems: 'center',
                 gap: 2,
-                border: '1px solid #e5e7eb',
+                border: `1px solid ${theme.palette.divider}`,
                 borderRadius: '12px',
                 transition: 'box-shadow 0.2s',
                 '&:hover': { boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' },
               }}
             >
-              <Avatar sx={{ width: 40, height: 40, backgroundColor: stat.bgColor, color: stat.color }}>
+              <Avatar sx={{ width: 48, height: 48, backgroundColor: stat.bgColor, color: stat.color }}>
                 {stat.icon}
               </Avatar>
               <Box sx={{ minWidth: 0 }}>
-                <Typography variant="h5" sx={{ fontWeight: 700, color: 'text.primary', lineHeight: 1.1 }}>
+                <Typography variant="h4" sx={{ fontWeight: 700, color: 'text.primary', lineHeight: 1.1 }}>
                   {stat.value}
                 </Typography>
-                <Typography
-                  variant="body2"
-                  sx={{ color: 'text.secondary', fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
-                >
+                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                   {stat.label}
                 </Typography>
               </Box>
