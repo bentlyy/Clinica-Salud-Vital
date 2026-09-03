@@ -55,27 +55,32 @@ function DoctorDashboard() {
         subtitle={t('role_subtitle', { role: user ? getRoleLabel(user.role, t) : '', tenant: user?.tenant_name || '' })}
       />
 
-      <Grid container spacing={3}>
+      <Grid container spacing={2.5}>
         {statCards.map((stat) => (
           <Grid xs={12} sm={6} md={3} key={stat.label}>
             <Paper
               sx={{
-                p: 3,
+                p: 2,
                 display: 'flex',
                 alignItems: 'center',
                 gap: 2,
+                border: '1px solid #e5e7eb',
+                borderRadius: '12px',
                 transition: 'box-shadow 0.2s',
                 '&:hover': { boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' },
               }}
             >
-              <Avatar sx={{ width: 48, height: 48, backgroundColor: stat.bgColor, color: stat.color }}>
+              <Avatar sx={{ width: 40, height: 40, backgroundColor: stat.bgColor, color: stat.color }}>
                 {stat.icon}
               </Avatar>
-              <Box>
-                <Typography variant="h4" sx={{ fontWeight: 700, color: 'text.primary' }}>
+              <Box sx={{ minWidth: 0 }}>
+                <Typography variant="h5" sx={{ fontWeight: 700, color: 'text.primary', lineHeight: 1.1 }}>
                   {stat.value}
                 </Typography>
-                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                <Typography
+                  variant="body2"
+                  sx={{ color: 'text.secondary', fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                >
                   {stat.label}
                 </Typography>
               </Box>
@@ -84,8 +89,8 @@ function DoctorDashboard() {
         ))}
       </Grid>
 
-      <Paper sx={{ mt: 3, p: 4, border: `1px solid ${theme.palette.divider}` }}>
-        <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, color: 'text.primary' }}>
+      <Paper sx={{ mt: 2.5, p: 2.5, border: `1px solid ${theme.palette.divider}`, borderRadius: '12px' }}>
+        <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 2, color: 'text.primary' }}>
           {t('upcoming_appointments_section')}
         </Typography>
         {upcoming && upcoming.length > 0 ? (
@@ -97,9 +102,9 @@ function DoctorDashboard() {
               return (
                 <Box key={b.id}>
                   {i > 0 && <Divider />}
-                  <ListItem disablePadding sx={{ py: 2 }}>
+                  <ListItem disablePadding sx={{ py: 1.25 }}>
                     <ListItemAvatar>
-                      <Avatar sx={{ width: 40, height: 40, backgroundColor: st.bg, color: st.color, fontSize: '0.75rem', fontWeight: 700 }}>
+                      <Avatar sx={{ width: 36, height: 36, backgroundColor: st.bg, color: st.color, fontSize: '0.75rem', fontWeight: 700 }}>
                         <CalendarMonth fontSize="small" />
                       </Avatar>
                     </ListItemAvatar>
@@ -109,7 +114,7 @@ function DoctorDashboard() {
                           <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary' }}>
                             {label}
                           </Typography>
-                          <Chip label={t(`status.${st.key}`)} size="small" sx={{ height: 20, fontSize: '0.7rem', fontWeight: 600, backgroundColor: st.bg, color: st.color }} />
+                          <Chip label={t(`status.${st.key}`)} size="small" sx={{ height: 18, fontSize: '0.7rem', fontWeight: 600, backgroundColor: st.bg, color: st.color }} />
                         </Box>
                       }
                       secondary={
@@ -124,7 +129,7 @@ function DoctorDashboard() {
             })}
           </List>
         ) : (
-          <Box sx={{ textAlign: 'center', py: 4 }}>
+          <Box sx={{ textAlign: 'center', py: 3 }}>
             <EventBusy sx={{ fontSize: 40, color: 'text.secondary', mb: 1, opacity: 0.4 }} />
             <Typography variant="body2" sx={{ color: 'text.secondary' }}>
               {t('no_upcoming_appointments')}
