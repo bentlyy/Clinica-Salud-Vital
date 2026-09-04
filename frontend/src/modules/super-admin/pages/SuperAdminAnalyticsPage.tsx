@@ -5,12 +5,6 @@ import {
   Paper,
   Tabs,
   Tab,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   Avatar,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
@@ -32,6 +26,7 @@ import { useTranslation } from 'react-i18next';
 import { MotionDiv } from '@/shared/utils/animations';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { LoadingState } from '@/shared/components/ui/LoadingState';
+import { DataTable } from '@/shared/components/ui/DataTable';
 import { apiClient } from '@/shared/services/api-client';
 import { formatNumber } from '@/shared/utils/localeUtils';
 
@@ -202,7 +197,7 @@ export default function SuperAdminAnalyticsPage() {
       icon: '📊',
       value: `${String(d.churn_rate ?? 0)}%`,
       label: t('churn_rate', 'Churn mensual'),
-      color: (d.churn_rate ?? 0) > 5 ? theme.palette.error.main : '#22c55e',
+      color: (d.churn_rate ?? 0) > 5 ? theme.palette.error.main : theme.palette.success.main,
     },
     {
       icon: '🔄',
@@ -237,7 +232,7 @@ export default function SuperAdminAnalyticsPage() {
             <Paper
               sx={{
                 p: 2.5,
-                border: '1px solid #e5e7eb',
+                border: `1px solid ${theme.palette.divider}`,
                 borderRadius: '12px',
                 textAlign: 'center',
               }}
@@ -263,7 +258,7 @@ export default function SuperAdminAnalyticsPage() {
         onChange={(_, v) => setActiveTab(v as TabKey)}
         sx={{
           mb: 3,
-          borderBottom: '2px solid #e5e7eb',
+          borderBottom: `2px solid ${theme.palette.divider}`,
           '& .MuiTabs-indicator': { backgroundColor: theme.palette.primary.main },
           '& .MuiTab-root': {
             textTransform: 'none',
@@ -344,8 +339,8 @@ function OverviewTab({ revenue, growth, topTenants, formatMonth }: OverviewTabPr
       <Grid container spacing={3} sx={{ mb: 3 }}>
         {/* MRR Evolution */}
         <Grid xs={12} md={6}>
-          <Paper sx={{ p: 0, border: '1px solid #e5e7eb', borderRadius: '14px', overflow: 'hidden' }}>
-            <Box sx={{ px: 2.5, py: 1.5, borderBottom: '1px solid #f3f4f6' }}>
+          <Paper sx={{ p: 0, border: `1px solid ${theme.palette.divider}`, borderRadius: '14px', overflow: 'hidden' }}>
+            <Box sx={{ px: 2.5, py: 1.5, borderBottom: `1px solid ${theme.palette.divider}` }}>
               <Typography variant="subtitle1" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
                 {t('revenue_evolution', 'Evolución MRR')}
               </Typography>
@@ -354,11 +349,11 @@ function OverviewTab({ revenue, growth, topTenants, formatMonth }: OverviewTabPr
               {revenue.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={revenue}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+                    <CartesianGrid strokeDasharray="3 3" stroke={theme.palette.divider} />
                     <XAxis dataKey="month" tick={{ fontSize: 11, fill: theme.palette.text.secondary }} tickFormatter={formatMonth} />
                     <YAxis tick={{ fontSize: 11, fill: theme.palette.text.secondary }} tickFormatter={(v: number) => `$${String(v)}`} />
                     <Tooltip formatter={(value: number) => [`$${formatNumber(Number(value))}`, t('income_tooltip', 'Ingresos')]} />
-                    <Area type="monotone" dataKey="revenue" stroke="#22c55e" fill="#22c55e" fillOpacity={0.15} strokeWidth={2} />
+                    <Area type="monotone" dataKey="revenue" stroke={theme.palette.success.main} fill={theme.palette.success.main} fillOpacity={0.15} strokeWidth={2} />
                   </AreaChart>
                 </ResponsiveContainer>
               ) : (
@@ -370,8 +365,8 @@ function OverviewTab({ revenue, growth, topTenants, formatMonth }: OverviewTabPr
 
         {/* User Growth */}
         <Grid xs={12} md={6}>
-          <Paper sx={{ p: 0, border: '1px solid #e5e7eb', borderRadius: '14px', overflow: 'hidden' }}>
-            <Box sx={{ px: 2.5, py: 1.5, borderBottom: '1px solid #f3f4f6' }}>
+          <Paper sx={{ p: 0, border: `1px solid ${theme.palette.divider}`, borderRadius: '14px', overflow: 'hidden' }}>
+            <Box sx={{ px: 2.5, py: 1.5, borderBottom: `1px solid ${theme.palette.divider}` }}>
               <Typography variant="subtitle1" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
                 {t('growth_chart', 'Crecimiento de Usuarios')}
               </Typography>
@@ -380,12 +375,12 @@ function OverviewTab({ revenue, growth, topTenants, formatMonth }: OverviewTabPr
               {growth.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={growth}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+                    <CartesianGrid strokeDasharray="3 3" stroke={theme.palette.divider} />
                     <XAxis dataKey="month" tick={{ fontSize: 11, fill: theme.palette.text.secondary }} tickFormatter={formatMonth} />
                     <YAxis tick={{ fontSize: 11, fill: theme.palette.text.secondary }} />
                     <Tooltip />
-                    <Bar dataKey="new_users" fill="#8b5cf6" name={t('new_users', 'Nuevos usuarios')} radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="new_tenants" fill="#3b82f6" name={t('new_tenants', 'Nuevos tenants')} radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="new_users" fill={theme.palette.custom.purple.main} name={t('new_users', 'Nuevos usuarios')} radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="new_tenants" fill={theme.palette.info.main} name={t('new_tenants', 'Nuevos tenants')} radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               ) : (
@@ -397,8 +392,8 @@ function OverviewTab({ revenue, growth, topTenants, formatMonth }: OverviewTabPr
       </Grid>
 
       {/* Top Clinics */}
-      <Paper sx={{ p: 0, border: '1px solid #e5e7eb', borderRadius: '14px', overflow: 'hidden' }}>
-        <Box sx={{ px: 2.5, py: 1.5, borderBottom: '1px solid #f3f4f6' }}>
+      <Paper sx={{ p: 0, border: `1px solid ${theme.palette.divider}`, borderRadius: '14px', overflow: 'hidden' }}>
+        <Box sx={{ px: 2.5, py: 1.5, borderBottom: `1px solid ${theme.palette.divider}` }}>
           <Typography variant="subtitle1" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
             {t('top_clinics', 'Top Clínicas por Citas')}
           </Typography>
@@ -407,11 +402,11 @@ function OverviewTab({ revenue, growth, topTenants, formatMonth }: OverviewTabPr
           {topTenants.length > 0 ? (
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={topTenants.slice(0, 10)}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+                <CartesianGrid strokeDasharray="3 3" stroke={theme.palette.divider} />
                 <XAxis dataKey="name" tick={{ fontSize: 11, fill: theme.palette.text.secondary }} />
                 <YAxis tick={{ fontSize: 11, fill: theme.palette.text.secondary }} />
                 <Tooltip />
-                <Bar dataKey="total_bookings" fill="#8b5cf6" name={t('bookings_header', 'Citas')} radius={[4, 4, 0, 0]}>
+                <Bar dataKey="total_bookings" fill={theme.palette.custom.purple.main} name={t('bookings_header', 'Citas')} radius={[4, 4, 0, 0]}>
                   {topTenants.slice(0, 10).map((_, i) => (
                     <Cell key={`cell-${String(i)}`} fill={`hsl(${200 + i * 15}, 60%, ${55 - i * 2}%)`} />
                   ))}
@@ -444,8 +439,8 @@ function RevenueTab({ revenue, churn, formatMonth }: RevenueTabProps) {
   return (
     <>
       {/* Revenue Evolution Chart */}
-      <Paper sx={{ p: 0, mb: 3, border: '1px solid #e5e7eb', borderRadius: '14px', overflow: 'hidden' }}>
-        <Box sx={{ px: 2.5, py: 1.5, borderBottom: '1px solid #f3f4f6' }}>
+      <Paper sx={{ p: 0, mb: 3, border: `1px solid ${theme.palette.divider}`, borderRadius: '14px', overflow: 'hidden' }}>
+        <Box sx={{ px: 2.5, py: 1.5, borderBottom: `1px solid ${theme.palette.divider}` }}>
           <Typography variant="subtitle1" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
             {t('revenue_last_12m', 'Evolución de Ingresos — Últimos 12 meses')}
           </Typography>
@@ -454,11 +449,11 @@ function RevenueTab({ revenue, churn, formatMonth }: RevenueTabProps) {
           {revenue.length > 0 ? (
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={revenue}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+                <CartesianGrid strokeDasharray="3 3" stroke={theme.palette.divider} />
                 <XAxis dataKey="month" tick={{ fontSize: 11, fill: theme.palette.text.secondary }} tickFormatter={formatMonth} />
                 <YAxis tick={{ fontSize: 11, fill: theme.palette.text.secondary }} tickFormatter={(v: number) => `$${String(v)}`} />
                 <Tooltip formatter={(value: number) => [`$${formatNumber(Number(value))}`, t('income_tooltip', 'Ingresos')]} />
-                <Area type="monotone" dataKey="revenue" stroke="#22c55e" fill="#22c55e" fillOpacity={0.15} strokeWidth={2} />
+                <Area type="monotone" dataKey="revenue" stroke={theme.palette.success.main} fill={theme.palette.success.main} fillOpacity={0.15} strokeWidth={2} />
               </AreaChart>
             </ResponsiveContainer>
           ) : (
@@ -471,12 +466,12 @@ function RevenueTab({ revenue, churn, formatMonth }: RevenueTabProps) {
       <Grid container spacing={3} sx={{ mb: 3 }}>
         {[
           { value: `$${formatNumber(Number(churn.mrr ?? 0))}`, label: t('mrr_current', 'MRR Actual'), textAlign: 'center' as const },
-          { value: `$${formatNumber(Number(churn.arr ?? 0))}`, label: t('arr_projected', 'ARR Proyectado'), color: '#3b82f6', textAlign: 'center' as const },
-          { value: `${String(churn.churn_rate ?? 0)}%`, label: t('churn_rate', 'Churn Rate'), color: (churn.churn_rate ?? 0) > 5 ? theme.palette.error.main : '#22c55e', textAlign: 'center' as const },
-          { value: `${String(churn.annual_retention ?? 0)}%`, label: t('retention_annual', 'Retención Anual'), color: '#8b5cf6', textAlign: 'center' as const },
+          { value: `$${formatNumber(Number(churn.arr ?? 0))}`, label: t('arr_projected', 'ARR Proyectado'), color: theme.palette.info.main, textAlign: 'center' as const },
+          { value: `${String(churn.churn_rate ?? 0)}%`, label: t('churn_rate', 'Churn Rate'), color: (churn.churn_rate ?? 0) > 5 ? theme.palette.error.main : theme.palette.success.main, textAlign: 'center' as const },
+          { value: `${String(churn.annual_retention ?? 0)}%`, label: t('retention_annual', 'Retención Anual'), color: theme.palette.custom.purple.main, textAlign: 'center' as const },
         ].map((stat) => (
           <Grid key={stat.label} xs={12} sm={6} md={3}>
-            <Paper sx={{ p: 2.5, border: '1px solid #e5e7eb', borderRadius: '12px', textAlign: stat.textAlign }}>
+            <Paper sx={{ p: 2.5, border: `1px solid ${theme.palette.divider}`, borderRadius: '12px', textAlign: stat.textAlign }}>
               <Typography variant="h5" sx={{ fontWeight: 700, color: stat.color ?? theme.palette.text.primary }}>
                 {stat.value}
               </Typography>
@@ -489,8 +484,8 @@ function RevenueTab({ revenue, churn, formatMonth }: RevenueTabProps) {
       </Grid>
 
       {/* Revenue Bar List */}
-      <Paper sx={{ p: 0, border: '1px solid #e5e7eb', borderRadius: '14px', overflow: 'hidden' }}>
-        <Box sx={{ px: 2.5, py: 1.5, borderBottom: '1px solid #f3f4f6' }}>
+      <Paper sx={{ p: 0, border: `1px solid ${theme.palette.divider}`, borderRadius: '14px', overflow: 'hidden' }}>
+        <Box sx={{ px: 2.5, py: 1.5, borderBottom: `1px solid ${theme.palette.divider}` }}>
           <Typography variant="subtitle1" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
             {t('revenue_detail', 'Ingresos por Mes')}
           </Typography>
@@ -510,7 +505,7 @@ function RevenueTab({ revenue, churn, formatMonth }: RevenueTabProps) {
                         ${formatNumber(rev.revenue)}
                       </Typography>
                     </Box>
-                    <Box sx={{ height: 8, bgcolor: '#f3f4f6', borderRadius: 1, overflow: 'hidden' }}>
+                    <Box sx={{ height: 8, bgcolor: theme.palette.custom.surface.sunken, borderRadius: 1, overflow: 'hidden' }}>
                       <Box
                         sx={{
                           height: '100%',
@@ -549,8 +544,8 @@ function GrowthTab({ growth, formatMonth }: GrowthTabProps) {
   return (
     <>
       {/* Growth Chart */}
-      <Paper sx={{ p: 0, mb: 3, border: '1px solid #e5e7eb', borderRadius: '14px', overflow: 'hidden' }}>
-        <Box sx={{ px: 2.5, py: 1.5, borderBottom: '1px solid #f3f4f6' }}>
+      <Paper sx={{ p: 0, mb: 3, border: `1px solid ${theme.palette.divider}`, borderRadius: '14px', overflow: 'hidden' }}>
+        <Box sx={{ px: 2.5, py: 1.5, borderBottom: `1px solid ${theme.palette.divider}` }}>
           <Typography variant="subtitle1" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
             {t('growth_detail', 'Crecimiento Mensual')}
           </Typography>
@@ -562,14 +557,14 @@ function GrowthTab({ growth, formatMonth }: GrowthTabProps) {
           {growth.length > 0 ? (
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={growth}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+                <CartesianGrid strokeDasharray="3 3" stroke={theme.palette.divider} />
                 <XAxis dataKey="month" tick={{ fontSize: 11, fill: theme.palette.text.secondary }} tickFormatter={formatMonth} />
                 <YAxis tick={{ fontSize: 11, fill: theme.palette.text.secondary }} />
                 <Tooltip />
                 <Legend />
-                <Bar dataKey="new_tenants" fill="#3b82f6" name={t('new_tenants', 'Nuevos tenants')} radius={[4, 4, 0, 0]} />
-                <Bar dataKey="new_users" fill="#8b5cf6" name={t('new_users', 'Nuevos usuarios')} radius={[4, 4, 0, 0]} />
-                <Bar dataKey="new_bookings" fill="#22c55e" name={t('new_bookings', 'Nuevas reservas')} radius={[4, 4, 0, 0]} />
+                <Bar dataKey="new_tenants" fill={theme.palette.info.main} name={t('new_tenants', 'Nuevos tenants')} radius={[4, 4, 0, 0]} />
+                <Bar dataKey="new_users" fill={theme.palette.custom.purple.main} name={t('new_users', 'Nuevos usuarios')} radius={[4, 4, 0, 0]} />
+                <Bar dataKey="new_bookings" fill={theme.palette.success.main} name={t('new_bookings', 'Nuevas reservas')} radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           ) : (
@@ -591,7 +586,7 @@ function GrowthTab({ growth, formatMonth }: GrowthTabProps) {
             },
           ].map((stat) => (
             <Grid key={stat.label} xs={12} sm={6} md={3}>
-              <Paper sx={{ p: 2.5, border: '1px solid #e5e7eb', borderRadius: '12px', textAlign: 'center' }}>
+              <Paper sx={{ p: 2.5, border: `1px solid ${theme.palette.divider}`, borderRadius: '12px', textAlign: 'center' }}>
                 <Typography variant="h5" sx={{ fontWeight: 700, color: theme.palette.text.primary }}>
                   {stat.value}
                 </Typography>
@@ -621,13 +616,13 @@ function OperationsTab({ operations }: OperationsTabProps) {
       {/* Operations KPIs */}
       <Grid container spacing={3} sx={{ mb: 3 }}>
         {[
-          { value: `${String(operations.cancellation_rate ?? 0)}%`, label: t('cancellation_rate', 'Tasa cancelación'), color: '#22c55e' },
-          { value: `${String(operations.no_show_rate ?? 0)}%`, label: t('no_show_rate', 'No-show rate'), color: '#8b5cf6' },
-          { value: String(operations.avg_lead_days ?? 0), label: t('lead_days', 'Días prom. reserva→atención'), color: '#3b82f6' },
+          { value: `${String(operations.cancellation_rate ?? 0)}%`, label: t('cancellation_rate', 'Tasa cancelación'), color: theme.palette.success.main },
+          { value: `${String(operations.no_show_rate ?? 0)}%`, label: t('no_show_rate', 'No-show rate'), color: theme.palette.custom.purple.main },
+          { value: String(operations.avg_lead_days ?? 0), label: t('lead_days', 'Días prom. reserva→atención'), color: theme.palette.info.main },
           { value: String(operations.total_bookings_period ?? 0), label: t('total_bookings_6m', 'Citas (últimos 6m)'), color: theme.palette.warning.main },
         ].map((stat) => (
           <Grid key={stat.label} xs={12} sm={6} md={3}>
-            <Paper sx={{ p: 2.5, border: '1px solid #e5e7eb', borderRadius: '12px', textAlign: 'center' }}>
+            <Paper sx={{ p: 2.5, border: `1px solid ${theme.palette.divider}`, borderRadius: '12px', textAlign: 'center' }}>
               <Typography variant="h5" sx={{ fontWeight: 700, color: stat.color }}>
                 {stat.value}
               </Typography>
@@ -643,8 +638,8 @@ function OperationsTab({ operations }: OperationsTabProps) {
       <Grid container spacing={3} sx={{ mb: 3 }}>
         {/* Specialties */}
         <Grid xs={12} md={6}>
-          <Paper sx={{ p: 0, border: '1px solid #e5e7eb', borderRadius: '14px', overflow: 'hidden' }}>
-            <Box sx={{ px: 2.5, py: 1.5, borderBottom: '1px solid #f3f4f6' }}>
+          <Paper sx={{ p: 0, border: `1px solid ${theme.palette.divider}`, borderRadius: '14px', overflow: 'hidden' }}>
+            <Box sx={{ px: 2.5, py: 1.5, borderBottom: `1px solid ${theme.palette.divider}` }}>
               <Typography variant="subtitle1" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
                 {t('specialties_used', 'Especialidades más usadas')}
               </Typography>
@@ -653,11 +648,11 @@ function OperationsTab({ operations }: OperationsTabProps) {
               {operations.specialties && operations.specialties.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={operations.specialties.slice(0, 8)} layout="vertical">
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+                    <CartesianGrid strokeDasharray="3 3" stroke={theme.palette.divider} />
                     <XAxis type="number" tick={{ fontSize: 11, fill: theme.palette.text.secondary }} />
                     <YAxis dataKey="name" type="category" width={120} tick={{ fontSize: 11, fill: theme.palette.text.secondary }} />
                     <Tooltip />
-                    <Bar dataKey="total" fill="#3b82f6" radius={[0, 4, 4, 0]} />
+                    <Bar dataKey="total" fill={theme.palette.info.main} radius={[0, 4, 4, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               ) : (
@@ -669,8 +664,8 @@ function OperationsTab({ operations }: OperationsTabProps) {
 
         {/* Top Doctors */}
         <Grid xs={12} md={6}>
-          <Paper sx={{ p: 0, border: '1px solid #e5e7eb', borderRadius: '14px', overflow: 'hidden' }}>
-            <Box sx={{ px: 2.5, py: 1.5, borderBottom: '1px solid #f3f4f6' }}>
+          <Paper sx={{ p: 0, border: `1px solid ${theme.palette.divider}`, borderRadius: '14px', overflow: 'hidden' }}>
+            <Box sx={{ px: 2.5, py: 1.5, borderBottom: `1px solid ${theme.palette.divider}` }}>
               <Typography variant="subtitle1" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
                 {t('top_doctors', 'Top 10 Médicos por citas')}
               </Typography>
@@ -679,11 +674,11 @@ function OperationsTab({ operations }: OperationsTabProps) {
               {operations.top_doctors && operations.top_doctors.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={operations.top_doctors} layout="vertical">
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+                    <CartesianGrid strokeDasharray="3 3" stroke={theme.palette.divider} />
                     <XAxis type="number" tick={{ fontSize: 11, fill: theme.palette.text.secondary }} />
                     <YAxis dataKey="name" type="category" width={120} tick={{ fontSize: 11, fill: theme.palette.text.secondary }} />
                     <Tooltip />
-                    <Bar dataKey="total_bookings" fill="#8b5cf6" radius={[0, 4, 4, 0]} />
+                    <Bar dataKey="total_bookings" fill={theme.palette.custom.purple.main} radius={[0, 4, 4, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               ) : (
@@ -696,8 +691,8 @@ function OperationsTab({ operations }: OperationsTabProps) {
 
       {/* Hourly Demand */}
       {operations.hourly_demand && operations.hourly_demand.length > 0 && (
-        <Paper sx={{ p: 0, border: '1px solid #e5e7eb', borderRadius: '14px', overflow: 'hidden' }}>
-          <Box sx={{ px: 2.5, py: 1.5, borderBottom: '1px solid #f3f4f6' }}>
+        <Paper sx={{ p: 0, border: `1px solid ${theme.palette.divider}`, borderRadius: '14px', overflow: 'hidden' }}>
+          <Box sx={{ px: 2.5, py: 1.5, borderBottom: `1px solid ${theme.palette.divider}` }}>
             <Typography variant="subtitle1" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
               {t('hourly_demand', 'Demanda por Hora del Día')}
             </Typography>
@@ -705,7 +700,7 @@ function OperationsTab({ operations }: OperationsTabProps) {
           <Box sx={{ p: 2, height: 270 }}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={operations.hourly_demand}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+                <CartesianGrid strokeDasharray="3 3" stroke={theme.palette.divider} />
                 <XAxis dataKey="hour" tick={{ fontSize: 11, fill: theme.palette.text.secondary }} />
                 <YAxis tick={{ fontSize: 11, fill: theme.palette.text.secondary }} />
                 <Tooltip />
@@ -730,9 +725,9 @@ function ComparisonTab({ comparison, occupancy }: ComparisonTabProps) {
   const theme = useTheme();
   const { t } = useTranslation('super_admin_analytics');
   const getScoreColor = (score: number): string => {
-    if (score >= 80) return '#22c55e';
-    if (score >= 50) return '#fbbf24';
-    if (score >= 20) return '#fb923c';
+    if (score >= 80) return theme.palette.success.main;
+    if (score >= 50) return theme.palette.warning.main;
+    if (score >= 20) return theme.palette.custom.orange.main;
     return theme.palette.error.main;
   };
 
@@ -740,8 +735,8 @@ function ComparisonTab({ comparison, occupancy }: ComparisonTabProps) {
     <>
       {/* Occupancy Chart */}
       {occupancy.length > 0 && (
-        <Paper sx={{ p: 0, mb: 3, border: '1px solid #e5e7eb', borderRadius: '14px', overflow: 'hidden' }}>
-          <Box sx={{ px: 2.5, py: 1.5, borderBottom: '1px solid #f3f4f6' }}>
+        <Paper sx={{ p: 0, mb: 3, border: `1px solid ${theme.palette.divider}`, borderRadius: '14px', overflow: 'hidden' }}>
+          <Box sx={{ px: 2.5, py: 1.5, borderBottom: `1px solid ${theme.palette.divider}` }}>
               <Typography variant="subtitle1" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
                 {t('occupancy_chart', 'Ocupación de Doctores por Clínica')}
               </Typography>
@@ -749,7 +744,7 @@ function ComparisonTab({ comparison, occupancy }: ComparisonTabProps) {
             <Box sx={{ p: 2, height: 320 }}>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={occupancy}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+                  <CartesianGrid strokeDasharray="3 3" stroke={theme.palette.divider} />
                   <XAxis dataKey="tenant_name" tick={{ fontSize: 11, fill: theme.palette.text.secondary }} />
                   <YAxis tick={{ fontSize: 11, fill: theme.palette.text.secondary }} tickFormatter={(v: number) => `${String(v)}%`} />
                   <Tooltip formatter={(value: number) => [`${Number(value).toFixed(1)}%`, t('occupancy', 'Ocupación')]} />
@@ -759,7 +754,7 @@ function ComparisonTab({ comparison, occupancy }: ComparisonTabProps) {
                       key={`occ-${String(i)}`}
                       fill={
                         Number(entry.occupancy_rate) > 80
-                          ? '#22c55e'
+                          ? theme.palette.success.main
                           : Number(entry.occupancy_rate) > 50
                             ? theme.palette.warning.main
                             : theme.palette.error.main
@@ -774,77 +769,77 @@ function ComparisonTab({ comparison, occupancy }: ComparisonTabProps) {
       )}
 
       {/* Comparison Table */}
-      <Paper sx={{ p: 0, border: '1px solid #e5e7eb', borderRadius: '14px', overflow: 'hidden' }}>
-        <Box sx={{ px: 2.5, py: 1.5, borderBottom: '1px solid #f3f4f6' }}>
+      <Paper sx={{ p: 0, border: `1px solid ${theme.palette.divider}`, borderRadius: '14px', overflow: 'hidden' }}>
+        <Box sx={{ px: 2.5, py: 1.5, borderBottom: `1px solid ${theme.palette.divider}` }}>
           <Typography variant="subtitle1" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
             {t('comparison_table', 'Comparativa Completa de Clínicas')}
           </Typography>
         </Box>
         {comparison.length > 0 ? (
-          <TableContainer>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>{t('clinic', 'Clínica')}</TableCell>
-                  <TableCell>{t('users_header', 'Usuarios')}</TableCell>
-                  <TableCell>{t('doctors_header', 'Doctores')}</TableCell>
-                  <TableCell>{t('bookings_header', 'Citas')}</TableCell>
-                  <TableCell>{t('revenue_header', 'Ingresos')}</TableCell>
-                  <TableCell>{t('health_score', 'Salud')}</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {comparison.map((row) => {
-                  const score = Number(row.health_score ?? 0);
+          <DataTable
+            columns={[
+              {
+                key: 'name',
+                header: t('clinic', 'Clínica'),
+                render: (row) => {
                   const initials = (row.name ?? '')
                     .split(' ')
                     .map((w) => w[0])
                     .join('')
                     .slice(0, 2)
                     .toUpperCase();
-
                   return (
-                    <TableRow key={row.id} hover>
-                      <TableCell>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                          <Avatar
-                            sx={{
-                              width: 36,
-                              height: 36,
-                              bgcolor: theme.palette.primary.main,
-                              fontSize: '0.8rem',
-                              fontWeight: 600,
-                            }}
-                          >
-                            {initials}
-                          </Avatar>
-                          <Box>
-                            <Typography variant="body2" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
-                              {row.name}
-                            </Typography>
-                            {!row.active && (
-                              <Typography variant="caption" sx={{ color: theme.palette.error.main }}>
-                                {t('inactive_label', '(inactiva)')}
-                              </Typography>
-                            )}
-                          </Box>
-                        </Box>
-                      </TableCell>
-                      <TableCell>{row.total_users ?? 0}</TableCell>
-                      <TableCell>{row.total_doctors ?? 0}</TableCell>
-                      <TableCell>{row.total_bookings ?? 0}</TableCell>
-                      <TableCell>${formatNumber(Number(row.metric_value ?? 0))}</TableCell>
-                      <TableCell>
-                        <Typography sx={{ fontWeight: 700, color: getScoreColor(score) }}>
-                          {score}
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                      <Avatar
+                        sx={{
+                          width: 36,
+                          height: 36,
+                          bgcolor: theme.palette.primary.main,
+                          fontSize: '0.8rem',
+                          fontWeight: 600,
+                        }}
+                      >
+                        {initials}
+                      </Avatar>
+                      <Box>
+                        <Typography variant="body2" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
+                          {row.name}
                         </Typography>
-                      </TableCell>
-                    </TableRow>
+                        {!row.active && (
+                          <Typography variant="caption" sx={{ color: theme.palette.error.main }}>
+                            {t('inactive_label', '(inactiva)')}
+                          </Typography>
+                        )}
+                      </Box>
+                    </Box>
                   );
-                })}
-              </TableBody>
-            </Table>
-          </TableContainer>
+                },
+              },
+              { key: 'total_users', header: t('users_header', 'Usuarios'), render: (row) => row.total_users ?? 0 },
+              { key: 'total_doctors', header: t('doctors_header', 'Doctores'), render: (row) => row.total_doctors ?? 0 },
+              { key: 'total_bookings', header: t('bookings_header', 'Citas'), render: (row) => row.total_bookings ?? 0 },
+              {
+                key: 'metric_value',
+                header: t('revenue_header', 'Ingresos'),
+                render: (row) => `$${formatNumber(Number(row.metric_value ?? 0))}`,
+              },
+              {
+                key: 'health_score',
+                header: t('health_score', 'Salud'),
+                render: (row) => {
+                  const score = Number(row.health_score ?? 0);
+                  return (
+                    <Typography sx={{ fontWeight: 700, color: getScoreColor(score) }}>
+                      {score}
+                    </Typography>
+                  );
+                },
+              },
+            ]}
+            data={comparison}
+            keyExtractor={(row) => row.id}
+            rowsPerPage={Math.max(comparison.length, 1)}
+          />
         ) : (
           <Box sx={{ p: 4, textAlign: 'center' }}>
             <EmptyChart message={t('no_data_comparison', 'Sin datos de comparación')} />

@@ -6,7 +6,6 @@ import {
   Typography,
   Button,
   Divider,
-  Chip,
   IconButton,
   Dialog,
   DialogTitle,
@@ -25,7 +24,7 @@ import CancelOutlined from '@mui/icons-material/CancelOutlined';
 import EventAvailableOutlined from '@mui/icons-material/EventAvailableOutlined';
 import CircularProgress from '@mui/material/CircularProgress';
 import type { Booking } from '../types/booking.types';
-import { BOOKING_STATUS_CONFIG } from '../types/booking.types';
+import { BookingStatusChip } from './BookingStatusChip';
 import { formatDate, formatDateTime } from '@/shared/utils/localeUtils';
 
 interface BookingDetailDrawerProps {
@@ -58,7 +57,6 @@ export function BookingDetailDrawer({
 
   if (!booking) return null;
 
-  const statusConfig = BOOKING_STATUS_CONFIG[booking.status];
   const canCancel = booking.status === 'pending' || booking.status === 'confirmed';
   const canReschedule = booking.status === 'pending' || booking.status === 'confirmed';
   const patientLabel = booking.patient_name || booking.guest_name || t('without_name');
@@ -112,15 +110,9 @@ export function BookingDetailDrawer({
           </Box>
 
           {/* Status badge */}
-          <Chip
-            label={t(statusConfig.labelKey)}
-            sx={{
-              backgroundColor: statusConfig.bgColor,
-              color: statusConfig.color,
-              fontWeight: 600,
-              mb: 3,
-            }}
-          />
+          <Box sx={{ mb: 3 }}>
+            <BookingStatusChip status={booking.status} />
+          </Box>
 
           <Divider sx={{ mb: 3 }} />
 
@@ -249,7 +241,7 @@ export function BookingDetailDrawer({
       <Dialog
         open={confirmOpen}
         onClose={() => setConfirmOpen(false)}
-        PaperProps={{ sx: { borderRadius: '16px', border: `1px solid ${theme.palette.divider}` } }}
+        PaperProps={{ sx: { borderRadius: '14px', border: `1px solid ${theme.palette.divider}` } }}
       >
         <DialogTitle>
           <Typography variant="h6" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
@@ -300,7 +292,7 @@ export function BookingDetailDrawer({
       <Dialog
         open={rescheduleOpen}
         onClose={() => setRescheduleOpen(false)}
-        PaperProps={{ sx: { borderRadius: '16px', border: `1px solid ${theme.palette.divider}` } }}
+        PaperProps={{ sx: { borderRadius: '14px', border: `1px solid ${theme.palette.divider}` } }}
       >
         <DialogTitle>
           <Typography variant="h6" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>

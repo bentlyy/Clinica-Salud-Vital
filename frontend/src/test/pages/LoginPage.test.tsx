@@ -167,7 +167,7 @@ describe('LoginPage', () => {
     renderLoginPage();
     const passwordInput = screen.getByLabelText('Contrasena');
     expect(passwordInput).toHaveAttribute('type', 'password');
-    const toggleButton = screen.getByRole('button', { name: '' });
+    const toggleButton = screen.getByRole('button', { name: /mostrar contraseña/i });
     fireEvent.click(toggleButton);
     expect(screen.getByLabelText('Contrasena')).toHaveAttribute('type', 'text');
   });

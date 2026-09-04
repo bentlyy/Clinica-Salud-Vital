@@ -167,6 +167,8 @@ describe('SecurityTab', () => {
     logoutAllMock.mockResolvedValue(undefined);
     renderTab();
     fireEvent.click(screen.getByRole('button', { name: 'Cerrar todas las sesiones' }));
+    const confirmButton = screen.getAllByRole('button', { name: 'Cerrar todas las sesiones' });
+    fireEvent.click(confirmButton[confirmButton.length - 1]);
     await waitFor(() => {
       expect(logoutAllMock).toHaveBeenCalled();
     });

@@ -32,7 +32,7 @@ export function BookingsTab({ bookings }: BookingsTabProps) {
   }
 
   return (
-    <Paper sx={{ border: '1px solid #e5e7eb', borderRadius: '12px' }}>
+    <Paper sx={{ border: `1px solid ${theme.palette.divider}`, borderRadius: '12px' }}>
       <List disablePadding>
         {sorted.map((booking, idx) => {
           const cfg = BOOKING_STATUS_CONFIG[booking.status as keyof typeof BOOKING_STATUS_CONFIG] ?? BOOKING_STATUS_CONFIG.pending;

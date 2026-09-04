@@ -9,12 +9,6 @@ import {
   Chip,
   Button,
   Divider,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -34,6 +28,7 @@ import Medication from '@mui/icons-material/Medication';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { LoadingState } from '@/shared/components/ui/LoadingState';
 import { ErrorState } from '@/shared/components/ui/ErrorState';
+import { DataTable, type DataTableColumn } from '@/shared/components/ui/DataTable';
 import { useAuth } from '@/shared/providers/AuthProvider';
 import {
   useLabRequestDetail,
@@ -103,7 +98,7 @@ function LabRequestDetailPageInner() {
   if (!request) return <ErrorState variant="notFound" />;
 
   const statusCfg = LAB_STATUS_CONFIG[request.status];
-  const priorityCfg = LAB_PRIORITY_CONFIG[request.priority] ?? { label: request.priority, color: '#6b7280', bgColor: '#f3f4f6' };
+  const priorityCfg = LAB_PRIORITY_CONFIG[request.priority] ?? { label: request.priority, color: theme.palette.text.secondary, bgColor: theme.palette.custom.surface.sunken };
 
   const canAddResults = user && (user.role === 'doctor' || user.role === 'lab_technician' || user.role === 'admin' || user.role === 'superadmin');
   const canValidateTech = user && (user.role === 'lab_technician' || user.role === 'admin' || user.role === 'superadmin');
@@ -112,6 +107,163 @@ function LabRequestDetailPageInner() {
 
   const activeItems: LabRequestItem[] = items ?? request.items ?? [];
   const activeSamples: LabSample[] = samples ?? [];
+
+  const sampleColumns: DataTableColumn<LabSample>[] = [
+    {
+      key: 'sample_code',
+      header: t('col_code'),
+      render: (sample) => (
+        <Typography variant="body2" sx={{ fontWeight: 500, fontFamily: 'monospace' }}>
+          {sample.sample_code}
+        </Typography>
+      ),
+    },
+    {
+      key: 'sample_type',
+      header: t('col_type'),
+      render: (sample) => (
+        <Typography variant="body2" sx={{ color: theme.palette.text.primary }}>
+          {sample.sample_type}
+        </Typography>
+      ),
+    },
+    {
+      key: 'status',
+      header: t('col_status'),
+      render: (sample) => (
+        <Chip
+          label={sample.status}
+          size="small"
+          sx={{
+            height: 22,
+            fontSize: '0.7rem',
+            fontWeight: 600,
+            backgroundColor: sample.status === 'completed' ? theme.palette.custom.status.success.bg : theme.palette.custom.status.info.bg,
+            color: sample.status === 'completed' ? theme.palette.custom.status.success.text : theme.palette.info.dark,
+          }}
+        />
+      ),
+    },
+    {
+      key: 'reception_time',
+      header: t('col_reception'),
+      render: (sample) => (
+        <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
+          {sample.reception_time
+            ? formatDateTime(sample.reception_time)
+            : '—'}
+        </Typography>
+      ),
+    },
+    {
+      key: 'storage_location',
+      header: t('col_location'),
+      render: (sample) => (
+        <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
+          {sample.storage_location || '—'}
+        </Typography>
+      ),
+    },
+  ];
+
+  const resultColumns: DataTableColumn<LabRequestItem>[] = [
+    {
+      key: 'test_name',
+      header: t('col_test'),
+      render: (item) => (
+        <Typography variant="body2" sx={{ fontWeight: 500, color: theme.palette.text.primary }}>
+          {item.test_name || item.test?.name || `Test #${item.lab_test_id}`}
+        </Typography>
+      ),
+    },
+    {
+      key: 'result_value',
+      header: t('col_value'),
+      render: (item) => (
+        <Typography variant="body2" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
+          {item.result_value || '—'}
+        </Typography>
+      ),
+    },
+    {
+      key: 'unit',
+      header: t('col_unit'),
+      render: (item) => (
+        <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
+          {item.unit || item.test?.unit || '—'}
+        </Typography>
+      ),
+    },
+    {
+      key: 'reference_range',
+      header: t('col_reference'),
+      render: (item) => (
+        <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
+          {item.reference_range || item.test?.reference_min != null ? `${item.test?.reference_min ?? ''}–${item.test?.reference_max ?? ''}` : '—'}
+        </Typography>
+      ),
+    },
+    {
+      key: 'status',
+      header: t('col_status'),
+      render: (item) => (
+        <Chip
+          label={LAB_STATUS_LABELS[item.status] || item.status || t('pending')}
+          size="small"
+          sx={{
+            backgroundColor: item.status === 'validated_doctor' || item.status === 'delivered' ? theme.palette.custom.status.success.bg : item.status === 'result_entered' ? theme.palette.custom.status.info.bg : theme.palette.custom.status.warning.bg,
+            color: item.status === 'validated_doctor' || item.status === 'delivered' ? theme.palette.custom.status.success.text : item.status === 'result_entered' ? theme.palette.info.dark : theme.palette.warning.dark,
+            fontWeight: 500,
+          }}
+        />
+      ),
+    },
+    {
+      key: 'validation',
+      header: t('col_validation'),
+      render: (item) => (
+        <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+          {item.validated_at_tech && (
+            <Chip
+              label={t('validated_tech')}
+              size="small"
+              icon={<Verified sx={{ fontSize: 14 }} />}
+              sx={{
+                height: 20,
+                fontSize: '0.65rem',
+                fontWeight: 600,
+                backgroundColor: theme.palette.custom.status.success.bg,
+                color: theme.palette.custom.status.success.text,
+              }}
+            />
+          )}
+          {item.validated_at_doctor && (
+            <Chip
+              label={t('validated_doctor')}
+              size="small"
+              icon={<Medication sx={{ fontSize: 14 }} />}
+              sx={{
+                height: 20,
+                fontSize: '0.65rem',
+                fontWeight: 600,
+                backgroundColor: theme.palette.custom.status.info.bg,
+                color: theme.palette.info.dark,
+              }}
+            />
+          )}
+        </Box>
+      ),
+    },
+    {
+      key: 'result_notes',
+      header: t('col_notes'),
+      render: (item) => (
+        <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
+          {item.result_notes || item.notes || '—'}
+        </Typography>
+      ),
+    },
+  ];
 
   // Status timeline
   const currentStepIndex = LAB_STATUS_FLOW.indexOf(request.status);
@@ -333,60 +485,7 @@ function LabRequestDetailPageInner() {
         {samplesLoading ? (
           <LoadingState message={t('loading_samples')} />
         ) : activeSamples.length > 0 ? (
-          <TableContainer>
-            <Table size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell>{t('col_code')}</TableCell>
-                  <TableCell>{t('col_type')}</TableCell>
-                  <TableCell>{t('col_status')}</TableCell>
-                  <TableCell>{t('col_reception')}</TableCell>
-                  <TableCell>{t('col_location')}</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {activeSamples.map((sample) => (
-                  <TableRow key={sample.id} hover>
-                    <TableCell>
-                      <Typography variant="body2" sx={{ fontWeight: 500, fontFamily: 'monospace' }}>
-                        {sample.sample_code}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="body2" sx={{ color: theme.palette.text.primary }}>
-                        {sample.sample_type}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Chip
-                        label={sample.status}
-                        size="small"
-                        sx={{
-                          height: 22,
-                          fontSize: '0.7rem',
-                          fontWeight: 600,
-                          backgroundColor: sample.status === 'completed' ? theme.palette.custom.status.success.bg : theme.palette.custom.status.info.bg,
-                          color: sample.status === 'completed' ? theme.palette.custom.status.success.text : theme.palette.info.dark,
-                        }}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
-                        {sample.reception_time
-                          ? formatDateTime(sample.reception_time)
-                          : '—'}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
-                        {sample.storage_location || '—'}
-                      </Typography>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+          <DataTable columns={sampleColumns} data={activeSamples} keyExtractor={(sample) => sample.id} />
         ) : (
           <Box sx={{ textAlign: 'center', py: 3, border: `2px dashed ${theme.palette.divider}`, borderRadius: '14px' }}>
             <Science sx={{ fontSize: 32, color: theme.palette.divider, mb: 1 }} />
@@ -407,95 +506,7 @@ function LabRequestDetailPageInner() {
       {itemsLoading ? (
         <LoadingState message={t('loading_items')} />
       ) : activeItems && activeItems.length > 0 ? (
-        <TableContainer component={Paper} sx={{ border: `1px solid ${theme.palette.divider}` }}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>{t('col_test')}</TableCell>
-                <TableCell>{t('col_value')}</TableCell>
-                <TableCell>{t('col_unit')}</TableCell>
-                <TableCell>{t('col_reference')}</TableCell>
-                <TableCell>{t('col_status')}</TableCell>
-                <TableCell>{t('col_validation')}</TableCell>
-                <TableCell>{t('col_notes')}</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {activeItems.map((item: LabRequestItem) => (
-                <TableRow key={item.id} hover>
-                  <TableCell>
-                    <Typography variant="body2" sx={{ fontWeight: 500, color: theme.palette.text.primary }}>
-                      {item.test_name || item.test?.name || `Test #${item.lab_test_id}`}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="body2" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
-                      {item.result_value || '—'}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
-                      {item.unit || item.test?.unit || '—'}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
-                      {item.reference_range || item.test?.reference_min != null ? `${item.test?.reference_min ?? ''}–${item.test?.reference_max ?? ''}` : '—'}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Chip
-                      label={LAB_STATUS_LABELS[item.status] || item.status || t('pending')}
-                      size="small"
-                      sx={{
-                        backgroundColor: item.status === 'validated_doctor' || item.status === 'delivered' ? theme.palette.custom.status.success.bg : item.status === 'result_entered' ? theme.palette.custom.status.info.bg : theme.palette.custom.status.warning.bg,
-                        color: item.status === 'validated_doctor' || item.status === 'delivered' ? theme.palette.custom.status.success.text : item.status === 'result_entered' ? theme.palette.info.dark : theme.palette.warning.dark,
-                        fontWeight: 500,
-                      }}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
-                      {item.validated_at_tech && (
-                        <Chip
-                          label={t('validated_tech')}
-                          size="small"
-                          icon={<Verified sx={{ fontSize: 14 }} />}
-                          sx={{
-                            height: 20,
-                            fontSize: '0.65rem',
-                            fontWeight: 600,
-                            backgroundColor: theme.palette.custom.status.success.bg,
-                            color: theme.palette.custom.status.success.text,
-                          }}
-                        />
-                      )}
-                      {item.validated_at_doctor && (
-                        <Chip
-                          label={t('validated_doctor')}
-                          size="small"
-                          icon={<Medication sx={{ fontSize: 14 }} />}
-                          sx={{
-                            height: 20,
-                            fontSize: '0.65rem',
-                            fontWeight: 600,
-                            backgroundColor: theme.palette.custom.status.info.bg,
-                            color: theme.palette.info.dark,
-                          }}
-                        />
-                      )}
-                    </Box>
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
-                      {item.result_notes || item.notes || '—'}
-                    </Typography>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
+        <DataTable columns={resultColumns} data={activeItems} keyExtractor={(item) => item.id} />
       ) : (
         <Paper
           sx={{

@@ -9,13 +9,13 @@ import {
   Grid,
   Chip,
   Avatar,
-  Skeleton,
   Alert,
   InputAdornment,
 } from '@mui/material';
 import Search from '@mui/icons-material/Search';
 import Science from '@mui/icons-material/Science';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
+import { LoadingState } from '@/shared/components/ui/LoadingState';
 import { getLabTests } from '../services/lab.service';
 import { formatNumber } from '@/shared/utils/localeUtils';
 import { getLabIcon, getLabColor } from '@/shared/components/lab-icons/LabIcons';
@@ -168,13 +168,7 @@ export default function LabTestsCatalogPage() {
 
       {/* Content */}
       {loading ? (
-        <Grid container spacing={2}>
-          {[...Array(6)].map((_, i) => (
-            <Grid xs={12} sm={6} md={4} key={i}>
-              <Skeleton variant="rounded" height={200} sx={{ borderRadius: '12px' }} />
-            </Grid>
-          ))}
-        </Grid>
+        <LoadingState message={t('lab_catalog:loading', 'Cargando catálogo...')} />
       ) : error ? (
         <Alert severity="error" sx={{ borderRadius: '12px' }}>{error}</Alert>
       ) : grouped.length === 0 ? (

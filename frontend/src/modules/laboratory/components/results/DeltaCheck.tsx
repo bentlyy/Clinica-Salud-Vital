@@ -34,26 +34,26 @@ function computeDeltaPercentage(
 }
 
 function getDeltaColor(
+  theme: Theme,
   status?: string,
   deltaPct?: number | null,
-  theme?: Theme,
 ): { main: string; bg: string; text: string } {
   if (status === 'critical') {
-    return { main: theme?.palette.error.main ?? '#ef4444', bg: theme?.palette.error.light ?? '#fef2f2', text: theme?.palette.error.dark ?? '#991b1b' };
+    return { main: theme.palette.error.main, bg: theme.palette.custom.status.error.bg, text: theme.palette.error.dark };
   }
   if (status === 'warning') {
-    return { main: theme?.palette.warning.main ?? '#f59e0b', bg: theme?.palette.warning.light ?? '#fffbeb', text: theme?.palette.warning.dark ?? '#92400e' };
+    return { main: theme.palette.warning.main, bg: theme.palette.custom.status.warning.bg, text: theme.palette.warning.dark };
   }
   if (deltaPct !== null && deltaPct !== undefined) {
     const absDelta = Math.abs(deltaPct);
     if (absDelta > 30) {
-      return { main: theme?.palette.error.main ?? '#ef4444', bg: theme?.palette.error.light ?? '#fef2f2', text: theme?.palette.error.dark ?? '#991b1b' };
+      return { main: theme.palette.error.main, bg: theme.palette.custom.status.error.bg, text: theme.palette.error.dark };
     }
     if (absDelta > 15) {
-      return { main: theme?.palette.warning.main ?? '#f59e0b', bg: theme?.palette.warning.light ?? '#fffbeb', text: theme?.palette.warning.dark ?? '#92400e' };
+      return { main: theme.palette.warning.main, bg: theme.palette.custom.status.warning.bg, text: theme.palette.warning.dark };
     }
   }
-  return { main: theme?.palette.success.main ?? '#10b981', bg: theme?.palette.success.light ?? '#ecfdf5', text: theme?.palette.success.dark ?? '#065f46' };
+  return { main: theme.palette.success.main, bg: theme.palette.custom.status.success.bg, text: theme.palette.success.dark };
 }
 
 function getStatusLabel(status: string, t: TFunction): string {
@@ -103,7 +103,7 @@ export const DeltaCheck = memo(function DeltaCheck({
   );
 
   const colors = useMemo(
-    () => getDeltaColor(deltaCheckStatus, deltaPct, theme),
+    () => getDeltaColor(theme, deltaCheckStatus, deltaPct),
     [deltaCheckStatus, deltaPct, theme],
   );
 

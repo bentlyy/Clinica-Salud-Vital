@@ -181,7 +181,7 @@ describe('ClinicalRecordDetailPage', () => {
     detailMock.data = record;
     renderPage();
     fireEvent.click(screen.getByRole('button', { name: 'Volver' }));
-    expect(navigateMock).toHaveBeenCalledWith(-1);
+    expect(navigateMock).toHaveBeenCalledWith('/clinical-records');
   });
 
   it('navigates to the edit page when the edit button is clicked', () => {

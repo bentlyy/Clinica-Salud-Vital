@@ -68,8 +68,8 @@ export function getRoleColor(role: JwtUser['role']): string {
     doctor: '#2563eb',
     lab_technician: '#d97706',
     patient: '#059669',
-    guest: '#6b7280',
-    user: '#6b7280',
+    guest: '#4b5563',
+    user: '#4b5563',
   };
-  return colors[role] || '#6b7280';
+  return colors[role] || '#4b5563';
 }

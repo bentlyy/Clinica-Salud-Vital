@@ -18,6 +18,7 @@ import { MotionDiv } from '@/shared/utils/animations';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { LoadingState } from '@/shared/components/ui/LoadingState';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
+import { ErrorState } from '@/shared/components/ui/ErrorState';
 import { apiClient } from '@/shared/services/api-client';
 import {
   getRangeStatus,
@@ -119,7 +120,7 @@ export default function PatientLabResultsPage() {
   }
 
   if (error) {
-    return <EmptyState title={t('lab_results:error_loading', 'Error al cargar resultados')} message="" />;
+    return <ErrorState error={error} />;
   }
 
   if (requests.length === 0) {
@@ -361,7 +362,7 @@ function RequestCard({ request, onClick }: RequestCardProps) {
                   size="small"
                   label={t('lab_results:new_badge', 'Nuevo')}
                   sx={{
-                    fontSize: 10,
+                    fontSize: 11,
                     fontWeight: 700,
                     bgcolor: theme.palette.primary.main,
                     color: theme.palette.common.white,

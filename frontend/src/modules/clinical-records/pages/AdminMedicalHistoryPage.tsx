@@ -4,18 +4,13 @@ import {
   Box,
   Paper,
   Typography,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   Chip,
-  Skeleton,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
+import { LoadingState } from '@/shared/components/ui/LoadingState';
+import { DataTable, type DataTableColumn } from '@/shared/components/ui/DataTable';
 import { formatDate } from '@/shared/utils/localeUtils';
 import { clinicalRecordService } from '../../clinical-records/services/clinical-record.service';
 import type { ClinicalRecord } from '../../clinical-records/types/clinical-record.types';
@@ -58,7 +53,45 @@ export default function AdminMedicalHistoryPage() {
     return map[status] || { bg: theme.palette.grey[100], fg: theme.palette.text.secondary, label: status };
   };
 
-  if (loading) return <Box sx={{ p: 4 }}>{[1, 2, 3].map((i) => <Skeleton key={i} variant="rounded" height={200} sx={{ mb: 2, borderRadius: '12px' }} />)}</Box>;
+  const historyColumns: DataTableColumn<ClinicalRecord>[] = [
+    {
+      key: 'patient_name',
+      header: t('admin_medical_history:colPatient'),
+      render: (r) => (
+        <Typography variant="body2" sx={{ fontWeight: 600 }}>
+          {r.patient_name || `Paciente #${r.patient_id}`}
+        </Typography>
+      ),
+    },
+    {
+      key: 'diagnosis',
+      header: t('admin_medical_history:colDiagnosis'),
+      render: (r) => (
+        <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
+          {r.diagnosis || '—'}
+        </Typography>
+      ),
+    },
+    {
+      key: 'created_at',
+      header: t('admin_medical_history:colDate'),
+      render: (r) => (
+        <Typography variant="body2" sx={{ color: theme.palette.text.secondary, fontSize: 13 }}>
+          {formatDate(r.created_at)}
+        </Typography>
+      ),
+    },
+    {
+      key: 'status',
+      header: t('admin_medical_history:colStatus'),
+      render: (r) => {
+        const st = getStatusConfig(r.status || 'draft');
+        return <Chip label={st.label} size="small" sx={{ backgroundColor: st.bg, color: st.fg, fontSize: 11 }} />;
+      },
+    },
+  ];
+
+  if (loading) return <LoadingState message={t('admin_medical_history:loading', 'Cargando historial...')} />;
 
   return (
     <Box>
@@ -68,36 +101,19 @@ export default function AdminMedicalHistoryPage() {
         <EmptyState title={t('admin_medical_history:emptyTitle')} message={t('admin_medical_history:emptyDesc')} />
       ) : (
         grouped.map(([doctorName, doctorRecords]) => (
-          <Paper key={doctorName} sx={{ p: 2.5, mb: 2, border: '1px solid #e5e7eb', borderRadius: '12px' }}>
+          <Paper key={doctorName} sx={{ p: 2.5, mb: 2, border: `1px solid ${theme.palette.divider}`, borderRadius: '12px' }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
               <Typography variant="subtitle1" sx={{ fontWeight: 700, color: theme.palette.text.primary }}>{doctorName}</Typography>
               <Chip label={t('admin_medical_history:recordCount', { count: doctorRecords.length })} size="small" sx={{ backgroundColor: theme.palette.info.light, color: theme.palette.info.main, fontWeight: 600 }} />
             </Box>
-            <TableContainer>
-              <Table size="small">
-                <TableHead>
-                  <TableRow>
-                    <TableCell>{t('admin_medical_history:colPatient')}</TableCell>
-                    <TableCell>{t('admin_medical_history:colDiagnosis')}</TableCell>
-                    <TableCell>{t('admin_medical_history:colDate')}</TableCell>
-                    <TableCell>{t('admin_medical_history:colStatus')}</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {doctorRecords.map((r) => {
-                    const st = getStatusConfig(r.status || 'draft');
-                    return (
-                      <TableRow key={r.id} hover>
-                        <TableCell><Typography variant="body2" sx={{ fontWeight: 600 }}>{r.patient_name || `Paciente #${r.patient_id}`}</Typography></TableCell>
-                        <TableCell><Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>{r.diagnosis || '—'}</Typography></TableCell>
-                        <TableCell><Typography variant="body2" sx={{ color: theme.palette.text.secondary, fontSize: 13 }}>{formatDate(r.created_at)}</Typography></TableCell>
-                        <TableCell><Chip label={st.label} size="small" sx={{ backgroundColor: st.bg, color: st.fg, fontSize: 11 }} /></TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </TableContainer>
+            <DataTable<ClinicalRecord>
+              columns={historyColumns}
+              data={doctorRecords}
+              keyExtractor={(r) => r.id}
+              emptyTitle={t('admin_medical_history:emptyTitle')}
+              emptyMessage={t('admin_medical_history:emptyDesc')}
+              rowsPerPage={doctorRecords.length || 1}
+            />
           </Paper>
         ))
       )}

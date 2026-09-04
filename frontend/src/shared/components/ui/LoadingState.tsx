@@ -13,6 +13,8 @@ export function LoadingState({ message }: LoadingStateProps) {
 
   return (
     <Box
+      role="status"
+      aria-live="polite"
       sx={{
         display: 'flex',
         flexDirection: 'column',

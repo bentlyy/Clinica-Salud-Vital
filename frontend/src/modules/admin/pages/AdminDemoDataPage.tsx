@@ -3,13 +3,6 @@ import {
   Box,
   Tabs,
   Tab,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   Chip,
   Alert,
   CircularProgress,
@@ -17,6 +10,7 @@ import {
 import { useTheme } from '@mui/material/styles';
 import { useTranslation } from 'react-i18next';
 import { apiClient } from '@/shared/services/api-client';
+import { DataTable } from '@/shared/components/ui/DataTable';
 
 interface Booking {
   id: number;
@@ -121,89 +115,72 @@ export default function AdminDemoDataPage() {
           <CircularProgress sx={{ color: theme.palette.primary.main }} />
         </Box>
       ) : (
-        <TableContainer component={Paper} sx={{ borderRadius: '12px' }}>
-          <Table size="small">
-            <TableHead>
-              <TableRow sx={{ backgroundColor: theme.palette.custom.surface.muted }}>
-                {tab === 'bookings' && (
-                  <>
-                    <TableCell sx={{ fontWeight: 600 }}>{t('demo_data:patient', 'Paciente')}</TableCell>
-                    <TableCell sx={{ fontWeight: 600 }}>RUT</TableCell>
-                    <TableCell sx={{ fontWeight: 600 }}>{t('demo_data:doctor', 'Doctor')}</TableCell>
-                    <TableCell sx={{ fontWeight: 600 }}>{t('demo_data:specialty', 'Especialidad')}</TableCell>
-                    <TableCell sx={{ fontWeight: 600 }}>{t('demo_data:date', 'Fecha')}</TableCell>
-                    <TableCell sx={{ fontWeight: 600 }}>{t('demo_data:time', 'Hora')}</TableCell>
-                    <TableCell sx={{ fontWeight: 600 }}>{t('demo_data:status', 'Estado')}</TableCell>
-                  </>
-                )}
-                {tab === 'clinical' && (
-                  <>
-                    <TableCell sx={{ fontWeight: 600 }}>{t('demo_data:patient', 'Paciente')}</TableCell>
-                    <TableCell sx={{ fontWeight: 600 }}>RUT</TableCell>
-                    <TableCell sx={{ fontWeight: 600 }}>{t('demo_data:doctor', 'Doctor')}</TableCell>
-                    <TableCell sx={{ fontWeight: 600 }}>{t('demo_data:diagnosis', 'Diagnóstico')}</TableCell>
-                    <TableCell sx={{ fontWeight: 600 }}>{t('demo_data:date', 'Fecha')}</TableCell>
-                    <TableCell sx={{ fontWeight: 600 }}>{t('demo_data:status', 'Estado')}</TableCell>
-                  </>
-                )}
-                {tab === 'lab' && (
-                  <>
-                    <TableCell sx={{ fontWeight: 600 }}>{t('demo_data:request_number', 'N° Solicitud')}</TableCell>
-                    <TableCell sx={{ fontWeight: 600 }}>{t('demo_data:patient', 'Paciente')}</TableCell>
-                    <TableCell sx={{ fontWeight: 600 }}>{t('demo_data:doctor', 'Doctor')}</TableCell>
-                    <TableCell sx={{ fontWeight: 600 }}>{t('demo_data:priority', 'Prioridad')}</TableCell>
-                    <TableCell sx={{ fontWeight: 600 }}>{t('demo_data:date', 'Fecha')}</TableCell>
-                    <TableCell sx={{ fontWeight: 600 }}>{t('demo_data:status', 'Estado')}</TableCell>
-                  </>
-                )}
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {tab === 'bookings' && bookings.length === 0 && (
-                <TableRow><TableCell colSpan={7} align="center" sx={{ py: 4, color: 'text.secondary' }}>{t('demo_data:no_bookings', 'No hay reservas.')}</TableCell></TableRow>
-              )}
-              {tab === 'bookings' && bookings.map(b => (
-                <TableRow key={b.id} hover>
-                  <TableCell>{b.patient_name}</TableCell>
-                  <TableCell>{b.patient_rut || '—'}</TableCell>
-                  <TableCell>{b.doctor_name}</TableCell>
-                  <TableCell>{b.specialty}</TableCell>
-                  <TableCell>{b.date}</TableCell>
-                  <TableCell>{b.time}</TableCell>
-                  <TableCell><Chip label={b.status} size="small" color={statusColor(b.status) as 'success' | 'warning' | 'info' | 'default'} /></TableCell>
-                </TableRow>
-              ))}
-
-              {tab === 'clinical' && records.length === 0 && (
-                <TableRow><TableCell colSpan={6} align="center" sx={{ py: 4, color: 'text.secondary' }}>{t('demo_data:no_records', 'No hay historial clínico.')}</TableCell></TableRow>
-              )}
-              {tab === 'clinical' && records.map(r => (
-                <TableRow key={r.id} hover>
-                  <TableCell>{r.patient_name}</TableCell>
-                  <TableCell>{r.patient_rut || '—'}</TableCell>
-                  <TableCell>{r.doctor_name}</TableCell>
-                  <TableCell>{r.diagnosis || '—'}</TableCell>
-                  <TableCell>{r.created_at?.split('T')[0]}</TableCell>
-                  <TableCell><Chip label={r.status} size="small" color={statusColor(r.status) as 'success' | 'warning' | 'info' | 'default'} /></TableCell>
-                </TableRow>
-              ))}
-
-              {tab === 'lab' && labReqs.length === 0 && (
-                <TableRow><TableCell colSpan={6} align="center" sx={{ py: 4, color: 'text.secondary' }}>{t('demo_data:no_lab', 'No hay exámenes.')}</TableCell></TableRow>
-              )}
-              {tab === 'lab' && labReqs.map(r => (
-                <TableRow key={r.id} hover>
-                  <TableCell>{r.request_number || `#${r.id}`}</TableCell>
-                  <TableCell>{r.patient_name || '—'}</TableCell>
-                  <TableCell>{r.doctor_name || '—'}</TableCell>
-                  <TableCell>{r.priority}</TableCell>
-                  <TableCell>{r.created_at?.split('T')[0]}</TableCell>
-                  <TableCell><Chip label={r.status} size="small" color={statusColor(r.status) as 'success' | 'warning' | 'info' | 'default'} /></TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
+        <>
+          {tab === 'bookings' && (
+          <DataTable
+            key="bookings"
+            columns={[
+              { key: 'patient_name', header: t('demo_data:patient', 'Paciente') },
+              { key: 'patient_rut', header: t('demo_data:rut', 'RUT'), render: (b) => b.patient_rut || '—' },
+              { key: 'doctor_name', header: t('demo_data:doctor', 'Doctor') },
+              { key: 'specialty', header: t('demo_data:specialty', 'Especialidad') },
+              { key: 'date', header: t('demo_data:date', 'Fecha') },
+              { key: 'time', header: t('demo_data:time', 'Hora') },
+              {
+                key: 'status',
+                header: t('demo_data:status', 'Estado'),
+                render: (b) => <Chip label={b.status} size="small" color={statusColor(b.status) as 'success' | 'warning' | 'info' | 'default'} />,
+              },
+            ]}
+            data={bookings}
+            keyExtractor={(b) => b.id}
+            emptyTitle={t('demo_data:no_bookings', 'No hay reservas.')}
+            rowsPerPage={Math.max(bookings.length, 1)}
+          />
+        )}
+        {tab === 'clinical' && (
+          <DataTable
+            key="clinical"
+            columns={[
+              { key: 'patient_name', header: t('demo_data:patient', 'Paciente') },
+              { key: 'patient_rut', header: t('demo_data:rut', 'RUT'), render: (r) => r.patient_rut || '—' },
+              { key: 'doctor_name', header: t('demo_data:doctor', 'Doctor') },
+              { key: 'diagnosis', header: t('demo_data:diagnosis', 'Diagnóstico'), render: (r) => r.diagnosis || '—' },
+              { key: 'created_at', header: t('demo_data:date', 'Fecha'), render: (r) => r.created_at?.split('T')[0] },
+              {
+                key: 'status',
+                header: t('demo_data:status', 'Estado'),
+                render: (r) => <Chip label={r.status} size="small" color={statusColor(r.status) as 'success' | 'warning' | 'info' | 'default'} />,
+              },
+            ]}
+            data={records}
+            keyExtractor={(r) => r.id}
+            emptyTitle={t('demo_data:no_records', 'No hay historial clínico.')}
+            rowsPerPage={Math.max(records.length, 1)}
+          />
+        )}
+        {tab === 'lab' && (
+          <DataTable
+            key="lab"
+            columns={[
+              { key: 'request_number', header: t('demo_data:request_number', 'N° Solicitud'), render: (r) => r.request_number || `#${r.id}` },
+              { key: 'patient_name', header: t('demo_data:patient', 'Paciente'), render: (r) => r.patient_name || '—' },
+              { key: 'doctor_name', header: t('demo_data:doctor', 'Doctor'), render: (r) => r.doctor_name || '—' },
+              { key: 'priority', header: t('demo_data:priority', 'Prioridad') },
+              { key: 'created_at', header: t('demo_data:date', 'Fecha'), render: (r) => r.created_at?.split('T')[0] },
+              {
+                key: 'status',
+                header: t('demo_data:status', 'Estado'),
+                render: (r) => <Chip label={r.status} size="small" color={statusColor(r.status) as 'success' | 'warning' | 'info' | 'default'} />,
+              },
+            ]}
+            data={labReqs}
+            keyExtractor={(r) => r.id}
+            emptyTitle={t('demo_data:no_lab', 'No hay exámenes.')}
+            rowsPerPage={Math.max(labReqs.length, 1)}
+          />
+        )}
+        </>
       )}
     </Box>
   );

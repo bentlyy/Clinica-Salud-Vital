@@ -26,10 +26,13 @@ export default defineConfig({
       output: {
         manualChunks: {
           vendor: ['react', 'react-dom', 'react-router-dom'],
-          mui: ['@mui/material', '@mui/icons-material', '@emotion/react', '@emotion/styled'],
+          mui: ['@mui/material', '@emotion/react', '@emotion/styled'],
+          icons: ['@mui/icons-material'],
+          i18n: ['i18next', 'react-i18next', 'i18next-browser-languagedetector'],
           charts: ['recharts'],
           calendar: ['@fullcalendar/react', '@fullcalendar/core', '@fullcalendar/daygrid', '@fullcalendar/timegrid', '@fullcalendar/interaction'],
           query: ['@tanstack/react-query', '@tanstack/react-table'],
+          auth: ['react-google-recaptcha', 'react-hook-form', '@hookform/resolvers', 'zod'],
         },
       },
     },

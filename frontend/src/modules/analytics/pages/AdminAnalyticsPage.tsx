@@ -1,7 +1,7 @@
 import { useState, memo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '@mui/material/styles';
-import { Box, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Avatar, Typography, Tabs, Tab, CircularProgress, Button } from '@mui/material';
+import { Box, Paper, Avatar, Typography, Tabs, Tab, CircularProgress, Button } from '@mui/material';
 import Star from '@mui/icons-material/Star';
 import People from '@mui/icons-material/People';
 import Event from '@mui/icons-material/Event';
@@ -16,6 +16,7 @@ import Insights from '@mui/icons-material/Insights';
 import FileDownload from '@mui/icons-material/FileDownload';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { ErrorState } from '@/shared/components/ui/ErrorState';
+import { DataTable } from '@/shared/components/ui/DataTable';
 import {
   useAdminAnalytics, useMyDoctorStats, useBookingsByMonth, useStatusDistribution,
   useNoShows, useDiagnoses, useDemand, useSchedules, useVitals,
@@ -114,7 +115,7 @@ function DoctorAnalytics() {
   return (
     <Box>
       <PageHeader title={t('myAnalytics')} subtitle={t('myAnalyticsSubtitle')} />
-      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr 1fr', md: '1fr 1fr 1fr 1fr' }, gap: 2, mb: 3 }}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr 1fr' }, gap: 2, mb: 3 }}>
         <StatCard icon={<Event sx={{ color: theme.palette.common.white }} />} label={t('myBookings')} value={myStats?.total_bookings ?? '—'} color={theme.palette.secondary.main} />
         <StatCard icon={<People sx={{ color: theme.palette.common.white }} />} label={t('patientsServed')} value={myStats?.patients_served ?? '—'} color={theme.palette.primary.main} />
         <StatCard icon={<Today sx={{ color: theme.palette.common.white }} />} label={t('upcomingBookings')} value={myStats?.upcoming_bookings ?? '—'} color={theme.palette.warning.main} />
@@ -185,7 +186,7 @@ function AdminAnalytics() {
               {t('exportCSV')}
             </Button>
           </Box>
-          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr 1fr', md: '1fr 1fr 1fr 1fr' }, gap: 2.5, mb: 3 }}>
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr 1fr' }, gap: 2.5, mb: 3 }}>
             <StatCard icon={<People sx={{ color: theme.palette.common.white }} />} label={t('totalPatients')} value={analytics?.stats?.total_patients ?? '—'} color={theme.palette.primary.main} />
             <StatCard icon={<LocalHospital sx={{ color: theme.palette.common.white }} />} label={t('totalDoctors')} value={analytics?.stats?.total_doctors ?? '—'} color={theme.palette.info.main} />
             <StatCard icon={<Event sx={{ color: theme.palette.common.white }} />} label={t('totalBookings')} value={analytics?.stats?.total_bookings ?? '—'} color={theme.palette.secondary.main} />
@@ -205,35 +206,41 @@ function AdminAnalytics() {
             ) : !analytics?.top_doctors?.length ? (
               <Typography variant="body2" sx={{ color: theme.palette.text.secondary, textAlign: 'center', py: 4 }}>{t('noData')}</Typography>
             ) : (
-              <TableContainer>
-                <Table size="small">
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>{t('colDoctor')}</TableCell>
-                      <TableCell>{t('colSpecialty')}</TableCell>
-                      <TableCell align="right">{t('colBookings')}</TableCell>
-                      <TableCell align="right">{t('colConfirmed')}</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {analytics.top_doctors.map((doctor) => (
-                      <TableRow key={doctor.id} hover>
-                        <TableCell>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                            <Avatar sx={{ width: 32, height: 32, bgcolor: theme.palette.primary.main, fontSize: '0.75rem', fontWeight: 600 }}>
-                              {doctor.name.charAt(0).toUpperCase()}
-                            </Avatar>
-                            <Typography variant="body2" sx={{ fontWeight: 500 }}>{doctor.name}</Typography>
-                          </Box>
-                        </TableCell>
-                        <TableCell><Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>{doctor.specialty || '—'}</Typography></TableCell>
-                        <TableCell align="right">{doctor.appointments}</TableCell>
-                        <TableCell align="right"><Typography variant="body2" sx={{ fontWeight: 600, color: theme.palette.primary.main }}>{doctor.confirmed_bookings}</Typography></TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
+              <DataTable
+                columns={[
+                  {
+                    key: 'name',
+                    header: t('colDoctor'),
+                    render: (doctor) => (
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                        <Avatar sx={{ width: 32, height: 32, bgcolor: theme.palette.primary.main, fontSize: '0.75rem', fontWeight: 600 }}>
+                          {doctor.name.charAt(0).toUpperCase()}
+                        </Avatar>
+                        <Typography variant="body2" sx={{ fontWeight: 500 }}>{doctor.name}</Typography>
+                      </Box>
+                    ),
+                  },
+                  {
+                    key: 'specialty',
+                    header: t('colSpecialty'),
+                    render: (doctor) => (
+                      <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>{doctor.specialty || '—'}</Typography>
+                    ),
+                  },
+                  { key: 'appointments', header: t('colBookings'), align: 'right' as const, render: (doctor) => doctor.appointments },
+                  {
+                    key: 'confirmed_bookings',
+                    header: t('colConfirmed'),
+                    align: 'right' as const,
+                    render: (doctor) => (
+                      <Typography variant="body2" sx={{ fontWeight: 600, color: theme.palette.primary.main }}>{doctor.confirmed_bookings}</Typography>
+                    ),
+                  },
+                ]}
+                data={analytics.top_doctors}
+                keyExtractor={(doctor) => doctor.id}
+                rowsPerPage={Math.max(analytics.top_doctors.length, 1)}
+              />
             )}
           </Paper>
         </Box>

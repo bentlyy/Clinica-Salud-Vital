@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '@mui/material/styles';
 import { useAuth } from '@/shared/providers/AuthProvider';
@@ -6,13 +6,6 @@ import { superAdminService } from '@/modules/super-admin/services/super-admin.se
 import {
   Box,
   Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TablePagination,
   TextField,
   InputAdornment,
   Chip,
@@ -28,6 +21,7 @@ import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { LoadingState } from '@/shared/components/ui/LoadingState';
 import { ErrorState } from '@/shared/components/ui/ErrorState';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
+import { DataTable, type DataTableColumn } from '@/shared/components/ui/DataTable';
 import { formatDateTime } from '@/shared/utils/localeUtils';
 import { useAuditList } from '../hooks/useAudit';
 import { AuditDetailDialog } from '../components/AuditDetailDialog';
@@ -42,7 +36,6 @@ import {
 
 export default function AuditPage() {
   const { t } = useTranslation('audit');
-  const { t: tc } = useTranslation('common');
   const theme = useTheme();
   const { user } = useAuth();
   const isSuperAdmin = user?.role === 'superadmin';
@@ -85,14 +78,113 @@ export default function AuditPage() {
   const logs = response?.data ?? [];
   const total = response?.total ?? 0;
 
-  const handlePageChange = (_: unknown, newPage: number) => {
-    setPage(newPage);
-  };
-
   const handleViewDetail = (log: AuditLog) => {
     setSelectedLog(log);
     setDetailDialogOpen(true);
   };
+
+  const columns = useMemo<DataTableColumn<AuditLog>[]>(
+    () => [
+      {
+        key: 'user',
+        header: t('user'),
+        render: (log) => (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Box
+              sx={{
+                width: 32,
+                height: 32,
+                borderRadius: '50%',
+                backgroundColor: theme.palette.custom.brand.lightest,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Security sx={{ fontSize: 16, color: theme.palette.primary.main }} />
+            </Box>
+            <Box component="span" sx={{ fontWeight: 500, color: theme.palette.text.primary, fontSize: '0.875rem' }}>
+              {log.user_name || t('userFallback', { id: log.user_id })}
+            </Box>
+          </Box>
+        ),
+      },
+      {
+        key: 'action',
+        header: t('action'),
+        render: (log) => (
+          <Chip
+            label={t(`actionLabels.${log.action}`, AUDIT_ACTION_LABELS[log.action] || log.action)}
+            size="small"
+            sx={{
+              backgroundColor: theme.palette.custom.brand.lightest,
+              color: theme.palette.primary.main,
+              fontWeight: 500,
+            }}
+          />
+        ),
+      },
+      {
+        key: 'entity',
+        header: t('entity'),
+        render: (log) => (
+          <Chip
+            label={t(`entityLabels.${log.entity_type}`, AUDIT_ENTITY_LABELS[log.entity_type] || log.entity_type)}
+            size="small"
+            sx={{
+              backgroundColor: theme.palette.custom.status.info.bg,
+              color: theme.palette.info.dark,
+              fontWeight: 500,
+            }}
+          />
+        ),
+      },
+      {
+        key: 'details',
+        header: t('details'),
+        render: (log) => (
+          <Box component="span" sx={{ color: theme.palette.text.secondary, maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block', fontSize: '0.875rem' }}>
+            {log.entity_id ? t('idValue', 'ID: {{id}}', { id: log.entity_id }) : '—'}
+          </Box>
+        ),
+      },
+      {
+        key: 'ip',
+        header: t('ipAddress'),
+        render: (log) => (
+          <Box component="span" sx={{ color: theme.palette.text.secondary, fontFamily: 'monospace', fontSize: '0.75rem' }}>
+            {log.ip_address || '—'}
+          </Box>
+        ),
+      },
+      {
+        key: 'date',
+        header: t('date'),
+        render: (log) => (
+          <Box component="span" sx={{ color: theme.palette.text.secondary, fontSize: '0.875rem' }}>
+            {formatDateTime(log.created_at)}
+          </Box>
+        ),
+      },
+      {
+        key: 'actions',
+        header: t('actions'),
+        align: 'right',
+        render: (log) => (
+          <MotionDiv whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
+            <IconButton
+              size="small"
+              onClick={() => handleViewDetail(log)}
+              sx={{ color: theme.palette.primary.main }}
+            >
+              <Visibility fontSize="small" />
+            </IconButton>
+          </MotionDiv>
+        ),
+      },
+    ],
+    [t, theme, handleViewDetail],
+  );
 
   const handleExport = () => {
     const headers = [t('csvHeaders.date'), t('csvHeaders.user'), t('csvHeaders.action'), t('csvHeaders.entity'), t('csvHeaders.entityId'), t('csvHeaders.ip')];
@@ -222,112 +314,17 @@ export default function AuditPage() {
           message={t('noResultsWithFilters')}
         />
       ) : (
-        <TableContainer component={Paper} sx={{ border: `1px solid ${theme.palette.divider}` }}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>{t('user')}</TableCell>
-                <TableCell>{t('action')}</TableCell>
-                <TableCell>{t('entity')}</TableCell>
-                <TableCell>{t('details')}</TableCell>
-                <TableCell>{t('ipAddress')}</TableCell>
-                <TableCell>{t('date')}</TableCell>
-                <TableCell align="right">{t('actions')}</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {logs.map((log) => {
-                const actionLabel = t(`actionLabels.${log.action}`, AUDIT_ACTION_LABELS[log.action] || log.action);
-                const entityLabel = t(`entityLabels.${log.entity_type}`, AUDIT_ENTITY_LABELS[log.entity_type] || log.entity_type);
-                return (
-                  <TableRow key={log.id} hover>
-                    <TableCell>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Box
-                          sx={{
-                            width: 32,
-                            height: 32,
-                            borderRadius: '50%',
-                            backgroundColor: theme.palette.custom.brand.lightest,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                          }}
-                        >
-                          <Security sx={{ fontSize: 16, color: theme.palette.primary.main }} />
-                        </Box>
-                        <Box>
-                          <Box component="span" sx={{ fontWeight: 500, color: theme.palette.text.primary, fontSize: '0.875rem' }}>
-                            {log.user_name || t('userFallback', { id: log.user_id })}
-                          </Box>
-                        </Box>
-                      </Box>
-                    </TableCell>
-                    <TableCell>
-                      <Chip
-                        label={actionLabel}
-                        size="small"
-                        sx={{
-                          backgroundColor: theme.palette.custom.brand.lightest,
-                          color: theme.palette.primary.main,
-                          fontWeight: 500,
-                        }}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Chip
-                        label={entityLabel}
-                        size="small"
-                        sx={{
-                          backgroundColor: theme.palette.custom.status.info.bg,
-                          color: theme.palette.info.dark,
-                          fontWeight: 500,
-                        }}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Box component="span" sx={{ color: theme.palette.text.secondary, maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block', fontSize: '0.875rem' }}>
-                        {log.entity_id ? t('idValue', 'ID: {{id}}', { id: log.entity_id }) : '—'}
-                      </Box>
-                    </TableCell>
-                    <TableCell>
-                      <Box component="span" sx={{ color: theme.palette.text.secondary, fontFamily: 'monospace', fontSize: '0.75rem' }}>
-                        {log.ip_address || '—'}
-                      </Box>
-                    </TableCell>
-                    <TableCell>
-                      <Box component="span" sx={{ color: theme.palette.text.secondary, fontSize: '0.875rem' }}>
-                        {formatDateTime(log.created_at)}
-                      </Box>
-                    </TableCell>
-                    <TableCell align="right">
-                      <MotionDiv whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
-                        <IconButton
-                          size="small"
-                          onClick={() => handleViewDetail(log)}
-                          sx={{ color: theme.palette.primary.main }}
-                        >
-                          <Visibility fontSize="small" />
-                        </IconButton>
-                      </MotionDiv>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-          <TablePagination
-            component="div"
-            count={total}
-            page={page}
-            onPageChange={handlePageChange}
-            rowsPerPage={limit}
-            labelRowsPerPage={t('rowsLabel')}
-            labelDisplayedRows={({ from, to, count }) =>
-              `${from}–${to} ${tc('of')} ${count}`
-            }
-          />
-        </TableContainer>
+        <DataTable
+          columns={columns}
+          data={logs}
+          keyExtractor={(log) => log.id}
+          serverSide
+          total={total}
+          page={page}
+          rowsPerPage={limit}
+          onPageChange={(newPage) => setPage(newPage)}
+          onRowClick={handleViewDetail}
+        />
       )}
 
       {/* Detail Dialog */}

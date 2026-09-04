@@ -14,10 +14,10 @@ import {
   TableRow,
   Chip,
   Button,
-  Skeleton,
 } from '@mui/material';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
+import { LoadingState } from '@/shared/components/ui/LoadingState';
 import { getLabRequests } from '../../laboratory/services/lab.service';
 import type { LabRequest } from '../../laboratory/types/lab.types';
 
@@ -72,7 +72,7 @@ export default function AdminLabRequestsPage() {
     return map[priority] || { bg: theme.palette.custom.surface.sunken, fg: theme.palette.text.secondary };
   };
 
-  if (loading) return <Box sx={{ p: 4 }}>{[1, 2, 3].map((i) => <Skeleton key={i} variant="rounded" height={200} sx={{ mb: 2, borderRadius: '12px' }} />)}</Box>;
+  if (loading) return <LoadingState message={t('admin_lab_requests:loading', 'Cargando solicitudes...')} />;
 
   return (
     <Box>

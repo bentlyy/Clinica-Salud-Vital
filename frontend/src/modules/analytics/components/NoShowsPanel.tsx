@@ -1,8 +1,9 @@
-import { Box, Paper, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from '@mui/material';
+import { Box, Paper, Typography } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { useTranslation } from 'react-i18next';
 import { memo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { DataTable } from '@/shared/components/ui/DataTable';
 import type { NoShowRecord } from '../types/analytics.types';
 
 const StatCard = memo(function StatCard({ label, value, color }: { label: string; value: number | string; color: string }) {
@@ -24,7 +25,7 @@ export function NoShowsPanel({ data }: { data: NoShowRecord[] }) {
 
   return (
     <Box>
-      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr 1fr 1fr' }, gap: 2, mb: 3 }}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr 1fr' }, gap: 2, mb: 3 }}>
         <StatCard label={t('total_bookings')} value={total} color={theme.palette.text.primary} />
         <StatCard label={t('no_shows')} value={noShows} color={theme.palette.error.main} />
         <StatCard label={t('no_show_rate')} value={`${rate}%`} color={Number(rate) > 15 ? theme.palette.error.main : theme.palette.success.main} />
@@ -50,34 +51,36 @@ export function NoShowsPanel({ data }: { data: NoShowRecord[] }) {
         <Typography variant="body2" sx={{ color: theme.palette.text.secondary, mb: 2 }}>
           {t('prediction_description')}
         </Typography>
-        <TableContainer>
-          <Table size="small">
-            <TableHead>
-              <TableRow>
-                <TableCell>{t('doctor')}</TableCell>
-                <TableCell align="right">{t('risk')}</TableCell>
-                <TableCell align="right">{t('recommendation')}</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {data.slice(0, 5).map((d) => {
+        <DataTable
+          columns={[
+            { key: 'doctor', header: t('doctor') },
+            {
+              key: 'risk',
+              header: t('risk'),
+              align: 'right',
+              render: (d) => {
                 const pct = d.total > 0 ? (d.noShows / d.total) * 100 : 0;
                 const highRisk = pct > 15;
                 return (
-                  <TableRow key={d.doctor}>
-                    <TableCell>{d.doctor}</TableCell>
-                    <TableCell align="right" sx={{ color: highRisk ? theme.palette.error.main : theme.palette.success.main, fontWeight: 600 }}>
-                      {pct.toFixed(1)}%
-                    </TableCell>
-                    <TableCell align="right">
-                      {highRisk ? t('extra_reminder') : t('normal')}
-                    </TableCell>
-                  </TableRow>
+                  <Typography sx={{ color: highRisk ? theme.palette.error.main : theme.palette.success.main, fontWeight: 600 }}>
+                    {pct.toFixed(1)}%
+                  </Typography>
                 );
-              })}
-            </TableBody>
-          </Table>
-        </TableContainer>
+              },
+            },
+            {
+              key: 'recommendation',
+              header: t('recommendation'),
+              align: 'right',
+              render: (d) => {
+                const pct = d.total > 0 ? (d.noShows / d.total) * 100 : 0;
+                return pct > 15 ? t('extra_reminder') : t('normal');
+              },
+            },
+          ]}
+          data={data.slice(0, 5)}
+          keyExtractor={(d) => d.doctor}
+        />
       </Paper>
     </Box>
   );

@@ -146,6 +146,7 @@ export function DashboardLayout() {
               onClick={() => setSidebarOpen(!sidebarOpen)}
               size="small"
               sx={{ color: 'text.secondary' }}
+              aria-label={sidebarOpen ? 'Cerrar menú lateral' : 'Menú de navegación'}
             >
               {sidebarOpen ? <ChevronLeft /> : <MenuIcon />}
             </IconButton>
@@ -237,6 +238,7 @@ export function DashboardLayout() {
                     logout();
                   }}
                   sx={{ color: 'text.secondary', '&:hover': { color: theme.palette.error.main } }}
+                  aria-label={tc('logout')}
                 >
                   <Logout fontSize="small" />
                 </IconButton>
@@ -264,6 +266,7 @@ export function DashboardLayout() {
                 edge="start"
                 onClick={() => setSidebarOpen(true)}
                 sx={{ mr: 1, color: 'text.primary' }}
+                aria-label="Menú de navegación"
               >
                 <MenuIcon />
               </IconButton>
@@ -278,7 +281,12 @@ export function DashboardLayout() {
               <LanguageSwitcher />
 
               <Tooltip title={mode === 'dark' ? tc('theme_light') : tc('theme_dark')}>
-                <IconButton size="small" sx={{ color: 'text.secondary' }} onClick={toggleTheme}>
+                <IconButton
+                  size="small"
+                  sx={{ color: 'text.secondary' }}
+                  onClick={toggleTheme}
+                  aria-label={mode === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
+                >
                   {mode === 'dark' ? <LightMode fontSize="small" /> : <DarkMode fontSize="small" />}
                 </IconButton>
               </Tooltip>
@@ -288,13 +296,14 @@ export function DashboardLayout() {
                   size="small"
                   sx={{ color: 'text.secondary' }}
                   onClick={() => navigate('/settings')}
+                  aria-label={tc('settings')}
                 >
                   <Settings fontSize="small" />
                 </IconButton>
               </Tooltip>
 
               <Tooltip title={tc('account')}>
-                <IconButton onClick={handleProfileMenuOpen} size="small" sx={{ ml: 0.5 }}>
+                <IconButton onClick={handleProfileMenuOpen} size="small" sx={{ ml: 0.5 }} aria-label={tc('account')}>
                   <Avatar
                     sx={{
                       width: 32,

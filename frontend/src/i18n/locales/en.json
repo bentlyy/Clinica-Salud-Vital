@@ -2684,6 +2684,8 @@
     "block_end": "End",
     "confirm_block": "Block",
     "delete_block": "Delete block",
+    "blockCreated": "Time block created successfully",
+    "blockDeleted": "Time block removed successfully",
     "booking_detail": "Appointment Detail",
     "patient": "Patient",
     "time": "Time",
@@ -3066,7 +3068,8 @@
     "reactivate": "Reactivate",
     "rowsPerPage": "Rows per page",
     "errorLoad": "Error loading users",
-    "errorToggle": "Error changing status"
+    "errorToggle": "Error changing status",
+    "toggledSuccess": "User status updated successfully"
   },
   "super_admin_billing": {
     "title": "Charges by Clinic",

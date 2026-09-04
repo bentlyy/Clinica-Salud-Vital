@@ -27,6 +27,7 @@ import { z } from 'zod';
 import { useChangePassword, useSessions, useRevokeSession } from '../hooks/useSettings';
 import { useTwoFAStatus, useGenerateTwoFA, useVerifyTwoFA, useDisableTwoFA } from '@/modules/2fa/hooks/useTwoFA';
 import { useAuth } from '@/shared/providers/AuthProvider';
+import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
 import toast from 'react-hot-toast';
 
 function createPasswordSchema(t: (key: string) => string) {
@@ -60,6 +61,7 @@ export function SecurityTab() {
   const [verifyCode, setVerifyCode] = useState('');
   const [showQR, setShowQR] = useState(false);
   const [revokingSessions, setRevokingSessions] = useState(false);
+  const [confirmRevokeAllOpen, setConfirmRevokeAllOpen] = useState(false);
 
   const {
     register,
@@ -99,6 +101,7 @@ export function SecurityTab() {
   };
 
   const handleRevokeAllSessions = async () => {
+    setConfirmRevokeAllOpen(false);
     setRevokingSessions(true);
     try {
       await logoutAll();
@@ -227,6 +230,7 @@ export function SecurityTab() {
                       value={verifyCode}
                       onChange={(e) => setVerifyCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
                       placeholder="000000"
+                      aria-label={t('enter_6_digit_code', 'Código de verificación de 6 dígitos')}
                       inputProps={{
                         maxLength: 6,
                         style: {
@@ -287,7 +291,7 @@ export function SecurityTab() {
         color="error"
         startIcon={<Devices />}
         disabled={revokingSessions}
-        onClick={handleRevokeAllSessions}
+        onClick={() => setConfirmRevokeAllOpen(true)}
       >
         {revokingSessions ? t('revoking') : t('revoke_all_sessions')}
       </Button>
@@ -326,6 +330,7 @@ export function SecurityTab() {
                     color="error"
                     disabled={revokeSession.isPending}
                     onClick={() => revokeSession.mutate(session.id)}
+                    aria-label={t('revoke_session', { defaultValue: 'Revocar sesión' })}
                   >
                     <Logout fontSize="small" />
                   </IconButton>
@@ -335,6 +340,16 @@ export function SecurityTab() {
           ))}
         </List>
       )}
+
+      <ConfirmDialog
+        open={confirmRevokeAllOpen}
+        onClose={() => setConfirmRevokeAllOpen(false)}
+        onConfirm={handleRevokeAllSessions}
+        title={t('revoke_all_title', { defaultValue: 'Revocar todas las sesiones' })}
+        message={t('revoke_sessions_warning')}
+        confirmLabel={t('revoke_all_sessions')}
+        loading={revokingSessions}
+      />
     </Box>
   );
 }

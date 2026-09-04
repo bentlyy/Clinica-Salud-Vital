@@ -4,12 +4,6 @@ import {
   Box,
   Typography,
   Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   Button,
   Chip,
   Dialog,
@@ -21,6 +15,7 @@ import {
   CircularProgress,
 } from '@mui/material';
 import { useTheme, type Theme } from '@mui/material/styles';
+import { DataTable, type DataTableColumn } from '@/shared/components/ui/DataTable';
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import DeleteSweepIcon from '@mui/icons-material/DeleteSweep';
@@ -220,6 +215,102 @@ export const SampleDisposal = memo(function SampleDisposal({
   const getSampleTypeLabel = (value: string) =>
     SAMPLE_TYPE_OPTIONS.find((o) => o.value === value)?.label ?? value;
 
+  const disposalColumns: DataTableColumn<LabSample>[] = [
+    {
+      key: 'sample_code',
+      header: t('code'),
+      render: (sample) => (
+        <Typography
+          variant="body2"
+          sx={{ fontWeight: 600, color: theme.palette.text.primary, fontFamily: 'monospace' }}
+        >
+          {sample.sample_code}
+        </Typography>
+      ),
+    },
+    {
+      key: 'sample_type',
+      header: t('type'),
+      render: (sample) => (
+        <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
+          {getSampleTypeLabel(sample.sample_type)}
+        </Typography>
+      ),
+    },
+    {
+      key: 'reception_time',
+      header: t('receptionDateLabel'),
+      render: (sample) => (
+        <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
+          {sample.reception_time ? formatDate(sample.reception_time) : '—'}
+        </Typography>
+      ),
+    },
+    {
+      key: 'days_stored',
+      header: t('daysStoredLabel'),
+      render: (sample) => {
+        const days = daysStored(sample.reception_time);
+        const colors = getDaysColor(days, theme);
+        return (
+          <Chip
+            icon={<ScheduleIcon sx={{ fontSize: 12 }} />}
+            label={`${days} ${t('days')}`}
+            size="small"
+            sx={{
+              backgroundColor: colors.bg,
+              color: colors.text,
+              fontWeight: 600,
+              fontSize: '0.7rem',
+            }}
+          />
+        );
+      },
+    },
+    {
+      key: 'status',
+      header: t('status'),
+      render: (sample) => (
+        <Chip
+          label={sample.status}
+          size="small"
+          sx={{
+            backgroundColor: theme.palette.action.hover,
+            color: theme.palette.text.secondary,
+            fontWeight: 500,
+            fontSize: '0.7rem',
+            textTransform: 'capitalize',
+          }}
+        />
+      ),
+    },
+    {
+      key: 'actions',
+      header: t('actionsLabel'),
+      align: 'right',
+      render: (sample) => (
+        <Button
+          variant="outlined"
+          size="small"
+          startIcon={<DeleteForeverIcon sx={{ fontSize: 14 }} />}
+          onClick={() => handleOpenDialog(sample)}
+          disabled={isLoading}
+          sx={{
+            borderColor: theme.palette.error.main,
+            color: theme.palette.error.main,
+            fontSize: '0.75rem',
+            '&:hover': {
+              backgroundColor: theme.palette.error.light,
+              borderColor: theme.palette.error.dark,
+            },
+          }}
+        >
+          {t('dispose')}
+        </Button>
+      ),
+    },
+  ];
+
   return (
     <>
       <Paper
@@ -239,119 +330,13 @@ export const SampleDisposal = memo(function SampleDisposal({
 
         <DisposalStats disposedThisMonth={disposedThisMonth} pendingCount={pendingCount} />
 
-        {eligibleSamples.length === 0 ? (
-          <Box
-            sx={{
-              textAlign: 'center',
-              py: 5,
-              backgroundColor: theme.palette.action.hover,
-              borderRadius: '10px',
-              border: `1px dashed ${theme.palette.divider}`,
-            }}
-          >
-            <DeleteSweepIcon sx={{ fontSize: 40, color: theme.palette.text.disabled, mb: 1 }} />
-            <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
-              {t('noEligibleSamples')}
-            </Typography>
-          </Box>
-        ) : (
-          <TableContainer>
-            <Table size="small">
-              <TableHead>
-              <TableRow>
-                <TableCell>{t('code')}</TableCell>
-                <TableCell>{t('type')}</TableCell>
-                <TableCell>{t('receptionDateLabel')}</TableCell>
-                <TableCell>{t('daysStoredLabel')}</TableCell>
-                <TableCell>{t('status')}</TableCell>
-                <TableCell align="right">{t('actionsLabel')}</TableCell>
-              </TableRow>
-              </TableHead>
-              <TableBody>
-                {eligibleSamples.map((sample) => {
-                  const days = daysStored(sample.reception_time);
-                  const colors = getDaysColor(days, theme);
-
-                  return (
-                    <TableRow
-                      key={sample.id}
-                      sx={{
-                        '&:hover': { backgroundColor: theme.palette.action.hover },
-                      }}
-                    >
-                      <TableCell>
-                        <Typography
-                          variant="body2"
-                          sx={{ fontWeight: 600, color: theme.palette.text.primary, fontFamily: 'monospace' }}
-                        >
-                          {sample.sample_code}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
-                          {getSampleTypeLabel(sample.sample_type)}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
-                          {sample.reception_time
-                            ? formatDate(sample.reception_time)
-                            : '—'}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Chip
-                          icon={<ScheduleIcon sx={{ fontSize: 12 }} />}
-                          label={`${days} ${t('days')}`}
-                          size="small"
-                          sx={{
-                            backgroundColor: colors.bg,
-                            color: colors.text,
-                            fontWeight: 600,
-                            fontSize: '0.7rem',
-                          }}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Chip
-                          label={sample.status}
-                          size="small"
-                          sx={{
-                            backgroundColor: theme.palette.action.hover,
-                            color: theme.palette.text.secondary,
-                            fontWeight: 500,
-                            fontSize: '0.7rem',
-                            textTransform: 'capitalize',
-                          }}
-                        />
-                      </TableCell>
-                      <TableCell align="right">
-                        <Button
-                          variant="outlined"
-                          size="small"
-                          startIcon={<DeleteForeverIcon sx={{ fontSize: 14 }} />}
-                          onClick={() => handleOpenDialog(sample)}
-                          disabled={isLoading}
-                          sx={{
-                            borderColor: theme.palette.error.main,
-                            color: theme.palette.error.main,
-                            fontSize: '0.75rem',
-                            '&:hover': {
-                              backgroundColor: theme.palette.error.light,
-                              borderColor: theme.palette.error.dark,
-                            },
-                          }}
-                        >
-                          {t('dispose')}
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        )}
+        <DataTable<LabSample>
+          columns={disposalColumns}
+          data={eligibleSamples}
+          keyExtractor={(sample) => sample.id}
+          emptyTitle={t('noEligibleSamples')}
+          rowsPerPage={eligibleSamples.length || 1}
+        />
       </Paper>
 
       {/* ── Disposal Dialog ──────────────────────────────────────────────── */}

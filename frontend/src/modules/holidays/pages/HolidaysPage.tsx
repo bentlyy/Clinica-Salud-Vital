@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Box,
@@ -12,12 +12,6 @@ import {
   TextField,
   IconButton,
   CircularProgress,
-  Table,
-  TableHead,
-  TableRow,
-  TableCell,
-  TableBody,
-  TableContainer,
   Chip,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
@@ -26,8 +20,9 @@ import DeleteOutline from '@mui/icons-material/DeleteOutline';
 import Close from '@mui/icons-material/Close';
 import EventBusy from '@mui/icons-material/EventBusy';
 import { format } from 'date-fns';
+import { DataTable, type DataTableColumn } from '@/shared/components/ui/DataTable';
 import { useHolidays, useCreateHoliday, useDeleteHoliday } from '../hooks/useHolidays';
-import type { CreateHolidayInput } from '../types/holiday.types';
+import type { CreateHolidayInput, Holiday } from '../types/holiday.types';
 
 export default function HolidaysPage() {
   const { t } = useTranslation('holidays');
@@ -55,10 +50,50 @@ export default function HolidaysPage() {
 
   const today = new Date().toISOString().split('T')[0];
 
+  const columns = useMemo<DataTableColumn<Holiday>[]>(
+    () => [
+      {
+        key: 'holiday_date',
+        header: t('date', { defaultValue: 'Fecha' }),
+        render: (holiday) => format(new Date(`${holiday.holiday_date}T00:00:00`), 'dd/MM/yyyy'),
+      },
+      { key: 'name', header: t('name', { defaultValue: 'Nombre' }) },
+      { key: 'notice_days', header: t('notice', { defaultValue: 'Aviso (días)' }) },
+      {
+        key: 'cancel_bookings',
+        header: t('cancelsBookings', { defaultValue: 'Cancela citas' }),
+        render: (holiday) => (
+          <Chip
+            size="small"
+            label={holiday.cancel_bookings ? t('yes', { defaultValue: 'Sí' }) : t('no', { defaultValue: 'No' })}
+            color={holiday.cancel_bookings ? 'warning' : 'default'}
+            variant="outlined"
+          />
+        ),
+      },
+      {
+        key: 'actions',
+        header: t('actions', { defaultValue: 'Acciones' }),
+        align: 'right',
+        render: (holiday) => (
+          <IconButton
+            size="small"
+            color="error"
+            onClick={() => deleteHoliday.mutate(holiday.id)}
+            disabled={deleteHoliday.isPending}
+          >
+            <DeleteOutline fontSize="small" />
+          </IconButton>
+        ),
+      },
+    ],
+    [t, deleteHoliday],
+  );
+
   return (
     <Box>
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
-        <Typography variant="h4" sx={{ fontWeight: 700, color: theme.palette.text.primary }}>
+        <Typography variant="h4" component="h1" sx={{ fontWeight: 700, color: theme.palette.text.primary }}>
           {t('title', { defaultValue: 'Días feriados de la clínica' })}
         </Typography>
         <Button
@@ -82,61 +117,32 @@ export default function HolidaysPage() {
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
           <CircularProgress />
         </Box>
+      ) : holidays && holidays.length > 0 ? (
+        <DataTable
+          columns={columns}
+          data={holidays}
+          keyExtractor={(holiday) => holiday.id}
+        />
       ) : (
-        <TableContainer component={Paper} sx={{ border: `1px solid ${theme.palette.divider}` }}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>{t('date', { defaultValue: 'Fecha' })}</TableCell>
-                <TableCell>{t('name', { defaultValue: 'Nombre' })}</TableCell>
-                <TableCell>{t('notice', { defaultValue: 'Aviso (días)' })}</TableCell>
-                <TableCell>{t('cancelsBookings', { defaultValue: 'Cancela citas' })}</TableCell>
-                <TableCell align="right">{t('actions', { defaultValue: 'Acciones' })}</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {holidays && holidays.length > 0 ? (
-                holidays.map((h) => (
-                  <TableRow key={h.id}>
-                    <TableCell>{format(new Date(h.holiday_date + 'T00:00:00'), 'dd/MM/yyyy')}</TableCell>
-                    <TableCell>{h.name}</TableCell>
-                    <TableCell>{h.notice_days}</TableCell>
-                    <TableCell>
-                      <Chip
-                        size="small"
-                        label={h.cancel_bookings ? t('yes', { defaultValue: 'Sí' }) : t('no', { defaultValue: 'No' })}
-                        color={h.cancel_bookings ? 'warning' : 'default'}
-                        variant="outlined"
-                      />
-                    </TableCell>
-                    <TableCell align="right">
-                      <IconButton
-                        size="small"
-                        color="error"
-                        onClick={() => deleteHoliday.mutate(h.id)}
-                        disabled={deleteHoliday.isPending}
-                      >
-                        <DeleteOutline fontSize="small" />
-                      </IconButton>
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={5} align="center" sx={{ py: 4 }}>
-                    <EventBusy sx={{ fontSize: 40, color: theme.palette.text.disabled, mb: 1 }} />
-                    <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
-                      {t('empty', { defaultValue: 'No hay feriados registrados' })}
-                    </Typography>
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
+        <Paper
+          sx={{
+            border: `1px solid ${theme.palette.divider}`,
+            borderRadius: '12px',
+            py: 4,
+            px: 2,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+          }}
+        >
+          <EventBusy sx={{ fontSize: 40, color: theme.palette.text.disabled, mb: 1 }} />
+          <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
+            {t('empty', { defaultValue: 'No hay feriados registrados' })}
+          </Typography>
+        </Paper>
       )}
 
-      <Dialog open={open} onClose={() => setOpen(false)} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: '16px', border: `1px solid ${theme.palette.divider}` } }}>
+      <Dialog open={open} onClose={() => setOpen(false)} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: '14px', border: `1px solid ${theme.palette.divider}` } }}>
         <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           {t('add', { defaultValue: 'Agregar feriado' })}
           <IconButton size="small" onClick={() => setOpen(false)}>

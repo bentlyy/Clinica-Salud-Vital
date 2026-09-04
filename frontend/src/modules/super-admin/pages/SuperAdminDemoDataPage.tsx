@@ -4,12 +4,6 @@ import {
   Box,
   Typography,
   Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   Chip,
   Button,
   Grid,
@@ -25,6 +19,7 @@ import DeleteSweep from '@mui/icons-material/DeleteSweep';
 import { useTranslation } from 'react-i18next';
 import { apiClient } from '@/shared/services/api-client';
 import toast from 'react-hot-toast';
+import { DataTable } from '@/shared/components/ui/DataTable';
 
 interface Booking {
   id: number;
@@ -84,11 +79,11 @@ export default function SuperAdminDemoDataPage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
 
   const TENANT_COLORS = [
-    `linear-gradient(135deg, ${theme.palette.primary.main}, #0f766e)`,
-    'linear-gradient(135deg, #3b82f6, #2563eb)',
-    'linear-gradient(135deg, #8b5cf6, #7c3aed)',
-    'linear-gradient(135deg, #f97316, #ea580c)',
-    `linear-gradient(135deg, ${theme.palette.text.secondary}, #4b5563)`,
+    `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.primary.dark})`,
+    `linear-gradient(135deg, ${theme.palette.info.main}, ${theme.palette.info.dark})`,
+    `linear-gradient(135deg, ${theme.palette.custom.purple.light}, ${theme.palette.custom.purple.main})`,
+    `linear-gradient(135deg, ${theme.palette.custom.orange.main}, ${theme.palette.custom.orange.dark})`,
+    `linear-gradient(135deg, ${theme.palette.text.secondary}, ${theme.palette.grey[600]})`,
   ];
   const [records, setRecords] = useState<ClinicalRecord[]>([]);
   const [labReqs, setLabReqs] = useState<LabRequest[]>([]);
@@ -159,7 +154,7 @@ export default function SuperAdminDemoDataPage() {
           </Typography>
         </Box>
         <Box sx={{ display: 'flex', gap: 1 }}>
-          <Button variant="contained" startIcon={<CloudDownload />} onClick={handleLoadAll} sx={{ backgroundColor: theme.palette.primary.main, '&:hover': { backgroundColor: '#0f766e' }, textTransform: 'none' }}>
+          <Button variant="contained" startIcon={<CloudDownload />} onClick={handleLoadAll} sx={{ backgroundColor: theme.palette.primary.main, '&:hover': { backgroundColor: theme.palette.primary.dark }, textTransform: 'none' }}>
             {t('load_all', 'Cargar Todo')}
           </Button>
           <Button variant="contained" color="error" startIcon={<DeleteSweep />} onClick={handleCleanAll} sx={{ textTransform: 'none' }}>
@@ -179,7 +174,7 @@ export default function SuperAdminDemoDataPage() {
           <Grid container spacing={2} sx={{ mb: 4 }}>
             {tenants.map((tenant, index) => (
               <Grid xs={12} sm={6} md={4} key={tenant.id}>
-                <Card sx={{ borderRadius: '12px', border: '1px solid #e5e7eb', overflow: 'hidden' }}>
+                <Card sx={{ borderRadius: '12px', border: `1px solid ${theme.palette.divider}`, overflow: 'hidden' }}>
                   <Box sx={{ height: 6, background: TENANT_COLORS[index % TENANT_COLORS.length] }} />
                   <CardContent sx={{ p: 2.5 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
@@ -212,8 +207,8 @@ export default function SuperAdminDemoDataPage() {
             ))}
           </Grid>
 
-          <Paper sx={{ borderRadius: '12px', border: '1px solid #e5e7eb' }}>
-            <Box sx={{ p: 2.5, borderBottom: '1px solid #e5e7eb' }}>
+          <Paper sx={{ borderRadius: '12px', border: `1px solid ${theme.palette.divider}` }}>
+            <Box sx={{ p: 2.5, borderBottom: `1px solid ${theme.palette.divider}` }}>
               <Typography variant="h6" sx={{ fontWeight: 600 }}>{t('global_data', 'Datos Globales')}</Typography>
               <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>{t('global_data_desc', 'Toda la información del sistema a nivel global')}</Typography>
             </Box>
@@ -222,87 +217,70 @@ export default function SuperAdminDemoDataPage() {
               <Tab value="clinical" label={t('clinicalHistoryCount', { count: records.length })} />
               <Tab value="lab" label={t('examsCount', { count: labReqs.length })} />
             </Tabs>
-            <TableContainer sx={{ p: 0 }}>
-              <Table size="small">
-                <TableHead>
-                  <TableRow sx={{ backgroundColor: '#f9fafb' }}>
-                    {selectedTab === 'bookings' && (
-                      <>
-                        <TableCell sx={{ fontWeight: 600 }}>{t('patient', 'Paciente')}</TableCell>
-                        <TableCell sx={{ fontWeight: 600 }}>{t('rut', 'RUT')}</TableCell>
-                        <TableCell sx={{ fontWeight: 600 }}>{t('doctor', 'Doctor')}</TableCell>
-                        <TableCell sx={{ fontWeight: 600 }}>{t('specialty', 'Especialidad')}</TableCell>
-                        <TableCell sx={{ fontWeight: 600 }}>{t('date', 'Fecha')}</TableCell>
-                        <TableCell sx={{ fontWeight: 600 }}>{t('time', 'Hora')}</TableCell>
-                        <TableCell sx={{ fontWeight: 600 }}>{t('status', 'Estado')}</TableCell>
-                      </>
-                    )}
-                    {selectedTab === 'clinical' && (
-                      <>
-                        <TableCell sx={{ fontWeight: 600 }}>{t('patient', 'Paciente')}</TableCell>
-                        <TableCell sx={{ fontWeight: 600 }}>{t('rut', 'RUT')}</TableCell>
-                        <TableCell sx={{ fontWeight: 600 }}>{t('doctor', 'Doctor')}</TableCell>
-                        <TableCell sx={{ fontWeight: 600 }}>{t('diagnosis', 'Diagnóstico')}</TableCell>
-                        <TableCell sx={{ fontWeight: 600 }}>{t('date', 'Fecha')}</TableCell>
-                        <TableCell sx={{ fontWeight: 600 }}>{t('status', 'Estado')}</TableCell>
-                      </>
-                    )}
-                    {selectedTab === 'lab' && (
-                      <>
-                        <TableCell sx={{ fontWeight: 600 }}>{t('request_number', 'N° Solicitud')}</TableCell>
-                        <TableCell sx={{ fontWeight: 600 }}>{t('patient', 'Paciente')}</TableCell>
-                        <TableCell sx={{ fontWeight: 600 }}>{t('doctor', 'Doctor')}</TableCell>
-                        <TableCell sx={{ fontWeight: 600 }}>{t('priority', 'Prioridad')}</TableCell>
-                        <TableCell sx={{ fontWeight: 600 }}>{t('date', 'Fecha')}</TableCell>
-                        <TableCell sx={{ fontWeight: 600 }}>{t('status', 'Estado')}</TableCell>
-                      </>
-                    )}
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {selectedTab === 'bookings' && bookings.length === 0 && (
-                    <TableRow><TableCell colSpan={7} align="center" sx={{ py: 4, color: 'text.secondary' }}>{t('no_bookings', 'No hay reservas.')}</TableCell></TableRow>
-                  )}
-                  {selectedTab === 'bookings' && bookings.map(b => (
-                    <TableRow key={b.id} hover>
-                      <TableCell>{b.patient_name}</TableCell>
-                      <TableCell>{b.patient_rut || '—'}</TableCell>
-                      <TableCell>{b.doctor_name}</TableCell>
-                      <TableCell>{b.specialty}</TableCell>
-                      <TableCell>{b.date}</TableCell>
-                      <TableCell>{b.time}</TableCell>
-                      <TableCell><Chip label={b.status} size="small" color={statusColor(b.status) as 'success' | 'warning' | 'info' | 'default'} /></TableCell>
-                    </TableRow>
-                  ))}
-                  {selectedTab === 'clinical' && records.length === 0 && (
-                    <TableRow><TableCell colSpan={6} align="center" sx={{ py: 4, color: 'text.secondary' }}>{t('no_records', 'No hay historial clínico.')}</TableCell></TableRow>
-                  )}
-                  {selectedTab === 'clinical' && records.map(r => (
-                    <TableRow key={r.id} hover>
-                      <TableCell>{r.patient_name}</TableCell>
-                      <TableCell>{r.patient_rut || '—'}</TableCell>
-                      <TableCell>{r.doctor_name}</TableCell>
-                      <TableCell>{r.diagnosis || '—'}</TableCell>
-                      <TableCell>{r.created_at?.split('T')[0]}</TableCell>
-                      <TableCell><Chip label={r.status} size="small" color={statusColor(r.status) as 'success' | 'warning' | 'info' | 'default'} /></TableCell>
-                    </TableRow>
-                  ))}
-                  {selectedTab === 'lab' && labReqs.length === 0 && (
-                    <TableRow><TableCell colSpan={6} align="center" sx={{ py: 4, color: 'text.secondary' }}>{t('no_lab', 'No hay exámenes.')}</TableCell></TableRow>
-                  )}
-                  {selectedTab === 'lab' && labReqs.map(r => (
-                    <TableRow key={r.id} hover>
-                      <TableCell>{r.request_number || `#${r.id}`}</TableCell>
-                      <TableCell>{r.patient_name || '—'}</TableCell>
-                      <TableCell>{r.doctor_name || '—'}</TableCell>
-                      <TableCell>{r.priority}</TableCell>
-                      <TableCell>{r.created_at?.split('T')[0]}</TableCell>
-                      <TableCell><Chip label={r.status} size="small" color={statusColor(r.status) as 'success' | 'warning' | 'info' | 'default'} /></TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
+            {selectedTab === 'bookings' && (
+              <DataTable
+                key="bookings"
+                columns={[
+                  { key: 'patient_name', header: t('patient', 'Paciente') },
+                  { key: 'patient_rut', header: t('rut', 'RUT'), render: (b) => b.patient_rut || '—' },
+                  { key: 'doctor_name', header: t('doctor', 'Doctor') },
+                  { key: 'specialty', header: t('specialty', 'Especialidad') },
+                  { key: 'date', header: t('date', 'Fecha') },
+                  { key: 'time', header: t('time', 'Hora') },
+                  {
+                    key: 'status',
+                    header: t('status', 'Estado'),
+                    render: (b) => <Chip label={b.status} size="small" color={statusColor(b.status) as 'success' | 'warning' | 'info' | 'default'} />,
+                  },
+                ]}
+                data={bookings}
+                keyExtractor={(b) => b.id}
+                emptyTitle={t('no_bookings', 'No hay reservas.')}
+                rowsPerPage={Math.max(bookings.length, 1)}
+              />
+            )}
+            {selectedTab === 'clinical' && (
+              <DataTable
+                key="clinical"
+                columns={[
+                  { key: 'patient_name', header: t('patient', 'Paciente') },
+                  { key: 'patient_rut', header: t('rut', 'RUT'), render: (r) => r.patient_rut || '—' },
+                  { key: 'doctor_name', header: t('doctor', 'Doctor') },
+                  { key: 'diagnosis', header: t('diagnosis', 'Diagnóstico'), render: (r) => r.diagnosis || '—' },
+                  { key: 'created_at', header: t('date', 'Fecha'), render: (r) => r.created_at?.split('T')[0] },
+                  {
+                    key: 'status',
+                    header: t('status', 'Estado'),
+                    render: (r) => <Chip label={r.status} size="small" color={statusColor(r.status) as 'success' | 'warning' | 'info' | 'default'} />,
+                  },
+                ]}
+                data={records}
+                keyExtractor={(r) => r.id}
+                emptyTitle={t('no_records', 'No hay historial clínico.')}
+                rowsPerPage={Math.max(records.length, 1)}
+              />
+            )}
+            {selectedTab === 'lab' && (
+              <DataTable
+                key="lab"
+                columns={[
+                  { key: 'request_number', header: t('request_number', 'N° Solicitud'), render: (r) => r.request_number || `#${r.id}` },
+                  { key: 'patient_name', header: t('patient', 'Paciente'), render: (r) => r.patient_name || '—' },
+                  { key: 'doctor_name', header: t('doctor', 'Doctor'), render: (r) => r.doctor_name || '—' },
+                  { key: 'priority', header: t('priority', 'Prioridad') },
+                  { key: 'created_at', header: t('date', 'Fecha'), render: (r) => r.created_at?.split('T')[0] },
+                  {
+                    key: 'status',
+                    header: t('status', 'Estado'),
+                    render: (r) => <Chip label={r.status} size="small" color={statusColor(r.status) as 'success' | 'warning' | 'info' | 'default'} />,
+                  },
+                ]}
+                data={labReqs}
+                keyExtractor={(r) => r.id}
+                emptyTitle={t('no_lab', 'No hay exámenes.')}
+                rowsPerPage={Math.max(labReqs.length, 1)}
+              />
+            )}
           </Paper>
         </>
       )}

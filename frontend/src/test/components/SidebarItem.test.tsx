@@ -1,5 +1,6 @@
 import { render, screen, fireEvent } from '@testing-library/react';
-import { describe, it, expect, vi, afterEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
+import { MemoryRouter } from 'react-router-dom';
 import { AppThemeProvider } from '@/shared/providers/ThemeProvider';
 import { SidebarItem } from '@/shared/components/layout/SidebarItem';
 
@@ -12,28 +13,26 @@ function renderSidebarItem(props: {
   onClick?: (path: string) => void;
   subItems?: { label: string; icon: React.ReactNode; path: string }[];
   locked?: boolean;
-}) {
+}, initialEntries?: string[]) {
   return render(
-    <AppThemeProvider>
-      <SidebarItem
-        icon={props.icon ?? <span>icon</span>}
-        label={props.label ?? 'Dashboard'}
-        path={props.path ?? '/dashboard'}
-        active={props.active ?? false}
-        collapsed={props.collapsed ?? false}
-        onClick={props.onClick ?? vi.fn()}
-        subItems={props.subItems}
-        locked={props.locked}
-      />
-    </AppThemeProvider>,
+    <MemoryRouter initialEntries={initialEntries}>
+      <AppThemeProvider>
+        <SidebarItem
+          icon={props.icon ?? <span>icon</span>}
+          label={props.label ?? 'Dashboard'}
+          path={props.path ?? '/dashboard'}
+          active={props.active ?? false}
+          collapsed={props.collapsed ?? false}
+          onClick={props.onClick ?? vi.fn()}
+          subItems={props.subItems}
+          locked={props.locked}
+        />
+      </AppThemeProvider>
+    </MemoryRouter>,
   );
 }
 
 describe('SidebarItem', () => {
-  afterEach(() => {
-    window.history.pushState({}, '', '/');
-  });
-
   it('renders the label and calls onClick with the path', () => {
     const onClick = vi.fn();
     renderSidebarItem({ label: 'Dashboard', path: '/dashboard', onClick });
@@ -89,12 +88,14 @@ describe('SidebarItem', () => {
   });
 
   it('auto-expands when a child route is active', () => {
-    window.history.pushState({}, '', '/laboratory/a');
-    renderSidebarItem({
-      label: 'Laboratory',
-      path: '/laboratory',
-      subItems: [{ label: 'Sub A', icon: <span>a</span>, path: '/laboratory/a' }],
-    });
+    renderSidebarItem(
+      {
+        label: 'Laboratory',
+        path: '/laboratory',
+        subItems: [{ label: 'Sub A', icon: <span>a</span>, path: '/laboratory/a' }],
+      },
+      ['/laboratory/a'],
+    );
     expect(screen.getByText('Sub A')).toBeInTheDocument();
   });
 

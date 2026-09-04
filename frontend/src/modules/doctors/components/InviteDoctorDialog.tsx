@@ -69,7 +69,7 @@ export function InviteDoctorDialog({ open, onClose, doctor, onSubmit, isPending 
       maxWidth="xs"
       fullWidth
       PaperProps={{
-        sx: { borderRadius: '16px', border: '1px solid #e5e7eb' },
+        sx: { borderRadius: '14px', border: `1px solid ${theme.palette.divider}` },
       }}
     >
       <DialogTitle
@@ -116,7 +116,7 @@ export function InviteDoctorDialog({ open, onClose, doctor, onSubmit, isPending 
               sx={{
                 mb: 2,
                 p: 1.5,
-                backgroundColor: '#f9fafb',
+                backgroundColor: theme.palette.custom.surface.muted,
                 borderRadius: '10px',
                 border: `1px solid ${theme.palette.grey[100]}`,
               }}

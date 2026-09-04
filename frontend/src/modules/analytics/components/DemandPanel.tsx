@@ -24,7 +24,7 @@ export function DemandPanel({ data }: { data: DemandRecord[] }) {
 
   return (
     <Box>
-      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr 1fr 1fr' }, gap: 2, mb: 3 }}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr 1fr' }, gap: 2, mb: 3 }}>
         <StatCard label={t('bookings_30_days')} value={totalBookings} />
         <StatCard label={t('daily_average')} value={avgDaily} />
         <StatCard label={t('peak_day')} value={peakDay} color={theme.palette.warning.main} />

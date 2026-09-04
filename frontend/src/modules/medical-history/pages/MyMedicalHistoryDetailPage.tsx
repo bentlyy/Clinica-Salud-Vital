@@ -9,12 +9,12 @@ import {
   Chip,
   Button,
   Grid,
-  Skeleton,
   Alert,
 } from '@mui/material';
 import ArrowBack from '@mui/icons-material/ArrowBack';
 import Science from '@mui/icons-material/Science';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
+import { LoadingState } from '@/shared/components/ui/LoadingState';
 import { clinicalRecordService } from '../../clinical-records/services/clinical-record.service';
 import { getLabRequests } from '../../laboratory/services/lab.service';
 import type { ClinicalRecord } from '../../clinical-records/types/clinical-record.types';
@@ -48,12 +48,7 @@ export default function MyMedicalHistoryDetailPage() {
     })();
   }, [id]);
 
-  if (loading) return (
-    <Box sx={{ p: 4 }}>
-      <Skeleton variant="rounded" height={60} sx={{ mb: 2, borderRadius: '12px' }} />
-      {[1, 2, 3].map((i) => <Skeleton key={i} variant="rounded" height={120} sx={{ mb: 2, borderRadius: '12px' }} />)}
-    </Box>
-  );
+  if (loading) return <LoadingState message={t('medical_history_detail:loading', 'Cargando detalle...')} />;
   if (error) return <Box sx={{ p: 4 }}><Alert severity="error" sx={{ borderRadius: '10px' }}>{error}</Alert></Box>;
   if (!record) return <Box sx={{ p: 4 }}><Alert severity="info" sx={{ borderRadius: '10px' }}>{t('medical_history_detail:notFound')}</Alert></Box>;
 
@@ -72,7 +67,7 @@ export default function MyMedicalHistoryDetailPage() {
         title={t('medical_history_detail:title')}
         subtitle={`${record.created_at?.split('T')[0]} — ${t('medical_history_detail:doctorLabel', { name: record.doctor_name || t('medical_history_detail:unknownDoctor') })}`}
         action={
-          <Button startIcon={<ArrowBack />} onClick={() => navigate(-1)} sx={{ textTransform: 'none' }}>
+          <Button startIcon={<ArrowBack />} onClick={() => navigate('/medical-history')} sx={{ textTransform: 'none' }}>
             {t('medical_history_detail:back')}
           </Button>
         }
@@ -156,7 +151,7 @@ export default function MyMedicalHistoryDetailPage() {
           <Box key={req.id} sx={{ p: 1.5, mb: 1, border: `1px solid ${theme.palette.custom.surface.sunken}`, borderRadius: '8px' }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
               <Typography variant="body2" sx={{ fontWeight: 600 }}>{req.request_number || `Solicitud #${req.id}`}</Typography>
-              <Chip label={req.status} size="small" sx={{ fontSize: 10, height: 20 }} />
+              <Chip label={req.status} size="small" sx={{ fontSize: 11, height: 20 }} />
             </Box>
             {req.items?.map((item) => (
               <Typography key={item.id} variant="caption" sx={{ color: theme.palette.text.secondary, display: 'block', pl: 1 }}>

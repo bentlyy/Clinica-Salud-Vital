@@ -5,12 +5,6 @@ import {
   Typography,
   Paper,
   TextField,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   Chip,
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
@@ -26,6 +20,7 @@ import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { LoadingState } from '@/shared/components/ui/LoadingState';
 import { ErrorState } from '@/shared/components/ui/ErrorState';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
+import { DataTable, type DataTableColumn } from '@/shared/components/ui/DataTable';
 import { useLabAnalytics } from '../hooks/useLab';
 import { formatCurrency } from '@/shared/utils/localeUtils';
 
@@ -120,6 +115,38 @@ function LabAnalyticsPage() {
     urgent: { lightKey: 'custom.status.warning.bg', colorKey: 'warning.main' },
     emergency: { lightKey: 'custom.status.error.bg', colorKey: 'error.main' },
   };
+
+  const doctorColumns: DataTableColumn<{ doctor_name: string; count: number }>[] = [
+    {
+      key: 'doctor_name',
+      header: t('col_doctor'),
+      render: (d) => (
+        <Typography variant="body2" sx={{ fontWeight: 500, color: theme.palette.text.primary }}>
+          {d.doctor_name}
+        </Typography>
+      ),
+    },
+    {
+      key: 'count',
+      header: t('col_requests'),
+      align: 'right',
+      render: (d) => (
+        <Typography variant="body2" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
+          {d.count}
+        </Typography>
+      ),
+    },
+    {
+      key: 'avg_time_min',
+      header: t('col_avg_time'),
+      align: 'right',
+      render: (d) => (
+        <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
+          {(d as { avg_time_min?: number }).avg_time_min?.toFixed(1) ?? '—'} min
+        </Typography>
+      ),
+    },
+  ];
 
   return (
     <Box>
@@ -388,38 +415,7 @@ function LabAnalyticsPage() {
               {t('requests_by_doctor')}
             </Typography>
             {analytics.by_doctor && analytics.by_doctor.length > 0 ? (
-              <TableContainer>
-                <Table size="small">
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>{t('col_doctor')}</TableCell>
-                      <TableCell align="right">{t('col_requests')}</TableCell>
-                      <TableCell align="right">{t('col_avg_time')}</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {analytics.by_doctor.map((d) => (
-                      <TableRow key={d.doctor_name} hover>
-                        <TableCell>
-                          <Typography variant="body2" sx={{ fontWeight: 500, color: theme.palette.text.primary }}>
-                            {d.doctor_name}
-                          </Typography>
-                        </TableCell>
-                        <TableCell align="right">
-                          <Typography variant="body2" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
-                            {d.count}
-                          </Typography>
-                        </TableCell>
-                        <TableCell align="right">
-                          <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
-                            {(d as { avg_time_min?: number }).avg_time_min?.toFixed(1) ?? '—'} min
-                          </Typography>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
+              <DataTable columns={doctorColumns} data={analytics.by_doctor} keyExtractor={(d) => d.doctor_name} />
             ) : (
               <Typography variant="body2" sx={{ color: theme.palette.text.secondary, textAlign: 'center', py: 3 }}>
                 {t('no_doctor_data')}

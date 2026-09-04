@@ -405,7 +405,7 @@ export const LAB_STATUS_COLORS: Record<LabRequestStatus, string> = {
   validated_doctor: '#10b981',
   signed: '#0d9488',
   delivered: '#065f46',
-  cancelled: '#6b7280',
+  cancelled: '#4b5563',
   rejected: '#ef4444',
   repeated: '#a855f7',
 };
@@ -419,7 +419,7 @@ export const LAB_PRIORITY_LABELS: Record<LabPriority, string> = {
 };
 
 export const LAB_PRIORITY_COLORS: Record<LabPriority, string> = {
-  low: '#6b7280',
+  low: '#4b5563',
   normal: '#3b82f6',
   routine: '#3b82f6',
   urgent: '#f59e0b',
@@ -505,7 +505,7 @@ export const LAB_STATUS_CONFIG: Record<LabRequestStatus, StatusConfig> = {
   validated_doctor:   { label: 'Validado Médico',        color: '#10b981', bgColor: '#ecfdf5' },
   signed:             { label: 'Firmado',                color: '#0d9488', bgColor: '#f0fdfa' },
   delivered:          { label: 'Entregado',              color: '#065f46', bgColor: '#ecfdf5' },
-  cancelled:          { label: 'Cancelado',              color: '#6b7280', bgColor: '#f3f4f6' },
+  cancelled:          { label: 'Cancelado',              color: '#4b5563', bgColor: '#f3f4f6' },
   rejected:           { label: 'Rechazado',              color: '#ef4444', bgColor: '#fef2f2' },
   repeated:           { label: 'Repetido',               color: '#a855f7', bgColor: '#faf5ff' },
 };
@@ -522,7 +522,7 @@ export const LAB_STATUS_OPTIONS: { value: LabRequestStatus | 'all'; label: strin
 ];
 
 export const LAB_PRIORITY_CONFIG: Record<LabPriority, PriorityConfig> = {
-  low:       { label: 'Baja',       color: '#6b7280', bgColor: '#f3f4f6' },
+  low:       { label: 'Baja',       color: '#4b5563', bgColor: '#f3f4f6' },
   normal:    { label: 'Normal',     color: '#3b82f6', bgColor: '#eff6ff' },
   routine:   { label: 'Normal',     color: '#3b82f6', bgColor: '#eff6ff' },
   urgent:    { label: 'Urgente',    color: '#d97706', bgColor: '#fffbeb' },

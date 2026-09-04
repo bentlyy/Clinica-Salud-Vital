@@ -1,12 +1,12 @@
 import { Box, Typography } from '@mui/material';
-import { useTheme } from '@mui/material/styles';
+import { useTheme, type Theme } from '@mui/material/styles';
 import { useTranslation } from 'react-i18next';
 import type { HealthScore } from '../types/super-admin.types';
 
-function scoreColor(score: number) {
-  if (score < 41) return '#dc2626';
-  if (score < 70) return '#f59e0b';
-  return '#10b981';
+function scoreColor(score: number, theme: Theme) {
+  if (score < 41) return theme.palette.error.main;
+  if (score < 70) return theme.palette.warning.main;
+  return theme.palette.success.main;
 }
 
 interface HealthScoreGaugeProps {
@@ -25,7 +25,7 @@ export function HealthScoreGauge({ tenant }: HealthScoreGaugeProps) {
   const theme = useTheme();
   const { t } = useTranslation('super_admin_dashboard');
   const score = tenant.health_score ?? 0;
-  const color = scoreColor(score);
+  const color = scoreColor(score, theme);
 
   const radius = 52;
   const circumference = 2 * Math.PI * radius;
@@ -103,7 +103,7 @@ export function HealthScoreGauge({ tenant }: HealthScoreGaugeProps) {
                   flex: 1,
                   height: 6,
                   borderRadius: '3px',
-                  backgroundColor: theme.palette.mode === 'dark' ? '#374151' : '#f3f4f6',
+                  backgroundColor: theme.palette.custom.surface.sunken,
                   overflow: 'hidden',
                 }}
               >
@@ -112,7 +112,7 @@ export function HealthScoreGauge({ tenant }: HealthScoreGaugeProps) {
                     height: '100%',
                     width: `${Math.min(100, (value / max) * 100)}%`,
                     borderRadius: '3px',
-                    backgroundColor: scoreColor((value / max) * 100),
+                    backgroundColor: scoreColor((value / max) * 100, theme),
                     transition: 'width 0.5s ease',
                   }}
                 />

@@ -554,7 +554,7 @@ function LoginModal({ onClose }: { onClose: () => void }) {
   }, [navigate]);
 
   return (
-    <div className="lm-overlay" onClick={onClose}>
+    <div className="lm-overlay" onClick={onClose} role="dialog" aria-modal="true" aria-labelledby="login-modal-title">
       <div className="lm-card" onClick={(e) => e.stopPropagation()}>
         {/* Left visual panel */}
         <div className="lm-visual">
@@ -580,7 +580,7 @@ function LoginModal({ onClose }: { onClose: () => void }) {
 
           {step === '2fa' ? (
             <>
-              <h1 className="lm-title">{t('login2faTitle')}</h1>
+              <h1 className="lm-title" id="login-modal-title">{t('login2faTitle')}</h1>
               <p className="lm-subtitle">{t('login2faSubtitle')}</p>
               <button className="lm-back" onClick={() => { setStep('login'); setTotp(''); setError(''); }}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
@@ -589,7 +589,7 @@ function LoginModal({ onClose }: { onClose: () => void }) {
             </>
           ) : (
             <>
-              <h1 className="lm-title">{t('loginTitle')}</h1>
+              <h1 className="lm-title" id="login-modal-title">{t('loginTitle')}</h1>
               <p className="lm-subtitle">{t('loginSubtitle')}</p>
             </>
           )}

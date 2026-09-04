@@ -24,7 +24,7 @@ function DetailRow({ icon, label, value }: { icon: React.ReactNode; label: strin
           width: 34,
           height: 34,
           borderRadius: '10px',
-          backgroundColor: theme.palette.mode === 'dark' ? 'rgba(99,102,241,0.15)' : '#eef2ff',
+          backgroundColor: theme.palette.custom.purple.bg,
           color: theme.palette.secondary.main,
           display: 'flex',
           alignItems: 'center',

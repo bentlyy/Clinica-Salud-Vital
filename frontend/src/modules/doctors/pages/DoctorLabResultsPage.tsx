@@ -4,14 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useTheme } from '@mui/material/styles';
 import {
   Box,
-  Paper,
   Typography,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   Chip,
   Button,
   IconButton,
@@ -34,6 +27,7 @@ import Download from '@mui/icons-material/Download';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { LoadingState } from '@/shared/components/ui/LoadingState';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
+import { DataTable, type DataTableColumn } from '@/shared/components/ui/DataTable';
 import { getLabRequests, getLabRequestById, createLabRequest, getLabTests } from '../../laboratory/services/lab.service';
 import { clinicalRecordService } from '../../clinical-records/services/clinical-record.service';
 import { downloadLabOrderPdf } from '@/shared/utils/pdf';
@@ -136,17 +130,82 @@ export default function DoctorLabResultsPage() {
     const map: Record<string, { bg: string; fg: string; label: string }> = {
       pending: { bg: theme.palette.warning.light, fg: theme.palette.warning.main, label: t('lab:statusLabels.pending') },
       received: { bg: theme.palette.info.light, fg: theme.palette.info.main, label: t('lab:statusLabels.received') },
-      processing: { bg: '#fff7ed', fg: '#f97316', label: t('lab:statusLabels.processing') },
-      result_entered: { bg: '#f0fdfa', fg: '#14b8a6', label: t('lab:statusLabels.result_entered') },
-      validated_tech: { bg: '#ecfdf5', fg: '#22c55e', label: t('lab:statusLabels.validated_tech') },
-      validated_doctor: { bg: '#ecfdf5', fg: '#10b981', label: t('lab:statusLabels.validated_doctor') },
-      signed: { bg: '#f0fdfa', fg: theme.palette.primary.main, label: t('lab:statusLabels.signed') },
-      delivered: { bg: '#ecfdf5', fg: '#065f46', label: t('lab:statusLabels.delivered') },
+      processing: { bg: theme.palette.custom.orange.bg, fg: theme.palette.custom.orange.main, label: t('lab:statusLabels.processing') },
+      result_entered: { bg: theme.palette.custom.brand.lightest, fg: theme.palette.custom.brand.main, label: t('lab:statusLabels.result_entered') },
+      validated_tech: { bg: theme.palette.custom.status.success.bg, fg: theme.palette.success.main, label: t('lab:statusLabels.validated_tech') },
+      validated_doctor: { bg: theme.palette.custom.status.success.bg, fg: theme.palette.success.main, label: t('lab:statusLabels.validated_doctor') },
+      signed: { bg: theme.palette.custom.brand.lightest, fg: theme.palette.primary.main, label: t('lab:statusLabels.signed') },
+      delivered: { bg: theme.palette.custom.status.success.bg, fg: theme.palette.success.dark, label: t('lab:statusLabels.delivered') },
       cancelled: { bg: theme.palette.grey[100], fg: theme.palette.text.secondary, label: t('lab:statusLabels.cancelled') },
       rejected: { bg: theme.palette.error.light, fg: theme.palette.error.main, label: t('lab:statusLabels.rejected') },
     };
     return map[status] || { bg: theme.palette.grey[100], fg: theme.palette.text.secondary, label: status };
   };
+
+  const tableColumns: DataTableColumn<LabRequest>[] = [
+    {
+      key: 'test_name',
+      header: t('doctor_lab_results:colRequest'),
+      render: (r) => (
+        <Typography variant="body2" sx={{ fontWeight: 600 }}>
+          {r.items?.[0]?.test_name || r.request_number || `#${r.id}`}
+        </Typography>
+      ),
+    },
+    {
+      key: 'patient_name',
+      header: t('doctor_lab_results:colPatient'),
+      render: (r) => (
+        <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
+          {r.patient_name || r.patient_email || `Paciente #${r.patient_id}`}
+        </Typography>
+      ),
+    },
+    {
+      key: 'doctor_name',
+      header: t('doctor_lab_results:colDoctor'),
+      render: (r) => (
+        <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>{r.doctor_name || '—'}</Typography>
+      ),
+    },
+    {
+      key: 'created_at',
+      header: t('doctor_lab_results:colDate'),
+      render: (r) => (
+        <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>{r.created_at?.split('T')[0] || '—'}</Typography>
+      ),
+    },
+    {
+      key: 'status',
+      header: t('doctor_lab_results:colStatus'),
+      render: (r) => {
+        const st = getStatusConfig(r.status);
+        return <Chip label={st.label} size="small" sx={{ backgroundColor: st.bg, color: st.fg, fontWeight: 600 }} />;
+      },
+    },
+    {
+      key: 'actions',
+      header: t('doctor_lab_results:colActions'),
+      align: 'right',
+      render: (r) => (
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
+          <IconButton size="small" onClick={() => openDetail(r.id)} sx={{ color: theme.palette.text.secondary }} aria-label={t('doctor_lab_results:viewDetail') || 'Ver detalle'}>
+            <Visibility fontSize="small" />
+          </IconButton>
+          <IconButton size="small" onClick={() => downloadLabOrderPdf(r.id)} sx={{ color: theme.palette.info.main }} aria-label={t('doctor_lab_results:downloadPdf') || 'Descargar PDF'}>
+            <Download fontSize="small" />
+          </IconButton>
+          <Button
+            size="small"
+            onClick={() => navigate(`/patient-history?patientId=${r.patient_id}`)}
+            sx={{ textTransform: 'none', fontSize: 12, color: theme.palette.primary.main, ml: 0.5 }}
+          >
+            {t('doctor_lab_results:history')}
+          </Button>
+        </Box>
+      ),
+    },
+  ];
 
   if (loading) return <LoadingState message={t('doctor_lab_results:loadingRequests')} />;
 
@@ -167,65 +226,7 @@ export default function DoctorLabResultsPage() {
       {requests.length === 0 ? (
         <EmptyState title={t('doctor_lab_results:emptyTitle')} message={t('doctor_lab_results:emptyDesc')} action={{ label: t('doctor_lab_results:newRequest'), onClick: () => setNewDialogOpen(true) }} />
       ) : (
-        <Paper sx={{ borderRadius: '14px', border: '1px solid #e5e7eb', overflow: 'hidden' }}>
-          <TableContainer>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>{t('doctor_lab_results:colRequest')}</TableCell>
-                  <TableCell>{t('doctor_lab_results:colPatient')}</TableCell>
-                  <TableCell>{t('doctor_lab_results:colDoctor')}</TableCell>
-                  <TableCell>{t('doctor_lab_results:colDate')}</TableCell>
-                  <TableCell>{t('doctor_lab_results:colStatus')}</TableCell>
-                  <TableCell align="right">{t('doctor_lab_results:colActions')}</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {requests.map((r) => {
-                  const st = getStatusConfig(r.status);
-                  return (
-                    <TableRow key={r.id} hover>
-                      <TableCell>
-                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                          {r.items?.[0]?.test_name || r.request_number || `#${r.id}`}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
-                          {r.patient_name || r.patient_email || `Paciente #${r.patient_id}`}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>{r.doctor_name || '—'}</Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>{r.created_at?.split('T')[0] || '—'}</Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Chip label={st.label} size="small" sx={{ backgroundColor: st.bg, color: st.fg, fontWeight: 600 }} />
-                      </TableCell>
-                      <TableCell align="right">
-                        <IconButton size="small" onClick={() => openDetail(r.id)} sx={{ color: theme.palette.text.secondary }}>
-                          <Visibility fontSize="small" />
-                        </IconButton>
-                        <IconButton size="small" onClick={() => downloadLabOrderPdf(r.id)} sx={{ color: theme.palette.info.main }}>
-                          <Download fontSize="small" />
-                        </IconButton>
-                        <Button
-                          size="small"
-                          onClick={() => navigate(`/patient-history?patientId=${r.patient_id}`)}
-                          sx={{ textTransform: 'none', fontSize: 12, color: theme.palette.primary.main, ml: 0.5 }}
-                        >
-                          {t('doctor_lab_results:history')}
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </Paper>
+        <DataTable columns={tableColumns} data={requests} keyExtractor={(r) => r.id} />
       )}
 
       {/* Detail Dialog */}
@@ -255,7 +256,7 @@ export default function DoctorLabResultsPage() {
                     </Box>
                   ))}
                   {detailRequest.notes && (
-                    <Box sx={{ mt: 2, p: 1.5, backgroundColor: '#f9fafb', borderRadius: '8px' }}>
+                    <Box sx={{ mt: 2, p: 1.5, backgroundColor: theme.palette.custom.surface.muted, borderRadius: '8px' }}>
                       <Typography variant="caption" sx={{ color: theme.palette.text.secondary, fontWeight: 600 }}>{t('doctor_lab_results:notes')}</Typography>
                       <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>{detailRequest.notes}</Typography>
                     </Box>
@@ -321,6 +322,7 @@ export default function DoctorLabResultsPage() {
                   <IconButton
                     onClick={() => setTestIds(testIds.filter((_, i) => i !== idx))}
                     sx={{ color: theme.palette.error.main }}
+                    aria-label={t('doctor_lab_results:removeExam') || 'Quitar examen'}
                   >
                     <Remove />
                   </IconButton>

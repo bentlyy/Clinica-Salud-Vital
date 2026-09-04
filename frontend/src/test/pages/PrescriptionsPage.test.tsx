@@ -200,7 +200,7 @@ describe('PrescriptionsPage', () => {
     expect(mutate).toHaveBeenCalledWith(1);
   });
 
-  it('deletes a prescription after confirming', () => {
+  it('deletes a prescription after confirming', async () => {
     const mutate = vi.fn();
     mutationsMock.remove.mockReturnValue({ mutate, isPending: false });
     listMock.isLoading = false;
@@ -209,19 +209,22 @@ describe('PrescriptionsPage', () => {
 
     openRowMenu();
     fireEvent.click(screen.getByText('Eliminar'));
+    const dialog = await screen.findByRole('dialog');
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Eliminar' }));
     expect(mutate).toHaveBeenCalledWith(1);
   });
 
-  it('does not delete when the confirmation is cancelled', () => {
+  it('does not delete when the confirmation is cancelled', async () => {
     const mutate = vi.fn();
     mutationsMock.remove.mockReturnValue({ mutate, isPending: false });
-    vi.stubGlobal('confirm', vi.fn(() => false));
     listMock.isLoading = false;
     listMock.data = { data: [prescription], total: 1 };
     renderPage();
 
     openRowMenu();
     fireEvent.click(screen.getByText('Eliminar'));
+    const dialog = await screen.findByRole('dialog');
+    fireEvent.click(within(dialog).getByRole('button', { name: /cancel/i }));
     expect(mutate).not.toHaveBeenCalled();
   });
 

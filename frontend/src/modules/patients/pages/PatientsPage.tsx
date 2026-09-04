@@ -1,20 +1,13 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Box,
   Paper,
   Typography,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   Avatar,
   Chip,
   TextField,
   InputAdornment,
-  TablePagination,
   FormControl,
   InputLabel,
   Select,
@@ -28,8 +21,10 @@ import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { LoadingState } from '@/shared/components/ui/LoadingState';
 import { ErrorState } from '@/shared/components/ui/ErrorState';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
+import { DataTable, type DataTableColumn } from '@/shared/components/ui/DataTable';
 import { formatDate } from '@/shared/utils/localeUtils';
 import { usePatientList } from '../hooks/usePatients';
+import type { Patient } from '../types/patient.types';
 
 export default function PatientsPage() {
   const theme = useTheme();
@@ -48,6 +43,89 @@ export default function PatientsPage() {
 
   const patients = data?.data ?? [];
   const total = data?.total ?? 0;
+
+  const columns = useMemo<DataTableColumn<Patient>[]>(
+    () => [
+      {
+        key: 'name',
+        header: t('name'),
+        render: (patient) => (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            <Avatar
+              src={patient.avatar_url}
+              sx={{
+                width: 36,
+                height: 36,
+                backgroundColor: theme.palette.primary.main,
+                fontSize: '0.8rem',
+              }}
+            >
+              {patient.name.charAt(0).toUpperCase()}
+            </Avatar>
+            <Typography variant="body2" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
+              {patient.name}
+            </Typography>
+          </Box>
+        ),
+      },
+      {
+        key: 'email',
+        header: t('emailLabel'),
+        render: (patient) => (
+          <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
+            {patient.email}
+          </Typography>
+        ),
+      },
+      {
+        key: 'phone',
+        header: t('phoneLabel'),
+        render: (patient) => (
+          <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
+            {patient.phone || '—'}
+          </Typography>
+        ),
+      },
+      {
+        key: 'gender',
+        header: t('gender'),
+        render: (patient) => (
+          <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
+            {patient.gender === 'male'
+              ? t('genderFilters.male')
+              : patient.gender === 'female'
+              ? t('genderFilters.female')
+              : patient.gender || '—'}
+          </Typography>
+        ),
+      },
+      {
+        key: 'is_active',
+        header: t('statusLabel'),
+        render: (patient) => (
+          <Chip
+            label={patient.is_active ? t('active') : t('inactive')}
+            size="small"
+            sx={{
+              backgroundColor: patient.is_active ? theme.palette.custom.status.success.bg : theme.palette.custom.status.error.bg,
+              color: patient.is_active ? theme.palette.custom.status.success.text : theme.palette.custom.status.error.text,
+              fontWeight: 600,
+            }}
+          />
+        ),
+      },
+      {
+        key: 'created_at',
+        header: t('colDate', 'Registro'),
+        render: (patient) => (
+          <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
+            {formatDate(patient.created_at)}
+          </Typography>
+        ),
+      },
+    ],
+    [t, theme],
+  );
 
   if (isLoading) return <LoadingState message={t('loading_patients')} />;
   if (error) return <ErrorState error={error as never} onRetry={refetch} />;
@@ -101,92 +179,20 @@ export default function PatientsPage() {
           message={search || genderFilter ? t('noPatientsFiltered') : t('noPatientsEmpty', 'Aún no hay pacientes registrados.')}
         />
       ) : (
-        <Paper sx={{ borderRadius: '14px', border: `1px solid ${theme.palette.divider}`, overflow: 'hidden' }}>
-          <TableContainer>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>{t('name')}</TableCell>
-                  <TableCell>{t('emailLabel')}</TableCell>
-                  <TableCell>{t('phoneLabel')}</TableCell>
-                  <TableCell>{t('gender')}</TableCell>
-                  <TableCell>{t('statusLabel')}</TableCell>
-                  <TableCell>{t('colDate', 'Registro')}</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {patients.map((patient) => (
-                  <TableRow key={patient.id} hover>
-                    <TableCell>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                        <Avatar
-                          src={patient.avatar_url}
-                          sx={{
-                            width: 36,
-                            height: 36,
-                            backgroundColor: theme.palette.primary.main,
-                            fontSize: '0.8rem',
-                          }}
-                        >
-                          {patient.name.charAt(0).toUpperCase()}
-                        </Avatar>
-                        <Typography variant="body2" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
-                          {patient.name}
-                        </Typography>
-                      </Box>
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
-                        {patient.email}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
-                        {patient.phone || '—'}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
-                        {patient.gender === 'male'
-                          ? t('genderFilters.male')
-                          : patient.gender === 'female'
-                          ? t('genderFilters.female')
-                          : patient.gender || '—'}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Chip
-                        label={patient.is_active ? t('active') : t('inactive')}
-                        size="small"
-                        sx={{
-                          backgroundColor: patient.is_active ? theme.palette.custom.status.success.bg : theme.palette.custom.status.error.bg,
-                          color: patient.is_active ? theme.palette.custom.status.success.text : theme.palette.custom.status.error.text,
-                          fontWeight: 600,
-                        }}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
-                        {formatDate(patient.created_at)}
-                      </Typography>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-
-          <TablePagination
-            component="div"
-            count={total}
-            page={page}
-            onPageChange={(_, newPage) => setPage(newPage)}
-            rowsPerPage={rowsPerPage}
-            onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value)); setPage(0); }}
-            rowsPerPageOptions={[5, 10, 25]}
-            labelRowsPerPage={t('rows_per_page', 'Filas por página')}
-          />
-        </Paper>
+        <DataTable
+          columns={columns}
+          data={patients}
+          keyExtractor={(patient) => patient.id}
+          serverSide
+          total={total}
+          page={page}
+          rowsPerPage={rowsPerPage}
+          onPageChange={(newPage) => setPage(newPage)}
+          onRowsPerPageChange={(newLimit) => {
+            setRowsPerPage(newLimit);
+            setPage(0);
+          }}
+        />
       )}
     </MotionDiv>
   );

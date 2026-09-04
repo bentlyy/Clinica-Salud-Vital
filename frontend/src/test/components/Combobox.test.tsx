@@ -36,7 +36,7 @@ describe('Combobox', () => {
 
   it('renders the input with the current value', () => {
     renderCombobox({ value: 'Casa' });
-    expect(screen.getByRole('textbox')).toHaveValue('Casa');
+    expect(screen.getByRole('combobox')).toHaveValue('Casa');
   });
 
   it('renders the placeholder', () => {
@@ -46,22 +46,22 @@ describe('Combobox', () => {
 
   it('shows static options on focus', () => {
     renderCombobox({ options: ['Casa', 'Clinica'] });
-    fireEvent.focus(screen.getByRole('textbox'));
+    fireEvent.focus(screen.getByRole('combobox'));
     expect(screen.getByText('Casa')).toBeInTheDocument();
     expect(screen.getByText('Clinica')).toBeInTheDocument();
   });
 
-  it('selects an option on mousedown', () => {
+  it('selects an option on click', () => {
     const { onChange } = renderCombobox({ options: ['Casa', 'Clinica'] });
-    fireEvent.focus(screen.getByRole('textbox'));
-    fireEvent.mouseDown(screen.getByText('Clinica'));
+    fireEvent.focus(screen.getByRole('combobox'));
+    fireEvent.click(screen.getByText('Clinica'));
     expect(onChange).toHaveBeenCalledWith('Clinica');
   });
 
   it('filters options while typing', async () => {
     const user = userEvent.setup();
     const { onChange } = renderCombobox({ options: ['Casa', 'Hospital'] });
-    const input = screen.getByRole('textbox');
+    const input = screen.getByRole('combobox');
     await user.click(input);
     await user.type(input, 'ca');
     await waitFor(() => {
@@ -73,25 +73,25 @@ describe('Combobox', () => {
 
   it('offers to add a new value not present in the options', () => {
     const { onChange } = renderCombobox({ options: ['Casa'] });
-    const input = screen.getByRole('textbox');
+    const input = screen.getByRole('combobox');
     fireEvent.focus(input);
     fireEvent.change(input, { target: { value: 'Nuevo Valor' } });
     const addOption = screen.getByText(/Agregar/);
     expect(addOption).toBeInTheDocument();
-    fireEvent.mouseDown(addOption);
+    fireEvent.click(addOption);
     expect(onChange).toHaveBeenCalledWith('Nuevo Valor');
   });
 
   it('shows "Sin resultados" when the list is empty', () => {
     renderCombobox({ options: [] });
-    fireEvent.focus(screen.getByRole('textbox'));
+    fireEvent.focus(screen.getByRole('combobox'));
     expect(screen.getByText('Sin resultados')).toBeInTheDocument();
   });
 
   it('loads options from the API when fetchUrl is provided', async () => {
     mockGet.mockResolvedValue({ data: ['Remote A', 'Remote B'] });
     renderCombobox({ fetchUrl: '/api/options' });
-    fireEvent.focus(screen.getByRole('textbox'));
+    fireEvent.focus(screen.getByRole('combobox'));
     await waitFor(() => {
       expect(screen.getByText('Remote A')).toBeInTheDocument();
       expect(screen.getByText('Remote B')).toBeInTheDocument();
@@ -102,7 +102,7 @@ describe('Combobox', () => {
   it('maps API items with name/label fields', async () => {
     mockGet.mockResolvedValue({ data: { items: [{ name: 'X' }, { label: 'Y' }] } });
     renderCombobox({ fetchUrl: '/api/options' });
-    fireEvent.focus(screen.getByRole('textbox'));
+    fireEvent.focus(screen.getByRole('combobox'));
     await waitFor(() => {
       expect(screen.getByText('X')).toBeInTheDocument();
       expect(screen.getByText('Y')).toBeInTheDocument();
@@ -112,7 +112,7 @@ describe('Combobox', () => {
   it('clears options when the API call fails', async () => {
     mockGet.mockRejectedValue(new Error('boom'));
     renderCombobox({ fetchUrl: '/api/options' });
-    fireEvent.focus(screen.getByRole('textbox'));
+    fireEvent.focus(screen.getByRole('combobox'));
     await waitFor(() => {
       expect(screen.getByText('Sin resultados')).toBeInTheDocument();
     });
@@ -120,7 +120,7 @@ describe('Combobox', () => {
 
   it('selects the highlighted option with the Enter key', () => {
     const { onChange } = renderCombobox({ options: ['Casa', 'Clinica'] });
-    const input = screen.getByRole('textbox');
+    const input = screen.getByRole('combobox');
     fireEvent.keyDown(input, { key: 'ArrowDown' }); // opens
     fireEvent.keyDown(input, { key: 'ArrowDown' }); // highlight first
     fireEvent.keyDown(input, { key: 'Enter' });
@@ -129,7 +129,7 @@ describe('Combobox', () => {
 
   it('closes the dropdown with the Escape key', () => {
     renderCombobox({ options: ['Casa'] });
-    const input = screen.getByRole('textbox');
+    const input = screen.getByRole('combobox');
     fireEvent.focus(input);
     expect(screen.getByText('Casa')).toBeInTheDocument();
     fireEvent.keyDown(input, { key: 'Escape' });
@@ -138,7 +138,7 @@ describe('Combobox', () => {
 
   it('respects the disabled prop', () => {
     renderCombobox({ disabled: true });
-    expect(screen.getByRole('textbox')).toBeDisabled();
+    expect(screen.getByRole('combobox')).toBeDisabled();
   });
 
   it('renders the helper text and error state', () => {

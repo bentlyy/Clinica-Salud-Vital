@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '@mui/material/styles';
 import {
@@ -22,13 +22,6 @@ interface HistoryTabProps {
   medicalHistory: FichaMedicalHistoryEntry[];
 }
 
-const STATUS_COLORS: Record<string, { bg: string; color: string }> = {
-  completed: { bg: '#ecfdf5', color: '#059669' },
-  pending: { bg: '#fffbeb', color: '#d97706' },
-  in_progress: { bg: '#eff6ff', color: '#2563eb' },
-  draft: { bg: '#f3f4f6', color: '#6b7280' },
-};
-
 const HISTORY_STATUS_KEYS: Record<string, string> = {
   active: 'historyActive',
   resolved: 'historyResolved',
@@ -41,8 +34,18 @@ export function HistoryTab({ records, medicalHistory }: HistoryTabProps) {
   const { t } = useTranslation();
   const [selectedRecord, setSelectedRecord] = useState<FichaClinicalRecord | null>(null);
 
+  const statusColors: Record<string, { bg: string; color: string }> = useMemo(
+    () => ({
+      completed: { bg: theme.palette.custom.status.success.bg, color: theme.palette.custom.status.success.text },
+      pending: { bg: theme.palette.custom.status.warning.bg, color: theme.palette.custom.status.warning.text },
+      in_progress: { bg: theme.palette.custom.status.info.bg, color: theme.palette.info.main },
+      draft: { bg: theme.palette.custom.surface.muted, color: theme.palette.text.secondary },
+    }),
+    [theme],
+  );
+
   const renderRecordDetail = (r: FichaClinicalRecord) => (
-    <Paper sx={{ p: 3, mb: 3, border: '1px solid #e5e7eb', borderRadius: '12px' }}>
+    <Paper sx={{ p: 3, mb: 3, border: `1px solid ${theme.palette.divider}`, borderRadius: '12px' }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
         <Typography variant="h6" sx={{ fontWeight: 600 }}>
           {t('patient_history:detailTitle', { date: r.created_at?.split('T')[0] })}
@@ -51,8 +54,8 @@ export function HistoryTab({ records, medicalHistory }: HistoryTabProps) {
           label={r.status}
           size="small"
           sx={{
-            backgroundColor: STATUS_COLORS[r.status || '']?.bg || theme.palette.grey[100],
-            color: STATUS_COLORS[r.status || '']?.color || theme.palette.text.secondary,
+            backgroundColor: statusColors[r.status || '']?.bg || theme.palette.grey[100],
+            color: statusColors[r.status || '']?.color || theme.palette.text.secondary,
           }}
         />
       </Box>
@@ -95,7 +98,7 @@ export function HistoryTab({ records, medicalHistory }: HistoryTabProps) {
   );
 
   const renderMedicalHistory = () => (
-    <Paper sx={{ p: 2.5, mb: 3, border: '1px solid #e5e7eb', borderRadius: '12px' }}>
+    <Paper sx={{ p: 2.5, mb: 3, border: `1px solid ${theme.palette.divider}`, borderRadius: '12px' }}>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
         <MedicalInformation sx={{ color: theme.palette.info.main, fontSize: 20 }} />
         <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
@@ -120,8 +123,8 @@ export function HistoryTab({ records, medicalHistory }: HistoryTabProps) {
                   label={t(`patient_ficha:${HISTORY_STATUS_KEYS[entry.status] ?? 'historyActive'}`)}
                   size="small"
                   sx={{
-                    backgroundColor: entry.status === 'resolved' ? '#ecfdf5' : '#fffbeb',
-                    color: entry.status === 'resolved' ? '#059669' : '#d97706',
+                    backgroundColor: entry.status === 'resolved' ? theme.palette.custom.status.success.bg : theme.palette.custom.status.warning.bg,
+                    color: entry.status === 'resolved' ? theme.palette.custom.status.success.text : theme.palette.custom.status.warning.text,
                     fontSize: 11,
                     fontWeight: 600,
                   }}
@@ -151,7 +154,7 @@ export function HistoryTab({ records, medicalHistory }: HistoryTabProps) {
       ) : (
         <>
           {renderMedicalHistory()}
-          <Paper sx={{ border: '1px solid #e5e7eb', borderRadius: '12px' }}>
+          <Paper sx={{ border: `1px solid ${theme.palette.divider}`, borderRadius: '12px' }}>
             {records.length === 0 ? (
               <EmptyState
                 icon={<Description sx={{ fontSize: 48, color: theme.palette.grey[300] }} />}
@@ -161,12 +164,12 @@ export function HistoryTab({ records, medicalHistory }: HistoryTabProps) {
             ) : (
               <List disablePadding>
                 {records.map((r, idx) => {
-                  const st = STATUS_COLORS[r.status || ''] || { bg: theme.palette.grey[100], color: theme.palette.text.secondary };
+                  const st = statusColors[r.status || ''] || { bg: theme.palette.grey[100], color: theme.palette.text.secondary };
                   return (
                     <Box key={r.id}>
                       {idx > 0 && <Divider />}
                       <ListItem
-                        sx={{ cursor: 'pointer', '&:hover': { backgroundColor: '#f0fdfa' } }}
+                        sx={{ cursor: 'pointer', '&:hover': { backgroundColor: theme.palette.custom.brand.lightest } }}
                         onClick={() => setSelectedRecord(r)}
                       >
                         <ListItemText

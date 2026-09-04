@@ -14,8 +14,9 @@ import {
   Checkbox,
   Typography,
   CircularProgress,
+  type SxProps,
 } from '@mui/material';
-import { useTheme } from '@mui/material/styles';
+import { useTheme, type Theme } from '@mui/material/styles';
 import InboxOutlinedIcon from '@mui/icons-material/InboxOutlined';
 
 export interface DataTableColumn<T> {
@@ -31,11 +32,13 @@ interface DataTableProps<T> {
   columns: DataTableColumn<T>[];
   data: T[];
   keyExtractor: (item: T) => string | number;
+  caption?: string;
   loading?: boolean;
   emptyTitle?: string;
   emptyMessage?: string;
   emptyAction?: ReactNode;
   onRowClick?: (item: T) => void;
+  rowSx?: (item: T, index: number) => SxProps<Theme>;
   selectable?: boolean;
   onSelectionChange?: (selected: (string | number)[]) => void;
   total?: number;
@@ -53,11 +56,13 @@ export function DataTable<T>({
   columns,
   data,
   keyExtractor,
+  caption,
   loading = false,
   emptyTitle,
   emptyMessage = '',
   emptyAction,
   onRowClick,
+  rowSx,
   selectable = false,
   onSelectionChange,
   total,
@@ -156,11 +161,16 @@ export function DataTable<T>({
   return (
     <Paper sx={{ border: `1px solid ${theme.palette.divider}`, borderRadius: '12px', overflow: 'hidden' }}>
       <TableContainer>
-        <Table size="small">
+        <Table size="small" role="grid">
+          {caption && (
+            <Box component="caption" sx={{ captionSide: 'top', textAlign: 'left', p: 1, fontWeight: 600, color: theme.palette.text.secondary }}>
+              {caption}
+            </Box>
+          )}
           <TableHead>
             <TableRow sx={{ backgroundColor: theme.palette.custom?.surface?.muted || theme.palette.background.default }}>
               {selectable && (
-                <TableCell padding="checkbox">
+                <TableCell scope="col" padding="checkbox">
                   <Checkbox
                     indeterminate={selected.size > 0 && selected.size < pagedData.length}
                     checked={pagedData.length > 0 && selected.size === pagedData.length}
@@ -172,6 +182,7 @@ export function DataTable<T>({
               {columns.map((col) => (
                 <TableCell
                   key={col.key}
+                  scope="col"
                   align={col.align || 'left'}
                   sx={{ fontWeight: 600, color: theme.palette.text.primary, width: col.width }}
                 >
@@ -215,15 +226,23 @@ export function DataTable<T>({
             ) : (
               pagedData.map((item, idx) => {
                 const id = keyExtractor(item);
+                const rowCustom = rowSx ? rowSx(item, idx) : undefined;
                 return (
                   <TableRow
                     key={id}
                     hover
                     onClick={onRowClick ? () => onRowClick(item) : undefined}
-                    sx={{
-                      cursor: onRowClick ? 'pointer' : 'default',
-                      '&:hover': onRowClick ? { backgroundColor: `${theme.palette.custom?.brand?.lightest || theme.palette.action.hover} !important` } : undefined,
-                    }}
+                    sx={
+                      {
+                        cursor: onRowClick ? 'pointer' : 'default',
+                        '&:hover': onRowClick
+                          ? { backgroundColor: `${theme.palette.custom?.brand?.lightest || theme.palette.action.hover} !important` }
+                          : undefined,
+                        ...(rowCustom && typeof rowCustom === 'object' && !Array.isArray(rowCustom)
+                          ? { ...rowCustom }
+                          : {}),
+                      } as unknown as SxProps<Theme>
+                    }
                   >
                     {selectable && (
                       <TableCell padding="checkbox">

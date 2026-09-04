@@ -29,7 +29,7 @@ export function SpecialtyStatsCards({ specialties, isSuperAdmin, clinicCount = 0
       value: formatNumber(specialties.length),
       icon: <MedicalServices sx={{ fontSize: 20 }} />,
       color: theme.palette.primary.main,
-      bg: theme.palette.mode === 'dark' ? 'rgba(13,148,136,0.15)' : '#f0fdfa',
+      bg: theme.palette.custom.brand.lightest,
     },
     {
       key: 'doctors',
@@ -37,7 +37,7 @@ export function SpecialtyStatsCards({ specialties, isSuperAdmin, clinicCount = 0
       value: formatNumber(totalDoctors),
       icon: <PeopleOutline sx={{ fontSize: 20 }} />,
       color: theme.palette.secondary.main,
-      bg: theme.palette.mode === 'dark' ? 'rgba(99,102,241,0.15)' : '#eef2ff',
+      bg: theme.palette.custom.purple.bg,
     },
     {
       key: 'procedures',
@@ -45,7 +45,7 @@ export function SpecialtyStatsCards({ specialties, isSuperAdmin, clinicCount = 0
       value: formatNumber(totalProcedures),
       icon: <CategoryOutlined sx={{ fontSize: 20 }} />,
       color: theme.palette.info.main,
-      bg: theme.palette.mode === 'dark' ? 'rgba(59,130,246,0.15)' : '#eff6ff',
+      bg: theme.palette.custom.status.info.bg,
     },
   ];
 
@@ -56,7 +56,7 @@ export function SpecialtyStatsCards({ specialties, isSuperAdmin, clinicCount = 0
       value: formatNumber(totalClinics || clinicCount),
       icon: <LocationOnOutlined sx={{ fontSize: 20 }} />,
       color: theme.palette.warning.main,
-      bg: theme.palette.mode === 'dark' ? 'rgba(245,158,11,0.15)' : '#fffbeb',
+      bg: theme.palette.custom.status.warning.bg,
     });
   }
 

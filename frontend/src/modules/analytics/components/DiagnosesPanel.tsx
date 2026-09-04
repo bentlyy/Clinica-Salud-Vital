@@ -24,7 +24,7 @@ export function DiagnosesPanel({ data }: { data: DiagnosisRecord[] }) {
 
       <Paper sx={{ p: 3, border: `1px solid ${theme.palette.divider}` }}>
         <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>{t('main_diagnoses')}</Typography>
-        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr 1fr', md: '1fr 1fr 1fr' }, gap: 2 }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr' }, gap: 2 }}>
           {data.slice(0, 6).map((d) => (
             <Paper key={d.diagnosis} sx={{ p: 2, border: `1px solid ${theme.palette.divider}` }}>
               <Typography variant="body2" sx={{ fontWeight: 600 }}>{d.diagnosis}</Typography>

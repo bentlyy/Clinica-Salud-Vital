@@ -77,10 +77,10 @@ describe('AdminMedicalHistoryPage', () => {
     vi.clearAllMocks();
   });
 
-  it('shows skeletons while loading', () => {
+  it('shows the loading state while loading', () => {
     clinicalRecordService.list.mockReturnValue(new Promise(() => undefined));
     renderPage();
-    expect(document.querySelectorAll('.MuiSkeleton-root').length).toBeGreaterThan(0);
+    expect(document.querySelectorAll('.MuiCircularProgress-root').length).toBeGreaterThan(0);
   });
 
   it('shows the empty state when there are no records', async () => {

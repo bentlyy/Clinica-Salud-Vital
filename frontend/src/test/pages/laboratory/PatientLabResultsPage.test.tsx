@@ -65,7 +65,7 @@ describe('PatientLabResultsPage', () => {
   it('renders the error state when the request fails', async () => {
     api.get.mockRejectedValue(new Error('fail'));
     renderPage();
-    expect(await screen.findByText('Error al cargar resultados')).toBeInTheDocument();
+    expect(await screen.findByText('fail')).toBeInTheDocument();
   });
 
   it('renders the empty state when there are no results', async () => {

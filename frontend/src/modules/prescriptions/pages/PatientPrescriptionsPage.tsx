@@ -9,6 +9,7 @@ import { MotionDiv } from '@/shared/utils/animations';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { LoadingState } from '@/shared/components/ui/LoadingState';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
+import { ErrorState } from '@/shared/components/ui/ErrorState';
 import { apiClient } from '@/shared/services/api-client';
 import { format } from 'date-fns';
 
@@ -47,7 +48,7 @@ export default function PatientPrescriptionsPage() {
   }
 
   if (error) {
-    return <EmptyState title={t('prescriptions:error_loading', 'Error al cargar las recetas')} message="" />;
+    return <ErrorState error={error} />;
   }
 
   if (prescriptions.length === 0) {

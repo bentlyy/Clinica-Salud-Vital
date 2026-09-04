@@ -53,7 +53,7 @@ export default function ClinicalRecordDetailPage() {
             <Button
               variant="outlined"
               startIcon={<ArrowBack />}
-              onClick={() => navigate(-1)}
+              onClick={() => navigate('/clinical-records')}
               sx={{ textTransform: 'none' }}
             >
               {t('back_button')}
@@ -82,7 +82,7 @@ export default function ClinicalRecordDetailPage() {
 
       <MotionDiv initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
         {/* Patient & Doctor Info */}
-        <Paper sx={{ p: 3, mb: 3, border: '1px solid #e5e7eb', boxShadow: 'none' }}>
+        <Paper sx={{ p: 3, mb: 3, border: `1px solid ${theme.palette.divider}`, boxShadow: 'none' }}>
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr 1fr' }, gap: 3 }}>
             <InfoBlock label={t('label_patient')} value={record.patient_name || t('patient_fallback', { id: record.patient_id })} />
             <InfoBlock label={t('label_doctor')} value={record.doctor_name || t('doctor_fallback', { id: record.doctor_id })} />
@@ -96,7 +96,7 @@ export default function ClinicalRecordDetailPage() {
 
         {/* Vitals */}
         {record.vitals && Object.keys(record.vitals).length > 0 && (
-          <Paper sx={{ p: 3, mb: 3, border: '1px solid #e5e7eb', boxShadow: 'none' }}>
+          <Paper sx={{ p: 3, mb: 3, border: `1px solid ${theme.palette.divider}`, boxShadow: 'none' }}>
             <Typography variant="h6" sx={{ fontWeight: 600, color: theme.palette.text.primary, mb: 2 }}>
               {t('section_vitals')}
             </Typography>
@@ -105,7 +105,7 @@ export default function ClinicalRecordDetailPage() {
         )}
 
         {/* Clinical Content */}
-        <Paper sx={{ p: 3, mb: 3, border: '1px solid #e5e7eb', boxShadow: 'none' }}>
+        <Paper sx={{ p: 3, mb: 3, border: `1px solid ${theme.palette.divider}`, boxShadow: 'none' }}>
           <ClinicalSection title={t('section_chief_complaint')} content={record.chief_complaint} />
           <Divider sx={{ my: 2 }} />
           <ClinicalSection title={t('section_diagnosis')} content={record.diagnosis} />
@@ -120,7 +120,7 @@ export default function ClinicalRecordDetailPage() {
         </Paper>
 
         {/* Attachments */}
-        <Paper sx={{ p: 3, border: '1px solid #e5e7eb', boxShadow: 'none' }}>
+        <Paper sx={{ p: 3, border: `1px solid ${theme.palette.divider}`, boxShadow: 'none' }}>
           <AttachmentsList entityType="clinical_record" entityId={record.id} canManage={canEdit} />
         </Paper>
       </MotionDiv>

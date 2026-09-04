@@ -18,6 +18,7 @@ export function EmptyState({ icon, title, message, action }: EmptyStateProps) {
 
   return (
     <Box
+      role="status"
       sx={{
         display: 'flex',
         flexDirection: 'column',

@@ -74,9 +74,9 @@ export function DoctorCard({ doctor, stats, onEdit, onViewSchedule, onInvite, ca
                 sx={{
                   mt: 0.5,
                   fontWeight: 500,
-                  backgroundColor: '#f0fdfa',
+                  backgroundColor: theme.palette.custom.brand.lightest,
                   color: theme.palette.primary.main,
-                  border: '1px solid #ccfbf1',
+                  border: `1px solid ${theme.palette.custom.brand.lighter}`,
                   fontSize: '0.7rem',
                 }}
               />
@@ -93,7 +93,7 @@ export function DoctorCard({ doctor, stats, onEdit, onViewSchedule, onInvite, ca
               gap: 1.5,
               mb: 2,
               p: 1.5,
-              backgroundColor: '#f9fafb',
+              backgroundColor: theme.palette.custom.surface.muted,
               borderRadius: '10px',
             }}
           >
@@ -143,7 +143,7 @@ export function DoctorCard({ doctor, stats, onEdit, onViewSchedule, onInvite, ca
               <IconButton
                 size="small"
                 onClick={() => onEdit(doctor)}
-                sx={{ color: theme.palette.text.secondary, '&:hover': { color: theme.palette.primary.main, backgroundColor: '#f0fdfa' } }}
+                sx={{ color: theme.palette.text.secondary, '&:hover': { color: theme.palette.primary.main, backgroundColor: theme.palette.custom.brand.lightest } }}
               >
                 <Edit fontSize="small" />
               </IconButton>
@@ -153,7 +153,7 @@ export function DoctorCard({ doctor, stats, onEdit, onViewSchedule, onInvite, ca
             <IconButton
               size="small"
               onClick={() => onViewSchedule(doctor)}
-              sx={{ color: theme.palette.text.secondary, '&:hover': { color: theme.palette.info.main, backgroundColor: '#eff6ff' } }}
+              sx={{ color: theme.palette.text.secondary, '&:hover': { color: theme.palette.info.main, backgroundColor: theme.palette.custom.status.info.bg } }}
             >
               <CalendarMonth fontSize="small" />
             </IconButton>
@@ -163,7 +163,7 @@ export function DoctorCard({ doctor, stats, onEdit, onViewSchedule, onInvite, ca
               <IconButton
                 size="small"
                 onClick={() => onInvite(doctor)}
-                sx={{ color: theme.palette.text.secondary, '&:hover': { color: theme.palette.warning.main, backgroundColor: '#fffbeb' } }}
+                sx={{ color: theme.palette.text.secondary, '&:hover': { color: theme.palette.warning.main, backgroundColor: theme.palette.custom.status.warning.bg } }}
               >
                 <Mail fontSize="small" />
               </IconButton>

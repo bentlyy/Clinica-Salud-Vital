@@ -37,6 +37,7 @@ export function ErrorState({ error, onRetry, variant = 'default' }: ErrorStatePr
 
   return (
     <Box
+      role="alert"
       sx={{
         display: 'flex',
         flexDirection: 'column',

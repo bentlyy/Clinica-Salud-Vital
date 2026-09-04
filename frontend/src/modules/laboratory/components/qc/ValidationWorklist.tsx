@@ -4,12 +4,6 @@ import {
   Box,
   Typography,
   Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   Button,
   Tabs,
   Tab,
@@ -17,9 +11,9 @@ import {
   Chip,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
+import { DataTable, type DataTableColumn } from '@/shared/components/ui/DataTable';
 import VerifiedIcon from '@mui/icons-material/Verified';
 import MedicationIcon from '@mui/icons-material/Medication';
-import InboxOutlinedIcon from '@mui/icons-material/InboxOutlined';
 import { StatusBadge } from '../shared/StatusBadge';
 import { type LabRequestItem, type LabRequestStatus } from '../../types/lab.types';
 
@@ -91,6 +85,101 @@ export const ValidationWorklist = memo(function ValidationWorklist({
   const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
     setTabIndex(newValue);
   };
+
+  const columns: DataTableColumn<LabRequestItem>[] = [
+    {
+      key: 'test',
+      header: t('lab:patientLabel', 'Paciente'),
+      render: (item) => (
+        <>
+          <Typography variant="body2" sx={{ fontWeight: 500, color: theme.palette.text.primary }}>
+            {item.test?.name ?? `Test #${item.lab_test_id}`}
+          </Typography>
+          <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
+            Solicitud #{item.lab_request_id}
+          </Typography>
+        </>
+      ),
+    },
+    {
+      key: 'test_name',
+      header: t('lab:test', 'Test'),
+      render: (item) => (
+        <Typography variant="body2" sx={{ color: theme.palette.text.primary }}>
+          {item.test_name ?? item.test?.name ?? '—'}
+        </Typography>
+      ),
+    },
+    {
+      key: 'result_value',
+      header: t('lab:resultValue', 'Resultado'),
+      render: (item) => (
+        <>
+          <Typography variant="body2" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
+            {item.result_value ?? '—'}
+          </Typography>
+          {item.unit && (
+            <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
+              {item.unit}
+            </Typography>
+          )}
+        </>
+      ),
+    },
+    {
+      key: 'reference_range',
+      header: t('lab:referenceRange', 'Referencia'),
+      render: (item) => (
+        <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
+          {item.reference_range ?? '—'}
+        </Typography>
+      ),
+    },
+    {
+      key: 'status',
+      header: t('lab:status', 'Estado'),
+      render: (item) => <StatusBadge status={item.status} />,
+    },
+    {
+      key: 'actions',
+      header: t('lab:actions', 'Acciones'),
+      render: (item) => {
+        const isTechTab = tabIndex === 0;
+        const canValidate =
+          isTechTab
+            ? item.status === 'result_entered'
+            : item.status === 'validated_tech';
+
+        if (!canValidate) return null;
+
+        return (
+          <Button
+            variant="contained"
+            size="small"
+            startIcon={
+              isTechTab ? <VerifiedIcon sx={{ fontSize: 16 }} /> : <MedicationIcon sx={{ fontSize: 16 }} />
+            }
+            onClick={() =>
+              isTechTab
+                ? onValidateTech?.(item.lab_request_id, item.id)
+                : onValidateDoctor?.(item.lab_request_id, item.id)
+            }
+            sx={{
+              background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+              fontSize: '0.75rem',
+              px: 2,
+              py: 0.5,
+              '&:hover': {
+                background: `linear-gradient(135deg, ${theme.palette.primary.dark} 0%, ${theme.palette.custom.brand.darker} 100%)`,
+              },
+            }}
+          >
+            {isTechTab ? 'Validar Técnico' : 'Validar Médico'}
+          </Button>
+        );
+      },
+    },
+  ];
 
   return (
     <Paper
@@ -173,129 +262,14 @@ export const ValidationWorklist = memo(function ValidationWorklist({
         />
       </Tabs>
 
-      {/* Empty state */}
-      {displayItems.length === 0 ? (
-        <Box
-          sx={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            py: 6,
-            gap: 1.5,
-          }}
-        >
-          <InboxOutlinedIcon sx={{ fontSize: 48, color: theme.palette.divider }} />
-          <Typography variant="body2" sx={{ color: theme.palette.text.secondary, fontWeight: 500 }}>
-            No hay resultados pendientes de validación
-          </Typography>
-        </Box>
-      ) : (
-        <TableContainer
-          sx={{
-            border: `1px solid ${theme.palette.custom.surface.sunken}`,
-            borderRadius: '10px',
-            overflow: 'hidden',
-          }}
-        >
-          <Table size="small">
-            <TableHead>
-              <TableRow>
-                {[
-                  t('lab:patientLabel', 'Paciente'),
-                  t('lab:test', 'Test'),
-                  t('lab:resultValue', 'Resultado'),
-                  t('lab:referenceRange', 'Referencia'),
-                  t('lab:status', 'Estado'),
-                  t('lab:actions', 'Acciones'),
-                ].map(
-                  (col) => (
-                    <TableCell key={col}>{col}</TableCell>
-                  ),
-                )}
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {displayItems.map((item) => {
-                const isTechTab = tabIndex === 0;
-                const canValidate =
-                  isTechTab
-                    ? item.status === 'result_entered'
-                    : item.status === 'validated_tech';
-
-                return (
-                  <TableRow
-                    key={item.id}
-                    hover
-                    sx={{
-                      '&:last-child td': { borderBottom: 0 },
-                    }}
-                  >
-                    <TableCell>
-                      <Typography variant="body2" sx={{ fontWeight: 500, color: theme.palette.text.primary }}>
-                        {item.test?.name ?? `Test #${item.lab_test_id}`}
-                      </Typography>
-                      <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
-                        Solicitud #{item.lab_request_id}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="body2" sx={{ color: theme.palette.text.primary }}>
-                        {item.test_name ?? item.test?.name ?? '—'}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="body2" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
-                        {item.result_value ?? '—'}
-                      </Typography>
-                      {item.unit && (
-                        <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
-                          {item.unit}
-                        </Typography>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
-                        {item.reference_range ?? '—'}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <StatusBadge status={item.status} />
-                    </TableCell>
-                    <TableCell>
-                      {canValidate && (
-                        <Button
-                          variant="contained"
-                          size="small"
-                          startIcon={
-                            isTechTab ? <VerifiedIcon sx={{ fontSize: 16 }} /> : <MedicationIcon sx={{ fontSize: 16 }} />
-                          }
-                          onClick={() =>
-                            isTechTab
-                              ? onValidateTech?.(item.lab_request_id, item.id)
-                              : onValidateDoctor?.(item.lab_request_id, item.id)
-                          }
-                          sx={{
-                            background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
-                            fontSize: '0.75rem',
-                            px: 2,
-                            py: 0.5,
-                            '&:hover': {
-                              background: `linear-gradient(135deg, ${theme.palette.primary.dark} 0%, ${theme.palette.custom.brand.darker} 100%)`,
-                            },
-                          }}
-                        >
-                          {isTechTab ? 'Validar Técnico' : 'Validar Médico'}
-                        </Button>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      )}
+      {/* Table */}
+      <DataTable<LabRequestItem>
+        columns={columns}
+        data={displayItems}
+        keyExtractor={(item) => item.id}
+        emptyTitle="No hay resultados pendientes de validación"
+        rowsPerPage={displayItems.length || 1}
+      />
     </Paper>
   );
 });

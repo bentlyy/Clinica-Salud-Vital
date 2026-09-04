@@ -1,17 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Box,
   Paper,
   TextField,
   InputAdornment,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TablePagination,
   Typography,
   IconButton,
   Menu,
@@ -42,6 +35,8 @@ import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { LoadingState } from '@/shared/components/ui/LoadingState';
 import { ErrorState } from '@/shared/components/ui/ErrorState';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
+import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
+import { DataTable, type DataTableColumn } from '@/shared/components/ui/DataTable';
 import { useAuth } from '@/shared/providers/AuthProvider';
 import { getDateFnsLocale } from '@/shared/utils/localeUtils';
 import {
@@ -52,7 +47,7 @@ import {
   useDownloadPrescriptionPdf,
 } from '../hooks/usePrescriptions';
 import { PrescriptionFormDialog } from '../components/PrescriptionFormDialog';
-import type { Prescription, Medication, CreatePrescriptionInput } from '../types/prescription.types';
+import type { Prescription, CreatePrescriptionInput } from '../types/prescription.types';
 
 export default function PrescriptionsPage() {
   const theme = useTheme();
@@ -76,6 +71,7 @@ export default function PrescriptionsPage() {
   const [detailPrescription, setDetailPrescription] = useState<Prescription | null>(null);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [menuPrescription, setMenuPrescription] = useState<Prescription | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Prescription | null>(null);
 
   const { data, isLoading, error, refetch } = useAllPrescriptions();
   const createMutation = useCreatePrescription();
@@ -108,10 +104,15 @@ export default function PrescriptionsPage() {
   };
 
   const handleDelete = (prescription: Prescription) => {
-    if (window.confirm(t('confirmDelete'))) {
-      deleteMutation.mutate(prescription.id);
-    }
+    setDeleteTarget(prescription);
     handleMenuClose();
+  };
+
+  const handleConfirmDelete = () => {
+    if (deleteTarget) {
+      deleteMutation.mutate(deleteTarget.id);
+      setDeleteTarget(null);
+    }
   };
 
   const handleFormClose = () => {
@@ -128,6 +129,73 @@ export default function PrescriptionsPage() {
   };
 
   const isSaving = createMutation.isPending || updateMutation.isPending;
+
+  const columns = useMemo<DataTableColumn<Prescription>[]>(
+    () => [
+      {
+        key: 'patient_name',
+        header: t('patient'),
+        render: (prescription) => (
+          <Typography variant="body2" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
+            {prescription.patient_name || t('patientFallback', { id: prescription.patient_id })}
+          </Typography>
+        ),
+      },
+      {
+        key: 'doctor_name',
+        header: t('doctor'),
+        render: (prescription) => (
+          <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
+            {prescription.doctor_name || t('doctorFallback', { id: prescription.doctor_id })}
+          </Typography>
+        ),
+      },
+      {
+        key: 'medications',
+        header: t('medications'),
+        render: (prescription) => (
+          <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', maxWidth: 300 }}>
+            {prescription.medications.slice(0, 3).map((med) => (
+              <Chip
+                key={`${med.name}-${med.dosage}`}
+                label={`${med.name} ${med.dosage}`}
+                size="small"
+                sx={{ fontSize: '0.7rem', height: 22 }}
+              />
+            ))}
+            {prescription.medications.length > 3 && (
+              <Chip
+                label={`+${prescription.medications.length - 3}`}
+                size="small"
+                variant="outlined"
+                sx={{ fontSize: '0.7rem', height: 22 }}
+              />
+            )}
+          </Box>
+        ),
+      },
+      {
+        key: 'created_at',
+        header: t('date'),
+        render: (prescription) => (
+          <Typography variant="body2" sx={{ color: theme.palette.text.secondary, whiteSpace: 'nowrap' }}>
+            {format(new Date(prescription.created_at), 'dd MMM yyyy', { locale: dateFnsLocale })}
+          </Typography>
+        ),
+      },
+      {
+        key: 'actions',
+        header: tc('actions'),
+        align: 'right',
+        render: (prescription) => (
+          <IconButton size="small" onClick={(e) => handleMenuOpen(e, prescription)} sx={{ color: theme.palette.text.secondary }}>
+            <MoreVert fontSize="small" />
+          </IconButton>
+        ),
+      },
+    ],
+    [t, tc, theme, dateFnsLocale, handleMenuOpen],
+  );
 
   if (isLoading) return <LoadingState message={t('loading')} />;
   if (error) return <ErrorState error={error as never} onRetry={refetch} />;
@@ -198,75 +266,20 @@ export default function PrescriptionsPage() {
         />
       ) : (
         <MotionDiv initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.1 }}>
-          <TableContainer component={Paper} sx={{ border: `1px solid ${theme.palette.divider}`, boxShadow: 'none' }}>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>{t('patient')}</TableCell>
-                  <TableCell>{t('doctor')}</TableCell>
-                  <TableCell>{t('medications')}</TableCell>
-                  <TableCell>{t('date')}</TableCell>
-                  <TableCell align="right">{tc('actions')}</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {prescriptions.map((prescription: Prescription, idx: number) => (
-                  <TableRow key={prescription.id ?? idx} hover sx={{ '&:last-child td': { borderBottom: 0 } }}>
-                    <TableCell>
-                      <Typography variant="body2" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
-                        {prescription.patient_name || t('patientFallback', { id: prescription.patient_id })}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
-                        {prescription.doctor_name || t('doctorFallback', { id: prescription.doctor_id })}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', maxWidth: 300 }}>
-                        {prescription.medications.slice(0, 3).map((med: Medication) => (
-                          <Chip
-                            key={`${med.name}-${med.dosage}`}
-                            label={`${med.name} ${med.dosage}`}
-                            size="small"
-                            sx={{ fontSize: '0.7rem', height: 22 }}
-                          />
-                        ))}
-                        {prescription.medications.length > 3 && (
-                          <Chip
-                            label={`+${prescription.medications.length - 3}`}
-                            size="small"
-                            variant="outlined"
-                            sx={{ fontSize: '0.7rem', height: 22 }}
-                          />
-                        )}
-                      </Box>
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="body2" sx={{ color: theme.palette.text.secondary, whiteSpace: 'nowrap' }}>
-                        {format(new Date(prescription.created_at), 'dd MMM yyyy', { locale: dateFnsLocale })}
-                      </Typography>
-                    </TableCell>
-                    <TableCell align="right">
-                      <IconButton size="small" onClick={(e) => handleMenuOpen(e, prescription)} sx={{ color: theme.palette.text.secondary }}>
-                        <MoreVert fontSize="small" />
-                      </IconButton>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-            <TablePagination
-              component="div"
-              count={total}
-              page={page}
-              onPageChange={(_, p) => setPage(p)}
-              rowsPerPage={rowsPerPage}
-              onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }}
-              labelRowsPerPage={tc('rowsPerPage')}
-              labelDisplayedRows={({ from, to, count }) => `${from}-${to} ${tc('of')} ${count !== -1 ? count : `${tc('moreThan')} ${to}`}`}
-            />
-          </TableContainer>
+          <DataTable
+            columns={columns}
+            data={prescriptions}
+            keyExtractor={(prescription) => prescription.id}
+            serverSide
+            total={total}
+            page={page}
+            rowsPerPage={rowsPerPage}
+            onPageChange={(newPage) => setPage(newPage)}
+            onRowsPerPageChange={(newLimit) => {
+              setRowsPerPage(newLimit);
+              setPage(0);
+            }}
+          />
         </MotionDiv>
       )}
 
@@ -316,7 +329,7 @@ export default function PrescriptionsPage() {
         onClose={() => setDetailPrescription(null)}
         maxWidth="md"
         fullWidth
-        PaperProps={{ sx: { borderRadius: '16px', border: `1px solid ${theme.palette.divider}` } }}
+        PaperProps={{ sx: { borderRadius: '14px', border: `1px solid ${theme.palette.divider}` } }}
       >
         {detailPrescription && (
           <>
@@ -398,6 +411,16 @@ export default function PrescriptionsPage() {
           </>
         )}
       </Dialog>
+
+      <ConfirmDialog
+        open={Boolean(deleteTarget)}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleConfirmDelete}
+        title={t('confirmDelete')}
+        message={t('confirmDeleteMessage', { defaultValue: '¿Deseas eliminar esta receta? Esta acción no se puede deshacer.' })}
+        confirmLabel={t('delete', { defaultValue: 'Eliminar' })}
+        loading={deleteMutation.isPending}
+      />
     </Box>
   );
 }
