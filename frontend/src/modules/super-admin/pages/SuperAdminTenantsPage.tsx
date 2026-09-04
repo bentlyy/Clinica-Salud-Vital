@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link as RouterLink } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '@mui/material/styles';
 import {
@@ -152,7 +153,20 @@ export default function SuperAdminTenantsPage() {
               key: 'name',
               header: t('col_name'),
               render: (tenant) => (
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                <Box
+                  component={RouterLink}
+                  to={`/tenants/${tenant.id}`}
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1.5,
+                    width: 'fit-content',
+                    textDecoration: 'none',
+                    color: 'inherit',
+                    cursor: 'pointer',
+                    '&:hover': { color: theme.palette.primary.main },
+                  }}
+                >
                   <Avatar
                     src={tenant.logo_url}
                     sx={{
@@ -164,7 +178,7 @@ export default function SuperAdminTenantsPage() {
                   >
                     {tenant.name.charAt(0).toUpperCase()}
                   </Avatar>
-                  <Typography variant="body2" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
+                  <Typography variant="body2" sx={{ fontWeight: 600, color: 'inherit' }}>
                     {tenant.name}
                   </Typography>
                 </Box>
