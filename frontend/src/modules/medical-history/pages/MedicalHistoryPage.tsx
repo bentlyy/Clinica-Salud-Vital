@@ -266,7 +266,7 @@ export default function MedicalHistoryPage() {
               placeholder={t('search_placeholder')}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              sx={{ flex: 1, minWidth: 200 }}
+              sx={{ flex: { xs: '1 1 100%', md: 1 }, minWidth: { xs: '100%', md: 200 } }}
               slotProps={{
                 input: {
                   startAdornment: (

@@ -165,7 +165,7 @@ function LabRequestsPageInner() {
                 ),
               },
             }}
-            sx={{ minWidth: 250 }}
+            sx={{ flex: { xs: '1 1 100%', md: 1 }, minWidth: { xs: '100%', md: 250 } }}
           />
           <TextField
             select
@@ -176,7 +176,7 @@ function LabRequestsPageInner() {
               setStatusFilter(e.target.value as LabRequestStatus | 'all');
               setPage(0);
             }}
-            sx={{ minWidth: 140 }}
+            sx={{ minWidth: { xs: '100%', md: 140 } }}
           >
             {LAB_STATUS_OPTIONS.map((opt) => (
               <MenuItem key={opt.value} value={opt.value}>
@@ -193,7 +193,7 @@ function LabRequestsPageInner() {
               setPriorityFilter(e.target.value as LabPriority | 'all');
               setPage(0);
             }}
-            sx={{ minWidth: 140 }}
+            sx={{ minWidth: { xs: '100%', md: 140 } }}
           >
             {LAB_PRIORITY_OPTIONS.map((opt) => (
               <MenuItem key={opt.value} value={opt.value}>

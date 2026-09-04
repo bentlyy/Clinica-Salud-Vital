@@ -67,7 +67,7 @@ export default function PatientsPage() {
             placeholder={t('searchPlaceholder', 'Buscar por nombre, email...')}
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(0); }}
-            sx={{ flex: 1, minWidth: 250 }}
+            sx={{ flex: { xs: '1 1 100%', md: 1 }, minWidth: { xs: '100%', md: 250 } }}
             slotProps={{
               input: {
                 startAdornment: (
@@ -78,7 +78,7 @@ export default function PatientsPage() {
               },
             }}
           />
-          <FormControl size="small" sx={{ minWidth: 150 }}>
+          <FormControl size="small" sx={{ minWidth: { xs: '100%', md: 150 } }}>
             <InputLabel>{t('gender')}</InputLabel>
             <Select
               value={genderFilter}

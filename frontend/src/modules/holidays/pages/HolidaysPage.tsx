@@ -136,14 +136,14 @@ export default function HolidaysPage() {
         </TableContainer>
       )}
 
-      <Dialog open={open} onClose={() => setOpen(false)} PaperProps={{ sx: { borderRadius: '16px', border: `1px solid ${theme.palette.divider}` } }}>
+      <Dialog open={open} onClose={() => setOpen(false)} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: '16px', border: `1px solid ${theme.palette.divider}` } }}>
         <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           {t('add', { defaultValue: 'Agregar feriado' })}
           <IconButton size="small" onClick={() => setOpen(false)}>
             <Close fontSize="small" />
           </IconButton>
         </DialogTitle>
-        <DialogContent sx={{ pt: 2, width: 420 }}>
+        <DialogContent sx={{ pt: 2, width: '100%' }}>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <TextField
               type="date"
