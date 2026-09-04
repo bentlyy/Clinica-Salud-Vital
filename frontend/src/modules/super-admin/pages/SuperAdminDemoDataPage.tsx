@@ -173,7 +173,7 @@ export default function SuperAdminDemoDataPage() {
         <>
           <Grid container spacing={2} sx={{ mb: 4 }}>
             {tenants.map((tenant, index) => (
-              <Grid xs={12} sm={6} md={4} key={tenant.id}>
+              <Grid item xs={12} sm={6} md={4} key={tenant.id}>
                 <Card sx={{ borderRadius: '12px', border: `1px solid ${theme.palette.divider}`, overflow: 'hidden' }}>
                   <Box sx={{ height: 6, background: TENANT_COLORS[index % TENANT_COLORS.length] }} />
                   <CardContent sx={{ p: 2.5 }}>

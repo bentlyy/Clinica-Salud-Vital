@@ -106,7 +106,7 @@ export default function SuperAdminTenantDetailPage() {
       </Typography>
       <Grid container spacing={3} sx={{ mb: 3 }}>
         {stats.map((s) => (
-          <Grid xs={6} sm={4} md={2} key={s.label}>
+          <Grid item xs={6} sm={4} md={2} key={s.label}>
             <Paper sx={{ p: 2, textAlign: 'center', border: `1px solid ${theme.palette.divider}`, borderRadius: '12px' }}>
               <Typography sx={{ color: s.color, mb: 0.5 }}>{s.icon}</Typography>
               <Typography variant="h5" sx={{ fontWeight: 700, color: theme.palette.text.primary }}>{s.value}</Typography>
