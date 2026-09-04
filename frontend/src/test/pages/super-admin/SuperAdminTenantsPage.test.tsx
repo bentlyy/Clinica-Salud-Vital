@@ -171,6 +171,12 @@ describe('SuperAdminTenantsPage', () => {
     expect(screen.getAllByText('Activa').length).toBeGreaterThanOrEqual(2);
   });
 
+  it('navigates to the tenant detail when the clinic name is clicked', () => {
+    renderPage();
+    expect(screen.getByRole('link', { name: /Clínica t1/ })).toHaveAttribute('href', '/tenants/t1');
+    expect(screen.getByRole('link', { name: /Clínica t2/ })).toHaveAttribute('href', '/tenants/t2');
+  });
+
   it('shows the empty state with a CTA when there are no tenants', () => {
     mockUseTenantList.mockReturnValue({
       data: { data: [], total: 0, page: 1, limit: 10, totalPages: 0 },
