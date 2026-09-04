@@ -441,20 +441,18 @@ describe('doctorService.verifyInviteToken', () => {
 
 describe('doctorService.listTenantUsers', () => {
   it('returns paginated users with totalPages', async () => {
-    mockQuery.mockResolvedValueOnce({ rows: [{ total: '25' }] });
-    mockQuery.mockResolvedValueOnce({ rows: [{ id: 1 }, { id: 2 }] });
+    mockQuery.mockResolvedValueOnce({ rows: [{ id: 1, total: 25 }, { id: 2, total: 25 }] });
 
     const result = await doctorService.listTenantUsers('t1', 3, 10);
 
     expect(result.data).toHaveLength(2);
     expect(result.pagination).toEqual({ page: 3, limit: 10, total: 25, totalPages: 3 });
     // params: [tenantId, limit, offset]
-    expect(mockQuery.mock.calls[1][1]).toEqual(['t1', 10, 20]);
+    expect(mockQuery.mock.calls[0][1]).toEqual(['t1', 10, 20]);
   });
 
   it('filters by role', async () => {
-    mockQuery.mockResolvedValueOnce({ rows: [{ total: '1' }] });
-    mockQuery.mockResolvedValueOnce({ rows: [{ id: 1, role: 'doctor' }] });
+    mockQuery.mockResolvedValueOnce({ rows: [{ id: 1, role: 'doctor', total: 1 }] });
 
     await doctorService.listTenantUsers('t1', 1, 20, { role: 'doctor' });
 
@@ -463,8 +461,7 @@ describe('doctorService.listTenantUsers', () => {
   });
 
   it('filters by search term', async () => {
-    mockQuery.mockResolvedValueOnce({ rows: [{ total: '1' }] });
-    mockQuery.mockResolvedValueOnce({ rows: [{ id: 1, name: 'Ana' }] });
+    mockQuery.mockResolvedValueOnce({ rows: [{ id: 1, name: 'Ana', total: 1 }] });
 
     await doctorService.listTenantUsers('t1', 1, 20, { search: 'ana' });
 
@@ -473,16 +470,19 @@ describe('doctorService.listTenantUsers', () => {
   });
 
   it('combines role and search filters with correct param indices', async () => {
-    mockQuery.mockResolvedValueOnce({ rows: [{ total: '5' }] });
-    mockQuery.mockResolvedValueOnce({ rows: [] });
+    mockQuery
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [{ total: '5' }] });
 
     await doctorService.listTenantUsers('t1', 1, 20, { role: 'doctor', search: 'ana' });
 
     expect(mockQuery.mock.calls[0][0]).toContain('u.role = $2');
     expect(mockQuery.mock.calls[0][0]).toContain('ILIKE $3');
     expect(mockQuery.mock.calls[0][1].slice(0, 3)).toEqual(['t1', 'doctor', '%ana%']);
+    expect(mockQuery.mock.calls[0][1].slice(3)).toEqual([20, 0]);
+    expect(mockQuery.mock.calls[1][0]).toContain('COUNT(*)');
     expect(mockQuery.mock.calls[1][1].slice(0, 3)).toEqual(['t1', 'doctor', '%ana%']);
-    expect(mockQuery.mock.calls[1][1].slice(3)).toEqual([20, 0]);
+    expect(mockQuery.mock.calls[1][1]).toHaveLength(3);
   });
 });
 

@@ -142,10 +142,9 @@ describe('bookingService.createBooking', () => {
 describe('bookingService.getBookingsByUser', () => {
   it('returns bookings for user', async () => {
     const mockBookings = [
-      { id: 1, date: '2025-01-15', time: '10:00', doctor_name: 'Dr. Test' },
+      { id: 1, date: '2025-01-15', time: '10:00', doctor_name: 'Dr. Test', total: 1 },
     ];
     mockQuery.mockResolvedValueOnce({ rows: mockBookings });
-    mockQuery.mockResolvedValueOnce({ rows: [{ count: '1' }] });
 
     const result = await bookingService.getBookingsByUser(1);
 
@@ -154,8 +153,7 @@ describe('bookingService.getBookingsByUser', () => {
   });
 
   it('returns bookings for user with tenant_id', async () => {
-    mockQuery.mockResolvedValueOnce({ rows: [{ id: 1 }] });
-    mockQuery.mockResolvedValueOnce({ rows: [{ count: '1' }] });
+    mockQuery.mockResolvedValueOnce({ rows: [{ id: 1, total: 1 }] });
 
     const result = await bookingService.getBookingsByUser(1, { page: 1, limit: 20 }, 'tenant-1');
 
@@ -168,9 +166,8 @@ describe('bookingService.getBookingsByUser', () => {
 
   it('filters by status and includes cancel metadata', async () => {
     mockQuery.mockResolvedValueOnce({
-      rows: [{ id: 1, status: 'cancelled', cancel_reason: 'Enfermo', cancelled_at: '2026-08-01T10:00:00.000Z' }],
+      rows: [{ id: 1, status: 'cancelled', cancel_reason: 'Enfermo', cancelled_at: '2026-08-01T10:00:00.000Z', total: 1 }],
     });
-    mockQuery.mockResolvedValueOnce({ rows: [{ count: '1' }] });
 
     const result = await bookingService.getBookingsByUser(1, { page: 1, limit: 20, status: 'cancelled' }, 'tenant-1');
 
@@ -179,10 +176,6 @@ describe('bookingService.getBookingsByUser', () => {
     expect(mockQuery).toHaveBeenCalledWith(
       expect.stringContaining('booking_status_history'),
       [1, 20, 0, 'tenant-1', 'cancelled']
-    );
-    expect(mockQuery).toHaveBeenCalledWith(
-      expect.stringContaining('COUNT(*)'),
-      [1, 'tenant-1', 'cancelled']
     );
   });
 });
@@ -362,10 +355,9 @@ describe('bookingService.getAvailableSlots', () => {
 describe('bookingService.getBookingsByDoctor', () => {
   it('returns bookings for doctor', async () => {
     const mockBookings = [
-      { id: 1, date: '2025-01-15', time: '10:00', patient_email: 'patient@test.com' },
+      { id: 1, date: '2025-01-15', time: '10:00', patient_email: 'patient@test.com', total: 1 },
     ];
     mockQuery.mockResolvedValueOnce({ rows: mockBookings });
-    mockQuery.mockResolvedValueOnce({ rows: [{ count: '1' }] });
 
     const result = await bookingService.getBookingsByDoctor(1);
 
@@ -374,8 +366,7 @@ describe('bookingService.getBookingsByDoctor', () => {
   });
 
   it('returns bookings for doctor with tenant_id', async () => {
-    mockQuery.mockResolvedValueOnce({ rows: [{ id: 1 }] });
-    mockQuery.mockResolvedValueOnce({ rows: [{ count: '1' }] });
+    mockQuery.mockResolvedValueOnce({ rows: [{ id: 1, total: 1 }] });
 
     const result = await bookingService.getBookingsByDoctor(1, { page: 1, limit: 50 }, 'tenant-1');
 
@@ -387,8 +378,7 @@ describe('bookingService.getBookingsByDoctor', () => {
   });
 
   it('filters by status with tenant_id', async () => {
-    mockQuery.mockResolvedValueOnce({ rows: [{ id: 1, status: 'no_show' }] });
-    mockQuery.mockResolvedValueOnce({ rows: [{ count: '1' }] });
+    mockQuery.mockResolvedValueOnce({ rows: [{ id: 1, status: 'no_show', total: 1 }] });
 
     const result = await bookingService.getBookingsByDoctor(1, { page: 1, limit: 50, status: 'no_show' }, 'tenant-1');
 
@@ -403,10 +393,9 @@ describe('bookingService.getBookingsByDoctor', () => {
 describe('bookingService.getAllBookings', () => {
   it('returns paginated bookings', async () => {
     const mockBookings = [
-      { id: 1, date: '2025-01-15', time: '10:00', doctor_name: 'Dr. Test' },
+      { id: 1, date: '2025-01-15', time: '10:00', doctor_name: 'Dr. Test', total: 1 },
     ];
     mockQuery.mockResolvedValueOnce({ rows: mockBookings });
-    mockQuery.mockResolvedValueOnce({ rows: [{ count: '1' }] });
 
     const result = await bookingService.getAllBookings({ page: 1, limit: 50 });
 
@@ -415,8 +404,7 @@ describe('bookingService.getAllBookings', () => {
   });
 
   it('returns paginated bookings with tenant_id', async () => {
-    mockQuery.mockResolvedValueOnce({ rows: [{ id: 1, date: '2025-01-15' }] });
-    mockQuery.mockResolvedValueOnce({ rows: [{ count: '1' }] });
+    mockQuery.mockResolvedValueOnce({ rows: [{ id: 1, date: '2025-01-15', total: 1 }] });
 
     const result = await bookingService.getAllBookings({ page: 1, limit: 10 }, 'tenant-1');
 
@@ -429,7 +417,7 @@ describe('bookingService.getAllBookings', () => {
 
   it('enforces Math.min(limit, 100) when limit exceeds 100', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [] });
-    mockQuery.mockResolvedValueOnce({ rows: [{ count: '0' }] });
+    mockQuery.mockResolvedValueOnce({ rows: [{ total: '0' }] });
 
     const result = await bookingService.getAllBookings({ page: 1, limit: 200 });
 
@@ -439,7 +427,7 @@ describe('bookingService.getAllBookings', () => {
 
   it('enforces Math.max(1, page) when page is 0 or negative', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [] });
-    mockQuery.mockResolvedValueOnce({ rows: [{ count: '0' }] });
+    mockQuery.mockResolvedValueOnce({ rows: [{ total: '0' }] });
 
     const result = await bookingService.getAllBookings({ page: -1, limit: 10 });
 
@@ -448,7 +436,7 @@ describe('bookingService.getAllBookings', () => {
 
   it('uses default limit of 100 when limit is non-integer', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [] });
-    mockQuery.mockResolvedValueOnce({ rows: [{ count: '0' }] });
+    mockQuery.mockResolvedValueOnce({ rows: [{ total: '0' }] });
 
     /** @type {any} */
     const badPage = 'invalid';
@@ -459,7 +447,7 @@ describe('bookingService.getAllBookings', () => {
 
   it('uses default page of 1 when page is non-integer', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [] });
-    mockQuery.mockResolvedValueOnce({ rows: [{ count: '0' }] });
+    mockQuery.mockResolvedValueOnce({ rows: [{ total: '0' }] });
 
     /** @type {any} */
     const badLimit = 'invalid';
@@ -470,7 +458,7 @@ describe('bookingService.getAllBookings', () => {
 
   it('enforces Math.min(limit, 100) with tenant_id', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [] });
-    mockQuery.mockResolvedValueOnce({ rows: [{ count: '5' }] });
+    mockQuery.mockResolvedValueOnce({ rows: [{ total: '5' }] });
 
     const result = await bookingService.getAllBookings({ page: 1, limit: 999 }, 'tenant-1');
 
@@ -482,8 +470,7 @@ describe('bookingService.getAllBookings', () => {
   });
 
   it('filters by status', async () => {
-    mockQuery.mockResolvedValueOnce({ rows: [{ id: 1, status: 'cancelled' }] });
-    mockQuery.mockResolvedValueOnce({ rows: [{ count: '1' }] });
+    mockQuery.mockResolvedValueOnce({ rows: [{ id: 1, status: 'cancelled', total: 1 }] });
 
     const result = await bookingService.getAllBookings({ page: 1, limit: 10, status: 'cancelled' }, 'tenant-1');
 

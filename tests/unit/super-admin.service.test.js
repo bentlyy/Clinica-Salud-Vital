@@ -41,9 +41,12 @@ import {
 
 describe('listTenants', () => {
   it('returns paginated tenants', async () => {
-    mockQuery
-      .mockResolvedValueOnce({ rows: [{ total: 3 }] })
-      .mockResolvedValueOnce({ rows: [{ id: 't1', name: 'Test' }, { id: 't2', name: 'Test 2' }] });
+    mockQuery.mockResolvedValueOnce({
+      rows: [
+        { id: 't1', name: 'Test', total: 3 },
+        { id: 't2', name: 'Test 2', total: 3 },
+      ],
+    });
 
     const result = await listTenants(1, 2);
     expect(result.pagination.total).toBe(3);
@@ -52,18 +55,14 @@ describe('listTenants', () => {
   });
 
   it('filters by active status', async () => {
-    mockQuery
-      .mockResolvedValueOnce({ rows: [{ total: 1 }] })
-      .mockResolvedValueOnce({ rows: [{ id: 't1', name: 'Active Tenant' }] });
+    mockQuery.mockResolvedValueOnce({ rows: [{ id: 't1', name: 'Active Tenant', total: 1 }] });
 
     await listTenants(1, 20, { active: true });
     expect(mockQuery.mock.calls[0][1]).toContain(true);
   });
 
   it('searches by name/id/domain', async () => {
-    mockQuery
-      .mockResolvedValueOnce({ rows: [{ total: 1 }] })
-      .mockResolvedValueOnce({ rows: [{ id: 't1' }] });
+    mockQuery.mockResolvedValueOnce({ rows: [{ id: 't1', total: 1 }] });
 
     await listTenants(1, 20, { search: 'clinic' });
     const params = mockQuery.mock.calls[0][1];
@@ -72,8 +71,8 @@ describe('listTenants', () => {
 
   it('returns empty result when no tenants', async () => {
     mockQuery
-      .mockResolvedValueOnce({ rows: [{ total: 0 }] })
-      .mockResolvedValueOnce({ rows: [] });
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [{ total: 0 }] });
 
     const result = await listTenants();
     expect(result.data).toEqual([]);
@@ -157,9 +156,7 @@ describe('deleteTenant', () => {
 
 describe('listUsers', () => {
   it('returns paginated users', async () => {
-    mockQuery
-      .mockResolvedValueOnce({ rows: [{ total: 5 }] })
-      .mockResolvedValueOnce({ rows: [{ id: 1, email: 'a@b.com', name: 'User' }] });
+    mockQuery.mockResolvedValueOnce({ rows: [{ id: 1, email: 'a@b.com', name: 'User', total: 5 }] });
 
     const result = await listUsers(1, 10);
     expect(result.pagination.total).toBe(5);
@@ -167,18 +164,14 @@ describe('listUsers', () => {
   });
 
   it('filters by tenantId', async () => {
-    mockQuery
-      .mockResolvedValueOnce({ rows: [{ total: 1 }] })
-      .mockResolvedValueOnce({ rows: [{ id: 1 }] });
+    mockQuery.mockResolvedValueOnce({ rows: [{ id: 1, total: 1 }] });
 
     await listUsers(1, 10, { tenantId: 't1' });
     expect(mockQuery.mock.calls[0][1]).toContain('t1');
   });
 
   it('filters by role', async () => {
-    mockQuery
-      .mockResolvedValueOnce({ rows: [{ total: 1 }] })
-      .mockResolvedValueOnce({ rows: [{ id: 1 }] });
+    mockQuery.mockResolvedValueOnce({ rows: [{ id: 1, total: 1 }] });
 
     await listUsers(1, 10, { role: 'admin' });
     expect(mockQuery.mock.calls[0][1]).toContain('admin');
