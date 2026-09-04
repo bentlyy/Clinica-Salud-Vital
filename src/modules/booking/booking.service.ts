@@ -13,6 +13,8 @@ import { notifyWaitlistForSlot } from '../waitlist/waitlist.service.js';
 import { createNotification } from '../notifications/notification.service.js';
 import { PaginationParams, PaginatedResponse } from '../../types/index.js';
 
+const MAX_PAGE_LIMIT = 100;
+
 interface BookingInput {
   doctor_id: number;
   user_id: number;
@@ -292,7 +294,7 @@ export const cancelBookingSeries = async (
 
 export const getAllBookings = async ({ page = 1, limit = 100, status, start_date, end_date }: Partial<PaginationParams & { status?: string; start_date?: string; end_date?: string }> = {}, tenantId?: string): Promise<PaginatedResponse<unknown>> => {
   const safePage = Math.max(1, Number.isInteger(page) ? page : 1);
-  const safeLimit = Math.max(1, Math.min(100, Number.isInteger(limit) ? limit : 100));
+  const safeLimit = Math.max(1, Math.min(MAX_PAGE_LIMIT, Number.isInteger(limit) ? limit : 100));
   const offset = (safePage - 1) * safeLimit;
   const params: (string | number)[] = [safeLimit, offset];
 
@@ -319,7 +321,8 @@ export const getAllBookings = async ({ page = 1, limit = 100, status, start_date
     SELECT b.id, b.date, b.time, b.duration, b.status, b.confirmed,
            d.name AS doctor_name, d.specialty,
            u.name AS patient_name, u.rut AS patient_rut, u.email AS patient_email,
-           ch.reason AS cancel_reason, ch.created_at AS cancelled_at
+           ch.reason AS cancel_reason, ch.created_at AS cancelled_at,
+           COUNT(*) OVER() AS total
     FROM bookings b
     JOIN doctors d ON b.doctor_id = d.id AND d.tenant_id = b.tenant_id
     LEFT JOIN users u ON b.user_id = u.id AND u.tenant_id = b.tenant_id
@@ -349,16 +352,18 @@ export const getAllBookings = async ({ page = 1, limit = 100, status, start_date
   if (start_date) addCount('date', '>=', start_date);
   if (end_date) addCount('date', '<=', end_date);
   const countQuery = countConditions.length > 0
-    ? `SELECT COUNT(*) FROM bookings WHERE ${countConditions.join(' AND ')}`
-    : 'SELECT COUNT(*) FROM bookings';
-  const countResult = await readPool.query(countQuery, countParams);
+    ? `SELECT COUNT(*) AS total FROM bookings WHERE ${countConditions.join(' AND ')}`
+    : 'SELECT COUNT(*) AS total FROM bookings';
+  const total = result.rows.length > 0
+    ? parseInt(result.rows[0].total)
+    : parseInt((await readPool.query(countQuery, countParams)).rows[0].total);
 
   return {
     data: result.rows,
-    total: parseInt(countResult.rows[0].count),
+    total,
     page: safePage,
     limit: safeLimit,
-    totalPages: Math.ceil(parseInt(countResult.rows[0].count) / safeLimit)
+    totalPages: Math.ceil(total / safeLimit)
   };
 };
 
@@ -468,7 +473,7 @@ export const createBooking = async ({ doctor_id, user_id, date, time, duration =
 
 export const getBookingsByUser = async (user_id: number, { page = 1, limit = 20, status }: Partial<PaginationParams & { status?: string }> = {}, tenantId: string): Promise<PaginatedResponse<unknown>> => {
   const safePage = Math.max(1, Number.isInteger(page) ? page : 1);
-  const safeLimit = Math.max(1, Math.min(100, Number.isInteger(limit) ? limit : 20));
+  const safeLimit = Math.max(1, Math.min(MAX_PAGE_LIMIT, Number.isInteger(limit) ? limit : 20));
   const offset = (safePage - 1) * safeLimit;
   const params: (string | number)[] = [user_id, safeLimit, offset, tenantId];
   let statusClause = '';
@@ -480,7 +485,8 @@ export const getBookingsByUser = async (user_id: number, { page = 1, limit = 20,
   const result = await readPool.query(`
     SELECT b.id, b.date, b.time, b.duration, b.status, b.confirmed,
            d.name AS doctor_name, d.specialty,
-           ch.reason AS cancel_reason, ch.created_at AS cancelled_at
+           ch.reason AS cancel_reason, ch.created_at AS cancelled_at,
+           COUNT(*) OVER() AS total
     FROM bookings b
     JOIN doctors d ON b.doctor_id = d.id AND d.tenant_id = b.tenant_id
     LEFT JOIN LATERAL (
@@ -500,17 +506,19 @@ export const getBookingsByUser = async (user_id: number, { page = 1, limit = 20,
     countStatusClause = ' AND status = $3';
     countParams.push(status);
   }
-  const countResult = await readPool.query(
-    `SELECT COUNT(*) FROM bookings WHERE user_id = $1 AND tenant_id = $2${countStatusClause}`,
-    countParams
-  );
+  const total = result.rows.length > 0
+    ? parseInt(result.rows[0].total)
+    : parseInt((await readPool.query(
+        `SELECT COUNT(*) AS total FROM bookings WHERE user_id = $1 AND tenant_id = $2${countStatusClause}`,
+        countParams
+      )).rows[0].total);
 
   return {
     data: result.rows,
-    total: parseInt(countResult.rows[0].count),
+    total,
     page: safePage,
     limit: safeLimit,
-    totalPages: Math.ceil(parseInt(countResult.rows[0].count) / safeLimit)
+    totalPages: Math.ceil(total / safeLimit)
   };
 };
 
@@ -829,7 +837,7 @@ export const getDailyBookingDensity = async (
 
 export const getBookingsByDoctor = async (doctor_id: number, { page = 1, limit = 50, status }: Partial<PaginationParams & { status?: string }> = {}, tenantId: string): Promise<PaginatedResponse<unknown>> => {
   const safePage = Math.max(1, Number.isInteger(page) ? page : 1);
-  const safeLimit = Math.max(1, Math.min(100, Number.isInteger(limit) ? limit : 50));
+  const safeLimit = Math.max(1, Math.min(MAX_PAGE_LIMIT, Number.isInteger(limit) ? limit : 50));
   const offset = (safePage - 1) * safeLimit;
   const params: (string | number)[] = [doctor_id, safeLimit, offset, tenantId];
   let statusClause = '';
@@ -846,7 +854,8 @@ export const getBookingsByDoctor = async (doctor_id: number, { page = 1, limit =
            u.rut AS patient_rut,
            b.guest_name, b.guest_email, b.guest_phone, b.guest_rut,
            d.name AS doctor_name,
-           ch.reason AS cancel_reason, ch.created_at AS cancelled_at
+           ch.reason AS cancel_reason, ch.created_at AS cancelled_at,
+           COUNT(*) OVER() AS total
     FROM bookings b
     LEFT JOIN users u ON b.user_id = u.id AND u.tenant_id = b.tenant_id
     LEFT JOIN doctors doc ON b.doctor_id = doc.id AND doc.tenant_id = b.tenant_id
@@ -868,16 +877,18 @@ export const getBookingsByDoctor = async (doctor_id: number, { page = 1, limit =
     countStatusClause = ' AND status = $3';
     countParams.push(status);
   }
-  const countResult = await readPool.query(
-    `SELECT COUNT(*) FROM bookings WHERE doctor_id = $1 AND tenant_id = $2${countStatusClause}`,
-    countParams
-  );
+  const total = result.rows.length > 0
+    ? parseInt(result.rows[0].total)
+    : parseInt((await readPool.query(
+        `SELECT COUNT(*) AS total FROM bookings WHERE doctor_id = $1 AND tenant_id = $2${countStatusClause}`,
+        countParams
+      )).rows[0].total);
 
   return {
     data: result.rows,
-    total: parseInt(countResult.rows[0].count),
+    total,
     page: safePage,
     limit: safeLimit,
-    totalPages: Math.ceil(parseInt(countResult.rows[0].count) / safeLimit)
+    totalPages: Math.ceil(total / safeLimit)
   };
 };

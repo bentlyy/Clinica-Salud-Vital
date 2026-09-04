@@ -10,6 +10,8 @@ import crypto from 'crypto';
 import { cleanRut, validateRut, formatRut } from '../../shared/rut.js';
 import { ensureSpecialty } from '../specialties/specialties.service.js';
 
+const MAX_PAGE_LIMIT = 100;
+
 interface DoctorInput {
   name: string;
   specialty: string;
@@ -278,6 +280,8 @@ export const listTenantUsers = async (
   limit: number = 20,
   filters?: { role?: string; search?: string }
 ): Promise<{ data: Record<string, unknown>[]; pagination: { page: number; limit: number; total: number; totalPages: number } }> => {
+  const safePage = Math.max(1, Number.isInteger(page) ? page : 1);
+  const safeLimit = Math.max(1, Math.min(MAX_PAGE_LIMIT, Number.isInteger(limit) ? limit : 20));
   const conditions: string[] = ['u.tenant_id = $1'];
   const params: (string | number)[] = [tenantId];
   let paramIdx = 2;
@@ -294,26 +298,29 @@ export const listTenantUsers = async (
   }
 
   const whereClause = conditions.join(' AND ');
+  const filterParams = [...params];
 
-  const countResult = await readPool.query(
-    `SELECT COUNT(*) as total FROM users u WHERE ${whereClause}`,
-    params
-  );
-  const total = parseInt(countResult.rows[0].total, 10);
-
-  const offset = (page - 1) * limit;
-  params.push(limit, offset);
+  const offset = (safePage - 1) * safeLimit;
+  params.push(safeLimit, offset);
 
   const result = await readPool.query(
-    `SELECT u.id, u.email, u.name, u.role, u.rut, u.phone, u.active, u.created_at
+    `SELECT u.id, u.email, u.name, u.role, u.rut, u.phone, u.active, u.created_at,
+            COUNT(*) OVER() AS total
      FROM users u WHERE ${whereClause}
      ORDER BY u.created_at DESC LIMIT $${paramIdx} OFFSET $${paramIdx + 1}`,
     params
   );
 
+  const total = result.rows.length > 0
+    ? parseInt(result.rows[0].total as string, 10)
+    : parseInt((await readPool.query(
+        `SELECT COUNT(*) AS total FROM users u WHERE ${whereClause}`,
+        filterParams
+      )).rows[0].total, 10);
+
   return {
     data: result.rows,
-    pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+    pagination: { page: safePage, limit: safeLimit, total, totalPages: Math.ceil(total / safeLimit) },
   };
 };
 

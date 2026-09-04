@@ -3,6 +3,8 @@ import { BadRequestError, NotFoundError } from '../../utils/errors.js';
 import { E } from '../../utils/error-codes.js';
 import { logger } from '../../utils/logger.js';
 
+const MAX_PAGE_LIMIT = 100;
+
 interface TenantRow {
   id: string;
   name: string;
@@ -20,6 +22,8 @@ export const listTenants = async (
   limit: number = 20,
   filters?: { active?: boolean; search?: string }
 ): Promise<{ data: Record<string, unknown>[]; pagination: { total: number; page: number; limit: number; totalPages: number } }> => {
+  const safePage = Math.max(1, Number.isInteger(page) ? page : 1);
+  const safeLimit = Math.max(1, Math.min(MAX_PAGE_LIMIT, Number.isInteger(limit) ? limit : 20));
   const conditions: string[] = ['1=1'];
   const params: (string | number | boolean)[] = [];
   let paramIdx = 1;
@@ -36,22 +40,18 @@ export const listTenants = async (
   }
 
   const whereClause = conditions.join(' AND ');
+  const filterParams = [...params];
 
-  const countResult = await readPool.query(
-    `SELECT COUNT(*) as total FROM tenants t WHERE ${whereClause}`,
-    params
-  );
-  const total = parseInt(countResult.rows[0].total, 10);
-
-  const offset = (page - 1) * limit;
-  params.push(limit, offset);
+  const offset = (safePage - 1) * safeLimit;
+  params.push(safeLimit, offset);
 
   const result = await readPool.query(
     `SELECT t.id, t.name, t.domain, t.locale, t.timezone, t.active, t.created_at,
         p.name AS plan_name, p.code AS plan_code,
         COALESCE(b.total_bookings, 0)::int AS total_bookings,
         COALESCE(u.total_users, 0)::int AS total_users,
-        COALESCE(d.total_doctors, 0)::int AS total_doctors
+        COALESCE(d.total_doctors, 0)::int AS total_doctors,
+        COUNT(*) OVER() AS total
      FROM tenants t
      LEFT JOIN LATERAL (
        SELECT s.plan_id FROM subscriptions s
@@ -67,7 +67,14 @@ export const listTenants = async (
     params
   );
 
-  const totalPages = Math.ceil(total / limit);
+  const total = result.rows.length > 0
+    ? parseInt(result.rows[0].total as string, 10)
+    : parseInt((await readPool.query(
+        `SELECT COUNT(*) AS total FROM tenants t WHERE ${whereClause}`,
+        filterParams
+      )).rows[0].total, 10);
+
+  const totalPages = Math.ceil(total / safeLimit);
 
   return {
     data: result.rows.map((r: Record<string, unknown>) => ({
@@ -82,7 +89,7 @@ export const listTenants = async (
       total_doctors: r.total_doctors,
       created_at: r.created_at,
     })),
-    pagination: { total, page, limit, totalPages },
+    pagination: { total, page: safePage, limit: safeLimit, totalPages },
   };
 };
 
@@ -211,6 +218,8 @@ export const listUsers = async (
   limit: number = 50,
   filters?: ListUsersFilters
 ): Promise<{ data: Record<string, unknown>[]; pagination: { page: number; limit: number; total: number; totalPages: number } }> => {
+  const safePage = Math.max(1, Number.isInteger(page) ? page : 1);
+  const safeLimit = Math.max(1, Math.min(MAX_PAGE_LIMIT, Number.isInteger(limit) ? limit : 50));
   const conditions: string[] = ['1=1'];
   const params: (string | number)[] = [];
   let paramIdx = 1;
@@ -232,25 +241,28 @@ export const listUsers = async (
   }
 
   const whereClause = conditions.join(' AND ');
+  const filterParams = [...params];
 
-  const countResult = await readPool.query(
-    `SELECT COUNT(*) as total FROM users u WHERE ${whereClause}`,
-    params
-  );
-  const total = parseInt(countResult.rows[0].total, 10);
-
-  const offset = (page - 1) * limit;
-  params.push(limit, offset);
+  const offset = (safePage - 1) * safeLimit;
+  params.push(safeLimit, offset);
 
   const result = await readPool.query(
     `SELECT u.id, u.email, u.name, u.role, u.rut, u.phone, u.tenant_id, u.active,
-            u.password_changed, u.totp_enabled, u.created_at, u.last_activity_at
+            u.password_changed, u.totp_enabled, u.created_at, u.last_activity_at,
+            COUNT(*) OVER() AS total
      FROM users u WHERE ${whereClause}
      ORDER BY u.created_at DESC LIMIT $${paramIdx} OFFSET $${paramIdx + 1}`,
     params
   );
 
-  const totalPages = Math.ceil(total / limit);
+  const total = result.rows.length > 0
+    ? parseInt(result.rows[0].total as string, 10)
+    : parseInt((await readPool.query(
+        `SELECT COUNT(*) AS total FROM users u WHERE ${whereClause}`,
+        filterParams
+      )).rows[0].total, 10);
+
+  const totalPages = Math.ceil(total / safeLimit);
 
   return {
     data: result.rows.map((r: Record<string, unknown>) => ({
@@ -259,7 +271,7 @@ export const listUsers = async (
       password_changed: r.password_changed, totp_enabled: r.totp_enabled,
       created_at: r.created_at, last_activity_at: r.last_activity_at,
     })),
-    pagination: { page, limit, total, totalPages },
+    pagination: { page: safePage, limit: safeLimit, total, totalPages },
   };
 };
 
