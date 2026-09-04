@@ -52,6 +52,9 @@ services:
       LOG_LEVEL: info
       LOG_DIR: logs
       FRONTEND_URL: http://localhost:5173
+      SENTRY_DSN: ${SENTRY_DSN}
+      METRICS_TOKEN: ${METRICS_TOKEN}
+      ALERT_WEBHOOK_URL: ${ALERT_WEBHOOK_URL}
     volumes:
       - .:/app
       - /app/node_modules

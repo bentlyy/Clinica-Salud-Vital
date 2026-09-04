@@ -1,0 +1,70 @@
+name: Database Backup (Daily)
+
+on:
+  schedule:
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: write
+
+env:
+  DATABASE_URL: ${{ secrets.DATABASE_URL }}
+  S3_BUCKET: ${{ secrets.S3_BUCKET }}
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+
+jobs:
+  backup-and-verify:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: verify
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -yqq --no-install-recommends postgresql-client
+
+      - name: Dump database (custom format)
+        id: dump
+        run: |
+          ./scripts/backup.sh "$RUNNER_TEMP/backup"
+          echo "backup_file=$(ls -1t "$RUNNER_TEMP/backup"/clinic_backup_*.dump | head -1)" >> "$GITHUB_OUTPUT"
+
+      - name: Restore & verify backup
+        env:
+          BACKUP_FILE: ${{ steps.dump.outputs.backup_file }}
+        run: |
+          pg_restore -d postgresql://postgres:postgres@localhost:5432/verify "$BACKUP_FILE"
+          TABLE_COUNT=$(psql -d postgresql://postgres:postgres@localhost:5432/verify -tA -c \
+            "SELECT count(*) FROM information_schema.tables WHERE table_schema='public'")
+          MIGRATIONS=$(psql -d postgresql://postgres:postgres@localhost:5432/verify -tA -c \
+            "SELECT count(*) FROM _migrations" 2>/dev/null || echo 0)
+          echo "Verify: tables=$TABLE_COUNT migrations=$MIGRATIONS"
+          test "${TABLE_COUNT:-0}" -gt 0
+
+      - name: Upload backup artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: db-backup
+          path: ${{ steps.dump.outputs.backup_file }}
+          retention-days: 30
+          if-no-files-found: error

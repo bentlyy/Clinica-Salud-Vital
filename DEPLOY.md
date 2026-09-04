@@ -205,3 +205,101 @@ git revert HEAD
 # Push to trigger redeploy
 git push origin main
 ```
+
+---
+
+## Backups y Recuperacion
+
+### Estrategia
+
+- **Backup diario automatico**: `.github/workflows/backup.yml` ejecuta a las 02:00 UTC un `pg_dump` en formato custom (`-Fc`, comprimido), lo restaura en una BD desechable para verificar integridad y sube el artefacto a GitHub con retencion de 30 dias.
+- **Retencion local**: 30 dumps (`BACKUP_RETENTION` para ajustar).
+- **Respaldos remotos (opcional)**: si configuras los secretos `S3_BUCKET` + `AWS_ACCESS_KEY_ID` + `AWS_SECRET_ACCESS_KEY` + `AWS_DEFAULT_REGION`, el mismo script sube cada dump a S3 (STANDARD_IA).
+- **Verificacion local**: `DATABASE_URL=... ./scripts/backup-verify.sh <archivo>` restaura el dump en una BD temporal y valida integridad de tablas, filas y FK.
+
+### Scripts
+
+| Script | Uso |
+|--------|-----|
+| `scripts/backup.sh` | Linux/CI: `DATABASE_URL=... ./scripts/backup.sh [output_dir]` |
+| `scripts/backup.ps1` | Windows: `.\scripts\backup.ps1 [output_dir]` |
+| `scripts/backup-verify.sh` | Verifica un dump restaurandolo en una BD temporal |
+
+### Programacion manual (si no usas GitHub Actions)
+
+**Linux (cron):**
+```cron
+0 2 * * * cd /path/to/app && DATABASE_URL="$DATABASE_URL" ./scripts/backup.sh /var/backups/clinic
+```
+
+**Windows (Task Scheduler):** crea una tarea diaria que ejecute:
+```
+powershell -File C:\path\to\app\scripts\backup.ps1 C:\backups\clinic
+```
+
+### Restauracion
+
+```bash
+# 1. Crear la BD destino (si no existe)
+createdb clinic_restored
+
+# 2. Restaurar el dump custom
+pg_restore -d clinic_restored --no-owner --no-acl clinic_backup_<timestamp>.dump
+
+# 3. Validar
+psql -d clinic_restored -c "SELECT count(*) FROM users"
+```
+
+### Notas de recuperacion ante fallos
+
+- El backend reintenta la conexion a BD hasta 10 veces con backoff exponencial al arrancar.
+- Las migraciones registradas en `_migrations` nunca se re-aplican; si restauras una BD anterior, aplica las migraciones pendientes al reiniciar el backend.
+- `statement_timeout=30s` e `idle_in_transaction_session_timeout=60s` se aplican a nivel de BD al arrancar.
+- El healthcheck de Docker/Render usa `/health` (readiness: proceso + BD). `/health/live` es liveness (el proceso responde) y no consulta BD.
+
+---
+
+## Observabilidad
+
+### Endpoints
+
+| Endpoint | Uso | Notas |
+|----------|-----|-------|
+| `/health` | Readiness (proceso + BD) | Docker/Render healthcheck |
+| `/health/live` | Liveness (proceso responde) | No consulta BD |
+| `/metrics` | Metrics en formato Prometheus | Protegido con `METRICS_TOKEN` si se define |
+
+Todos existen también bajo `/api/...` (salvo `/metrics` que además se sirve en `/api/metrics`).
+
+### Variables de entorno
+
+| Variable | Opcional | Uso |
+|----------|----------|-----|
+| `SENTRY_DSN` | Sí | Monitoreo de errores y alertas por email de Sentry |
+| `METRICS_TOKEN` | Sí | Si se define, `/metrics` exige `Authorization: Bearer <token>` |
+| `ALERT_WEBHOOK_URL` | Sí | Si se define, errores 5xx y jobs muertos publican un payload JSON al webhook (cooldown 60 s) |
+
+### Qué se expone en `/metrics`
+
+- **Servidor**: CPU, memoria (heap/RSS), event loop lag (prom-client default), loadavg 1/5/15m, uptime, disco (`statfs`: total/used/free/ratio).
+- **App**: `http_requests_total`, `http_request_duration_seconds` (histograma) por método/ruta/status; `jobs_total` por tipo/estado; `emails_total` por proveedor/estado.
+- **PostgreSQL**: tamaño de BD, conexiones activas, queries lentas (>5 s), estado del pool (total/idle/waiting).
+
+Todas las métricas llevan el prefijo `vitaria_`. Gate: cualquier Prometheus (Render Metrics, Grafana Cloud, Uptime Kuma) puede raspar `/metrics`.
+
+### Logs estructurados
+
+- En producción la consola emite JSON (mismo formato que `error.log`/`combined.log`) para la ingesta del proveedor (Render/Loki/etc).
+- Cada request lleva `X-Request-ID` (correlación), y tanto el request logger como el error handler lo incluyen en el campo `requestId` de los logs para rastrear un error completo.
+
+### Alertas
+
+- **Sentry**: configurando `SENTRY_DSN`, los 5xx se capturan y Sentry notifica por email/Slack.
+- **Webhook**: con `ALERT_WEBHOOK_URL` se publican errores 5xx y jobs muertos (con dedup de 60 s). El payload incluye `service`, `environment`, `version`, `timestamp`, `title`, `message` y `meta`.
+- **Backups**: si un job de backup falla, el workflow de GitHub puede configurarse para notificar.
+
+### Recomendación de monitoreo
+
+1. Raspar `/metrics` cada 30 s con un Prometheus (p. ej. Grafana Cloud free).
+2. Crear alertas: `http 5xx rate > 0` por 5 min, `event_loop_lag > 1s`, `disk_usage_ratio > 0.9`, `pg_long_running_queries > 0`, `vitaria_pg_connections` cerca del `max` del pool.
+3. Apuntar Uptime Kuma (o similar) a `/health` para disponibilidad externa.

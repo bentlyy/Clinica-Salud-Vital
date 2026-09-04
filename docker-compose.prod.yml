@@ -33,11 +33,15 @@ services:
       DB_CA_CERT: ${DB_CA_CERT}
       RECAPTCHA_SECRET_KEY: ${RECAPTCHA_SECRET_KEY}
       SUPERADMIN_PASSWORD: ${SUPERADMIN_PASSWORD}
+      SENTRY_DSN: ${SENTRY_DSN}
+      METRICS_TOKEN: ${METRICS_TOKEN}
+      ALERT_WEBHOOK_URL: ${ALERT_WEBHOOK_URL}
     healthcheck:
       test: ["CMD", "wget", "--spider", "http://localhost:3000/health"]
       interval: 30s
       timeout: 10s
       retries: 3
+      start_period: 30s
     networks:
       - backend-net
 
