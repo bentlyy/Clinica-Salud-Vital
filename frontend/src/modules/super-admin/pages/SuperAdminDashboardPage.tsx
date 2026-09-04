@@ -101,7 +101,7 @@ export default function SuperAdminDashboardPage() {
       {/* Stats Cards */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
         {statCardConfigs.map((stat) => (
-          <Grid xs={12} sm={6} md={3} key={stat.key}>
+          <Grid item xs={12} sm={6} md={3} key={stat.key}>
             <DashboardKpiCard
               label={t(stat.key)}
               value={stat.value}
@@ -117,7 +117,7 @@ export default function SuperAdminDashboardPage() {
 
       {/* Charts Row */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid xs={12} md={5}>
+        <Grid item xs={12} md={5}>
           <Paper sx={{ p: 3, border: `1px solid ${theme.palette.divider}`, borderRadius: '16px', height: '100%' }}>
             <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, color: theme.palette.text.primary }}>
               {t('clinics_by_plan')}
@@ -175,7 +175,7 @@ export default function SuperAdminDashboardPage() {
           </Paper>
         </Grid>
 
-        <Grid xs={12} md={7}>
+        <Grid item xs={12} md={7}>
           <Paper sx={{ p: 3, border: `1px solid ${theme.palette.divider}`, borderRadius: '16px', height: '100%' }}>
             <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, color: theme.palette.text.primary }}>
               {t('monthly_growth')}
@@ -229,7 +229,7 @@ export default function SuperAdminDashboardPage() {
 
       {/* Health + Alerts Row */}
       <Grid container spacing={3}>
-        <Grid xs={12} md={5}>
+        <Grid item xs={12} md={5}>
           <Paper sx={{ p: 3, border: `1px solid ${theme.palette.divider}`, borderRadius: '16px', height: '100%' }}>
             <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, color: theme.palette.text.primary }}>
               {t('health_score_title')}
@@ -248,7 +248,7 @@ export default function SuperAdminDashboardPage() {
           </Paper>
         </Grid>
 
-        <Grid xs={12} md={7}>
+        <Grid item xs={12} md={7}>
           <Paper sx={{ p: 3, border: `1px solid ${theme.palette.divider}`, borderRadius: '16px', height: '100%' }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
               <NotificationsNone sx={{ color: theme.palette.text.secondary, fontSize: 20 }} />

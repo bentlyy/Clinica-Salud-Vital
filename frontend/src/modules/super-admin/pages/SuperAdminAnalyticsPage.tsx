@@ -228,7 +228,7 @@ export default function SuperAdminAnalyticsPage() {
       {/* ── KPI Row ──────────────────────────────────────────────────── */}
       <Grid container spacing={3} sx={{ mb: 3 }}>
         {kpiStats.map((stat) => (
-          <Grid key={stat.label} xs={12} sm={6} md={3}>
+          <Grid item key={stat.label} xs={12} sm={6} md={3}>
             <Paper
               sx={{
                 p: 2.5,
@@ -338,7 +338,7 @@ function OverviewTab({ revenue, growth, topTenants, formatMonth }: OverviewTabPr
     <>
       <Grid container spacing={3} sx={{ mb: 3 }}>
         {/* MRR Evolution */}
-        <Grid xs={12} md={6}>
+        <Grid item xs={12} md={6}>
           <Paper sx={{ p: 0, border: `1px solid ${theme.palette.divider}`, borderRadius: '14px', overflow: 'hidden' }}>
             <Box sx={{ px: 2.5, py: 1.5, borderBottom: `1px solid ${theme.palette.divider}` }}>
               <Typography variant="subtitle1" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
@@ -364,7 +364,7 @@ function OverviewTab({ revenue, growth, topTenants, formatMonth }: OverviewTabPr
         </Grid>
 
         {/* User Growth */}
-        <Grid xs={12} md={6}>
+        <Grid item xs={12} md={6}>
           <Paper sx={{ p: 0, border: `1px solid ${theme.palette.divider}`, borderRadius: '14px', overflow: 'hidden' }}>
             <Box sx={{ px: 2.5, py: 1.5, borderBottom: `1px solid ${theme.palette.divider}` }}>
               <Typography variant="subtitle1" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
@@ -470,7 +470,7 @@ function RevenueTab({ revenue, churn, formatMonth }: RevenueTabProps) {
           { value: `${String(churn.churn_rate ?? 0)}%`, label: t('churn_rate', 'Churn Rate'), color: (churn.churn_rate ?? 0) > 5 ? theme.palette.error.main : theme.palette.success.main, textAlign: 'center' as const },
           { value: `${String(churn.annual_retention ?? 0)}%`, label: t('retention_annual', 'Retención Anual'), color: theme.palette.custom.purple.main, textAlign: 'center' as const },
         ].map((stat) => (
-          <Grid key={stat.label} xs={12} sm={6} md={3}>
+          <Grid item key={stat.label} xs={12} sm={6} md={3}>
             <Paper sx={{ p: 2.5, border: `1px solid ${theme.palette.divider}`, borderRadius: '12px', textAlign: stat.textAlign }}>
               <Typography variant="h5" sx={{ fontWeight: 700, color: stat.color ?? theme.palette.text.primary }}>
                 {stat.value}
@@ -585,7 +585,7 @@ function GrowthTab({ growth, formatMonth }: GrowthTabProps) {
               label: t('total_tenants_12m', 'Total tenants (12 meses)'),
             },
           ].map((stat) => (
-            <Grid key={stat.label} xs={12} sm={6} md={3}>
+            <Grid item key={stat.label} xs={12} sm={6} md={3}>
               <Paper sx={{ p: 2.5, border: `1px solid ${theme.palette.divider}`, borderRadius: '12px', textAlign: 'center' }}>
                 <Typography variant="h5" sx={{ fontWeight: 700, color: theme.palette.text.primary }}>
                   {stat.value}
@@ -621,7 +621,7 @@ function OperationsTab({ operations }: OperationsTabProps) {
           { value: String(operations.avg_lead_days ?? 0), label: t('lead_days', 'Días prom. reserva→atención'), color: theme.palette.info.main },
           { value: String(operations.total_bookings_period ?? 0), label: t('total_bookings_6m', 'Citas (últimos 6m)'), color: theme.palette.warning.main },
         ].map((stat) => (
-          <Grid key={stat.label} xs={12} sm={6} md={3}>
+          <Grid item key={stat.label} xs={12} sm={6} md={3}>
             <Paper sx={{ p: 2.5, border: `1px solid ${theme.palette.divider}`, borderRadius: '12px', textAlign: 'center' }}>
               <Typography variant="h5" sx={{ fontWeight: 700, color: stat.color }}>
                 {stat.value}
@@ -637,7 +637,7 @@ function OperationsTab({ operations }: OperationsTabProps) {
       {/* Specialties & Top Doctors */}
       <Grid container spacing={3} sx={{ mb: 3 }}>
         {/* Specialties */}
-        <Grid xs={12} md={6}>
+        <Grid item xs={12} md={6}>
           <Paper sx={{ p: 0, border: `1px solid ${theme.palette.divider}`, borderRadius: '14px', overflow: 'hidden' }}>
             <Box sx={{ px: 2.5, py: 1.5, borderBottom: `1px solid ${theme.palette.divider}` }}>
               <Typography variant="subtitle1" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
@@ -663,7 +663,7 @@ function OperationsTab({ operations }: OperationsTabProps) {
         </Grid>
 
         {/* Top Doctors */}
-        <Grid xs={12} md={6}>
+        <Grid item xs={12} md={6}>
           <Paper sx={{ p: 0, border: `1px solid ${theme.palette.divider}`, borderRadius: '14px', overflow: 'hidden' }}>
             <Box sx={{ px: 2.5, py: 1.5, borderBottom: `1px solid ${theme.palette.divider}` }}>
               <Typography variant="subtitle1" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>

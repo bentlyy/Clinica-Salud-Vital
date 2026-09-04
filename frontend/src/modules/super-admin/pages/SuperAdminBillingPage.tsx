@@ -111,7 +111,7 @@ export default function SuperAdminBillingPage() {
       {/* Summary cards */}
       <Grid container spacing={3} sx={{ mb: 3 }}>
         {statCards.map((stat) => (
-          <Grid xs={12} sm={6} md={3} key={stat.label}>
+          <Grid item xs={12} sm={6} md={3} key={stat.label}>
             <Paper
               sx={{
                 p: 3,

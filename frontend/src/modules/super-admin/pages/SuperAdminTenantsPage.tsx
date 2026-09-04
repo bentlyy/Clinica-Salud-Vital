@@ -356,7 +356,7 @@ export default function SuperAdminTenantsPage() {
                     { label: t('doctors'), value: tenantDetail.total_doctors || 0, icon: <LocalHospital sx={{ fontSize: 18 }} />, color: theme.palette.custom.purple.main },
                     { label: t('bookings'), value: tenantDetail.total_bookings || 0, icon: <CalendarMonth sx={{ fontSize: 18 }} />, color: theme.palette.warning.main },
                   ].map((item) => (
-                    <Grid xs={6} key={item.label}>
+                    <Grid item xs={6} key={item.label}>
                       <Paper
                         sx={{
                           p: 2,
