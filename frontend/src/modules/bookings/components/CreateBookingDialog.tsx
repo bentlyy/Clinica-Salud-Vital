@@ -179,7 +179,7 @@ export function CreateBookingDialog({
       fullWidth
       PaperProps={{
         sx: {
-          borderRadius: '16px',
+          borderRadius: '14px',
           border: `1px solid ${theme.palette.divider}`,
         },
       }}

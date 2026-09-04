@@ -4,12 +4,6 @@ import {
   Box,
   Typography,
   Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   Button,
   Select,
   MenuItem,
@@ -22,12 +16,12 @@ import {
   LinearProgress,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
+import { DataTable, type DataTableColumn } from '@/shared/components/ui/DataTable';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import ScienceIcon from '@mui/icons-material/Science';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import Inventory2Icon from '@mui/icons-material/Inventory2';
-import InboxOutlinedIcon from '@mui/icons-material/InboxOutlined';
 import type { LabReagent, LabArea } from '../../types/lab.types';
 import { formatDate } from '@/shared/utils/localeUtils';
 
@@ -118,6 +112,150 @@ export const ReagentInventory = memo(function ReagentInventory({
       }).length,
     };
   }, [reagents]);
+
+  const columns: DataTableColumn<LabReagent>[] = [
+    {
+      key: 'name',
+      header: 'Nombre',
+      render: (reagent) => (
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <ScienceIcon sx={{ fontSize: 18, color: theme.palette.text.secondary }} />
+          <Typography variant="body2" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
+            {reagent.name}
+          </Typography>
+        </Box>
+      ),
+    },
+    {
+      key: 'lot_number',
+      header: 'Lote',
+      render: (reagent) => (
+        <Typography variant="caption" sx={{ color: theme.palette.text.secondary, fontFamily: 'monospace' }}>
+          {reagent.lot_number}
+        </Typography>
+      ),
+    },
+    {
+      key: 'supplier',
+      header: 'Proveedor',
+      render: (reagent) => (
+        <Typography variant="body2" sx={{ color: theme.palette.text.primary }}>
+          {reagent.supplier ?? '—'}
+        </Typography>
+      ),
+    },
+    {
+      key: 'current_stock',
+      header: 'Stock',
+      render: (reagent) => {
+        const stockStatus = getStockStatus(reagent.current_stock, reagent.min_stock);
+        const stockPct =
+          reagent.min_stock > 0
+            ? Math.min(100, (reagent.current_stock / (reagent.min_stock * 2)) * 100)
+            : 100;
+        return (
+          <Box sx={{ minWidth: 80 }}>
+            <Typography variant="body2" sx={{ fontWeight: 600, color: resolveColor(stockStatus.color) }}>
+              {reagent.current_stock} {reagent.unit}
+            </Typography>
+            <LinearProgress
+              variant="determinate"
+              value={stockPct}
+              sx={{
+                height: 4,
+                borderRadius: 2,
+                mt: 0.5,
+                backgroundColor: theme.palette.custom.surface.sunken,
+                '& .MuiLinearProgress-bar': {
+                  backgroundColor: resolveColor(stockStatus.color),
+                  borderRadius: 2,
+                },
+              }}
+            />
+          </Box>
+        );
+      },
+    },
+    {
+      key: 'min_stock',
+      header: 'Stock Mín.',
+      render: (reagent) => (
+        <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
+          {reagent.min_stock} {reagent.unit}
+        </Typography>
+      ),
+    },
+    {
+      key: 'expiration_date',
+      header: 'Vencimiento',
+      render: (reagent) => {
+        const expirationStatus = getExpirationStatus(reagent.expiration_date);
+        return (
+          <Chip
+            label={expirationStatus.label}
+            size="small"
+            sx={{
+              height: 22,
+              fontSize: '0.7rem',
+              fontWeight: 600,
+              backgroundColor: resolveColor(expirationStatus.bgColor),
+              color: resolveColor(expirationStatus.color),
+              borderRadius: '6px',
+            }}
+          />
+        );
+      },
+    },
+    {
+      key: 'area',
+      header: 'Área',
+      render: (reagent) => (
+        <Typography variant="body2" sx={{ color: theme.palette.text.primary }}>
+          {reagent.area?.name ?? '—'}
+        </Typography>
+      ),
+    },
+    {
+      key: 'active',
+      header: 'Estado',
+      render: (reagent) => (
+        <Chip
+          label={reagent.active ? 'Activo' : 'Inactivo'}
+          size="small"
+          sx={{
+            height: 22,
+            fontSize: '0.7rem',
+            fontWeight: 600,
+            backgroundColor: reagent.active ? theme.palette.custom.status.success.bg : theme.palette.custom.surface.sunken,
+            color: reagent.active ? theme.palette.success.dark : theme.palette.text.secondary,
+            borderRadius: '6px',
+          }}
+        />
+      ),
+    },
+    {
+      key: 'actions',
+      header: 'Acciones',
+      render: (reagent) =>
+        onEdit ? (
+          <Tooltip title="Editar" arrow>
+            <IconButton
+              size="small"
+              onClick={() => onEdit(reagent)}
+              sx={{
+                color: theme.palette.text.secondary,
+                '&:hover': {
+                  color: theme.palette.primary.main,
+                  backgroundColor: theme.palette.custom.brand.lightest,
+                },
+              }}
+            >
+              <EditIcon sx={{ fontSize: 18 }} />
+            </IconButton>
+          </Tooltip>
+        ) : null,
+    },
+  ];
 
   if (isLoading) {
     return (
@@ -221,7 +359,7 @@ export const ReagentInventory = memo(function ReagentInventory({
 
       {/* Filter */}
       {areas.length > 0 && (
-        <FormControl size="small" sx={{ minWidth: 200, mb: 2 }}>
+        <FormControl size="small" sx={{ width: { xs: '100%', sm: 'auto' }, minWidth: { xs: 0, sm: 200 }, mb: 2 }}>
           <InputLabel id="area-filter-label">{t('filterByArea')}</InputLabel>
           <Select
             labelId="area-filter-label"
@@ -242,173 +380,14 @@ export const ReagentInventory = memo(function ReagentInventory({
         </FormControl>
       )}
 
-      {/* Empty state */}
-      {filtered.length === 0 ? (
-        <Box
-          sx={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            py: 6,
-            gap: 1.5,
-          }}
-        >
-          <InboxOutlinedIcon sx={{ fontSize: 48, color: theme.palette.divider }} />
-          <Typography variant="body2" sx={{ color: theme.palette.text.secondary, fontWeight: 500 }}>
-            No hay reactivos registrados
-          </Typography>
-        </Box>
-      ) : (
-        <TableContainer
-          sx={{
-            border: `1px solid ${theme.palette.custom.surface.sunken}`,
-            borderRadius: '10px',
-            overflow: 'hidden',
-          }}
-        >
-          <Table size="small">
-            <TableHead>
-              <TableRow>
-                {[
-                  'Nombre',
-                  'Lote',
-                  'Proveedor',
-                  'Stock',
-                  'Stock Mín.',
-                  'Vencimiento',
-                  'Área',
-                  'Estado',
-                  'Acciones',
-                ].map((col) => (
-                  <TableCell key={col}>{col}</TableCell>
-                ))}
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {filtered.map((reagent) => {
-                const expirationStatus = getExpirationStatus(reagent.expiration_date);
-                const stockStatus = getStockStatus(
-                  reagent.current_stock,
-                  reagent.min_stock,
-                );
-                const stockPct =
-                  reagent.min_stock > 0
-                    ? Math.min(100, (reagent.current_stock / (reagent.min_stock * 2)) * 100)
-                    : 100;
-
-                return (
-                  <TableRow
-                    key={reagent.id}
-                    hover
-                    sx={{ '&:last-child td': { borderBottom: 0 } }}
-                  >
-                    <TableCell>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <ScienceIcon sx={{ fontSize: 18, color: theme.palette.text.secondary }} />
-                        <Typography variant="body2" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
-                          {reagent.name}
-                        </Typography>
-                      </Box>
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="caption" sx={{ color: theme.palette.text.secondary, fontFamily: 'monospace' }}>
-                        {reagent.lot_number}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="body2" sx={{ color: theme.palette.text.primary }}>
-                        {reagent.supplier ?? '—'}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Box sx={{ minWidth: 80 }}>
-                        <Typography
-                          variant="body2"
-                          sx={{ fontWeight: 600, color: resolveColor(stockStatus.color) }}
-                        >
-                          {reagent.current_stock} {reagent.unit}
-                        </Typography>
-                        <LinearProgress
-                          variant="determinate"
-                          value={stockPct}
-                          sx={{
-                            height: 4,
-                            borderRadius: 2,
-                            mt: 0.5,
-                            backgroundColor: theme.palette.custom.surface.sunken,
-                            '& .MuiLinearProgress-bar': {
-                              backgroundColor: resolveColor(stockStatus.color),
-                              borderRadius: 2,
-                            },
-                          }}
-                        />
-                      </Box>
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
-                        {reagent.min_stock} {reagent.unit}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Chip
-                        label={expirationStatus.label}
-                        size="small"
-                        sx={{
-                          height: 22,
-                          fontSize: '0.7rem',
-                          fontWeight: 600,
-                          backgroundColor: resolveColor(expirationStatus.bgColor),
-                          color: resolveColor(expirationStatus.color),
-                          borderRadius: '6px',
-                        }}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="body2" sx={{ color: theme.palette.text.primary }}>
-                        {reagent.area?.name ?? '—'}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Chip
-                        label={reagent.active ? 'Activo' : 'Inactivo'}
-                        size="small"
-                        sx={{
-                          height: 22,
-                          fontSize: '0.7rem',
-                          fontWeight: 600,
-                          backgroundColor: reagent.active ? theme.palette.custom.status.success.bg : theme.palette.custom.surface.sunken,
-                          color: reagent.active ? theme.palette.success.dark : theme.palette.text.secondary,
-                          borderRadius: '6px',
-                        }}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      {onEdit && (
-                        <Tooltip title="Editar" arrow>
-                          <IconButton
-                            size="small"
-                            onClick={() => onEdit(reagent)}
-                            sx={{
-                              color: theme.palette.text.secondary,
-                              '&:hover': {
-                                color: theme.palette.primary.main,
-                                backgroundColor: theme.palette.custom.brand.lightest,
-                              },
-                            }}
-                          >
-                            <EditIcon sx={{ fontSize: 18 }} />
-                          </IconButton>
-                        </Tooltip>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      )}
+      {/* Table */}
+      <DataTable<LabReagent>
+        columns={columns}
+        data={filtered}
+        keyExtractor={(reagent) => reagent.id}
+        emptyTitle="No hay reactivos registrados"
+        rowsPerPage={filtered.length || 1}
+      />
     </Paper>
   );
 });

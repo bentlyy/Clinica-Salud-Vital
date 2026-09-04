@@ -79,7 +79,7 @@ export default function LoginPage() {
         sx={{
           flex: 1,
           display: { xs: 'none', md: 'flex' },
-          backgroundImage: 'url(/login.png)',
+          backgroundImage: 'url(/login.jpg)',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat',
@@ -126,7 +126,7 @@ export default function LoginPage() {
             >
               V
             </Box>
-            <Typography variant="h4" sx={{ fontWeight: 700, color: theme.palette.text.primary }}>
+            <Typography variant="h4" component="h1" sx={{ fontWeight: 700, color: theme.palette.text.primary }}>
               {t('title')}
             </Typography>
             <Typography variant="body2" sx={{ color: theme.palette.text.secondary, mt: 0.5 }}>
@@ -180,6 +180,7 @@ export default function LoginPage() {
                         onClick={() => setShowPassword(!showPassword)}
                         edge="end"
                         size="small"
+                        aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
                       >
                         {showPassword ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
                       </IconButton>

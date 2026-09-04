@@ -4,12 +4,6 @@ import {
   Box,
   Typography,
   Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   Button,
   Select,
   MenuItem,
@@ -22,11 +16,11 @@ import {
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import type { Theme } from '@mui/material/styles';
+import { DataTable, type DataTableColumn } from '@/shared/components/ui/DataTable';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 
 import PrecisionManufacturingIcon from '@mui/icons-material/PrecisionManufacturing';
-import InboxOutlinedIcon from '@mui/icons-material/InboxOutlined';
 import type { LabEquipment, LabArea } from '../../types/lab.types';
 import { formatDate } from '@/shared/utils/localeUtils';
 
@@ -112,6 +106,131 @@ export const EquipmentInventory = memo(function EquipmentInventory({
     [equipment],
   );
 
+  const columns: DataTableColumn<LabEquipment>[] = [
+    {
+      key: 'name',
+      header: 'Nombre',
+      render: (eq) => (
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <PrecisionManufacturingIcon sx={{ fontSize: 18, color: theme.palette.text.secondary }} />
+          <Typography variant="body2" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
+            {eq.name}
+          </Typography>
+        </Box>
+      ),
+    },
+    {
+      key: 'model',
+      header: 'Modelo',
+      render: (eq) => (
+        <Typography variant="body2" sx={{ color: theme.palette.text.primary }}>
+          {eq.model ?? '—'}
+        </Typography>
+      ),
+    },
+    {
+      key: 'serial_number',
+      header: 'Serial',
+      render: (eq) => (
+        <Typography variant="caption" sx={{ color: theme.palette.text.secondary, fontFamily: 'monospace' }}>
+          {eq.serial_number ?? '—'}
+        </Typography>
+      ),
+    },
+    {
+      key: 'area',
+      header: 'Área',
+      render: (eq) => (
+        <Typography variant="body2" sx={{ color: theme.palette.text.primary }}>
+          {eq.area?.name ?? '—'}
+        </Typography>
+      ),
+    },
+    {
+      key: 'status',
+      header: 'Estado',
+      render: (eq) => {
+        const statusCfg = getStatusConfig(theme, eq.status);
+        return (
+          <Chip
+            label={statusCfg.label}
+            size="small"
+            sx={{
+              height: 22,
+              fontSize: '0.7rem',
+              fontWeight: 600,
+              backgroundColor: statusCfg.bgColor,
+              color: statusCfg.color,
+              borderRadius: '6px',
+            }}
+          />
+        );
+      },
+    },
+    {
+      key: 'connection_type',
+      header: 'Conexión',
+      render: (eq) => (
+        <Chip
+          label={CONNECTION_LABELS[eq.connection_type]}
+          size="small"
+          variant="outlined"
+          sx={{
+            height: 22,
+            fontSize: '0.7rem',
+            fontWeight: 500,
+            borderRadius: '6px',
+            borderColor: theme.palette.divider,
+            color: theme.palette.text.secondary,
+          }}
+        />
+      ),
+    },
+    {
+      key: 'last_maintenance',
+      header: 'Último Mant.',
+      render: (eq) => (
+        <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
+          {eq.last_maintenance ? formatDate(eq.last_maintenance) : '—'}
+        </Typography>
+      ),
+    },
+    {
+      key: 'next_maintenance',
+      header: 'Próx. Mant.',
+      render: (eq) => {
+        const nextMaint = getMaintenanceColor(eq.next_maintenance, theme);
+        return (
+          <Typography variant="caption" sx={{ color: nextMaint.color, fontWeight: 500 }}>
+            {eq.next_maintenance ? formatDate(eq.next_maintenance) : '—'}
+          </Typography>
+        );
+      },
+    },
+    {
+      key: 'actions',
+      header: 'Acciones',
+      render: (eq) =>
+        onEdit ? (
+          <Tooltip title="Editar" arrow>
+            <IconButton
+              size="small"
+              onClick={() => onEdit(eq)}
+              sx={{
+                color: theme.palette.text.secondary,
+                '&:hover': {
+                  color: theme.palette.primary.main,
+                  backgroundColor: theme.palette.custom.brand.lightest,
+                },
+              }}
+            >
+              <EditIcon sx={{ fontSize: 18 }} />
+            </IconButton>
+          </Tooltip>
+        ) : null,
+    },
+  ];
+
   if (isLoading) {
     return (
       <Paper
@@ -189,7 +308,7 @@ export const EquipmentInventory = memo(function EquipmentInventory({
 
       {/* Filter */}
       {areas.length > 0 && (
-        <FormControl size="small" sx={{ minWidth: 200, mb: 2 }}>
+        <FormControl size="small" sx={{ width: { xs: '100%', sm: 'auto' }, minWidth: { xs: 0, sm: 200 }, mb: 2 }}>
           <InputLabel id="area-filter-label">{t('filterByArea')}</InputLabel>
           <Select
             labelId="area-filter-label"
@@ -210,151 +329,14 @@ export const EquipmentInventory = memo(function EquipmentInventory({
         </FormControl>
       )}
 
-      {/* Empty state */}
-      {filtered.length === 0 ? (
-        <Box
-          sx={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            py: 6,
-            gap: 1.5,
-          }}
-        >
-          <InboxOutlinedIcon sx={{ fontSize: 48, color: theme.palette.divider }} />
-          <Typography variant="body2" sx={{ color: theme.palette.text.secondary, fontWeight: 500 }}>
-            No hay equipos registrados
-          </Typography>
-        </Box>
-      ) : (
-        <TableContainer
-          sx={{
-            border: `1px solid ${theme.palette.custom.surface.sunken}`,
-            borderRadius: '10px',
-            overflow: 'hidden',
-          }}
-        >
-          <Table size="small">
-            <TableHead>
-              <TableRow>
-                {[
-                  'Nombre',
-                  'Modelo',
-                  'Serial',
-                  'Área',
-                  'Estado',
-                  'Conexión',
-                  'Último Mant.',
-                  'Próx. Mant.',
-                  'Acciones',
-                ].map((col) => (
-                  <TableCell key={col}>{col}</TableCell>
-                ))}
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {filtered.map((eq) => {
-                const statusCfg = getStatusConfig(theme, eq.status);
-                const nextMaint = getMaintenanceColor(eq.next_maintenance, theme);
-
-                return (
-                  <TableRow key={eq.id} hover sx={{ '&:last-child td': { borderBottom: 0 } }}>
-                    <TableCell>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <PrecisionManufacturingIcon sx={{ fontSize: 18, color: theme.palette.text.secondary }} />
-                        <Typography variant="body2" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
-                          {eq.name}
-                        </Typography>
-                      </Box>
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="body2" sx={{ color: theme.palette.text.primary }}>
-                        {eq.model ?? '—'}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="caption" sx={{ color: theme.palette.text.secondary, fontFamily: 'monospace' }}>
-                        {eq.serial_number ?? '—'}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="body2" sx={{ color: theme.palette.text.primary }}>
-                        {eq.area?.name ?? '—'}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Chip
-                        label={statusCfg.label}
-                        size="small"
-                        sx={{
-                          height: 22,
-                          fontSize: '0.7rem',
-                          fontWeight: 600,
-                          backgroundColor: statusCfg.bgColor,
-                          color: statusCfg.color,
-                          borderRadius: '6px',
-                        }}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Chip
-                        label={CONNECTION_LABELS[eq.connection_type]}
-                        size="small"
-                        variant="outlined"
-                        sx={{
-                          height: 22,
-                          fontSize: '0.7rem',
-                          fontWeight: 500,
-                          borderRadius: '6px',
-                          borderColor: theme.palette.divider,
-                          color: theme.palette.text.secondary,
-                        }}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
-                        {eq.last_maintenance
-                          ? formatDate(eq.last_maintenance)
-                          : '—'}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Typography
-                        variant="caption"
-                        sx={{ color: nextMaint.color, fontWeight: 500 }}
-                      >
-                        {eq.next_maintenance
-                          ? formatDate(eq.next_maintenance)
-                          : '—'}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      {onEdit && (
-                        <Tooltip title="Editar" arrow>
-                          <IconButton
-                            size="small"
-                            onClick={() => onEdit(eq)}
-                            sx={{
-                              color: theme.palette.text.secondary,
-                              '&:hover': {
-                                color: theme.palette.primary.main,
-                                backgroundColor: theme.palette.custom.brand.lightest,
-                              },
-                            }}
-                          >
-                            <EditIcon sx={{ fontSize: 18 }} />
-                          </IconButton>
-                        </Tooltip>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      )}
+      {/* Table */}
+      <DataTable<LabEquipment>
+        columns={columns}
+        data={filtered}
+        keyExtractor={(eq) => eq.id}
+        emptyTitle="No hay equipos registrados"
+        rowsPerPage={filtered.length || 1}
+      />
     </Paper>
   );
 });

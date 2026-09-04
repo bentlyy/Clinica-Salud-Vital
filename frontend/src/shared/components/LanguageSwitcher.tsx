@@ -31,6 +31,7 @@ export function LanguageSwitcher() {
           size="small"
           sx={{ color: theme.palette.text.secondary, gap: 0.5 }}
           onClick={(e) => setAnchorEl(e.currentTarget)}
+          aria-label={t('language', { ns: 'settings' })}
         >
           <Typography component="span" sx={{ fontSize: '1rem', lineHeight: 1 }}>
             {currentLang.flag}

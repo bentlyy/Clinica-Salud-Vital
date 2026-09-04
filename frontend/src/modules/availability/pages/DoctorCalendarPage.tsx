@@ -27,6 +27,8 @@ import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import EventAvailableIcon from '@mui/icons-material/EventAvailable';
 import EventBusyIcon from '@mui/icons-material/EventBusy';
 import { apiClient } from '@/shared/services/api-client';
+import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
+import toast from 'react-hot-toast';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { getFullCalendarLocale } from '@/shared/utils/localeUtils';
 import { LoadingState } from '@/shared/components/ui/LoadingState';
@@ -132,6 +134,7 @@ export default function DoctorCalendarPage() {
   const [blockModalOpen, setBlockModalOpen] = useState(false);
   const [blockRange, setBlockRange] = useState({ date: '', start: '', end: '' });
   const [blockReason, setBlockReason] = useState('');
+  const [deleteTarget, setDeleteTarget] = useState<{ exceptionId: string | number } | null>(null);
 
   const [filters, setFilters] = useState<Filters>({
     availability: true,
@@ -268,6 +271,19 @@ export default function DoctorCalendarPage() {
     [],
   );
 
+  const confirmDeleteBlock = useCallback(async () => {
+    if (!deleteTarget) return;
+    try {
+      await apiClient.delete(`/availability/exceptions/${String(deleteTarget.exceptionId)}`);
+      await fetchData();
+      toast.success(t('doctor_calendar:blockDeleted'));
+      setDeleteTarget(null);
+    } catch {
+      setError(t('errors:deleteError'));
+      toast.error(t('errors:deleteError'));
+    }
+  }, [deleteTarget, fetchData, t]);
+
   const confirmBlock = useCallback(async () => {
     try {
       setError(null);
@@ -280,8 +296,10 @@ export default function DoctorCalendarPage() {
       setBlockModalOpen(false);
       setBlockReason('');
       await fetchData();
+      toast.success(t('doctor_calendar:blockCreated'));
     } catch {
       setError(t('errors:generic'));
+      toast.error(t('errors:generic'));
     }
   }, [blockRange, blockReason, fetchData, t]);
 
@@ -289,15 +307,7 @@ export default function DoctorCalendarPage() {
     async (info: { event: { extendedProps: Record<string, unknown>; id: string } }) => {
       const p = info.event.extendedProps;
       if (p.type === 'exception') {
-        const confirmed = window.confirm(t('doctor_calendar:delete_block'));
-        if (confirmed) {
-          try {
-            await apiClient.delete(`/availability/exceptions/${String(p.exceptionId)}`);
-            await fetchData();
-          } catch {
-            setError(t('errors:deleteError'));
-          }
-        }
+        setDeleteTarget({ exceptionId: String(p.exceptionId) });
       } else if (p.type === 'booking') {
         setSelectedBooking({
           patient: String(p.patient ?? ''),
@@ -311,7 +321,7 @@ export default function DoctorCalendarPage() {
         });
       }
     },
-    [fetchData, t],
+    [],
   );
 
   const handleDateClick = useCallback(
@@ -335,7 +345,7 @@ export default function DoctorCalendarPage() {
             <Typography sx={{ fontWeight: 700, fontSize: 12, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {eventInfo.event.title}
             </Typography>
-            <Typography sx={{ fontSize: 10, opacity: 0.9, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            <Typography sx={{ fontSize: 11, opacity: 0.9, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {String(p.time)} ({String(p.duration ?? 30)}min)
               {p.rut ? ` • ${String(p.rut)}` : ''}
             </Typography>
@@ -569,6 +579,15 @@ export default function DoctorCalendarPage() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <ConfirmDialog
+        open={Boolean(deleteTarget)}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={confirmDeleteBlock}
+        title={t('doctor_calendar:deleteBlockTitle', { defaultValue: 'Eliminar bloqueo de horario' })}
+        message={t('doctor_calendar:delete_block')}
+        confirmLabel={t('doctor_calendar:confirm_block')}
+      />
     </Box>
   );
 }

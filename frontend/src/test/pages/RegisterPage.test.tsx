@@ -250,7 +250,7 @@ describe('RegisterPage', () => {
     });
     const passwordInput = screen.getByLabelText('Contraseña');
     expect(passwordInput).toHaveAttribute('type', 'password');
-    const toggleButtons = screen.getAllByRole('button', { name: '' });
+    const toggleButtons = screen.getAllByRole('button', { name: /mostrar contraseña/i });
     fireEvent.click(toggleButtons[0]);
     expect(screen.getByLabelText('Contraseña')).toHaveAttribute('type', 'text');
   });

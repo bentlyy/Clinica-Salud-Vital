@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import { AppThemeProvider } from '@/shared/providers/ThemeProvider';
@@ -202,7 +202,7 @@ describe('BillingPage', () => {
     expect(mutate).toHaveBeenCalledWith(1);
   });
 
-  it('calls deleteInvoice after confirming the delete dialog', () => {
+  it('calls deleteInvoice after confirming the delete dialog', async () => {
     const mutate = vi.fn();
     mockMutations.deleteInvoice.mockReturnValue({ mutate, isPending: false });
     mockHookReturn.isLoading = false;
@@ -211,19 +211,22 @@ describe('BillingPage', () => {
 
     const deleteButton = screen.getByRole('button', { name: /Eliminar/i });
     fireEvent.click(deleteButton);
+    const dialog = await screen.findByRole('dialog');
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Eliminar' }));
     expect(mutate).toHaveBeenCalledWith(1);
   });
 
-  it('does not delete when the user cancels the confirm dialog', () => {
+  it('does not delete when the user cancels the confirm dialog', async () => {
     const mutate = vi.fn();
     mockMutations.deleteInvoice.mockReturnValue({ mutate, isPending: false });
-    vi.stubGlobal('confirm', vi.fn(() => false));
     mockHookReturn.isLoading = false;
     mockHookReturn.data = { data: [invoice], total: 1 };
     renderPage();
 
     const deleteButton = screen.getByRole('button', { name: /Eliminar/i });
     fireEvent.click(deleteButton);
+    const dialog = await screen.findByRole('dialog');
+    fireEvent.click(within(dialog).getByRole('button', { name: /cancel/i }));
     expect(mutate).not.toHaveBeenCalled();
   });
 

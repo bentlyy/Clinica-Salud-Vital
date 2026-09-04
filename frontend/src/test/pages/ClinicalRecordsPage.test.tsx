@@ -235,12 +235,12 @@ describe('ClinicalRecordsPage', () => {
     fireEvent.click(screen.getByTestId('MoreVertIcon'));
     fireEvent.click(await screen.findByText('Eliminar'));
 
-    expect(confirmSpy).toHaveBeenCalled();
+    const dialog = await screen.findByRole('dialog');
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Eliminar' }));
     expect(deleteMutate).toHaveBeenCalledWith(5);
   });
 
   it('does not delete when the confirmation is rejected', async () => {
-    confirmSpy.mockReturnValue(false);
     const deleteMutate = vi.fn();
     mutationsMock.remove.mockReturnValue({ mutate: deleteMutate, isPending: false });
     listMock.isLoading = false;
@@ -250,7 +250,8 @@ describe('ClinicalRecordsPage', () => {
     fireEvent.click(screen.getByTestId('MoreVertIcon'));
     fireEvent.click(await screen.findByText('Eliminar'));
 
-    expect(confirmSpy).toHaveBeenCalled();
+    const dialog = await screen.findByRole('dialog');
+    fireEvent.click(within(dialog).getByRole('button', { name: /Cancelar/i }));
     expect(deleteMutate).not.toHaveBeenCalled();
   });
 

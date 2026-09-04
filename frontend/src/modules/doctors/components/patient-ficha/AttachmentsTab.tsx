@@ -12,7 +12,7 @@ export function AttachmentsTab({ patientId }: AttachmentsTabProps) {
   const { t } = useTranslation('patient_ficha');
 
   return (
-    <Paper sx={{ p: 2.5, border: '1px solid #e5e7eb', borderRadius: '12px' }}>
+    <Paper sx={{ p: 2.5, border: `1px solid ${theme.palette.divider}`, borderRadius: '12px' }}>
       <Box sx={{ mb: 1 }}>
         <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
           {t('noAttachmentsDesc')}

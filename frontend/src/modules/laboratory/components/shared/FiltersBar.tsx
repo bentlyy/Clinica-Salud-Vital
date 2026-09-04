@@ -42,7 +42,8 @@ const PRIORITY_OPTIONS = Object.entries(LAB_PRIORITY_LABELS).map(
 );
 
 const selectSx = {
-  minWidth: 150,
+  width: { xs: '100%', sm: 'auto' },
+  minWidth: { xs: 0, sm: 150 },
   fontSize: '0.875rem',
   '& .MuiOutlinedInput-root': {
     borderRadius: '10px',
@@ -84,7 +85,7 @@ export const FiltersBar = memo(function FiltersBar({
           value={filters.search}
           onChange={(val) => onFilterChange('search', val)}
           placeholder={t('searchPlaceholder')}
-          sx={{ minWidth: 250, flex: '1 1 250px' }}
+          sx={{ flex: '1 1 100%', minWidth: { xs: '100%', sm: 250 } }}
         />
 
         {/* Area */}
@@ -96,7 +97,7 @@ export const FiltersBar = memo(function FiltersBar({
           onChange={(e) =>
             onFilterChange('areaId', e.target.value === '' ? '' : Number(e.target.value))
           }
-          sx={{ ...selectSx, minWidth: 140 }}
+          sx={{ ...selectSx, minWidth: { xs: 0, sm: 140 } }}
         >
           <MenuItem value="">
             <em>{t('allAreas')}</em>

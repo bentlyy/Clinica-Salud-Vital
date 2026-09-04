@@ -60,9 +60,8 @@ describe('LabTestsCatalogPage', () => {
 
   it('renders the loading state while fetching', () => {
     service.getLabTests.mockReturnValue(new Promise(() => {}));
-    const { container } = renderPage();
-    // Loading is a grid of 6 Skeletons (no text)
-    expect(container.querySelectorAll('.MuiSkeleton-root').length).toBe(6);
+    renderPage();
+    expect(screen.getByRole('status')).toBeInTheDocument();
     expect(screen.getByPlaceholderText('lab_catalog:searchPlaceholder')).toBeInTheDocument();
   });
 

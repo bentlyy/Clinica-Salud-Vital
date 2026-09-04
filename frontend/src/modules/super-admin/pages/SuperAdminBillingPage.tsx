@@ -5,12 +5,6 @@ import {
   Box,
   Paper,
   Typography,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   TextField,
   InputAdornment,
   Chip,
@@ -31,6 +25,7 @@ import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { LoadingState } from '@/shared/components/ui/LoadingState';
 import { ErrorState } from '@/shared/components/ui/ErrorState';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
+import { DataTable } from '@/shared/components/ui/DataTable';
 import { superAdminService } from '../services/super-admin.service';
 import { formatCurrency, formatNumber } from '@/shared/utils/localeUtils';
 
@@ -103,10 +98,10 @@ export default function SuperAdminBillingPage() {
   );
 
   const statCards = [
-    { label: t('totalBilled'), value: formatCurrency(totals.billed, 'USD'), icon: <AccountBalance />, color: theme.palette.primary.main, bgColor: '#eff6ff' },
-    { label: t('totalPaid'), value: formatCurrency(totals.paid, 'USD'), icon: <Paid />, color: theme.palette.success.main, bgColor: '#ecfdf5' },
-    { label: t('totalPending'), value: formatCurrency(totals.pending, 'USD'), icon: <Pending />, color: theme.palette.warning.main, bgColor: '#fffbeb' },
-    { label: t('overdueInvoices'), value: formatNumber(totals.overdue), icon: <WarningAmber />, color: theme.palette.error.main, bgColor: '#fef2f2' },
+    { label: t('totalBilled'), value: formatCurrency(totals.billed, 'USD'), icon: <AccountBalance />, color: theme.palette.info.main, bgColor: theme.palette.custom.status.info.bg },
+    { label: t('totalPaid'), value: formatCurrency(totals.paid, 'USD'), icon: <Paid />, color: theme.palette.success.main, bgColor: theme.palette.custom.status.success.bg },
+    { label: t('totalPending'), value: formatCurrency(totals.pending, 'USD'), icon: <Pending />, color: theme.palette.warning.main, bgColor: theme.palette.custom.status.warning.bg },
+    { label: t('overdueInvoices'), value: formatNumber(totals.overdue), icon: <WarningAmber />, color: theme.palette.error.main, bgColor: theme.palette.custom.status.error.bg },
   ];
 
   return (
@@ -184,101 +179,114 @@ export default function SuperAdminBillingPage() {
       {rows.length === 0 ? (
         <EmptyState title={t('emptyTitle')} message={t('emptyMessage')} />
       ) : (
-        <Paper sx={{ borderRadius: '14px', border: `1px solid ${theme.palette.divider}`, overflow: 'hidden' }}>
-          <TableContainer>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>{t('colClinic')}</TableCell>
-                  <TableCell>{t('colInvoices')}</TableCell>
-                  <TableCell>{t('colBilled')}</TableCell>
-                  <TableCell>{t('colPaid')}</TableCell>
-                  <TableCell>{t('colPending')}</TableCell>
-                  <TableCell>{t('colOverdue')}</TableCell>
-                  <TableCell>{t('colStatus')}</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {rows.map((row) => {
-                  const paid = Number(row.total_paid) || 0;
-                  const billed = Number(row.total_billed) || 0;
-                  const collectionRate = billed > 0 ? Math.round((paid / billed) * 100) : 0;
-                  return (
-                    <TableRow key={row.id} hover>
-                      <TableCell>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                          <Avatar
-                            sx={{
-                              width: 36,
-                              height: 36,
-                              backgroundColor: row.active ? theme.palette.primary.main : theme.palette.grey[400],
-                              fontSize: '0.8rem',
-                            }}
-                          >
-                            {row.name.charAt(0).toUpperCase()}
-                          </Avatar>
-                          <Box>
-                            <Typography variant="body2" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
-                              {row.name}
-                            </Typography>
-                            <Typography variant="caption" sx={{ color: theme.palette.text.secondary, fontFamily: 'monospace' }}>
-                              {row.slug}
-                            </Typography>
-                          </Box>
-                        </Box>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="body2" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
-                          {formatNumber(row.invoice_count)}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="body2" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
-                          {formatCurrency(billed, 'USD')}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="body2" sx={{ fontWeight: 600, color: theme.palette.success.main }}>
-                          {formatCurrency(paid, 'USD')}
-                        </Typography>
-                        <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
-                          {collectionRate}%
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="body2" sx={{ fontWeight: 600, color: theme.palette.warning.main }}>
-                          {formatCurrency(Number(row.total_pending) || 0, 'USD')}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        {row.overdue_count > 0 ? (
-                          <Chip
-                            label={formatNumber(row.overdue_count)}
-                            size="small"
-                            sx={{ backgroundColor: '#fef2f2', color: '#dc2626', fontWeight: 600 }}
-                          />
-                        ) : (
-                          <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>0</Typography>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <Chip
-                          label={row.active ? t('active') : t('inactive')}
-                          size="small"
-                          sx={{
-                            backgroundColor: row.active ? '#ecfdf5' : '#f3f4f6',
-                            color: row.active ? theme.palette.success.main : theme.palette.text.secondary,
-                            fontWeight: 600,
-                          }}
-                        />
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </Paper>
+        <DataTable
+          columns={[
+            {
+              key: 'name',
+              header: t('colClinic'),
+              render: (row) => (
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                  <Avatar
+                    sx={{
+                      width: 36,
+                      height: 36,
+                      backgroundColor: row.active ? theme.palette.primary.main : theme.palette.grey[400],
+                      fontSize: '0.8rem',
+                    }}
+                  >
+                    {row.name.charAt(0).toUpperCase()}
+                  </Avatar>
+                  <Box>
+                    <Typography variant="body2" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
+                      {row.name}
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: theme.palette.text.secondary, fontFamily: 'monospace' }}>
+                      {row.slug}
+                    </Typography>
+                  </Box>
+                </Box>
+              ),
+            },
+            {
+              key: 'invoice_count',
+              header: t('colInvoices'),
+              render: (row) => (
+                <Typography variant="body2" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
+                  {formatNumber(row.invoice_count)}
+                </Typography>
+              ),
+            },
+            {
+              key: 'billed',
+              header: t('colBilled'),
+              render: (row) => (
+                <Typography variant="body2" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
+                  {formatCurrency(Number(row.total_billed) || 0, 'USD')}
+                </Typography>
+              ),
+            },
+            {
+              key: 'paid',
+              header: t('colPaid'),
+              render: (row) => {
+                const paid = Number(row.total_paid) || 0;
+                const billed = Number(row.total_billed) || 0;
+                const collectionRate = billed > 0 ? Math.round((paid / billed) * 100) : 0;
+                return (
+                  <>
+                    <Typography variant="body2" sx={{ fontWeight: 600, color: theme.palette.success.main }}>
+                      {formatCurrency(paid, 'USD')}
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
+                      {collectionRate}%
+                    </Typography>
+                  </>
+                );
+              },
+            },
+            {
+              key: 'pending',
+              header: t('colPending'),
+              render: (row) => (
+                <Typography variant="body2" sx={{ fontWeight: 600, color: theme.palette.warning.main }}>
+                  {formatCurrency(Number(row.total_pending) || 0, 'USD')}
+                </Typography>
+              ),
+            },
+            {
+              key: 'overdue_count',
+              header: t('colOverdue'),
+              render: (row) =>
+                row.overdue_count > 0 ? (
+                  <Chip
+                    label={formatNumber(row.overdue_count)}
+                    size="small"
+                    sx={{ backgroundColor: theme.palette.custom.status.error.bg, color: theme.palette.custom.status.error.text, fontWeight: 600 }}
+                  />
+                ) : (
+                  <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>0</Typography>
+                ),
+            },
+            {
+              key: 'status',
+              header: t('colStatus'),
+              render: (row) => (
+                <Chip
+                  label={row.active ? t('active') : t('inactive')}
+                  size="small"
+                  sx={{
+                    backgroundColor: row.active ? theme.palette.custom.status.success.bg : theme.palette.custom.surface.sunken,
+                    color: row.active ? theme.palette.custom.status.success.text : theme.palette.text.secondary,
+                    fontWeight: 600,
+                  }}
+                />
+              ),
+            },
+          ]}
+          data={rows}
+          keyExtractor={(row) => row.id}
+          rowsPerPage={Math.max(rows.length, 1)}
+        />
       )}
     </MotionDiv>
   );

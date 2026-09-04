@@ -45,7 +45,7 @@ export default function SuperAdminDashboardPage() {
     theme.palette.text.secondary,
     theme.palette.info.main,
     theme.palette.primary.main,
-    '#7c3aed',
+    theme.palette.custom.purple.main,
   ];
 
   const trend = computeTrend(dashboard.growth_by_month);
@@ -57,7 +57,7 @@ export default function SuperAdminDashboardPage() {
       key: 'total_clinics',
       icon: <AccountBalance sx={{ fontSize: 20 }} />,
       color: theme.palette.primary.main,
-      bgColor: theme.palette.mode === 'dark' ? 'rgba(13,148,136,0.15)' : '#f0fdfa',
+      bgColor: theme.palette.custom.brand.lightest,
       value: dashboard.total_tenants.toString(),
       trend: trend,
     },
@@ -65,7 +65,7 @@ export default function SuperAdminDashboardPage() {
       key: 'active_clinics',
       icon: <TrendingUp sx={{ fontSize: 20 }} />,
       color: theme.palette.success.main,
-      bgColor: theme.palette.mode === 'dark' ? 'rgba(16,185,129,0.15)' : '#ecfdf5',
+      bgColor: theme.palette.custom.status.success.bg,
       value: dashboard.active_tenants.toString(),
       trend: null,
     },
@@ -73,15 +73,15 @@ export default function SuperAdminDashboardPage() {
       key: 'total_users',
       icon: <People sx={{ fontSize: 20 }} />,
       color: theme.palette.info.main,
-      bgColor: theme.palette.mode === 'dark' ? 'rgba(59,130,246,0.15)' : '#eff6ff',
+      bgColor: theme.palette.custom.status.info.bg,
       value: formatNumber(dashboard.total_users),
       trend: null,
     },
     {
       key: 'total_revenue',
       icon: <AttachMoney sx={{ fontSize: 20 }} />,
-      color: '#7c3aed',
-      bgColor: theme.palette.mode === 'dark' ? 'rgba(124,58,237,0.15)' : '#f5f3ff',
+      color: theme.palette.custom.purple.main,
+      bgColor: theme.palette.custom.purple.bg,
       value: `$${formatNumber(dashboard.total_revenue)}`,
       trend: null,
     },
@@ -210,9 +210,9 @@ export default function SuperAdminDashboardPage() {
                     type="monotone"
                     dataKey="revenue"
                     name={t('revenue_label')}
-                    stroke="#7c3aed"
+                    stroke={theme.palette.custom.purple.main}
                     strokeWidth={2}
-                    dot={{ fill: '#7c3aed', r: 4 }}
+                    dot={{ fill: theme.palette.custom.purple.main, r: 4 }}
                     activeDot={{ r: 6 }}
                   />
                 </LineChart>

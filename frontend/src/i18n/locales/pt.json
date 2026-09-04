@@ -2689,6 +2689,8 @@
   "block_end": "Fim",
   "confirm_block": "Bloquear",
   "delete_block": "Excluir bloqueio",
+  "blockCreated": "Bloqueio de horário criado com sucesso",
+  "blockDeleted": "Bloqueio de horário removido com sucesso",
   "booking_detail": "Detalhe do Agendamento",
   "patient": "Paciente",
   "time": "Horário",
@@ -3071,8 +3073,9 @@
   "reactivate": "Reativar",
   "rowsPerPage": "Linhas por página",
   "errorLoad": "Erro ao carregar usuários",
-  "errorToggle": "Erro ao alterar estado"
- },
+  "errorToggle": "Erro ao alterar estado",
+  "toggledSuccess": "Estado do usuário atualizado com sucesso"
+  },
  "super_admin_billing": {
   "title": "Cobranças por Clínica",
   "subtitle": "Resumo de faturamento e cobranças de todas as clínicas",

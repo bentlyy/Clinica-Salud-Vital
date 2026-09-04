@@ -136,7 +136,7 @@ export function PrescriptionFormDialog({
       maxWidth="md"
       fullWidth
       PaperProps={{
-        sx: { borderRadius: '16px', border: `1px solid ${theme.palette.divider}` },
+        sx: { borderRadius: '14px', border: `1px solid ${theme.palette.divider}` },
       }}
     >
       <DialogTitle

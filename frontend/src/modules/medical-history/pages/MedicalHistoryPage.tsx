@@ -437,7 +437,7 @@ export default function MedicalHistoryPage() {
         onClose={handleFormClose}
         maxWidth="sm"
         fullWidth
-        PaperProps={{ sx: { borderRadius: '16px', border: `1px solid ${theme.palette.divider}` } }}
+        PaperProps={{ sx: { borderRadius: '14px', border: `1px solid ${theme.palette.divider}` } }}
       >
         <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', pb: 1 }}>
           <Typography variant="h5" sx={{ fontWeight: 700, color: theme.palette.text.primary }}>
@@ -533,7 +533,7 @@ export default function MedicalHistoryPage() {
                   {(['active', 'resolved', 'chronic', 'family'] as const).map((s) => (
                     <MenuItem key={s} value={s}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Circle sx={{ fontSize: 10, color: STATUS_CONFIG[s].color }} />
+                        <Circle sx={{ fontSize: 12, color: STATUS_CONFIG[s].color }} />
                         {STATUS_CONFIG[s].label}
                       </Box>
                     </MenuItem>

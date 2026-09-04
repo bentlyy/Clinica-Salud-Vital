@@ -31,6 +31,7 @@ export const Pagination = memo(function Pagination({ page, totalPages, total, on
       <Button
         variant="outlined"
         size="small"
+        aria-label={t('pagination.previous', 'Página anterior')}
         disabled={page <= 1}
         onClick={() => onPageChange(page - 1)}
         sx={{ minWidth: 36, textTransform: 'none', borderColor: theme.palette.divider, color: theme.palette.text.primary }}
@@ -48,6 +49,7 @@ export const Pagination = memo(function Pagination({ page, totalPages, total, on
             key={p}
             variant={p === page ? 'contained' : 'outlined'}
             size="small"
+            aria-label={t('pagination.pageNumber', 'Página {{page}}', { page: String(p) })}
             onClick={() => onPageChange(p as number)}
             sx={{
               minWidth: 36,
@@ -73,6 +75,7 @@ export const Pagination = memo(function Pagination({ page, totalPages, total, on
       <Button
         variant="outlined"
         size="small"
+        aria-label={t('pagination.next', 'Página siguiente')}
         disabled={page >= totalPages}
         onClick={() => onPageChange(page + 1)}
         sx={{ minWidth: 36, textTransform: 'none', borderColor: theme.palette.divider, color: theme.palette.text.primary }}

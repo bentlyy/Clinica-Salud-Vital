@@ -88,8 +88,8 @@ describe('AdminLabRequestsPage', () => {
 
   it('renders the loading state while fetching', () => {
     service.getLabRequests.mockReturnValue(new Promise(() => {}));
-    const { container } = renderPage();
-    expect(container.querySelectorAll('.MuiSkeleton-root').length).toBe(3);
+    renderPage();
+    expect(screen.getByText('Cargando solicitudes...')).toBeInTheDocument();
   });
 
   it('groups requests by doctor and renders the tables', async () => {

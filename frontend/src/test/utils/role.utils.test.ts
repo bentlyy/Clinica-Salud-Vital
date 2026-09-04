@@ -105,11 +105,11 @@ describe('getRoleColor', () => {
     expect(getRoleColor('doctor')).toBe('#2563eb');
     expect(getRoleColor('lab_technician')).toBe('#d97706');
     expect(getRoleColor('patient')).toBe('#059669');
-    expect(getRoleColor('guest')).toBe('#6b7280');
-    expect(getRoleColor('user')).toBe('#6b7280');
+    expect(getRoleColor('guest')).toBe('#4b5563');
+    expect(getRoleColor('user')).toBe('#4b5563');
   });
 
   it('falls back to a neutral color for unknown roles', () => {
-    expect(getRoleColor('mystery' as never)).toBe('#6b7280');
+    expect(getRoleColor('mystery' as never)).toBe('#4b5563');
   });
 });

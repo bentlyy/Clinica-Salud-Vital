@@ -4,6 +4,8 @@ import { useTheme } from '@mui/material/styles';
 import {
   Box,
   Button,
+  Dialog,
+  DialogContent,
   Tabs,
   Tab,
   MenuItem,
@@ -244,7 +246,7 @@ function LabQualityControlPage() {
               label={t('test_label')}
               value={chartTestId}
               onChange={(e) => setChartTestId(e.target.value === '' ? '' : Number(e.target.value))}
-              sx={{ minWidth: 200, '& .MuiOutlinedInput-root': { borderRadius: '10px' } }}
+              sx={{ width: { xs: '100%', sm: 'auto' }, minWidth: { xs: 0, sm: 200 }, '& .MuiOutlinedInput-root': { borderRadius: '10px' } }}
             >
               <MenuItem value="">
                 <em>{t('select_test')}</em>
@@ -283,34 +285,23 @@ function LabQualityControlPage() {
       )}
 
       {/* QC Form Dialog */}
-      {qcFormOpen && (
-        <Box
-          sx={{
-            position: 'fixed',
-            inset: 0,
-            zIndex: 1300,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: 'rgba(0,0,0,0.5)',
-          }}
-          onClick={() => setQcFormOpen(false)}
-        >
-          <Box
-            sx={{ width: '90%', maxWidth: 700, maxHeight: '90vh', overflow: 'auto' }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <QCForm
-              areas={areas}
-              tests={tests}
-              equipment={equipment}
-              onSubmit={handleCreateQc}
-              onCancel={() => setQcFormOpen(false)}
-              isLoading={createQcMutation.isPending}
-            />
-          </Box>
-        </Box>
-      )}
+      <Dialog
+        open={qcFormOpen}
+        onClose={() => setQcFormOpen(false)}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogContent sx={{ p: 0 }}>
+          <QCForm
+            areas={areas}
+            tests={tests}
+            equipment={equipment}
+            onSubmit={handleCreateQc}
+            onCancel={() => setQcFormOpen(false)}
+            isLoading={createQcMutation.isPending}
+          />
+        </DialogContent>
+      </Dialog>
     </Box>
   );
 }

@@ -1,10 +1,10 @@
 import { Box, Chip, Tooltip } from '@mui/material';
-import { useTheme } from '@mui/material/styles';
+import { useTheme, type Theme } from '@mui/material/styles';
 import { motion } from 'framer-motion';
 import type { Specialty, SpecialtyDoctor } from '../types/specialty.types';
 
 export function withAlpha(hex: string, alpha: number): string {
-  if (!hex || !/^#[0-9a-fA-F]{6}$/.test(hex)) return `rgba(25, 118, 210, ${alpha})`;
+  if (!hex || !/^#[0-9a-fA-F]{6}$/.test(hex)) return `rgba(13, 148, 136, ${alpha})`;
   const r = parseInt(hex.slice(1, 3), 16);
   const g = parseInt(hex.slice(3, 5), 16);
   const b = parseInt(hex.slice(5, 7), 16);
@@ -12,10 +12,11 @@ export function withAlpha(hex: string, alpha: number): string {
 }
 
 export function getSpecialtyColor(specialty: Specialty): string {
-  return specialty.color || '#1976D2';
+  return specialty.color || '#0d9488';
 }
 
 export function ColorIndicator({ color, size = 8 }: { color: string; size?: number }) {
+  const theme = useTheme();
   return (
     <Box
       component="span"
@@ -23,7 +24,7 @@ export function ColorIndicator({ color, size = 8 }: { color: string; size?: numb
         width: size,
         height: size,
         borderRadius: '50%',
-        backgroundColor: color || '#1976D2',
+        backgroundColor: color || theme.palette.primary.main,
         display: 'inline-block',
         flexShrink: 0,
       }}
@@ -87,9 +88,9 @@ export function ProcedureBadge({ procedures }: { procedures?: string[] }) {
         px: 1,
         height: 24,
         borderRadius: '8px',
-        backgroundColor: theme.palette.mode === 'dark' ? 'rgba(13,148,136,0.15)' : '#f0fdfa',
-        border: `1px solid ${theme.palette.mode === 'dark' ? 'rgba(13,148,136,0.3)' : '#ccfbf1'}`,
-        color: theme.palette.mode === 'dark' ? '#2dd4bf' : '#0f766e',
+        backgroundColor: theme.palette.custom.brand.lightest,
+        border: `1px solid ${theme.palette.custom.brand.lighter}`,
+        color: theme.palette.custom.brand.dark,
         fontWeight: 600,
         fontSize: '0.75rem',
       }}
@@ -111,16 +112,19 @@ function getInitials(name: string) {
 }
 
 const AVATAR_PALETTE = [
-  '#0d9488',
-  '#6366f1',
-  '#3b82f6',
-  '#db2777',
-  '#ea580c',
-  '#7c3aed',
+  'custom.brand.main',
+  'custom.purple.main',
+  'custom.cyan.main',
+  'custom.pink.main',
+  'custom.orange.main',
+  'secondary.main',
 ];
 
-function avatarColorFor(id: number) {
-  return AVATAR_PALETTE[id % AVATAR_PALETTE.length];
+function avatarColorFor(id: number, theme: Theme) {
+  const paletteItem = AVATAR_PALETTE[id % AVATAR_PALETTE.length] ?? AVATAR_PALETTE[0] ?? 'custom.brand.main';
+  const [group, key] = paletteItem.split('.') as [string, string];
+  const groupObj = (theme.palette as unknown as Record<string, Record<string, string>>)[group];
+  return groupObj?.[key] ?? theme.palette.primary.main;
 }
 
 export function DoctorAvatarGroup({ doctors, max = 3 }: { doctors?: SpecialtyDoctor[]; max?: number }) {
@@ -140,7 +144,7 @@ export function DoctorAvatarGroup({ doctors, max = 3 }: { doctors?: SpecialtyDoc
                 width: 30,
                 height: 30,
                 borderRadius: '50%',
-                backgroundColor: avatarColorFor(doc.id),
+                backgroundColor: avatarColorFor(doc.id, theme),
                 color: '#fff',
                 fontSize: '0.6875rem',
                 fontWeight: 700,
@@ -163,7 +167,7 @@ export function DoctorAvatarGroup({ doctors, max = 3 }: { doctors?: SpecialtyDoc
             width: 30,
             height: 30,
             borderRadius: '50%',
-            backgroundColor: theme.palette.mode === 'dark' ? '#374151' : '#f3f4f6',
+            backgroundColor: theme.palette.custom.surface.sunken,
             color: theme.palette.text.secondary,
             fontSize: '0.6875rem',
             fontWeight: 700,

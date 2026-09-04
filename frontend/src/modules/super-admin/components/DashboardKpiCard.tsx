@@ -23,7 +23,6 @@ export function DashboardKpiCard({
   trend,
 }: DashboardKpiCardProps) {
   const theme = useTheme();
-  const isDark = theme.palette.mode === 'dark';
 
   return (
     <Paper
@@ -64,8 +63,8 @@ export function DashboardKpiCard({
               fontVariantNumeric: 'tabular-nums',
               color: trend.up ? theme.palette.success.main : theme.palette.error.main,
               backgroundColor: trend.up
-                ? isDark ? 'rgba(16,185,129,0.15)' : '#ecfdf5'
-                : isDark ? 'rgba(239,68,68,0.15)' : '#fef2f2',
+                ? theme.palette.custom.status.success.bg
+                : theme.palette.custom.status.error.bg,
               px: 0.75,
               py: 0.25,
               borderRadius: '6px',

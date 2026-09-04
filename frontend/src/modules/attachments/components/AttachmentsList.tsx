@@ -15,6 +15,7 @@ import { useTheme } from '@mui/material/styles';
 import AttachFile from '@mui/icons-material/AttachFile';
 import DeleteOutline from '@mui/icons-material/DeleteOutline';
 import Download from '@mui/icons-material/Download';
+import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
 import { useAttachments, useUploadAttachment, useDeleteAttachment } from '../hooks/useAttachments';
 
 interface AttachmentsListProps {
@@ -34,10 +35,18 @@ export function AttachmentsList({ entityType, entityId, canManage = true }: Atta
   const theme = useTheme();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: number; name: string } | null>(null);
 
   const { data: attachments, isLoading } = useAttachments(entityType, entityId);
   const uploadMutation = useUploadAttachment(entityType, entityId ?? 0);
   const deleteMutation = useDeleteAttachment(entityType, entityId ?? 0);
+
+  const handleConfirmDelete = () => {
+    if (deleteTarget) {
+      deleteMutation.mutate(deleteTarget.id);
+      setDeleteTarget(null);
+    }
+  };
 
   if (!entityId) return null;
 
@@ -97,6 +106,8 @@ export function AttachmentsList({ entityType, entityId, canManage = true }: Atta
                 <IconButton
                   edge="end"
                   size="small"
+                  aria-label={t('download', { defaultValue: 'Descargar' })}
+                  title={t('download', { defaultValue: 'Descargar' })}
                   onClick={() => attachmentsServiceDownload(attachment.id, attachment.original_name)}
                 >
                   <Download fontSize="small" />
@@ -107,7 +118,9 @@ export function AttachmentsList({ entityType, entityId, canManage = true }: Atta
                     size="small"
                     color="error"
                     disabled={deleteMutation.isPending}
-                    onClick={() => deleteMutation.mutate(attachment.id)}
+                    onClick={() => setDeleteTarget({ id: attachment.id, name: attachment.original_name })}
+                    aria-label={t('delete', { defaultValue: 'Eliminar' })}
+                    title={t('delete', { defaultValue: 'Eliminar' })}
                     sx={{ ml: 0.5 }}
                   >
                     <DeleteOutline fontSize="small" />
@@ -123,6 +136,16 @@ export function AttachmentsList({ entityType, entityId, canManage = true }: Atta
           )}
         </List>
       )}
+
+      <ConfirmDialog
+        open={Boolean(deleteTarget)}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleConfirmDelete}
+        title={t('deleteTitle', { defaultValue: 'Eliminar archivo' })}
+        message={t('deleteMessage', { defaultValue: '¿Deseas eliminar este archivo adjunto?' })}
+        confirmLabel={t('delete', { defaultValue: 'Eliminar' })}
+        loading={deleteMutation.isPending}
+      />
     </Box>
   );
 }

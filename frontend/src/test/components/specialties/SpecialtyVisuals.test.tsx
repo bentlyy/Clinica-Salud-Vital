@@ -37,13 +37,13 @@ describe('SpecialtyVisuals helpers', () => {
     expect(withAlpha('#0d9488', 0.25)).toBe('rgba(13, 148, 136, 0.25)');
   });
 
-  it('withAlpha falls back to the default blue for invalid colors', () => {
-    expect(withAlpha('red', 0.5)).toBe('rgba(25, 118, 210, 0.5)');
+  it('withAlpha falls back to the default brand color for invalid colors', () => {
+    expect(withAlpha('red', 0.5)).toBe('rgba(13, 148, 136, 0.5)');
   });
 
   it('getSpecialtyColor returns the specialty color or a default', () => {
     expect(getSpecialtyColor(specialty)).toBe('#0d9488');
-    expect(getSpecialtyColor({ ...specialty, color: undefined })).toBe('#1976D2');
+    expect(getSpecialtyColor({ ...specialty, color: undefined })).toBe('#0d9488');
   });
 
   it('ColorIndicator renders the color', () => {

@@ -18,6 +18,7 @@ import { usePublicDoctorList } from '@/modules/doctors/hooks/useDoctors';
 import { BookingCalendar } from '../components/BookingCalendar';
 import { CreateBookingDialog } from '../components/CreateBookingDialog';
 import { BookingDetailDrawer } from '../components/BookingDetailDrawer';
+import { BookingStatusChip } from '../components/BookingStatusChip';
 import type { Booking, BookingListParams, BookingStatus, CreateBookingSeriesInput } from '../types/booking.types';
 import { BOOKING_STATUS_CONFIG, BOOKING_STATUS_OPTIONS } from '../types/booking.types';
 import { formatDate } from '@/shared/utils/localeUtils';
@@ -401,9 +402,6 @@ function BookingCard({ booking, onView, t }: BookingCardProps) {
   const theme = useTheme();
   const FALLBACK_STATUS = { labelKey: 'unknown_status', color: theme.palette.text.secondary, bgColor: theme.palette.grey[100] };
   const statusConfig = BOOKING_STATUS_CONFIG[booking.status] ?? FALLBACK_STATUS;
-  const statusLabel = statusConfig.labelKey === 'unknown_status'
-    ? t('unknown_status')
-    : t(statusConfig.labelKey);
   const patientLabel = booking.patient_name || booking.guest_name || t('without_name');
 
   return (
@@ -471,16 +469,7 @@ function BookingCard({ booking, onView, t }: BookingCardProps) {
 
       {/* Status + actions */}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-        <Chip
-          label={statusLabel}
-          size="small"
-          sx={{
-            backgroundColor: statusConfig.bgColor,
-            color: statusConfig.color,
-            fontWeight: 600,
-            fontSize: '0.75rem',
-          }}
-        />
+        <BookingStatusChip status={booking.status} />
         <Tooltip title={t('view_detail_tooltip')}>
           <IconButton
             size="small"

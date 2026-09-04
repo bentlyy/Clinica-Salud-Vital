@@ -8,7 +8,7 @@ import EventBusy from '@mui/icons-material/EventBusy';
 import Assignment from '@mui/icons-material/Assignment';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '@mui/material/styles';
+import { useTheme, type Theme } from '@mui/material/styles';
 import { useAuth } from '@/shared/providers/AuthProvider';
 import { getRoleLabel } from '@/shared/utils/role.utils';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
@@ -21,12 +21,12 @@ import DoctorsPage from '@/modules/doctors/pages/DoctorsPage';
 import PatientsPage from '@/modules/patients/pages/PatientsPage';
 import SpecialtiesPage from '@/modules/specialties/pages/SpecialtiesPage';
 
-function getStatusMap(isDark: boolean) {
+function getStatusMap(theme: Theme) {
   return {
-    pending: { key: 'pending', color: isDark ? '#fbbf24' : '#d97706', bg: isDark ? '#422006' : '#fffbeb' },
-    confirmed: { key: 'confirmed', color: isDark ? '#2dd4bf' : '#0d9488', bg: isDark ? '#042f2e' : '#f0fdfa' },
-    cancelled: { key: 'cancelled', color: isDark ? '#f87171' : '#ef4444', bg: isDark ? '#450a0a' : '#fef2f2' },
-    completed: { key: 'completed', color: isDark ? '#60a5fa' : '#2563eb', bg: isDark ? '#1e3a5f' : '#eff6ff' },
+    pending: { key: 'pending', color: theme.palette.custom.status.warning.text, bg: theme.palette.custom.status.warning.bg },
+    confirmed: { key: 'confirmed', color: theme.palette.primary.main, bg: theme.palette.custom.brand.lightest },
+    cancelled: { key: 'cancelled', color: theme.palette.error.main, bg: theme.palette.custom.status.error.bg },
+    completed: { key: 'completed', color: theme.palette.info.main, bg: theme.palette.custom.status.info.bg },
   };
 }
 
@@ -34,18 +34,17 @@ function DoctorDashboard() {
   const { t } = useTranslation('dashboard');
   const { user } = useAuth();
   const theme = useTheme();
-  const isDark = theme.palette.mode === 'dark';
-  const statusMap = getStatusMap(isDark);
+  const statusMap = getStatusMap(theme);
   const { data: stats, isLoading: statsLoading } = useMyDoctorStats();
   const { data: upcoming, isLoading: bookingsLoading } = useDoctorUpcomingBookings();
 
   if (statsLoading || bookingsLoading) return <LoadingState message={t('loading')} />;
 
   const statCards = [
-    { label: t('upcomingAppointments'), value: stats?.upcoming_bookings ?? 0, icon: <CalendarMonth />, color: isDark ? '#2dd4bf' : '#0d9488', bgColor: isDark ? '#042f2e' : '#f0fdfa' },
-    { label: t('patientsAttended'), value: stats?.patients_served ?? 0, icon: <People />, color: isDark ? '#60a5fa' : '#2563eb', bgColor: isDark ? '#1e3a5f' : '#eff6ff' },
-    { label: t('totalAppointments'), value: stats?.total_bookings ?? 0, icon: <Science />, color: isDark ? '#fbbf24' : '#d97706', bgColor: isDark ? '#422006' : '#fffbeb' },
-    { label: t('clinicalRecords'), value: stats?.clinical_records ?? 0, icon: <Assignment />, color: isDark ? '#a78bfa' : '#7c3aed', bgColor: isDark ? '#2e1065' : '#f5f3ff' },
+    { label: t('upcomingAppointments'), value: stats?.upcoming_bookings ?? 0, icon: <CalendarMonth />, color: theme.palette.primary.main, bgColor: theme.palette.custom.brand.lightest },
+    { label: t('patientsAttended'), value: stats?.patients_served ?? 0, icon: <People />, color: theme.palette.info.main, bgColor: theme.palette.custom.status.info.bg },
+    { label: t('totalAppointments'), value: stats?.total_bookings ?? 0, icon: <Science />, color: theme.palette.custom.status.warning.text, bgColor: theme.palette.custom.status.warning.bg },
+    { label: t('clinicalRecords'), value: stats?.clinical_records ?? 0, icon: <Assignment />, color: theme.palette.custom.purple.text, bgColor: theme.palette.custom.purple.bg },
   ];
 
   return (
@@ -142,8 +141,7 @@ function PatientDashboard() {
   const { t } = useTranslation('dashboard');
   const { user } = useAuth();
   const theme = useTheme();
-  const isDark = theme.palette.mode === 'dark';
-  const statusMap = getStatusMap(isDark);
+  const statusMap = getStatusMap(theme);
   const { data, isLoading } = useMyBookings({ page: 1, limit: 50 });
 
   if (isLoading) return <LoadingState message={t('loading')} />;
@@ -154,10 +152,10 @@ function PatientDashboard() {
   const cancelled = bookings.filter((b) => b.status === 'cancelled').length;
 
   const statCards = [
-    { label: t('upcomingAppointments'), value: upcoming.length, icon: <CalendarMonth />, color: isDark ? '#2dd4bf' : '#0d9488', bgColor: isDark ? '#042f2e' : '#f0fdfa' },
-    { label: t('completed'), value: completed, icon: <Assignment />, color: isDark ? '#60a5fa' : '#2563eb', bgColor: isDark ? '#1e3a5f' : '#eff6ff' },
-    { label: t('cancelled'), value: cancelled, icon: <EventBusy />, color: isDark ? '#f87171' : '#ef4444', bgColor: isDark ? '#450a0a' : '#fef2f2' },
-    { label: t('totalAppointments'), value: bookings.length, icon: <Science />, color: isDark ? '#fbbf24' : '#d97706', bgColor: isDark ? '#422006' : '#fffbeb' },
+    { label: t('upcomingAppointments'), value: upcoming.length, icon: <CalendarMonth />, color: theme.palette.primary.main, bgColor: theme.palette.custom.brand.lightest },
+    { label: t('completed'), value: completed, icon: <Assignment />, color: theme.palette.info.main, bgColor: theme.palette.custom.status.info.bg },
+    { label: t('cancelled'), value: cancelled, icon: <EventBusy />, color: theme.palette.error.main, bgColor: theme.palette.custom.status.error.bg },
+    { label: t('totalAppointments'), value: bookings.length, icon: <Science />, color: theme.palette.custom.status.warning.text, bgColor: theme.palette.custom.status.warning.bg },
   ];
 
   return (
@@ -251,16 +249,15 @@ function AdminOverview() {
   const { t } = useTranslation('dashboard');
   const { user } = useAuth();
   const theme = useTheme();
-  const isDark = theme.palette.mode === 'dark';
-  const statusMap = getStatusMap(isDark);
+  const statusMap = getStatusMap(theme);
   const { data: stats } = useDashboardStats();
   const { data: upcoming } = useUpcomingBookings();
 
   const statCards = [
-    { label: t('todaysAppointments'), value: stats?.today_bookings ?? 0, icon: <CalendarMonth />, color: isDark ? '#2dd4bf' : '#0d9488', bgColor: isDark ? '#042f2e' : '#f0fdfa' },
-    { label: t('totalPatients'), value: stats?.total_patients ?? 0, icon: <People />, color: isDark ? '#60a5fa' : '#2563eb', bgColor: isDark ? '#1e3a5f' : '#eff6ff' },
-    { label: t('totalAppointments'), value: stats?.total_bookings ?? 0, icon: <Science />, color: isDark ? '#fbbf24' : '#d97706', bgColor: isDark ? '#422006' : '#fffbeb' },
-    { label: t('confirmed'), value: stats?.confirmed_bookings ?? 0, icon: <TrendingUp />, color: isDark ? '#34d399' : '#059669', bgColor: isDark ? '#022c22' : '#ecfdf5' },
+    { label: t('todaysAppointments'), value: stats?.today_bookings ?? 0, icon: <CalendarMonth />, color: theme.palette.primary.main, bgColor: theme.palette.custom.brand.lightest },
+    { label: t('totalPatients'), value: stats?.total_patients ?? 0, icon: <People />, color: theme.palette.info.main, bgColor: theme.palette.custom.status.info.bg },
+    { label: t('totalAppointments'), value: stats?.total_bookings ?? 0, icon: <Science />, color: theme.palette.custom.status.warning.text, bgColor: theme.palette.custom.status.warning.bg },
+    { label: t('confirmed'), value: stats?.confirmed_bookings ?? 0, icon: <TrendingUp />, color: theme.palette.success.main, bgColor: theme.palette.custom.status.success.bg },
   ];
 
   return (

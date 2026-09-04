@@ -98,7 +98,7 @@ export function PatientLayout() {
           <Box sx={{ flex: 1 }} />
 
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-            <IconButton size="small" sx={{ color: 'text.secondary' }}>
+            <IconButton size="small" sx={{ color: 'text.secondary' }} aria-label="Notificaciones">
               <Badge badgeContent={3} color="error" variant="dot">
                 <Notifications fontSize="small" />
               </Badge>
@@ -106,11 +106,16 @@ export function PatientLayout() {
 
             <LanguageSwitcher />
 
-            <IconButton size="small" sx={{ color: 'text.secondary' }} onClick={toggleTheme}>
+            <IconButton
+              size="small"
+              sx={{ color: 'text.secondary' }}
+              onClick={toggleTheme}
+              aria-label={mode === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
+            >
               {mode === 'dark' ? <LightMode fontSize="small" /> : <DarkMode fontSize="small" />}
             </IconButton>
 
-            <IconButton onClick={(e) => setAnchorEl(e.currentTarget)} size="small" sx={{ ml: 0.5 }}>
+            <IconButton onClick={(e) => setAnchorEl(e.currentTarget)} size="small" sx={{ ml: 0.5 }} aria-label="Perfil">
               <Avatar
                 sx={{
                   width: 32,

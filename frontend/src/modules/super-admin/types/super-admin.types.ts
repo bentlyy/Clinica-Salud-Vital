@@ -95,7 +95,7 @@ export const TENANT_PLAN_CONFIG: Record<
   string,
   { label: string; color: string; bgColor: string }
 > = {
-  free: { label: 'Gratuito', color: '#6b7280', bgColor: '#f3f4f6' },
+  free: { label: 'Gratuito', color: '#4b5563', bgColor: '#f3f4f6' },
   basic: { label: 'Básico', color: '#2563eb', bgColor: '#eff6ff' },
   pro: { label: 'Pro', color: '#0d9488', bgColor: '#f0fdfa' },
   enterprise: { label: 'Enterprise', color: '#7c3aed', bgColor: '#f5f3ff' },

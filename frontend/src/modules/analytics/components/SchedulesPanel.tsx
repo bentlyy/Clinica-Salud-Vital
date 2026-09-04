@@ -1,6 +1,7 @@
-import { Box, Paper, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from '@mui/material';
+import { Box, Paper, Typography } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { useTranslation } from 'react-i18next';
+import { DataTable } from '@/shared/components/ui/DataTable';
 import type { ScheduleRecord } from '../types/analytics.types';
 
 const HOURS = ['09:00', '10:00', '11:00', '14:00', '15:00', '16:00'];
@@ -71,41 +72,38 @@ export function SchedulesPanel({ data }: { data: ScheduleRecord[] }) {
 
       <Paper sx={{ p: 3, border: `1px solid ${theme.palette.divider}` }}>
         <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>{t('schedule_recommendations')}</Typography>
-        <TableContainer>
-          <Table size="small">
-            <TableHead>
-              <TableRow>
-                <TableCell>{t('day')}</TableCell>
-                <TableCell>{t('best_time')}</TableCell>
-                <TableCell>{t('occupancy')}</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {data.slice(0, 5).map((d) => (
-                <TableRow key={d.day}>
-                  <TableCell>{translateDay(d.day)}</TableCell>
-                  <TableCell>{d.bestTime}</TableCell>
-                  <TableCell>
-                    <Box
-                      component="span"
-                      sx={{
-                        px: 1,
-                        py: 0.5,
-                        borderRadius: 1,
-                        bgcolor: d.occupancy > 70 ? theme.palette.custom.status.error.bg : theme.palette.custom.brand.lightest,
-                        color: d.occupancy > 70 ? theme.palette.error.dark : theme.palette.primary.main,
-                        fontSize: '0.8125rem',
-                        fontWeight: 500,
-                      }}
-                    >
-                      {d.occupancy}%
-                    </Box>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
+        <DataTable
+          columns={[
+            {
+              key: 'day',
+              header: t('day'),
+              render: (d) => translateDay(d.day),
+            },
+            { key: 'bestTime', header: t('best_time'), render: (d) => d.bestTime },
+            {
+              key: 'occupancy',
+              header: t('occupancy'),
+              render: (d) => (
+                <Box
+                  component="span"
+                  sx={{
+                    px: 1,
+                    py: 0.5,
+                    borderRadius: 1,
+                    bgcolor: d.occupancy > 70 ? theme.palette.custom.status.error.bg : theme.palette.custom.brand.lightest,
+                    color: d.occupancy > 70 ? theme.palette.error.dark : theme.palette.primary.main,
+                    fontSize: '0.8125rem',
+                    fontWeight: 500,
+                  }}
+                >
+                  {d.occupancy}%
+                </Box>
+              ),
+            },
+          ]}
+          data={data.slice(0, 5)}
+          keyExtractor={(d) => d.day}
+        />
       </Paper>
     </Box>
   );

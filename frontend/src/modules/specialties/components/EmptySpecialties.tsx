@@ -32,7 +32,7 @@ export function EmptySpecialties({ hasSearch, onCreate }: EmptySpecialtiesProps)
           width: 64,
           height: 64,
           borderRadius: '18px',
-          backgroundColor: theme.palette.mode === 'dark' ? 'rgba(13,148,136,0.15)' : '#f0fdfa',
+          backgroundColor: theme.palette.custom.brand.lightest,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',

@@ -299,7 +299,7 @@ export default function AvailabilityPage() {
         onClose={handleCloseDialog}
         maxWidth="sm"
         fullWidth
-        PaperProps={{ sx: { borderRadius: '16px', border: `1px solid ${theme.palette.divider}` } }}
+        PaperProps={{ sx: { borderRadius: '14px', border: `1px solid ${theme.palette.divider}` } }}
       >
         <DialogTitle>
           <Typography variant="h5" sx={{ fontWeight: 700, color: theme.palette.text.primary }}>
@@ -432,7 +432,7 @@ export default function AvailabilityPage() {
       <Dialog
         open={deleteConfirmId !== null}
         onClose={() => setDeleteConfirmId(null)}
-        PaperProps={{ sx: { borderRadius: '16px', border: `1px solid ${theme.palette.divider}` } }}
+        PaperProps={{ sx: { borderRadius: '14px', border: `1px solid ${theme.palette.divider}` } }}
       >
         <DialogTitle>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -469,7 +469,7 @@ export default function AvailabilityPage() {
         onClose={() => setExceptionDialogOpen(false)}
         maxWidth="sm"
         fullWidth
-        PaperProps={{ sx: { borderRadius: '16px', border: `1px solid ${theme.palette.divider}` } }}
+        PaperProps={{ sx: { borderRadius: '14px', border: `1px solid ${theme.palette.divider}` } }}
       >
         <DialogTitle>
           <Typography variant="h5" sx={{ fontWeight: 700, color: theme.palette.text.primary }}>
@@ -544,7 +544,7 @@ export default function AvailabilityPage() {
       <Dialog
         open={deleteExceptionConfirmId !== null}
         onClose={() => setDeleteExceptionConfirmId(null)}
-        PaperProps={{ sx: { borderRadius: '16px', border: `1px solid ${theme.palette.divider}` } }}
+        PaperProps={{ sx: { borderRadius: '14px', border: `1px solid ${theme.palette.divider}` } }}
       >
         <DialogTitle>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>

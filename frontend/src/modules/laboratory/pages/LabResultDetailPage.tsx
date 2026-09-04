@@ -7,21 +7,16 @@ import {
   Box,
   Paper,
   Typography,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   Chip,
   Button,
-  Skeleton,
   LinearProgress,
   Alert,
 } from '@mui/material';
 import ArrowBack from '@mui/icons-material/ArrowBack';
 import WarningAmber from '@mui/icons-material/WarningAmber';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
+import { LoadingState } from '@/shared/components/ui/LoadingState';
+import { DataTable, type DataTableColumn } from '@/shared/components/ui/DataTable';
 import { getLabRequestById } from '../../laboratory/services/lab.service';
 import { getLabColor } from '@/shared/components/lab-icons/LabIcons';
 import { formatReferenceRange, getRangeStatus, type ReferenceRanges } from '../utils/labRange';
@@ -48,10 +43,10 @@ export default function LabResultDetailPage() {
 
   const goBack = () => {
     if (user?.role === 'doctor') navigate('/doctor/lab-results');
-    else navigate('/patient/laboratory');
+    else navigate('/my-laboratory');
   };
 
-  if (loading) return <Box sx={{ p: 4 }}><Skeleton variant="rounded" height={200} sx={{ borderRadius: '12px' }} /></Box>;
+  if (loading) return <LoadingState message={t('lab_result_detail:loading', 'Cargando detalles...')} />;
   if (error) return <Box sx={{ p: 4 }}><Alert severity="error" sx={{ borderRadius: '10px' }}>{error}</Alert></Box>;
   if (!request) return <Box sx={{ p: 4 }}><Alert severity="info" sx={{ borderRadius: '10px' }}>{t('lab_result_detail:notFound')}</Alert></Box>;
 
@@ -75,6 +70,87 @@ export default function LabResultDetailPage() {
     cancelled: { bg: theme.palette.custom.surface.sunken, fg: theme.palette.text.secondary },
   };
   const st = statusColors[request.status] || { bg: theme.palette.custom.surface.sunken, fg: theme.palette.text.secondary };
+
+  const resultColumns: DataTableColumn<LabRequestItem>[] = [
+    {
+      key: 'test_name',
+      header: t('lab_result_detail:colExam'),
+      render: (item) => {
+        const hasResult = !!item.result_value;
+        const rangeStatus = getRangeStatus(item.result_value, (item as { reference_ranges?: ReferenceRanges }).reference_ranges);
+        const isAbnormal = rangeStatus === 'high' || rangeStatus === 'low';
+        return (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Box sx={{
+              width: 8, height: 8, borderRadius: '50%',
+              backgroundColor: isAbnormal
+                ? theme.palette.error.main
+                : hasResult ? theme.palette.success.main : theme.palette.warning.main, flexShrink: 0,
+            }} />
+            <Typography variant="body2" sx={{ fontWeight: 600 }}>{item.test_name || `Test #${item.lab_test_id}`}</Typography>
+          </Box>
+        );
+      },
+    },
+    {
+      key: 'result_value',
+      header: t('lab_result_detail:colResult'),
+      render: (item) => {
+        const hasResult = !!item.result_value;
+        const rangeStatus = getRangeStatus(item.result_value, (item as { reference_ranges?: ReferenceRanges }).reference_ranges);
+        const isAbnormal = rangeStatus === 'high' || rangeStatus === 'low';
+        return hasResult ? (
+          <Typography
+            variant="body2"
+            sx={{
+              fontWeight: 600,
+              color: isAbnormal ? theme.palette.error.main : theme.palette.custom.status.success.text,
+            }}
+          >
+            {item.result_value}
+            {item.unit && <Typography component="span" variant="caption" sx={{ ml: 0.5, fontWeight: 400, color: theme.palette.text.secondary }}>{item.unit}</Typography>}
+            {isAbnormal && (
+              <Chip
+                size="small"
+                label={rangeStatus === 'high'
+                  ? t('lab_result_detail:high', 'Alto')
+                  : t('lab_result_detail:low', 'Bajo')}
+                sx={{ ml: 1, fontSize: 11, fontWeight: 700, bgcolor: theme.palette.error.main, color: theme.palette.common.white }}
+              />
+            )}
+          </Typography>
+        ) : (
+          <Typography variant="body2" sx={{ color: theme.palette.text.secondary, fontStyle: 'italic' }}>{t('lab_result_detail:pending')}</Typography>
+        );
+      },
+    },
+    {
+      key: 'reference_range',
+      header: t('lab_result_detail:colReference'),
+      render: (item) => (
+        <Typography variant="body2" sx={{ color: theme.palette.text.secondary, fontSize: 13 }}>{formatReferenceRange((item as { reference_ranges?: ReferenceRanges }).reference_ranges)}</Typography>
+      ),
+    },
+    {
+      key: 'result_notes',
+      header: t('lab_result_detail:colNotes'),
+      render: (item) => (
+        <Typography variant="body2" sx={{ color: theme.palette.text.secondary, fontSize: 13 }}>{item.result_notes || '—'}</Typography>
+      ),
+    },
+  ];
+
+  const resultsRowSx = (item: LabRequestItem, idx: number) => {
+    const rangeStatus = getRangeStatus(item.result_value, (item as { reference_ranges?: ReferenceRanges }).reference_ranges);
+    const isAbnormal = rangeStatus === 'high' || rangeStatus === 'low';
+    return {
+      backgroundColor: isAbnormal
+        ? theme.palette.error.light
+        : idx % 2 !== 0
+          ? theme.palette.custom.surface.muted
+          : 'transparent',
+    };
+  };
 
   return (
     <Box>
@@ -126,84 +202,12 @@ export default function LabResultDetailPage() {
           {t('lab_result_detail:anomalyBanner', 'Este informe contiene {{count}} valor(es) fuera de rango', { count: outOfRangeItems.length })}
         </Alert>
       )}
-      <Paper sx={{ border: `1px solid ${theme.palette.divider}`, borderRadius: '12px', overflow: 'hidden' }}>
-        <TableContainer>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>{t('lab_result_detail:colExam')}</TableCell>
-                <TableCell>{t('lab_result_detail:colResult')}</TableCell>
-                <TableCell>{t('lab_result_detail:colReference')}</TableCell>
-                <TableCell>{t('lab_result_detail:colNotes')}</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {items.map((item, idx) => {
-                const hasResult = !!item.result_value;
-                const referenceRanges = (item as { reference_ranges?: ReferenceRanges }).reference_ranges;
-                const rangeStatus = getRangeStatus(item.result_value, referenceRanges);
-                const isAbnormal = rangeStatus === 'high' || rangeStatus === 'low';
-                return (
-                  <TableRow
-                    key={item.id}
-                    hover
-                    sx={{
-                      backgroundColor: isAbnormal
-                        ? theme.palette.error.light
-                        : idx % 2 !== 0
-                          ? theme.palette.custom.surface.muted
-                          : 'transparent',
-                    }}
-                  >
-                    <TableCell>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Box sx={{
-                          width: 8, height: 8, borderRadius: '50%',
-                          backgroundColor: isAbnormal
-                            ? theme.palette.error.main
-                            : hasResult ? theme.palette.success.main : theme.palette.warning.main, flexShrink: 0,
-                        }} />
-                        <Typography variant="body2" sx={{ fontWeight: 600 }}>{item.test_name || `Test #${item.lab_test_id}`}</Typography>
-                      </Box>
-                    </TableCell>
-                    <TableCell>
-                      {hasResult ? (
-                        <Typography
-                          variant="body2"
-                          sx={{
-                            fontWeight: 600,
-                            color: isAbnormal ? theme.palette.error.main : theme.palette.custom.status.success.text,
-                          }}
-                        >
-                          {item.result_value}
-                          {item.unit && <Typography component="span" variant="caption" sx={{ ml: 0.5, fontWeight: 400, color: theme.palette.text.secondary }}>{item.unit}</Typography>}
-                          {isAbnormal && (
-                            <Chip
-                              size="small"
-                              label={rangeStatus === 'high'
-                                ? t('lab_result_detail:high', 'Alto')
-                                : t('lab_result_detail:low', 'Bajo')}
-                              sx={{ ml: 1, fontSize: 10, fontWeight: 700, bgcolor: theme.palette.error.main, color: theme.palette.common.white }}
-                            />
-                          )}
-                        </Typography>
-                      ) : (
-                        <Typography variant="body2" sx={{ color: theme.palette.text.secondary, fontStyle: 'italic' }}>{t('lab_result_detail:pending')}</Typography>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="body2" sx={{ color: theme.palette.text.secondary, fontSize: 13 }}>{formatReferenceRange(referenceRanges)}</Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="body2" sx={{ color: theme.palette.text.secondary, fontSize: 13 }}>{item.result_notes || '—'}</Typography>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </Paper>
+      <DataTable
+        columns={resultColumns}
+        data={items}
+        keyExtractor={(item) => item.id}
+        rowSx={resultsRowSx}
+      />
 
       {request.notes && (
         <Paper sx={{ p: 2, mt: 2, border: `1px solid ${color}30`, borderRadius: '12px', backgroundColor: `${color}08` }}>

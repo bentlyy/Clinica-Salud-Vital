@@ -1,17 +1,10 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
   Box,
   Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   Chip,
   IconButton,
   Button,
-  TablePagination,
   Tooltip,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
@@ -19,17 +12,18 @@ import Add from '@mui/icons-material/Add';
 import CheckCircle from '@mui/icons-material/CheckCircle';
 import Visibility from '@mui/icons-material/Visibility';
 import Delete from '@mui/icons-material/Delete';
-import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { MotionDiv } from '@/shared/utils/animations';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { LoadingState } from '@/shared/components/ui/LoadingState';
 import { ErrorState } from '@/shared/components/ui/ErrorState';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
+import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
+import { DataTable, type DataTableColumn } from '@/shared/components/ui/DataTable';
 import { BillingSummaryCards } from '../components/BillingSummaryCards';
 import { InvoiceFormDialog } from '../components/InvoiceFormDialog';
 import { useInvoiceList, useBillingStats, useCreateInvoice, usePayInvoice, useDeleteInvoice } from '../hooks/useBilling';
-import type { InvoiceStatus, CreateInvoiceInput } from '../types/billing.types';
+import type { Invoice, InvoiceStatus, CreateInvoiceInput } from '../types/billing.types';
 import { formatDate, formatCurrency } from '@/shared/utils/localeUtils';
 
 const STATUS_CONFIG: Record<InvoiceStatus, { labelKey: string; color: 'success' | 'warning' | 'error' | 'default' }> = {
@@ -47,6 +41,7 @@ export default function BillingPage() {
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [statusFilter, setStatusFilter] = useState<InvoiceStatus | ''>('');
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
 
   const { data: listData, isLoading: listLoading, error: listError, refetch: refetchList } = useInvoiceList({
     page: page + 1,
@@ -73,10 +68,86 @@ export default function BillingPage() {
   };
 
   const handleDeleteInvoice = (id: number) => {
-    if (window.confirm(t('confirm_delete'))) {
-      deleteInvoice.mutate(id);
+    setDeleteTarget(id);
+  };
+
+  const handleConfirmDelete = () => {
+    if (deleteTarget != null) {
+      deleteInvoice.mutate(deleteTarget);
+      setDeleteTarget(null);
     }
   };
+
+  const columns = useMemo<DataTableColumn<Invoice>[]>(
+    () => [
+      {
+        key: 'invoice_number',
+        header: t('invoiceNumber'),
+        render: (invoice) => <Box component="span" sx={{ fontWeight: 600 }}>{invoice.invoice_number}</Box>,
+      },
+      {
+        key: 'patient',
+        header: t('patient'),
+        render: (invoice) => invoice.patient_name || t('patient_id', { id: invoice.patient_id }),
+      },
+      {
+        key: 'amount',
+        header: t('amount'),
+        render: (invoice) => <Box component="span" sx={{ fontWeight: 600 }}>{formatCurrency(invoice.total_amount)}</Box>,
+      },
+      {
+        key: 'status',
+        header: t('status'),
+        render: (invoice) => (
+          <Chip
+            label={t(`statusLabels.${STATUS_CONFIG[invoice.status]?.labelKey || invoice.status}`)}
+            color={STATUS_CONFIG[invoice.status]?.color || 'default'}
+            size="small"
+          />
+        ),
+      },
+      {
+        key: 'due_date',
+        header: t('dueDate'),
+        render: (invoice) => formatDate(invoice.due_date),
+      },
+      {
+        key: 'actions',
+        header: tc('actions'),
+        align: 'right',
+        render: (invoice) => (
+          <>
+            <Tooltip title={t('view_detail')}>
+              <IconButton size="small" sx={{ color: theme.palette.text.secondary }}>
+                <Visibility fontSize="small" />
+              </IconButton>
+            </Tooltip>
+            {invoice.status === 'pending' && (
+              <Tooltip title={t('markAsPaid')}>
+                <IconButton
+                  size="small"
+                  sx={{ color: theme.palette.primary.main }}
+                  onClick={() => handlePayInvoice(invoice.id)}
+                >
+                  <CheckCircle fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            )}
+            <Tooltip title={tc('delete')}>
+              <IconButton
+                size="small"
+                sx={{ color: theme.palette.error.main }}
+                onClick={() => handleDeleteInvoice(invoice.id)}
+              >
+                <Delete fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          </>
+        ),
+      },
+    ],
+    [t, tc, theme],
+  );
 
   if (listError) {
     return <ErrorState error={listError as Error} onRetry={refetchList} />;
@@ -136,108 +207,30 @@ export default function BillingPage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, delay: 0.2 }}
       >
-        <Paper
-          sx={{ border: `1px solid ${theme.palette.divider}` }}
-        >
-        <TableContainer>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>{t('invoiceNumber')}</TableCell>
-                <TableCell>{t('patient')}</TableCell>
-                <TableCell>{t('amount')}</TableCell>
-                <TableCell>{t('status')}</TableCell>
-                <TableCell>{t('dueDate')}</TableCell>
-                <TableCell align="right">{tc('actions')}</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {listLoading ? (
-                <TableRow>
-                  <TableCell colSpan={6}>
-                    <LoadingState message={t('loading_invoices')} />
-                  </TableCell>
-                </TableRow>
-              ) : invoices.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6}>
-                    <EmptyState
-                      title={t('noInvoices')}
-                      message={t('create_first_invoice')}
-                    />
-                  </TableCell>
-                </TableRow>
-              ) : (
-                invoices.map((invoice, index) => (
-                  <TableRow
-                    key={invoice.id}
-                    component={motion.tr}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: index * 0.03 }}
-                    hover
-                  >
-                    <TableCell sx={{ fontWeight: 600 }}>{invoice.invoice_number}</TableCell>
-                    <TableCell>{invoice.patient_name || t('patient_id', { id: invoice.patient_id })}</TableCell>
-                    <TableCell sx={{ fontWeight: 600 }}>{formatCurrency(invoice.total_amount)}</TableCell>
-                    <TableCell>
-                      <Chip
-                        label={t(`statusLabels.${STATUS_CONFIG[invoice.status]?.labelKey || invoice.status}`)}
-                        color={STATUS_CONFIG[invoice.status]?.color || 'default'}
-                        size="small"
-                      />
-                    </TableCell>
-                    <TableCell>{formatDate(invoice.due_date)}</TableCell>
-                    <TableCell align="right">
-                      <Tooltip title={t('view_detail')}>
-                        <IconButton size="small" sx={{ color: theme.palette.text.secondary }}>
-                          <Visibility fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                      {invoice.status === 'pending' && (
-                        <Tooltip title={t('markAsPaid')}>
-                          <IconButton
-                            size="small"
-                            sx={{ color: theme.palette.primary.main }}
-                            onClick={() => handlePayInvoice(invoice.id)}
-                          >
-                            <CheckCircle fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                      )}
-                      <Tooltip title={tc('delete')}>
-                        <IconButton
-                          size="small"
-                          sx={{ color: theme.palette.error.main }}
-                          onClick={() => handleDeleteInvoice(invoice.id)}
-                        >
-                          <Delete fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
-
-        <TablePagination
-          component="div"
-          count={total}
-          page={page}
-          onPageChange={(_, newPage) => setPage(newPage)}
-          rowsPerPage={rowsPerPage}
-          onRowsPerPageChange={(e) => {
-            setRowsPerPage(parseInt(e.target.value, 10));
-            setPage(0);
-          }}
-          labelRowsPerPage={tc('rowsPerPage')}
-          labelDisplayedRows={({ from, to, count }) =>
-            `${from}–${to} ${tc('of')} ${count !== -1 ? count : `${tc('moreThan')} ${to}`}`
-          }
-        />
-      </Paper>
+        {listLoading ? (
+          <Paper sx={{ border: `1px solid ${theme.palette.divider}`, borderRadius: '12px', overflow: 'hidden' }}>
+            <LoadingState message={t('loading_invoices')} />
+          </Paper>
+        ) : invoices.length === 0 ? (
+          <Paper sx={{ border: `1px solid ${theme.palette.divider}`, borderRadius: '12px', overflow: 'hidden' }}>
+            <EmptyState title={t('noInvoices')} message={t('create_first_invoice')} />
+          </Paper>
+        ) : (
+          <DataTable
+            columns={columns}
+            data={invoices}
+            keyExtractor={(invoice) => invoice.id}
+            serverSide
+            total={total}
+            page={page}
+            rowsPerPage={rowsPerPage}
+            onPageChange={(newPage) => setPage(newPage)}
+            onRowsPerPageChange={(newLimit) => {
+              setRowsPerPage(newLimit);
+              setPage(0);
+            }}
+          />
+        )}
       </MotionDiv>
 
       {/* Create Invoice Dialog */}
@@ -246,6 +239,16 @@ export default function BillingPage() {
         onClose={() => setDialogOpen(false)}
         onSubmit={handleCreateInvoice}
         isLoading={createInvoice.isPending}
+      />
+
+      <ConfirmDialog
+        open={deleteTarget != null}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleConfirmDelete}
+        title={t('confirm_delete')}
+        message={t('confirm_delete_message', { defaultValue: '¿Deseas eliminar esta factura? Esta acción no se puede deshacer.' })}
+        confirmLabel={tc('delete')}
+        loading={deleteInvoice.isPending}
       />
     </Box>
   );

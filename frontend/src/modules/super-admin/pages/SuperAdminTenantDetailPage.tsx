@@ -60,9 +60,9 @@ export default function SuperAdminTenantDetailPage() {
   const stats = [
     { label: t('statUsers'), value: tenant.total_users || 0, icon: <People sx={{ fontSize: 22 }} />, color: theme.palette.info.main },
     { label: t('statPatients'), value: tenant.total_patients || 0, icon: <People sx={{ fontSize: 22 }} />, color: theme.palette.primary.main },
-    { label: t('statDoctors'), value: tenant.total_doctors || 0, icon: <LocalHospital sx={{ fontSize: 22 }} />, color: '#7c3aed' },
+    { label: t('statDoctors'), value: tenant.total_doctors || 0, icon: <LocalHospital sx={{ fontSize: 22 }} />, color: theme.palette.custom.purple.main },
     { label: t('statBookings'), value: tenant.total_bookings || 0, icon: <CalendarMonth sx={{ fontSize: 22 }} />, color: theme.palette.warning.main },
-    { label: t('statInvoices'), value: tenant.invoice_count || 0, icon: <Receipt sx={{ fontSize: 22 }} />, color: '#ec4899' },
+    { label: t('statInvoices'), value: tenant.invoice_count || 0, icon: <Receipt sx={{ fontSize: 22 }} />, color: theme.palette.custom.pink.main },
     { label: t('statLabRequests'), value: tenant.lab_request_count || 0, icon: <Science sx={{ fontSize: 22 }} />, color: theme.palette.warning.main },
   ];
 
@@ -79,7 +79,7 @@ export default function SuperAdminTenantDetailPage() {
       />
 
       {/* Info */}
-      <Paper sx={{ p: 3, mb: 3, border: '1px solid #e5e7eb', borderRadius: '14px' }}>
+      <Paper sx={{ p: 3, mb: 3, border: `1px solid ${theme.palette.divider}`, borderRadius: '14px' }}>
         <Typography variant="subtitle2" sx={{ fontWeight: 600, color: theme.palette.text.secondary, mb: 2, letterSpacing: 1, fontSize: 11 }}>
           {t('infoTitle')}
         </Typography>
@@ -87,7 +87,7 @@ export default function SuperAdminTenantDetailPage() {
           {[
             { label: t('labelDomain'), value: tenant.domain || '—' },
             { label: t('labelPlan'), value: <Chip label={planConfig.label} size="small" sx={{ backgroundColor: planConfig.bgColor, color: planConfig.color, fontWeight: 600 }} /> },
-            { label: t('labelStatus'), value: <Chip label={tenant.active ? t('statusActive') : t('statusInactive')} size="small" sx={{ backgroundColor: tenant.active ? '#ecfdf5' : '#fef2f2', color: tenant.active ? theme.palette.success.main : '#dc2626', fontWeight: 600 }} /> },
+            { label: t('labelStatus'), value: <Chip label={tenant.active ? t('statusActive') : t('statusInactive')} size="small" sx={{ backgroundColor: tenant.active ? theme.palette.custom.status.success.bg : theme.palette.custom.status.error.bg, color: tenant.active ? theme.palette.custom.status.success.text : theme.palette.custom.status.error.text, fontWeight: 600 }} /> },
             { label: t('labelLocale'), value: tenant.locale || '—' },
             { label: t('labelTimezone'), value: tenant.timezone || '—' },
             { label: t('labelCreated'), value: formatDate(tenant.created_at) },
@@ -107,7 +107,7 @@ export default function SuperAdminTenantDetailPage() {
       <Grid container spacing={3} sx={{ mb: 3 }}>
         {stats.map((s) => (
           <Grid xs={6} sm={4} md={2} key={s.label}>
-            <Paper sx={{ p: 2, textAlign: 'center', border: '1px solid #f3f4f6', borderRadius: '12px' }}>
+            <Paper sx={{ p: 2, textAlign: 'center', border: `1px solid ${theme.palette.divider}`, borderRadius: '12px' }}>
               <Typography sx={{ color: s.color, mb: 0.5 }}>{s.icon}</Typography>
               <Typography variant="h5" sx={{ fontWeight: 700, color: theme.palette.text.primary }}>{s.value}</Typography>
               <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>{s.label}</Typography>
@@ -117,7 +117,7 @@ export default function SuperAdminTenantDetailPage() {
       </Grid>
 
       {/* Revenue placeholder */}
-      <Paper sx={{ p: 3, border: '1px solid #e5e7eb', borderRadius: '14px' }}>
+      <Paper sx={{ p: 3, border: `1px solid ${theme.palette.divider}`, borderRadius: '14px' }}>
         <Typography variant="subtitle2" sx={{ fontWeight: 600, color: theme.palette.text.secondary, mb: 2, letterSpacing: 1, fontSize: 11 }}>
           {t('financialTitle')}
         </Typography>

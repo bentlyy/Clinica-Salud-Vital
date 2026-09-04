@@ -4,13 +4,6 @@ import { useTheme } from '@mui/material/styles';
 import {
   Box,
   Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TablePagination,
   TextField,
   InputAdornment,
   Chip,
@@ -37,6 +30,7 @@ import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { LoadingState } from '@/shared/components/ui/LoadingState';
 import { ErrorState } from '@/shared/components/ui/ErrorState';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
+import { DataTable, type DataTableColumn } from '@/shared/components/ui/DataTable';
 import { useAuth } from '@/shared/providers/AuthProvider';
 import {
   useLabRequests,
@@ -49,6 +43,7 @@ import {
   LAB_PRIORITY_OPTIONS,
   type LabRequestStatus,
   type LabPriority,
+  type LabRequest,
 } from '../types/lab.types';
 
 const createRequestSchema = z.object({
@@ -67,7 +62,7 @@ function LabRequestsPageInner() {
   const theme = useTheme();
 
   const [page, setPage] = useState(0);
-  const [limit] = useState(10);
+  const [limit, setLimit] = useState(10);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<LabRequestStatus | 'all'>('all');
   const [priorityFilter, setPriorityFilter] = useState<LabPriority | 'all'>('all');
@@ -108,9 +103,111 @@ function LabRequestsPageInner() {
   const requests = response?.data ?? [];
   const total = response?.total ?? 0;
 
-  const handlePageChange = (_: unknown, newPage: number) => {
-    setPage(newPage);
-  };
+  const tableColumns: DataTableColumn<LabRequest>[] = [
+    {
+      key: 'request_number',
+      header: t('col_request_number'),
+      render: (req) => (
+        <Typography variant="body2" sx={{ fontWeight: 500, fontFamily: 'monospace' }}>
+          {req.request_number || `#${req.id}`}
+        </Typography>
+      ),
+    },
+    {
+      key: 'patient_name',
+      header: t('col_patient'),
+      render: (req) => (
+        <Typography variant="body2" sx={{ fontWeight: 500 }}>
+          {req.patient_name || t('patient_fallback', { id: req.patient_id })}
+        </Typography>
+      ),
+    },
+    {
+      key: 'doctor_name',
+      header: t('col_doctor'),
+      render: (req) => (
+        <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
+          {req.doctor_name || t('doctor_fallback', { id: req.doctor_id })}
+        </Typography>
+      ),
+    },
+    {
+      key: 'status',
+      header: t('col_status'),
+      render: (req) => {
+        const statusCfg = LAB_STATUS_CONFIG[req.status];
+        return (
+          <Chip
+            label={statusCfg.label}
+            size="small"
+            sx={{
+              backgroundColor: statusCfg.bgColor,
+              color: statusCfg.color,
+              fontWeight: 500,
+            }}
+          />
+        );
+      },
+    },
+    {
+      key: 'priority',
+      header: t('col_priority'),
+      render: (req) => {
+        const priorityCfg = LAB_PRIORITY_CONFIG[req.priority] ?? { label: req.priority, color: theme.palette.text.secondary, bgColor: theme.palette.custom.surface.sunken };
+        return (
+          <Chip
+            label={priorityCfg.label}
+            size="small"
+            sx={{
+              backgroundColor: priorityCfg.bgColor,
+              color: priorityCfg.color,
+              fontWeight: 500,
+            }}
+          />
+        );
+      },
+    },
+    {
+      key: 'created_at',
+      header: t('col_date'),
+      render: (req) => (
+        <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
+          {formatDate(req.created_at)}
+        </Typography>
+      ),
+    },
+    {
+      key: 'actions',
+      header: t('col_actions'),
+      align: 'right',
+      render: (req) => (
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <IconButton
+            size="small"
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(`/laboratory/requests/${req.id}`);
+            }}
+            sx={{ color: theme.palette.text.secondary }}
+          >
+            <Visibility fontSize="small" />
+          </IconButton>
+          {(user?.role === 'admin' || user?.role === 'superadmin' || user?.role === 'lab_technician') && (
+            <IconButton
+              size="small"
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate(`/laboratory/requests/${req.id}`);
+              }}
+              sx={{ color: theme.palette.primary.main }}
+            >
+              <Edit fontSize="small" />
+            </IconButton>
+          )}
+        </Box>
+      ),
+    },
+  ];
 
   const handleCreate = (data: CreateRequestForm) => {
     createMutation.mutate(
@@ -220,113 +317,21 @@ function LabRequestsPageInner() {
           }
         />
       ) : (
-        <TableContainer component={Paper} sx={{ border: `1px solid ${theme.palette.divider}` }}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>{t('col_request_number')}</TableCell>
-                <TableCell>{t('col_patient')}</TableCell>
-                <TableCell>{t('col_doctor')}</TableCell>
-                <TableCell>{t('col_status')}</TableCell>
-                <TableCell>{t('col_priority')}</TableCell>
-                <TableCell>{t('col_date')}</TableCell>
-                <TableCell align="right">{t('col_actions')}</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {requests.map((req) => {
-                const statusCfg = LAB_STATUS_CONFIG[req.status];
-                const priorityCfg = LAB_PRIORITY_CONFIG[req.priority] ?? { label: req.priority, color: '#6b7280', bgColor: '#f3f4f6' };
-                return (
-                  <TableRow
-                    key={req.id}
-                    hover
-                    onClick={() => navigate(`/laboratory/requests/${req.id}`)}
-                    sx={{ cursor: 'pointer' }}
-                  >
-                    <TableCell>
-                      <Typography variant="body2" sx={{ fontWeight: 500, fontFamily: 'monospace' }}>
-                        {req.request_number || `#${req.id}`}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                        {req.patient_name || t('patient_fallback', { id: req.patient_id })}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
-                        {req.doctor_name || t('doctor_fallback', { id: req.doctor_id })}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Chip
-                        label={statusCfg.label}
-                        size="small"
-                        sx={{
-                          backgroundColor: statusCfg.bgColor,
-                          color: statusCfg.color,
-                          fontWeight: 500,
-                        }}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Chip
-                        label={priorityCfg.label}
-                        size="small"
-                        sx={{
-                          backgroundColor: priorityCfg.bgColor,
-                          color: priorityCfg.color,
-                          fontWeight: 500,
-                        }}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
-                        {formatDate(req.created_at)}
-                      </Typography>
-                    </TableCell>
-                    <TableCell align="right">
-                      <IconButton
-                        size="small"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          navigate(`/laboratory/requests/${req.id}`);
-                        }}
-                        sx={{ color: theme.palette.text.secondary }}
-                      >
-                        <Visibility fontSize="small" />
-                      </IconButton>
-                      {(user?.role === 'admin' || user?.role === 'superadmin' || user?.role === 'lab_technician') && (
-                        <IconButton
-                          size="small"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(`/laboratory/requests/${req.id}`);
-                          }}
-                          sx={{ color: theme.palette.primary.main }}
-                        >
-                          <Edit fontSize="small" />
-                        </IconButton>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-          <TablePagination
-            component="div"
-            count={total}
-            page={page}
-            onPageChange={handlePageChange}
-            rowsPerPage={limit}
-            labelRowsPerPage={t('rows_per_page')}
-            labelDisplayedRows={({ from, to, count }) =>
-              `${from}–${to} de ${count}`
-            }
-          />
-        </TableContainer>
+        <DataTable
+          columns={tableColumns}
+          data={requests}
+          keyExtractor={(req) => req.id}
+          serverSide
+          total={total}
+          page={page}
+          rowsPerPage={limit}
+          onPageChange={(newPage) => setPage(newPage)}
+          onRowsPerPageChange={(newLimit) => {
+            setLimit(newLimit);
+            setPage(0);
+          }}
+          onRowClick={(req) => navigate(`/laboratory/requests/${req.id}`)}
+        />
       )}
 
       {/* Create Dialog */}

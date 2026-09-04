@@ -2650,6 +2650,8 @@
     "block_end": "Fin",
     "confirm_block": "Bloquear",
     "delete_block": "Eliminar bloqueo",
+    "blockCreated": "Bloqueo de horario creado correctamente",
+    "blockDeleted": "Bloqueo de horario eliminado correctamente",
     "booking_detail": "Detalle de Cita",
     "patient": "Paciente",
     "time": "Horario",
@@ -3032,7 +3034,8 @@
     "reactivate": "Reactivar",
     "rowsPerPage": "Filas por página",
     "errorLoad": "Error al cargar usuarios",
-    "errorToggle": "Error al cambiar estado"
+    "errorToggle": "Error al cambiar estado",
+    "toggledSuccess": "Estado del usuario actualizado correctamente"
   },
   "super_admin_billing": {
     "title": "Cobros por Clínica",

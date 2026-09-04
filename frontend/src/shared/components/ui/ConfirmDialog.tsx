@@ -7,7 +7,7 @@ import {
   Button,
 } from '@mui/material';
 import type { ReactNode } from 'react';
-import { useTheme } from '@mui/material/styles';
+import { useTheme, type Theme } from '@mui/material/styles';
 import Typography from '@mui/material/Typography';
 import WarningAmber from '@mui/icons-material/WarningAmber';
 import ErrorOutline from '@mui/icons-material/ErrorOutline';
@@ -25,8 +25,6 @@ interface ConfirmDialogProps {
   variant?: 'danger' | 'primary' | 'warning';
   loading?: boolean;
 }
-
-import type { Theme } from '@mui/material/styles';
 
 function getVariantConfig(variant: 'danger' | 'primary' | 'warning', theme: Theme) {
   switch (variant) {

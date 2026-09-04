@@ -63,9 +63,11 @@ class ErrorBoundaryInner extends Component<ErrorBoundaryInnerProps, ErrorBoundar
             <Typography variant="h5" gutterBottom fontWeight="bold">
               {t('error_boundary:title', 'Algo salió mal')}
             </Typography>
-            <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-              {t('error_boundary:message', 'Ha ocurrido un error inesperado. Por favor, intenta de nuevo.')}
-            </Typography>
+            <Box role="alert" aria-live="assertive">
+              <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
+                {t('error_boundary:message', 'Ha ocurrido un error inesperado. Por favor, intenta de nuevo.')}
+              </Typography>
+            </Box>
             {this.state.error && (
               <Typography
                 variant="caption"

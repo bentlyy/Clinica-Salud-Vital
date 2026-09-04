@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '@mui/material/styles';
+import { useTheme, type Theme } from '@mui/material/styles';
 import { Box, Paper, Typography, Chip, Divider, List, ListItem, ListItemText } from '@mui/material';
 import Science from '@mui/icons-material/Science';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
@@ -10,14 +10,17 @@ interface LabTabProps {
   labRequests: FichaLabRequest[];
 }
 
-const STATUS_COLORS: Record<string, { bg: string; color: string }> = {
-  completed: { bg: '#ecfdf5', color: '#059669' },
-  delivered: { bg: '#ecfdf5', color: '#059669' },
-  signed: { bg: '#ecfdf5', color: '#059669' },
-  pending: { bg: '#fffbeb', color: '#d97706' },
-  in_progress: { bg: '#eff6ff', color: '#2563eb' },
-  draft: { bg: '#f3f4f6', color: '#6b7280' },
-};
+function getStatusColor(status: string, theme: Theme): { bg: string; color: string } {
+  const map: Record<string, { bg: string; color: string }> = {
+    completed: { bg: theme.palette.custom.status.success.bg, color: theme.palette.success.main },
+    delivered: { bg: theme.palette.custom.status.success.bg, color: theme.palette.success.main },
+    signed: { bg: theme.palette.custom.status.success.bg, color: theme.palette.success.main },
+    pending: { bg: theme.palette.custom.status.warning.bg, color: theme.palette.warning.dark },
+    in_progress: { bg: theme.palette.custom.status.info.bg, color: theme.palette.info.main },
+    draft: { bg: theme.palette.custom.surface.sunken, color: theme.palette.text.secondary },
+  };
+  return map[status] || { bg: theme.palette.grey[100], color: theme.palette.text.secondary };
+}
 
 export function LabTab({ labRequests }: LabTabProps) {
   const theme = useTheme();
@@ -34,10 +37,10 @@ export function LabTab({ labRequests }: LabTabProps) {
   }
 
   return (
-    <Paper sx={{ border: '1px solid #e5e7eb', borderRadius: '12px' }}>
+    <Paper sx={{ border: `1px solid ${theme.palette.divider}`, borderRadius: '12px' }}>
       <List disablePadding>
         {labRequests.map((r, idx) => {
-          const st = STATUS_COLORS[r.status] || { bg: theme.palette.grey[100], color: theme.palette.text.secondary };
+          const st = getStatusColor(r.status, theme);
           const canDownload = r.status === 'completed' || r.status === 'delivered' || r.status === 'signed';
           return (
             <Box key={r.id}>

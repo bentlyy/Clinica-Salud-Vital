@@ -5,18 +5,11 @@ import {
   Box,
   Paper,
   Typography,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   IconButton,
   Chip,
   Button,
   TextField,
   InputAdornment,
-  TablePagination,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -41,6 +34,7 @@ import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { LoadingState } from '@/shared/components/ui/LoadingState';
 import { ErrorState } from '@/shared/components/ui/ErrorState';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
+import { DataTable } from '@/shared/components/ui/DataTable';
 import {
   useTenantList,
   useTenantDetail,
@@ -126,7 +120,7 @@ export default function SuperAdminTenantsPage() {
       />
 
       {/* Search */}
-      <Paper sx={{ p: 2, mb: 3, border: '1px solid #e5e7eb', borderRadius: '14px' }}>
+      <Paper sx={{ p: 2, mb: 3, border: `1px solid ${theme.palette.divider}`, borderRadius: '14px' }}>
         <TextField
           fullWidth
           size="small"
@@ -152,97 +146,100 @@ export default function SuperAdminTenantsPage() {
           action={!search ? { label: t('new_clinic'), onClick: openCreateDialog } : undefined}
         />
       ) : (
-        <Paper sx={{ borderRadius: '14px', border: '1px solid #e5e7eb', overflow: 'hidden' }}>
-          <TableContainer>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>{t('col_name')}</TableCell>
-                  <TableCell>{t('col_slug')}</TableCell>
-                  <TableCell>{t('col_plan')}</TableCell>
-                  <TableCell>{t('col_status')}</TableCell>
-                  <TableCell align="right">{t('col_actions')}</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {tenants.map((tenant) => {
-                  const planConfig = TENANT_PLAN_CONFIG[tenant.plan] ?? TENANT_PLAN_CONFIG.free!;
-                  return (
-                    <TableRow key={tenant.id} hover>
-                      <TableCell>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                          <Avatar
-                            src={tenant.logo_url}
-                            sx={{
-                              width: 36,
-                              height: 36,
-                              backgroundColor: theme.palette.primary.main,
-                              fontSize: '0.8rem',
-                            }}
-                          >
-                            {tenant.name.charAt(0).toUpperCase()}
-                          </Avatar>
-                          <Typography variant="body2" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
-                            {tenant.name}
-                          </Typography>
-                        </Box>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="body2" sx={{ color: theme.palette.text.secondary, fontFamily: 'monospace' }}>
-                          {tenant.slug}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Chip
-                          label={planConfig.label}
-                          size="small"
-                          sx={{
-                            backgroundColor: planConfig.bgColor,
-                            color: planConfig.color,
-                            fontWeight: 600,
-                          }}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Chip
-                          label={tenant.active ? t('active') : t('inactive')}
-                          size="small"
-                          sx={{
-                            backgroundColor: tenant.active ? '#ecfdf5' : '#fef2f2',
-                            color: tenant.active ? theme.palette.success.main : '#dc2626',
-                            fontWeight: 600,
-                          }}
-                        />
-                      </TableCell>
-                      <TableCell align="right">
-                        <IconButton size="small" onClick={() => setDrawerTenantId(tenant.id)} sx={{ color: theme.palette.text.secondary }}>
-                          <Visibility fontSize="small" />
-                        </IconButton>
-                        <IconButton size="small" onClick={() => openEditDialog(tenant)} sx={{ color: theme.palette.text.secondary }}>
-                          <Edit fontSize="small" />
-                        </IconButton>
-                        <IconButton size="small" onClick={() => setDeleteDialog(tenant)} sx={{ color: theme.palette.error.main }}>
-                          <Delete fontSize="small" />
-                        </IconButton>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </TableContainer>
-
-          <TablePagination
-            component="div"
-            count={total}
-            page={page}
-            onPageChange={(_, newPage) => setPage(newPage)}
-            rowsPerPage={rowsPerPage}
-            onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value)); setPage(0); }}
-            rowsPerPageOptions={[5, 10, 25]}
-            labelRowsPerPage={t('rows_per_page')}
-          />
-        </Paper>
+        <DataTable
+          columns={[
+            {
+              key: 'name',
+              header: t('col_name'),
+              render: (tenant) => (
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                  <Avatar
+                    src={tenant.logo_url}
+                    sx={{
+                      width: 36,
+                      height: 36,
+                      backgroundColor: theme.palette.primary.main,
+                      fontSize: '0.8rem',
+                    }}
+                  >
+                    {tenant.name.charAt(0).toUpperCase()}
+                  </Avatar>
+                  <Typography variant="body2" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
+                    {tenant.name}
+                  </Typography>
+                </Box>
+              ),
+            },
+            {
+              key: 'slug',
+              header: t('col_slug'),
+              render: (tenant) => (
+                <Typography variant="body2" sx={{ color: theme.palette.text.secondary, fontFamily: 'monospace' }}>
+                  {tenant.slug}
+                </Typography>
+              ),
+            },
+            {
+              key: 'plan',
+              header: t('col_plan'),
+              render: (tenant) => {
+                const planConfig = TENANT_PLAN_CONFIG[tenant.plan] ?? TENANT_PLAN_CONFIG.free!;
+                return (
+                  <Chip
+                    label={planConfig.label}
+                    size="small"
+                    sx={{
+                      backgroundColor: planConfig.bgColor,
+                      color: planConfig.color,
+                      fontWeight: 600,
+                    }}
+                  />
+                );
+              },
+            },
+            {
+              key: 'active',
+              header: t('col_status'),
+              render: (tenant) => (
+                <Chip
+                  label={tenant.active ? t('active') : t('inactive')}
+                  size="small"
+                  sx={{
+                    backgroundColor: tenant.active ? theme.palette.custom.status.success.bg : theme.palette.custom.status.error.bg,
+                    color: tenant.active ? theme.palette.custom.status.success.text : theme.palette.custom.status.error.text,
+                    fontWeight: 600,
+                  }}
+                />
+              ),
+            },
+            {
+              key: 'actions',
+              header: t('col_actions'),
+              align: 'right',
+              render: (tenant) => (
+                <>
+                  <IconButton size="small" onClick={() => setDrawerTenantId(tenant.id)} sx={{ color: theme.palette.text.secondary }}>
+                    <Visibility fontSize="small" />
+                  </IconButton>
+                  <IconButton size="small" onClick={() => openEditDialog(tenant)} sx={{ color: theme.palette.text.secondary }}>
+                    <Edit fontSize="small" />
+                  </IconButton>
+                  <IconButton size="small" onClick={() => setDeleteDialog(tenant)} sx={{ color: theme.palette.error.main }}>
+                    <Delete fontSize="small" />
+                  </IconButton>
+                </>
+              ),
+            },
+          ]}
+          data={tenants}
+          keyExtractor={(tenant) => tenant.id}
+          total={total}
+          page={page}
+          rowsPerPage={rowsPerPage}
+          onPageChange={setPage}
+          onRowsPerPageChange={(limit) => { setRowsPerPage(limit); setPage(0); }}
+          serverSide
+        />
       )}
 
       {/* Create/Edit Dialog */}
@@ -333,8 +330,8 @@ export default function SuperAdminTenantsPage() {
                   label={tenantDetail.active ? t('active') : t('inactive')}
                   size="small"
                   sx={{
-                    backgroundColor: tenantDetail.active ? '#ecfdf5' : '#fef2f2',
-                    color: tenantDetail.active ? theme.palette.success.main : '#dc2626',
+                    backgroundColor: tenantDetail.active ? theme.palette.custom.status.success.bg : theme.palette.custom.status.error.bg,
+                    color: tenantDetail.active ? theme.palette.custom.status.success.text : theme.palette.custom.status.error.text,
                     fontWeight: 600,
                   }}
                 />
@@ -356,7 +353,7 @@ export default function SuperAdminTenantsPage() {
                   {[
                     { label: t('users'), value: tenantDetail.total_users || 0, icon: <People sx={{ fontSize: 18 }} />, color: theme.palette.info.main },
                     { label: t('patients'), value: tenantDetail.total_patients || 0, icon: <CalendarMonth sx={{ fontSize: 18 }} />, color: theme.palette.primary.main },
-                    { label: t('doctors'), value: tenantDetail.total_doctors || 0, icon: <LocalHospital sx={{ fontSize: 18 }} />, color: '#7c3aed' },
+                    { label: t('doctors'), value: tenantDetail.total_doctors || 0, icon: <LocalHospital sx={{ fontSize: 18 }} />, color: theme.palette.custom.purple.main },
                     { label: t('bookings'), value: tenantDetail.total_bookings || 0, icon: <CalendarMonth sx={{ fontSize: 18 }} />, color: theme.palette.warning.main },
                   ].map((item) => (
                     <Grid xs={6} key={item.label}>
@@ -364,7 +361,7 @@ export default function SuperAdminTenantsPage() {
                         sx={{
                           p: 2,
                           textAlign: 'center',
-                          border: '1px solid #f3f4f6',
+                          border: `1px solid ${theme.palette.divider}`,
                           borderRadius: '10px',
                         }}
                       >

@@ -6,13 +6,6 @@ import {
   Paper,
   TextField,
   InputAdornment,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TablePagination,
   IconButton,
   Menu,
   MenuItem,
@@ -39,6 +32,8 @@ import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { LoadingState } from '@/shared/components/ui/LoadingState';
 import { ErrorState } from '@/shared/components/ui/ErrorState';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
+import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
+import { DataTable, type DataTableColumn } from '@/shared/components/ui/DataTable';
 import { useAuth } from '@/shared/providers/AuthProvider';
 import { getDateFnsLocale } from '@/shared/utils/localeUtils';
 import {
@@ -72,6 +67,7 @@ export default function ClinicalRecordsPage() {
   }, []);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [menuRecord, setMenuRecord] = useState<ClinicalRecord | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<ClinicalRecord | null>(null);
 
   const params = useMemo(
     () => ({
@@ -112,10 +108,15 @@ export default function ClinicalRecordsPage() {
   };
 
   const handleDelete = (record: ClinicalRecord) => {
-    if (window.confirm(t('confirm_delete_title'))) {
-      deleteMutation.mutate(record.id);
-    }
+    setDeleteTarget(record);
     handleMenuClose();
+  };
+
+  const handleConfirmDelete = () => {
+    if (deleteTarget) {
+      deleteMutation.mutate(deleteTarget.id);
+      setDeleteTarget(null);
+    }
   };
 
   const handleFormClose = () => {
@@ -132,6 +133,73 @@ export default function ClinicalRecordsPage() {
   };
 
   const isSaving = createMutation.isPending || updateMutation.isPending;
+
+  const columns = useMemo<DataTableColumn<ClinicalRecord>[]>(
+    () => [
+      {
+        key: 'patient_name',
+        header: t('col_patient'),
+        render: (record) => (
+          <Typography variant="body2" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
+            {record.patient_name || t('patientFallback', { id: record.patient_id })}
+          </Typography>
+        ),
+      },
+      {
+        key: 'doctor_name',
+        header: t('col_doctor'),
+        render: (record) => (
+          <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
+            {record.doctor_name || t('doctorFallback', { id: record.doctor_id })}
+          </Typography>
+        ),
+      },
+      {
+        key: 'chief_complaint',
+        header: t('col_chief_complaint'),
+        render: (record) => (
+          <Typography
+            variant="body2"
+            sx={{ color: theme.palette.text.secondary, maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+          >
+            {record.chief_complaint}
+          </Typography>
+        ),
+      },
+      {
+        key: 'diagnosis',
+        header: t('col_diagnosis'),
+        render: (record) => (
+          <Typography
+            variant="body2"
+            sx={{ color: theme.palette.text.secondary, maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+          >
+            {record.diagnosis}
+          </Typography>
+        ),
+      },
+      {
+        key: 'created_at',
+        header: t('col_date'),
+        render: (record) => (
+          <Typography variant="body2" sx={{ color: theme.palette.text.secondary, whiteSpace: 'nowrap' }}>
+            {format(new Date(record.created_at), 'dd MMM yyyy', { locale: dateFnsLocale })}
+          </Typography>
+        ),
+      },
+      {
+        key: 'actions',
+        header: t('col_actions'),
+        align: 'right',
+        render: (record) => (
+          <IconButton size="small" onClick={(e) => handleMenuOpen(e, record)} sx={{ color: theme.palette.text.secondary }}>
+            <MoreVert fontSize="small" />
+          </IconButton>
+        ),
+      },
+    ],
+    [t, theme, dateFnsLocale, handleMenuOpen],
+  );
 
   if (isLoading) return <LoadingState message={t('loading_records')} />;
   if (error) return <ErrorState error={error as never} onRetry={refetch} />;
@@ -172,7 +240,7 @@ export default function ClinicalRecordsPage() {
 
       {/* Search */}
       <MotionDiv initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
-        <Paper sx={{ p: 2, mb: 3, border: '1px solid #e5e7eb', boxShadow: 'none' }}>
+        <Paper sx={{ p: 2, mb: 3, border: `1px solid ${theme.palette.divider}`, boxShadow: 'none' }}>
           <TextField
             fullWidth
             size="small"
@@ -202,76 +270,20 @@ export default function ClinicalRecordsPage() {
         />
       ) : (
         <MotionDiv initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.1 }}>
-          <TableContainer component={Paper} sx={{ border: '1px solid #e5e7eb', boxShadow: 'none' }}>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>{t('col_patient')}</TableCell>
-                  <TableCell>{t('col_doctor')}</TableCell>
-                  <TableCell>{t('col_chief_complaint')}</TableCell>
-                  <TableCell>{t('col_diagnosis')}</TableCell>
-                  <TableCell>{t('col_date')}</TableCell>
-                  <TableCell align="right">{t('col_actions')}</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {records.map((record) => (
-                  <TableRow key={record.id} hover sx={{ '&:last-child td': { borderBottom: 0 } }}>
-                    <TableCell>
-                      <Typography variant="body2" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
-                        {record.patient_name || t('patientFallback', { id: record.patient_id })}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
-                        {record.doctor_name || t('doctorFallback', { id: record.doctor_id })}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Typography
-                        variant="body2"
-                        sx={{ color: theme.palette.text.secondary, maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
-                      >
-                        {record.chief_complaint}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Typography
-                        variant="body2"
-                        sx={{ color: theme.palette.text.secondary, maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
-                      >
-                        {record.diagnosis}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="body2" sx={{ color: theme.palette.text.secondary, whiteSpace: 'nowrap' }}>
-                        {format(new Date(record.created_at), 'dd MMM yyyy', { locale: dateFnsLocale })}
-                      </Typography>
-                    </TableCell>
-                    <TableCell align="right">
-                      <IconButton size="small" onClick={(e) => handleMenuOpen(e, record)} sx={{ color: theme.palette.text.secondary }}>
-                        <MoreVert fontSize="small" />
-                      </IconButton>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-            <TablePagination
-              component="div"
-              count={total}
-              page={page}
-              onPageChange={(_, p) => setPage(p)}
-              rowsPerPage={rowsPerPage}
-              onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }}
-              labelRowsPerPage={t('rows_per_page')}
-              labelDisplayedRows={({ from, to, count }) =>
-                count !== -1
-                  ? t('labelDisplayedRows', { from, to, count })
-                  : t('labelDisplayedRowsMore', { to })
-              }
-            />
-          </TableContainer>
+          <DataTable
+            columns={columns}
+            data={records}
+            keyExtractor={(record) => record.id}
+            serverSide
+            total={total}
+            page={page}
+            rowsPerPage={rowsPerPage}
+            onPageChange={(newPage) => setPage(newPage)}
+            onRowsPerPageChange={(newLimit) => {
+              setRowsPerPage(newLimit);
+              setPage(0);
+            }}
+          />
         </MotionDiv>
       )}
 
@@ -282,7 +294,7 @@ export default function ClinicalRecordsPage() {
         onClose={handleMenuClose}
         transformOrigin={{ horizontal: 'right', vertical: 'top' }}
         anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
-        slotProps={{ paper: { sx: { mt: 1, minWidth: 180, borderRadius: 2, border: '1px solid #e5e7eb' } } }}
+        slotProps={{ paper: { sx: { mt: 1, minWidth: 180, borderRadius: 2, border: `1px solid ${theme.palette.divider}` } } }}
       >
         <MenuItem onClick={() => menuRecord && handleViewDetail(menuRecord)}>
           <ListItemIcon><Visibility fontSize="small" sx={{ color: theme.palette.text.secondary }} /></ListItemIcon>
@@ -317,7 +329,7 @@ export default function ClinicalRecordsPage() {
         onClose={() => setDetailRecord(null)}
         maxWidth="md"
         fullWidth
-        PaperProps={{ sx: { borderRadius: '16px', border: '1px solid #e5e7eb' } }}
+        PaperProps={{ sx: { borderRadius: '14px', border: `1px solid ${theme.palette.divider}` } }}
       >
         {detailRecord && (
           <>
@@ -358,6 +370,16 @@ export default function ClinicalRecordsPage() {
           </>
         )}
       </Dialog>
+
+      <ConfirmDialog
+        open={Boolean(deleteTarget)}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleConfirmDelete}
+        title={t('confirm_delete_title')}
+        message={t('confirm_delete_message', { defaultValue: '¿Deseas eliminar este registro clínico? Esta acción no se puede deshacer.' })}
+        confirmLabel={t('delete')}
+        loading={deleteMutation.isPending}
+      />
     </Box>
   );
 }

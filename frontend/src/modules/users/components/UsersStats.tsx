@@ -30,7 +30,6 @@ function relativeTime(iso: string, t: (key: string, opts?: Record<string, unknow
 export function UsersStats({ users, total }: UsersStatsProps) {
   const { t } = useTranslation('users');
   const theme = useTheme();
-  const dark = theme.palette.mode === 'dark';
 
   const activeCount = users.filter((u) => u.is_active).length;
   const inactiveCount = users.length - activeCount;
@@ -49,7 +48,7 @@ export function UsersStats({ users, total }: UsersStatsProps) {
       value: formatNumber(total),
       icon: <PeopleOutline sx={{ fontSize: 20 }} />,
       color: theme.palette.primary.main,
-      bg: dark ? 'rgba(13,148,136,0.15)' : '#f0fdfa',
+      bg: theme.palette.custom.brand.lightest,
     },
     {
       key: 'stats_active',
@@ -58,7 +57,7 @@ export function UsersStats({ users, total }: UsersStatsProps) {
       sub: t('stats_pct', { pct: activePct }),
       icon: <CheckCircleOutline sx={{ fontSize: 20 }} />,
       color: theme.palette.success.main,
-      bg: dark ? 'rgba(16,185,129,0.15)' : '#ecfdf5',
+      bg: theme.palette.custom.status.success.bg,
     },
     {
       key: 'stats_inactive',
@@ -66,7 +65,7 @@ export function UsersStats({ users, total }: UsersStatsProps) {
       value: formatNumber(inactiveCount),
       icon: <BlockOutlined sx={{ fontSize: 20 }} />,
       color: theme.palette.custom.status.error.text,
-      bg: dark ? 'rgba(239,68,68,0.15)' : '#fef2f2',
+      bg: theme.palette.custom.status.error.bg,
     },
     {
       key: 'stats_last_login',
@@ -74,7 +73,7 @@ export function UsersStats({ users, total }: UsersStatsProps) {
       value: newest ? relativeTime(newest.created_at, t) : t('never'),
       icon: <HistoryOutlined sx={{ fontSize: 20 }} />,
       color: theme.palette.info.main,
-      bg: dark ? 'rgba(59,130,246,0.15)' : '#eff6ff',
+      bg: theme.palette.custom.status.info.bg,
     },
   ];
 
@@ -82,7 +81,7 @@ export function UsersStats({ users, total }: UsersStatsProps) {
     <Box
       sx={{
         display: 'grid',
-        gridTemplateColumns: { xs: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' },
+        gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' },
         gap: 2,
         mb: 3,
       }}

@@ -25,7 +25,7 @@ export function VitalsPanel({ data }: { data: VitalsRecord[] }) {
 
   return (
     <Box>
-      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr 1fr 1fr' }, gap: 2, mb: 3 }}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr 1fr' }, gap: 2, mb: 3 }}>
         <StatCard label={t('total_records')} value={data.length} color={theme.palette.text.primary} />
         <StatCard label={t('anomalies_detected')} value={anomalies.length} color={theme.palette.error.main} />
         <StatCard label={t('normals')} value={normal} color={theme.palette.success.main} />

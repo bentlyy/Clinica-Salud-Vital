@@ -2655,6 +2655,8 @@
   "block_end": "Fin",
   "confirm_block": "Bloquer",
   "delete_block": "Supprimer le blocage",
+  "blockCreated": "Blocage de créneau créé avec succès",
+  "blockDeleted": "Blocage de créneau supprimé avec succès",
   "booking_detail": "Détail du Rendez-vous",
   "patient": "Patient",
   "time": "Créneau",
@@ -3037,8 +3039,9 @@
   "reactivate": "Réactiver",
   "rowsPerPage": "Lignes par page",
   "errorLoad": "Erreur lors du chargement",
-  "errorToggle": "Erreur lors du changement d'état"
- },
+  "errorToggle": "Erreur lors du changement d'état",
+  "toggledSuccess": "Statut de l'utilisateur mis à jour avec succès"
+  },
  "super_admin_billing": {
   "title": "Charges par Clinique",
   "subtitle": "Résumé de facturation et des encaissements de toutes les cliniques",

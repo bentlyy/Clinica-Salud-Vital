@@ -4,6 +4,7 @@ import LockIcon from '@mui/icons-material/Lock';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import ChevronRight from '@mui/icons-material/ChevronRight';
 import React, { memo, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 
 interface NavChild {
   label: string;
@@ -24,10 +25,11 @@ interface SidebarItemProps {
 
 export const SidebarItem = memo(function SidebarItem({ icon, label, path, active, collapsed, onClick, subItems, locked }: SidebarItemProps) {
   const theme = useTheme();
+  const { pathname } = useLocation();
   const hasChildren = Boolean(subItems && subItems.length > 0);
   const [expanded, setExpanded] = useState(false);
 
-  const childActive = subItems?.some((c) => window.location.pathname === c.path || window.location.pathname.startsWith(c.path + '/')) ?? false;
+  const childActive = subItems?.some((c) => pathname === c.path || pathname.startsWith(c.path + '/')) ?? false;
   const isActive = active && !hasChildren;
   const showExpanded = expanded || childActive;
 
@@ -120,7 +122,7 @@ export const SidebarItem = memo(function SidebarItem({ icon, label, path, active
     return (
       <Collapse in={showExpanded} timeout="auto" unmountOnExit>
         {subItems!.map((child) => {
-          const childIsActive = window.location.pathname === child.path || window.location.pathname.startsWith(child.path + '/');
+          const childIsActive = pathname === child.path || pathname.startsWith(child.path + '/');
           const childSelected = {
             backgroundColor: theme.palette.custom?.brand?.lightest || theme.palette.action.selected,
             color: theme.palette.primary.main,

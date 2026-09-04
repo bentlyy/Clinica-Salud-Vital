@@ -1,5 +1,7 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { MemoryRouter } from 'react-router-dom';
+import { AppThemeProvider } from '@/shared/providers/ThemeProvider';
 import SuperAdminDemoDataPage from '@/modules/super-admin/pages/SuperAdminDemoDataPage';
 
 const mockGet = vi.hoisted(() => vi.fn());
@@ -60,7 +62,13 @@ function mockApiResponses() {
 }
 
 function renderPage() {
-  return render(<SuperAdminDemoDataPage />);
+  return render(
+    <MemoryRouter>
+      <AppThemeProvider>
+        <SuperAdminDemoDataPage />
+      </AppThemeProvider>
+    </MemoryRouter>,
+  );
 }
 
 describe('SuperAdminDemoDataPage', () => {

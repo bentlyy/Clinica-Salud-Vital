@@ -125,7 +125,7 @@ export function InvoiceFormDialog({ open, onClose, onSubmit, isLoading }: Invoic
       maxWidth="md"
       fullWidth
       PaperProps={{
-        sx: { borderRadius: '16px', border: `1px solid ${theme.palette.divider}` },
+        sx: { borderRadius: '14px', border: `1px solid ${theme.palette.divider}` },
       }}
     >
       <DialogTitle sx={{ fontWeight: 700, color: theme.palette.text.primary, pb: 1 }}>
@@ -220,7 +220,7 @@ export function InvoiceFormDialog({ open, onClose, onSubmit, isLoading }: Invoic
                 exit={{ opacity: 0, height: 0 }}
                 transition={{ duration: 0.2 }}
               >
-                <Box sx={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr auto', gap: 1, mb: 2, alignItems: 'flex-start' }}>
+                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr 1fr', sm: '2fr 1fr 1fr 1fr auto' }, gap: 1, mb: 2, alignItems: 'flex-start' }}>
                   <Controller
                     name={`items.${index}.description`}
                     control={control}
@@ -232,6 +232,7 @@ export function InvoiceFormDialog({ open, onClose, onSubmit, isLoading }: Invoic
                         size="small"
                         error={!!errors.items?.[index]?.description}
                         helperText={errors.items?.[index]?.description?.message}
+                        sx={{ gridColumn: { xs: '1 / -1' } }}
                       />
                     )}
                   />

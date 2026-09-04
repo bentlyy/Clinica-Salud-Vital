@@ -24,7 +24,7 @@ export function PrescriptionsTab({ prescriptions }: PrescriptionsTabProps) {
   }
 
   return (
-    <Paper sx={{ border: '1px solid #e5e7eb', borderRadius: '12px' }}>
+    <Paper sx={{ border: `1px solid ${theme.palette.divider}`, borderRadius: '12px' }}>
       <List disablePadding>
         {prescriptions.map((record, idx) => (
           <Box key={record.clinical_record_id}>
@@ -49,7 +49,7 @@ export function PrescriptionsTab({ prescriptions }: PrescriptionsTabProps) {
                           icon={<Medication sx={{ fontSize: 16 }} />}
                           label={med.name}
                           size="small"
-                          sx={{ backgroundColor: '#ecfdf5', color: '#0f766e', fontWeight: 600 }}
+                          sx={{ backgroundColor: theme.palette.custom.status.success.bg, color: theme.palette.primary.dark, fontWeight: 600 }}
                         />
                         <Typography variant="body2" sx={{ color: theme.palette.text.primary }}>
                           {[med.dosage, med.frequency, med.duration].filter(Boolean).join(' · ')}

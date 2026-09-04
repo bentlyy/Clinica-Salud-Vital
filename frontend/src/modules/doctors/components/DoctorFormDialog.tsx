@@ -114,7 +114,7 @@ export function DoctorFormDialog({ open, onClose, doctor, onSubmit, isPending }:
       maxWidth="sm"
       fullWidth
       PaperProps={{
-        sx: { borderRadius: '16px', border: '1px solid #e5e7eb' },
+        sx: { borderRadius: '14px', border: `1px solid ${theme.palette.divider}` },
       }}
     >
       <DialogTitle
@@ -186,7 +186,7 @@ export function DoctorFormDialog({ open, onClose, doctor, onSubmit, isPending }:
                   slotProps={{
                     input: { readOnly: isEdit },
                   }}
-                  sx={{ '& .MuiInputBase-root.Mui-disabled': { backgroundColor: '#f9fafb' } }}
+                  sx={{ '& .MuiInputBase-root.Mui-disabled': { backgroundColor: theme.palette.custom.surface.muted } }}
                 />
               )}
             />

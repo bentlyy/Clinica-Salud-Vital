@@ -9,16 +9,9 @@ import {
   Button,
   Typography,
   Chip,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   Avatar,
   IconButton,
   Tooltip,
-  TablePagination,
   ToggleButton,
   ToggleButtonGroup,
 } from '@mui/material';
@@ -35,6 +28,7 @@ import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { LoadingState } from '@/shared/components/ui/LoadingState';
 import { ErrorState } from '@/shared/components/ui/ErrorState';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
+import { DataTable, type DataTableColumn } from '@/shared/components/ui/DataTable';
 import { useAuth } from '@/shared/providers/AuthProvider';
 import {
   useDoctorList,
@@ -148,6 +142,111 @@ export default function DoctorsPage() {
     void doctor;
   };
 
+  const tableColumns: DataTableColumn<Doctor>[] = [
+    {
+      key: 'name',
+      header: t('name'),
+      render: (doctor) => (
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+          <Avatar
+            sx={{
+              width: 36,
+              height: 36,
+              backgroundColor: getDoctorColor(doctor.id, theme.palette.text.secondary),
+              fontSize: '0.8rem',
+              fontWeight: 600,
+            }}
+            src={doctor.avatar_url}
+          >
+            {getInitials(doctor.name)}
+          </Avatar>
+          <Typography variant="body2" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
+            Dr. {doctor.name}
+          </Typography>
+        </Box>
+      ),
+    },
+    {
+      key: 'email',
+      header: t('emailLabel'),
+      render: (doctor) => (
+        <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
+          {doctor.email}
+        </Typography>
+      ),
+    },
+    {
+      key: 'specialty',
+      header: t('specialtyLabel'),
+      render: (doctor) =>
+        doctor.specialty ? (
+          <Chip
+            label={doctor.specialty}
+            size="small"
+            sx={{
+              fontWeight: 500,
+              backgroundColor: theme.palette.custom.brand.lightest,
+              color: theme.palette.primary.main,
+              border: `1px solid ${theme.palette.custom.brand.lighter}`,
+            }}
+          />
+        ) : (
+          <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
+            —
+          </Typography>
+        ),
+    },
+    {
+      key: 'license_number',
+      header: t('licenseNumber'),
+      render: (doctor) => (
+        <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
+          {doctor.license_number ?? '—'}
+        </Typography>
+      ),
+    },
+    {
+      key: 'actions',
+      header: t('actionsLabel'),
+      align: 'right',
+      render: (doctor) => (
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 0.5 }}>
+          {canEdit && (
+            <Tooltip title={t('editDoctorLabel', { name: doctor.name })}>
+              <IconButton
+                size="small"
+                onClick={() => openEditDialog(doctor)}
+                sx={{ color: theme.palette.text.secondary, '&:hover': { color: theme.palette.primary.main } }}
+              >
+                <Edit fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          )}
+          <Tooltip title={t('doctorSchedule')}>
+            <IconButton
+              size="small"
+              onClick={() => openSchedule(doctor)}
+              sx={{ color: theme.palette.text.secondary, '&:hover': { color: theme.palette.info.main } }}
+            >
+              <CalendarMonth fontSize="small" />
+            </IconButton>
+          </Tooltip>
+          {canInvite && !doctor.user_id && (
+            <Tooltip title={t('inviteDoctor')}>
+              <IconButton
+                size="small"
+                onClick={() => openInviteDialog(doctor)}
+                sx={{ color: theme.palette.text.secondary, '&:hover': { color: theme.palette.warning.main } }}
+              >
+                <Mail fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          )}
+        </Box>
+      ),
+    },
+  ];
+
   if (isLoading) return <LoadingState message={t('loading_doctors')} />;
   if (error) return <ErrorState error={error as Error} onRetry={refetch} />;
 
@@ -172,7 +271,7 @@ export default function DoctorsPage() {
                   color: theme.palette.warning.main,
                   '&:hover': {
                     borderColor: theme.palette.warning.dark,
-                    backgroundColor: '#fffbeb',
+                    backgroundColor: theme.palette.custom.status.warning.bg,
                     color: theme.palette.warning.dark,
                   },
                 }}
@@ -209,7 +308,7 @@ export default function DoctorsPage() {
           gap: 2,
           alignItems: { md: 'center' },
           justifyContent: 'space-between',
-          border: '1px solid #e5e7eb',
+          border: `1px solid ${theme.palette.divider}`,
         }}
       >
         <TextField
@@ -236,12 +335,12 @@ export default function DoctorsPage() {
           size="small"
           sx={{
             '& .MuiToggleButton-root': {
-              border: '1px solid #e5e7eb',
+              border: `1px solid ${theme.palette.divider}`,
               px: 1.5,
               '&.Mui-selected': {
-                backgroundColor: '#f0fdfa',
+                backgroundColor: theme.palette.custom.brand.lightest,
                 color: theme.palette.primary.main,
-                '&:hover': { backgroundColor: '#ccfbf1' },
+                '&:hover': { backgroundColor: theme.palette.custom.brand.lighter },
               },
             },
           }}
@@ -290,128 +389,20 @@ export default function DoctorsPage() {
         </Box>
       ) : (
         /* Table View */
-        <Paper sx={{ border: '1px solid #e5e7eb', overflow: 'hidden' }}>
-          <TableContainer>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>{t('name')}</TableCell>
-                  <TableCell>{t('emailLabel')}</TableCell>
-                  <TableCell>{t('specialtyLabel')}</TableCell>
-                  <TableCell>{t('licenseNumber')}</TableCell>
-                  <TableCell align="right">{t('actionsLabel')}</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {doctors.map((doctor) => (
-                  <TableRow key={doctor.id} hover>
-                    <TableCell>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                        <Avatar
-                          sx={{
-                            width: 36,
-                            height: 36,
-                            backgroundColor: getDoctorColor(doctor.id, theme.palette.text.secondary),
-                            fontSize: '0.8rem',
-                            fontWeight: 600,
-                          }}
-                          src={doctor.avatar_url}
-                        >
-                          {getInitials(doctor.name)}
-                        </Avatar>
-                        <Typography variant="body2" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
-                          Dr. {doctor.name}
-                        </Typography>
-                      </Box>
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
-                        {doctor.email}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      {doctor.specialty ? (
-                        <Chip
-                          label={doctor.specialty}
-                          size="small"
-                          sx={{
-                            fontWeight: 500,
-                            backgroundColor: '#f0fdfa',
-                            color: theme.palette.primary.main,
-                            border: '1px solid #ccfbf1',
-                          }}
-                        />
-                      ) : (
-                        <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
-                          —
-                        </Typography>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
-                        {doctor.license_number ?? '—'}
-                      </Typography>
-                    </TableCell>
-                    <TableCell align="right">
-                      <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 0.5 }}>
-                        {canEdit && (
-                          <Tooltip title={t('editDoctorLabel', { name: doctor.name })}>
-                            <IconButton
-                              size="small"
-                              onClick={() => openEditDialog(doctor)}
-                              sx={{ color: theme.palette.text.secondary, '&:hover': { color: theme.palette.primary.main } }}
-                            >
-                              <Edit fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                        )}
-                        <Tooltip title={t('doctorSchedule')}>
-                          <IconButton
-                            size="small"
-                            onClick={() => openSchedule(doctor)}
-                            sx={{ color: theme.palette.text.secondary, '&:hover': { color: theme.palette.info.main } }}
-                          >
-                            <CalendarMonth fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                        {canInvite && !doctor.user_id && (
-                          <Tooltip title={t('inviteDoctor')}>
-                            <IconButton
-                              size="small"
-                              onClick={() => openInviteDialog(doctor)}
-                              sx={{ color: theme.palette.text.secondary, '&:hover': { color: theme.palette.warning.main } }}
-                            >
-                              <Mail fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                        )}
-                      </Box>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-
-          <TablePagination
-            component="div"
-            count={total}
-            page={page}
-            onPageChange={(_, newPage) => setPage(newPage)}
-            rowsPerPage={rowsPerPage}
-            onRowsPerPageChange={(e) => {
-              setRowsPerPage(parseInt(e.target.value, 10));
-              setPage(0);
-            }}
-            rowsPerPageOptions={[6, 12, 24, 48]}
-            labelRowsPerPage={t('rows_per_page', 'Filas por página')}
-            labelDisplayedRows={({ from, to, count }) =>
-              count !== -1
-                ? t('labelDisplayedRows', { from, to, count })
-                : t('labelDisplayedRowsMore', { to })
-            }
-          />
-        </Paper>
+        <DataTable
+          columns={tableColumns}
+          data={doctors}
+          keyExtractor={(doctor) => doctor.id}
+          serverSide
+          total={total}
+          page={page}
+          rowsPerPage={rowsPerPage}
+          onPageChange={(newPage) => setPage(newPage)}
+          onRowsPerPageChange={(limit) => {
+            setRowsPerPage(limit);
+            setPage(0);
+          }}
+        />
       )}
 
       {/* Stats summary below grid */}
@@ -423,7 +414,7 @@ export default function DoctorsPage() {
             display: 'flex',
             alignItems: 'center',
             gap: 3,
-            border: '1px solid #e5e7eb',
+            border: `1px solid ${theme.palette.divider}`,
             flexWrap: 'wrap',
           }}
         >

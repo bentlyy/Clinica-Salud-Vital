@@ -101,10 +101,10 @@ describe('MyMedicalHistoryDetailPage', () => {
     navigateMock.mockClear();
   });
 
-  it('shows skeletons while loading', () => {
+  it('shows the loading state while loading', () => {
     apiClient.get.mockReturnValue(new Promise(() => undefined));
     renderPage();
-    expect(document.querySelectorAll('.MuiSkeleton-root').length).toBeGreaterThan(0);
+    expect(document.querySelectorAll('.MuiCircularProgress-root').length).toBeGreaterThan(0);
   });
 
   it('shows the error alert when the record fails to load', async () => {
@@ -149,6 +149,6 @@ describe('MyMedicalHistoryDetailPage', () => {
     mockApiWithLabs([]);
     renderPage();
     fireEvent.click(await screen.findByRole('button', { name: 'Volver' }));
-    expect(navigateMock).toHaveBeenCalledWith(-1);
+    expect(navigateMock).toHaveBeenCalledWith('/medical-history');
   });
 });

@@ -95,7 +95,8 @@ export const SearchInput = memo(function SearchInput({
         },
       }}
       sx={{
-        minWidth: 220,
+        width: { xs: '100%', sm: 'auto' },
+        minWidth: { xs: 0, sm: 220 },
         '& .MuiOutlinedInput-root': {
           borderRadius: '10px',
           fontSize: '0.875rem',

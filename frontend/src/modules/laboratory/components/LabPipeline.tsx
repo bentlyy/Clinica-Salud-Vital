@@ -142,8 +142,8 @@ export function LabPipeline({ requests }: LabPipelineProps) {
                           height: 18,
                           fontSize: '0.65rem',
                           fontWeight: 500,
-                          backgroundColor: LAB_PRIORITY_CONFIG[request.priority]?.bgColor ?? '#f3f4f6',
-                          color: LAB_PRIORITY_CONFIG[request.priority]?.color ?? '#6b7280',
+                          backgroundColor: LAB_PRIORITY_CONFIG[request.priority]?.bgColor ?? theme.palette.custom.surface.sunken,
+                          color: LAB_PRIORITY_CONFIG[request.priority]?.color ?? theme.palette.text.secondary,
                         }}
                       />
                       {request.doctor_name && (

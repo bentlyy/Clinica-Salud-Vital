@@ -110,6 +110,6 @@ describe('PatientPrescriptionsPage', () => {
   it('shows the error state when the request fails', async () => {
     apiClient.get.mockRejectedValue(new Error('Network error'));
     renderPage();
-    expect(await screen.findByText('Error al cargar las recetas')).toBeInTheDocument();
+    expect(await screen.findByText('Network error')).toBeInTheDocument();
   });
 });

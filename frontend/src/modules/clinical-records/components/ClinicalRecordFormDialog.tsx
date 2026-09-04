@@ -13,6 +13,7 @@ import {
   Autocomplete,
 } from '@mui/material';
 import Close from '@mui/icons-material/Close';
+import { useTheme } from '@mui/material/styles';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -77,6 +78,7 @@ export function ClinicalRecordFormDialog({
   patientName,
 }: ClinicalRecordFormDialogProps) {
   const { t } = useTranslation('clinical_records');
+  const theme = useTheme();
   const isEditing = !!record;
   const { data: templatesData } = useClinicalTemplates();
   const templates = templatesData?.data ?? [];
@@ -174,7 +176,7 @@ export function ClinicalRecordFormDialog({
       maxWidth="md"
       fullWidth
       PaperProps={{
-        sx: { borderRadius: '16px', border: '1px solid #e5e7eb' },
+        sx: { borderRadius: '14px', border: `1px solid ${theme.palette.divider}` },
       }}
     >
       <DialogTitle
@@ -185,10 +187,10 @@ export function ClinicalRecordFormDialog({
           pb: 1,
         }}
       >
-        <Typography variant="h5" sx={{ fontWeight: 700, color: '#1f2937' }}>
+        <Typography variant="h5" sx={{ fontWeight: 700, color: theme.palette.text.primary }}>
           {isEditing ? t('edit_record') : t('new_record')}
         </Typography>
-        <IconButton onClick={onClose} size="small" sx={{ color: '#6b7280' }}>
+        <IconButton onClick={onClose} size="small" sx={{ color: theme.palette.text.secondary }}>
           <Close fontSize="small" />
         </IconButton>
       </DialogTitle>
@@ -317,7 +319,7 @@ export function ClinicalRecordFormDialog({
           />
 
           {/* Vitals Section */}
-          <Typography variant="h6" sx={{ fontWeight: 600, color: '#1f2937', mb: 1.5, mt: 1 }}>
+          <Typography variant="h6" sx={{ fontWeight: 600, color: theme.palette.text.primary, mb: 1.5, mt: 1 }}>
             {t('vital_signs')}
           </Typography>
           <Box
@@ -327,9 +329,9 @@ export function ClinicalRecordFormDialog({
               gap: 2,
               mb: 3,
               p: 2,
-              backgroundColor: '#f9fafb',
+              backgroundColor: theme.palette.custom.surface.muted,
               borderRadius: '10px',
-              border: '1px solid #f3f4f6',
+              border: `1px solid ${theme.palette.divider}`,
             }}
           >
             {VITAL_FIELDS.map((vital) => (
@@ -369,7 +371,7 @@ export function ClinicalRecordFormDialog({
         </Box>
       </DialogContent>
 
-      <DialogActions sx={{ px: 3, py: 2, borderTop: '1px solid #f3f4f6' }}>
+      <DialogActions sx={{ px: 3, py: 2, borderTop: `1px solid ${theme.palette.divider}` }}>
         <Button onClick={onClose} variant="outlined" sx={{ mr: 1 }}>
           {t('cancel', { ns: 'common' })}
         </Button>

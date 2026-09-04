@@ -55,8 +55,8 @@ export default function DoctorPanel() {
   const QUICK_LINKS = [
     { labelKey: 'doctor_panel:linkCalendar', icon: <CalendarMonth />, path: '/calendar', color: theme.palette.primary.main },
     { labelKey: 'doctor_panel:linkSchedule', icon: <AccessTime />, path: '/availability', color: theme.palette.info.main },
-    { labelKey: 'doctor_panel:linkHistory', icon: <History />, path: '/clinical-records', color: '#7c3aed' },
-    { labelKey: 'doctor_panel:linkLaboratory', icon: <Science />, path: '/laboratory', color: '#f59e0b' },
+    { labelKey: 'doctor_panel:linkHistory', icon: <History />, path: '/clinical-records', color: theme.palette.custom.purple.main },
+    { labelKey: 'doctor_panel:linkLaboratory', icon: <Science />, path: '/laboratory', color: theme.palette.warning.main },
     { labelKey: 'doctor_panel:linkPatients', icon: <People />, path: '/patients', color: theme.palette.success.main },
   ];
 
@@ -126,7 +126,7 @@ export default function DoctorPanel() {
                 p: 2,
                 textAlign: 'center',
                 cursor: 'pointer',
-                border: '1px solid #e5e7eb',
+                border: `1px solid ${theme.palette.divider}`,
                 borderRadius: '12px',
                 transition: 'all 0.2s',
                 '&:hover': {
@@ -150,7 +150,7 @@ export default function DoctorPanel() {
       <Grid container spacing={3}>
         {/* Stats */}
         <Grid xs={12} md={4}>
-          <Paper sx={{ p: 2.5, border: '1px solid #e5e7eb', borderRadius: '12px' }}>
+          <Paper sx={{ p: 2.5, border: `1px solid ${theme.palette.divider}`, borderRadius: '12px' }}>
             <Typography variant="subtitle2" sx={{ fontWeight: 600, color: theme.palette.text.secondary, mb: 2 }}>
               {t('doctor_panel:daySummary')}
             </Typography>
@@ -194,7 +194,7 @@ export default function DoctorPanel() {
 
         {/* Today's Agenda */}
         <Grid xs={12} md={8}>
-          <Paper sx={{ p: 2.5, border: '1px solid #e5e7eb', borderRadius: '12px' }}>
+          <Paper sx={{ p: 2.5, border: `1px solid ${theme.palette.divider}`, borderRadius: '12px' }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
               <EventNote sx={{ color: theme.palette.primary.main, fontSize: 20 }} />
               <Typography variant="subtitle2" sx={{ fontWeight: 600, color: theme.palette.text.secondary }}>
@@ -217,7 +217,7 @@ export default function DoctorPanel() {
                         <Typography variant="caption" sx={{ fontWeight: 700, color: st.color, textTransform: 'uppercase', fontSize: 11 }}>
                           {getStatusLabel(group.status, t)}
                         </Typography>
-                        <Chip label={group.items.length} size="small" sx={{ height: 18, fontSize: 10, backgroundColor: st.bg, color: st.color, fontWeight: 700 }} />
+                        <Chip label={group.items.length} size="small" sx={{ height: 18, fontSize: 11, backgroundColor: st.bg, color: st.color, fontWeight: 700 }} />
                       </Box>
                       {group.items.map((booking) => (
                         <ListItem
@@ -237,7 +237,7 @@ export default function DoctorPanel() {
                           }
                         >
                           <ListItemAvatar>
-                            <Avatar sx={{ backgroundColor: '#0d948815', color: theme.palette.primary.main, width: 40, height: 40, fontSize: 14, fontWeight: 600 }}>
+                            <Avatar sx={{ backgroundColor: theme.palette.custom.brand.alpha8, color: theme.palette.primary.main, width: 40, height: 40, fontSize: 14, fontWeight: 600 }}>
                               {booking.time}
                             </Avatar>
                           </ListItemAvatar>

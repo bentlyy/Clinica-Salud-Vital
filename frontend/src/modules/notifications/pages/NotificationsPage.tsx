@@ -174,7 +174,7 @@ export default function NotificationsPage({ embedded }: { embedded?: boolean }) 
                   }}
                   onClick={() => handleNotificationClick(notification)}
                   secondaryAction={
-                    <IconButton size="small" edge="end" sx={{ color: theme.palette.text.secondary }}>
+                    <IconButton size="small" edge="end" sx={{ color: theme.palette.text.secondary }} aria-label={t('notificationType_' + notification.type, notification.type)}>
                       {TYPE_ICONS[notification.type]}
                     </IconButton>
                   }

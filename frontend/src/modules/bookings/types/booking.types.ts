@@ -91,7 +91,7 @@ export const BOOKING_STATUS_CONFIG: Record<
   confirmed: { labelKey: 'statusLabels.confirmed', color: '#0d9488', bgColor: '#f0fdfa' },
   cancelled: { labelKey: 'statusLabels.cancelled', color: '#ef4444', bgColor: '#fef2f2' },
   completed: { labelKey: 'statusLabels.completed', color: '#2563eb', bgColor: '#eff6ff' },
-  no_show: { labelKey: 'statusLabels.no_show', color: '#6b7280', bgColor: '#f3f4f6' },
+  no_show: { labelKey: 'statusLabels.no_show', color: '#4b5563', bgColor: '#f3f4f6' },
 };
 
 export const BOOKING_STATUS_OPTIONS: { value: BookingStatus | 'all'; labelKey: string }[] = [

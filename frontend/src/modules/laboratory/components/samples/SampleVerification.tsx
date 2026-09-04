@@ -4,12 +4,6 @@ import {
   Box,
   Typography,
   Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   Button,
   Chip,
   IconButton,
@@ -21,6 +15,7 @@ import {
   CircularProgress,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
+import { DataTable, type DataTableColumn } from '@/shared/components/ui/DataTable';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
 import VerifiedIcon from '@mui/icons-material/Verified';
@@ -178,6 +173,97 @@ export const SampleVerification = memo(function SampleVerification({
   const getContainerTypeLabel = (value: string) =>
     CONTAINER_TYPE_OPTIONS.find((o) => o.value === value)?.label ?? value;
 
+  const verificationColumns: DataTableColumn<LabSample>[] = [
+    {
+      key: 'sample_code',
+      header: t('code'),
+      render: (sample) => (
+        <Typography
+          variant="body2"
+          sx={{ fontWeight: 600, color: theme.palette.text.primary, fontFamily: 'monospace' }}
+        >
+          {sample.sample_code}
+        </Typography>
+      ),
+    },
+    {
+      key: 'sample_type',
+      header: t('type'),
+      render: (sample) => (
+        <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
+          {getSampleTypeLabel(sample.sample_type)}
+        </Typography>
+      ),
+    },
+    {
+      key: 'container_type',
+      header: t('container'),
+      render: (sample) => (
+        <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
+          {getContainerTypeLabel(sample.container_type)}
+        </Typography>
+      ),
+    },
+    {
+      key: 'volume',
+      header: t('volume'),
+      render: (sample) => (
+        <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
+          {sample.volume ? `${sample.volume} ml` : '—'}
+        </Typography>
+      ),
+    },
+    {
+      key: 'status',
+      header: t('status'),
+      render: () => (
+        <Chip
+          label={t('received')}
+          size="small"
+          sx={{
+            backgroundColor: theme.palette.custom.status.info.bg,
+            color: theme.palette.info.dark,
+            fontWeight: 500,
+            fontSize: '0.7rem',
+          }}
+        />
+      ),
+    },
+    {
+      key: 'actions',
+      header: t('actionsLabel'),
+      align: 'right',
+      render: (sample) => (
+        <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end' }}>
+          <IconButton
+            size="small"
+            onClick={() => onVerify(sample.id)}
+            disabled={isLoading}
+            sx={{
+              color: theme.palette.success.main,
+              '&:hover': { backgroundColor: theme.palette.custom.status.success.bg },
+            }}
+            title={t('verify')}
+          >
+            <CheckCircleIcon fontSize="small" />
+          </IconButton>
+          <IconButton
+            size="small"
+            onClick={() => handleOpenReject(sample.id)}
+            disabled={isLoading}
+            sx={{
+              color: theme.palette.error.main,
+              '&:hover': { backgroundColor: theme.palette.custom.status.error.bg },
+            }}
+            title={t('reject')}
+          >
+            <CancelIcon fontSize="small" />
+          </IconButton>
+        </Box>
+      ),
+    },
+  ];
+
   return (
     <>
       <Paper
@@ -197,106 +283,13 @@ export const SampleVerification = memo(function SampleVerification({
 
         <StatsBar total={samples.length} verified={verifiedSamples.length} pending={pendingCount} />
 
-        {receivedSamples.length === 0 ? (
-          <Box
-            sx={{
-              textAlign: 'center',
-              py: 5,
-              backgroundColor: theme.palette.custom.surface.muted,
-              borderRadius: '10px',
-              border: `1px dashed ${theme.palette.divider}`,
-            }}
-          >
-            <CheckCircleIcon sx={{ fontSize: 40, color: theme.palette.divider, mb: 1 }} />
-            <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
-              {t('noPendingVerification')}
-            </Typography>
-          </Box>
-        ) : (
-          <TableContainer>
-            <Table size="small">
-              <TableHead>
-              <TableRow>
-                <TableCell>{t('code')}</TableCell>
-                <TableCell>{t('type')}</TableCell>
-                <TableCell>{t('container')}</TableCell>
-                <TableCell>{t('volume')}</TableCell>
-                <TableCell>{t('status')}</TableCell>
-                <TableCell align="right">{t('actionsLabel')}</TableCell>
-              </TableRow>
-              </TableHead>
-              <TableBody>
-                {receivedSamples.map((sample) => (
-                  <TableRow
-                    key={sample.id}
-                    sx={{ '&:hover': { backgroundColor: theme.palette.custom.surface.muted } }}
-                  >
-                    <TableCell>
-                      <Typography variant="body2" sx={{ fontWeight: 600, color: theme.palette.text.primary, fontFamily: 'monospace' }}>
-                        {sample.sample_code}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
-                        {getSampleTypeLabel(sample.sample_type)}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
-                        {getContainerTypeLabel(sample.container_type)}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
-                        {sample.volume ? `${sample.volume} ml` : '—'}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Chip
-                        label={t('received')}
-                        size="small"
-                        sx={{
-                          backgroundColor: theme.palette.custom.status.info.bg,
-                          color: theme.palette.info.dark,
-                          fontWeight: 500,
-                          fontSize: '0.7rem',
-                        }}
-                      />
-                    </TableCell>
-                    <TableCell align="right">
-                      <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end' }}>
-                        <IconButton
-                          size="small"
-                          onClick={() => onVerify(sample.id)}
-                          disabled={isLoading}
-                          sx={{
-                            color: theme.palette.success.main,
-                            '&:hover': { backgroundColor: theme.palette.custom.status.success.bg },
-                          }}
-                           title={t('verify')}
-                        >
-                          <CheckCircleIcon fontSize="small" />
-                        </IconButton>
-                        <IconButton
-                          size="small"
-                          onClick={() => handleOpenReject(sample.id)}
-                          disabled={isLoading}
-                          sx={{
-                            color: theme.palette.error.main,
-                            '&:hover': { backgroundColor: theme.palette.custom.status.error.bg },
-                          }}
-                           title={t('reject')}
-                        >
-                          <CancelIcon fontSize="small" />
-                        </IconButton>
-                      </Box>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        )}
+        <DataTable<LabSample>
+          columns={verificationColumns}
+          data={receivedSamples}
+          keyExtractor={(sample) => sample.id}
+          emptyTitle={t('noPendingVerification')}
+          rowsPerPage={receivedSamples.length || 1}
+        />
       </Paper>
 
       {/* Reject Dialog */}

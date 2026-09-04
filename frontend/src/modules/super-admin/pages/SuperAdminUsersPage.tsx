@@ -5,21 +5,15 @@ import {
   Box,
   Paper,
   Typography,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   IconButton,
   TextField,
   InputAdornment,
-  TablePagination,
   Select,
   MenuItem,
   FormControl,
   InputLabel,
 } from '@mui/material';
+import toast from 'react-hot-toast';
 import Search from '@mui/icons-material/Search';
 import Block from '@mui/icons-material/Block';
 import CheckCircle from '@mui/icons-material/CheckCircle';
@@ -27,6 +21,7 @@ import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { LoadingState } from '@/shared/components/ui/LoadingState';
 import { ErrorState } from '@/shared/components/ui/ErrorState';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
+import { DataTable } from '@/shared/components/ui/DataTable';
 import { UserAvatar, RoleBadge, StatusBadge } from '@/modules/users/components/UserVisuals';
 import { superAdminService } from '../services/super-admin.service';
 import type { UserRole } from '@/shared/types/api.types';
@@ -113,8 +108,9 @@ export default function SuperAdminUsersPage() {
       setUsers((prev) =>
         prev.map((u) => (u.id === user.id ? { ...u, active: !u.active } : u)),
       );
+      toast.success(t('toggledSuccess', { active: !user.active }));
     } catch {
-      setError(t('errorToggle'));
+      toast.error(t('errorToggle'));
     } finally {
       setTogglingId(null);
     }
@@ -181,92 +177,87 @@ export default function SuperAdminUsersPage() {
       {users.length === 0 ? (
         <EmptyState title={t('emptyTitle')} message={search ? t('emptySearch') : t('emptyNone')} />
       ) : (
-        <Paper sx={{ borderRadius: '14px', border: `1px solid ${theme.palette.divider}`, overflow: 'hidden' }}>
-          <TableContainer>
-            <Table>
-              <TableHead>
-                <TableRow sx={{ backgroundColor: theme.palette.mode === 'dark' ? 'rgba(148,163,184,0.06)' : '#f8fafc' }}>
-                  <TableCell>{t('colUser')}</TableCell>
-                  <TableCell>{t('colEmail')}</TableCell>
-                  <TableCell>{t('colRole')}</TableCell>
-                  <TableCell>{t('colClinic')}</TableCell>
-                  <TableCell>{t('colStatus')}</TableCell>
-                  <TableCell align="right">{t('colActions')}</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {users.map((user) => {
-                  const isActive = user.active !== false;
-                  return (
-                    <TableRow
-                      key={user.id}
-                      hover
-                      sx={{
-                        '&:hover td': { backgroundColor: theme.palette.mode === 'dark' ? 'rgba(148,163,184,0.04)' : '#f9fafb' },
-                      }}
-                    >
-                      <TableCell>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                          <UserAvatar name={user.name || t('noName')} role={(user.role as UserRole) || 'user'} size={38} />
-                          <Typography variant="body2" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
-                            {user.name || t('noName')}
-                          </Typography>
-                        </Box>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>{user.email}</Typography>
-                      </TableCell>
-                      <TableCell>
-                        <RoleBadge role={(user.role as UserRole) || 'user'} />
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
-                          {user.tenant_id ? (clinicNameById.get(user.tenant_id) || user.tenant_id) : t('noClinic')}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <StatusBadge isActive={isActive} />
-                      </TableCell>
-                      <TableCell align="right">
-                        <IconButton
-                          size="small"
-                          onClick={() => handleToggleActive(user)}
-                          disabled={togglingId === user.id}
-                          title={isActive ? t('deactivate') : t('reactivate')}
-                          sx={{
-                            color: isActive ? theme.palette.error.main : theme.palette.success.main,
-                            border: `1px solid ${theme.palette.divider}`,
-                            borderRadius: '10px',
-                            '&:hover': {
-                              backgroundColor: isActive
-                                ? theme.palette.error.main
-                                : theme.palette.success.main,
-                              color: '#fff',
-                            },
-                          }}
-                        >
-                          {isActive
-                            ? <Block fontSize="small" />
-                            : <CheckCircle fontSize="small" />}
-                        </IconButton>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </TableContainer>
-          <TablePagination
-            component="div"
-            count={total}
-            page={page}
-            onPageChange={(_, newPage) => setPage(newPage)}
-            rowsPerPage={rowsPerPage}
-            onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value)); setPage(0); }}
-            rowsPerPageOptions={[10, 25, 50]}
-            labelRowsPerPage={t('rowsPerPage')}
-          />
-        </Paper>
+        <DataTable
+          columns={[
+            {
+              key: 'name',
+              header: t('colUser'),
+              render: (user) => (
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                  <UserAvatar name={user.name || t('noName')} role={(user.role as UserRole) || 'user'} size={38} />
+                  <Typography variant="body2" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
+                    {user.name || t('noName')}
+                  </Typography>
+                </Box>
+              ),
+            },
+            {
+              key: 'email',
+              header: t('colEmail'),
+              render: (user) => (
+                <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>{user.email}</Typography>
+              ),
+            },
+            {
+              key: 'role',
+              header: t('colRole'),
+              render: (user) => <RoleBadge role={(user.role as UserRole) || 'user'} />,
+            },
+            {
+              key: 'tenant_id',
+              header: t('colClinic'),
+              render: (user) => (
+                <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
+                  {user.tenant_id ? (clinicNameById.get(user.tenant_id) || user.tenant_id) : t('noClinic')}
+                </Typography>
+              ),
+            },
+            {
+              key: 'active',
+              header: t('colStatus'),
+              render: (user) => <StatusBadge isActive={user.active !== false} />,
+            },
+            {
+              key: 'actions',
+              header: t('colActions'),
+              align: 'right',
+              render: (user) => {
+                const isActive = user.active !== false;
+                return (
+                  <IconButton
+                    size="small"
+                    onClick={() => handleToggleActive(user)}
+                    disabled={togglingId === user.id}
+                    title={isActive ? t('deactivate') : t('reactivate')}
+                    sx={{
+                      color: isActive ? theme.palette.error.main : theme.palette.success.main,
+                      border: `1px solid ${theme.palette.divider}`,
+                      borderRadius: '10px',
+                      '&:hover': {
+                        backgroundColor: isActive
+                          ? theme.palette.error.main
+                          : theme.palette.success.main,
+                        color: '#fff',
+                      },
+                    }}
+                  >
+                    {isActive
+                      ? <Block fontSize="small" />
+                      : <CheckCircle fontSize="small" />}
+                  </IconButton>
+                );
+              },
+            },
+          ]}
+          data={users}
+          keyExtractor={(user) => user.id}
+          total={total}
+          page={page}
+          rowsPerPage={rowsPerPage}
+          onPageChange={setPage}
+          onRowsPerPageChange={(limit) => { setRowsPerPage(limit); setPage(0); }}
+          serverSide
+        />
       )}
     </Box>
   );

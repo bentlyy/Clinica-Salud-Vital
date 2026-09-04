@@ -18,6 +18,7 @@ export function NotificationBell() {
         size="small"
         sx={{ color: theme.palette.text.secondary }}
         onClick={() => navigate('/notifications')}
+        aria-label={t('notifications:bellTooltip', 'Notificaciones ({{count}})', { count })}
       >
         <Badge
           badgeContent={count}

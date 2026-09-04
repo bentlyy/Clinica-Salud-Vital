@@ -47,6 +47,7 @@ export default function TwoFAPage() {
             value={code}
             onChange={(e) => { setCode(e.target.value.replace(/\D/g, '').slice(0, 6)); }}
             placeholder="000000"
+            aria-label={t('two_fa:enter_6_digit_code', 'Código de verificación de 6 dígitos')}
             slotProps={{ htmlInput: { maxLength: 6, style: { textAlign: 'center', fontSize: '1.5rem', letterSpacing: '0.5em', fontFamily: 'monospace' } } }}
             sx={{ mb: 3 }}
             autoFocus

@@ -1,5 +1,5 @@
 import { Box, Typography, Button, Chip } from '@mui/material';
-import { useTheme } from '@mui/material/styles';
+import { useTheme, type Theme } from '@mui/material/styles';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import ScheduleOutlined from '@mui/icons-material/ScheduleOutlined';
@@ -10,14 +10,14 @@ import PaymentsOutlined from '@mui/icons-material/PaymentsOutlined';
 import MedicalServicesOutlined from '@mui/icons-material/MedicalServicesOutlined';
 import type { SaasAlert } from '../types/super-admin.types';
 
-const SEVERITY_CONFIG: Record<string, { color: string; bg: string }> = {
-  critical: { color: '#dc2626', bg: '#fef2f2' },
-  high: { color: '#ea580c', bg: '#fff7ed' },
-  medium: { color: '#f59e0b', bg: '#fffbeb' },
-  low: { color: '#64748b', bg: '#f8fafc' },
-};
-
-const DEFAULT_SEVERITY = { color: '#64748b', bg: '#f8fafc' };
+function SEVERITY_CONFIG(theme: Theme): Record<string, { color: string; bg: string }> {
+  return {
+    critical: { color: theme.palette.error.main, bg: theme.palette.custom.status.error.bg },
+    high: { color: theme.palette.custom.orange.dark, bg: theme.palette.custom.orange.bg },
+    medium: { color: theme.palette.warning.main, bg: theme.palette.custom.status.warning.bg },
+    low: { color: theme.palette.text.secondary, bg: theme.palette.custom.surface.muted },
+  };
+}
 
 function alertIcon(type: string) {
   switch (type) {
@@ -39,7 +39,8 @@ function alertIcon(type: string) {
 export function AlertCard({ alert }: { alert: SaasAlert }) {
   const theme = useTheme();
   const { t } = useTranslation('super_admin_dashboard');
-  const severity = SEVERITY_CONFIG[alert.severity] ?? DEFAULT_SEVERITY;
+  const config = SEVERITY_CONFIG(theme);
+  const severity = config[alert.severity] ?? config.low ?? { color: theme.palette.text.secondary, bg: theme.palette.custom.surface.muted };
 
   return (
     <Box
