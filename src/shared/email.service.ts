@@ -3,6 +3,7 @@ import sgMail from '@sendgrid/mail';
 import { logger } from '../utils/logger.js';
 import { tenantService } from './multi-tenant.service.js';
 import { toError } from '../utils/errors.js';
+import { emailsTotal } from './metrics.service.js';
 
 export interface EmailOptions {
   to: string;
@@ -44,6 +45,9 @@ const initSendGrid = (): boolean => {
 
   try {
     sgMail.setApiKey(apiKey);
+    if (typeof sgMail.setTimeout === 'function') {
+      sgMail.setTimeout(10000);
+    }
     provider = 'sendgrid';
     logger.info('[Email] Proveedor SendGrid configurado');
     return true;
@@ -66,6 +70,11 @@ const initSMTP = (): boolean => {
       port: 587,
       secure: false,
       auth: { user: emailUser, pass: emailPass },
+      pool: true,
+      maxConnections: 5,
+      connectionTimeout: 10000,
+      greetingTimeout: 10000,
+      socketTimeout: 20000,
     });
     provider = 'smtp';
     logger.info('[Email] Proveedor SMTP (Gmail) configurado');
@@ -104,10 +113,12 @@ const sendViaSendGrid = async ({ to, subject, html, tenantId }: EmailOptions): P
       subject,
       html,
     });
+    emailsTotal.inc({ provider: 'sendgrid', status: 'sent' });
     return { sent: true };
   } catch (err) {
     const error = err as Error;
     logger.error('[Email] Error SendGrid:', { error: error.message, to, subject });
+    emailsTotal.inc({ provider: 'sendgrid', status: 'error' });
     return { sent: false, error: error.message };
   }
 };
@@ -122,10 +133,12 @@ const sendViaSMTP = async ({ to, subject, html, tenantId }: EmailOptions): Promi
       subject,
       html,
     });
+    emailsTotal.inc({ provider: 'smtp', status: 'sent' });
     return { sent: true };
   } catch (err) {
     const error = err as Error;
     logger.error('[Email] Error SMTP:', { error: error.message, stack: error.stack, to, subject });
+    emailsTotal.inc({ provider: 'smtp', status: 'error' });
     return { sent: false, error: error.message };
   }
 };
@@ -133,6 +146,7 @@ const sendViaSMTP = async ({ to, subject, html, tenantId }: EmailOptions): Promi
 export const sendEmail = async (options: EmailOptions): Promise<EmailResult> => {
   if (provider === 'log') {
     logger.info(`[Email] Modo log — Para: ${options.to} | Asunto: ${options.subject}`);
+    emailsTotal.inc({ provider: 'log', status: 'sent' });
     return { sent: true };
   }
 

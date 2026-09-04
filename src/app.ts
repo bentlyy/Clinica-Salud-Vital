@@ -21,10 +21,13 @@ import { optionalAuth } from './middlewares/auth.middleware.js';
 import { validateEmailConfig } from './shared/email.service.js';
 import { requestLogger } from './middlewares/requestLogger.middleware.js';
 import { correlationIdMiddleware } from './middlewares/correlationId.middleware.js';
+import { metricsMiddleware } from './middlewares/metrics.middleware.js';
+import { metricsHandler } from './shared/metrics.service.js';
 import { csrfProtection } from './middlewares/csrf.middleware.js';
 import { errorHandler, notFoundHandler } from './middlewares/errorHandler.middleware.js';
 import { trackActivity, stopSessionCleanup } from './middlewares/sessionActivity.middleware.js';
 import { initSentry, setupExpressErrorHandler } from './shared/sentry.service.js';
+import Sentry from './shared/sentry.service.js';
 import { logger } from './utils/logger.js';
 import { toError } from './utils/errors.js';
 import cron from 'node-cron';
@@ -115,10 +118,26 @@ const healthHandler = async (_req: Request, res: Response) => {
 };
 
 app.use(securityMiddleware);
-app.use(compression());
+app.use(compression({
+  threshold: 1024,
+  level: 6,
+}));
+
+const livenessHandler = (_req: Request, res: Response) => {
+  res.status(200).json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    version: pkg.version,
+  });
+};
 
 app.get('/health', healthHandler);
 app.get('/api/health', healthHandler);
+app.get('/health/live', livenessHandler);
+app.get('/api/health/live', livenessHandler);
+
+app.get('/metrics', metricsHandler);
+app.get('/api/metrics', metricsHandler);
 
 const isProduction = process.env.NODE_ENV === 'production';
 
@@ -166,6 +185,7 @@ app.use(trackActivity);
 
 app.use(correlationIdMiddleware);
 app.use(requestLogger);
+app.use(metricsMiddleware);
 
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -177,7 +197,7 @@ const globalLimiter = rateLimit({
     if (req.tenant_id) return `tenant:${req.tenant_id}:${req.ip || 'unknown'}`;
     return `ip:${req.ip || 'unknown'}`;
   },
-  skip: (req) => req.path === '/health' || req.path === '/api/health',
+  skip: (req) => req.path === '/health' || req.path === '/api/health' || req.path === '/health/live' || req.path === '/api/health/live' || req.path === '/metrics' || req.path === '/api/metrics',
   handler: (req, res) => {
     logger.warn('Rate limit exceeded (global)', { path: req.path, ip: req.ip, tenant_id: req.tenant_id });
     res.status(429).json({ error: 'Too many requests, please try again later' });
@@ -475,26 +495,39 @@ const startServer = async (): Promise<void> => {
   });
 };
 
+let shuttingDown = false;
+
+const shutdown = (signal: string, exitCode = 0): void => {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  logger.info(`${signal} received. Shutting down gracefully...`);
+  stopSessionCleanup();
+  stopQueueProcessor();
+  const forceExit = new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Shutdown timeout')), 5000));
+  Promise.race([pool.end(), forceExit])
+    .catch((err: unknown) => logger.warn('Pool close error during shutdown', toError(err).message))
+    .finally(() => {
+      if (Sentry.getClient && Sentry.getClient()) {
+        Sentry.close(2000).then(() => process.exit(exitCode));
+      } else {
+        process.exit(exitCode);
+      }
+    });
+};
+
 process.on('unhandledRejection', (reason) => {
   const mem = process.memoryUsage();
   logger.error('Unhandled Rejection', { reason, memory: { heapUsed: `${Math.round(mem.heapUsed / 1024 / 1024)}MB`, rss: `${Math.round(mem.rss / 1024 / 1024)}MB` } });
 });
 
-process.on('SIGTERM', () => {
-  logger.info('SIGTERM received. Shutting down gracefully...');
-  stopSessionCleanup();
-  stopQueueProcessor();
-  pool.end().catch((err: unknown) => logger.warn('Pool close error on SIGTERM', toError(err).message));
-  process.exit(0);
+process.on('uncaughtException', (err) => {
+  const mem = process.memoryUsage();
+  logger.error('UNCAUGHT EXCEPTION', { error: toError(err).message, stack: toError(err).stack, memory: { heapUsed: `${Math.round(mem.heapUsed / 1024 / 1024)}MB`, rss: `${Math.round(mem.rss / 1024 / 1024)}MB` } });
+  shutdown('UNCAUGHT_EXCEPTION', 1);
 });
 
-process.on('SIGINT', () => {
-  logger.info('SIGINT received. Shutting down gracefully...');
-  stopSessionCleanup();
-  stopQueueProcessor();
-  pool.end().catch((err: unknown) => logger.warn('Pool close error on SIGINT', toError(err).message));
-  process.exit(0);
-});
+process.on('SIGTERM', () => shutdown('SIGTERM', 0));
+process.on('SIGINT', () => shutdown('SIGINT', 0));
 
 export { app };
 export { startServer };

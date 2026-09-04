@@ -1,6 +1,8 @@
 import { pool } from './db.js';
 import { logger } from '../utils/logger.js';
 import { toError } from '../utils/errors.js';
+import { jobsTotal } from './metrics.service.js';
+import { notifyCritical } from './alerts.service.js';
 
 interface JobData {
   type: string;
@@ -91,6 +93,7 @@ class QueueService {
         `UPDATE jobs SET status = 'dead', last_error = $1, completed_at = NOW() WHERE id = $2`,
         [`No handler registered for type "${row.type}"`, row.id],
       );
+      jobsTotal.inc({ type: row.type, status: 'dead' });
       return;
     }
 
@@ -100,6 +103,7 @@ class QueueService {
         `UPDATE jobs SET status = 'completed', completed_at = NOW() WHERE id = $1`,
         [row.id],
       );
+      jobsTotal.inc({ type: row.type, status: 'completed' });
     } catch (err) {
       const errorMsg = toError(err).message || String(err);
       const attempts = row.attempts;
@@ -110,6 +114,12 @@ class QueueService {
           [errorMsg, row.id],
         );
         logger.error(`Job #${row.id} "${row.type}" moved to dead after ${attempts} attempts`, { error: errorMsg });
+        jobsTotal.inc({ type: row.type, status: 'dead' });
+        notifyCritical({
+          title: `Job #${row.id} "${row.type}" dead after ${attempts} attempts`,
+          message: errorMsg,
+          meta: { jobId: row.id, type: row.type, attempts },
+        });
       } else {
         const delayMs = BACKOFF_DELAYS[attempts - 1] ?? BACKOFF_DELAYS[BACKOFF_DELAYS.length - 1];
         await pool.query(
@@ -121,6 +131,7 @@ class QueueService {
           [errorMsg, String(delayMs), row.id],
         );
         logger.warn(`Job #${row.id} "${row.type}" failed (attempt ${attempts}/3), retry in ${delayMs / 1000}s`, { error: errorMsg });
+        jobsTotal.inc({ type: row.type, status: 'retrying' });
       }
     }
   }
