@@ -1,0 +1,3 @@
+services:
+  db:
+    command: postgres -c config_file=/etc/postgresql/postgresql.conf -c ssl=off
