@@ -249,6 +249,9 @@ function buildTheme(mode: ThemeMode) {
             fontSize: '0.8125rem',
             padding: '12px 16px',
             borderBottom: `1px solid ${isDark ? '#374151' : '#f3f4f6'}`,
+            '@media (max-width: 600px)': {
+              padding: '10px 12px',
+            },
           },
           head: {
             fontWeight: 600,
@@ -299,6 +302,28 @@ function buildTheme(mode: ThemeMode) {
           root: {
             fontWeight: 600,
             fontSize: '0.875rem',
+          },
+        },
+      },
+      MuiDialog: {
+        styleOverrides: {
+          paper: {
+            margin: 16,
+            maxWidth: 'calc(100% - 32px)',
+            '@media (max-width: 480px)': {
+              margin: 12,
+              maxWidth: 'calc(100% - 24px)',
+            },
+          },
+        },
+      },
+      MuiDialogContent: {
+        styleOverrides: {
+          root: {
+            '@media (max-width: 480px)': {
+              paddingLeft: 24,
+              paddingRight: 24,
+            },
           },
         },
       },

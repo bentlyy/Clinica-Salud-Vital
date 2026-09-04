@@ -139,7 +139,7 @@ export default function SuperAdminUsersPage() {
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(0); }}
             onKeyDown={(e) => e.key === 'Enter' && load()}
-            sx={{ flex: 1, minWidth: 200 }}
+            sx={{ flex: { xs: '1 1 100%', md: 1 }, minWidth: { xs: '100%', md: 200 } }}
             slotProps={{
               input: {
                 startAdornment: (
@@ -150,7 +150,7 @@ export default function SuperAdminUsersPage() {
               },
             }}
           />
-          <FormControl size="small" sx={{ minWidth: 140 }}>
+          <FormControl size="small" sx={{ minWidth: { xs: '100%', md: 140 } }}>
             <InputLabel>{t('roleFilter')}</InputLabel>
             <Select
               value={roleFilter}
@@ -162,7 +162,7 @@ export default function SuperAdminUsersPage() {
               ))}
             </Select>
           </FormControl>
-          <FormControl size="small" sx={{ minWidth: 180 }}>
+          <FormControl size="small" sx={{ minWidth: { xs: '100%', md: 180 } }}>
             <InputLabel>{t('clinicFilter')}</InputLabel>
             <Select
               value={clinicFilter}

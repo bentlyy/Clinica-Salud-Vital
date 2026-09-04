@@ -155,7 +155,7 @@ export default function AuditPage() {
                 ),
               },
             }}
-            sx={{ minWidth: 250 }}
+            sx={{ flex: { xs: '1 1 100%', md: 1 }, minWidth: { xs: '100%', md: 250 } }}
           />
           <TextField
             select
@@ -166,7 +166,7 @@ export default function AuditPage() {
               setActionFilter(e.target.value);
               setPage(0);
             }}
-            sx={{ minWidth: 140 }}
+            sx={{ minWidth: { xs: '100%', md: 140 } }}
           >
             {AUDIT_ACTION_OPTIONS.map((opt) => (
               <MenuItem key={opt.value} value={opt.value}>
@@ -183,7 +183,7 @@ export default function AuditPage() {
               setEntityFilter(e.target.value);
               setPage(0);
             }}
-            sx={{ minWidth: 140 }}
+            sx={{ minWidth: { xs: '100%', md: 140 } }}
           >
             {AUDIT_ENTITY_OPTIONS.map((opt) => (
               <MenuItem key={opt.value} value={opt.value}>
@@ -201,7 +201,7 @@ export default function AuditPage() {
                 setClinicFilter(e.target.value);
                 setPage(0);
               }}
-              sx={{ minWidth: 180 }}
+              sx={{ minWidth: { xs: '100%', md: 180 } }}
             >
               <MenuItem value="">{t('allClinics')}</MenuItem>
               {clinics.map((clinic) => (

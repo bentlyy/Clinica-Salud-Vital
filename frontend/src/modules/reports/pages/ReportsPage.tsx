@@ -167,7 +167,7 @@ export default function ReportsPage() {
               value={dateFrom}
               onChange={(e) => setDateFrom(e.target.value)}
               slotProps={{ inputLabel: { shrink: true } }}
-              sx={{ maxWidth: 300 }}
+              sx={{ width: { xs: '100%', md: 300 }, maxWidth: { xs: '100%', md: 300 } }}
             />
             <TextField
               fullWidth
@@ -176,13 +176,13 @@ export default function ReportsPage() {
               value={dateTo}
               onChange={(e) => setDateTo(e.target.value)}
               slotProps={{ inputLabel: { shrink: true } }}
-              sx={{ maxWidth: 300 }}
+              sx={{ width: { xs: '100%', md: 300 }, maxWidth: { xs: '100%', md: 300 } }}
             />
             <Button
               variant="contained"
               onClick={handleGenerate}
               disabled={!dateFrom || !dateTo || generateReport.isPending}
-              sx={{ minWidth: 160 }}
+              sx={{ minWidth: { xs: '100%', md: 160 } }}
             >
               {generateReport.isPending ? t('generating') : t('generateReport')}
             </Button>

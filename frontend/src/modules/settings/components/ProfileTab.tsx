@@ -100,6 +100,7 @@ export function ProfileTab() {
           sx={{
             height: 120,
             position: 'relative',
+            overflow: 'hidden',
             background: `linear-gradient(135deg, ${theme.palette.custom.brand.darker} 0%, ${theme.palette.custom.brand.dark} 45%, ${theme.palette.custom.brand.main} 100%)`,
           }}
         >

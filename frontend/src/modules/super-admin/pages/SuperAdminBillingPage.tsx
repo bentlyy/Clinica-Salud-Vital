@@ -154,7 +154,7 @@ export default function SuperAdminBillingPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && load()}
-            sx={{ flex: 1, minWidth: 200 }}
+            sx={{ flex: { xs: '1 1 100%', md: 1 }, minWidth: { xs: '100%', md: 200 } }}
             slotProps={{
               input: {
                 startAdornment: (
@@ -165,7 +165,7 @@ export default function SuperAdminBillingPage() {
               },
             }}
           />
-          <FormControl size="small" sx={{ minWidth: 180 }}>
+          <FormControl size="small" sx={{ minWidth: { xs: '100%', md: 180 } }}>
             <InputLabel>{t('clinicFilter')}</InputLabel>
             <Select
               value={clinicFilter}
