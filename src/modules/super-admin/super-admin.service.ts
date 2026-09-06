@@ -1,4 +1,4 @@
-import { pool, readPool } from '../../shared/db.js';
+import { superAdminPool } from '../../shared/db.js';
 import { BadRequestError, NotFoundError } from '../../utils/errors.js';
 import { E } from '../../utils/error-codes.js';
 import { logger } from '../../utils/logger.js';
@@ -45,7 +45,7 @@ export const listTenants = async (
   const offset = (safePage - 1) * safeLimit;
   params.push(safeLimit, offset);
 
-  const result = await readPool.query(
+  const result = await superAdminPool.query(
     `SELECT t.id, t.name, t.domain, t.locale, t.timezone, t.active, t.created_at,
         p.name AS plan_name, p.code AS plan_code,
         COALESCE(b.total_bookings, 0)::int AS total_bookings,
@@ -69,7 +69,7 @@ export const listTenants = async (
 
   const total = result.rows.length > 0
     ? parseInt(result.rows[0].total as string, 10)
-    : parseInt((await readPool.query(
+    : parseInt((await superAdminPool.query(
         `SELECT COUNT(*) AS total FROM tenants t WHERE ${whereClause}`,
         filterParams
       )).rows[0].total, 10);
@@ -94,12 +94,12 @@ export const listTenants = async (
 };
 
 export const getTenantDetail = async (tenantId: string): Promise<Record<string, unknown>> => {
-  const tenantResult = await readPool.query<TenantRow>(
+  const tenantResult = await superAdminPool.query<TenantRow>(
     'SELECT id, name, domain, locale, timezone, config, active, created_at, updated_at FROM tenants WHERE id = $1', [tenantId]
   );
   if (tenantResult.rows.length === 0) throw new NotFoundError(E.SA_TENANT_NOT_FOUND);
   const tenant = tenantResult.rows[0];
-  const statsResult = await readPool.query(`
+  const statsResult = await superAdminPool.query(`
     SELECT
       COALESCE(SUM(CASE WHEN u.role IN ('user', 'patient') THEN 1 ELSE 0 END), 0) AS total_patients,
       COUNT(DISTINCT d.id) AS total_doctors,
@@ -114,7 +114,7 @@ export const getTenantDetail = async (tenantId: string): Promise<Record<string, 
     WHERE u.tenant_id = $1
   `, [tenantId]);
 
-  const subResult = await readPool.query(
+  const subResult = await superAdminPool.query(
     `SELECT p.name AS plan_name, p.code AS plan_code
      FROM subscriptions s
      JOIN plans p ON p.id = s.plan_id
@@ -171,7 +171,7 @@ export const updateTenant = async (
   if (sets.length === 0) throw new BadRequestError(E.SA_NO_FIELDS);
 
   params.push(tenantId);
-  const result = await pool.query<TenantRow>(
+  const result = await superAdminPool.query<TenantRow>(
     `UPDATE tenants SET ${sets.join(', ')}, updated_at = NOW() WHERE id = $${paramIdx} RETURNING *`,
     params
   );
@@ -188,20 +188,20 @@ export const updateTenant = async (
 };
 
 export const deleteTenant = async (tenantId: string, deletedBy?: number): Promise<void> => {
-  const result = await pool.query(
+  const result = await superAdminPool.query(
     'UPDATE tenants SET active = false, deleted_at = NOW(), deleted_by = $2 WHERE id = $1 AND deleted_at IS NULL RETURNING id',
     [tenantId, deletedBy || null]
   );
   if (result.rows.length === 0) throw new NotFoundError(E.SA_TENANT_DELETED);
 
   // Revocar todos los refresh tokens del tenant
-  await pool.query(
+  await superAdminPool.query(
     'UPDATE refresh_tokens SET revoked = true WHERE tenant_id = $1',
     [tenantId]
   );
 
   // Marcar usuarios como inactivos
-  await pool.query(
+  await superAdminPool.query(
     'UPDATE users SET active = false WHERE tenant_id = $1 AND active = true',
     [tenantId]
   );
@@ -246,7 +246,7 @@ export const listUsers = async (
   const offset = (safePage - 1) * safeLimit;
   params.push(safeLimit, offset);
 
-  const result = await readPool.query(
+  const result = await superAdminPool.query(
     `SELECT u.id, u.email, u.name, u.role, u.rut, u.phone, u.tenant_id, u.active,
             u.password_changed, u.totp_enabled, u.created_at, u.last_activity_at,
             COUNT(*) OVER() AS total
@@ -257,7 +257,7 @@ export const listUsers = async (
 
   const total = result.rows.length > 0
     ? parseInt(result.rows[0].total as string, 10)
-    : parseInt((await readPool.query(
+    : parseInt((await superAdminPool.query(
         `SELECT COUNT(*) AS total FROM users u WHERE ${whereClause}`,
         filterParams
       )).rows[0].total, 10);
@@ -276,7 +276,7 @@ export const listUsers = async (
 };
 
 export const setUserActive = async (userId: number, active: boolean, tenantId?: string): Promise<Record<string, unknown>> => {
-  const result = await pool.query(
+  const result = await superAdminPool.query(
     `UPDATE users SET active = $1 WHERE id = $2${tenantId ? ' AND tenant_id = $3' : ''} RETURNING id, email, name, role, active, tenant_id`,
     tenantId ? [active, userId, tenantId] : [active, userId]
   );
@@ -292,7 +292,7 @@ export const getGlobalStats = async (): Promise<{
   total_bookings: number;
   total_revenue: number;
 }> => {
-  const result = await readPool.query(`
+  const result = await superAdminPool.query(`
     SELECT
       (SELECT COUNT(*) FROM tenants) as total_tenants,
       (SELECT COUNT(*) FROM tenants WHERE active = true) as active_tenants,
@@ -305,7 +305,7 @@ export const getGlobalStats = async (): Promise<{
 };
 
 export const getGlobalDashboard = async (): Promise<Record<string, unknown>> => {
-  const result = await readPool.query(`
+  const result = await superAdminPool.query(`
     SELECT
       (SELECT COUNT(*) FROM tenants)::int AS total_tenants,
       (SELECT COUNT(*) FROM tenants WHERE active = true)::int AS active_tenants,
@@ -338,7 +338,7 @@ export const getGlobalDashboard = async (): Promise<Record<string, unknown>> => 
 };
 
 export const getPlanDistribution = async (): Promise<{ plan: string; code: string; count: string }[]> => {
-  const result = await readPool.query(`
+  const result = await superAdminPool.query(`
     SELECT p.name AS plan, p.code, COUNT(*)::text AS count
     FROM subscriptions s
     JOIN plans p ON p.id = s.plan_id
@@ -361,7 +361,7 @@ export const getTopTenants = async (
   };
   const metricSql = metricMap[metric] || metricMap.bookings;
 
-  const result = await readPool.query(`
+  const result = await superAdminPool.query(`
     SELECT
       t.id, t.name, t.domain, t.active, t.created_at,
       ${metricSql} AS metric_value,
@@ -376,7 +376,7 @@ export const getTopTenants = async (
 };
 
 export const getRevenueAnalytics = async (months: number = 12): Promise<Record<string, unknown>[]> => {
-  const result = await readPool.query(`
+  const result = await superAdminPool.query(`
     SELECT
       TO_CHAR(paid_at, 'YYYY-MM') AS month,
       COUNT(*)::int AS invoices,
@@ -390,7 +390,7 @@ export const getRevenueAnalytics = async (months: number = 12): Promise<Record<s
 };
 
 export const getTenantGrowthMetrics = async (tenantId: string, months: number = 12): Promise<Record<string, unknown>[]> => {
-  const result = await readPool.query(`
+  const result = await superAdminPool.query(`
     SELECT
       m.month,
       COALESCE(u.new_users, 0)::int AS new_users,
@@ -422,7 +422,7 @@ export const getTenantGrowthMetrics = async (tenantId: string, months: number = 
 };
 
 export const getGrowthMetrics = async (months: number = 12): Promise<Record<string, unknown>[]> => {
-  const result = await readPool.query(`
+  const result = await superAdminPool.query(`
     SELECT
       m.month,
       COALESCE(t.new_tenants, 0)::int AS new_tenants,
@@ -449,7 +449,7 @@ export const getGrowthMetrics = async (months: number = 12): Promise<Record<stri
 };
 
 export const getTenantHealthScores = async (): Promise<Record<string, unknown>[]> => {
-  const result = await readPool.query(`
+  const result = await superAdminPool.query(`
     WITH tenant_activity AS (
       SELECT
         t.id, t.name, t.active, t.created_at,
@@ -512,7 +512,7 @@ export const getTenantHealthDetail = async (tenantId: string): Promise<Record<st
 };
 
 export const getOperationMetrics = async (months: number = 6): Promise<Record<string, unknown>> => {
-  const specialtiesResult = await readPool.query(`
+  const specialtiesResult = await superAdminPool.query(`
     SELECT s.name, COUNT(b.id)::int AS total
     FROM specialties s
     JOIN doctors d ON d.specialty = s.name
@@ -521,7 +521,7 @@ export const getOperationMetrics = async (months: number = 6): Promise<Record<st
     ORDER BY total DESC
   `, [months]);
 
-  const cancellationRate = await readPool.query(`
+  const cancellationRate = await superAdminPool.query(`
     SELECT
       ROUND(
         (COUNT(*) FILTER (WHERE status = 'cancelled')::numeric /
@@ -533,7 +533,7 @@ export const getOperationMetrics = async (months: number = 6): Promise<Record<st
     WHERE date >= NOW() - INTERVAL '1 month' * $1
   `, [months]);
 
-  const noShowResult = await readPool.query(`
+  const noShowResult = await superAdminPool.query(`
     SELECT
       ROUND(
         (COUNT(*) FILTER (WHERE b.status = 'confirmed' AND cr.id IS NULL)::numeric /
@@ -544,14 +544,14 @@ export const getOperationMetrics = async (months: number = 6): Promise<Record<st
     WHERE b.date >= NOW() - INTERVAL '1 month' * $1 AND b.date <= CURRENT_DATE
   `, [months]);
 
-  const avgLeadTime = await readPool.query(`
+  const avgLeadTime = await superAdminPool.query(`
     SELECT
       ROUND(AVG(EXTRACT(DAY FROM (b.date + b.time) - b.created_at))::numeric, 1) AS avg_lead_days
     FROM bookings b
     WHERE b.created_at >= NOW() - INTERVAL '1 month' * $1
   `, [months]);
 
-  const topDoctors = await readPool.query(`
+  const topDoctors = await superAdminPool.query(`
     SELECT d.name, COUNT(b.id)::int AS total_bookings,
       ROW_NUMBER() OVER (ORDER BY COUNT(b.id) DESC) AS rank
     FROM doctors d
@@ -561,7 +561,7 @@ export const getOperationMetrics = async (months: number = 6): Promise<Record<st
     LIMIT 10
   `, [months]);
 
-  const hourlyDemand = await readPool.query(`
+  const hourlyDemand = await superAdminPool.query(`
     SELECT EXTRACT(DOW FROM date)::int AS day_of_week, EXTRACT(HOUR FROM time)::int AS hour, COUNT(*)::int AS bookings
     FROM bookings
     WHERE date >= NOW() - INTERVAL '1 month' * $1 AND status != 'cancelled'
@@ -582,7 +582,7 @@ export const getOperationMetrics = async (months: number = 6): Promise<Record<st
 };
 
 export const getChurnMetrics = async (months: number = 12): Promise<Record<string, unknown>> => {
-  const result = await readPool.query(`
+  const result = await superAdminPool.query(`
     WITH months AS (
       SELECT TO_CHAR(generate_series(NOW() - INTERVAL '1 month' * $1, NOW(), '1 month'), 'YYYY-MM') AS month
     ),
@@ -619,7 +619,7 @@ export const getChurnMetrics = async (months: number = 12): Promise<Record<strin
   const retentionRate = Math.round((1 - (churnRate / 100)) * 100 * 10) / 10;
   const annualRetention = Math.round(Math.pow(retentionRate / 100, 12) * 100 * 10) / 10;
 
-  const mrrResult = await readPool.query(`
+  const mrrResult = await superAdminPool.query(`
     SELECT COALESCE(SUM(amount), 0) AS mrr
     FROM subscription_invoices
     WHERE status = 'paid' AND paid_at >= NOW() - INTERVAL '30 days'
@@ -637,7 +637,7 @@ export const getChurnMetrics = async (months: number = 12): Promise<Record<strin
 };
 
 export const getComparisonTable = async (): Promise<Record<string, unknown>[]> => {
-  const result = await readPool.query(`
+  const result = await superAdminPool.query(`
     SELECT
       t.id, t.name, t.active, t.created_at,
       p.name AS plan_name, p.code AS plan_code,
@@ -668,7 +668,7 @@ export const getComparisonTable = async (): Promise<Record<string, unknown>[]> =
 };
 
 export const getOccupancyMetrics = async (): Promise<Record<string, unknown>[]> => {
-  const result = await readPool.query(`
+  const result = await superAdminPool.query(`
     SELECT
       t.id, t.name,
       COUNT(DISTINCT da.id)::int AS total_slots,
@@ -689,7 +689,7 @@ export const getOccupancyMetrics = async (): Promise<Record<string, unknown>[]> 
 };
 
 export const getActivityMetrics = async (): Promise<Record<string, unknown>[]> => {
-  const result = await readPool.query(`
+  const result = await superAdminPool.query(`
     SELECT
       t.id, t.name, t.active,
       MAX(b.created_at) AS last_booking,
@@ -805,7 +805,7 @@ export const adminCreateTenant = async (data: {
   }
   const planCode = data.planCode || data.plan || 'free';
 
-  const client = await pool.connect();
+  const client = await superAdminPool.connect();
   try {
     await client.query('BEGIN');
 
@@ -875,7 +875,7 @@ export const getBillingSummary = async (options: { tenantId?: string; search?: s
 
   const whereClause = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : '';
 
-  const result = await readPool.query(
+  const result = await superAdminPool.query(
     `SELECT
        t.id,
        t.name,
