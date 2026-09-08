@@ -5,7 +5,7 @@ import { getQuery, getQueryInt } from '../../shared/query.js';
 export const getAuditLogs = asyncHandler(async (req, res) => {
   const user_id = getQueryInt(req.query, 'user_id', 0);
   const action = getQuery(req.query, 'action');
-  const resource_type = getQuery(req.query, 'resource_type');
+  const resource_type = getQuery(req.query, 'resource_type') || getQuery(req.query, 'entity_type');
   const start_date = getQuery(req.query, 'start_date');
   const end_date = getQuery(req.query, 'end_date');
   const limit = getQueryInt(req.query, 'limit', 20);

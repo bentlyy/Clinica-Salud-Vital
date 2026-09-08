@@ -84,7 +84,17 @@ export const getAuditLogs = async (query: AuditLogQuery = {}): Promise<unknown[]
   if (query.end_date) { conditions.push(`al.created_at <= $${paramCount++}`); params.push(query.end_date); }
 
   const whereClause = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : '';
-  const sql = `SELECT al.*, u.email AS user_email FROM audit_logs al LEFT JOIN users u ON al.user_id = u.id ${whereClause} ORDER BY al.created_at DESC LIMIT $${paramCount++} OFFSET $${paramCount++}`;
+  const sql = `SELECT
+      al.id, al.tenant_id, al.user_id,
+      COALESCE(u.name, u.email) AS user_name,
+      al.action,
+      al.resource_type AS entity_type,
+      al.resource_id AS entity_id,
+      CASE WHEN al.old_values IS NOT NULL OR al.new_values IS NOT NULL
+        THEN jsonb_build_object('old_values', al.old_values, 'new_values', al.new_values)
+        ELSE NULL END AS details,
+      al.ip_address, al.user_agent, al.hash, al.previous_hash, al.created_at
+    FROM audit_logs al LEFT JOIN users u ON al.user_id = u.id ${whereClause} ORDER BY al.created_at DESC LIMIT $${paramCount++} OFFSET $${paramCount++}`;
   params.push(safeLimit, offset);
 
   const result = await pool.query(sql, params);
