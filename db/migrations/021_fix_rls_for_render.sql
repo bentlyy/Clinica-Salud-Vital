@@ -27,7 +27,7 @@ DECLARE
     'waitlist', 'clinic_holidays', 'medical_history', 'user_sessions',
     'attachments', 'reports', 'webhook_subscriptions', 'webhook_deliveries',
     'ml_demand_forecast', 'doctor_availability', 'doctor_exceptions',
-    'refresh_tokens', 'password_reset_tokens', 'tenants'
+    'refresh_tokens', 'password_reset_tokens'
   ];
 BEGIN
   FOREACH tbl IN ARRAY tenant_tables LOOP
