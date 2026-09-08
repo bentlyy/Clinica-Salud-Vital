@@ -11,7 +11,6 @@ import {
   CircularProgress,
   Container,
   FormControl,
-  FormHelperText,
   InputLabel,
   LinearProgress,
   MenuItem,
@@ -40,7 +39,6 @@ const defaultForm: OnboardPayload = {
   admin_name: '',
   admin_email: '',
   admin_password: '',
-  confirm_password: '',
   country: '',
   plan_code: 'free',
   legal_name: '',
@@ -60,7 +58,7 @@ const defaultForm: OnboardPayload = {
   operating_hours: undefined,
   notes: '',
   documents: [] as OnboardingDraftDocument[],
-} as OnboardPayload & { confirm_password: string };
+} as OnboardPayload;
 
 const steps = ['account', 'profile', 'documents', 'review'];
 
@@ -77,6 +75,7 @@ export default function OnboardingContractPage() {
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldError, setFieldError] = useState<string | null>(null);
+  const [confirmPassword, setConfirmPassword] = useState('');
   const fileInputs = useRef<Record<number, HTMLInputElement | null>>({});
 
   const { control, handleSubmit, watch, setValue, getValues } = useForm({
@@ -314,8 +313,8 @@ export default function OnboardingContractPage() {
                             label={t('account.confirmPassword')}
                             required
                             fullWidth
-                            error={!!getValues('confirm_password') && getValues('confirm_password') !== getValues('admin_password')}
-                            onChange={(e) => setValue('confirm_password', e.target.value)}
+                            error={confirmPassword.length > 0 && confirmPassword !== getValues('admin_password')}
+                            onChange={(e) => setConfirmPassword(e.target.value)}
                           />
                         </Box>
                       </Box>

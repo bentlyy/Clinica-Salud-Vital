@@ -175,6 +175,7 @@ const TECH_STACK = [
 
 function LandingPage() {
   const { t } = useTranslation('landing');
+  const navigate = useNavigate();
   const [loginOpen, setLoginOpen] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const openLogin = useCallback(() => setLoginOpen(true), []);
