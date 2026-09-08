@@ -97,7 +97,7 @@ export function fileToBase64(file: File): Promise<{ file_name: string; mime_type
     const reader = new FileReader();
     reader.onload = () => {
       const result = String(reader.result || '');
-      const base64 = result.includes(',') ? result.split(',')[1] : result;
+      const base64 = result.includes(',') ? (result.split(',')[1] ?? '') : result;
       resolve({ file_name: file.name, mime_type: file.type || 'application/octet-stream', data_base64: base64 });
     };
     reader.onerror = () => reject(new Error('Failed to read file'));
