@@ -17,6 +17,8 @@ import MedicalServices from '@mui/icons-material/MedicalServices';
 import TrendingUp from '@mui/icons-material/TrendingUp';
 import Verified from '@mui/icons-material/Verified';
 import Analytics from '@mui/icons-material/Analytics';
+import ContactPage from '@mui/icons-material/ContactPage';
+import BusinessCenter from '@mui/icons-material/BusinessCenter';
 import type { UserRole } from '@/shared/types/api.types';
 import type { TFunction } from 'i18next';
 
@@ -52,6 +54,8 @@ const NAV_ITEMS_DEF: NavItemDef[] = [
   { labelKey: 'management', icon: <Assessment />, path: '/management', roles: ['admin', 'doctor'] },
   { labelKey: 'panelSaas', icon: <TrendingUp />, path: '/saas', roles: ['superadmin'] },
   { labelKey: 'clinics', icon: <AccountBalance />, path: '/tenants', roles: ['superadmin'] },
+  { labelKey: 'onboardingApps', icon: <ContactPage />, path: '/onboarding-applications', roles: ['superadmin'] },
+  { labelKey: 'clinicOnboarding', icon: <BusinessCenter />, path: '/settings/onboarding', roles: ['superadmin', 'admin'] },
   { labelKey: 'users', icon: <People />, path: '/users', roles: ['superadmin'] },
   { labelKey: 'specialties', icon: <MedicalServices />, path: '/specialties', roles: ['superadmin'] },
   { labelKey: 'holidays', icon: <CalendarToday />, path: '/holidays', roles: ['superadmin', 'admin'] },

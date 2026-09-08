@@ -26,6 +26,7 @@ const PUBLIC_PATHS = new Set([
   '/api/doctors/public',
   '/api/specialties',
   '/api/saas/plans',
+  '/api/saas/onboard',
   '/api/auth/.well-known/jwks.json',
 ]);
 

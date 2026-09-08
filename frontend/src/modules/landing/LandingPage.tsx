@@ -199,7 +199,7 @@ function LandingPage() {
         <div className="lp-nav-actions">
           <LanguageSwitcher />
           <button className="lp-nav-btn lp-nav-btn-ghost" onClick={openLogin}>{t('navLogin')}</button>
-          <button className="lp-nav-btn lp-nav-btn-primary" onClick={openLogin}>{t('navCta')}</button>
+          <button className="lp-nav-btn lp-nav-btn-primary" onClick={() => navigate('/contratar')}>{t('navCta')}</button>
         </div>
       </nav>
 
@@ -360,7 +360,7 @@ function LandingPage() {
               </ul>
               <button
                 className={`lp-hero-btn lp-hero-btn-block ${plan.popular ? 'lp-hero-btn-primary' : 'lp-hero-btn-secondary'}`}
-                onClick={openLogin}
+                onClick={() => navigate('/contratar')}
               >
                 {t('pricingCta')}
               </button>
@@ -420,7 +420,7 @@ function LandingPage() {
         <p className="lp-cta-desc">
           {t('ctaDesc')}
         </p>
-        <button className="lp-hero-btn lp-hero-btn-primary" onClick={openLogin}>
+        <button className="lp-hero-btn lp-hero-btn-primary" onClick={() => navigate('/contratar')}>
           {t('ctaButton')}
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
         </button>
