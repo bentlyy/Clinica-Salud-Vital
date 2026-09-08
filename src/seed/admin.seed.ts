@@ -349,7 +349,7 @@ export const seedTestTenants = async (): Promise<void> => {
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
-      await client.query('SET LOCAL app.tenant_id = $1', [t.id]);
+      await client.query("SELECT set_config('app.tenant_id', $1, true)", [t.id]);
       const q = client.query.bind(client);
 
       // ── Subscription ─────────────────────────────────────────────────────
@@ -663,6 +663,7 @@ export const seedTestTenants = async (): Promise<void> => {
       for (let i = 0; i < 8; i++) {
         if (allLabTestIds.length === 0 || allLabAreaIds.length === 0) break;
         try {
+          await client.query('SAVEPOINT qc_skip');
           await q(
             `INSERT INTO lab_qc_records (lab_test_id, lab_area_id, equipment_id, reagent_id, qc_type, status, performed_by, performed_at, results, notes, tenant_id)
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
@@ -681,7 +682,9 @@ export const seedTestTenants = async (): Promise<void> => {
             ]
           );
           qcCount++;
-        } catch { /* skip */ }
+        } catch {
+          await client.query('ROLLBACK TO SAVEPOINT qc_skip').catch(() => {});
+        }
       }
       logger.info(`  Lab QC records: ${qcCount}`);
     }
@@ -897,7 +900,8 @@ export const seedTestTenants = async (): Promise<void> => {
           try {
             await q(
               `INSERT INTO lab_notifications (type, title, message, severity, tenant_id)
-               VALUES ($1, $2, $3, $4, $5)`,
+               VALUES ($1, $2, $3, $4, $5)
+               ON CONFLICT DO NOTHING`,
               [notif.type, notif.title, notif.message, notif.severity, t.id]
             );
             notifCount++;
