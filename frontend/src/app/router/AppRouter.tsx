@@ -109,6 +109,11 @@ const MyMedicalHistoryDetailPage = lazy(() => import('@/modules/medical-history/
 // Not Found
 const NotFoundPage = lazy(() => import('@/modules/auth/pages/NotFoundPage'));
 
+// Onboarding module
+const OnboardingContractPage = lazy(() => import('@/modules/onboarding/pages/OnboardingContractPage'));
+const ClinicOnboardingPage = lazy(() => import('@/modules/onboarding/pages/ClinicOnboardingPage'));
+const SuperAdminOnboardingPage = lazy(() => import('@/modules/onboarding/pages/SuperAdminOnboardingPage'));
+
 const SUPERADMIN_ONLY = ['superadmin'];
 const ADMIN_STAFF = ['superadmin', 'admin'];
 const STAFF_ROLES = ['superadmin', 'admin', 'doctor', 'lab_technician'];
@@ -163,6 +168,16 @@ export function AppRouter() {
           <Route path="/tenants" element={
             <ProtectedRoute allowedRoles={SUPERADMIN_ONLY}>
               <SuperAdminTenantsPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/onboarding-applications" element={
+            <ProtectedRoute allowedRoles={SUPERADMIN_ONLY}>
+              <SuperAdminOnboardingPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/settings/onboarding" element={
+            <ProtectedRoute allowedRoles={ADMIN_STAFF}>
+              <ClinicOnboardingPage />
             </ProtectedRoute>
           } />
           <Route path="/tenants/:id" element={
@@ -341,6 +356,9 @@ export function AppRouter() {
 
         {/* Public landing page */}
         <Route path="/" element={<LandingPage />} />
+
+        {/* Público: formulario de contratación de clínicas */}
+        <Route path="/contratar" element={<OnboardingContractPage />} />
 
         {/* Public routes */}
         <Route path="/2fa" element={<TwoFAPage />} />

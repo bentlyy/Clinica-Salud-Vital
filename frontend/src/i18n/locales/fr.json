@@ -1,4 +1,158 @@
 {
+ "onboarding": {
+  "brandName": "vitaria",
+  "pageSubtitle": "Intégrez votre clinique",
+  "common": {
+   "backHome": "Retour à l'accueil",
+   "back": "Retour",
+   "next": "Suivant",
+   "submit": "Envoyer la demande",
+   "save": "Enregistrer",
+   "saved": "Profil enregistré",
+   "delete": "Supprimer",
+   "cancel": "Annuler",
+   "close": "Fermer",
+   "remove": "Retirer",
+   "previous": "Précédent",
+   "submitFailed": "Impossible d'envoyer la demande. Veuillez réessayer.",
+   "status": "Statut"
+  },
+  "steps": {
+   "account": "Compte",
+   "profile": "Données de la clinique",
+   "documents": "Documents",
+   "review": "Révision"
+  },
+  "account": {
+   "title": "Informations du compte",
+   "tenantName": "Nom de la clinique",
+   "domain": "Sous-domaine",
+   "domainHint": "Minuscules, chiffres et tirets. Ex. : ma-clinique",
+   "country": "Pays",
+   "plan": "Formule",
+   "adminTitle": "Administrateur de la clinique",
+   "adminName": "Nom complet",
+   "adminPhone": "Téléphone",
+   "adminEmail": "Email",
+   "adminPassword": "Mot de passe",
+   "confirmPassword": "Confirmer le mot de passe",
+   "requiredFields": "Remplissez tous les champs obligatoires",
+   "invalidDomain": "Le sous-domaine ne peut contenir que des minuscules, des chiffres et des tirets",
+   "invalidEmail": "Email invalide",
+   "passwordMin": "Le mot de passe doit comporter au moins 8 caractères"
+  },
+  "profile": {
+   "title": "Données de la clinique",
+   "optionalHint": "Ces données aident notre équipe à activer votre compte plus rapidement. Toutes sont facultatives.",
+   "legalName": "Raison sociale",
+   "taxId": "N° fiscal",
+   "region": "Région / État",
+   "city": "Ville",
+   "address": "Adresse",
+   "postalCode": "Code postal",
+   "phone": "Téléphone de la clinique",
+   "website": "Site web",
+   "licenseNumber": "N° licence sanitaire",
+   "legalEntityType": "Type d'entité légale",
+   "legalRepName": "Représentant légal",
+   "legalRepEmail": "Email du représentant",
+   "specialties": "Spécialités",
+   "specialtiesPlaceholder": "Séparées par des virgules (Ex. : Médecine générale, Dermatologie)",
+   "doctorCount": "N° de médecins",
+   "operatingHours": "Horaires d'ouverture (JSON)",
+   "notes": "Notes / exigences"
+  },
+  "documents": {
+   "title": "Documents",
+   "hint": "Joignez jusqu'à 6 fichiers : contrat signé, licence, n° fiscal, acte constitutif, logo, etc. (max. 10 Mo par fichier).",
+   "empty": "Aucun document joint",
+   "category": "Catégorie",
+   "categories": {
+    "contract": "Contrat",
+    "license": "Licence sanitaire",
+    "tax_id": "N° fiscal",
+    "constitution": "Acte constitutif",
+    "logo": "Logo",
+    "other": "Autre"
+   },
+   "selectFile": "Sélectionner un fichier",
+   "addFile": "Ajouter un fichier",
+   "upload": "Téléverser",
+   "uploaded": "Document téléversé",
+   "deleted": "Document supprimé",
+   "filename": "Fichier",
+   "size": "Taille",
+   "actions": "Actions",
+   "download": "Télécharger"
+  },
+  "review": {
+   "title": "Vérifier et envoyer",
+   "completeness": "d'exhaustivité du profil",
+   "attachments": "Documents joints"
+  },
+  "success": {
+   "title": "Demande envoyée !",
+   "description": "Nous avons créé votre compte administrateur. Notre équipe examinera la demande et activera votre clinique.",
+   "credentials": "Vous pouvez vous connecter avec l'email et le mot de passe enregistrés. Votre sous-domaine apparaîtra après approbation."
+  },
+  "status": {
+   "pending": "En attente de révision",
+   "approved": "Approuvé",
+   "rejected": "Rejeté"
+  },
+  "missing": {
+   "title": "Profil d'intégration incomplet",
+   "description": "Vous n'avez pas encore envoyé votre profil d'intégration. Complétez le formulaire pour que notre équipe puisse activer votre clinique.",
+   "cta": "Compléter le formulaire"
+  },
+  "clinic": {
+   "title": "Intégration de ma clinique",
+   "completeness": "Exhaustivité du profil",
+   "missing": "Champs manquants",
+   "fields": {
+    "legal_name": "Raison sociale",
+    "tax_id": "N° fiscal",
+    "country": "Pays",
+    "city": "Ville",
+    "address": "Adresse",
+    "phone": "Téléphone",
+    "website": "Site web",
+    "license_number": "Licence sanitaire",
+    "legal_entity_type": "Type d'entité",
+    "legal_representative_name": "Représentant légal",
+    "specialties": "Spécialités",
+    "doctor_count": "N° de médecins",
+    "operating_hours": "Horaires d'ouverture",
+    "contract_document": "Contrat signé"
+   },
+   "profileData": "Données du profil"
+  },
+  "applications": {
+   "title": "Demandes d'intégration",
+   "back": "Tableau de bord SaaS",
+   "tabs": {
+    "all": "Toutes",
+    "pending": "En attente",
+    "approved": "Approuvées",
+    "rejected": "Rejetées"
+   },
+   "search": "Rechercher par clinique, n° fiscal ou email",
+   "total": "{{count}} demandes",
+   "col": {
+    "company": "Clinique",
+    "taxId": "N° fiscal",
+    "plan": "Formule",
+    "completeness": "Exhaustivité",
+    "actions": "Actions"
+   },
+   "view": "Voir",
+   "approve": "Approuver",
+   "reject": "Rejeter",
+   "rejectTitle": "Rejeter la demande",
+   "rejectHint": "Indiquez la raison du rejet. La clinique la verra dans son panneau.",
+   "rejectReason": "Raison du rejet"
+  }
+ },
  "common": {
   "loading": "Chargement...",
   "error": "Erreur",
@@ -247,6 +401,8 @@
   }
  },
  "nav": {
+  "onboardingApps": "Intégrations",
+  "clinicOnboarding": "Mon intégration",
   "dashboard": "Tableau de bord",
   "panelSaas": "Panneau SaaS",
   "clinics": "Cliniques",

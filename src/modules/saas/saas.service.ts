@@ -2,6 +2,7 @@ import { pool } from '../../shared/db.js';
 import { logger } from '../../utils/logger.js';
 import { BadRequestError, NotFoundError } from '../../utils/errors.js';
 import { E } from '../../utils/error-codes.js';
+import { insertOnboarding, insertOnboardingDocuments, type OnboardingProfileInput, type OnboardingDocumentInput } from './onboarding.service.js';
 
 export interface Plan {
   id: number;
@@ -427,8 +428,10 @@ export const onboardTenant = async (data: {
   locale?: string;
   timezone?: string;
   planCode?: string;
+  profile?: OnboardingProfileInput;
+  documents?: OnboardingDocumentInput[];
 }): Promise<{ tenantId: string; subscription: SubscriptionWithPlan | null; message: string }> => {
-  const { tenantName, domain, adminEmail, adminPassword, adminName, locale, timezone, planCode } = data;
+  const { tenantName, domain, adminEmail, adminPassword, adminName, locale, timezone, planCode, profile, documents } = data;
   const tenantId = domain;
 
   const client = await pool.connect();
@@ -456,11 +459,13 @@ export const onboardTenant = async (data: {
     const bcrypt = await import('bcrypt');
     const hash = await bcrypt.hash(adminPassword, 12);
 
-    await client.query(
+    const userResult = await client.query(
       `INSERT INTO users (email, password, name, role, tenant_id, password_changed)
-       VALUES ($1, $2, $3, 'admin', $4, true)`,
+       VALUES ($1, $2, $3, 'admin', $4, true)
+       RETURNING id`,
       [adminEmail, hash, adminName || tenantName, tenantId]
     );
+    const adminUserId = (userResult.rows?.[0] as { id?: number } | undefined)?.id ?? null;
 
     // Create subscription if plan specified
     let subscription: SubscriptionWithPlan | null = null;
@@ -488,6 +493,27 @@ export const onboardTenant = async (data: {
       } catch (err) {
         logger.warn(`Failed to create subscription for plan '${planCode}': ${err}`);
       }
+    }
+
+    // Perfil de incorporación (tenant_onboarding)
+    const onboarding = await insertOnboarding(
+      { query: (text, params) => client.query(text, params) },
+      {
+        tenantId,
+        companyName: tenantName,
+        adminEmail,
+        adminName: adminName || null,
+        planCode: planCode || 'free',
+        profile: profile || {},
+      }
+    );
+
+    // Documentos adjuntos del formulario público (si vienen)
+    if (documents && documents.length > 0) {
+      await insertOnboardingDocuments(
+        { query: (text, params) => client.query(text, params) },
+        { onboardingId: onboarding.id, tenantId, uploadedBy: adminUserId, documents },
+      );
     }
 
     await client.query('COMMIT');

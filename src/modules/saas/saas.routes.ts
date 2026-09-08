@@ -4,6 +4,14 @@ import { authMiddleware, authorize } from '../../middlewares/auth.middleware.js'
 import { validateZod } from '../../middlewares/validate.middleware.js';
 import * as saasController from './saas.controller.js';
 import { onboardSchema, checkoutSchema, changePlanSchema } from './saas.schema.js';
+import {
+  updateOnboardingProfileSchema,
+  onboardingDocumentSchema,
+  onboardingDocumentIdSchema,
+  onboardingIdSchema,
+  rejectOnboardingSchema,
+  listOnboardingApplicationsQuerySchema,
+} from './onboarding.schema.js';
 
 const router = Router();
 
@@ -31,5 +39,19 @@ router.get('/usage/summary', authorize('admin', 'superadmin'), saasController.ge
 router.get('/limits', authorize('admin', 'superadmin'), saasController.getLimits);
 router.get('/features', saasController.getFeatures);
 router.patch('/tenant', authorize('admin', 'superadmin'), saasController.updateTenantConfig);
+
+// ── Onboarding: perfil y documentos (clínica autenticada) ─
+router.get('/onboarding', authorize('admin', 'superadmin'), saasController.getMyOnboarding);
+router.patch('/onboarding', authorize('admin', 'superadmin'), validateZod(updateOnboardingProfileSchema), saasController.updateMyOnboarding);
+router.post('/onboarding/documents', authorize('admin', 'superadmin'), validateZod(onboardingDocumentSchema), saasController.uploadOnboardingDocument);
+router.get('/onboarding/documents', authorize('admin', 'superadmin'), saasController.listMyOnboardingDocuments);
+router.get('/onboarding/documents/:id/download', authorize('admin', 'superadmin'), validateZod(onboardingDocumentIdSchema, 'params'), saasController.downloadOnboardingDocument);
+router.delete('/onboarding/documents/:id', authorize('admin', 'superadmin'), validateZod(onboardingDocumentIdSchema, 'params'), saasController.deleteOnboardingDocument);
+
+// ── Onboarding: aplicaciones (panel superadmin) ───────────
+router.get('/onboarding/applications', authorize('superadmin'), validateZod(listOnboardingApplicationsQuerySchema, 'query'), saasController.listOnboardingApplications);
+router.get('/onboarding/applications/:id', authorize('superadmin'), validateZod(onboardingIdSchema, 'params'), saasController.getOnboardingApplication);
+router.patch('/onboarding/applications/:id/approve', authorize('superadmin'), validateZod(onboardingIdSchema, 'params'), saasController.approveOnboardingApplication);
+router.patch('/onboarding/applications/:id/reject', authorize('superadmin'), validateZod(onboardingIdSchema, 'params'), validateZod(rejectOnboardingSchema), saasController.rejectOnboardingApplication);
 
 export default router;

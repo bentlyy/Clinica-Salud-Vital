@@ -186,6 +186,13 @@ export const E = {
   SAAS_NO_FIELDS:               'SAAS_NO_FIELDS',
   SAAS_PLAN_REQUIRED:           'SAAS_PLAN_REQUIRED',
   SAAS_UNKNOWN_FIELD:           'SAAS_UNKNOWN_FIELD',
+  SAAS_ONBOARDING_NOT_FOUND:    'SAAS_ONBOARDING_NOT_FOUND',
+  SAAS_ONBOARDING_ALREADY_PROCESSED: 'SAAS_ONBOARDING_ALREADY_PROCESSED',
+  SAAS_DOCUMENT_NOT_FOUND:      'SAAS_DOCUMENT_NOT_FOUND',
+  SAAS_DOCUMENT_FORBIDDEN:      'SAAS_DOCUMENT_FORBIDDEN',
+  SAAS_DOCUMENT_TOO_LARGE:      'SAAS_DOCUMENT_TOO_LARGE',
+  SAAS_DOCUMENT_INVALID_BASE64: 'SAAS_DOCUMENT_INVALID_BASE64',
+  SAAS_DOCUMENT_TYPE_INVALID:   'SAAS_DOCUMENT_TYPE_INVALID',
 
   // ── Specialties ─────────────────────────────────────────────────
   SPECIALTY_NAME_REQUIRED:      'SPECIALTY_NAME_REQUIRED',
@@ -403,6 +410,13 @@ export const ERROR_MESSAGES: Record<ErrorCode, string> = {
   [E.SAAS_NO_FIELDS]:               'No valid fields to update',
   [E.SAAS_PLAN_REQUIRED]:           'plan_code is required',
   [E.SAAS_UNKNOWN_FIELD]:           'Unknown field',
+  [E.SAAS_ONBOARDING_NOT_FOUND]:    'Onboarding profile not found for this tenant. Complete the registration first.',
+  [E.SAAS_ONBOARDING_ALREADY_PROCESSED]: 'Onboarding application already reviewed (approved or rejected).',
+  [E.SAAS_DOCUMENT_NOT_FOUND]:      'Document not found',
+  [E.SAAS_DOCUMENT_FORBIDDEN]:      'You are not allowed to delete this document',
+  [E.SAAS_DOCUMENT_TOO_LARGE]:      'Document exceeds the maximum allowed size (10 MB)',
+  [E.SAAS_DOCUMENT_INVALID_BASE64]: 'Invalid file data (bad base64)',
+  [E.SAAS_DOCUMENT_TYPE_INVALID]:   'File type not allowed',
 
   // Specialties
   [E.SPECIALTY_NAME_REQUIRED]:      'Name is required',

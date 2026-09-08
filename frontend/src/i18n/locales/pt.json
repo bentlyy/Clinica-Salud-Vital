@@ -1,4 +1,158 @@
 {
+ "onboarding": {
+  "brandName": "vitaria",
+  "pageSubtitle": "Integre sua clínica",
+  "common": {
+   "backHome": "Voltar ao início",
+   "back": "Voltar",
+   "next": "Avançar",
+   "submit": "Enviar solicitação",
+   "save": "Salvar",
+   "saved": "Perfil salvo",
+   "delete": "Excluir",
+   "cancel": "Cancelar",
+   "close": "Fechar",
+   "remove": "Remover",
+   "previous": "Anterior",
+   "submitFailed": "Não foi possível enviar a solicitação. Tente novamente.",
+   "status": "Estado"
+  },
+  "steps": {
+   "account": "Conta",
+   "profile": "Dados da clínica",
+   "documents": "Documentos",
+   "review": "Revisão"
+  },
+  "account": {
+   "title": "Dados da conta",
+   "tenantName": "Nome da clínica",
+   "domain": "Subdomínio",
+   "domainHint": "Minúsculas, números e hifens. Ex.: minha-clinica",
+   "country": "País",
+   "plan": "Plano",
+   "adminTitle": "Administrador da clínica",
+   "adminName": "Nome completo",
+   "adminPhone": "Telefone",
+   "adminEmail": "Email",
+   "adminPassword": "Senha",
+   "confirmPassword": "Confirmar senha",
+   "requiredFields": "Preencha todos os campos obrigatórios",
+   "invalidDomain": "O subdomínio só pode conter minúsculas, números e hifens",
+   "invalidEmail": "Email inválido",
+   "passwordMin": "A senha deve ter pelo menos 8 caracteres"
+  },
+  "profile": {
+   "title": "Dados da clínica",
+   "optionalHint": "Esses dados ajudam nossa equipe a ativar sua conta mais rápido. Todos são opcionais e você pode preenchê-los depois.",
+   "legalName": "Razão social",
+   "taxId": "CNPJ / ID fiscal",
+   "region": "Região / Estado",
+   "city": "Cidade",
+   "address": "Endereço",
+   "postalCode": "CEP",
+   "phone": "Telefone da clínica",
+   "website": "Site",
+   "licenseNumber": "N° licença sanitária",
+   "legalEntityType": "Tipo de entidade legal",
+   "legalRepName": "Representante legal",
+   "legalRepEmail": "Email do representante",
+   "specialties": "Especialidades",
+   "specialtiesPlaceholder": "Separadas por vírgula (Ex.: Clínica geral, Dermatologia)",
+   "doctorCount": "N° de médicos",
+   "operatingHours": "Horário de atendimento (JSON)",
+   "notes": "Notas / requisitos"
+  },
+  "documents": {
+   "title": "Documentos",
+   "hint": "Anexe até 6 arquivos: contrato assinado, licença, CNPJ, escritura de constituição, logo etc. (máx. 10 MB por arquivo).",
+   "empty": "Ainda não há documentos anexados",
+   "category": "Categoria",
+   "categories": {
+    "contract": "Contrato",
+    "license": "Licença sanitária",
+    "tax_id": "CNPJ / ID fiscal",
+    "constitution": "Escritura de constituição",
+    "logo": "Logo",
+    "other": "Outro"
+   },
+   "selectFile": "Selecionar arquivo",
+   "addFile": "Adicionar arquivo",
+   "upload": "Enviar",
+   "uploaded": "Documento enviado",
+   "deleted": "Documento excluído",
+   "filename": "Arquivo",
+   "size": "Tamanho",
+   "actions": "Ações",
+   "download": "Baixar"
+  },
+  "review": {
+   "title": "Revise e envie",
+   "completeness": "de completude do perfil",
+   "attachments": "Documentos anexados"
+  },
+  "success": {
+   "title": "Solicitação enviada!",
+   "description": "Criamos sua conta de administrador. Nossa equipe revisará a solicitação e ativará sua clínica.",
+   "credentials": "Você já pode entrar com o email e senha registrados. Seu subdomínio aparecerá após a aprovação."
+  },
+  "status": {
+   "pending": "Pendente de revisão",
+   "approved": "Aprovado",
+   "rejected": "Rejeitado"
+  },
+  "missing": {
+   "title": "Perfil de integração incompleto",
+   "description": "Você ainda não enviou seu perfil de integração. Complete o formulário para que nossa equipe possa ativar sua clínica.",
+   "cta": "Preencher formulário"
+  },
+  "clinic": {
+   "title": "Integração da minha clínica",
+   "completeness": "Completude do perfil",
+   "missing": "Campos pendentes",
+   "fields": {
+    "legal_name": "Razão social",
+    "tax_id": "CNPJ / ID fiscal",
+    "country": "País",
+    "city": "Cidade",
+    "address": "Endereço",
+    "phone": "Telefone",
+    "website": "Site",
+    "license_number": "Licença sanitária",
+    "legal_entity_type": "Tipo de entidade",
+    "legal_representative_name": "Representante legal",
+    "specialties": "Especialidades",
+    "doctor_count": "N° de médicos",
+    "operating_hours": "Horário de atendimento",
+    "contract_document": "Contrato assinado"
+   },
+   "profileData": "Dados do perfil"
+  },
+  "applications": {
+   "title": "Solicitações de integração",
+   "back": "Painel SaaS",
+   "tabs": {
+    "all": "Todas",
+    "pending": "Pendentes",
+    "approved": "Aprovadas",
+    "rejected": "Rejeitadas"
+   },
+   "search": "Buscar por clínica, CNPJ ou email",
+   "total": "{{count}} solicitações",
+   "col": {
+    "company": "Clínica",
+    "taxId": "CNPJ / ID fiscal",
+    "plan": "Plano",
+    "completeness": "Completude",
+    "actions": "Ações"
+   },
+   "view": "Ver",
+   "approve": "Aprovar",
+   "reject": "Rejeitar",
+   "rejectTitle": "Rejeitar solicitação",
+   "rejectHint": "Informe o motivo da rejeição. A clínica o verá no painel.",
+   "rejectReason": "Motivo da rejeição"
+  }
+ },
  "common": {
   "loading": "Carregando...",
   "error": "Erro",
@@ -247,6 +401,8 @@
   }
  },
  "nav": {
+  "onboardingApps": "Integrações",
+  "clinicOnboarding": "Minha integração",
   "dashboard": "Painel",
   "panelSaas": "Painel SaaS",
   "clinics": "Clínicas",

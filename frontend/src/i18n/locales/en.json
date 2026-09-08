@@ -1,4 +1,158 @@
 {
+  "onboarding": {
+    "brandName": "vitaria",
+    "pageSubtitle": "Onboard your clinic",
+    "common": {
+      "backHome": "Back to home",
+      "back": "Back",
+      "next": "Next",
+      "submit": "Submit request",
+      "save": "Save",
+      "saved": "Profile saved",
+      "delete": "Delete",
+      "cancel": "Cancel",
+      "close": "Close",
+      "remove": "Remove",
+      "previous": "Previous",
+      "submitFailed": "Could not submit the request. Please try again.",
+      "status": "Status"
+    },
+    "steps": {
+      "account": "Account",
+      "profile": "Clinic details",
+      "documents": "Documents",
+      "review": "Review"
+    },
+    "account": {
+      "title": "Account details",
+      "tenantName": "Clinic name",
+      "domain": "Subdomain",
+      "domainHint": "Lowercase letters, numbers and hyphens. E.g.: my-clinic",
+      "country": "Country",
+      "plan": "Plan",
+      "adminTitle": "Clinic administrator",
+      "adminName": "Full name",
+      "adminPhone": "Phone",
+      "adminEmail": "Email",
+      "adminPassword": "Password",
+      "confirmPassword": "Confirm password",
+      "requiredFields": "Fill in all required fields",
+      "invalidDomain": "Subdomain can only contain lowercase letters, numbers and hyphens",
+      "invalidEmail": "Invalid email",
+      "passwordMin": "Password must be at least 8 characters"
+    },
+    "profile": {
+      "title": "Clinic details",
+      "optionalHint": "These details help our support team activate your account faster. All are optional and you can complete them later.",
+      "legalName": "Legal name",
+      "taxId": "Tax ID",
+      "region": "Region / State",
+      "city": "City",
+      "address": "Address",
+      "postalCode": "Postal code",
+      "phone": "Clinic phone",
+      "website": "Website",
+      "licenseNumber": "Health license no.",
+      "legalEntityType": "Legal entity type",
+      "legalRepName": "Legal representative",
+      "legalRepEmail": "Representative email",
+      "specialties": "Specialties",
+      "specialtiesPlaceholder": "Comma separated (E.g.: General medicine, Dermatology)",
+      "doctorCount": "Number of doctors",
+      "operatingHours": "Operating hours (JSON)",
+      "notes": "Notes / requirements"
+    },
+    "documents": {
+      "title": "Documents",
+      "hint": "Attach up to 6 files: signed contract, license, tax ID, incorporation deed, logo, etc. (max. 10 MB each).",
+      "empty": "No documents attached yet",
+      "category": "Category",
+      "categories": {
+        "contract": "Contract",
+        "license": "Health license",
+        "tax_id": "Tax ID",
+        "constitution": "Incorporation deed",
+        "logo": "Logo",
+        "other": "Other"
+      },
+      "selectFile": "Select file",
+      "addFile": "Add file",
+      "upload": "Upload",
+      "uploaded": "Document uploaded",
+      "deleted": "Document deleted",
+      "filename": "Filename",
+      "size": "Size",
+      "actions": "Actions",
+      "download": "Download"
+    },
+    "review": {
+      "title": "Review and submit",
+      "completeness": "profile completeness",
+      "attachments": "Attached documents"
+    },
+    "success": {
+      "title": "Request submitted!",
+      "description": "We have created your administrator account. Our team will review the request and activate your clinic.",
+      "credentials": "You can now log in with the email and password you registered. Your subdomain will be shown once the request is approved."
+    },
+    "status": {
+      "pending": "Pending review",
+      "approved": "Approved",
+      "rejected": "Rejected"
+    },
+    "missing": {
+      "title": "Incomplete onboarding profile",
+      "description": "You have not submitted your onboarding profile yet. Complete the form so our team can activate your clinic.",
+      "cta": "Complete the form"
+    },
+    "clinic": {
+      "title": "My clinic onboarding",
+      "completeness": "Profile completeness",
+      "missing": "Pending fields",
+      "fields": {
+        "legal_name": "Legal name",
+        "tax_id": "Tax ID",
+        "country": "Country",
+        "city": "City",
+        "address": "Address",
+        "phone": "Phone",
+        "website": "Website",
+        "license_number": "Health license",
+        "legal_entity_type": "Entity type",
+        "legal_representative_name": "Legal representative",
+        "specialties": "Specialties",
+        "doctor_count": "Number of doctors",
+        "operating_hours": "Operating hours",
+        "contract_document": "Signed contract"
+      },
+      "profileData": "Profile details"
+    },
+    "applications": {
+      "title": "Onboarding requests",
+      "back": "SaaS dashboard",
+      "tabs": {
+        "all": "All",
+        "pending": "Pending",
+        "approved": "Approved",
+        "rejected": "Rejected"
+      },
+      "search": "Search by clinic, tax ID or email",
+      "total": "{{count}} requests",
+      "col": {
+        "company": "Clinic",
+        "taxId": "Tax ID",
+        "plan": "Plan",
+        "completeness": "Completeness",
+        "actions": "Actions"
+      },
+      "view": "View",
+      "approve": "Approve",
+      "reject": "Reject",
+      "rejectTitle": "Reject request",
+      "rejectHint": "Enter the rejection reason. The clinic will see it in their panel.",
+      "rejectReason": "Rejection reason"
+    }
+  },
   "common": {
     "loading": "Loading...",
     "error": "Error",
@@ -247,6 +401,8 @@
     }
   },
   "nav": {
+    "onboardingApps": "Onboarding",
+    "clinicOnboarding": "My onboarding",
     "dashboard": "Dashboard",
     "panelSaas": "SaaS Panel",
     "clinics": "Clinics",
