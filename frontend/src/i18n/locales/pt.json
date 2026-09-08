@@ -65,6 +65,16 @@
   "documents": {
    "title": "Documentos",
    "hint": "Anexe até 6 arquivos: contrato assinado, licença, CNPJ, escritura de constituição, logo etc. (máx. 10 MB por arquivo).",
+   "acceptedFormats": "Formatos aceitos: PDF, imagens (JPG, PNG, WEBP, GIF, SVG) e documentos do Office (DOC, DOCX, XLS, XLSX) e TXT. Tamanho máximo por arquivo: 10 MB.",
+   "requirementsTitle": "O que cada documento deve conter",
+   "requirements": {
+    "contract": "Contrato de prestação de serviços assinado pelo representante legal.",
+    "license": "Licença sanitária ou alvará de funcionamento vigente.",
+    "tax_id": "Certificado de identificação tributária (CNPJ / NIF) ou de início de atividades.",
+    "constitution": "Escritura de constituição ou estatuto social.",
+    "logo": "Logo oficial da clínica em formato de imagem.",
+    "other": "Qualquer outro documento que ajude a equipe a revisar a solicitação."
+   },
    "empty": "Ainda não há documentos anexados",
    "category": "Categoria",
    "categories": {
@@ -88,7 +98,8 @@
   "review": {
    "title": "Revise e envie",
    "completeness": "de completude do perfil",
-   "attachments": "Documentos anexados"
+   "attachments": "Documentos anexados",
+   "captchaRequired": "Complete o captcha de segurança antes de enviar."
   },
   "success": {
    "title": "Solicitação enviada!",

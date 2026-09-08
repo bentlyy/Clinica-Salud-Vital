@@ -65,6 +65,16 @@
     "documents": {
       "title": "Documents",
       "hint": "Attach up to 6 files: signed contract, license, tax ID, incorporation deed, logo, etc. (max. 10 MB each).",
+      "acceptedFormats": "Accepted formats: PDF, images (JPG, PNG, WEBP, GIF, SVG) and Office documents (DOC, DOCX, XLS, XLSX) and TXT. Max size per file: 10 MB.",
+      "requirementsTitle": "What each document must contain",
+      "requirements": {
+        "contract": "Service agreement signed by the legal representative.",
+        "license": "Valid health license or operating permit.",
+        "tax_id": "Tax identification certificate (Tax ID / NIF) or business start certificate.",
+        "constitution": "Incorporation deed or company bylaws.",
+        "logo": "Official clinic logo in image format.",
+        "other": "Any other document that helps the team review the request."
+      },
       "empty": "No documents attached yet",
       "category": "Category",
       "categories": {
@@ -88,7 +98,8 @@
     "review": {
       "title": "Review and submit",
       "completeness": "profile completeness",
-      "attachments": "Attached documents"
+      "attachments": "Attached documents",
+      "captchaRequired": "Complete the security captcha before submitting."
     },
     "success": {
       "title": "Request submitted!",

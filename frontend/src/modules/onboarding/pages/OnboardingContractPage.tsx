@@ -24,6 +24,8 @@ import {
 } from '@mui/material';
 import UploadFile from '@mui/icons-material/UploadFile';
 import CheckCircleOutline from '@mui/icons-material/CheckCircleOutline';
+import InfoOutlined from '@mui/icons-material/InfoOutlined';
+import ReCAPTCHA from 'react-google-recaptcha';
 import { onboardingService, fileToBase64 } from '../services/onboarding.service';
 import type { OnboardingDocumentCategory, OnboardingDraftDocument, OnboardPayload } from '../types/onboarding.types';
 
@@ -64,6 +66,9 @@ const steps = ['account', 'profile', 'documents', 'review'];
 
 const DOC_CATEGORIES: OnboardingDocumentCategory[] = ['contract', 'license', 'tax_id', 'constitution', 'logo', 'other'];
 
+const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
+const hasCaptcha = Boolean(RECAPTCHA_SITE_KEY);
+
 export default function OnboardingContractPage() {
   const { t } = useTranslation('onboarding');
   const navigate = useNavigate();
@@ -76,6 +81,7 @@ export default function OnboardingContractPage() {
   const [error, setError] = useState<string | null>(null);
   const [fieldError, setFieldError] = useState<string | null>(null);
   const [confirmPassword, setConfirmPassword] = useState('');
+  const recaptchaRef = useRef<ReCAPTCHA | null>(null);
   const fileInputs = useRef<Record<number, HTMLInputElement | null>>({});
 
   const { control, handleSubmit, watch, setValue, getValues } = useForm({
@@ -141,6 +147,11 @@ export default function OnboardingContractPage() {
 
   const onSubmit = handleSubmit(async (values) => {
     setError(null);
+    const token = recaptchaRef.current?.getValue() ?? undefined;
+    if (hasCaptcha && !token) {
+      setError(t('review.captchaRequired'));
+      return;
+    }
     setSubmitting(true);
     try {
       const documents: OnboardingDraftDocument[] = [];
@@ -177,10 +188,12 @@ export default function OnboardingContractPage() {
         ...(values.operating_hours ? { operating_hours: values.operating_hours } : {}),
         ...(values.notes && { notes: values.notes }),
         ...(documents.length > 0 ? { documents } : {}),
+        ...(token ? { captcha_token: token } : {}),
       };
       await onboardingService.onboardTenant(payload);
       setDone(true);
     } catch (err) {
+      recaptchaRef.current?.reset();
       setError((err as { response?: { data?: { error?: string } } })?.response?.data?.error || t('common.submitFailed'));
     } finally {
       setSubmitting(false);
@@ -193,17 +206,16 @@ export default function OnboardingContractPage() {
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
-      <Box sx={{ px: 2, py: 2, borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper' }}>
-        <Container maxWidth="lg" sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Box component="span" sx={{ fontWeight: 700, fontSize: 18 }}>+ {t('brandName')}</Box>
-            <Typography variant="body2" color="text.secondary">{t('pageSubtitle')}</Typography>
-          </Box>
-          <Button onClick={() => navigate('/')} color="inherit">{t('common.backHome')}</Button>
-        </Container>
-      </Box>
-
       <Container maxWidth="md" sx={{ py: 4 }}>
+        {!done && (
+          <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Box component="span" sx={{ fontWeight: 700, fontSize: 20 }}>+ {t('brandName')}</Box>
+              <Typography variant="body2" color="text.secondary">{t('pageSubtitle')}</Typography>
+            </Box>
+            <Button onClick={() => navigate('/')} color="inherit" size="small">{t('common.backHome')}</Button>
+          </Box>
+        )}
         {done ? (
           <Paper sx={{ p: 4, textAlign: 'center' }}>
             <CheckCircleOutline color="success" sx={{ fontSize: 64, mb: 2 }} />
@@ -349,7 +361,22 @@ export default function OnboardingContractPage() {
                   {activeStep === 2 && (
                     <Box>
                       <Typography variant="h6" sx={{ mb: 1 }}>{t('documents.title')}</Typography>
-                      <Alert severity="info" sx={{ mb: 3 }}>{t('documents.hint')}</Alert>
+                      <Alert severity="info" sx={{ mb: 1 }}>{t('documents.hint')}</Alert>
+                      <Alert severity="success" sx={{ mb: 2 }} icon={<InfoOutlined />}>
+                        {t('documents.acceptedFormats')}
+                      </Alert>
+                      <Typography variant="subtitle2" sx={{ mb: 1 }}>{t('documents.requirementsTitle')}</Typography>
+                      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 1.5, mb: 3 }}>
+                        {DOC_CATEGORIES.map((c) => (
+                          <Box key={c} sx={{ display: 'flex', gap: 1 }}>
+                            <CheckCircleOutline color="success" sx={{ fontSize: 18, mt: '2px', flexShrink: 0 }} />
+                            <Box>
+                              <Typography variant="body2" sx={{ fontWeight: 600 }}>{t(`documents.categories.${c}`)}</Typography>
+                              <Typography variant="caption" color="text.secondary">{t(`documents.requirements.${c}`)}</Typography>
+                            </Box>
+                          </Box>
+                        ))}
+                      </Box>
                       {files.length === 0 && (
                         <Box sx={{ textAlign: 'center', py: 2, color: 'text.secondary' }}>{t('documents.empty')}</Box>
                       )}
@@ -420,6 +447,11 @@ export default function OnboardingContractPage() {
                           <Typography variant="body2" color="text.secondary">{t('documents.empty')}</Typography>
                         )}
                       </Box>
+                      {hasCaptcha && (
+                        <Box sx={{ mt: 3, display: 'flex', justifyContent: 'center' }}>
+                          <ReCAPTCHA ref={recaptchaRef} sitekey={RECAPTCHA_SITE_KEY!} />
+                        </Box>
+                      )}
                     </Box>
                   )}
 
