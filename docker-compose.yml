@@ -95,4 +95,4 @@ networks:
     internal: false
   db-net:
     driver: bridge
-    internal: true
+    internal: false
