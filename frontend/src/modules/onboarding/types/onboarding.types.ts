@@ -88,6 +88,7 @@ export interface OnboardPayload {
   operating_hours?: Record<string, unknown>;
   notes?: string;
   documents?: OnboardingDraftDocument[];
+  captcha_token?: string;
 }
 
 export type OnboardingProfileUpdate = Partial<

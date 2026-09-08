@@ -65,6 +65,16 @@
     "documents": {
       "title": "Documentos",
       "hint": "Adjunta hasta 6 archivos: contrato firmado, licencia, RUT, escritura de constitución, logo, etc. (máx. 10 MB por archivo).",
+      "acceptedFormats": "Formatos aceptados: PDF, imágenes (JPG, PNG, WEBP, GIF, SVG) y documentos de Office (DOC, DOCX, XLS, XLSX) y TXT. Tamaño máximo por archivo: 10 MB.",
+      "requirementsTitle": "Qué debe contener cada documento",
+      "requirements": {
+        "contract": "Contrato de prestación de servicios firmado por el representante legal.",
+        "license": "Licencia sanitaria o permiso de funcionamiento vigente.",
+        "tax_id": "Certificado de identificación tributaria (RUT / NIF) o de inicio de actividades.",
+        "constitution": "Escritura de constitución o estatutos de la sociedad.",
+        "logo": "Logo oficial de la clínica en formato de imagen.",
+        "other": "Cualquier otro documento que ayude al equipo a revisar la solicitud."
+      },
       "empty": "Aún no hay documentos adjuntos",
       "category": "Categoría",
       "categories": {
@@ -88,7 +98,8 @@
     "review": {
       "title": "Revisa y envía",
       "completeness": "de completitud del perfil",
-      "attachments": "Documentos adjuntos"
+      "attachments": "Documentos adjuntos",
+      "captchaRequired": "Completa el captcha de seguridad antes de enviar."
     },
     "success": {
       "title": "¡Solicitud enviada!",

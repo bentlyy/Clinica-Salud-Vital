@@ -65,6 +65,16 @@
   "documents": {
    "title": "Documents",
    "hint": "Joignez jusqu'à 6 fichiers : contrat signé, licence, n° fiscal, acte constitutif, logo, etc. (max. 10 Mo par fichier).",
+   "acceptedFormats": "Formats acceptés : PDF, images (JPG, PNG, WEBP, GIF, SVG) et documents Office (DOC, DOCX, XLS, XLSX) et TXT. Taille maximale par fichier : 10 Mo.",
+   "requirementsTitle": "Ce que chaque document doit contenir",
+   "requirements": {
+    "contract": "Contrat de prestation de services signé par le représentant légal.",
+    "license": "Licence sanitaire ou autorisation d'exploitation en cours de validité.",
+    "tax_id": "Certificat d'identification fiscale (NIF) ou de début d'activité.",
+    "constitution": "Acte constitutif ou statuts de la société.",
+    "logo": "Logo officiel de la clinique au format image.",
+    "other": "Tout autre document aidant l'équipe à examiner la demande."
+   },
    "empty": "Aucun document joint",
    "category": "Catégorie",
    "categories": {
@@ -88,7 +98,8 @@
   "review": {
    "title": "Vérifier et envoyer",
    "completeness": "d'exhaustivité du profil",
-   "attachments": "Documents joints"
+   "attachments": "Documents joints",
+   "captchaRequired": "Complétez le captcha de sécurité avant d'envoyer."
   },
   "success": {
    "title": "Demande envoyée !",
