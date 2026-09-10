@@ -87,7 +87,13 @@ export const fetchPayment = async (paymentId: string): Promise<MercadoPagoPaymen
   });
   const data = await raw.json() as MercadoPagoPayment & { error?: { message?: string } };
   if (!raw.ok || !data.id) {
-    throw new Error(data.error?.message || 'Mercado Pago payment lookup failed');
+    const message = data.error?.message || 'Mercado Pago payment lookup failed';
+    if (raw.status === 404) {
+      const err = new Error(message) as Error & { code?: string };
+      err.code = 'PAYMENT_NOT_FOUND';
+      throw err;
+    }
+    throw new Error(message);
   }
   return data;
 };

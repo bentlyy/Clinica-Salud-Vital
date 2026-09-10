@@ -128,4 +128,16 @@ describe('fetchPayment', () => {
 
     await expect(fetchPayment('999')).rejects.toThrow('payment not found');
   });
+
+  it('throws PAYMENT_NOT_FOUND on HTTP 404', async () => {
+    process.env.MERCADOPAGO_ACCESS_TOKEN = 'TEST-123';
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 404,
+      json: async () => ({ error: { message: 'payment not found' } }),
+    });
+    vi.stubGlobal('fetch', mockFetch);
+
+    await expect(fetchPayment('999999999')).rejects.toMatchObject({ code: 'PAYMENT_NOT_FOUND' });
+  });
 });
