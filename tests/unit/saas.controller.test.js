@@ -238,6 +238,23 @@ describe('saasController.mercadopagoWebhook', () => {
     expect(res.json).toHaveBeenCalledWith({ error: 'Webhook processing failed' });
   });
 
+  it('acknowledges with 200 when the payment does not exist (404)', async () => {
+    saasMercadoPago.isMercadoPagoConfigured.mockReturnValue(true);
+    const notFound = new Error('payment not found');
+    notFound.code = 'PAYMENT_NOT_FOUND';
+    notFound.code = 'PAYMENT_NOT_FOUND';
+    saasMercadoPago.fetchPayment.mockRejectedValue(notFound);
+    const res = mockRes();
+
+    await saasController.mercadopagoWebhook(
+      { body: { type: 'payment', data: { id: '123456789' } }, query: {}, headers: {} },
+      res
+    );
+
+    expect(res.status).not.toHaveBeenCalled();
+    expect(res.json).toHaveBeenCalledWith({ received: true });
+  });
+
   it('acknowledges non-payment topics without processing', async () => {
     saasMercadoPago.isMercadoPagoConfigured.mockReturnValue(true);
     const res = mockRes();

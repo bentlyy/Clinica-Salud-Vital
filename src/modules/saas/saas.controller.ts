@@ -116,12 +116,17 @@ export const mercadopagoWebhook = asyncHandler(async (req: Request, res: Respons
       logger.info(`[Mercado Pago Webhook] topic '${type}' no requiere procesamiento`);
     }
   } catch (err) {
+    const errCode = (err as Error & { code?: string }).code;
+    if (errCode === 'PAYMENT_NOT_FOUND') {
+      logger.info(`[Mercado Pago Webhook] notificación con payment inexistente — acknowledged (id=${(err as Error).message})`);
+      return res.json({ received: true });
+    }
     logger.error('[Mercado Pago Webhook] Notification handling failed', { error: (err as Error).message, type });
     res.status(500).json({ error: 'Webhook processing failed' });
     return;
   }
 
-  res.json({ received: true });
+  return res.json({ received: true });
 });
 
 export const changePlan = asyncHandler(async (req: Request, res: Response) => {
