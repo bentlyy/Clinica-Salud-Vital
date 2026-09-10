@@ -114,6 +114,11 @@ const OnboardingContractPage = lazy(() => import('@/modules/onboarding/pages/Onb
 const ClinicOnboardingPage = lazy(() => import('@/modules/onboarding/pages/ClinicOnboardingPage'));
 const SuperAdminOnboardingPage = lazy(() => import('@/modules/onboarding/pages/SuperAdminOnboardingPage'));
 
+// SaaS subscription module
+const SaasPlanPage = lazy(() => import('@/modules/saas/pages/PlanPage'));
+const SaasCheckoutPage = lazy(() => import('@/modules/saas/pages/CheckoutPage'));
+const SaasSuccessPage = lazy(() => import('@/modules/saas/pages/SuccessPage'));
+
 const SUPERADMIN_ONLY = ['superadmin'];
 const ADMIN_STAFF = ['superadmin', 'admin'];
 const STAFF_ROLES = ['superadmin', 'admin', 'doctor', 'lab_technician'];
@@ -352,6 +357,21 @@ export function AppRouter() {
           } />
           <Route path="/my-laboratory" element={<PatientLabResultsPage />} />
           <Route path="/my-laboratory/:id" element={<LabResultDetailPage />} />
+          <Route path="/saas/plan" element={
+            <ProtectedRoute allowedRoles={ADMIN_STAFF}>
+              <SaasPlanPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/saas/checkout" element={
+            <ProtectedRoute allowedRoles={ADMIN_STAFF}>
+              <SaasCheckoutPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/saas/success" element={
+            <ProtectedRoute allowedRoles={ADMIN_STAFF}>
+              <SaasSuccessPage />
+            </ProtectedRoute>
+          } />
         </Route>
 
         {/* Public landing page */}

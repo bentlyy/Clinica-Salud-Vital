@@ -8,6 +8,8 @@ export interface JwtUser {
   tenant_id: number;
   tenant_name: string;
   tenant_slug: string;
+  currency?: string;
+  country_code?: string;
   token_version: number;
   iat: number;
   exp: number;

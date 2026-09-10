@@ -6,6 +6,7 @@ const mockSaasService = vi.hoisted(() => ({
   getTenantSubscription: vi.fn(),
   getTenantPlan: vi.fn(),
   createSubscription: vi.fn(),
+  getTenantCurrency: vi.fn(),
   changePlan: vi.fn(),
   cancelSubscription: vi.fn(),
   getTenantUsage: vi.fn(),
@@ -93,7 +94,7 @@ describe('saasController.getMySubscription', () => {
 
 describe('saasController.createCheckout', () => {
   it('creates subscription and returns checkout info (MVP mode)', async () => {
-    mockSaasService.getPlanByCode.mockResolvedValue({ id: 1, code: 'pro', name: 'Pro', price_monthly_clp: 19990 });
+    mockSaasService.getPlanByCode.mockResolvedValue({ id: 1, code: 'pro', name: 'Pro', price_monthly: 79 });
     mockSaasService.createSubscription.mockResolvedValue({ id: 1, status: 'active', plan: { code: 'pro' } });
     saasMercadoPago.isMercadoPagoConfigured.mockReturnValue(false);
     const req = { body: { plan_code: 'pro' }, tenant_id: 'tenant-1' };
@@ -112,7 +113,8 @@ describe('saasController.createCheckout', () => {
   });
 
   it('creates a Mercado Pago preference when configured', async () => {
-    mockSaasService.getPlanByCode.mockResolvedValue({ id: 1, code: 'pro', name: 'Pro', price_monthly_clp: 19990 });
+    mockSaasService.getPlanByCode.mockResolvedValue({ id: 1, code: 'pro', name: 'Pro', price_monthly: 79 });
+    mockSaasService.getTenantCurrency.mockResolvedValue('CLP');
     saasMercadoPago.isMercadoPagoConfigured.mockReturnValue(true);
     saasMercadoPago.createCheckoutPreference.mockResolvedValue({
       id: 'pref_1',
@@ -128,7 +130,8 @@ describe('saasController.createCheckout', () => {
       tenantId: 'tenant-1',
       planCode: 'pro',
       planName: 'Pro',
-      priceCLP: 19990,
+      currency: 'CLP',
+      unitPrice: 75050,
       returnUrl: 'https://app.vitaria.com',
     });
     expect(mockSaasService.createSubscription).not.toHaveBeenCalled();

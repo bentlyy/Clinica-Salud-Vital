@@ -5,6 +5,7 @@ import * as onboardingService from './onboarding.service.js';
 import { BadRequestError, NotFoundError } from '../../utils/errors.js';
 import { E } from '../../utils/error-codes.js';
 import { logger } from '../../utils/logger.js';
+import { convertFromUsd } from '../../shared/currencies.js';
 import {
   createCheckoutPreference,
   fetchPayment,
@@ -50,11 +51,13 @@ export const createCheckout = asyncHandler(async (req: Request, res: Response) =
   // (subscription is activated asynchronously via the webhook).
   if (isMercadoPagoConfigured()) {
     const baseUrl = `${req.protocol}://${req.get('host')}`;
+    const currency = await saasService.getTenantCurrency(req.tenant_id);
     const preference = await createCheckoutPreference({
       tenantId: req.tenant_id,
       planCode: plan.code,
       planName: plan.name,
-      priceCLP: plan.price_monthly_clp,
+      currency,
+      unitPrice: convertFromUsd(plan.price_monthly, currency),
       returnUrl: baseUrl,
     });
     res.status(201).json({
@@ -155,6 +158,10 @@ export const getUsageSummary = asyncHandler(async (req: Request, res: Response) 
 const verifyCaptchaOnboard = async (token: string): Promise<boolean> => {
   const secret = process.env.RECAPTCHA_SECRET_KEY;
   if (!secret) return true;
+  if (secret === '6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe') {
+    logger.warn('reCAPTCHA TEST key en uso — captcha aceptado siempre (modo prueba)');
+    return true;
+  }
   if (!token) {
     logger.warn('reCAPTCHA secret configured but no token provided — blocking request');
     return false;
@@ -186,6 +193,8 @@ export const onboardTenant = asyncHandler(async (req: Request, res: Response) =>
     adminName: req.body.admin_name,
     locale: req.body.locale,
     timezone: req.body.timezone,
+    currency: req.body.currency,
+    countryCode: req.body.country_code,
     planCode: req.body.plan_code || 'free',
     ...(Object.keys(profile).length > 0 ? { profile } : {}),
     ...(Array.isArray(req.body.documents) && req.body.documents.length > 0 ? { documents: req.body.documents } : {}),
@@ -291,7 +300,7 @@ export const getFeatures = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export const updateTenantConfig = asyncHandler(async (req: Request, res: Response) => {
-  const allowed = ['name', 'locale', 'timezone', 'config'];
+  const allowed = ['name', 'locale', 'timezone', 'currency', 'country_code', 'config'];
   const updates: Record<string, unknown> = {};
   for (const key of allowed) {
     if (req.body[key] !== undefined) updates[key] = req.body[key];

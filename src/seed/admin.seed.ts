@@ -2,6 +2,7 @@ import { pool } from '../shared/db.js';
 import bcrypt from 'bcrypt';
 import { logger } from '../utils/logger.js';
 import { deriveSeedPassword } from './seed-credentials.js';
+import { convertFromUsd } from '../shared/currencies.js';
 
 const DEFAULT_TENANT_ID = process.env.DEFAULT_TENANT_ID || 'default';
 
@@ -24,6 +25,20 @@ const randomInt = (min: number, max: number): number =>
   Math.floor(Math.random() * (max - min + 1)) + min;
 
 const pick = <T>(arr: T[]): T => arr[randomInt(0, arr.length - 1)];
+
+let _tenantCurrencyCache = new Map<string, string>();
+const tenantCurrency = async (tenantId: string): Promise<string> => {
+  const cached = _tenantCurrencyCache.get(tenantId);
+  if (cached) return cached;
+  try {
+    const res = await pool.query('SELECT COALESCE(NULLIF(currency, \'\'), \'CLP\') as currency FROM tenants WHERE id = $1', [tenantId]);
+    const cur = res.rows[0]?.currency || 'CLP';
+    _tenantCurrencyCache.set(tenantId, cur);
+    return cur;
+  } catch {
+    return 'CLP';
+  }
+};
 
 // ─── Test data constants ────────────────────────────────────────────────────
 
@@ -920,6 +935,7 @@ export const seedTestTenants = async (): Promise<void> => {
 
       let invoiceCount = 0;
       const invoiceConcepts = ['Consulta médica general', 'Control de especialidad', 'Consulta de urgencia', 'Control preventivo'];
+      const invCurrency = await tenantCurrency(t.id);
       for (let i = 0; i < pastBookingsForInvoice.rows.length; i++) {
         if (Math.random() > 0.5) continue;
         const b = pastBookingsForInvoice.rows[i];
@@ -933,13 +949,13 @@ export const seedTestTenants = async (): Promise<void> => {
         try {
           const invResult = await q(
             `INSERT INTO invoices (invoice_number, patient_id, doctor_id, booking_id, concept, description, amount, currency, tax_amount, total_amount, status, due_date, issued_at, paid_at, payment_method, tenant_id)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, 'CLP', $8, $9, $10, $11, $12, $13, $14, $15)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
              ON CONFLICT (invoice_number) DO NOTHING RETURNING id`,
             [
               invoiceNumber, b.user_id, b.doctor_id, b.id,
               pick(invoiceConcepts),
               `Factura por consulta médica del ${formatDate(b.date)}`,
-              amount, taxAmount, totalAmount, invoiceStatus,
+              amount, invCurrency, taxAmount, totalAmount, invoiceStatus,
               formatDate(dueDate), b.date,
               invoiceStatus === 'paid' ? addDays(b.date, randomInt(1, 10)) : null,
               invoiceStatus === 'paid' ? pick(['efectivo', 'tarjeta_credito', 'tarjeta_debito', 'transferencia']) : null,
@@ -959,14 +975,15 @@ export const seedTestTenants = async (): Promise<void> => {
         if (subResult.rows.length > 0) {
           const subId = subResult.rows[0].id;
           const planAmount = t.planCode === 'pro' ? 79 : 29;
+          const subCurrency = await tenantCurrency(t.id);
           for (let m = 1; m <= 6; m++) {
             const paidAt = addDays(today, -(m * 30));
             try {
               await q(
                 `INSERT INTO subscription_invoices (tenant_id, subscription_id, amount, currency, status, period_start, period_end, paid_at)
-                 VALUES ($1, $2, $3, 'USD', 'paid', $4, $5, $6)
+                 VALUES ($1, $2, $3, $4, 'paid', $5, $6, $7)
                  ON CONFLICT DO NOTHING`,
-                [t.id, subId, planAmount, addDays(paidAt, -1), paidAt, paidAt]
+                [t.id, subId, convertFromUsd(planAmount, subCurrency), subCurrency, addDays(paidAt, -1), paidAt, paidAt]
               );
             } catch { /* skip */ }
           }

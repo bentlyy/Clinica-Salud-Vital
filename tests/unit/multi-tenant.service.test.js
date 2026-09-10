@@ -94,7 +94,7 @@ describe('tenantService.loadFromDB', () => {
     await tenantService.loadFromDB();
 
     expect(mockQuery).toHaveBeenCalledWith(
-      'SELECT id, name, domain, locale, timezone, config, active FROM tenants WHERE active = true'
+      'SELECT id, name, domain, locale, timezone, COALESCE(currency, \'CLP\') as currency, COALESCE(country_code, \'CL\') as country_code, config, active FROM tenants WHERE active = true'
     );
     expect(tenantService.getById('db-1')).toEqual(dbTenants[0]);
     expect(tenantService.getById('db-2')).toEqual(dbTenants[1]);

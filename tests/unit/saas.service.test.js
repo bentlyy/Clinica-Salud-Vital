@@ -1,4 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import * as bcrypt from 'bcrypt';
+import { tenantService } from '../../src/shared/multi-tenant.service.js';
 
 const { mockQuery, mockClient, mockConnect } = vi.hoisted(() => ({
   mockQuery: vi.fn(),
@@ -36,8 +38,10 @@ import * as saasService from '../../src/modules/saas/saas.service.js';
 import { logger as mockLogger } from '../../src/utils/logger.js';
 
 beforeEach(() => {
-  vi.clearAllMocks();
+  vi.resetAllMocks();
   mockConnect.mockReturnValue(mockClient);
+  bcrypt.hash.mockResolvedValue('hashed-password');
+  tenantService.loadFromDB.mockResolvedValue(undefined);
 });
 
 const mockPlan = (overrides = {}) => ({
@@ -155,6 +159,7 @@ describe('saasService.getTenantPlan', () => {
 describe('saasService.createSubscription', () => {
   it('creates active subscription with paid invoice', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [mockPlan()] });
+    mockQuery.mockResolvedValueOnce({ rows: [{ currency: 'CLP' }] });
     mockClient.query.mockImplementation((sql) => {
       if (sql === 'BEGIN') return Promise.resolve({});
       if (sql.includes('SELECT id FROM subscriptions')) return Promise.resolve({ rows: [] });
@@ -169,13 +174,14 @@ describe('saasService.createSubscription', () => {
     expect(result.status).toBe('active');
     expect(result.plan.code).toBe('pro');
     const invoiceCall = mockClient.query.mock.calls.find(([sql]) => sql.includes('subscription_invoices'));
-    expect(invoiceCall[1][3]).toBe('paid');
-    expect(invoiceCall[1][6]).toEqual(expect.any(Date));
+    expect(invoiceCall[1][4]).toBe('paid');
+    expect(invoiceCall[1][7]).toEqual(expect.any(Date));
     expect(mockClient.query).toHaveBeenCalledWith('COMMIT');
   });
 
   it('creates trialing subscription with pending invoice when trialDays provided', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [mockPlan()] });
+    mockQuery.mockResolvedValueOnce({ rows: [{ currency: 'CLP' }] });
     mockClient.query.mockImplementation((sql) => {
       if (sql === 'BEGIN') return Promise.resolve({});
       if (sql.includes('SELECT id FROM subscriptions')) return Promise.resolve({ rows: [] });
@@ -189,8 +195,8 @@ describe('saasService.createSubscription', () => {
 
     expect(result.status).toBe('trialing');
     const invoiceCall = mockClient.query.mock.calls.find(([sql]) => sql.includes('subscription_invoices'));
-    expect(invoiceCall[1][3]).toBe('pending');
-    expect(invoiceCall[1][6]).toBeNull();
+    expect(invoiceCall[1][4]).toBe('pending');
+    expect(invoiceCall[1][7]).toBeNull();
   });
 
   it('throws when an active subscription already exists and rolls back', async () => {
@@ -210,6 +216,7 @@ describe('saasService.createSubscription', () => {
 describe('saasService.changePlan', () => {
   it('changes plan, creates invoice and returns message', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [mockPlan()] });
+    mockQuery.mockResolvedValueOnce({ rows: [{ currency: 'CLP' }] });
     mockClient.query.mockImplementation((sql) => {
       if (sql === 'BEGIN') return Promise.resolve({});
       if (sql.includes('SELECT s.*')) return Promise.resolve({ rows: [{ id: 1, plan_id: 1, old_plan_code: 'basic', current_period_end: '2026-12-31' }] });
@@ -540,6 +547,7 @@ describe('saasService.onboardTenant', () => {
       return Promise.resolve({ rows: [] });
     });
     mockQuery.mockResolvedValueOnce({ rows: [mockPlan()] });
+    mockQuery.mockResolvedValueOnce({ rows: [{ currency: 'CLP' }] });
 
     const result = await saasService.onboardTenant({ ...baseInput, planCode: 'pro' });
 
@@ -595,6 +603,7 @@ describe('saasService.handleMercadoPagoPaymentApproved', () => {
   it('activates an existing subscription with MP payment ids', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [] });                     // findSubscriptionByMpPaymentId
     mockQuery.mockResolvedValueOnce({ rows: [mockPlan()] });           // getPlanByCode
+    mockQuery.mockResolvedValueOnce({ rows: [{ currency: 'CLP' }] });  // getTenantCurrency
     mockClient.query
       .mockResolvedValueOnce({})                                       // BEGIN
       .mockResolvedValueOnce({ rows: [{ id: 9 }] })                    // SELECT existing FOR UPDATE
@@ -620,7 +629,8 @@ describe('saasService.handleMercadoPagoPaymentApproved', () => {
 
   it('creates a new subscription with an invoice when none exists', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [] });                     // findSubscriptionByMpPaymentId
-    mockQuery.mockResolvedValueOnce({ rows: [mockPlan({ price_monthly_clp: 19990 })] }); // getPlanByCode
+    mockQuery.mockResolvedValueOnce({ rows: [mockPlan({ price_monthly: 79 })] }); // getPlanByCode
+    mockQuery.mockResolvedValueOnce({ rows: [{ currency: 'CLP' }] });  // getTenantCurrency
     mockClient.query
       .mockResolvedValueOnce({})                                       // BEGIN
       .mockResolvedValueOnce({ rows: [] })                             // SELECT existing → none
@@ -640,7 +650,7 @@ describe('saasService.handleMercadoPagoPaymentApproved', () => {
     );
     expect(mockClient.query).toHaveBeenCalledWith(
       expect.stringContaining('INSERT INTO subscription_invoices'),
-      expect.arrayContaining(['tenant-new', 12, 19990, expect.any(Date), expect.any(Date), 'pmt_2', expect.any(Date)])
+      expect.arrayContaining(['tenant-new', 12, 75050, 'CLP', expect.any(Date), expect.any(Date), 'pmt_2', expect.any(Date)])
     );
   });
 

@@ -8,6 +8,8 @@ export interface Tenant {
   domain: string;
   locale: string;
   timezone: string;
+  currency: string;
+  country_code: string;
   config: Record<string, unknown>;
   active: boolean;
 }
@@ -58,7 +60,7 @@ export const tenantService = {
     loadingLock = (async () => {
       try {
         const result = await pool.query<Tenant>(
-          'SELECT id, name, domain, locale, timezone, config, active FROM tenants WHERE active = true'
+          'SELECT id, name, domain, locale, timezone, COALESCE(currency, \'CLP\') as currency, COALESCE(country_code, \'CL\') as country_code, config, active FROM tenants WHERE active = true'
         );
         const loaded = result.rows;
         const oldCount = tenantService.getAll().length;

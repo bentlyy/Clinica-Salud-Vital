@@ -19,6 +19,7 @@ import Verified from '@mui/icons-material/Verified';
 import Analytics from '@mui/icons-material/Analytics';
 import ContactPage from '@mui/icons-material/ContactPage';
 import BusinessCenter from '@mui/icons-material/BusinessCenter';
+import CreditCard from '@mui/icons-material/CreditCard';
 import type { UserRole } from '@/shared/types/api.types';
 import type { TFunction } from 'i18next';
 
@@ -83,6 +84,7 @@ const NAV_ITEMS_DEF: NavItemDef[] = [
   { labelKey: 'audit', icon: <Inventory />, path: '/audit', roles: ['superadmin'] },
   { labelKey: 'labResults', icon: <Science />, path: '/my-laboratory', roles: ['patient'] },
   { labelKey: 'cobros', icon: <Payments />, path: '/cobros', roles: ['superadmin'] },
+  { labelKey: 'saasPlan', icon: <CreditCard />, path: '/saas/plan', roles: ['superadmin', 'admin'] },
   { labelKey: 'settings', icon: <Settings />, path: '/settings', roles: ['superadmin', 'admin', 'doctor', 'lab_technician', 'patient'] },
 ];
 

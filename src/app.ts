@@ -53,6 +53,8 @@ import billingRoutes from './modules/billing/billing.routes.js';
 import laboratoryRoutes from './modules/laboratory/laboratory.routes.js';
 import specialtiesRoutes from './modules/specialties/specialties.routes.js';
 import saasRoutes from './modules/saas/saas.routes.js';
+import currenciesRoutes from './modules/currencies/currencies.routes.js';
+import { refreshRates } from './shared/currencies.js';
 import superAdminRoutes from './modules/super-admin/super-admin.routes.js';
 import medicalHistoryRoutes from './modules/medical-history/medical-history.routes.js';
 import reportRoutes from './modules/reports/report.routes.js';
@@ -252,6 +254,7 @@ app.use(`${API_PREFIX}/billing`, billingRoutes);
 app.use(`${API_PREFIX}/laboratory`, laboratoryRoutes);
 app.use(`${API_PREFIX}/specialties`, specialtiesRoutes);
 app.use(`${API_PREFIX}/saas`, saasRoutes);
+  app.use(`${API_PREFIX}/currencies`, currenciesRoutes);
 app.use(`${API_PREFIX}/super-admin`, superAdminRoutes);
 app.use(`${API_PREFIX}/medical-history`, medicalHistoryRoutes);
 app.use(`${API_PREFIX}/reports`, reportRoutes);
@@ -478,6 +481,14 @@ const startServer = async (): Promise<void> => {
       }
 
       startReminderJob();
+
+      // Carga tasas de cambio al boot (usa fallback si el proveedor falla) y
+      // las refresca cada 6h. La Landing y el checkout las consumen en vivo.
+      void refreshRates();
+      cron.schedule('0 */6 * * *', () => {
+        void refreshRates();
+      });
+      logger.info('Exchange rates refresh scheduled (every 6 hours)');
 
       cron.schedule('0 */6 * * *', async () => {
         try {
