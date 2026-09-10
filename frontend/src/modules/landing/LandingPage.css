@@ -619,6 +619,65 @@
   margin-bottom: 20px;
 }
 
+.lp-pricing-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  max-width: 1000px;
+  margin: 0 auto 28px;
+  flex-wrap: wrap;
+}
+
+.lp-pricing-country-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #6b7280;
+}
+
+.lp-pricing-country-select {
+  appearance: none;
+  background: #ffffff;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 8px 32px 8px 14px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #0d3d38;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='12'%20height='12'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%236b7280'%20stroke-width='2.5'%20stroke-linecap='round'%20stroke-linejoin='round'%3E%3Cpath%20d='M6%209l6%206%206-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  transition: border-color 0.2s;
+}
+
+.lp-pricing-country-select:hover,
+.lp-pricing-country-select:focus {
+  border-color: #218c90;
+  outline: none;
+}
+
+.lp-pricing-rate-note {
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+.lp-pricing-base {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #6b7280;
+  margin: -16px 0 24px;
+}
+
+.lp-pricing-base-country {
+  font-weight: 500;
+  color: #9ca3af;
+}
+
 .lp-pricing-price {
   display: flex;
   align-items: baseline;
@@ -1042,7 +1101,22 @@
 .lm-field-recaptcha {
   min-height: 78px;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.lm-captcha-test-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fcd34d;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.4;
+  text-align: center;
 }
 
 .lm-label {

@@ -40,7 +40,8 @@ describe('createCheckoutPreference', () => {
     tenantId: 't1',
     planCode: 'pro',
     planName: 'Pro',
-    priceCLP: 19990,
+    currency: 'CLP',
+    unitPrice: 19990,
     returnUrl: 'https://app.vitaria.com',
   };
 

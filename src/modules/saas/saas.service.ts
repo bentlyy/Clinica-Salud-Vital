@@ -2,6 +2,7 @@ import { pool, superAdminPool } from '../../shared/db.js';
 import { logger } from '../../utils/logger.js';
 import { BadRequestError, NotFoundError } from '../../utils/errors.js';
 import { E } from '../../utils/error-codes.js';
+import { convertFromUsd, getCurrencyForCountry, getCountryForCurrency, SUPPORTED_COUNTRIES } from '../../shared/currencies.js';
 import { insertOnboarding, insertOnboardingDocuments, type OnboardingProfileInput, type OnboardingDocumentInput } from './onboarding.service.js';
 
 export interface Plan {
@@ -9,10 +10,10 @@ export interface Plan {
   name: string;
   code: string;
   description: string | null;
+  /** Precio mensual en USD (fuente de verdad). */
   price_monthly: number;
+  /** Precio anual en USD. */
   price_yearly: number;
-  price_monthly_clp: number;
-  price_yearly_clp: number;
   max_doctors: number;
   max_patients: number;
   storage_gb: number;
@@ -48,7 +49,6 @@ const GRACE_PERIOD_DAYS = 7;
 export const getPlans = async (): Promise<Plan[]> => {
   const result = await pool.query(
     `SELECT id, name, code, description, price_monthly, price_yearly,
-            price_monthly_clp, price_yearly_clp,
             max_doctors, max_patients, storage_gb, features, active, sort_order
      FROM plans WHERE active = true ORDER BY sort_order ASC`
   );
@@ -58,7 +58,6 @@ export const getPlans = async (): Promise<Plan[]> => {
 export const getPlanByCode = async (code: string): Promise<Plan> => {
   const result = await pool.query(
     `SELECT id, name, code, description, price_monthly, price_yearly,
-            price_monthly_clp, price_yearly_clp,
             max_doctors, max_patients, storage_gb, features, active, sort_order
      FROM plans WHERE code = $1`,
     [code]
@@ -70,7 +69,6 @@ export const getPlanByCode = async (code: string): Promise<Plan> => {
 export const getPlanById = async (id: number): Promise<Plan> => {
   const result = await pool.query(
     `SELECT id, name, code, description, price_monthly, price_yearly,
-            price_monthly_clp, price_yearly_clp,
             max_doctors, max_patients, storage_gb, features, active, sort_order
      FROM plans WHERE id = $1`,
     [id]
@@ -87,7 +85,6 @@ export const getTenantSubscription = async (tenantId: string): Promise<Subscript
             json_build_object(
               'id', p.id, 'name', p.name, 'code', p.code, 'description', p.description,
               'price_monthly', p.price_monthly, 'price_yearly', p.price_yearly,
-              'price_monthly_clp', p.price_monthly_clp, 'price_yearly_clp', p.price_yearly_clp,
               'max_doctors', p.max_doctors, 'max_patients', p.max_patients,
               'storage_gb', p.storage_gb, 'features', p.features, 'active', p.active,
               'sort_order', p.sort_order
@@ -111,11 +108,30 @@ export const getTenantPlan = async (tenantId: string): Promise<Plan> => {
   } catch {
     return {
       id: 0, name: 'Free', code: 'free', description: 'Free plan',
-      price_monthly: 0, price_yearly: 0, price_monthly_clp: 0, price_yearly_clp: 0,
+      price_monthly: 0, price_yearly: 0,
       max_doctors: 1, max_patients: 50,
       storage_gb: 1, features: { bookings: true }, active: true, sort_order: 0,
     };
   }
+};
+
+/**
+ * Moneda de facturación del tenant (default CLP hasta que se configure).
+ */
+export const getTenantCurrency = async (tenantId: string): Promise<string> => {
+  const result = await pool.query(
+    'SELECT COALESCE(NULLIF(currency, \'\'), \'CLP\') as currency FROM tenants WHERE id = $1',
+    [tenantId]
+  );
+  return result.rows[0]?.currency || 'CLP';
+};
+
+const amountInTenantCurrency = async (
+  usdAmount: number,
+  tenantId: string,
+): Promise<{ amount: number; currency: string }> => {
+  const currency = await getTenantCurrency(tenantId);
+  return { amount: convertFromUsd(usdAmount, currency), currency };
 };
 
 export const createSubscription = async (
@@ -157,11 +173,12 @@ export const createSubscription = async (
       [tenantId, plan.id, status, now, periodEnd, trialEnd]
     );
 
-    // Create first invoice
+    // Create first invoice (en la moneda del tenant)
+    const { amount, currency } = await amountInTenantCurrency(plan.price_monthly, tenantId);
     await client.query(
-      `INSERT INTO subscription_invoices (tenant_id, subscription_id, amount, status, period_start, period_end, paid_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-      [tenantId, result.rows[0].id, plan.price_monthly_clp, status === 'active' ? 'paid' : 'pending', now, periodEnd, status === 'active' ? now : null]
+      `INSERT INTO subscription_invoices (tenant_id, subscription_id, amount, currency, status, period_start, period_end, paid_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+      [tenantId, result.rows[0].id, amount, currency, status === 'active' ? 'paid' : 'pending', now, periodEnd, status === 'active' ? now : null]
     );
 
     await client.query('COMMIT');
@@ -210,11 +227,12 @@ export const changePlan = async (
       [newPlan.id, sub.id]
     );
 
-    // Create invoice for plan change
+    // Create invoice for plan change (en la moneda del tenant)
+    const { amount, currency } = await amountInTenantCurrency(newPlan.price_monthly, tenantId);
     await client.query(
-      `INSERT INTO subscription_invoices (tenant_id, subscription_id, amount, status, period_start, period_end, paid_at)
-       VALUES ($1, $2, $3, 'paid', NOW(), $4, NOW())`,
-      [tenantId, sub.id, newPlan.price_monthly_clp, sub.current_period_end]
+      `INSERT INTO subscription_invoices (tenant_id, subscription_id, amount, currency, status, period_start, period_end, paid_at)
+       VALUES ($1, $2, $3, $4, 'paid', NOW(), $5, NOW())`,
+      [tenantId, sub.id, amount, currency, sub.current_period_end]
     );
 
     await client.query('COMMIT');
@@ -393,7 +411,7 @@ export const getTenantFeatures = async (tenantId: string): Promise<Record<string
 
 // ─── Tenant Config ───────────────────────────────────────
 
-const ALLOWED_TENANT_CONFIG_FIELDS = new Set(['name', 'locale', 'timezone', 'config']);
+const ALLOWED_TENANT_CONFIG_FIELDS = new Set(['name', 'locale', 'timezone', 'currency', 'country_code', 'config']);
 
 export const updateTenantConfig = async (
   tenantId: string,
@@ -434,12 +452,22 @@ export const onboardTenant = async (data: {
   adminName?: string;
   locale?: string;
   timezone?: string;
+  currency?: string;
+  countryCode?: string;
   planCode?: string;
   profile?: OnboardingProfileInput;
   documents?: OnboardingDocumentInput[];
 }): Promise<{ tenantId: string; subscription: SubscriptionWithPlan | null; message: string }> => {
-  const { tenantName, domain, adminEmail, adminPassword, adminName, locale, timezone, planCode, profile, documents } = data;
+  const { tenantName, domain, adminEmail, adminPassword, adminName, locale, timezone, currency, countryCode, planCode, profile, documents } = data;
   const tenantId = domain;
+
+  const supportedCurrency = SUPPORTED_COUNTRIES.some((c) => c.currency === currency)
+    ? (currency as string)
+    : getCurrencyForCountry(countryCode || '');
+  const resolvedCurrency = supportedCurrency || 'CLP';
+  const resolvedCountryCode = SUPPORTED_COUNTRIES.some((c) => c.countryCode === (countryCode || '').toUpperCase())
+    ? (countryCode as string).toUpperCase()
+    : getCountryForCurrency(resolvedCurrency);
 
   const client = await superAdminPool.connect();
   try {
@@ -451,14 +479,16 @@ export const onboardTenant = async (data: {
     }
 
     await client.query(
-      `INSERT INTO tenants (id, name, domain, locale, timezone, config, active)
-       VALUES ($1, $2, $3, $4, $5, $6, true)`,
+      `INSERT INTO tenants (id, name, domain, locale, timezone, currency, country_code, config, active)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, true)`,
       [
         tenantId,
         tenantName,
         domain,
         locale || process.env.APP_LOCALE || 'es',
         timezone || 'America/Santiago',
+        resolvedCurrency,
+        resolvedCountryCode,
         JSON.stringify({ company: tenantName, contact_email: adminEmail }),
       ]
     );
@@ -491,9 +521,9 @@ export const onboardTenant = async (data: {
         );
 
         await client.query(
-          `INSERT INTO subscription_invoices (tenant_id, subscription_id, amount, status, period_start, period_end, paid_at)
-           VALUES ($1, $2, $3, 'paid', $4, $5, $6)`,
-          [tenantId, subResult.rows[0].id, plan.price_monthly_clp, now, periodEnd, plan.price_monthly_clp === 0 ? now : null]
+          `INSERT INTO subscription_invoices (tenant_id, subscription_id, amount, currency, status, period_start, period_end, paid_at)
+           VALUES ($1, $2, $3, $4, 'paid', $5, $6, $7)`,
+          [tenantId, subResult.rows[0].id, convertFromUsd(plan.price_monthly, resolvedCurrency), resolvedCurrency, now, periodEnd, plan.price_monthly === 0 ? now : null]
         );
 
         subscription = { ...subResult.rows[0], plan } as SubscriptionWithPlan;
@@ -577,6 +607,7 @@ const activateSubscriptionForPayment = async (payment: {
   }
 
   const plan = await getPlanByCode(planCode);
+  const { amount, currency } = await amountInTenantCurrency(plan.price_monthly, tenantId);
   const now = new Date();
   const periodEnd = new Date(now);
   periodEnd.setMonth(periodEnd.getMonth() + 1);
@@ -609,11 +640,11 @@ const activateSubscriptionForPayment = async (payment: {
          RETURNING id`,
         [tenantId, plan.id, now, periodEnd, payment.metadata?.preference_id || null, payment.id]
       );
-      if (plan.price_monthly_clp > 0) {
+      if (plan.price_monthly > 0) {
         await client.query(
-          `INSERT INTO subscription_invoices (tenant_id, subscription_id, amount, status, period_start, period_end, mercadopago_payment_id, paid_at)
-           VALUES ($1, $2, $3, 'paid', $4, $5, $6, $7)`,
-          [tenantId, inserted.rows[0].id, plan.price_monthly_clp, now, periodEnd, payment.id, now]
+          `INSERT INTO subscription_invoices (tenant_id, subscription_id, amount, currency, status, period_start, period_end, mercadopago_payment_id, paid_at)
+           VALUES ($1, $2, $3, $4, 'paid', $5, $6, $7, $8)`,
+          [tenantId, inserted.rows[0].id, amount, currency, now, periodEnd, payment.id, now]
         );
       }
     }

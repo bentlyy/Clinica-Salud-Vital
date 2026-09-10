@@ -5,9 +5,17 @@ import { LanguageSwitcher } from '@/shared/components/LanguageSwitcher';
 import ReCAPTCHA from 'react-google-recaptcha';
 import { useAuth } from '@/shared/providers/AuthProvider';
 import { getRedirectPath } from '@/shared/utils/role.utils';
+import { isTestCaptcha, RECAPTCHA_SITE_KEY } from '@/shared/utils/captcha';
+import { useSelectedCountry, useExchangeRates } from '@/shared/hooks/usePricing';
+import {
+  SUPPORTED_COUNTRIES,
+  getCountryByCode,
+  convertUsd,
+  formatPricingAmount,
+  getCurrencySymbol,
+} from '@/shared/utils/pricing';
 import './LandingPage.css';
 
-const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
 const hasCaptcha = Boolean(RECAPTCHA_SITE_KEY);
 
 /* ——— Data arrays use translation keys as values ——— */
@@ -34,7 +42,7 @@ const CLIENTS = [
 
 const PRICING_PLANS = [
   {
-    nameKey: 'plan1Name', descKey: 'plan1Desc', price: '299', popular: false,
+    nameKey: 'plan1Name', descKey: 'plan1Desc', usdPrice: 29, popular: false,
     features: [
       { textKey: 'plan1Feature1', included: true },
       { textKey: 'plan1Feature2', included: true },
@@ -46,7 +54,7 @@ const PRICING_PLANS = [
     ],
   },
   {
-    nameKey: 'plan2Name', descKey: 'plan2Desc', price: '599', popular: true,
+    nameKey: 'plan2Name', descKey: 'plan2Desc', usdPrice: 79, popular: true,
     features: [
       { textKey: 'plan2Feature1', included: true },
       { textKey: 'plan2Feature2', included: true },
@@ -58,7 +66,7 @@ const PRICING_PLANS = [
     ],
   },
   {
-    nameKey: 'plan3Name', descKey: 'plan3Desc', price: '1,299', popular: false,
+    nameKey: 'plan3Name', descKey: 'plan3Desc', usdPrice: 199, popular: false,
     features: [
       { textKey: 'plan3Feature1', included: true },
       { textKey: 'plan3Feature2', included: true },
@@ -180,6 +188,10 @@ function LandingPage() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const openLogin = useCallback(() => setLoginOpen(true), []);
   const closeLogin = useCallback(() => setLoginOpen(false), []);
+  const [countryCode, setCountryCode] = useSelectedCountry();
+  const { rates } = useExchangeRates();
+  const pricingCountry = getCountryByCode(countryCode);
+  const pricingCurrency = pricingCountry.currency;
 
   return (
     <div>
@@ -338,35 +350,58 @@ function LandingPage() {
           <h2 className="lp-section-title">{t('pricingTitle')}</h2>
           <p className="lp-section-desc">{t('pricingDesc')}</p>
         </div>
+        <div className="lp-pricing-toolbar">
+          <span className="lp-pricing-country-label">{t('pricingCountryLabel')}</span>
+          <select
+            className="lp-pricing-country-select"
+            value={countryCode}
+            onChange={(e) => setCountryCode(e.target.value)}
+            aria-label={t('pricingCountryLabel')}
+          >
+            {SUPPORTED_COUNTRIES.map((c) => (
+              <option key={c.countryCode} value={c.countryCode}>
+                {c.flag} {t(c.countryKey)}
+              </option>
+            ))}
+          </select>
+          <span className="lp-pricing-rate-note">{t('pricingRateNote')}</span>
+        </div>
         <div className="lp-pricing-grid">
-          {PRICING_PLANS.map((plan) => (
-            <div key={plan.nameKey} className={`lp-pricing-card ${plan.popular ? 'lp-pricing-popular' : ''}`}>
-              {plan.popular && <div className="lp-pricing-badge">{t('pricingMostPopular')}</div>}
-              <div className="lp-pricing-name">{t(plan.nameKey)}</div>
-              <div className="lp-pricing-desc">{t(plan.descKey)}</div>
-              <div className="lp-pricing-price">
-                <span className="lp-pricing-currency">$</span>
-                <span className="lp-pricing-amount">{plan.price}</span>
-                <span className="lp-pricing-period">{t('pricingPeriod')}</span>
+          {PRICING_PLANS.map((plan) => {
+            const localAmount = convertUsd(plan.usdPrice, pricingCurrency, rates);
+            return (
+              <div key={plan.nameKey} className={`lp-pricing-card ${plan.popular ? 'lp-pricing-popular' : ''}`}>
+                {plan.popular && <div className="lp-pricing-badge">{t('pricingMostPopular')}</div>}
+                <div className="lp-pricing-name">{t(plan.nameKey)}</div>
+                <div className="lp-pricing-desc">{t(plan.descKey)}</div>
+                <div className="lp-pricing-price">
+                  <span className="lp-pricing-currency">{getCurrencySymbol(pricingCurrency)}</span>
+                  <span className="lp-pricing-amount">{formatPricingAmount(localAmount, pricingCurrency)}</span>
+                  <span className="lp-pricing-period">{t('pricingPeriod')}</span>
+                </div>
+                <div className="lp-pricing-base">
+                  {t('pricingBase')}: {formatPricingAmount(plan.usdPrice, 'USD')} USD
+                  <span className="lp-pricing-base-country"> · {pricingCountry.flag} {t(pricingCountry.countryKey)}</span>
+                </div>
+                <ul className="lp-pricing-features">
+                  {plan.features.map((f, j) => (
+                    <li key={j} className={f.included ? '' : 'lp-pricing-feature-disabled'}>
+                      <span className={f.included ? 'lp-pricing-check' : 'lp-pricing-x'}>
+                        {f.included ? '✓' : '✗'}
+                      </span>
+                      {t(f.textKey)}
+                    </li>
+                  ))}
+                </ul>
+                <button
+                  className={`lp-hero-btn lp-hero-btn-block ${plan.popular ? 'lp-hero-btn-primary' : 'lp-hero-btn-secondary'}`}
+                  onClick={() => navigate('/contratar')}
+                >
+                  {t('pricingCta')}
+                </button>
               </div>
-              <ul className="lp-pricing-features">
-                {plan.features.map((f, j) => (
-                  <li key={j} className={f.included ? '' : 'lp-pricing-feature-disabled'}>
-                    <span className={f.included ? 'lp-pricing-check' : 'lp-pricing-x'}>
-                      {f.included ? '✓' : '✗'}
-                    </span>
-                    {t(f.textKey)}
-                  </li>
-                ))}
-              </ul>
-              <button
-                className={`lp-hero-btn lp-hero-btn-block ${plan.popular ? 'lp-hero-btn-primary' : 'lp-hero-btn-secondary'}`}
-                onClick={() => navigate('/contratar')}
-              >
-                {t('pricingCta')}
-              </button>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </section>
 
@@ -663,6 +698,11 @@ function LoginModal({ onClose }: { onClose: () => void }) {
 
             {step === 'login' && hasCaptcha && (
               <div className="lm-field lm-field-recaptcha">
+                {isTestCaptcha && (
+                  <div className="lm-captcha-test">
+                    <span className="lm-captcha-test-badge">{t('captchaTestBadge')}</span>
+                  </div>
+                )}
                 <ReCAPTCHA ref={recaptchaRef} sitekey={RECAPTCHA_SITE_KEY!} />
               </div>
             )}

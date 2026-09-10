@@ -71,6 +71,8 @@ export interface OnboardPayload {
   timezone?: string;
   plan_code?: string;
   country?: string;
+  country_code?: string;
+  currency?: string;
   legal_name?: string;
   tax_id?: string;
   region?: string;

@@ -68,6 +68,24 @@ interface User {
 const ACCESS_TOKEN_EXPIRY = '15m';
 const REFRESH_TOKEN_EXPIRY_DAYS = 30;
 
+// Moneda/país de facturación del tenant (afecta display y checkout).
+const getTenantBilling = async (tenantId: string): Promise<{ currency: string; country_code: string }> => {
+  try {
+    const result = await readPool.query(
+      `SELECT COALESCE(NULLIF(currency, ''), 'CLP') as currency,
+              COALESCE(NULLIF(country_code, ''), 'CL') as country_code
+       FROM tenants WHERE id = $1`,
+      [tenantId]
+    );
+    return {
+      currency: result.rows[0]?.currency || 'CLP',
+      country_code: result.rows[0]?.country_code || 'CL',
+    };
+  } catch {
+    return { currency: 'CLP', country_code: 'CL' };
+  }
+};
+
 const generateAccessToken = (user: { id: number; email: string; role: UserRole; tenant_id: string; token_version?: number }): string => {
   return jwtManager.sign(
     { id: user.id, role: user.role || 'user', tenant_id: user.tenant_id, token_version: user.token_version || 0 },
@@ -186,6 +204,10 @@ export const register = async ({ email, password, name, rut, phone, tenant_id, i
 const verifyCaptcha = async (token: string): Promise<boolean> => {
   const secret = process.env.RECAPTCHA_SECRET_KEY;
   if (!secret) return true;
+  if (secret === '6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe') {
+    logger.warn('reCAPTCHA TEST key en uso — captcha aceptado siempre (modo prueba)');
+    return true;
+  }
   if (!token) {
     logger.warn('reCAPTCHA secret configured but no token provided — blocking request');
     return false;
@@ -210,7 +232,7 @@ const verifyCaptcha = async (token: string): Promise<boolean> => {
 export const login = async ({ email, password, totp_token, captcha_token, ip_address, user_agent }: LoginParams, tenantId: string = 'default'): Promise<{
   access_token: string;
   refresh_token: string;
-  user: { id: number; email: string; name: string | null; role: UserRole; rut: string | null; phone: string | null; password_changed: boolean; totp_enabled: boolean; tenant_id: string };
+  user: { id: number; email: string; name: string | null; role: UserRole; rut: string | null; phone: string | null; password_changed: boolean; totp_enabled: boolean; tenant_id: string; currency: string; country_code: string };
 }> => {
   if (!email || !password) throw new BadRequestError(E.AUTH_EMAIL_REQUIRED);
 
@@ -288,6 +310,8 @@ export const login = async ({ email, password, totp_token, captcha_token, ip_add
   );
   const refresh_token = await generateRefreshToken(user.id, sessionId);
 
+  const billing = await getTenantBilling(user.tenant_id || process.env.DEFAULT_TENANT_ID || 'default');
+
   return {
     access_token,
     refresh_token,
@@ -301,6 +325,8 @@ export const login = async ({ email, password, totp_token, captcha_token, ip_add
       password_changed: user.password_changed ?? false,
       totp_enabled: user.totp_enabled ?? false,
       tenant_id: user.tenant_id || process.env.DEFAULT_TENANT_ID || 'default',
+      currency: billing.currency,
+      country_code: billing.country_code,
     },
   };
 };
@@ -308,7 +334,7 @@ export const login = async ({ email, password, totp_token, captcha_token, ip_add
 export const refreshToken = async ({ refresh_token }: RefreshParams): Promise<{
   access_token: string;
   refresh_token: string;
-  user: { id: number; email: string; name: string | null; role: string; rut: string | null; phone: string | null; password_changed: boolean; totp_enabled: boolean; tenant_id: string };
+  user: { id: number; email: string; name: string | null; role: string; rut: string | null; phone: string | null; password_changed: boolean; totp_enabled: boolean; tenant_id: string; currency: string; country_code: string };
 } | null> => {
   const client = await pool.connect();
   try {
@@ -393,6 +419,8 @@ export const refreshToken = async ({ refresh_token }: RefreshParams): Promise<{
 
     void touchUserSession(sessionId);
 
+    const billing = await getTenantBilling(user.tenant_id || process.env.DEFAULT_TENANT_ID || 'default');
+
     return {
       access_token: newAccessToken,
       refresh_token: newToken,
@@ -406,6 +434,8 @@ export const refreshToken = async ({ refresh_token }: RefreshParams): Promise<{
         password_changed: user.password_changed ?? false,
         totp_enabled: user.totp_enabled ?? false,
         tenant_id: user.tenant_id || process.env.DEFAULT_TENANT_ID || 'default',
+        currency: billing.currency,
+        country_code: billing.country_code,
       },
     };
   } catch (error) {

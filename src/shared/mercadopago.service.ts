@@ -4,8 +4,10 @@ export interface MercadoPagoPreferenceParams {
   tenantId: string;
   planCode: string;
   planName: string;
-  /** Precio mensual en CLP (entero, sin decimales, como espera Mercado Pago). */
-  priceCLP: number;
+  /** Moneda local del tenant (CLP, ARS, BRL, MXN...). */
+  currency: string;
+  /** Precio mensual en la moneda del tenant (convertido desde USD). */
+  unitPrice: number;
   returnUrl: string;
 }
 
@@ -34,16 +36,16 @@ export const getAccessToken = (): string => process.env.MERCADOPAGO_ACCESS_TOKEN
 const createPreference = async (params: MercadoPagoPreferenceParams): Promise<MercadoPagoPreference> => {
   const base = params.returnUrl.replace(/\/$/, '');
   const body = {
-    items: [
-      {
-        id: `plan_${params.planCode}`,
-        title: `Suscripción Vitaria ${params.planName}`,
-        description: `Plan ${params.planName} — 1 mes`,
-        quantity: 1,
-        currency_id: 'CLP',
-        unit_price: params.priceCLP,
-      },
-    ],
+items: [
+        {
+          id: `plan_${params.planCode}`,
+          title: `Suscripción Vitaria ${params.planName}`,
+          description: `Plan ${params.planName} — 1 mes`,
+          quantity: 1,
+          currency_id: params.currency,
+          unit_price: params.unitPrice,
+        },
+      ],
     metadata: { plan_code: params.planCode, tenant_id: params.tenantId },
     external_reference: params.tenantId,
     back_urls: {

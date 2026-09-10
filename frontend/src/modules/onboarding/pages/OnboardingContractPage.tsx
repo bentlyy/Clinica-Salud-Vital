@@ -26,6 +26,8 @@ import UploadFile from '@mui/icons-material/UploadFile';
 import CheckCircleOutline from '@mui/icons-material/CheckCircleOutline';
 import InfoOutlined from '@mui/icons-material/InfoOutlined';
 import ReCAPTCHA from 'react-google-recaptcha';
+import { RECAPTCHA_SITE_KEY } from '@/shared/utils/captcha';
+import { SUPPORTED_COUNTRIES, getCurrencyForCountry, convertUsd, formatPricingAmount, getCurrencySymbol, FALLBACK_RATES } from '@/shared/utils/pricing';
 import { onboardingService, fileToBase64 } from '../services/onboarding.service';
 import type { OnboardingDocumentCategory, OnboardingDraftDocument, OnboardPayload } from '../types/onboarding.types';
 
@@ -42,6 +44,8 @@ const defaultForm: OnboardPayload = {
   admin_email: '',
   admin_password: '',
   country: '',
+  country_code: '',
+  currency: 'CLP',
   plan_code: 'free',
   legal_name: '',
   tax_id: '',
@@ -66,8 +70,10 @@ const steps = ['account', 'profile', 'documents', 'review'];
 
 const DOC_CATEGORIES: OnboardingDocumentCategory[] = ['contract', 'license', 'tax_id', 'constitution', 'logo', 'other'];
 
-const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
 const hasCaptcha = Boolean(RECAPTCHA_SITE_KEY);
+
+void RECAPTCHA_SITE_KEY;
+void hasCaptcha;
 
 export default function OnboardingContractPage() {
   const { t } = useTranslation('onboarding');
@@ -89,6 +95,7 @@ export default function OnboardingContractPage() {
   });
 
   const watchPlan = watch('plan_code');
+  const watchCountry = watch('country_code');
 
   const loadPlans = useCallback(async () => {
     try {
@@ -107,7 +114,7 @@ export default function OnboardingContractPage() {
   const validateStep = (): boolean => {
     const f = getValues();
     if (activeStep === 0) {
-      if (!f.tenant_name || !f.domain || !f.admin_name || !f.admin_email || !f.admin_password || !f.country) {
+      if (!f.tenant_name || !f.domain || !f.admin_name || !f.admin_email || !f.admin_password || !f.country_code) {
         setFieldError(t('account.requiredFields'));
         return false;
       }
@@ -167,7 +174,9 @@ export default function OnboardingContractPage() {
         admin_password: values.admin_password,
         admin_name: values.admin_name,
         admin_phone: values.admin_phone,
-        country: values.country,
+        country: values.country_code,
+        country_code: values.country_code,
+        currency: getCurrencyForCountry(values.country_code ?? 'CL'),
         plan_code: values.plan_code,
         locale: 'es',
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/Santiago',
@@ -275,25 +284,40 @@ export default function OnboardingContractPage() {
                         />
                         <Controller
                           control={control}
-                          name="country"
+                          name="country_code"
+                          rules={{ required: true }}
                           render={({ field }) => (
-                            <TextField {...field} label={t('account.country')} required fullWidth />
+                            <FormControl fullWidth required>
+                              <InputLabel>{t('account.country')}</InputLabel>
+                              <Select {...field} label={t('account.country')}>
+                                {SUPPORTED_COUNTRIES.map((c) => (
+                                  <MenuItem key={c.countryCode} value={c.countryCode}>
+                                    {c.flag} {t('account.country_' + c.countryCode, c.countryCode)}
+                                  </MenuItem>
+                                ))}
+                              </Select>
+                            </FormControl>
                           )}
                         />
                         <Controller
                           control={control}
                           name="plan_code"
                           render={({ field }) => (
-                            <FormControl fullWidth required>
-                              <InputLabel>{t('account.plan')}</InputLabel>
-                              <Select {...field} label={t('account.plan')}>
-                                {plans.map((p) => (
-                                  <MenuItem key={p.code} value={p.code}>
-                                    {p.name} — {p.description || ''}
-                                  </MenuItem>
-                                ))}
-                              </Select>
-                            </FormControl>
+<FormControl fullWidth required>
+                                <InputLabel>{t('account.plan')}</InputLabel>
+                                <Select {...field} label={t('account.plan')}>
+                                  {plans.map((p) => {
+                                    const planCurrency = getCurrencyForCountry(watchCountry || 'CL');
+                                    const symbol = getCurrencySymbol(planCurrency);
+                                    const converted = convertUsd(p.price_monthly, planCurrency, FALLBACK_RATES);
+                                    return (
+                                      <MenuItem key={p.code} value={p.code}>
+                                        {p.name} — {symbol}{formatPricingAmount(converted, planCurrency)}/mes {p.description || ''}
+                                      </MenuItem>
+                                    );
+                                  })}
+                                </Select>
+                              </FormControl>
                           )}
                         />
                         <Typography variant="subtitle2" sx={{ mt: 1 }}>{t('account.adminTitle')}</Typography>
@@ -428,7 +452,7 @@ export default function OnboardingContractPage() {
                       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
                         <ReviewField label={t('account.tenantName')} value={onQuestionnaire.tenant_name} md />
                         <ReviewField label={t('account.domain')} value={onQuestionnaire.domain} md />
-                        <ReviewField label={t('account.country')} value={onQuestionnaire.country} md />
+                        <ReviewField label={t('account.country')} value={watchCountry} md />
                         <ReviewField label={t('account.plan')} value={watchPlan} md />
                         <ReviewField label={t('account.adminName')} value={onQuestionnaire.admin_name} md />
                         <ReviewField label={t('account.adminEmail')} value={onQuestionnaire.admin_email} md />
@@ -479,7 +503,7 @@ export default function OnboardingContractPage() {
 
 export function computePreviewCompleteness(f: Partial<OnboardPayload>): number {
   const fields: unknown[] = [
-    f.tenant_name, f.domain, f.admin_email, f.admin_password, f.country,
+    f.tenant_name, f.domain, f.admin_email, f.admin_password, f.country_code,
     f.legal_name, f.tax_id, f.city, f.address, f.phone,
     f.website, f.license_number, f.legal_entity_type, f.legal_representative_name,
     f.specialties, f.doctor_count, f.operating_hours,

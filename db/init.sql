@@ -12,6 +12,8 @@ CREATE TABLE IF NOT EXISTS tenants (
   domain TEXT NOT NULL UNIQUE,
   locale TEXT DEFAULT 'es',
   timezone TEXT DEFAULT 'America/Santiago',
+  currency VARCHAR(3) DEFAULT 'CLP',
+  country_code VARCHAR(2) DEFAULT 'CL',
   config JSONB DEFAULT '{}',
   active BOOLEAN DEFAULT true,
   deleted_at TIMESTAMPTZ,
@@ -209,7 +211,7 @@ CREATE TABLE IF NOT EXISTS invoices (
   concept VARCHAR(255) NOT NULL,
   description TEXT,
   amount NUMERIC(10, 2) NOT NULL,
-  currency VARCHAR(3) DEFAULT 'USD',
+  currency VARCHAR(3) DEFAULT 'CLP',
   tax_amount NUMERIC(10, 2) DEFAULT 0,
   discount_amount NUMERIC(10, 2) DEFAULT 0,
   total_amount NUMERIC(10, 2) NOT NULL,
@@ -423,8 +425,6 @@ CREATE TABLE IF NOT EXISTS plans (
   description TEXT,
   price_monthly DECIMAL(10,2) NOT NULL DEFAULT 0,
   price_yearly DECIMAL(10,2) NOT NULL DEFAULT 0,
-  price_monthly_clp INTEGER NOT NULL DEFAULT 0,
-  price_yearly_clp INTEGER NOT NULL DEFAULT 0,
   max_doctors INTEGER NOT NULL DEFAULT 1,
   max_patients INTEGER NOT NULL DEFAULT 50,
   storage_gb INTEGER NOT NULL DEFAULT 1,
@@ -1186,13 +1186,13 @@ CREATE TABLE clinical_templates (
 CREATE INDEX idx_clinical_templates_tenant ON clinical_templates (tenant_id);
 
 -- SaaS plans
-INSERT INTO plans (name, code, description, price_monthly, price_yearly, price_monthly_clp, price_yearly_clp, max_doctors, max_patients, storage_gb, features, sort_order) VALUES
-  ('Gratuito', 'free', 'Plan básico para clínicas pequeñas', 0, 0, 0, 0, 1, 50, 1,
+INSERT INTO plans (name, code, description, price_monthly, price_yearly, max_doctors, max_patients, storage_gb, features, sort_order) VALUES
+  ('Gratuito', 'free', 'Plan básico para clínicas pequeñas', 0, 0, 1, 50, 1,
    '{"bookings": true, "clinical_records": false, "laboratory": false, "analytics": false, "api_access": false, "white_label": false, "custom_domain": false, "sms": false, "advanced_reports": false}'::jsonb, 1),
-  ('Básico', 'basic', 'Para clínicas en crecimiento', 29, 290, 9990, 99990, 3, 200, 5,
+  ('Básico', 'basic', 'Para clínicas en crecimiento', 29, 290, 3, 200, 5,
    '{"bookings": true, "clinical_records": true, "laboratory": false, "analytics": true, "api_access": false, "white_label": false, "custom_domain": false, "sms": true, "advanced_reports": false}'::jsonb, 2),
-  ('Profesional', 'pro', 'Solución completa para clínicas', 79, 790, 19990, 199900, 10, -1, 20,
+  ('Profesional', 'pro', 'Solución completa para clínicas', 79, 790, 10, -1, 20,
    '{"bookings": true, "clinical_records": true, "laboratory": true, "analytics": true, "api_access": true, "white_label": false, "custom_domain": false, "sms": true, "advanced_reports": true}'::jsonb, 3),
-  ('Enterprise', 'enterprise', 'Solución integral con personalización', 199, 1990, 39990, 399900, -1, -1, 100,
+  ('Enterprise', 'enterprise', 'Solución integral con personalización', 199, 1990, -1, -1, 100,
    '{"bookings": true, "clinical_records": true, "laboratory": true, "analytics": true, "api_access": true, "white_label": true, "custom_domain": true, "sms": true, "advanced_reports": true}'::jsonb, 4)
 ON CONFLICT (code) DO NOTHING;
