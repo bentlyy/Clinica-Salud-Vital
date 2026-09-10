@@ -8,7 +8,7 @@ mockRouter.patch.mockReturnValue(mockRouter);
 mockRouter.delete.mockReturnValue(mockRouter);
 mockRouter.use.mockReturnValue(mockRouter);
 
-vi.mock('express', () => ({ Router: vi.fn(() => mockRouter) }));
+vi.mock('express', () => ({ Router: vi.fn(() => mockRouter), urlencoded: vi.fn(() => mockMw) }));
 
 const mockMw = vi.fn();
 const mockAuthorize = vi.fn(() => mockMw);
@@ -39,7 +39,8 @@ const mockCtrl = Object.fromEntries([
   // exception
   'getMyExceptions', 'createException', 'deleteException',
   // saas
-  'stripeWebhook', 'getPlans', 'onboardTenant', 'getMySubscription', 'createCheckout', 'changePlan', 'cancelSubscription', 'getUsage', 'getUsageSummary', 'getLimits', 'getFeatures', 'updateTenantConfig',
+  'mercadopagoWebhook', 'getPlans', 'onboardTenant', 'getMySubscription', 'createCheckout', 'changePlan', 'cancelSubscription', 'getUsage', 'getUsageSummary', 'getLimits', 'getFeatures', 'updateTenantConfig',
+  'getMyOnboarding', 'updateMyOnboarding', 'uploadOnboardingDocument', 'listMyOnboardingDocuments', 'downloadOnboardingDocument', 'deleteOnboardingDocument', 'listOnboardingApplications', 'getOnboardingApplication', 'approveOnboardingApplication', 'rejectOnboardingApplication',
   // specialties
   'getSpecialties', 'getSpecialtyById', 'createSpecialty', 'updateSpecialty', 'deleteSpecialty',
 ].map(k => [k, vi.fn()]));

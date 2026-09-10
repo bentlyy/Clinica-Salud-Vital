@@ -20,7 +20,7 @@ C4Context
 
     System_Ext(email_svc, "SendGrid/SMTP", "Notificaciones email")
     System_Ext(sms_svc, "Twilio", "SMS/WhatsApp")
-    System_Ext(stripe, "Stripe", "Pagos")
+    System_Ext(mp, "Mercado Pago", "Pagos CLP")
     System_Ext(sentry, "Sentry", "Error tracking")
 
     Rel(patient, web, "Usa", "HTTPS")
@@ -30,7 +30,7 @@ C4Context
     Rel(api, db, "SQL", "pg")
     Rel(api, email_svc, "Email")
     Rel(api, sms_svc, "SMS/WhatsApp")
-    Rel(api, stripe, "Pagos")
+    Rel(api, mp, "Pagos")
     Rel(api, sentry, "Errores")
 ```
 

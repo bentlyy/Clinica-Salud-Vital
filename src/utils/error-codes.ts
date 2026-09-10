@@ -228,6 +228,10 @@ export const E = {
 
   // ── Email ───────────────────────────────────────────────────────
   EMAIL_SEND_FAILED:            'EMAIL_SEND_FAILED',
+
+  // ── Mercado Pago Webhook ─────────────────────────────────────────
+  MERCADOPAGO_NOT_CONFIGURED:   'MERCADOPAGO_NOT_CONFIGURED',
+  MERCADOPAGO_BAD_REQUEST:      'MERCADOPAGO_BAD_REQUEST',
 } as const;
 
 export type ErrorCode = (typeof E)[keyof typeof E];
@@ -452,4 +456,8 @@ export const ERROR_MESSAGES: Record<ErrorCode, string> = {
 
   // Email
   [E.EMAIL_SEND_FAILED]:            'Email send failed',
+
+  // Mercado Pago Webhook
+  [E.MERCADOPAGO_NOT_CONFIGURED]: 'Mercado Pago not configured — MERCADOPAGO_ACCESS_TOKEN is missing',
+  [E.MERCADOPAGO_BAD_REQUEST]:    'Invalid Mercado Pago webhook payload',
 };

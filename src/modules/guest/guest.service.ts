@@ -55,7 +55,7 @@ export const createGuestBooking = async ({ doctor_id, date, time, duration = 30,
     await client.query('BEGIN');
 
     await client.query(
-      `SELECT pg_advisory_xact_lock(hashtext($1::text || $2))`,
+      `SELECT pg_advisory_xact_lock($1::bigint, (hashtext($2::text)::bit(32)::bigint))`,
       [doctor_id, date]
     );
 

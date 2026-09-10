@@ -81,22 +81,23 @@ describe('api-client request interceptor', () => {
     expect((result.headers as Record<string, string>).Authorization).toBeUndefined();
   });
 
-  it('adds the tenant id header from localStorage', () => {
+  it('does not add the tenant id header (derived from the JWT on the server)', () => {
     localStorage.setItem('tenant_id', 'tenant-9');
     const result = requestInterceptor()(makeConfig());
-    expect(result.headers).toMatchObject({ 'X-Tenant-Id': 'tenant-9' });
+    expect((result.headers as Record<string, string>)['X-Tenant-Id']).toBeUndefined();
   });
 
   it('adds the CSRF token only for non-safe methods', () => {
-    localStorage.setItem('csrf_token', 'csrf-1');
+    document.cookie = 'csrf_token=csrf-1';
     const getConfig = requestInterceptor()(makeConfig({ method: 'get' }));
     expect((getConfig.headers as Record<string, string>)['X-CSRF-Token']).toBeUndefined();
 
     const postConfig = requestInterceptor()(makeConfig({ method: 'post' }));
     expect(postConfig.headers).toMatchObject({ 'X-CSRF-Token': 'csrf-1' });
+    document.cookie = 'csrf_token=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';
   });
 
-  it('prefers the csrf token from the cookie over localStorage', () => {
+  it('reads the CSRF token from the cookie (never from localStorage)', () => {
     document.cookie = 'csrf_token=cookie-csrf';
     localStorage.setItem('csrf_token', 'local-csrf');
     const postConfig = requestInterceptor()(makeConfig({ method: 'post' }));
@@ -110,14 +111,14 @@ describe('api-client response interceptor (success)', () => {
     localStorage.clear();
   });
 
-  it('stores the CSRF token returned by the server', () => {
+  it('does not persist the CSRF token returned by the server', () => {
     responseInterceptor().ok({ headers: { 'x-csrf-token': 'csrf-server' } });
-    expect(localStorage.getItem('csrf_token')).toBe('csrf-server');
+    expect(localStorage.getItem('csrf_token')).toBeNull();
   });
 
-  it('stores the tenant id returned by the server', () => {
+  it('does not persist the tenant id returned by the server', () => {
     responseInterceptor().ok({ headers: { 'x-tenant-id': 'tenant-server' } });
-    expect(localStorage.getItem('tenant_id')).toBe('tenant-server');
+    expect(localStorage.getItem('tenant_id')).toBeNull();
   });
 
   it('passes the response through unchanged', () => {

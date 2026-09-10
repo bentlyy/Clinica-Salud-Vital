@@ -7,10 +7,10 @@ import { z } from 'zod';
 const router = Router();
 
 const generateReportSchema = z.object({
-  report_type: z.enum(['monthly', 'yearly', 'doctor-performance', 'service-utilization']),
-  doctor_id: z.number().int().positive().optional(),
-  start_date: z.string().datetime().optional(),
-  end_date: z.string().datetime().optional(),
+  type: z.enum(['appointments', 'revenue', 'patients', 'laboratory', 'custom']),
+  date_from: z.string().min(1),
+  date_to: z.string().min(1),
+  filters: z.record(z.string(), z.unknown()).optional(),
 }).strict();
 
 router.use(authMiddleware);

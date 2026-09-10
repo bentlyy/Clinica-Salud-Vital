@@ -18,7 +18,9 @@ const isInternalDb = (): boolean => {
   return url.includes('@db:') || url.includes('@localhost:') || url.includes('@127.0.0.1:');
 };
 
-const poolMax = parseInt(process.env.DB_POOL_MAX || '25', 10);
+// Default 15 keeps the main pool under the DB role limit of 20 connections
+// (see db/security.sql) while leaving headroom for the read/superadmin pools.
+const poolMax = parseInt(process.env.DB_POOL_MAX || '15', 10);
 
 const dbCaCert = (() => {
   const raw = process.env.DB_CA_CERT;

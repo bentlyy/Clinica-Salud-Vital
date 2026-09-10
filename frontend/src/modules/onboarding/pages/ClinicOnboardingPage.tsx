@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   Alert,
@@ -45,7 +44,6 @@ const statusTone = (status: OnboardingProfile['status']) => {
 
 export default function ClinicOnboardingPage() {
   const { t } = useTranslation('onboarding');
-  const navigate = useNavigate();
   const [profile, setProfile] = useState<OnboardingProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -143,11 +141,43 @@ export default function ClinicOnboardingPage() {
 
   if (!profile) {
     return (
-      <Paper sx={{ p: 4, maxWidth: 560, mx: 'auto', mt: 4, textAlign: 'center' }}>
-        <Typography variant="h6" sx={{ mb: 1 }}>{t('missing.title')}</Typography>
-        <Typography color="text.secondary" sx={{ mb: 3 }}>{t('missing.description')}</Typography>
-        <Button variant="contained" onClick={() => navigate('/contratar')}>{t('missing.cta')}</Button>
-      </Paper>
+      <Box sx={{ p: { xs: 2, md: 3 } }}>
+        <Typography variant="h5" sx={{ mb: 2 }}>{t('missing.title')}</Typography>
+        <Alert severity="info" sx={{ mb: 3 }}>{t('missing.description')}</Alert>
+
+        <Paper sx={{ p: 3 }}>
+          <Typography variant="h6" sx={{ mb: 3 }}>{t('clinic.profileData')}</Typography>
+          <Box component="form" onSubmit={onSave}>
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
+              <Controller control={control} name="legal_name" render={({ field }) => <TextField {...field} label={t('profile.legalName')} fullWidth />} />
+              <Controller control={control} name="tax_id" render={({ field }) => <TextField {...field} label={t('profile.taxId')} fullWidth />} />
+              <Controller control={control} name="country" render={({ field }) => <TextField {...field} label={t('account.country')} fullWidth />} />
+              <Controller control={control} name="region" render={({ field }) => <TextField {...field} label={t('profile.region')} fullWidth />} />
+              <Controller control={control} name="city" render={({ field }) => <TextField {...field} label={t('profile.city')} fullWidth />} />
+              <Controller control={control} name="address" render={({ field }) => <TextField {...field} label={t('profile.address')} fullWidth />} />
+              <Controller control={control} name="postal_code" render={({ field }) => <TextField {...field} label={t('profile.postalCode')} fullWidth />} />
+              <Controller control={control} name="phone" render={({ field }) => <TextField {...field} label={t('profile.phone')} fullWidth />} />
+              <Controller control={control} name="website" render={({ field }) => <TextField {...field} label={t('profile.website')} fullWidth />} />
+              <Controller control={control} name="license_number" render={({ field }) => <TextField {...field} label={t('profile.licenseNumber')} fullWidth />} />
+              <Controller control={control} name="legal_entity_type" render={({ field }) => <TextField {...field} label={t('profile.legalEntityType')} fullWidth />} />
+              <Controller control={control} name="legal_representative_name" render={({ field }) => <TextField {...field} label={t('profile.legalRepName')} fullWidth />} />
+              <Controller control={control} name="legal_representative_email" render={({ field }) => <TextField {...field} type="email" label={t('profile.legalRepEmail')} fullWidth />} />
+              <Controller control={control} name="admin_phone" render={({ field }) => <TextField {...field} label={t('account.adminPhone')} fullWidth />} />
+              <Controller control={control} name="specialties" render={({ field }) => <TextField {...field} label={t('profile.specialties')} fullWidth multiline minRows={2} value={field.value?.join(', ') || ''} onChange={(e) => field.onChange(e.target.value.split(',').map((s) => s.trim()).filter(Boolean))} />} />
+              <Controller control={control} name="doctor_count" render={({ field }) => <TextField {...field} type="number" label={t('profile.doctorCount')} fullWidth onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)} />} />
+              <Controller control={control} name="operating_hours" render={({ field }) => <TextField {...field} label={t('profile.operatingHours')} fullWidth multiline minRows={2} value={typeof field.value === 'string' ? field.value : typeof field.value === 'object' && field.value ? JSON.stringify(field.value) : ''} onChange={(e) => field.onChange(JSON.stringify(e.target.value))} />} />
+              <Controller control={control} name="notes" render={({ field }) => <TextField {...field} label={t('profile.notes')} fullWidth multiline minRows={2} />} />
+            </Box>
+            <Box sx={{ mt: 3, textAlign: 'right' }}>
+              <Button type="submit" variant="contained" disabled={saving}>
+                {saving ? <CircularProgress size={20} color="inherit" /> : t('common.save')}
+              </Button>
+            </Box>
+          </Box>
+        </Paper>
+
+        <Snackbar open={!!toast} autoHideDuration={3000} onClose={() => setToast(null)} message={toast} />
+      </Box>
     );
   }
 

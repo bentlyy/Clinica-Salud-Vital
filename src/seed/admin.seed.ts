@@ -467,21 +467,22 @@ export const seedTestTenants = async (): Promise<void> => {
     }
     logger.info(`  Pacientes: ${patientIds.length}`);
 
-    // ── Shared patient (same email in both clinics) ─────────────────────────
+    // ── Shared patient (mismo email en ambas clínicas) ──────────────────────
+    // Se inserta solo la fila del tenant actual: el seed corre dentro de una
+    // transacción RLS (app.tenant_id = t.id), por lo que insertar la fila del
+    // otro tenant violaría la política WITH CHECK de `users`. Cada tenant
+    // inserta su propia fila con el mismo email (idempotente por ON CONFLICT).
 
-    for (const domain of ['norte', 'sur']) {
-      const tenantId = domain === 'norte' ? 'clinica-norte' : 'clinica-sur';
-      await q(
-        'INSERT INTO users (email, password, name, role, rut, phone, gender, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT (tenant_id, email) DO UPDATE SET name = EXCLUDED.name, password = EXCLUDED.password',
-        [
-          'compartido@clinic.com', await hash('compartido@clinic.com'), 'Usuario Compartido', 'user',
-          `${randomInt(10000000, 99999999)}-${pick(['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'K'])}`,
-          `+569${randomInt(10000000, 99999999)}`,
-          pick(['M', 'F']),
-          tenantId,
-        ]
-      );
-    }
+    await q(
+      'INSERT INTO users (email, password, name, role, rut, phone, gender, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT (tenant_id, email) DO UPDATE SET name = EXCLUDED.name, password = EXCLUDED.password',
+      [
+        'compartido@clinic.com', await hash('compartido@clinic.com'), 'Usuario Compartido', 'user',
+        `${randomInt(10000000, 99999999)}-${pick(['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'K'])}`,
+        `+569${randomInt(10000000, 99999999)}`,
+        pick(['M', 'F']),
+        t.id,
+      ]
+    );
 
     // ── Lab technician (pro plan only) ─────────────────────────────────────
 

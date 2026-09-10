@@ -12,7 +12,7 @@
 | `email.service.ts` | Multi-proveedor: SendGrid > SMTP > log; validación de config al boot |
 | `multi-tenant.service.ts` | Caché in-memory de tenants (TTL 5 min), `loadFromDB()` al boot |
 | `crypto.service.ts` | AES-256-GCM + PBKDF2 para secrets 2FA; hash SHA256 de tokens |
-| `stripe.service.ts` | Cliente Stripe real o stub si no hay `STRIPE_SECRET_KEY` |
+| `mercadopago.service.ts` | Cliente Mercado Pago (preferencias Checkout Pro CLP + `fetchPayment`); stub si no hay `MERCADOPAGO_ACCESS_TOKEN` |
 | `queue.service.ts` | Cola de jobs sobre tabla `jobs` con retry/backoff (30s/2m/8m) |
 | `sessions.service.ts` | Crear/revocar sesiones; token hasheado; TTL 30 días |
 | `ownership.ts` | Chequeos BOLA fail-closed médico ↔ paciente (clinical_records / bookings) |

@@ -10,5 +10,12 @@ declare module 'express-serve-static-core' {
       role: UserRole;
       rut?: string;
     };
+    rawBody?: Buffer;
+  }
+}
+
+declare module 'http' {
+  interface IncomingMessage {
+    rawBody?: Buffer;
   }
 }

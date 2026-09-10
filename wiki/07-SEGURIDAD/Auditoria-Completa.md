@@ -135,7 +135,7 @@ Se auditaron ~136 archivos fuente (86 backend + 50 frontend). Se encontraron **7
 | ID | Categoría | Descripción | Archivo:línea |
 |----|-----------|-------------|---------------|
 | B43 | Env | validateEmailConfig no await transporter.verify() | `shared/email.service.ts:83-89` |
-| B44 | Config | global stripeWarning mutable | `app.ts:31-32` |
+| B44 | Config | global mercadopagoWarning mutable | `app.ts:31-32` |
 | B45 | ML | Tabla ml_demand_forecast referenciada en seed pero sin CREATE TABLE | `seed/seed.ts` |
 
 ---

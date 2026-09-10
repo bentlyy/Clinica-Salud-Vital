@@ -54,10 +54,12 @@ export const getDashboardStats = async (tenantId: string) => {
     SELECT
       (SELECT COUNT(*) FROM users WHERE role = 'user' AND tenant_id = $1)::int AS total_patients,
       (SELECT COUNT(*) FROM doctors WHERE tenant_id = $1)::int AS total_doctors,
-      (SELECT COUNT(*) FROM bookings WHERE status != 'cancelled' AND tenant_id = $1)::int AS total_bookings,
-      (SELECT COUNT(*) FROM bookings WHERE date = CURRENT_DATE AND status != 'cancelled' AND tenant_id = $1)::int AS today_bookings,
-      (SELECT COUNT(*) FROM bookings WHERE confirmed = true AND status != 'cancelled' AND tenant_id = $1)::int AS confirmed_bookings,
-      (SELECT COUNT(*) FROM bookings WHERE status = 'cancelled' AND tenant_id = $1)::int AS cancelled_bookings
+      COUNT(*) FILTER (WHERE b.status != 'cancelled')::int AS total_bookings,
+      COUNT(*) FILTER (WHERE b.status != 'cancelled' AND b.date = CURRENT_DATE)::int AS today_bookings,
+      COUNT(*) FILTER (WHERE b.confirmed = true AND b.status != 'cancelled')::int AS confirmed_bookings,
+      COUNT(*) FILTER (WHERE b.status = 'cancelled')::int AS cancelled_bookings
+    FROM bookings b
+    WHERE b.tenant_id = $1
   `, [tenantId]);
 
   return result.rows[0];

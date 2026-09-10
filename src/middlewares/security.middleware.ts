@@ -105,9 +105,14 @@ export const validateEnvSecurity = (): void => {
     throw new UnauthorizedError('DATABASE_URL no está definida.');
   }
 
-  // RECAPTCHA_SECRET_KEY (optional)
+  // RECAPTCHA_SECRET_KEY (optional, but REQUIRED in production)
   if (!process.env.RECAPTCHA_SECRET_KEY) {
+    if (isProduction) {
+      throw new UnauthorizedError('RECAPTCHA_SECRET_KEY es obligatoria en producción para proteger login/registro.');
+    }
     logger.warn('⚠️ RECAPTCHA_SECRET_KEY no está definida. El CAPTCHA estará deshabilitado hasta que se configure.');
+  } else if (isProduction && process.env.RECAPTCHA_SECRET_KEY === '6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe') {
+    throw new UnauthorizedError('RECAPTCHA_SECRET_KEY es la TEST KEY de Google (siempre pasa). Reemplázala con una key real en producción.');
   }
 
   if (!isProduction) {

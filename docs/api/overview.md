@@ -183,8 +183,8 @@ Todos los endpoints de lista aceptan `?page=1&limit=20`. Default page=1, limit=2
 | Método | Ruta | Descripción |
 |--------|------|-------------|
 | POST | `/saas/onboard` | Crear tenant + suscripción + admin |
-| POST | `/saas/checkout` | Sesión de checkout Stripe |
-| POST | `/saas/webhook/stripe` | Receptor de webhook Stripe |
+| POST | `/saas/checkout` | Preferencia de pago Mercado Pago (Checkout Pro) |
+| POST | `/saas/webhook/mercadopago` | Receptor de webhook Mercado Pago |
 | GET | `/saas/plans` | Listar planes |
 
 ---

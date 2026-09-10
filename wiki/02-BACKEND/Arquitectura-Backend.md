@@ -51,7 +51,7 @@ src/
 │   ├── email.service.ts       # SendGrid > SMTP > log
 │   ├── multi-tenant.service.ts
 │   ├── crypto.service.ts      # AES-256-GCM
-│   ├── stripe.service.ts
+│   ├── mercadopago.service.ts  # Pagos CLP (Checkout Pro) / stub
 │   ├── queue.service.ts       # Cola sobre tabla jobs
 │   ├── sessions.service.ts
 │   ├── ownership.ts           # Checks BOLA

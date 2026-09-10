@@ -27,9 +27,10 @@
 - `payments`: Pagos asociados a facturas
 - `insurance_claims`: Reclamos a seguros
 
-## Integración Stripe
+## Pagos externos
 
-Stripe está en **modo simulado** (stub). Sin API key válida, opera en modo local.
+- Las **suscripciones SaaS** se cobran con **Mercado Pago (CLP)** vía el módulo `saas` (webhook `POST /api/saas/webhook/mercadopago`). Sin `MERCADOPAGO_ACCESS_TOKEN`, el checkout opera en modo simulado (stub).
+- El módulo `billing` mantiene facturación interna (facturas, items, pagos, reclamos a seguros) sin pasarela externa.
 
 ---
 

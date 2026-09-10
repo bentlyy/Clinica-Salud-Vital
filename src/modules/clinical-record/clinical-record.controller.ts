@@ -225,7 +225,7 @@ export const getAllPrescriptions = asyncHandler(async (req: Request, res: Respon
       FROM clinical_records cr
       JOIN users u ON cr.patient_id = u.id
       JOIN doctors d ON cr.doctor_id = d.id
-      LEFT JOIN prescriptions p ON p.clinical_record_id = cr.id AND p.tenant_id = $2
+      LEFT JOIN prescriptions p ON p.clinical_record_id = cr.id AND p.tenant_id = cr.tenant_id
       WHERE cr.doctor_id = $1 AND cr.tenant_id = $2
       GROUP BY cr.id, u.name, d.name, cr.created_at
       ORDER BY cr.created_at DESC

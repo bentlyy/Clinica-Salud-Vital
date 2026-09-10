@@ -28,7 +28,7 @@ Documentación del backend Express + TypeScript.
 | Email | Nodemailer + SendGrid |
 | PDF | PDFKit |
 | Predictivo | `smaForecast()` — media móvil simple (sin TF.js) |
-| Pagos | Stripe SDK (stub sin key) |
+| Pagos | Mercado Pago Checkout Pro (CLP), stub sin `MERCADOPAGO_ACCESS_TOKEN` |
 | Monitoreo | Sentry (opcional) |
 
 ## Backend en números

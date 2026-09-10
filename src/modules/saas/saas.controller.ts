@@ -5,6 +5,11 @@ import * as onboardingService from './onboarding.service.js';
 import { BadRequestError, NotFoundError } from '../../utils/errors.js';
 import { E } from '../../utils/error-codes.js';
 import { logger } from '../../utils/logger.js';
+import {
+  createCheckoutPreference,
+  fetchPayment,
+  isMercadoPagoConfigured,
+} from '../../shared/mercadopago.service.js';
 
 const PROFILE_KEYS = [
   'legal_name', 'tax_id', 'country', 'region', 'city', 'address', 'postal_code',
@@ -39,9 +44,28 @@ export const createCheckout = asyncHandler(async (req: Request, res: Response) =
   if (!plan_code) throw new BadRequestError(E.SAAS_PLAN_REQUIRED);
 
   // Check plan exists
-  await saasService.getPlanByCode(plan_code);
+  const plan = await saasService.getPlanByCode(plan_code);
 
-  // Create subscription directly (MVP: no Stripe)
+  // Mercado Pago configured: create a real Checkout Pro preference
+  // (subscription is activated asynchronously via the webhook).
+  if (isMercadoPagoConfigured()) {
+    const baseUrl = `${req.protocol}://${req.get('host')}`;
+    const preference = await createCheckoutPreference({
+      tenantId: req.tenant_id,
+      planCode: plan.code,
+      planName: plan.name,
+      priceCLP: plan.price_monthly_clp,
+      returnUrl: baseUrl,
+    });
+    res.status(201).json({
+      url: preference.init_point,
+      preferenceId: preference.id,
+      mode: 'mercadopago',
+    });
+    return;
+  }
+
+  // MVP mode: create subscription directly (no Mercado Pago)
   const subscription = await saasService.createSubscription(req.tenant_id, plan_code);
 
   res.status(201).json({
@@ -51,10 +75,52 @@ export const createCheckout = asyncHandler(async (req: Request, res: Response) =
   });
 });
 
-export const stripeWebhook = asyncHandler(async (req: Request, res: Response) => {
-  // MVP: webhook stub — in production, verify Stripe signature and handle events
-  const event = req.body;
-  logger.info('[Stripe Webhook] Received event:', event?.type || 'unknown');
+/**
+ * Mercado Pago webhook (Checkout Pro). The platform sends a notification with
+ * the payment id; we never trust the notification itself — we resolve the
+ * payment via the Mercado Pago API and reconcile only approved payments.
+ */
+export const mercadopagoWebhook = asyncHandler(async (req: Request, res: Response) => {
+  const body: Record<string, unknown> = req.body ?? {};
+  const type = body?.type ?? body?.topic ?? req.query?.type ?? req.query?.topic ?? 'payment';
+
+  // Not configured → keep legacy stub behavior (acknowledge only).
+  if (!isMercadoPagoConfigured()) {
+    logger.info(`[Mercado Pago Webhook] Received notification (stub): type=${type}`);
+    res.json({ received: true, mode: 'stub' });
+    return;
+  }
+
+  try {
+    if (type === 'payment') {
+      const nestedData = body?.data as Record<string, unknown> | undefined;
+      const paymentId = String(
+        nestedData?.id ?? body?.['data.id'] ?? body?.data_id ?? body?.id ??
+        req.query?.['data.id'] ?? req.query?.id ?? req.query?.data_id ?? ''
+      ).trim();
+      if (!paymentId) {
+        res.status(400).json({ error: E.MERCADOPAGO_BAD_REQUEST });
+        return;
+      }
+      const payment = await fetchPayment(paymentId);
+      if (payment.status === 'approved') {
+        await saasService.handleMercadoPagoPaymentApproved({
+          id: payment.id,
+          external_reference: payment.external_reference,
+          metadata: payment.metadata,
+        });
+      } else {
+        logger.info(`[Mercado Pago Webhook] payment ${paymentId} en estado '${payment.status}' — sin acción`);
+      }
+    } else {
+      logger.info(`[Mercado Pago Webhook] topic '${type}' no requiere procesamiento`);
+    }
+  } catch (err) {
+    logger.error('[Mercado Pago Webhook] Notification handling failed', { error: (err as Error).message, type });
+    res.status(500).json({ error: 'Webhook processing failed' });
+    return;
+  }
+
   res.json({ received: true });
 });
 

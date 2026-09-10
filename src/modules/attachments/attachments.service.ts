@@ -5,6 +5,101 @@ import crypto from 'crypto';
 import { BadRequestError, NotFoundError, ForbiddenError } from '../../utils/errors.js';
 
 const UPLOAD_ROOT = path.resolve(process.env.UPLOAD_DIR || path.join(process.cwd(), 'uploads'));
+
+// ── Ownership verification helpers ──────────────────────────────────
+// Prevents IDOR: a patient must only access their own clinical data.
+
+interface OwnershipResult {
+  patientId?: number;
+  doctorId?: number;
+}
+
+const getEntityOwnership = async (
+  entityType: string,
+  entityId: number,
+  tenantId: string,
+): Promise<OwnershipResult | null> => {
+  switch (entityType) {
+    case 'clinical_record': {
+      const r = await pool.query(
+        'SELECT patient_id, doctor_id FROM clinical_records WHERE id = $1 AND tenant_id = $2',
+        [entityId, tenantId],
+      );
+      return r.rows[0] ? { patientId: r.rows[0].patient_id, doctorId: r.rows[0].doctor_id } : null;
+    }
+    case 'prescription': {
+      const r = await pool.query(
+        `SELECT cr.patient_id, cr.doctor_id
+         FROM prescriptions p
+         JOIN clinical_records cr ON p.clinical_record_id = cr.id
+         WHERE p.id = $1 AND p.tenant_id = $2`,
+        [entityId, tenantId],
+      );
+      return r.rows[0] ? { patientId: r.rows[0].patient_id, doctorId: r.rows[0].doctor_id } : null;
+    }
+    case 'lab_result': {
+      const r = await pool.query(
+        `SELECT lr.patient_id, lr.doctor_id
+         FROM lab_requests lr
+         WHERE lr.id = $1 AND lr.tenant_id = $2`,
+        [entityId, tenantId],
+      );
+      return r.rows[0] ? { patientId: r.rows[0].patient_id, doctorId: r.rows[0].doctor_id } : null;
+    }
+    case 'booking': {
+      const r = await pool.query(
+        'SELECT user_id AS patient_id, doctor_id FROM bookings WHERE id = $1 AND tenant_id = $2',
+        [entityId, tenantId],
+      );
+      return r.rows[0] ? { patientId: r.rows[0].patient_id, doctorId: r.rows[0].doctor_id } : null;
+    }
+    case 'medical_history': {
+      const r = await pool.query(
+        'SELECT patient_id, NULL AS doctor_id FROM medical_history WHERE id = $1 AND tenant_id = $2',
+        [entityId, tenantId],
+      );
+      return r.rows[0] ? { patientId: r.rows[0].patient_id, doctorId: r.rows[0].doctor_id } : null;
+    }
+    case 'patient': {
+      // entity_id is the user.id for the patient
+      const r = await pool.query(
+        'SELECT id AS patient_id, NULL AS doctor_id FROM users WHERE id = $1 AND tenant_id = $2',
+        [entityId, tenantId],
+      );
+      return r.rows[0] ? { patientId: r.rows[0].patient_id, doctorId: r.rows[0].doctor_id } : null;
+    }
+    default:
+      return null;
+  }
+};
+
+const assertOwnership = (
+  ownership: OwnershipResult | null,
+  entityType: string,
+  entityId: number,
+  userId: number,
+  userRole: string,
+  doctorId?: number,
+): void => {
+  if (!ownership) throw new NotFoundError(`${entityType} #${entityId} not found`);
+
+  // Admin / superadmin: full access within tenant
+  if (userRole === 'admin' || userRole === 'superadmin') return;
+
+  // Doctor: must be the attending doctor
+  if (userRole === 'doctor') {
+    if (doctorId && ownership.doctorId === doctorId) return;
+    throw new ForbiddenError('No tienes acceso a esta entidad');
+  }
+
+  // Patient / user: must be the patient
+  if (userRole === 'patient' || userRole === 'user') {
+    if (ownership.patientId === userId) return;
+    throw new ForbiddenError('No tienes acceso a esta entidad');
+  }
+
+  throw new ForbiddenError('Rol no autorizado');
+};
 const MAX_FILE_BYTES = 10 * 1024 * 1024;
 
 const ALLOWED_MIME = new Set([
@@ -70,12 +165,18 @@ export const uploadAttachment = async (
   uploadedBy: number,
   tenantId: string,
   input: AttachmentInput,
+  userRole: string,
+  userDoctorId?: number,
 ): Promise<AttachmentRecord> => {
   const { entity_type, entity_id, file_name, mime_type, data_base64 } = input;
   if (!ALLOWED_ENTITIES.has(entity_type)) throw new BadRequestError('Invalid entity_type');
   if (!entity_id || entity_id <= 0) throw new BadRequestError('Invalid entity_id');
   if (!ALLOWED_MIME.has(mime_type)) throw new BadRequestError('Tipo de archivo no permitido');
   if (!data_base64) throw new BadRequestError('data_base64 is required');
+
+  // Verify the entity exists and the user owns / has access to it
+  const ownership = await getEntityOwnership(entity_type, entity_id, tenantId);
+  assertOwnership(ownership, entity_type, entity_id, uploadedBy, userRole, userDoctorId);
 
   let buffer: Buffer;
   try {
@@ -107,8 +208,16 @@ export const listAttachments = async (
   entityType: string,
   entityId: number,
   tenantId: string,
+  userId: number,
+  userRole: string,
+  userDoctorId?: number,
 ): Promise<AttachmentRecord[]> => {
   if (!ALLOWED_ENTITIES.has(entityType)) throw new BadRequestError('Invalid entity_type');
+
+  // Verify the entity exists and the user owns / has access to it
+  const ownership = await getEntityOwnership(entityType, entityId, tenantId);
+  assertOwnership(ownership, entityType, entityId, userId, userRole, userDoctorId);
+
   const result = await pool.query(
     `SELECT ${ATTACHMENT_SELECT} FROM attachments WHERE tenant_id = $1 AND entity_type = $2 AND entity_id = $3 ORDER BY created_at ASC`,
     [tenantId, entityType, entityId]
@@ -119,6 +228,9 @@ export const listAttachments = async (
 export const getAttachment = async (
   id: number,
   tenantId: string,
+  userId: number,
+  userRole: string,
+  userDoctorId?: number,
 ): Promise<{ record: AttachmentRecord; filePath: string }> => {
   const result = await pool.query(
     `SELECT ${ATTACHMENT_SELECT} FROM attachments WHERE id = $1 AND tenant_id = $2`,
@@ -126,6 +238,11 @@ export const getAttachment = async (
   );
   if (result.rows.length === 0) throw new NotFoundError('Attachment not found');
   const record = parseAttachment(result.rows[0]);
+
+  // Verify the source entity belongs to the requesting user (IDOR protection)
+  const ownership = await getEntityOwnership(record.entity_type, record.entity_id, tenantId);
+  assertOwnership(ownership, record.entity_type, record.entity_id, userId, userRole, userDoctorId);
+
   const filePath = path.join(UPLOAD_ROOT, tenantId, record.stored_name);
   return { record, filePath };
 };
@@ -135,13 +252,18 @@ export const deleteAttachment = async (
   tenantId: string,
   userId: number,
   role: string,
+  userDoctorId?: number,
 ): Promise<void> => {
   const result = await pool.query(
-    'SELECT id, stored_name, uploaded_by FROM attachments WHERE id = $1 AND tenant_id = $2',
+    `SELECT ${ATTACHMENT_SELECT} FROM attachments WHERE id = $1 AND tenant_id = $2`,
     [id, tenantId]
   );
   if (result.rows.length === 0) throw new NotFoundError('Attachment not found');
-  const row = result.rows[0] as { id: number; stored_name: string; uploaded_by: number };
+  const row = result.rows[0] as AttachmentRecord;
+
+  // Verify the source entity belongs to the requesting user (IDOR protection)
+  const ownership = await getEntityOwnership(row.entity_type, row.entity_id, tenantId);
+  assertOwnership(ownership, row.entity_type, row.entity_id, userId, role, userDoctorId);
 
   if (role !== 'admin' && role !== 'superadmin' && role !== 'doctor' && row.uploaded_by !== userId) {
     throw new ForbiddenError('No tienes permiso para eliminar este archivo');

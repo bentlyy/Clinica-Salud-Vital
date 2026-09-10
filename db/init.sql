@@ -165,6 +165,11 @@ CREATE TABLE IF NOT EXISTS prescriptions (
   tenant_id TEXT NOT NULL DEFAULT 'default'
 );
 
+-- GLOBAL REFERENCE TABLE (no tenant_id by design):
+-- CIE-10 is the WHO ICD-10 medical dictionary — shared world-readonly data,
+-- NOT tenant-owned PHI. Do NOT add tenant_id nor RLS tenant policies.
+-- Client access is read-only (GET routes only); rows are seeded at migration
+-- time and must NOT be mutable from the app layer.
 CREATE TABLE IF NOT EXISTS cie10_catalog (
   id SERIAL PRIMARY KEY,
   code VARCHAR(10) UNIQUE NOT NULL,
@@ -418,6 +423,8 @@ CREATE TABLE IF NOT EXISTS plans (
   description TEXT,
   price_monthly DECIMAL(10,2) NOT NULL DEFAULT 0,
   price_yearly DECIMAL(10,2) NOT NULL DEFAULT 0,
+  price_monthly_clp INTEGER NOT NULL DEFAULT 0,
+  price_yearly_clp INTEGER NOT NULL DEFAULT 0,
   max_doctors INTEGER NOT NULL DEFAULT 1,
   max_patients INTEGER NOT NULL DEFAULT 50,
   storage_gb INTEGER NOT NULL DEFAULT 1,
@@ -438,9 +445,8 @@ CREATE TABLE IF NOT EXISTS subscriptions (
   current_period_end TIMESTAMP NOT NULL,
   trial_end TIMESTAMP,
   canceled_at TIMESTAMP,
-  stripe_customer_id TEXT,
-  stripe_subscription_id TEXT,
-  stripe_price_id TEXT,
+  mercadopago_preference_id TEXT,
+  mercadopago_payment_id TEXT,
   metadata JSONB DEFAULT '{}',
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW()
@@ -451,13 +457,12 @@ CREATE TABLE IF NOT EXISTS subscription_invoices (
   tenant_id TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
   subscription_id INTEGER NOT NULL REFERENCES subscriptions(id) ON DELETE CASCADE,
   amount DECIMAL(10,2) NOT NULL,
-  currency VARCHAR(3) DEFAULT 'USD',
+  currency VARCHAR(3) DEFAULT 'CLP',
   status VARCHAR(20) NOT NULL DEFAULT 'pending'
     CHECK (status IN ('pending', 'paid', 'uncollectible', 'void')),
   period_start TIMESTAMP NOT NULL,
   period_end TIMESTAMP NOT NULL,
-  stripe_invoice_id TEXT UNIQUE,
-  stripe_payment_intent TEXT,
+  mercadopago_payment_id TEXT,
   paid_at TIMESTAMP,
   created_at TIMESTAMP DEFAULT NOW()
 );
@@ -1181,13 +1186,13 @@ CREATE TABLE clinical_templates (
 CREATE INDEX idx_clinical_templates_tenant ON clinical_templates (tenant_id);
 
 -- SaaS plans
-INSERT INTO plans (name, code, description, price_monthly, price_yearly, max_doctors, max_patients, storage_gb, features, sort_order) VALUES
-  ('Gratuito', 'free', 'Plan básico para clínicas pequeñas', 0, 0, 1, 50, 1,
+INSERT INTO plans (name, code, description, price_monthly, price_yearly, price_monthly_clp, price_yearly_clp, max_doctors, max_patients, storage_gb, features, sort_order) VALUES
+  ('Gratuito', 'free', 'Plan básico para clínicas pequeñas', 0, 0, 0, 0, 1, 50, 1,
    '{"bookings": true, "clinical_records": false, "laboratory": false, "analytics": false, "api_access": false, "white_label": false, "custom_domain": false, "sms": false, "advanced_reports": false}'::jsonb, 1),
-  ('Básico', 'basic', 'Para clínicas en crecimiento', 29, 290, 3, 200, 5,
+  ('Básico', 'basic', 'Para clínicas en crecimiento', 29, 290, 9990, 99990, 3, 200, 5,
    '{"bookings": true, "clinical_records": true, "laboratory": false, "analytics": true, "api_access": false, "white_label": false, "custom_domain": false, "sms": true, "advanced_reports": false}'::jsonb, 2),
-  ('Profesional', 'pro', 'Solución completa para clínicas', 79, 790, 10, -1, 20,
+  ('Profesional', 'pro', 'Solución completa para clínicas', 79, 790, 19990, 199900, 10, -1, 20,
    '{"bookings": true, "clinical_records": true, "laboratory": true, "analytics": true, "api_access": true, "white_label": false, "custom_domain": false, "sms": true, "advanced_reports": true}'::jsonb, 3),
-  ('Enterprise', 'enterprise', 'Solución integral con personalización', 199, 1990, -1, -1, 100,
+  ('Enterprise', 'enterprise', 'Solución integral con personalización', 199, 1990, 39990, 399900, -1, -1, 100,
    '{"bookings": true, "clinical_records": true, "laboratory": true, "analytics": true, "api_access": true, "white_label": true, "custom_domain": true, "sms": true, "advanced_reports": true}'::jsonb, 4)
 ON CONFLICT (code) DO NOTHING;

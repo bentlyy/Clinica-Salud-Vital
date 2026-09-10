@@ -73,7 +73,7 @@ services:
 ## Health Check
 
 Endpoint: `GET /health`
-- Verifica conectividad con DB y estado de pool, Stripe
+- Verifica conectividad con DB y estado de pool, Mercado Pago
 - Es usado por Render y Docker como `healthcheck`
 
 ---

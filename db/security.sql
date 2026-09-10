@@ -208,11 +208,12 @@ BEGIN
       tbl
     );
 
-    -- Writes: blocked by default (admin operations use postgres role)
+    -- Writes: blocked for app role (cross-tenant SaaS writes must use the
+    -- BYPASSRLS superadmin pool, see DATABASE_URL_SUPERADMIN in src/shared/db.ts)
     EXECUTE format(
       'CREATE POLICY restrict_writes ON %I FOR ALL
-        USING (current_setting(''app.tenant_id'', true) IS NOT NULL)
-         WITH CHECK (current_setting(''app.tenant_id'', true) IS NOT NULL)',
+        USING (false)
+         WITH CHECK (false)',
       tbl
     );
 

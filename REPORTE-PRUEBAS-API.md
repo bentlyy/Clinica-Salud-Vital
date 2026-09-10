@@ -14,7 +14,7 @@
 | Pruebas pasaron | 18 |
 | Pruebas fallaron | 0 (expected: DB down) |
 | Bug de seguridad encontrados | 3 |
-| Tests unitarios backend | 1,537 ✅ (109 archivos, todos pasan) |
+| Tests unitarios backend | 1,583 ✅ (114 archivos, todos pasan) |
 | TypeScript backend | ✅ Compila sin errores |
 | TypeScript frontend | ✅ Compila sin errores |
 
@@ -25,7 +25,7 @@
 ### Health Check
 | Prueba | HTTP | Resultado |
 |--------|------|-----------|
-| GET `/health` | 503 | ✅ Responde con status, memory, DB (error por DB down), Stripe |
+| GET `/health` | 503 | ✅ Responde con status, memory, DB (error por DB down), Mercado Pago |
 | GET `/api/health` | 503 | ✅ Mismo comportamiento |
 
 ### Autenticación — Validación
@@ -243,7 +243,7 @@ app.use('/api', authRoutes);  // Las rutas API debajo
 | sessions.service.test.js | 7 | Sessions management |
 | shared.test.js | 14 | Utilidades compartidas |
 | specialties.controller.test.js | 6 | Especialidades |
-| stripe.service.test.js | 6 | Stripe integration |
+| mercadopago.service.test.js | 12 | Mercado Pago integration |
 | super-admin.schema.test.js | 13 | Super admin schemas |
 | waitlist.service.test.js | 10 | Lista de espera |
 | booking-history.test.js | 6 | Historial de estados |

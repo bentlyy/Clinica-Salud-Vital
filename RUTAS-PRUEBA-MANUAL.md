@@ -833,7 +833,7 @@
 
 ### 10.5 Health Check
 1. Ir a `/health` o `/api/health`
-2. **Esperado:** JSON con status de DB, memoria, Stripe
+2. **Esperado:** JSON con status de DB, memoria, Mercado Pago
 
 ### 10.6 Feature Flags (Laboratorio)
 1. Login como admin

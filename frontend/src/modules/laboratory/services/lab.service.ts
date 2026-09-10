@@ -362,8 +362,7 @@ export async function acknowledgeAllNotifications(opts?: { signal?: AbortSignal 
 // ── SSE ──────────────────────────────────────────────────────────────────────
 
 export function subscribeToLabSSE(onMessage: (event: MessageEvent) => void): EventSource {
-  const token = localStorage.getItem('access_token');
-  const url = `${import.meta.env.VITE_API_URL || '/api'}${BASE}/events${token ? `?token=${token}` : ''}`;
+  const url = `${import.meta.env.VITE_API_URL || '/api'}${BASE}/events`;
   const eventSource = new EventSource(url);
   eventSource.onmessage = onMessage;
   return eventSource;

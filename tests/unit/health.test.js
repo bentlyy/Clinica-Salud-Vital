@@ -51,11 +51,11 @@ describe('Health endpoint logic', () => {
     expect(mem.heapUsed).toBeLessThanOrEqual(mem.heapTotal);
   });
 
-  it('reports stripe status based on global flag', () => {
-    let stripeStatus = 'configured';
-    if (global.stripeWarning) stripeStatus = 'stub_mode';
+  it('reports mercadopago status based on global flag', () => {
+    let mpStatus = 'configured';
+    if (global.mercadopagoWarning) mpStatus = 'stub_mode';
 
-    expect(['configured', 'stub_mode']).toContain(stripeStatus);
+    expect(['configured', 'stub_mode']).toContain(mpStatus);
   });
 
   it('handles health check errors gracefully', async () => {

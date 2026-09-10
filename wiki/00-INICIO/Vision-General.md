@@ -14,7 +14,7 @@
 | Monitoreo | Sentry, logs estructurados Winston |
 | Email | SendGrid + nodemailer (SMTP/log fallback) |
 | SMS/WhatsApp | Twilio (modo log en desarrollo) |
-| Pagos | Stripe (modo simulado sin API key) |
+| Pagos | Mercado Pago (Checkout Pro, CLP; stub sin `MERCADOPAGO_ACCESS_TOKEN`) |
 
 ## Funcionalidades Principales
 
@@ -24,7 +24,7 @@
 - **Agenda médica**: Creación, cancelación, slots disponibles, disponibilidad semanal, excepciones, feriados, series recurrentes
 - **Reserva como invitado**: Booking sin login mediante RUT chileno + waitlist
 - **Historia Clínica Electrónica**: Registros SOAP, recetas, CIE-10, PDF, plantillas clínicas
-- **Facturación**: Facturas, pagos, seguros, integración Stripe
+- **Facturación**: Facturas, pagos, seguros, suscripciones SaaS con Mercado Pago
 - **Laboratorio**: Catálogo de exámenes, solicitudes, muestras, equipos, reactivos, control de calidad, resultados
 - **Dashboard analítico**: KPIs, gráficos, pronóstico de demanda (media móvil), tendencias
 - **Reportes**: Generación de reportes con exportación PDF
@@ -42,7 +42,7 @@ graph LR
     B --> C[(PostgreSQL 15 + RLS)]
     B --> D[SendGrid / SMTP]
     B --> E[Twilio]
-    B --> F[Stripe]
+    B --> F[Mercado Pago]
 ```
 
 Patrón: **Monolito modular** — un solo deploy con 23 módulos débilmente acoplados dentro de `src/modules/`.

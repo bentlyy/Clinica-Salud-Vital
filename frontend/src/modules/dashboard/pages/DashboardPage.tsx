@@ -6,7 +6,7 @@ import Science from '@mui/icons-material/Science';
 import TrendingUp from '@mui/icons-material/TrendingUp';
 import EventBusy from '@mui/icons-material/EventBusy';
 import Assignment from '@mui/icons-material/Assignment';
-import { useState } from 'react';
+import { Suspense, lazy, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useTheme, type Theme } from '@mui/material/styles';
 import { useAuth } from '@/shared/providers/AuthProvider';
@@ -16,10 +16,11 @@ import { LoadingState } from '@/shared/components/ui/LoadingState';
 import { formatDate } from '@/shared/utils/localeUtils';
 import { useDashboardStats, useUpcomingBookings, useMyDoctorStats, useDoctorUpcomingBookings } from '../hooks/useAnalytics';
 import { useMyBookings } from '@/modules/bookings/hooks/useBookings';
-import UsersPage from '@/modules/users/pages/UsersPage';
-import DoctorsPage from '@/modules/doctors/pages/DoctorsPage';
-import PatientsPage from '@/modules/patients/pages/PatientsPage';
-import SpecialtiesPage from '@/modules/specialties/pages/SpecialtiesPage';
+
+const UsersPage = lazy(() => import('@/modules/users/pages/UsersPage'));
+const DoctorsPage = lazy(() => import('@/modules/doctors/pages/DoctorsPage'));
+const PatientsPage = lazy(() => import('@/modules/patients/pages/PatientsPage'));
+const SpecialtiesPage = lazy(() => import('@/modules/specialties/pages/SpecialtiesPage'));
 
 function getStatusMap(theme: Theme) {
   return {
@@ -369,7 +370,9 @@ function AdminDashboard() {
           ))}
         </Tabs>
       </Box>
-      <Box>{tabs[tab]?.content}</Box>
+      <Box>
+        <Suspense fallback={<LoadingState message={t('loading')} />}>{tabs[tab]?.content}</Suspense>
+      </Box>
     </Box>
   );
 }

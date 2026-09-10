@@ -2,6 +2,7 @@ import { pool, readPool } from '../../shared/db.js';
 import { NotFoundError, BadRequestError, toError } from '../../utils/errors.js';
 import { E } from '../../utils/error-codes.js';
 import { logger } from '../../utils/logger.js';
+import { enqueueJob } from '../../shared/queue.service.js';
 
 export interface ReportConfig {
   type: string;
@@ -121,9 +122,10 @@ const generators: Record<string, (config: ReportConfig, tenantId: string) => any
   laboratory: generateLaboratory,
 };
 
-export const generateReport = async (type: string, config: ReportConfig, userId: number, tenantId: string) => {
-  const validTypes = ['appointments', 'revenue', 'patients', 'laboratory', 'custom'];
-  if (!validTypes.includes(type)) throw new BadRequestError(E.REPORT_INVALID_TYPE, 'Invalid report type: ' + type);
+const VALID_TYPES = ['appointments', 'revenue', 'patients', 'laboratory', 'custom'];
+
+export const createReport = async (type: string, config: ReportConfig, userId: number, tenantId: string) => {
+  if (!VALID_TYPES.includes(type)) throw new BadRequestError(E.REPORT_INVALID_TYPE, 'Invalid report type: ' + type);
 
   const { rows } = await pool.query(
     `INSERT INTO reports (tenant_id, user_id, type, status, config)
@@ -133,29 +135,39 @@ export const generateReport = async (type: string, config: ReportConfig, userId:
   );
 
   const report = rows[0];
+  await enqueueJob('report:generate', { reportId: report.id, tenantId });
+
+  return { ...report, result_url: null };
+};
+
+export const processReport = async (reportId: number, tenantId: string) => {
+  const { rows } = await readPool.query(
+    `SELECT id, tenant_id, user_id, type, status, config, result_url, created_at FROM reports WHERE id = $1 AND tenant_id = $2`,
+    [reportId, tenantId]
+  );
+  if (!rows[0]) throw new NotFoundError(E.REPORT_NOT_FOUND);
+  const report = rows[0];
 
   try {
-    const generator = generators[type];
+    const generator = generators[report.type];
     let result: unknown;
     if (generator) {
-      result = await generator(config, tenantId);
+      result = await generator(report.config, tenantId);
     } else {
-      result = { message: 'Report generated', type };
+      result = { message: 'Report generated', type: report.type };
     }
 
     await pool.query(
       `UPDATE reports SET status = 'completed', result_url = $1 WHERE id = $2`,
       [JSON.stringify(result), report.id]
     );
-
-    return { ...report, status: 'completed', result_url: JSON.stringify(result) };
+    logger.info(`Report #${report.id} "${report.type}" completed for ${tenantId}`);
   } catch (err) {
-    logger.error('Report generation failed', { error: toError(err).message, type, reportId: report.id });
+    logger.error('Report generation failed', { error: toError(err).message, type: report.type, reportId: report.id });
     await pool.query(
       `UPDATE reports SET status = 'failed' WHERE id = $1`,
       [report.id]
     );
-    return { ...report, status: 'failed' };
   }
 };
 
