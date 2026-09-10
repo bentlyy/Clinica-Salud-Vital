@@ -25,7 +25,8 @@ export const errorHandler = (
     logger.warn('Client error', { error: err.message, statusCode, url: req.originalUrl, method: req.method, requestId });
   }
 
-  const message = !isInternalError(statusCode) ? err.message : 'Internal server error';
+  const isDev = process.env.NODE_ENV !== 'production';
+  const message = !isInternalError(statusCode) || isDev ? err.message : 'Internal server error';
 
   const body: Record<string, unknown> = { error: message };
   if (err.code) body.code = err.code;

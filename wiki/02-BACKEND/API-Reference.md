@@ -159,12 +159,12 @@
 
 | Método | Ruta | Auth | Descripción |
 |--------|------|------|-------------|
-| POST | `webhook/stripe` | ❌ | Webhook Stripe |
+| POST | `webhook/mercadopago` | ❌ | Webhook Mercado Pago |
 | GET | `plans` | ❌ | Lista de planes |
 | POST | `onboard` | 3/hora | Onboarding |
 | GET | `features` | ❌ | Features públicas |
 | GET | `subscription` | admin, superadmin | Suscripción actual |
-| POST | `checkout` | admin, superadmin | Checkout Stripe |
+| POST | `checkout` | admin, superadmin | Checkout Mercado Pago |
 | POST | `change-plan` | admin, superadmin | Cambiar plan |
 | POST | `cancel` | admin, superadmin | Cancelar suscripción |
 | GET | `usage` | admin, superadmin | Uso del tenant |

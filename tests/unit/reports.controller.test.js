@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 vi.mock('../../src/modules/reports/report.service.js', () => ({
   getAvailable: vi.fn(),
-  generateReport: vi.fn(),
+  createReport: vi.fn(),
   getById: vi.fn(),
 }));
 
@@ -29,8 +29,8 @@ describe('reportController.getAvailable', () => {
 });
 
 describe('reportController.generate', () => {
-  it('generates report and returns it', async () => {
-    vi.mocked(reportService.generateReport).mockResolvedValue({ id: 1, status: 'completed' });
+  it('creates report and returns it', async () => {
+    vi.mocked(reportService.createReport).mockResolvedValue({ id: 1, status: 'generating' });
     const req = {
       body: { type: 'revenue', date_from: '2026-01-01', date_to: '2026-01-31', filters: { doctor_id: 2 } },
       user: { id: 7 },
@@ -42,13 +42,13 @@ describe('reportController.generate', () => {
     reportController.generate(req, res, next);
     await flush();
 
-    expect(reportService.generateReport).toHaveBeenCalledWith(
+    expect(reportService.createReport).toHaveBeenCalledWith(
       'revenue',
       { type: 'revenue', date_from: '2026-01-01', date_to: '2026-01-31', filters: { doctor_id: 2 } },
       7,
       't1'
     );
-    expect(res.json).toHaveBeenCalledWith({ id: 1, status: 'completed' });
+    expect(res.json).toHaveBeenCalledWith({ id: 1, status: 'generating' });
   });
 
   it('calls next with error when type is missing', async () => {
@@ -59,7 +59,7 @@ describe('reportController.generate', () => {
     reportController.generate(req, res, next);
     await flush();
 
-    expect(reportService.generateReport).not.toHaveBeenCalled();
+    expect(reportService.createReport).not.toHaveBeenCalled();
     expect(next).toHaveBeenCalledWith(expect.any(Error));
   });
 

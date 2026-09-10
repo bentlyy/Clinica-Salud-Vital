@@ -486,7 +486,6 @@ function LoginModal({ onClose }: { onClose: () => void }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -508,7 +507,6 @@ function LoginModal({ onClose }: { onClose: () => void }) {
       try {
         const res = await login(pendingEmail, pendingPassword, totp, captcha_token);
         if (res.requires_2fa) { setError(t('loginError2faIncorrect')); setLoading(false); return; }
-        if (rememberMe) localStorage.setItem('rememberedEmail', pendingEmail);
         navigate(getRedirectPath(res.user.role), { replace: true });
       } catch (err: unknown) {
         const axiosErr = err as { response?: { data?: { error?: string } } };
@@ -534,7 +532,6 @@ function LoginModal({ onClose }: { onClose: () => void }) {
         setLoading(false);
         return;
       }
-      if (rememberMe) localStorage.setItem('rememberedEmail', email);
       navigate(getRedirectPath(res.user.role), { replace: true });
     } catch (err: unknown) {
       const axiosErr = err as { response?: { data?: { error?: string } } };
@@ -544,7 +541,7 @@ function LoginModal({ onClose }: { onClose: () => void }) {
     } finally {
       setLoading(false);
     }
-  }, [email, password, loading, step, totp, pendingEmail, pendingPassword, rememberMe, login, navigate, t]);
+  }, [email, password, loading, step, totp, pendingEmail, pendingPassword, login, navigate, t]);
 
   const handleGuest = useCallback(() => {
     navigate('/booking');
@@ -672,11 +669,6 @@ function LoginModal({ onClose }: { onClose: () => void }) {
 
             {step === 'login' && (
               <div className="lm-options">
-                <label className="lm-checkbox">
-                  <input type="checkbox" checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} />
-                  <span className="lm-checkbox-mark" />
-                  <span className="lm-checkbox-text">{t('loginRememberMe')}</span>
-                </label>
                 <a href="/forgot-password" className="lm-forgot">{t('loginForgotPassword')}</a>
               </div>
             )}

@@ -226,11 +226,11 @@
 
 | Method | Path | Auth | Roles | Description |
 |--------|------|------|-------|-------------|
-| POST | `/webhook/stripe` | Public | — | Stripe webhook (stub) |
+| POST | `/webhook/mercadopago` | Public | — | Mercado Pago webhook |
 | GET | `/plans` | Public | — | Public plans list |
 | POST | `/onboard` | Public | — | Onboard new tenant (3/hr limit) |
 | GET | `/subscription` | Auth | admin, superadmin | Get subscription |
-| POST | `/checkout` | Auth | admin, superadmin | Simulated Stripe checkout |
+| POST | `/checkout` | Auth | admin, superadmin | Mercado Pago checkout (Checkout Pro) |
 | POST | `/change-plan` | Auth | admin, superadmin | Change plan |
 | POST | `/cancel` | Auth | admin, superadmin | Cancel subscription |
 | GET | `/usage` | Auth | admin, superadmin | Usage data (stub) |
@@ -1646,7 +1646,7 @@ Before every PR:
 ## 6. Known Backend Inconsistencies (Frontend Should Handle)
 
 1. **patient module is empty** — no dedicated patient endpoints. Patient data comes from `users` table.
-2. **Stripe is stubbed** — checkout/subscription endpoints return mock data.
+2. **Mercado Pago checkout not consumed** — the frontend does not call `/checkout` or render `/saas/success` yet; backend works (stub or Checkout Pro).
 3. **SSE endpoint** (`/api/laboratory/events`) requires auth but browser EventSource doesn't support headers — may need `fetch`-based approach.
 4. **Some endpoints return `data` wrapper, some don't** — frontend should normalize.
 5. **i18n: only `es` and `en` are active** — `pt` and `fr` are deprecated.

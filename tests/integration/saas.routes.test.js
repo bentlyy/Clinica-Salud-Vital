@@ -16,6 +16,11 @@ vi.mock('../../src/shared/db.js', () => ({
     on: vi.fn(),
   },
   readPool: { query: mockQuery },
+  superAdminPool: {
+    query: mockQuery,
+    connect: mockConnect,
+    on: vi.fn(),
+  },
 }));
 
 vi.mock('../../src/shared/jwt.service.js', () => ({
@@ -146,11 +151,11 @@ describe('POST /api/saas/onboard (public with rate limit)', () => {
   });
 });
 
-describe('POST /api/saas/webhook/stripe (public)', () => {
-  it('accepts stripe webhook', async () => {
+describe('POST /api/saas/webhook/mercadopago (public)', () => {
+  it('acknowledges the mercadopago webhook', async () => {
     const res = await request(app)
-      .post('/api/saas/webhook/stripe')
-      .send({ type: 'checkout.session.completed' });
+      .post('/api/saas/webhook/mercadopago')
+      .send({ type: 'payment', data: { id: '123' } });
 
     expect(res.status).toBe(200);
     expect(res.body.received).toBe(true);

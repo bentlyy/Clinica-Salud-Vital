@@ -105,23 +105,23 @@ export const createLabRequest = asyncHandler(async (req, res) => {
 
   const data = { ...req.body, doctor_id: doctor.id };
   const request = await laboratoryService.createLabRequest(data, req.tenant_id);
-  emitLabEvent(LAB_EVENTS.NEW_REQUEST, { id: request.id, request_number: request.request_number });
-  emitLabEvent(LAB_EVENTS.METRICS_UPDATE, {});
+  emitLabEvent(LAB_EVENTS.NEW_REQUEST, { id: request.id, request_number: request.request_number }, req.tenant_id);
+  emitLabEvent(LAB_EVENTS.METRICS_UPDATE, {}, req.tenant_id);
   res.status(201).json(request);
 });
 
 export const updateLabRequestStatus = asyncHandler(async (req, res) => {
   const { status } = req.body;
   const request = await laboratoryService.updateLabRequestStatus(Number(req.params.id), status, req.tenant_id);
-  emitLabEvent(LAB_EVENTS.STATUS_CHANGE, { id: request.id, status: request.status });
-  emitLabEvent(LAB_EVENTS.METRICS_UPDATE, {});
+  emitLabEvent(LAB_EVENTS.STATUS_CHANGE, { id: request.id, status: request.status }, req.tenant_id);
+  emitLabEvent(LAB_EVENTS.METRICS_UPDATE, {}, req.tenant_id);
   res.json(request);
 });
 
 export const updateLabRequestItemResult = asyncHandler(async (req, res) => {
   const { result_value, result_notes } = req.body;
   const item = await laboratoryService.updateLabRequestItemResult(Number(req.params.item_id), result_value, req.tenant_id, result_notes);
-  emitLabEvent(LAB_EVENTS.METRICS_UPDATE, {});
+  emitLabEvent(LAB_EVENTS.METRICS_UPDATE, {}, req.tenant_id);
   res.json(item);
 });
 
@@ -157,8 +157,8 @@ export const getLabRequestsForLab = asyncHandler(async (req, res) => {
 export const updateLabRequestItemStatusCtrl = asyncHandler(async (req, res) => {
   const { status } = req.body;
   const item = await laboratoryService.updateLabRequestItemStatus(Number(req.params.item_id), status, req.tenant_id);
-  emitLabEvent(LAB_EVENTS.STATUS_CHANGE, { item_id: Number(req.params.item_id), status });
-  emitLabEvent(LAB_EVENTS.METRICS_UPDATE, {});
+  emitLabEvent(LAB_EVENTS.STATUS_CHANGE, { item_id: Number(req.params.item_id), status }, req.tenant_id);
+  emitLabEvent(LAB_EVENTS.METRICS_UPDATE, {}, req.tenant_id);
   res.json(item);
 });
 
@@ -170,8 +170,8 @@ export const setLabTypeCtrl = asyncHandler(async (req, res) => {
 
 export const cancelLabRequest = asyncHandler(async (req, res) => {
   const result = await laboratoryService.cancelLabRequest(Number(req.params.id), req.user!.id, req.user!.role, req.tenant_id);
-  emitLabEvent(LAB_EVENTS.STATUS_CHANGE, { id: result.id, status: result.status });
-  emitLabEvent(LAB_EVENTS.METRICS_UPDATE, {});
+  emitLabEvent(LAB_EVENTS.STATUS_CHANGE, { id: result.id, status: result.status }, req.tenant_id);
+  emitLabEvent(LAB_EVENTS.METRICS_UPDATE, {}, req.tenant_id);
   res.json(result);
 });
 
@@ -362,6 +362,10 @@ export const acknowledgeNotificationCtrl = asyncHandler(async (req, res) => {
 
 // === Real-time Events (SSE) ===
 export const handleLabEvents = (req: Request, res: Response) => {
+  const tenantId = req.user!.role === 'superadmin' && req.query.tenant_id
+    ? String(req.query.tenant_id)
+    : req.tenant_id;
+
   res.writeHead(200, {
     'Content-Type': 'text/event-stream',
     'Cache-Control': 'no-cache',
@@ -376,7 +380,7 @@ export const handleLabEvents = (req: Request, res: Response) => {
     const listener = (data: unknown) => {
       res.write(`event: ${sseEvent}\ndata: ${JSON.stringify(data)}\n\n`);
     };
-    const off = onLabEvent(backendEvent, listener);
+    const off = onLabEvent(backendEvent, tenantId, listener);
     unsubs.push(off);
   }
 

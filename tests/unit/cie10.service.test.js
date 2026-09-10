@@ -7,7 +7,7 @@ vi.mock('../../src/shared/db.js', () => ({
   readPool: { query: mockQuery },
 }));
 
-import { searchCie10, getCie10ByCode, createCie10Entry, updateCie10Entry, deleteCie10Entry, getCie10Categories } from '../../src/modules/clinical-record/cie10.service.js';
+import { searchCie10, getCie10ByCode, getCie10Categories } from '../../src/modules/clinical-record/cie10.service.js';
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -45,47 +45,6 @@ describe('getCie10ByCode', () => {
   it('throws NotFoundError when not found', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [] });
     await expect(getCie10ByCode('ZZZ')).rejects.toThrow('CIE-10 entry not found');
-  });
-});
-
-describe('createCie10Entry', () => {
-  it('creates entry with category', async () => {
-    mockQuery.mockResolvedValueOnce({ rows: [{ code: 'A01' }] });
-    const result = await createCie10Entry({ code: 'A01', description: 'Fiebre', category: 'A' });
-    expect(result.code).toBe('A01');
-    expect(mockQuery.mock.calls[0][1][2]).toBe('A');
-  });
-
-  it('creates entry without category', async () => {
-    mockQuery.mockResolvedValueOnce({ rows: [{ code: 'A01' }] });
-    await createCie10Entry({ code: 'A01', description: 'Fiebre' });
-    expect(mockQuery.mock.calls[0][1][2]).toBeNull();
-  });
-});
-
-describe('updateCie10Entry', () => {
-  it('updates existing entry', async () => {
-    mockQuery.mockResolvedValueOnce({ rows: [{ id: 1, description: 'New' }] });
-    const result = await updateCie10Entry(1, { description: 'New', category: 'B' });
-    expect(result.description).toBe('New');
-  });
-
-  it('throws when not found', async () => {
-    mockQuery.mockResolvedValueOnce({ rows: [] });
-    await expect(updateCie10Entry(999, { description: 'X' })).rejects.toThrow('CIE-10 entry not found');
-  });
-});
-
-describe('deleteCie10Entry', () => {
-  it('deletes existing entry', async () => {
-    mockQuery.mockResolvedValueOnce({ rows: [{ id: 1 }] });
-    const result = await deleteCie10Entry(1);
-    expect(result.message).toContain('deleted');
-  });
-
-  it('throws when not found', async () => {
-    mockQuery.mockResolvedValueOnce({ rows: [] });
-    await expect(deleteCie10Entry(999)).rejects.toThrow('CIE-10 entry not found');
   });
 });
 

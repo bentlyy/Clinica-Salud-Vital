@@ -14,9 +14,18 @@ const mockSaasService = vi.hoisted(() => ({
   onboardTenant: vi.fn(),
   getTenantFeatures: vi.fn(),
   updateTenantConfig: vi.fn(),
+  handleMercadoPagoPaymentApproved: vi.fn(),
 }));
 
 vi.mock('../../src/modules/saas/saas.service.js', () => mockSaasService);
+
+vi.mock('../../src/shared/mercadopago.service.js', () => ({
+  createCheckoutPreference: vi.fn(),
+  fetchPayment: vi.fn(),
+  isMercadoPagoConfigured: vi.fn(),
+}));
+
+import * as saasMercadoPago from '../../src/shared/mercadopago.service.js';
 
 vi.mock('../../src/middlewares/asyncHandler.middleware.js', () => ({
   asyncHandler: (fn) => fn,
@@ -83,9 +92,10 @@ describe('saasController.getMySubscription', () => {
 });
 
 describe('saasController.createCheckout', () => {
-  it('creates subscription and returns checkout info', async () => {
-    mockSaasService.getPlanByCode.mockResolvedValue({ id: 1, code: 'pro' });
+  it('creates subscription and returns checkout info (MVP mode)', async () => {
+    mockSaasService.getPlanByCode.mockResolvedValue({ id: 1, code: 'pro', name: 'Pro', price_monthly_clp: 19990 });
     mockSaasService.createSubscription.mockResolvedValue({ id: 1, status: 'active', plan: { code: 'pro' } });
+    saasMercadoPago.isMercadoPagoConfigured.mockReturnValue(false);
     const req = { body: { plan_code: 'pro' }, tenant_id: 'tenant-1' };
     const res = mockRes();
 
@@ -100,14 +110,144 @@ describe('saasController.createCheckout', () => {
       message: "Subscription created for plan 'pro'",
     });
   });
-});
 
-describe('saasController.stripeWebhook', () => {
-  it('returns received true', async () => {
+  it('creates a Mercado Pago preference when configured', async () => {
+    mockSaasService.getPlanByCode.mockResolvedValue({ id: 1, code: 'pro', name: 'Pro', price_monthly_clp: 19990 });
+    saasMercadoPago.isMercadoPagoConfigured.mockReturnValue(true);
+    saasMercadoPago.createCheckoutPreference.mockResolvedValue({
+      id: 'pref_1',
+      init_point: 'https://www.mercadopago.cl/checkout/v1/redirect?pref_id=1',
+      sandbox_init_point: '',
+    });
+    const req = { body: { plan_code: 'pro' }, tenant_id: 'tenant-1', protocol: 'https', get: vi.fn(() => 'app.vitaria.com') };
     const res = mockRes();
 
-    await saasController.stripeWebhook({}, res);
+    await saasController.createCheckout(req, res);
 
+    expect(saasMercadoPago.createCheckoutPreference).toHaveBeenCalledWith({
+      tenantId: 'tenant-1',
+      planCode: 'pro',
+      planName: 'Pro',
+      priceCLP: 19990,
+      returnUrl: 'https://app.vitaria.com',
+    });
+    expect(mockSaasService.createSubscription).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(201);
+    expect(res.json).toHaveBeenCalledWith({
+      url: 'https://www.mercadopago.cl/checkout/v1/redirect?pref_id=1',
+      preferenceId: 'pref_1',
+      mode: 'mercadopago',
+    });
+  });
+});
+
+describe('saasController.mercadopagoWebhook', () => {
+  it('acknowledges in stub mode when Mercado Pago is not configured', async () => {
+    saasMercadoPago.isMercadoPagoConfigured.mockReturnValue(false);
+    const res = mockRes();
+
+    await saasController.mercadopagoWebhook({ body: { type: 'payment' }, query: {}, headers: {} }, res);
+
+    expect(res.json).toHaveBeenCalledWith({ received: true, mode: 'stub' });
+  });
+
+  it('reconciles an approved payment sent via body', async () => {
+    saasMercadoPago.isMercadoPagoConfigured.mockReturnValue(true);
+    saasMercadoPago.fetchPayment.mockResolvedValue({
+      id: '12345',
+      status: 'approved',
+      external_reference: 'tenant-1',
+      metadata: { plan_code: 'pro' },
+    });
+    const res = mockRes();
+
+    await saasController.mercadopagoWebhook(
+      { body: { type: 'payment', data: { id: '12345' } }, query: {}, headers: {} },
+      res
+    );
+
+    expect(saasMercadoPago.fetchPayment).toHaveBeenCalledWith('12345');
+    expect(mockSaasService.handleMercadoPagoPaymentApproved).toHaveBeenCalledWith({
+      id: '12345',
+      external_reference: 'tenant-1',
+      metadata: { plan_code: 'pro' },
+    });
+    expect(res.json).toHaveBeenCalledWith({ received: true });
+  });
+
+  it('reconciles an approved payment sent via query params', async () => {
+    saasMercadoPago.isMercadoPagoConfigured.mockReturnValue(true);
+    saasMercadoPago.fetchPayment.mockResolvedValue({
+      id: '999',
+      status: 'approved',
+      external_reference: 'tenant-2',
+      metadata: { plan_code: 'basic' },
+    });
+    const res = mockRes();
+
+    await saasController.mercadopagoWebhook(
+      { body: {}, query: { type: 'payment', 'data.id': '999' }, headers: {} },
+      res
+    );
+
+    expect(saasMercadoPago.fetchPayment).toHaveBeenCalledWith('999');
+    expect(mockSaasService.handleMercadoPagoPaymentApproved).toHaveBeenCalled();
+    expect(res.json).toHaveBeenCalledWith({ received: true });
+  });
+
+  it('does nothing for non-approved payments', async () => {
+    saasMercadoPago.isMercadoPagoConfigured.mockReturnValue(true);
+    saasMercadoPago.fetchPayment.mockResolvedValue({
+      id: '123',
+      status: 'pending',
+      external_reference: 'tenant-1',
+      metadata: { plan_code: 'pro' },
+    });
+    const res = mockRes();
+
+    await saasController.mercadopagoWebhook(
+      { body: { type: 'payment', data: { id: '123' } }, query: {}, headers: {} },
+      res
+    );
+
+    expect(mockSaasService.handleMercadoPagoPaymentApproved).not.toHaveBeenCalled();
+    expect(res.json).toHaveBeenCalledWith({ received: true });
+  });
+
+  it('returns 400 when payment id is missing', async () => {
+    saasMercadoPago.isMercadoPagoConfigured.mockReturnValue(true);
+    const res = mockRes();
+
+    await saasController.mercadopagoWebhook({ body: {}, query: {}, headers: {} }, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({ error: 'MERCADOPAGO_BAD_REQUEST' });
+  });
+
+  it('returns 500 when payment resolution fails', async () => {
+    saasMercadoPago.isMercadoPagoConfigured.mockReturnValue(true);
+    saasMercadoPago.fetchPayment.mockRejectedValue(new Error('mp api down'));
+    const res = mockRes();
+
+    await saasController.mercadopagoWebhook(
+      { body: { type: 'payment', data: { id: '1' } }, query: {}, headers: {} },
+      res
+    );
+
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.json).toHaveBeenCalledWith({ error: 'Webhook processing failed' });
+  });
+
+  it('acknowledges non-payment topics without processing', async () => {
+    saasMercadoPago.isMercadoPagoConfigured.mockReturnValue(true);
+    const res = mockRes();
+
+    await saasController.mercadopagoWebhook(
+      { body: { type: 'plan' }, query: {}, headers: {} },
+      res
+    );
+
+    expect(saasMercadoPago.fetchPayment).not.toHaveBeenCalled();
     expect(res.json).toHaveBeenCalledWith({ received: true });
   });
 });

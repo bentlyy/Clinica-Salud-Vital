@@ -3,7 +3,6 @@ import { BadRequestError, NotFoundError } from '../../utils/errors.js';
 import { enqueueJob } from '../../shared/queue.service.js';
 import { toError } from '../../utils/errors.js';
 import { logger } from '../../utils/logger.js';
-import { recordBookingStatusChange } from '../../shared/booking-history.js';
 import { notifyWaitlistForSlot } from '../waitlist/waitlist.service.js';
 
 export interface Holiday {
@@ -85,46 +84,73 @@ export const createHoliday = async (
     const diffDays = Math.ceil((target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
     shortNotice = diffDays < notice_days;
 
-    const bookingResult = await pool.query(
-      `SELECT b.id, b.doctor_id, b.user_id, u.email AS patient_email, u.name AS patient_name
-       FROM bookings b
-       JOIN users u ON b.user_id = u.id AND u.tenant_id = b.tenant_id
-       WHERE b.tenant_id = $1 AND b.date = $2 AND b.status != 'cancelled'`,
-      [tenantId, holiday_date]
-    );
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
 
-    for (const b of bookingResult.rows) {
-      await pool.query(
-        `UPDATE bookings SET status = 'cancelled' WHERE id = $1 AND tenant_id = $2`,
-        [b.id, tenantId]
+      const bookingResult = await client.query(
+        `SELECT b.id, b.doctor_id, b.user_id, u.email AS patient_email, u.name AS patient_name
+         FROM bookings b
+         JOIN users u ON b.user_id = u.id AND u.tenant_id = b.tenant_id
+         WHERE b.tenant_id = $1 AND b.date = $2 AND b.status != 'cancelled'`,
+        [tenantId, holiday_date]
       );
-      await recordBookingStatusChange(b.id, {
-        toStatus: 'cancelled',
-        fromStatus: 'confirmed',
-        actorType: 'admin',
-        changedByUserId: createdBy,
-        reason: `Feriado clínico: ${name}`,
-      });
-      cancelledBookings++;
+      const bookings = bookingResult.rows;
 
-      if (b.patient_email) {
-        enqueueJob('email:send', {
-          type: 'booking-cancelled-holiday',
-          to: b.patient_email,
-          subject: 'Cita cancelada - Feriado de la clínica',
-          html: `
-            <h2>Cita cancelada</h2>
-            <p>Hola ${String(b.patient_name)},</p>
-            <p>Tu cita del ${holiday_date} ha sido cancelada porque la clínica estará cerrada por feriado (${name}).</p>
-            <p>Por favor, reprograma tu cita desde la plataforma.</p>
-          `,
-          tenantId,
-        }).catch((err) => logger.error('Error encolando email de cancelación por feriado:', { error: toError(err).message }));
+      if (bookings.length > 0) {
+        const ids = bookings.map((b: Record<string, unknown>) => b.id as number);
+        const reason = `Feriado clínico: ${name}`;
+        const fromStatuses = bookings.map(() => 'confirmed');
+        const toStatuses = bookings.map(() => 'cancelled');
+        const actorTypes = bookings.map(() => 'admin');
+        const changedBy = bookings.map(() => createdBy);
+        const reasons = bookings.map(() => reason);
+        const nulls = bookings.map(() => null);
+
+        await client.query(
+          `UPDATE bookings SET status = 'cancelled' WHERE id = ANY($1::int[]) AND tenant_id = $2`,
+          [ids, tenantId]
+        );
+
+        await client.query(
+          `INSERT INTO booking_status_history
+             (booking_id, from_status, to_status, actor_type, changed_by_user_id, changed_by_role, reason, notes)
+           SELECT * FROM UNNEST(
+             $1::int[], $2::text[], $3::text[], $4::text[], $5::int[], $6::text[], $7::text[], $8::text[]
+           )`,
+          [ids, fromStatuses, toStatuses, actorTypes, changedBy, nulls, reasons, nulls]
+        );
       }
 
-      void notifyWaitlistForSlot(b.doctor_id, holiday_date, tenantId).catch((err) =>
-        logger.error('Error notificando waitlist por feriado:', { error: toError(err).message })
-      );
+      await client.query('COMMIT');
+
+      for (const b of bookings) {
+        cancelledBookings++;
+
+        if (b.patient_email) {
+          enqueueJob('email:send', {
+            type: 'booking-cancelled-holiday',
+            to: b.patient_email,
+            subject: 'Cita cancelada - Feriado de la clínica',
+            html: `
+              <h2>Cita cancelada</h2>
+              <p>Hola ${String(b.patient_name)},</p>
+              <p>Tu cita del ${holiday_date} ha sido cancelada porque la clínica estará cerrada por feriado (${name}).</p>
+              <p>Por favor, reprograma tu cita desde la plataforma.</p>
+            `,
+            tenantId,
+          }).catch((err) => logger.error('Error encolando email de cancelación por feriado:', { error: toError(err).message }));
+        }
+
+        void notifyWaitlistForSlot(b.doctor_id, holiday_date, tenantId).catch((err) =>
+          logger.error('Error notificando waitlist por feriado:', { error: toError(err).message })
+        );
+      }
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
     }
   }
 

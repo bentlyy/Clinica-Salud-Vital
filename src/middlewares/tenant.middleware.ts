@@ -27,6 +27,7 @@ const PUBLIC_PATHS = new Set([
   '/api/specialties',
   '/api/saas/plans',
   '/api/saas/onboard',
+  '/api/saas/webhook/mercadopago',
   '/api/auth/.well-known/jwks.json',
 ]);
 

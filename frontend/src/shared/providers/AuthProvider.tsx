@@ -42,7 +42,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (!cancelled) {
           setAccessToken(data.access_token);
           setUser(normalizeUser(data.user));
-          localStorage.setItem('auth_user', JSON.stringify(normalizeUser(data.user)));
         }
       } catch (err) {
         if (!cancelled) {
@@ -87,7 +86,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (data.requires_2fa) return data;
     setAccessToken(data.access_token);
     setUser(normalizeUser(data.user));
-    localStorage.setItem('auth_user', JSON.stringify(normalizeUser(data.user)));
     return data;
   }, []);
 

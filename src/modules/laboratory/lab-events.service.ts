@@ -10,15 +10,24 @@ export const LAB_EVENTS = {
   NOTIFICATION: 'notification',
 } as const;
 
-export const emitLabEvent = (event: string, data: unknown): void => {
-  labEmitter.emit(event, data);
+export type LabEventChannel = `${string}:${string}`;
+
+export const getChannel = (event: string, tenantId: string): LabEventChannel => `${tenantId}:${event}`;
+
+export const emitLabEvent = (event: string, data: unknown, tenantId: string): void => {
+  labEmitter.emit(getChannel(event, tenantId), { ...(data as object), tenant_id: tenantId });
 };
 
-export const onLabEvent = (event: string, listener: (data: unknown) => void): (() => void) => {
-  labEmitter.on(event, listener);
-  return () => { labEmitter.off(event, listener); };
+export const onLabEvent = (
+  event: string,
+  tenantId: string,
+  listener: (data: unknown) => void,
+): (() => void) => {
+  const channel = getChannel(event, tenantId);
+  labEmitter.on(channel, listener);
+  return () => { labEmitter.off(channel, listener); };
 };
 
-export const offLabEvent = (event: string, listener: (data: unknown) => void): void => {
-  labEmitter.off(event, listener);
+export const offLabEvent = (event: string, tenantId: string, listener: (data: unknown) => void): void => {
+  labEmitter.off(getChannel(event, tenantId), listener);
 };

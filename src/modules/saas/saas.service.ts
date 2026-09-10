@@ -1,4 +1,4 @@
-import { pool } from '../../shared/db.js';
+import { pool, superAdminPool } from '../../shared/db.js';
 import { logger } from '../../utils/logger.js';
 import { BadRequestError, NotFoundError } from '../../utils/errors.js';
 import { E } from '../../utils/error-codes.js';
@@ -11,6 +11,8 @@ export interface Plan {
   description: string | null;
   price_monthly: number;
   price_yearly: number;
+  price_monthly_clp: number;
+  price_yearly_clp: number;
   max_doctors: number;
   max_patients: number;
   storage_gb: number;
@@ -28,8 +30,8 @@ export interface Subscription {
   current_period_end: string;
   trial_end: string | null;
   canceled_at: string | null;
-  stripe_customer_id: string | null;
-  stripe_subscription_id: string | null;
+  mercadopago_preference_id: string | null;
+  mercadopago_payment_id: string | null;
   metadata: Record<string, unknown>;
   created_at: string;
   updated_at: string;
@@ -46,6 +48,7 @@ const GRACE_PERIOD_DAYS = 7;
 export const getPlans = async (): Promise<Plan[]> => {
   const result = await pool.query(
     `SELECT id, name, code, description, price_monthly, price_yearly,
+            price_monthly_clp, price_yearly_clp,
             max_doctors, max_patients, storage_gb, features, active, sort_order
      FROM plans WHERE active = true ORDER BY sort_order ASC`
   );
@@ -55,6 +58,7 @@ export const getPlans = async (): Promise<Plan[]> => {
 export const getPlanByCode = async (code: string): Promise<Plan> => {
   const result = await pool.query(
     `SELECT id, name, code, description, price_monthly, price_yearly,
+            price_monthly_clp, price_yearly_clp,
             max_doctors, max_patients, storage_gb, features, active, sort_order
      FROM plans WHERE code = $1`,
     [code]
@@ -66,6 +70,7 @@ export const getPlanByCode = async (code: string): Promise<Plan> => {
 export const getPlanById = async (id: number): Promise<Plan> => {
   const result = await pool.query(
     `SELECT id, name, code, description, price_monthly, price_yearly,
+            price_monthly_clp, price_yearly_clp,
             max_doctors, max_patients, storage_gb, features, active, sort_order
      FROM plans WHERE id = $1`,
     [id]
@@ -82,6 +87,7 @@ export const getTenantSubscription = async (tenantId: string): Promise<Subscript
             json_build_object(
               'id', p.id, 'name', p.name, 'code', p.code, 'description', p.description,
               'price_monthly', p.price_monthly, 'price_yearly', p.price_yearly,
+              'price_monthly_clp', p.price_monthly_clp, 'price_yearly_clp', p.price_yearly_clp,
               'max_doctors', p.max_doctors, 'max_patients', p.max_patients,
               'storage_gb', p.storage_gb, 'features', p.features, 'active', p.active,
               'sort_order', p.sort_order
@@ -105,7 +111,8 @@ export const getTenantPlan = async (tenantId: string): Promise<Plan> => {
   } catch {
     return {
       id: 0, name: 'Free', code: 'free', description: 'Free plan',
-      price_monthly: 0, price_yearly: 0, max_doctors: 1, max_patients: 50,
+      price_monthly: 0, price_yearly: 0, price_monthly_clp: 0, price_yearly_clp: 0,
+      max_doctors: 1, max_patients: 50,
       storage_gb: 1, features: { bookings: true }, active: true, sort_order: 0,
     };
   }
@@ -119,7 +126,7 @@ export const createSubscription = async (
   const plan = await getPlanByCode(planCode);
   const periodMonths = options?.periodMonths || 1;
 
-  const client = await pool.connect();
+  const client = await superAdminPool.connect();
   try {
     await client.query('BEGIN');
 
@@ -154,7 +161,7 @@ export const createSubscription = async (
     await client.query(
       `INSERT INTO subscription_invoices (tenant_id, subscription_id, amount, status, period_start, period_end, paid_at)
        VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-      [tenantId, result.rows[0].id, plan.price_monthly, status === 'active' ? 'paid' : 'pending', now, periodEnd, status === 'active' ? now : null]
+      [tenantId, result.rows[0].id, plan.price_monthly_clp, status === 'active' ? 'paid' : 'pending', now, periodEnd, status === 'active' ? now : null]
     );
 
     await client.query('COMMIT');
@@ -175,7 +182,7 @@ export const changePlan = async (
 ): Promise<{ subscription: SubscriptionWithPlan; message: string }> => {
   const newPlan = await getPlanByCode(newPlanCode);
 
-  const client = await pool.connect();
+  const client = await superAdminPool.connect();
   try {
     await client.query('BEGIN');
 
@@ -207,7 +214,7 @@ export const changePlan = async (
     await client.query(
       `INSERT INTO subscription_invoices (tenant_id, subscription_id, amount, status, period_start, period_end, paid_at)
        VALUES ($1, $2, $3, 'paid', NOW(), $4, NOW())`,
-      [tenantId, sub.id, newPlan.price_monthly, sub.current_period_end]
+      [tenantId, sub.id, newPlan.price_monthly_clp, sub.current_period_end]
     );
 
     await client.query('COMMIT');
@@ -227,7 +234,7 @@ export const changePlan = async (
 };
 
 export const cancelSubscription = async (tenantId: string): Promise<{ message: string }> => {
-  const client = await pool.connect();
+  const client = await superAdminPool.connect();
   try {
     await client.query('BEGIN');
 
@@ -273,7 +280,7 @@ export const handlePastDueSubscriptions = async (): Promise<void> => {
     if (now > graceEnd) {
       // Grace period expired: downgrade to free plan
       const freePlan = await getPlanByCode('free');
-      await pool.query(
+      await superAdminPool.query(
         `UPDATE subscriptions SET plan_id = $1, status = 'canceled', canceled_at = NOW(), updated_at = NOW()
          WHERE id = $2`,
         [freePlan.id, sub.id]
@@ -316,7 +323,7 @@ export const recordUsage = async (
   metricKey: string,
   value: number
 ): Promise<void> => {
-  await pool.query(
+  await superAdminPool.query(
     `INSERT INTO tenant_usage (tenant_id, metric_key, metric_value, recorded_at)
      VALUES ($1, $2, $3, CURRENT_DATE)
      ON CONFLICT (tenant_id, metric_key, recorded_at)
@@ -409,7 +416,7 @@ export const updateTenantConfig = async (
   if (sets.length === 0) return;
 
   params.push(tenantId);
-  const result = await pool.query(
+  const result = await superAdminPool.query(
     `UPDATE tenants SET ${sets.join(', ')}, updated_at = NOW() WHERE id = $${paramIdx} RETURNING id`,
     params
   );
@@ -434,7 +441,7 @@ export const onboardTenant = async (data: {
   const { tenantName, domain, adminEmail, adminPassword, adminName, locale, timezone, planCode, profile, documents } = data;
   const tenantId = domain;
 
-  const client = await pool.connect();
+  const client = await superAdminPool.connect();
   try {
     await client.query('BEGIN');
 
@@ -486,7 +493,7 @@ export const onboardTenant = async (data: {
         await client.query(
           `INSERT INTO subscription_invoices (tenant_id, subscription_id, amount, status, period_start, period_end, paid_at)
            VALUES ($1, $2, $3, 'paid', $4, $5, $6)`,
-          [tenantId, subResult.rows[0].id, plan.price_monthly, now, periodEnd, plan.price_monthly === 0 ? now : null]
+          [tenantId, subResult.rows[0].id, plan.price_monthly_clp, now, periodEnd, plan.price_monthly_clp === 0 ? now : null]
         );
 
         subscription = { ...subResult.rows[0], plan } as SubscriptionWithPlan;
@@ -538,4 +545,96 @@ export const onboardTenant = async (data: {
   } finally {
     client.release();
   }
+};
+
+// ─── Mercado Pago webhook reconciliation ────────────────
+
+/**
+ * Match a Mercado Pago payment id to a local subscription. Used by the
+ * webhook handler to reconcile a confirmed payment against the local DB.
+ */
+const findSubscriptionByMpPaymentId = async (
+  mpPaymentId: string
+): Promise<{ id: number; tenant_id: string; plan_id: number } | null> => {
+  if (!mpPaymentId) return null;
+  const result = await pool.query(
+    `SELECT id, tenant_id, plan_id FROM subscriptions WHERE mercadopago_payment_id = $1`,
+    [mpPaymentId]
+  );
+  return result.rows[0] || null;
+};
+
+const activateSubscriptionForPayment = async (payment: {
+  id: string;
+  external_reference: string | null;
+  metadata?: { plan_code?: string; preference_id?: string; tenant_id?: string };
+}): Promise<void> => {
+  const tenantId = payment.external_reference || payment.metadata?.tenant_id;
+  const planCode = payment.metadata?.plan_code;
+  if (!tenantId || !planCode) {
+    logger.warn('[Mercado Pago] payment without tenant metadata — skipping');
+    return;
+  }
+
+  const plan = await getPlanByCode(planCode);
+  const now = new Date();
+  const periodEnd = new Date(now);
+  periodEnd.setMonth(periodEnd.getMonth() + 1);
+
+  const client = await superAdminPool.connect();
+  try {
+    await client.query('BEGIN');
+
+    const existing = await client.query(
+      `SELECT id FROM subscriptions
+       WHERE tenant_id = $1 AND status IN ('active', 'trialing', 'past_due')
+       FOR UPDATE`,
+      [tenantId]
+    );
+
+    if (existing.rows.length > 0) {
+      await client.query(
+        `UPDATE subscriptions
+         SET status = 'active', plan_id = $1,
+             mercadopago_preference_id = $2, mercadopago_payment_id = $3,
+             current_period_start = $4, current_period_end = $5,
+             updated_at = NOW()
+         WHERE id = $6`,
+        [plan.id, payment.metadata?.preference_id || null, payment.id, now, periodEnd, existing.rows[0].id]
+      );
+    } else {
+      const inserted = await client.query(
+        `INSERT INTO subscriptions (tenant_id, plan_id, status, current_period_start, current_period_end, mercadopago_preference_id, mercadopago_payment_id)
+         VALUES ($1, $2, 'active', $3, $4, $5, $6)
+         RETURNING id`,
+        [tenantId, plan.id, now, periodEnd, payment.metadata?.preference_id || null, payment.id]
+      );
+      if (plan.price_monthly_clp > 0) {
+        await client.query(
+          `INSERT INTO subscription_invoices (tenant_id, subscription_id, amount, status, period_start, period_end, mercadopago_payment_id, paid_at)
+           VALUES ($1, $2, $3, 'paid', $4, $5, $6, $7)`,
+          [tenantId, inserted.rows[0].id, plan.price_monthly_clp, now, periodEnd, payment.id, now]
+        );
+      }
+    }
+
+    await client.query('COMMIT');
+    logger.info(`[Mercado Pago] payment approved → subscription active tenant=${tenantId} plan=${planCode} payment=${payment.id}`);
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
+  }
+};
+
+export const handleMercadoPagoPaymentApproved = async (
+  payment: { id: string; external_reference: string | null; metadata?: { plan_code?: string; preference_id?: string } }
+): Promise<void> => {
+  const already = await findSubscriptionByMpPaymentId(payment.id);
+  if (already) {
+    logger.info(`[Mercado Pago] payment ${payment.id} ya conciliado — skipping idempotente`);
+    return;
+  }
+  await activateSubscriptionForPayment(payment);
 };

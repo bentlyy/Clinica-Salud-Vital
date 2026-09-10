@@ -842,6 +842,9 @@ describe('laboratoryController.handleLabEvents (SSE)', () => {
   it('writes connected event, registers listeners and cleans up on close', () => {
     let onClose = null;
     const req = {
+      user: { role: 'admin' },
+      tenant_id: 'test',
+      query: {},
       on: vi.fn((evt, cb) => {
         if (evt === 'close') onClose = cb;
       }),
@@ -855,6 +858,24 @@ describe('laboratoryController.handleLabEvents (SSE)', () => {
     expect(req.on).toHaveBeenCalledWith('close', expect.any(Function));
 
     // Trigger the close listener to clear the heartbeat interval
+    onClose();
+  });
+
+  it('allows superadmin to subscribe to another tenant via query', () => {
+    let onClose = null;
+    const req = {
+      user: { role: 'superadmin', id: 1 },
+      tenant_id: 'default',
+      query: { tenant_id: 'other-tenant' },
+      on: vi.fn((evt, cb) => {
+        if (evt === 'close') onClose = cb;
+      }),
+    };
+    const res = { writeHead: vi.fn(), write: vi.fn() };
+
+    laboratoryController.handleLabEvents(req, res);
+
+    expect(res.writeHead).toHaveBeenCalledWith(200, expect.objectContaining({ 'Content-Type': 'text/event-stream' }));
     onClose();
   });
 });

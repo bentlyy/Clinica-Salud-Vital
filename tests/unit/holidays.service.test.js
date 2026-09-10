@@ -1,9 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const { mockQuery } = vi.hoisted(() => ({ mockQuery: vi.fn() }));
+const { mockQuery, mockConnect, mockClientQuery, mockRelease } = vi.hoisted(() => {
+  const mockQuery = vi.fn();
+  const mockClientQuery = vi.fn().mockResolvedValue({});
+  const mockRelease = vi.fn();
+  const mockConnect = vi.fn().mockResolvedValue({ query: mockClientQuery, release: mockRelease });
+  return { mockQuery, mockConnect, mockClientQuery, mockRelease };
+});
 
 vi.mock('../../src/shared/db.js', () => ({
-  pool: { query: mockQuery },
+  pool: { query: mockQuery, connect: mockConnect },
   readPool: { query: mockQuery },
 }));
 
@@ -30,6 +36,7 @@ import {
   deleteHoliday,
 } from '../../src/modules/holidays/holidays.service.js';
 import { enqueueJob } from '../../src/shared/queue.service.js';
+import { notifyWaitlistForSlot } from '../../src/modules/waitlist/waitlist.service.js';
 import { BadRequestError, NotFoundError } from '../../src/utils/errors.js';
 
 const holidayRow = {
@@ -45,6 +52,9 @@ const holidayRow = {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mockClientQuery.mockReset().mockResolvedValue({});
+  mockRelease.mockReset();
+  mockConnect.mockReset().mockResolvedValue({ query: mockClientQuery, release: mockRelease });
 });
 
 describe('listHolidays', () => {
@@ -97,29 +107,52 @@ describe('createHoliday', () => {
   it('cancels bookings, emails patients and notifies waitlist', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [] });
     mockQuery.mockResolvedValueOnce({ rows: [holidayRow] });
-    mockQuery.mockResolvedValueOnce({
-      rows: [{ id: 5, doctor_id: 2, user_id: 3, patient_email: 'p@test.com', patient_name: 'Paciente' }],
-    });
-    mockQuery.mockResolvedValueOnce({ rowCount: 1 });
+
+    mockClientQuery
+      .mockResolvedValueOnce({})
+      .mockResolvedValueOnce({
+        rows: [{ id: 5, doctor_id: 2, user_id: 3, patient_email: 'p@test.com', patient_name: 'Paciente' }],
+      })
+      .mockResolvedValueOnce({ rowCount: 1 })
+      .mockResolvedValueOnce({});
 
     const result = await createHoliday(9, 't', { holiday_date: '2030-09-18', name: 'Fiestas Patrias' });
 
     expect(result.cancelled_bookings).toBe(1);
     expect(enqueueJob).toHaveBeenCalledWith('email:send', expect.objectContaining({ type: 'booking-cancelled-holiday' }));
+    expect(notifyWaitlistForSlot).toHaveBeenCalledWith(2, '2030-09-18', 't');
+    expect(mockRelease).toHaveBeenCalled();
   });
 
   it('cancels bookings without email when patient has none', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [] });
     mockQuery.mockResolvedValueOnce({ rows: [holidayRow] });
-    mockQuery.mockResolvedValueOnce({
-      rows: [{ id: 6, doctor_id: 2, user_id: 3, patient_email: null, patient_name: 'Sin correo' }],
-    });
-    mockQuery.mockResolvedValueOnce({ rowCount: 1 });
+
+    mockClientQuery
+      .mockResolvedValueOnce({})
+      .mockResolvedValueOnce({
+        rows: [{ id: 6, doctor_id: 2, user_id: 3, patient_email: null, patient_name: 'Sin correo' }],
+      })
+      .mockResolvedValueOnce({ rowCount: 1 })
+      .mockResolvedValueOnce({});
 
     const result = await createHoliday(9, 't', { holiday_date: '2030-09-18', name: 'Fiestas Patrias' });
 
     expect(result.cancelled_bookings).toBe(1);
     expect(enqueueJob).not.toHaveBeenCalled();
+  });
+
+  it('rolls back on error', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] });
+    mockQuery.mockResolvedValueOnce({ rows: [holidayRow] });
+
+    mockClientQuery
+      .mockResolvedValueOnce({})
+      .mockRejectedValueOnce(new Error('DB Error'));
+
+    await expect(createHoliday(9, 't', { holiday_date: '2030-09-18', name: 'Fiestas Patrias' })).rejects.toThrow();
+    expect(mockClientQuery).toHaveBeenCalledWith('ROLLBACK');
+    expect(mockRelease).toHaveBeenCalled();
   });
 });
 

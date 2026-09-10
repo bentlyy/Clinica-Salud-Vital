@@ -34,7 +34,19 @@ export const sanitizeRecordFields = <T extends Record<string, unknown>>(data: T,
   return sanitized;
 };
 
-const SENSITIVE_FIELDS = ['password', 'current_password', 'new_password', 'totp_secret', 'totp_token', 'token', 'access_token', 'refresh_token', 'secret', 'captcha_token'];
+const SENSITIVE_FIELDS = [
+  // Auth credentials
+  'password', 'current_password', 'new_password', 'totp_secret', 'totp_token',
+  'token', 'access_token', 'refresh_token', 'secret', 'captcha_token',
+  // PHI / clinical data
+  'chief_complaint', 'anamnesis', 'diagnosis', 'treatment_plan', 'notes',
+  'vital_signs', 'medications', 'prescriptions', 'medical_history',
+  'lab_results', 'lab_values', 'result_values', 'result_value',
+  // Patient PII
+  'rut', 'phone', 'email',
+  // Guest booking PII
+  'guest_data', 'guest_rut', 'guest_name', 'guest_email', 'guest_phone',
+];
 
 export const stripSensitiveFields = (body: Record<string, unknown>): Record<string, unknown> => {
   if (!body || typeof body !== 'object') return body;

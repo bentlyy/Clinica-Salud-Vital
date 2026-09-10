@@ -28,7 +28,7 @@ function getCsrfToken(): string | null {
     const match = document.cookie.match(/(?:^|;\s*)csrf_token=([^;]+)/);
     if (match) return decodeURIComponent(match[1] as string);
   }
-  return localStorage.getItem('csrf_token');
+  return null;
 }
 
 export function refreshSession(): Promise<AuthResponse> {
@@ -66,11 +66,6 @@ apiClient.interceptors.request.use((config) => {
     config.headers.Authorization = `Bearer ${token}`;
   }
 
-  const tenantId = localStorage.getItem('tenant_id');
-  if (tenantId) {
-    config.headers['X-Tenant-Id'] = tenantId;
-  }
-
   if (config.method && !['get', 'head', 'options'].includes(config.method)) {
     const csrfToken = getCsrfToken();
     if (csrfToken) {
@@ -83,14 +78,6 @@ apiClient.interceptors.request.use((config) => {
 
 apiClient.interceptors.response.use(
   (response) => {
-    const csrfHeader = response.headers['x-csrf-token'];
-    if (csrfHeader) {
-      localStorage.setItem('csrf_token', csrfHeader as string);
-    }
-    const tenantHeader = response.headers['x-tenant-id'];
-    if (tenantHeader) {
-      localStorage.setItem('tenant_id', tenantHeader as string);
-    }
     return response;
   },
   async (error) => {

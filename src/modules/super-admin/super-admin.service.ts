@@ -448,7 +448,7 @@ export const getGrowthMetrics = async (months: number = 12): Promise<Record<stri
   return result.rows;
 };
 
-export const getTenantHealthScores = async (): Promise<Record<string, unknown>[]> => {
+export const getTenantHealthScores = async (tenantId?: string): Promise<Record<string, unknown>[]> => {
   const result = await superAdminPool.query(`
     WITH tenant_activity AS (
       SELECT
@@ -469,6 +469,7 @@ export const getTenantHealthScores = async (): Promise<Record<string, unknown>[]
         ) AS modules_used
       FROM tenants t
       LEFT JOIN bookings b ON b.tenant_id = t.id
+      WHERE ($1::text IS NULL OR t.id = $1)
       GROUP BY t.id, t.name, t.active, t.created_at
     ),
     extended AS (
@@ -490,7 +491,7 @@ export const getTenantHealthScores = async (): Promise<Record<string, unknown>[]
       score_activity + score_trend + score_patients + score_cancellation + score_modules AS health_total
     FROM extended
     ORDER BY health_total ASC
-  `);
+  `, [tenantId ?? null]);
   const rows = result.rows.map((r: Record<string, unknown>) => {
     const healthScore = Math.round(
       Number(r.score_activity || 0) +
@@ -505,8 +506,8 @@ export const getTenantHealthScores = async (): Promise<Record<string, unknown>[]
 };
 
 export const getTenantHealthDetail = async (tenantId: string): Promise<Record<string, unknown>> => {
-  const all = await getTenantHealthScores();
-  const tenant = all.find((r: Record<string, unknown>) => r.id === tenantId);
+  const rows = await getTenantHealthScores(tenantId);
+  const tenant = rows[0];
   if (!tenant) throw new NotFoundError(E.SA_TENANT_NOT_FOUND);
   return tenant;
 };

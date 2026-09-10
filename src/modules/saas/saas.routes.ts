@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, urlencoded } from 'express';
 import rateLimit from 'express-rate-limit';
 import { authMiddleware, authorize } from '../../middlewares/auth.middleware.js';
 import { validateZod } from '../../middlewares/validate.middleware.js';
@@ -22,7 +22,7 @@ const onboardLimiter = rateLimit({
   keyGenerator: (req) => req.ip || 'unknown',
 });
 
-router.post('/webhook/stripe', saasController.stripeWebhook);
+router.post('/webhook/mercadopago', urlencoded({ extended: false }), saasController.mercadopagoWebhook);
 
 router.get('/plans', saasController.getPlans);
 

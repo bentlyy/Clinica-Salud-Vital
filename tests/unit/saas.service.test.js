@@ -13,6 +13,11 @@ vi.mock('../../src/shared/db.js', () => ({
     on: vi.fn(),
   },
   readPool: { query: mockQuery },
+  superAdminPool: {
+    query: mockQuery,
+    connect: mockConnect,
+    on: vi.fn(),
+  },
 }));
 
 vi.mock('../../src/utils/logger.js', () => ({
@@ -570,5 +575,80 @@ describe('saasService.onboardTenant', () => {
 
     expect(result.subscription).toBeNull();
     expect(result.message).toBe('Tenant created (no plan assigned)');
+  });
+});
+
+describe('saasService.handleMercadoPagoPaymentApproved', () => {
+  it('is idempotent: skips when the payment was already reconciled', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [{ id: 9, tenant_id: 'tenant-1', plan_id: 2 }] }); // findSubscriptionByMpPaymentId
+
+    await saasService.handleMercadoPagoPaymentApproved({
+      id: '999',
+      external_reference: 'tenant-1',
+      metadata: { plan_code: 'pro' },
+    });
+
+    expect(mockQuery).toHaveBeenCalledWith(expect.stringContaining('WHERE mercadopago_payment_id = $1'), ['999']);
+    expect(mockConnect).not.toHaveBeenCalled();
+  });
+
+  it('activates an existing subscription with MP payment ids', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] });                     // findSubscriptionByMpPaymentId
+    mockQuery.mockResolvedValueOnce({ rows: [mockPlan()] });           // getPlanByCode
+    mockClient.query
+      .mockResolvedValueOnce({})                                       // BEGIN
+      .mockResolvedValueOnce({ rows: [{ id: 9 }] })                    // SELECT existing FOR UPDATE
+      .mockResolvedValueOnce({})                                       // UPDATE subscription
+      .mockResolvedValueOnce({});                                      // COMMIT
+
+    await saasService.handleMercadoPagoPaymentApproved({
+      id: 'pmt_1',
+      external_reference: 'tenant-1',
+      metadata: { plan_code: 'pro', preference_id: 'pref_1' },
+    });
+
+    expect(mockClient.query).toHaveBeenCalledWith(
+      expect.stringContaining("SET status = 'active', plan_id"),
+      expect.any(Array)
+    );
+    expect(mockClient.query).toHaveBeenCalledWith(
+      expect.stringContaining('mercadopago_payment_id = $3'),
+      [2, 'pref_1', 'pmt_1', expect.any(Date), expect.any(Date), 9]
+    );
+    expect(mockClient.query).toHaveBeenCalledWith('COMMIT');
+  });
+
+  it('creates a new subscription with an invoice when none exists', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] });                     // findSubscriptionByMpPaymentId
+    mockQuery.mockResolvedValueOnce({ rows: [mockPlan({ price_monthly_clp: 19990 })] }); // getPlanByCode
+    mockClient.query
+      .mockResolvedValueOnce({})                                       // BEGIN
+      .mockResolvedValueOnce({ rows: [] })                             // SELECT existing → none
+      .mockResolvedValueOnce({ rows: [{ id: 12 }] })                    // INSERT subscription
+      .mockResolvedValueOnce({})                                        // INSERT invoice
+      .mockResolvedValueOnce({});                                       // COMMIT
+
+    await saasService.handleMercadoPagoPaymentApproved({
+      id: 'pmt_2',
+      external_reference: 'tenant-new',
+      metadata: { plan_code: 'pro', preference_id: 'pref_2' },
+    });
+
+    expect(mockClient.query).toHaveBeenCalledWith(
+      expect.stringContaining('INSERT INTO subscriptions'),
+      expect.any(Array)
+    );
+    expect(mockClient.query).toHaveBeenCalledWith(
+      expect.stringContaining('INSERT INTO subscription_invoices'),
+      expect.arrayContaining(['tenant-new', 12, 19990, expect.any(Date), expect.any(Date), 'pmt_2', expect.any(Date)])
+    );
+  });
+
+  it('skips when external_reference and metadata are missing', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] });                     // findSubscriptionByMpPaymentId
+
+    await saasService.handleMercadoPagoPaymentApproved({ id: 'pmt_3', external_reference: null });
+
+    expect(mockConnect).not.toHaveBeenCalled();
   });
 });

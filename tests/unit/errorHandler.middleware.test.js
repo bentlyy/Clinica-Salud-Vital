@@ -26,12 +26,15 @@ beforeEach(() => {
 
 describe('errorHandler', () => {
   it('responds with 500 and message', () => {
+    const originalEnv = process.env.NODE_ENV;
+    process.env.NODE_ENV = 'production';
     const err = new Error('Something broke');
     const req = mockReq();
     const res = mockRes();
     const next = vi.fn();
 
     errorHandler(err, req, res, next);
+    process.env.NODE_ENV = originalEnv;
 
     expect(res.status).toHaveBeenCalledWith(500);
     expect(res.json).toHaveBeenCalledWith({ error: 'Internal server error' });
@@ -104,6 +107,8 @@ describe('errorHandler', () => {
   });
 
   it('masks internal error message for server errors (5xx)', () => {
+    const originalEnv = process.env.NODE_ENV;
+    process.env.NODE_ENV = 'production';
     const err = new Error('Database connection failed');
     err.statusCode = 500;
     const req = mockReq();
@@ -111,6 +116,7 @@ describe('errorHandler', () => {
     const next = vi.fn();
 
     errorHandler(err, req, res, next);
+    process.env.NODE_ENV = originalEnv;
 
     expect(res.json).toHaveBeenCalledWith(
       expect.objectContaining({ error: 'Internal server error' })

@@ -133,7 +133,7 @@ export const getAllPrescriptions = async (tenantId: string, limit: number = 100,
     FROM clinical_records cr
     JOIN users u ON cr.patient_id = u.id
     JOIN doctors d ON cr.doctor_id = d.id
-    LEFT JOIN prescriptions p ON p.clinical_record_id = cr.id AND p.tenant_id = $1
+    LEFT JOIN prescriptions p ON p.clinical_record_id = cr.id AND p.tenant_id = cr.tenant_id
     WHERE cr.tenant_id = $1
     GROUP BY cr.id, u.name, d.name, cr.created_at
     ORDER BY cr.created_at DESC
@@ -163,7 +163,7 @@ export const getMyPrescriptions = async (patientId: number, tenantId: string) =>
     FROM clinical_records cr
     JOIN users u ON cr.patient_id = u.id
     JOIN doctors d ON cr.doctor_id = d.id
-    LEFT JOIN prescriptions p ON p.clinical_record_id = cr.id AND p.tenant_id = $2
+    LEFT JOIN prescriptions p ON p.clinical_record_id = cr.id AND p.tenant_id = cr.tenant_id
     WHERE cr.tenant_id = $2 AND cr.patient_id = $1
     GROUP BY cr.id, u.name, d.name, cr.created_at
     ORDER BY cr.created_at DESC

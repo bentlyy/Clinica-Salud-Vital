@@ -9,6 +9,10 @@ const DEFAULT_TENANT_ID = process.env.DEFAULT_TENANT_ID || 'default';
 const getAdminPassword = (): string => {
   const password = process.env.ADMIN_PASSWORD;
   if (password) return password;
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('ADMIN_PASSWORD es obligatoria en producción. Abortando seed.');
+  }
+  logger.warn('ADMIN_PASSWORD no definida — usando fallback de desarrollo.');
   return 'REPLACED_PASSWORD';
 };
 

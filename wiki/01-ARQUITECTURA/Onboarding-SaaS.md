@@ -16,7 +16,7 @@ El onboarding determina el primer contacto de una clínica con la plataforma. El
 
 | Patrón | Descripción | Ejemplo del mercado | Riesgo |
 |--------|-------------|--------------------|--------|
-| **Self-serve inmediato** | El tenant se crea y activa al instante; el pago/verificación ocurre después | SaaS horizontales con pago por tarjeta (Stripe Checkout como bandera) | Fraude y tenants "fantasma" sin datos reales |
+| **Self-serve inmediato** | El tenant se crea y activa al instante; el pago/verificación ocurre después | SaaS horizontales con pago por tarjeta (Mercado Pago Checkout Pro como bandera) | Fraude y tenants "fantasma" sin datos reales |
 | **Submitted-first (adoptado)** | La solicitud se envía con documentos; el proveedor aprueba antes de activar el tenant | tbioscan (healthcare) — flujo "primero el expediente, luego el tenant" | Latencia entre registro y primer uso |
 | **Provisioner asíncrono / cola** | El tenant se crea vía job en background con retry/backoff | dudoxx Tenant Provisioner, SaaS con pool de recursos | Complejidad de infraestructura |
 

@@ -80,3 +80,9 @@ temp/
 
 # Test output files
 test-output*.txt
+
+# Dev test scripts (may contain hardcoded credentials - never commit)
+api-test*.js
+dbtest*.js
+login-test.js
+check-*.js

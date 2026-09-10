@@ -16,6 +16,11 @@ vi.mock('../../src/shared/db.js', () => ({
     on: vi.fn(),
   },
   readPool: { query: mockQuery },
+  superAdminPool: {
+    query: mockQuery,
+    connect: mockConnect,
+    on: vi.fn(),
+  },
 }));
 
 vi.mock('../../src/shared/jwt.service.js', () => ({
@@ -91,8 +96,12 @@ describe('GET /api/super-admin/tenants', () => {
   it('returns paginated tenants', async () => {
     mockQuery
       .mockResolvedValueOnce({ rows: [{ token_version: 0, active: true }] })
-      .mockResolvedValueOnce({ rows: [{ total: 2 }] })
-      .mockResolvedValueOnce({ rows: [{ id: 't1', name: 'Test' }, { id: 't2', name: 'Test 2' }] });
+      .mockResolvedValueOnce({
+        rows: [
+          { id: 't1', name: 'Test', plan_code: null, plan_name: null, total_bookings: 0, total_users: 5, total_doctors: 2, created_at: new Date(), total: 2 },
+          { id: 't2', name: 'Test 2', plan_code: 'pro', plan_name: 'Pro', total_bookings: 10, total_users: 8, total_doctors: 3, created_at: new Date(), total: 2 },
+        ],
+      });
 
     const res = await request(app)
       .get('/api/super-admin/tenants')
@@ -106,8 +115,9 @@ describe('GET /api/super-admin/tenants', () => {
   it('filters by search param', async () => {
     mockQuery
       .mockResolvedValueOnce({ rows: [{ token_version: 0, active: true }] })
-      .mockResolvedValueOnce({ rows: [{ total: 1 }] })
-      .mockResolvedValueOnce({ rows: [{ id: 't1', name: 'Target' }] });
+      .mockResolvedValueOnce({
+        rows: [{ id: 't1', name: 'Target', plan_code: null, plan_name: null, total_bookings: 0, total_users: 0, total_doctors: 0, created_at: new Date(), total: 1 }],
+      });
 
     const res = await request(app)
       .get('/api/super-admin/tenants?search=Target')

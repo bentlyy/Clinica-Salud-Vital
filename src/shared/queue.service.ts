@@ -63,12 +63,12 @@ class QueueService {
          SET    status = 'processing',
                 started_at = NOW(),
                 attempts = attempts + 1
-         WHERE  id = (
+         WHERE  id IN (
            SELECT id FROM jobs
            WHERE  status = 'pending'
              AND  next_retry_at <= NOW()
            ORDER  BY next_retry_at ASC
-           LIMIT  1
+           LIMIT  10
            FOR UPDATE SKIP LOCKED
          )
          RETURNING id, type, data, attempts`,
@@ -150,6 +150,12 @@ export function registerWorker(type: string, handler: JobHandler): void {
 export function registerWorkers(): void {
   const { registerWebhookWorker } = require('../modules/webhooks/webhooks.service.js') as typeof import('../modules/webhooks/webhooks.service.js');
   registerWebhookWorker();
+
+  registerWorker('report:generate', async (job) => {
+    const { reportId, tenantId } = job.data as { reportId: number; tenantId: string };
+    const { processReport } = require('../modules/reports/report.service.js') as typeof import('../modules/reports/report.service.js');
+    await processReport(reportId, tenantId);
+  });
 
   registerWorker('email:send', async (job) => {
     const { type: emailType, to, subject, html, tenantId } = job.data as Record<string, any>;

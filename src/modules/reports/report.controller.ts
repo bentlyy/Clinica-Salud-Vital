@@ -13,7 +13,7 @@ export const generate = asyncHandler(async (req, res) => {
   if (!type || !date_from || !date_to) {
     throw new BadRequestError(E.REPORT_MISSING_PARAMS);
   }
-  const report = await reportService.generateReport(
+  const report = await reportService.createReport(
     type,
     { type, date_from, date_to, filters },
     req.user!.id,

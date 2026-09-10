@@ -71,11 +71,20 @@ CREATE INDEX IF NOT EXISTS idx_onboarding_tenant ON tenant_onboarding(tenant_id)
 CREATE INDEX IF NOT EXISTS idx_onboarding_status ON tenant_onboarding(status);
 CREATE INDEX IF NOT EXISTS idx_onboarding_doc ON onboarding_documents(onboarding_id, tenant_id);
 
--- Permisos para roles usados por la app
-GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE tenant_onboarding TO clinic_app;
-GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE onboarding_documents TO clinic_app;
-GRANT USAGE, SELECT ON SEQUENCE tenant_onboarding_id_seq TO clinic_app;
-GRANT USAGE, SELECT ON SEQUENCE onboarding_documents_id_seq TO clinic_app;
+-- Permisos para roles usados por la app (solo si el rol existe; en PostgreSQL
+-- gestionados el rol de conexión puede llamarse distinto, y omitimos sin fallar
+-- para que la migración se registre siempre y no se reintente en cada boot).
+DO $$
+BEGIN
+  IF EXISTS (SELECT FROM pg_roles WHERE rolname = 'clinic_app') THEN
+    EXECUTE 'GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE tenant_onboarding TO clinic_app';
+    EXECUTE 'GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE onboarding_documents TO clinic_app';
+    EXECUTE 'GRANT USAGE, SELECT ON SEQUENCE tenant_onboarding_id_seq TO clinic_app';
+    EXECUTE 'GRANT USAGE, SELECT ON SEQUENCE onboarding_documents_id_seq TO clinic_app';
+  ELSE
+    RAISE WARNING 'clinic_app no existe - omitiendo GRANTs de onboarding';
+  END IF;
+END $$;
 
 -- Permisos para clinic_superadmin (solo si el rol existe; en PostgreSQL
 -- gestionados donde 025 no pudo crear el rol, se omiten sin fallar).

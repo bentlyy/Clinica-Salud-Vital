@@ -216,7 +216,7 @@ Vitaria utiliza una arquitectura de **monolito modular**, separando las principa
 
 ### Integraciones
 
-- Stripe
+- Mercado Pago (Chile, CLP)
 - SendGrid
 - Twilio
 

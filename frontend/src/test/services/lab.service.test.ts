@@ -443,7 +443,7 @@ describe('lab.service SSE', () => {
     vi.unstubAllGlobals();
   });
 
-  it('subscribeToLabSSE creates an EventSource with the token when present', () => {
+  it('subscribeToLabSSE creates an EventSource without embedding the token in the URL', () => {
     localStorage.setItem('access_token', 'tok-123');
     vi.stubGlobal('EventSource', EventSourceMock as unknown as typeof EventSource);
 
@@ -453,11 +453,11 @@ describe('lab.service SSE', () => {
     expect(es).toBeInstanceOf(EventSourceMock);
     expect(EventSourceMock).toHaveBeenCalledTimes(1);
     expect(EventSourceMock.mock.calls[0][0]).toContain('/laboratory/events');
-    expect(EventSourceMock.mock.calls[0][0]).toContain('token=tok-123');
+    expect(EventSourceMock.mock.calls[0][0]).not.toContain('token=');
     expect(es.onmessage).toBe(onMessage);
   });
 
-  it('subscribeToLabSSE omits the token when not present', () => {
+  it('subscribeToLabSSE never leaks credentials into the URL when not present', () => {
     localStorage.removeItem('access_token');
     vi.stubGlobal('EventSource', EventSourceMock as unknown as typeof EventSource);
 

@@ -33,7 +33,7 @@ graph LR
 |---|---------|-----------|
 | 1 | `security.middleware.ts` | Helmet (CSP, HSTS, frameguard) + HPP + Permissions-Policy + `validateEnvSecurity` |
 | 2 | `compression` | Respuestas gzip |
-| 3 | `healthHandler` | `GET /health` y `GET /api/health` (DB, pool, stripe) |
+| 3 | `healthHandler` | `GET /health` y `GET /api/health` (DB, pool, mercadopago) |
 | 4 | `cors` | Whitelist localhost:5173 + FRONTEND_URL + RENDER_EXTERNAL_URL, `credentials: true` |
 | 5 | `cookieParser(COOKIE_SECRET)` | Parsea cookies firmadas |
 | 6 | `express.json` | Body size limit 100KB |

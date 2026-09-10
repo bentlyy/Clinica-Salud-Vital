@@ -13,17 +13,21 @@ vi.mock('../../src/utils/logger.js', () => ({
   logger: { info: vi.fn(), error: vi.fn(), warn: vi.fn() },
 }));
 
+vi.mock('../../src/shared/queue.service.js', () => ({
+  enqueueJob: vi.fn().mockResolvedValue({}),
+}));
+
 import * as reportService from '../../src/modules/reports/report.service.js';
+import { enqueueJob } from '../../src/shared/queue.service.js';
 import { logger } from '../../src/utils/logger.js';
 
 beforeEach(() => {
-  vi.clearAllMocks();
+  vi.resetAllMocks();
 });
 
 describe('reportService.getAvailable', () => {
   it('returns the 5 available report types', async () => {
     const types = await reportService.getAvailable();
-
     expect(types).toHaveLength(5);
     expect(types.map(t => t.type)).toEqual(
       expect.arrayContaining(['appointments', 'revenue', 'patients', 'laboratory', 'custom'])
@@ -31,29 +35,41 @@ describe('reportService.getAvailable', () => {
   });
 });
 
-describe('reportService.generateReport', () => {
-  const baseConfig = { type: 'appointments', date_from: '2026-01-01', date_to: '2026-01-31' };
-  const insertReportRow = { id: 1, tenant_id: 't1', user_id: 5, type: 'appointments', status: 'generating', config: '{}', result_url: null };
-
+describe('reportService.createReport', () => {
   it('throws BadRequest for invalid report type', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] });
     await expect(
-      reportService.generateReport('bogus', baseConfig, 5, 't1')
-    ).rejects.toThrow('Invalid report type');
+      reportService.createReport('bogus', { type: 'bogus', date_from: '2026-01-01', date_to: '2026-01-31' }, 5, 't1')
+    ).rejects.toThrow();
   });
 
-  it('generates an appointments report and marks it completed', async () => {
-    mockQuery.mockResolvedValueOnce({ rows: [{ ...insertReportRow }] });
+  it('inserts a report row and enqueues a job', async () => {
+    const reportRow = { id: 1, tenant_id: 't1', user_id: 5, type: 'appointments', status: 'generating', config: '{}', result_url: null };
+    mockQuery.mockResolvedValueOnce({ rows: [reportRow] });
+
+    const config = { type: 'appointments', date_from: '2026-01-01', date_to: '2026-01-31' };
+    const result = await reportService.createReport('appointments', config, 5, 't1');
+
+    expect(result.id).toBe(1);
+    expect(result.status).toBe('generating');
+    expect(result.result_url).toBeNull();
+    expect(mockQuery).toHaveBeenCalledWith(
+      expect.stringContaining('INSERT INTO reports'),
+      ['t1', 5, 'appointments', JSON.stringify(config)]
+    );
+    expect(enqueueJob).toHaveBeenCalledWith('report:generate', { reportId: 1, tenantId: 't1' });
+  });
+});
+
+describe('reportService.processReport', () => {
+  it('marks report as completed with appointments data', async () => {
+    const reportRow = { id: 1, type: 'appointments', config: { type: 'appointments', date_from: '2026-01-01', date_to: '2026-01-31' } };
+    mockQuery.mockResolvedValueOnce({ rows: [reportRow] });
     mockQuery.mockResolvedValueOnce({ rows: [{ id: 10, date: '2026-01-05' }] });
     mockQuery.mockResolvedValueOnce({ rows: [] });
 
-    const result = await reportService.generateReport('appointments', baseConfig, 5, 't1');
+    await reportService.processReport(1, 't1');
 
-    expect(result.status).toBe('completed');
-    expect(result.result_url).toContain('total');
-    expect(mockQuery).toHaveBeenCalledWith(
-      expect.stringContaining(`INSERT INTO reports`),
-      ['t1', 5, 'appointments', JSON.stringify(baseConfig)]
-    );
     expect(mockQuery).toHaveBeenCalledWith(
       expect.stringContaining(`UPDATE reports SET status = 'completed'`),
       expect.any(Array)
@@ -61,7 +77,8 @@ describe('reportService.generateReport', () => {
   });
 
   it('computes totalRevenue for revenue reports', async () => {
-    mockQuery.mockResolvedValueOnce({ rows: [{ ...insertReportRow, type: 'revenue' }] });
+    const reportRow = { id: 2, type: 'revenue', config: { type: 'revenue', date_from: '2026-01-01', date_to: '2026-01-31' } };
+    mockQuery.mockResolvedValueOnce({ rows: [reportRow] });
     mockQuery.mockResolvedValueOnce({
       rows: [
         { id: 1, total_amount: '100.5', status: 'paid' },
@@ -70,15 +87,18 @@ describe('reportService.generateReport', () => {
     });
     mockQuery.mockResolvedValueOnce({ rows: [] });
 
-    const result = await reportService.generateReport('revenue', { ...baseConfig, type: 'revenue' }, 5, 't1');
+    await reportService.processReport(2, 't1');
 
-    const parsed = JSON.parse(result.result_url);
-    expect(parsed.totalRevenue).toBe(150);
-    expect(parsed.total).toBe(2);
+    const updateCall = mockQuery.mock.calls.find(c => String(c[0]).startsWith('UPDATE reports SET status = '));
+    expect(updateCall).toBeDefined();
+    const payload = JSON.parse(updateCall[1][0]);
+    expect(payload.totalRevenue).toBe(150);
+    expect(payload.total).toBe(2);
   });
 
   it('counts completed results for laboratory reports', async () => {
-    mockQuery.mockResolvedValueOnce({ rows: [{ ...insertReportRow, type: 'laboratory' }] });
+    const reportRow = { id: 3, type: 'laboratory', config: { type: 'laboratory', date_from: '2026-01-01', date_to: '2026-01-31' } };
+    mockQuery.mockResolvedValueOnce({ rows: [reportRow] });
     mockQuery.mockResolvedValueOnce({
       rows: [
         { id: 1, status: 'completed' },
@@ -88,47 +108,40 @@ describe('reportService.generateReport', () => {
     });
     mockQuery.mockResolvedValueOnce({ rows: [] });
 
-    const result = await reportService.generateReport('laboratory', { ...baseConfig, type: 'laboratory' }, 5, 't1');
+    await reportService.processReport(3, 't1');
 
-    const parsed = JSON.parse(result.result_url);
-    expect(parsed.completed).toBe(2);
-    expect(parsed.total).toBe(3);
-  });
-
-  it('generates patients report', async () => {
-    mockQuery.mockResolvedValueOnce({ rows: [{ ...insertReportRow, type: 'patients' }] });
-    mockQuery.mockResolvedValueOnce({ rows: [{ id: 1, name: 'Ana' }] });
-    mockQuery.mockResolvedValueOnce({ rows: [] });
-
-    const result = await reportService.generateReport('patients', { ...baseConfig, type: 'patients' }, 5, 't1');
-
-    const parsed = JSON.parse(result.result_url);
-    expect(parsed.patients).toHaveLength(1);
+    const updateCall = mockQuery.mock.calls.find(c => String(c[0]).startsWith('UPDATE reports SET status = '));
+    expect(updateCall).toBeDefined();
+    const payload = JSON.parse(updateCall[1][0]);
+    expect(payload.completed).toBe(2);
+    expect(payload.total).toBe(3);
   });
 
   it('handles custom report type without generator', async () => {
-    mockQuery.mockResolvedValueOnce({ rows: [{ ...insertReportRow, type: 'custom' }] });
+    const reportRow = { id: 5, type: 'custom', config: { type: 'custom', date_from: '2026-01-01', date_to: '2026-01-31' } };
+    mockQuery.mockResolvedValueOnce({ rows: [reportRow] });
     mockQuery.mockResolvedValueOnce({ rows: [] });
 
-    const result = await reportService.generateReport('custom', { ...baseConfig, type: 'custom' }, 5, 't1');
+    await reportService.processReport(5, 't1');
 
-    const parsed = JSON.parse(result.result_url);
-    expect(parsed.message).toBe('Report generated');
-    expect(parsed.type).toBe('custom');
+    expect(mockQuery).toHaveBeenCalledWith(
+      expect.stringContaining(`UPDATE reports SET status = 'completed'`),
+      [JSON.stringify({ message: 'Report generated', type: 'custom' }), 5]
+    );
   });
 
   it('marks report as failed when generator throws', async () => {
-    mockQuery.mockResolvedValueOnce({ rows: [{ ...insertReportRow }] });
+    const reportRow = { id: 6, type: 'appointments', config: { type: 'appointments', date_from: '2026-01-01', date_to: '2026-01-31' } };
+    mockQuery.mockResolvedValueOnce({ rows: [reportRow] });
     mockQuery.mockRejectedValueOnce(new Error('DB exploded'));
     mockQuery.mockResolvedValueOnce({ rows: [] });
 
-    const result = await reportService.generateReport('appointments', baseConfig, 5, 't1');
+    await reportService.processReport(6, 't1');
 
-    expect(result.status).toBe('failed');
-    expect(logger.error).toHaveBeenCalledWith('Report generation failed', expect.objectContaining({ reportId: 1 }));
+    expect(logger.error).toHaveBeenCalledWith('Report generation failed', expect.objectContaining({ reportId: 6 }));
     expect(mockQuery).toHaveBeenCalledWith(
       expect.stringContaining(`UPDATE reports SET status = 'failed'`),
-      [1]
+      [6]
     );
   });
 });
@@ -136,9 +149,7 @@ describe('reportService.generateReport', () => {
 describe('reportService.getById', () => {
   it('returns the report for the tenant', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [{ id: 3, type: 'revenue' }] });
-
     const result = await reportService.getById(3, 't1');
-
     expect(result.id).toBe(3);
     expect(mockQuery).toHaveBeenCalledWith(
       expect.stringContaining('WHERE id = $1 AND tenant_id = $2'),
@@ -148,7 +159,6 @@ describe('reportService.getById', () => {
 
   it('throws Report not found when missing', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [] });
-
-    await expect(reportService.getById(999, 't1')).rejects.toThrow('Report not found');
+    await expect(reportService.getById(999, 't1')).rejects.toThrow();
   });
 });

@@ -36,7 +36,7 @@ import pkg from '../package.json';
 import type { QueryConfig } from 'pg';
 
 declare global {
-  var stripeWarning: boolean | undefined;
+  var mercadopagoWarning: boolean | undefined;
 }
 
 import doctorRoutes from './modules/doctor/doctor.routes.js';
@@ -94,11 +94,11 @@ const healthHandler = async (_req: Request, res: Response) => {
       const mem = process.memoryUsage();
       const memUsed = Math.round(mem.heapUsed / 1024 / 1024);
       const memTotal = Math.round(mem.heapTotal / 1024 / 1024);
-      let stripeStatus = 'configured';
-      if (global.stripeWarning) stripeStatus = 'stub_mode';
+      let mpStatus = 'configured';
+      if (global.mercadopagoWarning) mpStatus = 'stub_mode';
       body.checks = {
         database: { status: dbStatus, latency_ms: dbLatency, pool: { total: pool.totalCount, idle: pool.idleCount, waiting: pool.waitingCount } },
-        stripe: { status: stripeStatus },
+        mercadopago: { status: mpStatus },
         memory: { status: 'ok', heap_used_mb: memUsed, heap_total_mb: memTotal },
       };
     } else {
@@ -177,7 +177,12 @@ if (process.env.NODE_ENV === 'production') {
 
 // COOKIE_SECRET must be set independently of JWT_SECRET; do not share secrets between mechanisms
 app.use(cookieParser(process.env.COOKIE_SECRET));
-app.use(express.json({ limit: '100kb' }));
+app.use(express.json({
+  limit: '100kb',
+  verify: (req, _res, buf) => {
+    req.rawBody = buf;
+  },
+}));
 app.use(csrfProtection);
 app.use(optionalAuth);
 app.use(tenantMiddleware);
@@ -324,11 +329,18 @@ const runMigration = async (): Promise<void> => {
         break;
       } catch (migErr) {
         const isLastAttempt = attempt === MAX_MIGRATION_ATTEMPTS;
+        const reason = (migErr as Error).message;
         logger.error(`Error en migración ${file} (intento ${attempt}/${MAX_MIGRATION_ATTEMPTS})`, {
-          error: (migErr as Error).message,
+          error: reason,
           sql: sql.slice(0, 200),
         });
-        if (isLastAttempt) throw migErr;
+        if (isLastAttempt) {
+          logger.error(
+            `Migración ${file} NO aplicada (${reason}). No se bloquean migraciones posteriores; ` +
+            `se reintentará automáticamente en el próximo arranque.`
+          );
+          break;
+        }
         await new Promise((r: (value: unknown) => void) => setTimeout(r, attempt * 2000));
       }
     }
@@ -375,19 +387,14 @@ const startServer = async (): Promise<void> => {
       validateEmailConfig();
 
       if (process.env.NODE_ENV === 'production') {
-        const stripeKey = process.env.STRIPE_SECRET_KEY || '';
-        if (!stripeKey) {
+        const mpToken = process.env.MERCADOPAGO_ACCESS_TOKEN || '';
+        if (!mpToken.startsWith('APP_USR-')) {
           logger.error('████████████████████████████████████████████████████████████████');
-          logger.error('█ CRITICAL: STRIPE_SECRET_KEY no configurada                   █');
+          logger.error('█ CRITICAL: MERCADOPAGO_ACCESS_TOKEN no configurada            █');
           logger.error('█ El sistema SaaS NO procesará pagos reales                    █');
-          logger.error('█ Configure STRIPE_SECRET_KEY en las variables de entorno      █');
+          logger.error('█ Configure APP_USR-... en las variables de entorno            █');
           logger.error('████████████████████████████████████████████████████████████████');
-          global.stripeWarning = true;
-        } else if (stripeKey.startsWith('sk_test_')) {
-          logger.warn('████████████████████████████████████████████████████████████████');
-          logger.warn('█ WARNING: STRIPE_SECRET_KEY es de prueba (sk_test_)           █');
-          logger.warn('█ Cambiar a sk_live_ para producción real                       █');
-          logger.warn('████████████████████████████████████████████████████████████████');
+          global.mercadopagoWarning = true;
         }
       }
 
@@ -432,37 +439,43 @@ const startServer = async (): Promise<void> => {
       } catch {
         // Managed PostgreSQL may not support custom GUCs — non-fatal
       }
-      step('seedDefaultTenant');
-      try {
-        await seedDefaultTenant();
-      } catch (seedErr) {
-        logger.error('seedDefaultTenant failed (non-fatal, continuing startup)', { error: String(seedErr) });
+      const seedsEnabled = process.env.NODE_ENV !== 'production' || process.env.RUN_SEEDS === 'true';
+      if (seedsEnabled) {
+        step('seedDefaultTenant');
+        try {
+          await seedDefaultTenant();
+        } catch (seedErr) {
+          logger.error('seedDefaultTenant failed (non-fatal, continuing startup)', { error: String(seedErr) });
+        }
+        step('seedSuperAdmin');
+        try {
+          await seedSuperAdmin();
+        } catch (seedErr) {
+          logger.error('seedSuperAdmin failed (non-fatal, continuing startup)', { error: String(seedErr) });
+        }
+        step('seedTestTenants');
+        try {
+          await seedTestTenants();
+        } catch (seedErr) {
+          logger.error('seedTestTenants failed (non-fatal, continuing startup)', { error: String(seedErr) });
+        }
+        step('seed');
+        try {
+          await seed();
+        } catch (seedErr) {
+          logger.error('seed failed (non-fatal, continuing startup)', { error: String(seedErr) });
+        }
+        await backfillInvoices();
+        await backfillMedicalHistory();
+        await backfillLabRequests();
+        await backfillLabNotifications();
+        await backfillUser1Data();
+        await spreadSeedDates();
+        markSeedComplete();
+      } else {
+        logger.info('[STARTUP] Seeds de demo deshabilitados en producción (RUN_SEEDS=true para forzar)');
+        markSeedComplete();
       }
-      step('seedSuperAdmin');
-      try {
-        await seedSuperAdmin();
-      } catch (seedErr) {
-        logger.error('seedSuperAdmin failed (non-fatal, continuing startup)', { error: String(seedErr) });
-      }
-      step('seedTestTenants');
-      try {
-        await seedTestTenants();
-      } catch (seedErr) {
-        logger.error('seedTestTenants failed (non-fatal, continuing startup)', { error: String(seedErr) });
-      }
-      step('seed');
-      try {
-        await seed();
-      } catch (seedErr) {
-        logger.error('seed failed (non-fatal, continuing startup)', { error: String(seedErr) });
-      }
-      await backfillInvoices();
-      await backfillMedicalHistory();
-      await backfillLabRequests();
-      await backfillLabNotifications();
-      await backfillUser1Data();
-      await spreadSeedDates();
-      markSeedComplete();
 
       startReminderJob();
 

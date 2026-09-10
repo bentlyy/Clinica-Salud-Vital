@@ -25,7 +25,6 @@
 - [ ] Portal de autoservicio avanzado para pacientes (citas online, historial, pagos)
 - [ ] App mobile (React Native)
 - [ ] Integración FHIR R4
-- [ ] Migración a pago con Stripe real (quitar stub)
 - [ ] Modelos de ML reales (hoy `smaForecast` = media móvil simple)
 
 ## Completado
@@ -40,6 +39,7 @@
 - [x] Hardening BOLA/ownership + RLS forzada
 - [x] Módulo de plantillas clínicas (`/api/clinical-templates`)
 - [x] Sesiones de usuario + endpoints `/api/auth/sessions`
+- [x] Pagos SaaS con Mercado Pago (Checkout Pro CLP, webhook verificado vía API; quita Stripe)
 
 ---
 
