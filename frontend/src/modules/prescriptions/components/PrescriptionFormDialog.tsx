@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type SyntheticEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import {
@@ -12,7 +12,9 @@ import {
   Typography,
   IconButton,
   Divider,
+  Autocomplete,
 } from '@mui/material';
+import type { AutocompleteRenderInputParams } from '@mui/material/Autocomplete';
 import { useTheme } from '@mui/material/styles';
 import Close from '@mui/icons-material/Close';
 import Add from '@mui/icons-material/Add';
@@ -73,6 +75,7 @@ export function PrescriptionFormDialog({
     control,
     handleSubmit,
     reset,
+    setValue,
     formState: { errors },
   } = useForm<PrescriptionFormData>({
     resolver: zodResolver(prescriptionSchema(t)),
@@ -107,6 +110,8 @@ export function PrescriptionFormDialog({
         id: prescription.patient_id,
         name: prescription.patient_name || '',
         email: '',
+        is_active: true,
+        created_at: '',
       });
     } else {
       reset({
@@ -181,19 +186,19 @@ export function PrescriptionFormDialog({
               sx={{ mb: 3 }}
             />
           ) : (
-            <Autocomplete
+            <Autocomplete<Patient, false>
               options={patientsData?.data ?? []}
-              getOptionLabel={(option) => option.name}
-              isOptionEqualToValue={(option, value) => option.id === value.id}
+              getOptionLabel={(option: Patient) => option.name}
+              isOptionEqualToValue={(option: Patient, value: Patient) => option.id === value.id}
               value={selectedPatient}
-              onChange={(_, value) => {
+              onChange={(_: SyntheticEvent, value: Patient | null) => {
                 setSelectedPatient(value);
                 setValue('patient_id', value?.id ?? 0);
                 setValue('patient_name', value?.name ?? '');
               }}
-              onInputChange={(_, value) => setPatientSearch(value)}
+              onInputChange={(_: SyntheticEvent, value: string) => setPatientSearch(value)}
               loading={patientsData === undefined}
-              renderInput={(params) => (
+              renderInput={(params: AutocompleteRenderInputParams) => (
                 <TextField
                   {...params}
                   label={t('patient_name_label', 'Nombre del Paciente')}
