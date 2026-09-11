@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { authMiddleware, authorize } from '../../middlewares/auth.middleware.js';
 import { validateZod } from '../../middlewares/validate.middleware.js';
-import { getMedicalHistory, getMedicalHistoryByPatient, createMedicalHistory, updateMedicalHistory } from './medical-history.controller.js';
+import { getMedicalHistory, getMedicalHistoryByPatient, createMedicalHistory, updateMedicalHistory, deleteMedicalHistory } from './medical-history.controller.js';
 import { z } from 'zod';
 
 const router = Router();
@@ -26,5 +26,6 @@ router.get('/patient/:patientId', authorize('doctor', 'admin', 'user', 'patient'
 router.get('/', authorize('doctor', 'admin', 'user', 'patient', 'superadmin'), getMedicalHistory);
 router.post('/', authorize('doctor', 'admin', 'superadmin'), validateZod(createMedicalHistorySchema), createMedicalHistory);
 router.patch('/:id', authorize('doctor', 'admin', 'superadmin'), validateZod(updateMedicalHistorySchema), updateMedicalHistory);
+router.delete('/:id', authorize('doctor', 'admin', 'superadmin'), deleteMedicalHistory);
 
 export default router;

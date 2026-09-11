@@ -45,12 +45,20 @@ export const doctorService = {
   },
 
   async create(input: CreateDoctorInput, config?: AxiosRequestConfig): Promise<Doctor> {
-    const { data } = await apiClient.post<Doctor>('/doctors', input, config);
-    return data;
+    const { data } = await apiClient.post<Doctor | { doctor: Doctor }>('/doctors/register', {
+      name: input.name,
+      email: input.email,
+      specialty: input.specialty || undefined,
+      phone: input.phone || undefined,
+    }, config);
+    return 'doctor' in data ? data.doctor : data;
   },
 
   async update(id: number, input: UpdateDoctorInput, config?: AxiosRequestConfig): Promise<Doctor> {
-    const { data } = await apiClient.patch<Doctor>(`/doctors/${id}`, input, config);
+    const { data } = await apiClient.patch<Doctor>(`/doctors/${id}`, {
+      name: input.name,
+      specialty: input.specialty || undefined,
+    }, config);
     return data;
   },
 

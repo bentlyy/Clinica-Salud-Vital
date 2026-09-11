@@ -583,7 +583,7 @@ function LoginModal({ onClose }: { onClose: () => void }) {
   }, [navigate]);
 
   const handleGuestDashboard = useCallback(() => {
-    navigate('/dashboard', { replace: true });
+    navigate('/booking', { replace: true });
   }, [navigate]);
 
   return (

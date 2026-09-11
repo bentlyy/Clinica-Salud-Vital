@@ -4,6 +4,10 @@ import { AppThemeProvider } from '@/shared/providers/ThemeProvider';
 import { PrescriptionFormDialog } from '@/modules/prescriptions/components/PrescriptionFormDialog';
 import type { Prescription, CreatePrescriptionInput } from '@/modules/prescriptions/types/prescription.types';
 
+vi.mock('@/modules/patients/hooks/usePatients', () => ({
+  usePatientList: () => ({ data: { data: [] }, isFetching: false }),
+}));
+
 vi.mock('react-i18next', () => ({
   useTranslation: () => {
     const translations: Record<string, string> = {
@@ -85,7 +89,7 @@ describe('PrescriptionFormDialog', () => {
   it('shows validation errors when submitting an empty form', async () => {
     renderDialog();
     fireEvent.click(screen.getByRole('button', { name: 'Crear Receta' }));
-    expect(await screen.findByText('El nombre del paciente es requerido')).toBeInTheDocument();
+    expect(await screen.findByText('Seleccione un paciente')).toBeInTheDocument();
     expect(await screen.findByText('El nombre del medicamento es requerido')).toBeInTheDocument();
     expect(await screen.findByText('La dosis es requerida')).toBeInTheDocument();
   });

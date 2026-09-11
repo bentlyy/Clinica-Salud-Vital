@@ -444,6 +444,7 @@
     "analytics": "Analytics",
     "reports": "Reports",
     "audit": "Audit",
+    "holidays": "Holidays",
     "notifications": "Notifications",
     "cobros": "Charges",
     "saasPlan": "Subscription",
@@ -1913,7 +1914,11 @@
     "sending": "Sending...",
     "send_invitation": "Send Invitation",
     "valid_email": "Please enter a valid email address",
-    "inviteSent": "Invitation sent successfully"
+    "inviteSent": "Invitation sent successfully",
+    "specialtyRequired": "Specialty is required",
+    "doctorCreateError": "Error creating the doctor. Please try again.",
+    "doctorUpdateError": "Error updating the doctor. Please try again.",
+    "inviteError": "Error sending the invitation. Please try again."
   },
   "patients": {
     "title": "Patients",

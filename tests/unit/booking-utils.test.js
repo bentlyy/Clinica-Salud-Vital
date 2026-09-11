@@ -150,6 +150,14 @@ describe('checkSlotOverlap', () => {
     );
   });
 
+  it('casts time and int parameters in the overlap query', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] });
+    await expect(checkSlotOverlap(1, '2030-06-17', '10:00', 30, undefined, 'default')).resolves.toBeUndefined();
+    const sql = mockQuery.mock.calls[0][0];
+    expect(sql).toContain('$3::time');
+    expect(sql).toContain('$4::int');
+  });
+
   it('queries with default tenantId', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [] });
     await expect(checkSlotOverlap(1, '2030-06-17', '10:00', 30, undefined, 'default')).resolves.toBeUndefined();

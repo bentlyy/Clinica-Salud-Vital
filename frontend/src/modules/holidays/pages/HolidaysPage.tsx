@@ -55,7 +55,7 @@ export default function HolidaysPage() {
       {
         key: 'holiday_date',
         header: t('date', { defaultValue: 'Fecha' }),
-        render: (holiday) => format(new Date(`${holiday.holiday_date}T00:00:00`), 'dd/MM/yyyy'),
+        render: (holiday) => format(new Date(`${String(holiday.holiday_date).slice(0, 10)}T00:00:00`), 'dd/MM/yyyy'),
       },
       { key: 'name', header: t('name', { defaultValue: 'Nombre' }) },
       { key: 'notice_days', header: t('notice', { defaultValue: 'Aviso (días)' }) },

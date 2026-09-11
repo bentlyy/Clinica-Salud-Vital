@@ -225,6 +225,27 @@ export const getDoctorByUserId = async (user_id: number, tenantId: string): Prom
   return result.rows[0] || null;
 };
 
+export const updateDoctor = async (id: number, input: { name?: string; specialty?: string }, tenantId: string): Promise<Doctor> => {
+  const existing = await readPool.query<Doctor>(
+    'SELECT * FROM doctors WHERE id = $1 AND tenant_id = $2',
+    [id, tenantId]
+  );
+
+  if (existing.rows.length === 0) {
+    throw new NotFoundError(E.DOCTOR_PROFILE_NOT_FOUND);
+  }
+
+  const name = input.name ?? existing.rows[0].name;
+  const specialty = input.specialty ?? existing.rows[0].specialty;
+
+  const result = await pool.query<Doctor>(
+    'UPDATE doctors SET name = $1, specialty = $2 WHERE id = $3 AND tenant_id = $4 RETURNING *',
+    [name, specialty, id, tenantId]
+  );
+
+  return result.rows[0];
+};
+
 interface InvitePersonInput {
   email: string;
   name?: string;

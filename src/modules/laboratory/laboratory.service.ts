@@ -843,7 +843,7 @@ export const createLabArea = async (data: any, tenantId: string) => {
 // QC RECORDS
 // ============================================================
 export const getQCRecords = async (tenantId: string, query: any = {}) => {
-  let sql = 'SELECT id, lab_test_id, lab_area_id, sample_id, equipment_id, reagent_id, qc_type, control_name, lot_number, expiration_date, measured_value, expected_min, expected_max, status, performed_by, notes, created_at, updated_at, tenant_id FROM lab_qc_records WHERE tenant_id = $1';
+  let sql = 'SELECT id, lab_test_id, lab_area_id, sample_id, equipment_id, reagent_id, qc_type, control_name, lot_number, expiration_date, measured_value, expected_min, expected_max, status, performed_by, notes, performed_at, created_at, tenant_id FROM lab_qc_records WHERE tenant_id = $1';
   const params: any[] = [tenantId];
   let count = 2;
 

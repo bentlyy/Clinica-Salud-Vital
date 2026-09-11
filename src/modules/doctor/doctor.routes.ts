@@ -4,6 +4,7 @@ import {
   getDoctorsPublic,
   registerDoctor,
   createDoctor,
+  updateDoctor,
   invitePerson,
   getMyDoctorProfile,
   listUsers,
@@ -11,7 +12,7 @@ import {
 } from './doctor.controller.js';
 import { authMiddleware, authorize } from '../../middlewares/auth.middleware.js';
 import { validateZod } from '../../middlewares/validate.middleware.js';
-import { registerDoctorSchema, createDoctorSchema, invitePersonSchema } from './doctor.schema.js';
+import { registerDoctorSchema, createDoctorSchema, updateDoctorSchema, invitePersonSchema } from './doctor.schema.js';
 
 const router = Router();
 
@@ -27,6 +28,7 @@ router.get('/public', (req, res, next) => {
 }, getDoctorsPublic);
 
 router.post('/', authMiddleware, authorize('admin', 'superadmin'), validateZod(createDoctorSchema), createDoctor);
+router.patch('/:id', authMiddleware, authorize('admin', 'superadmin'), validateZod(updateDoctorSchema), updateDoctor);
 
 router.get('/me', authMiddleware, authorize('doctor'), getMyDoctorProfile);
 

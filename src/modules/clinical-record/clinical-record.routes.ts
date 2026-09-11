@@ -37,7 +37,7 @@ router.get('/cie10/categories', authorize('doctor', 'admin'), getCie10Categories
 router.get('/cie10/:code', authorize('doctor', 'admin'), getCie10ByCode);
 router.get('/prescriptions/all', authorize('doctor', 'admin', 'superadmin'), getAllPrescriptions);
 router.get('/prescriptions/mine', authorize('user', 'patient'), getMyPrescriptions);
-router.get('/prescriptions/:id/pdf', authorize('doctor'), downloadPrescriptionPDF);
+router.get('/prescriptions/:id/pdf', authorize('doctor', 'user', 'patient'), downloadPrescriptionPDF);
 
 router.get('/', authorize('doctor', 'admin', 'user', 'patient', 'superadmin'), getClinicalRecords);
 router.get('/:id', authorize('doctor', 'admin', 'user', 'patient'), validateZod(clinicalRecordIdSchema, 'params'), getClinicalRecordById);

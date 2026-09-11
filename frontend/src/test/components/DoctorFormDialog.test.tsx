@@ -73,6 +73,7 @@ describe('DoctorFormDialog', () => {
       expect(onSubmit).toHaveBeenCalledWith({
         name: 'Ana Torres',
         email: 'ana@clinic.com',
+        specialty: 'Dermatología',
         specialty_id: undefined,
         license_number: 'LIC-999',
         phone: '+56 9 1234 5678',

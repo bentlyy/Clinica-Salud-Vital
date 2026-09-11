@@ -106,10 +106,10 @@ export const checkSlotOverlap = async (
      WHERE doctor_id = $1 AND date = $2 AND status != 'cancelled'
      AND tenant_id = $5
      AND ($6::int IS NULL OR id != $6)
-     AND (
-       (time <= $3 AND (time + (duration || ' minutes')::interval) > $3)
-       OR ($3 <= time AND ($3::time + ($4 || ' minutes')::interval) > time)
-     )`,
+AND (
+        (time <= $3::time AND (time + make_interval(mins => duration)) > $3::time)
+        OR ($3::time <= time AND ($3::time + make_interval(mins => $4::int)) > time)
+      )`,
     [doctorId, date, time, duration, tenantId, excludeBookingId ?? null]
   );
 

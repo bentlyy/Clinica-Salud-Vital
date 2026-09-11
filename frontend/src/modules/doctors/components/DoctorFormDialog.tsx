@@ -23,7 +23,7 @@ function createDoctorSchema(t: (key: string) => string) {
   return z.object({
     name: z.string().min(2, t('name_min_length')),
     email: z.string().email(t('invalid_email')),
-    specialty: z.string().optional(),
+    specialty: z.string().min(1, t('specialtyRequired')).optional(),
     license_number: z.string().optional(),
     phone: z.string().optional(),
     bio: z.string().optional(),
@@ -99,6 +99,7 @@ export function DoctorFormDialog({ open, onClose, doctor, onSubmit, isPending }:
     onSubmit({
       name: data.name,
       email: data.email,
+      specialty: data.specialty || undefined,
       specialty_id: undefined,
       license_number: data.license_number || undefined,
       phone: data.phone || undefined,

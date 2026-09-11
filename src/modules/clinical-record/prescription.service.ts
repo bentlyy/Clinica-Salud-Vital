@@ -151,6 +151,7 @@ export const getMyPrescriptions = async (patientId: number, tenantId: string) =>
            COALESCE(
              json_agg(
                json_build_object(
+                 'id', p.id,
                  'name', p.medication,
                  'dosage', p.dosage,
                  'frequency', p.frequency,

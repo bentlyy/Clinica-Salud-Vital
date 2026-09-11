@@ -7,10 +7,11 @@ export const patientKeys = {
   list: (params?: PatientListParams) => ['patients', 'list', params] as const,
 };
 
-export function usePatientList(params?: PatientListParams) {
+export function usePatientList(params?: PatientListParams, enabled = true) {
   return useQuery({
     queryKey: patientKeys.list(params),
     queryFn: ({ signal }) => patientService.list(params, { signal }),
     placeholderData: (prev) => prev,
+    enabled,
   });
 }

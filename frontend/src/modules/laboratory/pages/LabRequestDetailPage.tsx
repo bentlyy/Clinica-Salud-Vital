@@ -68,9 +68,30 @@ function LabRequestDetailPageInner() {
   const validateDoctorMutation = useValidateDoctor();
   const deliverMutation = useDeliverResult();
 
-  const handleAddResults = useCallback((_data: AddLabResultsInput) => {
-    setResultsDialogOpen(false);
-  }, []);
+  const handleAddResults = useCallback(
+    (data: AddLabResultsInput) => {
+      const itemsList = items ?? request?.items ?? [];
+      data.results.forEach((row) => {
+        const item =
+          itemsList.find(
+            (i) => i.test_name === row.test_name || i.test?.name === row.test_name,
+          ) ?? itemsList[0];
+        if (!item) return;
+        enterResultMutation.mutate({
+          requestId,
+          itemId: item.id,
+          input: {
+            result_value: row.value,
+            unit: row.unit,
+            notes: row.notes,
+            results: {},
+          },
+        });
+      });
+      setResultsDialogOpen(false);
+    },
+    [requestId, items, request, enterResultMutation],
+  );
 
   const handleValidateTech = useCallback(
     (itemId: number) => {

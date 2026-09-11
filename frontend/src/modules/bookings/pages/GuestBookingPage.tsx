@@ -121,7 +121,7 @@ export default function GuestBookingPage() {
       setSlots([]);
       setSelectedSlot(null);
       try {
-        const res = await apiClient.get<Slot[] | { data: Slot[] }>('/bookings/slots', {
+        const res = await apiClient.get<Slot[] | { data: Slot[] }>('/bookings/available-slots', {
           params: { doctor_id: doctorId, date: dateStr },
         });
         const list = Array.isArray(res.data) ? res.data : (res.data as { data: Slot[] }).data;
@@ -169,7 +169,7 @@ export default function GuestBookingPage() {
     setLoading(true);
     setError(null);
     try {
-      await apiClient.post('/bookings/guest', {
+      await apiClient.post('/guest/booking', {
         name: name.trim(),
         email: email.trim(),
         phone: phone.trim(),

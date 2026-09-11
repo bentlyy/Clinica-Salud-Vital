@@ -94,21 +94,37 @@ describe('doctorService', () => {
   });
 
   describe('create', () => {
-    it('posts the input to /doctors', async () => {
-      const input = { name: 'Nuevo', email: 'nuevo@clinic.com' };
+    it('posts name/email/specialty/phone to /doctors/register', async () => {
+      const input = { name: 'Nuevo', email: 'nuevo@clinic.com', specialty: 'Cardiología', phone: '+56912345678' };
       apiClient.post.mockResolvedValue({ data: rawDoctor(9, input) });
       const result = await doctorService.create(input);
-      expect(apiClient.post).toHaveBeenCalledWith('/doctors', input, undefined);
+      expect(apiClient.post).toHaveBeenCalledWith('/doctors/register', {
+        name: 'Nuevo',
+        email: 'nuevo@clinic.com',
+        specialty: 'Cardiología',
+        phone: '+56912345678',
+      }, undefined);
       expect(result.name).toBe('Nuevo');
+    });
+
+    it('unwraps the doctor from the register response payload', async () => {
+      const input = { name: 'Ana', email: 'ana@clinic.com', specialty: 'Pediatría' };
+      apiClient.post.mockResolvedValue({ data: { message: 'ok', doctor: rawDoctor(10, input), email: input.email } });
+      const result = await doctorService.create(input);
+      expect(result.name).toBe('Ana');
+      expect(result.id).toBe(10);
     });
   });
 
   describe('update', () => {
-    it('patches /doctors/:id with the input', async () => {
-      const input = { name: 'Actualizado' };
+    it('patches /doctors/:id with name and specialty', async () => {
+      const input = { name: 'Actualizado', specialty: 'Dermatología' };
       apiClient.patch.mockResolvedValue({ data: rawDoctor(3, input) });
       const result = await doctorService.update(3, input);
-      expect(apiClient.patch).toHaveBeenCalledWith('/doctors/3', input, undefined);
+      expect(apiClient.patch).toHaveBeenCalledWith('/doctors/3', {
+        name: 'Actualizado',
+        specialty: 'Dermatología',
+      }, undefined);
       expect(result.name).toBe('Actualizado');
     });
   });

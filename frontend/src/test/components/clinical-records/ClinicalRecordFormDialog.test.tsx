@@ -8,6 +8,10 @@ vi.mock('@/modules/clinical-templates/hooks/useClinicalTemplates', () => ({
   useClinicalTemplates: () => ({ data: { data: [] }, isLoading: false }),
 }));
 
+vi.mock('@/modules/patients/hooks/usePatients', () => ({
+  usePatientList: () => ({ data: { data: [] }, isFetching: false }),
+}));
+
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (key: string, opts?: Record<string, unknown>) => {
@@ -101,7 +105,7 @@ describe('ClinicalRecordFormDialog', () => {
     renderDialog();
     fireEvent.click(screen.getByRole('button', { name: 'Crear Registro' }));
 
-    expect(await screen.findByText('El nombre del paciente es requerido')).toBeInTheDocument();
+    expect(await screen.findByText('Selecciona un paciente')).toBeInTheDocument();
     expect(await screen.findByText('El motivo de consulta es requerido')).toBeInTheDocument();
     expect(await screen.findByText('El diagnóstico es requerido')).toBeInTheDocument();
     expect(await screen.findByText('El tratamiento es requerido')).toBeInTheDocument();

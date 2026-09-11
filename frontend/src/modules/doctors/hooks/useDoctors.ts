@@ -51,6 +51,9 @@ export function useCreateDoctor() {
       queryClient.invalidateQueries({ queryKey: ['doctors'] });
       toast.success(i18n.t('doctors:doctorCreated'));
     },
+    onError: () => {
+      toast.error(i18n.t('doctors:doctorCreateError'));
+    },
   });
 }
 
@@ -65,6 +68,9 @@ export function useUpdateDoctor() {
       queryClient.invalidateQueries({ queryKey: ['doctors', variables.id] });
       toast.success(i18n.t('doctors:doctorUpdated'));
     },
+    onError: () => {
+      toast.error(i18n.t('doctors:doctorUpdateError'));
+    },
   });
 }
 
@@ -77,6 +83,9 @@ export function useInviteDoctor() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['doctors'] });
       toast.success(i18n.t('doctors:inviteSent'));
+    },
+    onError: () => {
+      toast.error(i18n.t('doctors:inviteError'));
     },
   });
 }

@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import {
@@ -21,6 +21,8 @@ import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import type { Prescription, CreatePrescriptionInput } from '../types/prescription.types';
+import { usePatientList } from '@/modules/patients/hooks/usePatients';
+import type { Patient } from '@/modules/patients/types/patient.types';
 
 const medicationSchema = (t: TFunction) =>
   z.object({
@@ -63,6 +65,9 @@ export function PrescriptionFormDialog({
   const theme = useTheme();
   const { t } = useTranslation('prescriptions');
   const isEditing = !!prescription;
+  const [patientSearch, setPatientSearch] = useState('');
+  const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
+  const { data: patientsData } = usePatientList({ limit: 10, search: patientSearch || undefined }, open);
 
   const {
     control,
@@ -98,6 +103,11 @@ export function PrescriptionFormDialog({
           instructions: m.instructions || '',
         })),
       });
+      setSelectedPatient({
+        id: prescription.patient_id,
+        name: prescription.patient_name || '',
+        email: '',
+      });
     } else {
       reset({
         patient_name: patientName || '',
@@ -105,6 +115,8 @@ export function PrescriptionFormDialog({
         notes: '',
         medications: [{ name: '', dosage: '', frequency: '', duration: '', instructions: '' }],
       });
+      setSelectedPatient(null);
+      setPatientSearch('');
     }
   };
 
@@ -169,15 +181,25 @@ export function PrescriptionFormDialog({
               sx={{ mb: 3 }}
             />
           ) : (
-            <Controller
-              name="patient_name"
-              control={control}
-              render={({ field }) => (
+            <Autocomplete
+              options={patientsData?.data ?? []}
+              getOptionLabel={(option) => option.name}
+              isOptionEqualToValue={(option, value) => option.id === value.id}
+              value={selectedPatient}
+              onChange={(_, value) => {
+                setSelectedPatient(value);
+                setValue('patient_id', value?.id ?? 0);
+                setValue('patient_name', value?.name ?? '');
+              }}
+              onInputChange={(_, value) => setPatientSearch(value)}
+              loading={patientsData === undefined}
+              renderInput={(params) => (
                 <TextField
-                  {...field}
+                  {...params}
                   label={t('patient_name_label', 'Nombre del Paciente')}
-                  error={!!errors.patient_name}
-                  helperText={errors.patient_name?.message}
+                  placeholder={t('search_patient_placeholder', 'Busque un paciente por nombre...')}
+                  error={!!errors.patient_id}
+                  helperText={errors.patient_id?.message || errors.patient_name?.message}
                   fullWidth
                   sx={{ mb: 3 }}
                 />

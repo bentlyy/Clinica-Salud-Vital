@@ -170,6 +170,12 @@ export function AppRouter() {
           }
         >
           <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/account" element={<SettingsPage />} />
+          <Route path="/patient" element={<DashboardPage />} />
+          <Route path="/patient/bookings" element={<BookingsPage />} />
+          <Route path="/patient/clinical-records" element={<ClinicalRecordsPage />} />
+          <Route path="/patient/laboratory" element={<PatientLabResultsPage />} />
+          <Route path="/patient/settings" element={<SettingsPage />} />
           <Route path="/tenants" element={
             <ProtectedRoute allowedRoles={SUPERADMIN_ONLY}>
               <SuperAdminTenantsPage />
