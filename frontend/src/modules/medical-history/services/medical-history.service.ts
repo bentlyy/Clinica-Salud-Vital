@@ -57,4 +57,9 @@ export const medicalHistoryService = {
     const { data } = await apiClient.patch<MedicalHistoryEntry>(`/medical-history/${id}`, input, { signal: opts?.signal });
     return data;
   },
+
+  async remove(id: number, opts?: { signal?: AbortSignal }): Promise<{ message: string }> {
+    const { data } = await apiClient.delete<{ message: string }>(`/medical-history/${id}`, { signal: opts?.signal });
+    return data;
+  },
 };

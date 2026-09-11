@@ -95,11 +95,11 @@ export function useRescheduleBooking() {
 }
 
 export function useAvailableSlots(doctorId: number | null, date: string | null) {
+  const isValidDate = typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date);
   return useQuery({
     queryKey: bookingKeys.availableSlots(doctorId ?? 0, date ?? ''),
     queryFn: ({ signal }) => bookingService.getAvailableSlots(doctorId!, date!, { signal }),
-    enabled: !!doctorId && !!date,
-    staleTime: STALE_TIME,
+    enabled: !!doctorId && isValidDate,
   });
 }
 

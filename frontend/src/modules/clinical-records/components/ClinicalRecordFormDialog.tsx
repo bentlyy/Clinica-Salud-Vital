@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -21,6 +21,8 @@ import { useTranslation } from 'react-i18next';
 import type { ClinicalRecord, CreateClinicalRecordInput } from '../types/clinical-record.types';
 import type { ClinicalTemplate } from '@/modules/clinical-templates/types/template.types';
 import { useClinicalTemplates } from '@/modules/clinical-templates/hooks/useClinicalTemplates';
+import { usePatientList } from '@/modules/patients/hooks/usePatients';
+import type { Patient } from '@/modules/patients/types/patient.types';
 
 const vitalsSchema = z.object({
   temperature: z.string().optional(),
@@ -80,8 +82,11 @@ export function ClinicalRecordFormDialog({
   const { t } = useTranslation('clinical_records');
   const theme = useTheme();
   const isEditing = !!record;
-  const { data: templatesData } = useClinicalTemplates();
+  const { data: templatesData } = useClinicalTemplates({ enabled: open });
   const templates = templatesData?.data ?? [];
+  const [patientSearch, setPatientSearch] = useState('');
+  const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
+  const { data: patientsData } = usePatientList({ limit: 10, search: patientSearch || undefined }, open);
 
   const clinicalRecordSchema = useMemo(() => createClinicalRecordSchema(t), [t]);
 
@@ -134,6 +139,8 @@ export function ClinicalRecordFormDialog({
           notes: '',
           vitals: {},
         });
+        setSelectedPatient(null);
+        setPatientSearch('');
       }
     }
   }, [open, record, patientId, patientName, reset]);
@@ -202,26 +209,26 @@ export function ClinicalRecordFormDialog({
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2, mb: 3 }}>
             {/* Patient selector (when not pre-set) */}
             {!patientId && (
-              <Controller
-                name="patient_name"
-                control={control}
-                render={({ field }) => (
-                  <Autocomplete
-                    freeSolo
-                    options={[]}
-                    {...field}
-                    onChange={(_, value) => {
-                      field.onChange(value || '');
-                    }}
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        label={t('patient_name')}
-                        error={!!errors.patient_name}
-                        helperText={errors.patient_name?.message}
-                        fullWidth
-                      />
-                    )}
+              <Autocomplete
+                options={patientsData?.data ?? []}
+                getOptionLabel={(option) => option.name}
+                isOptionEqualToValue={(option, value) => option.id === value.id}
+                value={selectedPatient}
+                onChange={(_, value) => {
+                  setSelectedPatient(value);
+                  setValue('patient_id', value?.id ?? 0);
+                  setValue('patient_name', value?.name ?? '');
+                }}
+                onInputChange={(_, value) => setPatientSearch(value)}
+                loading={patientsData === undefined}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label={t('patient_name')}
+                    placeholder={t('search_patient_placeholder', 'Busque un paciente por nombre...')}
+                    error={!!errors.patient_id}
+                    helperText={errors.patient_id?.message}
+                    fullWidth
                   />
                 )}
               />

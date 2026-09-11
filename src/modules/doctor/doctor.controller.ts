@@ -8,6 +8,12 @@ export const getDoctors = asyncHandler(async (req, res) => {
   res.json(doctors);
 });
 
+export const updateDoctor = asyncHandler(async (req, res) => {
+  const id = Number(req.params.id);
+  const doctor = await doctorService.updateDoctor(id, req.body, req.tenant_id);
+  res.json(doctor);
+});
+
 export const getDoctorsPublic = asyncHandler(async (req, res) => {
   const doctors = await doctorService.getAllDoctors(req.tenant_id);
   const safe = doctors.map((d) => ({
@@ -29,6 +35,15 @@ export const registerDoctor = asyncHandler(async (req, res) => {
 });
 
 export const createDoctor = asyncHandler(async (req, res) => {
+  if (!req.body.user_id) {
+    const result = await doctorService.registerDoctor(req.body, req.tenant_id);
+    res.status(201).json({
+      message: 'Doctor registrado correctamente. Instrucciones enviadas por email.',
+      doctor: result.doctor,
+      email: result.credentials.email,
+    });
+    return;
+  }
   const doctor = await doctorService.createDoctor(req.body, req.tenant_id);
   res.status(201).json(doctor);
 });

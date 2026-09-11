@@ -84,3 +84,15 @@ export const updateMedicalHistory = asyncHandler(async (req: Request, res: Respo
   );
   res.json(record);
 });
+
+export const deleteMedicalHistory = asyncHandler(async (req: Request, res: Response) => {
+  const tenantId = req.user!.role === 'superadmin' ? 'default' : req.tenant_id;
+
+  if (req.user!.role === 'doctor') {
+    const existing = await medicalHistoryService.getMedicalHistoryById(Number(req.params.id), req.tenant_id);
+    await assertDoctorAccessToPatient(req.user!.id, existing.patient_id, req.tenant_id);
+  }
+
+  await medicalHistoryService.deleteMedicalHistory(Number(req.params.id), tenantId);
+  res.status(200).json({ message: 'Registro eliminado correctamente' });
+});

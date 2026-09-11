@@ -93,3 +93,12 @@ export const updateMedicalHistory = async (id: number, data: Partial<MedicalHist
   if (result.rows.length === 0) throw new NotFoundError(E.MEDICAL_HISTORY_NOT_FOUND);
   return result.rows[0];
 };
+
+export const deleteMedicalHistory = async (id: number, tenantId: string) => {
+  const result = await pool.query(
+    'DELETE FROM medical_history WHERE id = $1 AND tenant_id = $2 RETURNING id',
+    [id, tenantId],
+  );
+  if (result.rows.length === 0) throw new NotFoundError(E.MEDICAL_HISTORY_NOT_FOUND);
+  return result.rows[0];
+};

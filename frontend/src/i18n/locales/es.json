@@ -444,6 +444,7 @@
     "analytics": "Analíticas",
     "reports": "Reportes",
     "audit": "Auditoria",
+    "holidays": "Feriados",
     "doctorPanel": "Mi Panel",
     "doctorLabResults": "Resultados Lab",
     "doctorPatientHistory": "Mis Pacientes",
@@ -1899,7 +1900,11 @@
     "sending": "Enviando...",
     "send_invitation": "Enviar Invitación",
     "valid_email": "Ingresa un email válido",
-    "inviteSent": "Invitación enviada exitosamente"
+    "inviteSent": "Invitación enviada exitosamente",
+    "specialtyRequired": "La especialidad es requerida",
+    "doctorCreateError": "Error al crear el doctor. Intenta nuevamente.",
+    "doctorUpdateError": "Error al actualizar el doctor. Intenta nuevamente.",
+    "inviteError": "Error al enviar la invitación. Intenta nuevamente."
   },
   "patients": {
     "title": "Pacientes",

@@ -4,10 +4,11 @@ import i18n from '@/i18n/i18n';
 import { clinicalTemplateService } from '../services/clinical-template.service';
 import type { CreateTemplateInput, UpdateTemplateInput } from '../types/template.types';
 
-export function useClinicalTemplates() {
+export function useClinicalTemplates(options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ['clinical-templates'],
     queryFn: ({ signal }) => clinicalTemplateService.list({ signal }),
+    enabled: options?.enabled ?? true,
   });
 }
 

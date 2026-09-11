@@ -444,6 +444,7 @@
   "analytics": "Analíticas",
   "reports": "Relatórios",
   "audit": "Auditoria",
+  "holidays": "Feriados",
   "notifications": "Notificações",
   "cobros": "Cobranças",
   "saasPlan": "Assinatura",
@@ -1918,7 +1919,11 @@
   "sending": "Enviando...",
   "send_invitation": "Enviar Convite",
   "valid_email": "Por favor, insira um endereço de e-mail válido",
-  "inviteSent": "Convite enviado com sucesso"
+  "inviteSent": "Convite enviado com sucesso",
+  "specialtyRequired": "A especialidade é obrigatória",
+  "doctorCreateError": "Erro ao criar o médico. Tente novamente.",
+  "doctorUpdateError": "Erro ao atualizar o médico. Tente novamente.",
+  "inviteError": "Erro ao enviar o convite. Tente novamente."
  },
  "patients": {
   "title": "Pacientes",

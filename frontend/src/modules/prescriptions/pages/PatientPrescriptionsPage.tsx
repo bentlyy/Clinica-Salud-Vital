@@ -1,8 +1,9 @@
 import { useTheme } from '@mui/material/styles';
-import { Box, Typography, Paper, Chip } from '@mui/material';
+import { Box, Typography, Paper, Chip, Button, Stack } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import MedicationIcon from '@mui/icons-material/Medication';
 import Assignment from '@mui/icons-material/Assignment';
+import PictureAsPdf from '@mui/icons-material/PictureAsPdf';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { MotionDiv } from '@/shared/utils/animations';
@@ -11,9 +12,11 @@ import { LoadingState } from '@/shared/components/ui/LoadingState';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { ErrorState } from '@/shared/components/ui/ErrorState';
 import { apiClient } from '@/shared/services/api-client';
+import { prescriptionService } from '../services/prescription.service';
 import { format } from 'date-fns';
 
 interface Medication {
+  id: number;
   name: string;
   dosage: string;
   frequency: string;
@@ -163,20 +166,56 @@ export default function PatientPrescriptionsPage() {
                 <Box display="flex" gap={2} color="text.secondary" fontSize={13}>
                   <span>📅 {prescription.created_at ? format(new Date(prescription.created_at), 'dd MMM yyyy') : '-'}</span>
                 </Box>
-                {prescription.medications.length > 0 && (
-                  <Box display="flex" gap={0.5} flexWrap="wrap" mt={1}>
-                    {prescription.medications.map((med) => (
-                      <Chip
-                        key={`${med.name}-${med.dosage}`}
-                        size="small"
-                        label={`${med.name} ${med.dosage}`}
-                        sx={{ fontSize: 11 }}
-                      />
-                    ))}
-                  </Box>
-                )}
               </Box>
             </Box>
+
+            {prescription.medications.length > 0 && (
+              <Stack spacing={1} mt={2}>
+                {prescription.medications.map((med) => (
+                  <Paper
+                    key={med.id ?? `${med.name}-${med.dosage}`}
+                    variant="outlined"
+                    sx={{
+                      p: 1.5,
+                      borderRadius: 1,
+                      borderColor: theme.palette.divider,
+                      backgroundColor: theme.palette.custom.surface.muted,
+                    }}
+                  >
+                    <Box display="flex" justifyContent="space-between" alignItems="center" gap={1} flexWrap="wrap">
+                      <Box>
+                        <Typography fontWeight={600} fontSize={14}>
+                          {med.name}
+                        </Typography>
+                        <Box display="flex" gap={0.5} flexWrap="wrap" mt={0.5}>
+                          <Chip size="small" label={`Dosis: ${med.dosage}`} sx={{ fontSize: 11 }} />
+                          <Chip size="small" label={`Frecuencia: ${med.frequency}`} sx={{ fontSize: 11 }} />
+                          {med.duration && (
+                            <Chip size="small" label={`Duración: ${med.duration}`} sx={{ fontSize: 11 }} />
+                          )}
+                        </Box>
+                        {med.instructions && (
+                          <Typography variant="caption" color="text.secondary" display="block" mt={0.5}>
+                            {t('prescriptions:instructions_label', 'Instrucciones')}: {med.instructions}
+                          </Typography>
+                        )}
+                      </Box>
+                      {med.id && (
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          startIcon={<PictureAsPdf sx={{ color: theme.palette.error.main }} />}
+                          onClick={() => prescriptionService.downloadPdf(med.id)}
+                          sx={{ textTransform: 'none', borderColor: theme.palette.grey[300] }}
+                        >
+                          {t('prescriptions:download_pdf', 'Descargar PDF')}
+                        </Button>
+                      )}
+                    </Box>
+                  </Paper>
+                ))}
+              </Stack>
+            )}
           </Paper>
         ))}
       </Box>

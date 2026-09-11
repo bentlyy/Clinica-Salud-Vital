@@ -17,6 +17,7 @@ export interface Doctor {
 export interface CreateDoctorInput {
   name: string;
   email: string;
+  specialty?: string;
   specialty_id?: number;
   license_number?: string;
   phone?: string;
@@ -27,6 +28,7 @@ export interface CreateDoctorInput {
 export interface UpdateDoctorInput {
   name?: string;
   email?: string;
+  specialty?: string;
   specialty_id?: number;
   license_number?: string;
   phone?: string;

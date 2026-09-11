@@ -19,6 +19,7 @@ import { BookingCalendar } from '../components/BookingCalendar';
 import { CreateBookingDialog } from '../components/CreateBookingDialog';
 import { BookingDetailDrawer } from '../components/BookingDetailDrawer';
 import { BookingStatusChip } from '../components/BookingStatusChip';
+import { MyWaitlistPanel } from '@/modules/waitlist/components/MyWaitlistPanel';
 import type { Booking, BookingListParams, BookingStatus, CreateBookingSeriesInput } from '../types/booking.types';
 import { BOOKING_STATUS_CONFIG, BOOKING_STATUS_OPTIONS } from '../types/booking.types';
 import { formatDate } from '@/shared/utils/localeUtils';
@@ -260,6 +261,9 @@ export default function BookingsPage() {
           </Box>
         }
       />
+
+      {/* My waitlist (patient only) */}
+      {role === 'patient' && <MyWaitlistPanel />}
 
       {/* Status filter chips */}
       <Box sx={{ display: 'flex', gap: 1, mb: 3, flexWrap: 'wrap' }}>

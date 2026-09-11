@@ -263,13 +263,18 @@ export const getCie10Categories = asyncHandler(async (req: Request, res: Respons
 });
 
 export const downloadPrescriptionPDF = asyncHandler(async (req: Request, res: Response) => {
-  const doctor = await doctorService.getDoctorByUserId(req.user!.id, req.tenant_id);
-  if (!doctor) throw new NotFoundError(E.DOCTOR_PROFILE_NOT_FOUND);
-
   const prescription = await prescriptionService.getPrescriptionById(Number(req.params.id), req.tenant_id);
 
-  if (prescription.doctor_id !== doctor.id) {
-    throw new BadRequestError(E.ACCESS_DENIED);
+  if (req.user!.role === 'doctor') {
+    const doctor = await doctorService.getDoctorByUserId(req.user!.id, req.tenant_id);
+    if (!doctor) throw new NotFoundError(E.DOCTOR_PROFILE_NOT_FOUND);
+    if (prescription.doctor_id !== doctor.id) {
+      throw new BadRequestError(E.ACCESS_DENIED);
+    }
+  } else if (req.user!.role === 'user' || req.user!.role === 'patient') {
+    if (prescription.patient_id !== req.user!.id) {
+      throw new BadRequestError(E.ACCESS_DENIED);
+    }
   }
 
   const pdfBuffer = await generatePrescriptionPDF(prescription.id, req.tenant_id);

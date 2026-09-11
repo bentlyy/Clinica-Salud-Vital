@@ -24,7 +24,7 @@ router.post('/confirm/:token', confirmBooking);
 router.get('/me', authMiddleware, getMyBookings);
 router.patch('/:id/cancel', authMiddleware, validateZod(bookingIdSchema, 'params'), validateZod(cancelBookingSchema, 'body'), cancelBooking);
 router.patch('/:id/reschedule', authMiddleware, validateZod(bookingIdSchema, 'params'), validateZod(rescheduleBookingSchema, 'body'), rescheduleBooking);
-router.get('/available-slots', authMiddleware, validateZod(availableSlotsSchema, 'query'), getAvailableSlots);
+router.get('/available-slots', validateZod(availableSlotsSchema, 'query'), getAvailableSlots);
 router.get('/doctor/daily-density', authMiddleware, authorize('doctor'), getDailyDensity);
 router.get('/doctor', authMiddleware, authorize('doctor'), getDoctorBookings);
 router.get('/all', authMiddleware, authorize('admin', 'superadmin'), getAllBookingsAdmin);

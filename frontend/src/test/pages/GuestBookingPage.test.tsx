@@ -71,7 +71,7 @@ function mockBackend({ withDoctors = true, withSlots = true } = {}) {
         ? Promise.resolve({ data: { data: doctors } })
         : Promise.resolve({ data: { data: [] } });
     }
-    if (url === '/bookings/slots') {
+    if (url === '/bookings/available-slots') {
       return withSlots
         ? Promise.resolve({ data: { data: slots } })
         : Promise.resolve({ data: { data: [] } });
@@ -156,7 +156,7 @@ describe('GuestBookingPage', () => {
     // Pick a date to load slots
     fireEvent.change(screen.getByLabelText('Fecha'), { target: { value: '2026-08-15' } });
     await waitFor(() => {
-      expect(apiClient.get).toHaveBeenCalledWith('/bookings/slots', {
+      expect(apiClient.get).toHaveBeenCalledWith('/bookings/available-slots', {
         params: { doctor_id: 1, date: '2026-08-15' },
       });
     });
@@ -177,7 +177,7 @@ describe('GuestBookingPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Confirmar reserva' }));
 
     await waitFor(() => {
-      expect(apiClient.post).toHaveBeenCalledWith('/bookings/guest', {
+      expect(apiClient.post).toHaveBeenCalledWith('/guest/booking', {
         name: 'Maria Garcia',
         email: 'maria@x.cl',
         phone: '+56911111111',
