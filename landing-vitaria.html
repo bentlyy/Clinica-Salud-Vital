@@ -350,6 +350,12 @@ p{margin:0 0 1em}
 .lm-demo-label{font-size:.86rem;font-weight:800;color:var(--text);margin-bottom:6px}
 .lm-demo-creds{font-size:.82rem;color:var(--text-soft);margin-bottom:12px;word-break:break-word}
 .lm-demo-creds span{font-weight:700;color:var(--brand-deep)}
+/* Demo dentro del panel visual (izquierda): cristal sobre gradiente */
+.lm-visual .lm-demo{margin-top:auto;width:100%;border-top:1px solid rgba(255,255,255,.28);padding-top:18px}
+.lm-visual .lm-demo-label{color:#fff}
+.lm-visual .lm-demo-creds{color:#c9e2dc}
+.lm-visual .lm-demo-creds span{color:#fff}
+.lm-demo-mobile{display:none}
 .lm-note{text-align:center;font-size:.86rem;color:var(--text-soft);margin-top:18px}
 .lm-back{background:none;border:0;color:var(--brand-deep);font-weight:700;cursor:pointer;font-size:.88rem;padding:4px;min-height:36px}
 
@@ -380,6 +386,7 @@ p{margin:0 0 1em}
   .lm-card{grid-template-columns:1fr}
   .lm-visual{display:none}
   .lm-form-panel{border-radius:24px}
+  .lm-demo-mobile{display:block}
   .lm-ghost{grid-template-columns:1fr}
 }
 @media (prefers-reduced-motion:reduce){
@@ -685,6 +692,11 @@ p{margin:0 0 1em}
       <span class="lm-visual-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3v18M3 12h18"/></svg></span>
       <h2 class="lm-visual-title" data-i18n="loginVisualTitle">Vitaria</h2>
       <p class="lm-visual-sub" data-i18n="loginVisualSub">Plataforma moderna para la gestión integral de tu centro médico</p>
+      <div class="lm-demo">
+        <p class="lm-demo-label" data-i18n="loginDemoTitle">Explora la plataforma con la demo</p>
+        <p class="lm-demo-creds"><span data-i18n="loginDemoCredsLabel">Credenciales demo:</span> admin@demo.clinic.com / DemoVitaria2026!</p>
+        <button class="btn btn-primary btn-block" type="button" id="loginDemoBtn" data-i18n="loginDemoButton">Entrar con la demo</button>
+      </div>
     </div>
     <div class="lm-form-panel">
       <button class="lm-close" data-close-login aria-label="Cerrar">
@@ -720,10 +732,10 @@ p{margin:0 0 1em}
           <button class="btn btn-ghost" type="button" data-guest-booking data-i18n="loginGuestBooking">Reservar como invitado</button>
           <button class="btn btn-ghost" type="button" data-guest-dashboard data-i18n="loginGuestDashboard">Entrar como invitado</button>
         </div>
-        <div class="lm-demo">
+        <div class="lm-demo lm-demo-mobile">
           <p class="lm-demo-label" data-i18n="loginDemoTitle">Explora la plataforma con la demo</p>
           <p class="lm-demo-creds"><span data-i18n="loginDemoCredsLabel">Credenciales demo:</span> admin@demo.clinic.com / DemoVitaria2026!</p>
-          <button class="btn btn-primary btn-block" type="button" id="loginDemoBtn" data-i18n="loginDemoButton">Entrar con la demo</button>
+          <button class="btn btn-primary btn-block" type="button" id="loginDemoBtnMobile" data-i18n="loginDemoButton">Entrar con la demo</button>
         </div>
         <p class="lm-note">
           <span data-i18n="loginNoAccount">¿No tienes cuenta?</span>
@@ -1038,8 +1050,8 @@ function handleTwofaSubmit(e){
 function handleDemoLogin(){
   openLogin();
   hideLoginError('loginError');
-  var btn = document.getElementById('loginDemoBtn');
-  if (btn) btn.disabled = true;
+  var btns = [document.getElementById('loginDemoBtn'), document.getElementById('loginDemoBtnMobile')];
+  btns.forEach(function(b){ if (b) b.disabled = true; });
   var captcha_token = window.__captchaToken || undefined;
   postLogin({ email:'admin@demo.clinic.com', password:'DemoVitaria2026!', tenant_id:'clinica-demo', captcha_token:captcha_token })
     .then(function(res){
@@ -1073,7 +1085,7 @@ function handleDemoLogin(){
       }
     })
     .catch(function(){ showLoginError('loginError', t('loginErrorDefault')); if (window.__captchaReset) window.__captchaReset(); })
-    .finally(function(){ if (btn) btn.disabled = false; });
+    .finally(function(){ btns.forEach(function(b){ if (b) b.disabled = false; }); });
 }
 
 function openLogin(){
@@ -1221,6 +1233,7 @@ document.addEventListener('keydown', function(ev){
 
 document.getElementById('loginForm').addEventListener('submit', handleLoginSubmit);
 document.getElementById('loginDemoBtn').addEventListener('click', handleDemoLogin);
+document.getElementById('loginDemoBtnMobile').addEventListener('click', handleDemoLogin);
 document.getElementById('twofaForm').addEventListener('submit', handleTwofaSubmit);
 document.getElementById('backToLogin').addEventListener('click', function(){
   document.getElementById('twofaStep').hidden = true;

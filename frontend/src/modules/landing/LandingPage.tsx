@@ -617,11 +617,24 @@ function LoginModal({ onClose }: { onClose: () => void }) {
       <div className="lm-card" onClick={(e) => e.stopPropagation()}>
         {/* Left visual panel */}
         <div className="lm-visual">
-          <div className="lm-visual-icon">🩺</div>
-          <h2 className="lm-visual-title">{t('loginVisualTitle')}</h2>
-          <p className="lm-visual-sub">
-            {t('loginVisualSub')}
-          </p>
+          <div className="lm-visual-content">
+            <div className="lm-visual-icon">🩺</div>
+            <h2 className="lm-visual-title">{t('loginVisualTitle')}</h2>
+            <p className="lm-visual-sub">
+              {t('loginVisualSub')}
+            </p>
+          </div>
+
+          <div className="lm-visual-footer">
+            <div className="lm-demo">
+              <div className="lm-demo-title">{t('loginDemoTitle')}</div>
+              <div className="lm-demo-creds">{DEMO_EMAIL} / {DEMO_PASSWORD}</div>
+              <button className="lm-demo-btn" type="button" onClick={handleDemo} disabled={loading}>
+                {loading && <span className="lm-spinner" />}
+                {t('loginDemoButton')}
+              </button>
+            </div>
+          </div>
         </div>
 
         {/* Right form panel */}
@@ -760,15 +773,6 @@ function LoginModal({ onClose }: { onClose: () => void }) {
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
             {t('loginGuestBooking')}
           </button>
-
-          <div className="lm-demo">
-            <div className="lm-demo-title">{t('loginDemoTitle')}</div>
-            <div className="lm-demo-creds">{DEMO_EMAIL} / {DEMO_PASSWORD}</div>
-            <button className="lm-demo-btn" type="button" onClick={handleDemo} disabled={loading}>
-              {loading && <span className="lm-spinner" />}
-              {t('loginDemoButton')}
-            </button>
-          </div>
 
           <p className="lm-signup">
             {t('loginNoAccount')} <a onClick={onClose}>{t('loginContactAdmin')}</a>

@@ -969,12 +969,24 @@
   background: linear-gradient(160deg, #0d3d38 0%, #1a6b5a 50%, #218c90 100%);
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 28px 24px;
+  align-items: stretch;
+  padding: 28px 24px 22px;
   color: #ffffff;
   position: relative;
   overflow: hidden;
+}
+
+.lm-visual-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1 1 auto;
+}
+
+.lm-visual-footer {
+  flex: 0 0 auto;
+  margin-top: 20px;
 }
 
 .lm-visual::before {
@@ -1446,52 +1458,57 @@
 }
 
 /* Demo login block */
-.lm-demo {
-  margin-top: 14px;
+.lm-visual .lm-demo {
+  margin: 0;
   padding: 12px;
-  border: 1.5px dashed #2ad4bf;
+  border: 1.5px solid rgba(255, 255, 255, 0.35);
   border-radius: 12px;
-  background: #f0fdf9;
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(4px);
+  text-align: center;
 }
 
-.lm-demo-title {
+.lm-visual .lm-demo-title {
   font-size: 13px;
   font-weight: 700;
-  color: #115e59;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #ffffff;
 }
 
-.lm-demo-creds {
-  margin: 6px 0 10px;
+.lm-visual .lm-demo-creds {
+  margin: 8px 0 12px;
   font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
-  font-size: 11.5px;
-  color: #1a6b5a;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.75);
   word-break: break-all;
+  line-height: 1.5;
 }
 
-.lm-demo-btn {
+.lm-visual .lm-demo-btn {
   width: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
   padding: 9px;
-  background: #14b8a6;
+  background: #ffffff;
   border: none;
   border-radius: 10px;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 700;
   font-family: inherit;
-  color: #ffffff;
+  color: #0f766e;
   cursor: pointer;
-  transition: background 0.2s, transform 0.2s;
+  transition: background 0.2s, transform 0.2s, color 0.2s;
 }
 
-.lm-demo-btn:hover {
-  background: #0d9488;
+.lm-visual .lm-demo-btn:hover {
+  background: #ccfbf1;
   transform: translateY(-1px);
 }
 
-.lm-demo-btn:disabled {
+.lm-visual .lm-demo-btn:disabled {
   opacity: 0.7;
   cursor: default;
   transform: none;
