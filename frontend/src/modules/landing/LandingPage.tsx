@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef } from 'react';
+import type { FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation, Trans } from 'react-i18next';
 import { LanguageSwitcher } from '@/shared/components/LanguageSwitcher';
@@ -178,6 +179,140 @@ const TECH_STACK = [
   },
 ];
 
+const PROBLEMS = [
+  { icon: '📞', titleKey: 'problema1Title', painKey: 'problema1Pain', solKey: 'problema1Sol' },
+  { icon: '📁', titleKey: 'problema2Title', painKey: 'problema2Pain', solKey: 'problema2Sol' },
+  { icon: '🔬', titleKey: 'problema3Title', painKey: 'problema3Pain', solKey: 'problema3Sol' },
+  { icon: '📊', titleKey: 'problema4Title', painKey: 'problema4Pain', solKey: 'problema4Sol' },
+];
+
+const AUDIENCES = [
+  { icon: '🩺', titleKey: 'audiencia1Title', descKey: 'audiencia1Desc', tagKey: 'audiencia1Tag' },
+  { icon: '🏥', titleKey: 'audiencia2Title', descKey: 'audiencia2Desc', tagKey: 'audiencia2Tag' },
+  { icon: '🏨', titleKey: 'audiencia3Title', descKey: 'audiencia3Desc', tagKey: 'audiencia3Tag' },
+  { icon: '🧪', titleKey: 'audiencia4Title', descKey: 'audiencia4Desc', tagKey: 'audiencia4Tag' },
+];
+
+const SHOTS = [
+  { src: '/screenshots/dashboard.png', captionKey: 'shotDashboard' },
+  { src: '/screenshots/pacientes.png', captionKey: 'shotPatients' },
+  { src: '/screenshots/citas.png', captionKey: 'shotBookings' },
+  { src: '/screenshots/laboratorio.png', captionKey: 'shotLab' },
+];
+
+/* ==========================================================================
+   DemoRequestSection
+   ========================================================================== */
+
+function DemoRequestSection() {
+  const { t } = useTranslation('landing');
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [clinic, setClinic] = useState('');
+  const [message, setMessage] = useState('');
+  const [sent, setSent] = useState(false);
+
+  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const subject = encodeURIComponent(t('demoRequestSubject'));
+    const body = encodeURIComponent(
+      `${t('formNameLabel')}: ${name}\n${t('formEmailLabel')}: ${email}\n${t('formClinicLabel')}: ${clinic}\n\n${message}`,
+    );
+    window.location.href = `mailto:${t('footerContactEmail')}?subject=${subject}&body=${body}`;
+    setSent(true);
+  };
+
+  return (
+    <section id="solicitar-demo" className="lp-section lp-section-alt">
+      <div className="lp-section-header">
+        <div className="lp-section-label">{t('demoRequestLabel')}</div>
+        <h2 className="lp-section-title">{t('demoRequestTitle')}</h2>
+        <p className="lp-section-desc">{t('demoRequestDesc')}</p>
+      </div>
+      <div className="lp-contact-grid">
+        <div className="lp-contact-copy">
+          <ul className="lp-contact-bullets">
+            <li>
+              <span className="lp-contact-bullet-icon">✓</span>
+              {t('demoRequestBullet1')}
+            </li>
+            <li>
+              <span className="lp-contact-bullet-icon">✓</span>
+              {t('demoRequestBullet2')}
+            </li>
+            <li>
+              <span className="lp-contact-bullet-icon">✓</span>
+              {t('demoRequestBullet3')}
+            </li>
+          </ul>
+          <p className="lp-contact-direct">
+            {t('contactDirectLabel')}{' '}
+            <a href={`mailto:${t('footerContactEmail')}`}>{t('footerContactEmail')}</a>
+          </p>
+        </div>
+        <div className="lp-contact-card">
+          <form className="lp-contact-form" onSubmit={handleSubmit}>
+            <div className="lp-contact-field">
+              <label className="lp-contact-label" htmlFor="demo-name">{t('formNameLabel')}</label>
+              <input
+                id="demo-name"
+                className="lp-contact-input"
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder={t('formNamePlaceholder')}
+                required
+              />
+            </div>
+            <div className="lp-contact-field">
+              <label className="lp-contact-label" htmlFor="demo-email">{t('formEmailLabel')}</label>
+              <input
+                id="demo-email"
+                className="lp-contact-input"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder={t('formEmailPlaceholder')}
+                required
+              />
+            </div>
+            <div className="lp-contact-field">
+              <label className="lp-contact-label" htmlFor="demo-clinic">{t('formClinicLabel')}</label>
+              <input
+                id="demo-clinic"
+                className="lp-contact-input"
+                type="text"
+                value={clinic}
+                onChange={(e) => setClinic(e.target.value)}
+                placeholder={t('formClinicPlaceholder')}
+              />
+            </div>
+            <div className="lp-contact-field">
+              <label className="lp-contact-label" htmlFor="demo-msg">{t('formMsgLabel')}</label>
+              <textarea
+                id="demo-msg"
+                className="lp-contact-input"
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                placeholder={t('formMsgPlaceholder')}
+              />
+            </div>
+            <button type="submit" className="lp-hero-btn lp-hero-btn-primary">
+              {t('formSubmit')}
+            </button>
+            {sent && (
+              <div className="lp-contact-success">
+                <span>✓</span>
+                {t('formSuccess')}
+              </div>
+            )}
+          </form>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 /* ==========================================================================
    LandingPage
    ========================================================================== */
@@ -262,6 +397,35 @@ function LandingPage() {
         </div>
       </section>
 
+      {/* ---------- PROBLEMA ---------- */}
+      <section id="problema" className="lp-section lp-section-alt">
+        <div className="lp-section-header">
+          <div className="lp-section-label">{t('problemaLabel')}</div>
+          <h2 className="lp-section-title">{t('problemaTitle')}</h2>
+          <p className="lp-section-desc">
+            {t('problemaDesc')}
+          </p>
+        </div>
+        <div className="lp-problem-grid">
+          {PROBLEMS.map((p) => (
+            <div key={p.titleKey} className="lp-problem-card">
+              <div className="lp-problem-head">
+                <div className="lp-problem-icon">{p.icon}</div>
+                <h3 className="lp-problem-title">{t(p.titleKey)}</h3>
+              </div>
+              <p className="lp-problem-pain">{t(p.painKey)}</p>
+              <div className="lp-problem-sol">
+                <span className="lp-problem-sol-check">✓</span>
+                <span>
+                  <span className="lp-problem-sol-label">{t('problemaSolLabel')}</span>
+                  <span>{t(p.solKey)}</span>
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
       {/* ---------- FEATURES ---------- */}
       <section id="features" className="lp-section">
         <div className="lp-section-header">
@@ -296,6 +460,27 @@ function LandingPage() {
             <div key={c.nameKey} className="lp-client-card">
               <div className="lp-client-logo" style={{ background: c.color }}>{c.emoji}</div>
               <div className="lp-client-name">{t(c.nameKey)}</div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ---------- PARA QUIÉN ---------- */}
+      <section id="audiencia" className="lp-section">
+        <div className="lp-section-header">
+          <div className="lp-section-label">{t('audienciaLabel')}</div>
+          <h2 className="lp-section-title">{t('audienciaTitle')}</h2>
+          <p className="lp-section-desc">
+            {t('audienciaDesc')}
+          </p>
+        </div>
+        <div className="lp-audience-grid">
+          {AUDIENCES.map((a) => (
+            <div key={a.titleKey} className="lp-audience-card">
+              <div className="lp-audience-icon">{a.icon}</div>
+              <h3 className="lp-audience-title">{t(a.titleKey)}</h3>
+              <p className="lp-audience-desc">{t(a.descKey)}</p>
+              <div className="lp-audience-tag">{t(a.tagKey)}</div>
             </div>
           ))}
         </div>
@@ -340,6 +525,30 @@ function LandingPage() {
                 ))}
               </div>
             </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ---------- SCREENSHOTS ---------- */}
+      <section id="screenshots" className="lp-section">
+        <div className="lp-section-header">
+          <div className="lp-section-label">{t('shotsLabel')}</div>
+          <h2 className="lp-section-title">{t('shotsTitle')}</h2>
+          <p className="lp-section-desc">
+            {t('shotsDesc')}
+          </p>
+        </div>
+        <div className="lp-shots-grid">
+          {SHOTS.map((s) => (
+            <figure key={s.src} className="lp-shot">
+              <img
+                className="lp-shot-img"
+                src={s.src}
+                alt={t(s.captionKey)}
+                loading="lazy"
+              />
+              <figcaption className="lp-shot-caption">{t(s.captionKey)}</figcaption>
+            </figure>
           ))}
         </div>
       </section>
@@ -450,6 +659,9 @@ function LandingPage() {
           ))}
         </div>
       </section>
+
+      {/* ---------- SOLICITAR DEMO ---------- */}
+      <DemoRequestSection />
 
       {/* ---------- CTA ---------- */}
       <section id="cta" className="lp-cta-section">
