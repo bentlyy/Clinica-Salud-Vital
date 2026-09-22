@@ -38,12 +38,13 @@ export default function PlanPage() {
     error: subError,
   } = useMySubscription();
 
+  const subscription = subData?.subscription ?? null;
+  const currentPrice = useConvertedPrice(subscription?.plan?.price_monthly ?? 0);
+
   if (plansLoading || subLoading) return <LoadingState />;
   if (plansError || subError) return <ErrorState />;
 
   const currentPlanCode = subData?.subscription?.plan?.code ?? subData?.plan?.code;
-  const subscription = subData?.subscription ?? null;
-  const currentPrice = useConvertedPrice(subscription?.plan?.price_monthly ?? 0);
 
   const handleSelect = (plan: Plan) => {
     navigate(`/saas/checkout?plan=${plan.code}`);

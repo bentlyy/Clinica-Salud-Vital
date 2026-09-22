@@ -153,6 +153,14 @@ export const changePassword = asyncHandler(async (req: Request, res: Response) =
   res.json({ message: 'Password changed successfully' });
 });
 
+export const get2FAStatus = asyncHandler(async (req: Request, res: Response) => {
+  if (!req.user) {
+    throw new UnauthorizedError(E.AUTH_AUTHENTICATION_REQUIRED);
+  }
+  const enabled = await authService.is2FARequired(req.user.id);
+  res.json({ enabled });
+});
+
 export const enable2FA = asyncHandler(async (req: Request, res: Response) => {
   if (!req.user) {
     throw new UnauthorizedError(E.AUTH_AUTHENTICATION_REQUIRED);

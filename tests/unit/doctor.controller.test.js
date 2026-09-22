@@ -80,14 +80,14 @@ describe('doctorController.registerDoctor', () => {
 describe('doctorController.createDoctor', () => {
   it('creates doctor and returns 201', async () => {
     vi.mocked(doctorService.createDoctor).mockResolvedValue({ id: 1, name: 'Dr. New' });
-    const req = { body: { name: 'Dr. New', specialty: 'General' }, tenant_id: 't1' };
+    const req = { body: { name: 'Dr. New', specialty: 'General', user_id: 7 }, tenant_id: 't1' };
     const res = { status: vi.fn().mockReturnThis(), json: vi.fn() };
     const next = vi.fn();
 
     doctorController.createDoctor(req, res, next);
     await flush();
 
-    expect(doctorService.createDoctor).toHaveBeenCalledWith({ name: 'Dr. New', specialty: 'General' }, 't1');
+    expect(doctorService.createDoctor).toHaveBeenCalledWith({ name: 'Dr. New', specialty: 'General', user_id: 7 }, 't1');
     expect(res.status).toHaveBeenCalledWith(201);
     expect(res.json).toHaveBeenCalledWith({ id: 1, name: 'Dr. New' });
   });

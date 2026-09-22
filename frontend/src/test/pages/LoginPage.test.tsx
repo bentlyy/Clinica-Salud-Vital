@@ -36,6 +36,10 @@ vi.mock('react-i18next', () => ({
         email_invalid: 'Ingresa un email valido',
         password_min_length: 'La contrasena debe tener al menos 6 caracteres',
         login_error: 'Error al iniciar sesion',
+        demo_title: 'Quieres explorar la demo?',
+        demo_body: 'Accede con un tenant de demostracion con datos de ejemplo.',
+        demo_credentials_label: 'Credenciales demo:',
+        demo_button: 'Probar la demo',
       };
       return translations[key] ?? key;
     },
@@ -101,7 +105,7 @@ describe('LoginPage', () => {
     fireEvent.input(screen.getByLabelText('Contrasena'), { target: { value: 'password123' } });
     fireEvent.click(screen.getByRole('button', { name: /iniciar sesion/i }));
     await waitFor(() => {
-      expect(mockLogin).toHaveBeenCalledWith('admin@clinic.com', 'password123');
+      expect(mockLogin).toHaveBeenCalledWith('admin@clinic.com', 'password123', undefined, undefined, undefined);
     });
   });
 
@@ -170,5 +174,24 @@ describe('LoginPage', () => {
     const toggleButton = screen.getByRole('button', { name: /mostrar contraseña/i });
     fireEvent.click(toggleButton);
     expect(screen.getByLabelText('Contrasena')).toHaveAttribute('type', 'text');
+  });
+
+  it('renders the demo login block with credentials', () => {
+    renderLoginPage();
+    expect(screen.getByText('Quieres explorar la demo?')).toBeInTheDocument();
+    expect(screen.getByText(/admin@demo\.clinic\.com/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Probar la demo' })).toBeInTheDocument();
+  });
+
+  it('logs in with demo credentials and tenant_id on demo button click', async () => {
+    mockLogin.mockResolvedValue({ requires_2fa: false });
+    renderLoginPage();
+    fireEvent.click(screen.getByRole('button', { name: 'Probar la demo' }));
+    await waitFor(() => {
+      expect(mockLogin).toHaveBeenCalledWith('admin@demo.clinic.com', 'DemoVitaria2026!', undefined, undefined, 'clinica-demo');
+    });
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith('/dashboard');
+    });
   });
 });

@@ -519,7 +519,7 @@ describe('downloadPrescriptionPDF', () => {
     vi.mocked(doctorService.getDoctorByUserId).mockResolvedValue({ id: 1 });
     vi.mocked(prescriptionService.getPrescriptionById).mockResolvedValue({ id: 1, doctor_id: 1 });
     vi.mocked(pdfService.generatePrescriptionPDF).mockResolvedValue(Buffer.from('pdf-data'));
-    const req = { params: { id: '1' }, user: { id: 1 } };
+    const req = { params: { id: '1' }, user: { id: 1, role: 'doctor' } };
     const res = { setHeader: vi.fn(), send: vi.fn() };
     const next = vi.fn();
 
@@ -532,7 +532,7 @@ describe('downloadPrescriptionPDF', () => {
   it('calls next with error for wrong doctor', async () => {
     vi.mocked(doctorService.getDoctorByUserId).mockResolvedValue({ id: 1 });
     vi.mocked(prescriptionService.getPrescriptionById).mockResolvedValue({ id: 1, doctor_id: 99 });
-    const req = { params: { id: '1' }, user: { id: 1 } };
+    const req = { params: { id: '1' }, user: { id: 1, role: 'doctor' } };
     const res = { setHeader: vi.fn(), send: vi.fn() };
     const next = vi.fn();
 
@@ -543,7 +543,7 @@ describe('downloadPrescriptionPDF', () => {
 
   it('calls next with error if doctor not found', async () => {
     vi.mocked(doctorService.getDoctorByUserId).mockResolvedValue(null);
-    const req = { params: { id: '1' }, user: { id: 1 } };
+    const req = { params: { id: '1' }, user: { id: 1, role: 'doctor' } };
     const res = { setHeader: vi.fn(), send: vi.fn() };
     const next = vi.fn();
 

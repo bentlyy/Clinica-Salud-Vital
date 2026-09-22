@@ -131,6 +131,10 @@ vi.mock('@/modules/clinical-templates/hooks/useClinicalTemplates', () => ({
   useClinicalTemplates: () => ({ data: { data: [] }, isLoading: false }),
 }));
 
+vi.mock('@/modules/patients/hooks/usePatients', () => ({
+  usePatientList: () => ({ data: { data: [] }, isLoading: false }),
+}));
+
 const record: ClinicalRecord = {
   id: 5,
   tenant_id: 1,

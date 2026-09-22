@@ -1,10 +1,16 @@
-import { pool } from '../shared/db.js';
+import { pool, superAdminPool } from '../shared/db.js';
 import bcrypt from 'bcrypt';
 import { logger } from '../utils/logger.js';
 import { deriveSeedPassword } from './seed-credentials.js';
 import { convertFromUsd } from '../shared/currencies.js';
 
 const DEFAULT_TENANT_ID = process.env.DEFAULT_TENANT_ID || 'default';
+
+// ─── Demo tenant (comercial) ─────────────────────────────────────────────────
+
+export const DEMO_TENANT_ID = 'clinica-demo';
+export const DEMO_ADMIN_EMAIL = 'admin@demo.clinic.com';
+export const DEMO_ADMIN_PASSWORD = 'DemoVitaria2026!';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -60,6 +66,17 @@ const TEST_TENANTS = [
     adminRut: '22222222-2',
     planCode: 'basic',
     labTechnicianEmail: null as string | null,
+  },
+  {
+    id: DEMO_TENANT_ID,
+    name: 'Clínica Demo Vitaria',
+    domain: 'demo',
+    adminEmail: DEMO_ADMIN_EMAIL,
+    adminRut: '10101010-1',
+    planCode: 'pro',
+    labTechnicianEmail: 'lab@demo.clinic.com',
+    demoPassword: DEMO_ADMIN_PASSWORD,
+    autoCreate: true,
   },
 ];
 
@@ -333,33 +350,73 @@ export const seedAdmin = async (): Promise<void> => {
 // ─── Seed: Test tenants (comprehensive) ─────────────────────────────────────
 
 export const seedTestTenants = async (): Promise<void> => {
-  if (process.env.NODE_ENV === 'production' && process.env.SEED_ON_STARTUP !== 'true') {
+  if (
+    process.env.NODE_ENV === 'production' &&
+    process.env.SEED_ON_STARTUP !== 'true' &&
+    process.env.RUN_SEEDS !== 'true'
+  ) {
     logger.info('[SEED SKIPPED] No se ejecutan tenants de prueba en producción sin SEED_ON_STARTUP=true');
     return;
   }
 
   await pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS idx_users_tenant_email ON users (tenant_id, email)`);
 
+  const fixedPasswords = new Map<string, string>();
+  for (const t of TEST_TENANTS) {
+    if (t.demoPassword && t.adminEmail) fixedPasswords.set(t.adminEmail.toLowerCase(), t.demoPassword);
+    if (t.demoPassword && t.labTechnicianEmail) fixedPasswords.set(t.labTechnicianEmail.toLowerCase(), t.demoPassword);
+  }
+
   const _seedHashCache = new Map<string, string>();
   const hashFor = async (email: string): Promise<string> => {
-    const cached = _seedHashCache.get(email);
+    const key = email.toLowerCase();
+    const cached = _seedHashCache.get(key);
     if (cached) return cached;
-    const h = await bcrypt.hash(deriveSeedPassword(email), 12);
-    _seedHashCache.set(email, h);
+    const seedPassword = fixedPasswords.get(key) ?? deriveSeedPassword(email);
+    const h = await bcrypt.hash(seedPassword, 12);
+    _seedHashCache.set(key, h);
     return h;
   };
   const hash = hashFor;
   const today = new Date();
 
+  const ensureTenant = async (t: (typeof TEST_TENANTS)[number]): Promise<boolean> => {
+    const exists = await pool.query('SELECT 1 FROM tenants WHERE id = $1', [t.id]);
+    if (exists.rows.length > 0) return true;
+
+    if (!t.autoCreate) {
+      logger.info(`Tenant ${t.id} no existe (RLS impide crearlo desde la app) — saltando`);
+      return false;
+    }
+
+    logger.info(`Tenant ${t.id} no existe — creándolo vía pool superadmin (BYPASSRLS)`);
+    try {
+      await superAdminPool.query(
+        `INSERT INTO tenants (id, name, domain, locale, timezone, config, active)
+         VALUES ($1, $2, $3, $4, $5, $6, true)
+         ON CONFLICT (id) DO NOTHING`,
+        [t.id, t.name, `${t.domain}.clinic.com`, 'es', 'America/Santiago', JSON.stringify({ company: t.name })]
+      );
+      await superAdminPool.query(
+        `INSERT INTO subscriptions (tenant_id, plan_id, status, current_period_start, current_period_end)
+         SELECT $1, id, 'active', NOW(), NOW() + INTERVAL '1 year'
+         FROM plans WHERE code = $2
+         ON CONFLICT DO NOTHING`,
+        [t.id, t.planCode]
+      );
+      return true;
+    } catch (err) {
+      logger.error(`No se pudo crear el tenant ${t.id}`, err);
+      return false;
+    }
+  };
+
   for (const t of TEST_TENANTS) {
     logger.info(`\n━━━ Seeding tenant: ${t.id} (${t.name}) ━━━`);
 
-    const exists = await pool.query('SELECT 1 FROM tenants WHERE id = $1', [t.id]);
-    if (exists.rows.length === 0) {
-      logger.info(`Tenant ${t.id} no existe (RLS impide crearlo desde la app) — saltando`);
-      continue;
-    }
-    logger.info(`Tenant ${t.id} already exists — ensuring data seed`);
+    const ready = await ensureTenant(t);
+    if (!ready) continue;
+    logger.info(`Tenant ${t.id} ready — ensuring data seed`);
 
     const client = await pool.connect();
     try {
@@ -387,7 +444,7 @@ export const seedTestTenants = async (): Promise<void> => {
     // ── Doctors (5-6 per tenant, unique specialties) ───────────────────────
 
     const tenantSpecialties =
-      t.id === 'clinica-norte'
+      t.id === 'clinica-norte' || t.id === DEMO_TENANT_ID
         ? [
             { name: 'Dr. Andrés Medina', email: 'medina', rut: '33333333-3', specialty: 'Cardiología', gender: 'M' },
             { name: 'Dra. Carla Fuentes', email: 'fuentes', rut: '33344444-4', specialty: 'Dermatología', gender: 'F' },
@@ -453,7 +510,7 @@ export const seedTestTenants = async (): Promise<void> => {
     // ── Patients (8-10 per tenant) ─────────────────────────────────────────
 
     const patientNames =
-      t.id === 'clinica-norte'
+      t.id === 'clinica-norte' || t.id === DEMO_TENANT_ID
         ? [
             'Pedro Navarro', 'Sofía Rivas', 'Mateo Delgado', 'Valentina Castro', 'Santiago Peña',
             'Camila Herrera', 'Nicolás Bravo', 'Isidora Muñoz', 'Joaquín Vargas', 'Fernanda Cortés',

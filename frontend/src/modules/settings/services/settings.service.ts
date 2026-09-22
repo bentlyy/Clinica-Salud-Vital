@@ -13,8 +13,17 @@ export const settingsService = {
   },
 
   async getSessions(opts?: { signal?: AbortSignal }): Promise<Session[]> {
-    const { data } = await apiClient.get<{ data: Session[] }>('/auth/sessions', { signal: opts?.signal });
-    return data.data;
+    const { data } = await apiClient.get<{ data: BackendSession[] }>('/auth/sessions', { signal: opts?.signal });
+    return (data.data ?? []).map((s) => ({
+      id: s.id,
+      tenant_id: s.tenant_id,
+      user_id: s.user_id,
+      device: s.user_agent,
+      ip_address: s.ip_address,
+      created_at: s.created_at,
+      last_activity: s.last_seen_at,
+      revoked_at: s.revoked_at,
+    }));
   },
 
   async revokeSession(id: number, opts?: { signal?: AbortSignal }): Promise<{ message: string }> {
@@ -31,5 +40,17 @@ export interface Session {
   ip_address: string | null;
   created_at: string;
   last_activity: string | null;
+  revoked_at: string | null;
+}
+
+interface BackendSession {
+  id: number;
+  tenant_id: string;
+  user_id: number;
+  ip_address: string | null;
+  user_agent: string | null;
+  created_at: string;
+  last_seen_at: string;
+  expires_at: string | null;
   revoked_at: string | null;
 }

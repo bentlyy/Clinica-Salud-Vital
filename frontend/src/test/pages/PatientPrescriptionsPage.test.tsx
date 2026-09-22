@@ -104,7 +104,10 @@ describe('PatientPrescriptionsPage', () => {
     expect(screen.getByText('Con Medicamentos')).toBeInTheDocument();
     expect(screen.getByText('Medicamentos')).toBeInTheDocument();
     expect(screen.getByText('Receta — Dr. Dr. Perez')).toBeInTheDocument();
-    expect(screen.getByText('Paracetamol 500mg')).toBeInTheDocument();
+    expect(screen.getByText('Paracetamol')).toBeInTheDocument();
+    expect(screen.getByText('Dosis: 500mg')).toBeInTheDocument();
+    expect(screen.getByText('Frecuencia: cada 8h')).toBeInTheDocument();
+    expect(screen.getByText('Duración: 7 dias')).toBeInTheDocument();
   });
 
   it('shows the error state when the request fails', async () => {

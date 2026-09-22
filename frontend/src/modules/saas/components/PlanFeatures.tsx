@@ -54,7 +54,11 @@ export function PlanFeatures({ plan }: { plan: Plan }) {
   return (
     <Box component="ul" sx={{ listStyle: 'none', p: 0, m: 0, display: 'grid', gap: 0.75 }}>
       {items.map((feat) => (
-        <Box component="li" key={feat.key} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <Box
+          component="li"
+          key={feat.vars?.subject ? `${feat.key}-${feat.vars.subject}` : feat.key}
+          sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
+        >
           <CheckCircle
             sx={{
               fontSize: 16,

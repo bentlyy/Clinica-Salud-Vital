@@ -202,7 +202,8 @@ describe('POST /api/saas/checkout', () => {
     mockQuery
       .mockResolvedValueOnce(AUTH_OK)                                         // auth
       .mockResolvedValueOnce({ rows: [PLAN_ROW] })                           // getPlanByCode('pro') in controller
-      .mockResolvedValueOnce({ rows: [PLAN_ROW] });                          // getPlanByCode('pro') inside createSubscription
+      .mockResolvedValueOnce({ rows: [PLAN_ROW] })                           // getPlanByCode('pro') inside createSubscription
+      .mockResolvedValueOnce({ rows: [{ currency: 'CLP' }] });               // getTenantCurrency in createSubscription
 
     mockClient.query
       .mockResolvedValueOnce({})                                              // BEGIN
