@@ -54,6 +54,11 @@ vi.mock('react-i18next', () => {
     loginSubmit: 'Ingresar',
     loginGuestDashboard: 'Ver demo como invitado',
     loginGuestBooking: 'Reservar como invitado',
+    problemaTitle: 'El problema',
+    audienciaTitle: 'Para quién es',
+    shotsTitle: 'Screenshots',
+    demoRequestTitle: 'Solicita una demo',
+    formSubmit: 'Solicitar demo',
   };
   const t = (key: string, fallback?: string) => translations[key] ?? fallback ?? key;
   return {
@@ -138,5 +143,45 @@ describe('LandingPage', () => {
     fireEvent.click(screen.getByText('Crear cuenta gratis'));
     fireEvent.click(screen.getByText('Reservar como invitado'));
     expect(mockNavigate).toHaveBeenCalledWith('/booking');
+  });
+
+  it('renders the problem section with 4 pain cards', () => {
+    renderPage();
+    expect(screen.getByText('El problema')).toBeInTheDocument();
+    expect(document.querySelectorAll('.lp-problem-card')).toHaveLength(4);
+  });
+
+  it('renders the audience section with 4 cards', () => {
+    renderPage();
+    expect(screen.getByText('Para quién es')).toBeInTheDocument();
+    expect(document.querySelectorAll('.lp-audience-card')).toHaveLength(4);
+  });
+
+  it('renders the screenshots section with the 4 demo captures', () => {
+    renderPage();
+    expect(screen.getByText('Screenshots')).toBeInTheDocument();
+    expect(document.querySelectorAll('.lp-shot')).toHaveLength(4);
+  });
+
+  it('renders the demo request form and shows success on submit', () => {
+    const locationSetter = vi.fn();
+    Object.defineProperty(window, 'location', {
+      configurable: true,
+      value: {
+        href: 'http://localhost/',
+        set href(value: string) {
+          locationSetter(value);
+        },
+      },
+    });
+    renderPage();
+    expect(screen.getByText('Solicita una demo')).toBeInTheDocument();
+    expect(document.querySelectorAll('.lp-contact-input')).toHaveLength(4);
+    fireEvent.change(screen.getByLabelText('formNameLabel'), { target: { value: 'Ana' } });
+    fireEvent.change(screen.getByLabelText('formEmailLabel'), { target: { value: 'test@test.com' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Solicitar demo' }));
+    expect(locationSetter).toHaveBeenCalled();
+    expect(locationSetter.mock.calls[0][0]).toContain('mailto:');
+    expect(document.querySelector('.lp-contact-success')).not.toBeNull();
   });
 });
