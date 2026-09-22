@@ -224,6 +224,22 @@ const authLimiter = rateLimit({
   },
 });
 
+// Lax limiter for session endpoints (refresh/logout). A 429 here would leave the
+// refresh cookie alive server-side and cause a "phantom login" on the next boot,
+// or spuriously log the user out — so keep it generous and keyed by session/user.
+const sessionLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many session requests, please try again later.' },
+  keyGenerator: (req: Request) => `session:${req.user?.id || req.ip || 'unknown'}`,
+  handler: (req: Request, res: Response) => {
+    logger.warn('Rate limit exceeded (session)', { ip: req.ip, userId: req.user?.id });
+    res.status(429).json({ error: 'Too many session requests, please try again later.' });
+  },
+});
+
 const phiWriteLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 30,
@@ -234,7 +250,15 @@ const phiWriteLimiter = rateLimit({
 });
 
 app.use(globalLimiter);
-app.use('/api/auth', authLimiter);
+
+// Strict limiter only for credential-based (brute-force prone) endpoints:
+// refresh/logout MUST NOT share this budget or a 429 would leave sessions half-open.
+app.use('/api/auth/login', authLimiter);
+app.use('/api/auth/register', authLimiter);
+app.use('/api/auth/forgot-password', authLimiter);
+app.use('/api/auth/reset-password', authLimiter);
+app.use('/api/auth/refresh', sessionLimiter);
+app.use('/api/auth/logout', sessionLimiter);
 
 const API_PREFIX = '/api';
 

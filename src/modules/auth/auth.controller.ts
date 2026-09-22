@@ -120,10 +120,15 @@ export const resetAdmin = asyncHandler(async (req: Request, res: Response) => {
 
 export const logout = asyncHandler(async (req: Request, res: Response) => {
   const refresh_token = req.body.refresh_token || req.cookies?.refresh_token;
-  if (refresh_token) {
-    await authService.logout(refresh_token, req.user?.id);
+  try {
+    if (refresh_token) {
+      await authService.logout(refresh_token, req.user?.id);
+    }
+  } finally {
+    // Always clear the auth cookies, even if the server-side revocation fails:
+    // leaving a stale refresh cookie behind would cause a "phantom login" on boot.
+    clearAuthCookies(res);
   }
-  clearAuthCookies(res);
   res.json({ message: 'Logged out successfully' });
 });
 

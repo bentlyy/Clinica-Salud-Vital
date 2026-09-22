@@ -71,7 +71,7 @@ describe('authService.refreshToken', () => {
     mockClient.query.mockImplementation((sql) => {
       if (sql === 'BEGIN') return Promise.resolve({});
       if (sql.includes('FOR UPDATE')) return Promise.resolve({ rows: [{ id: 10, user_id: 1, revoked: true, token_family: 'fam-1', session_id: 5 }] });
-      if (sql.includes('WHERE token_family')) return Promise.resolve({});
+      if (sql.includes('WHERE token_family')) return Promise.resolve({ rows: [] });
       if (sql.includes('UPDATE user_sessions SET revoked_at')) return Promise.resolve({});
       if (sql === 'COMMIT') return Promise.resolve({});
       return Promise.resolve({ rows: [] });
@@ -92,6 +92,8 @@ describe('authService.refreshToken', () => {
       if (sql === 'BEGIN') return Promise.resolve({});
       if (sql.includes('FOR UPDATE')) return Promise.resolve({ rows: [{ id: 10, user_id: 1, revoked: false, token_family: 'fam-1', session_id: 5, token_version: 0 }] });
       if (sql.includes('FROM users WHERE id')) return Promise.resolve({ rows: [{ id: 1, email: 'u@t.com', role: 'user', tenant_id: 'default', token_version: 0 }] });
+      if (sql.includes('SELECT token_version FROM refresh_tokens')) return Promise.resolve({ rows: [{ token_version: 0 }] });
+      if (sql.includes('FROM user_sessions')) return Promise.resolve({ rows: [{ id: 5, revoked_at: null, expires_at: new Date(Date.now() + 86400000).toISOString(), last_seen_at: new Date().toISOString() }] });
       if (sql.includes('UPDATE refresh_tokens SET revoked')) return Promise.resolve({});
       if (sql.includes('INSERT INTO refresh_tokens')) return Promise.resolve({});
       if (sql === 'COMMIT') return Promise.resolve({});
@@ -103,6 +105,89 @@ describe('authService.refreshToken', () => {
     expect(result).not.toBeNull();
     expect(mockClient.query).not.toHaveBeenCalledWith(
       expect.stringContaining('WHERE token_family'),
+      expect.anything()
+    );
+  });
+
+  it('rejects the session and revokes the family when the absolute session expiry is reached', async () => {
+    mockClient.query.mockImplementation((sql) => {
+      if (sql === 'BEGIN') return Promise.resolve({});
+      if (sql.includes('FOR UPDATE')) return Promise.resolve({ rows: [{ id: 10, user_id: 1, revoked: false, token_family: 'fam-1', session_id: 5 }] });
+      if (sql.includes('FROM users WHERE id')) return Promise.resolve({ rows: [{ id: 1, email: 'u@t.com', role: 'user', tenant_id: 'default', token_version: 0 }] });
+      if (sql.includes('SELECT token_version FROM refresh_tokens')) return Promise.resolve({ rows: [{ token_version: 0 }] });
+      if (sql.includes('FROM user_sessions')) return Promise.resolve({ rows: [{ id: 5, revoked_at: null, expires_at: new Date(Date.now() - 1000).toISOString(), last_seen_at: new Date().toISOString() }] });
+      if (sql === 'COMMIT') return Promise.resolve({});
+      return Promise.resolve({ rows: [] });
+    });
+
+    const { refreshToken } = await import('../../src/modules/auth/auth.service.js');
+    const result = await refreshToken({ refresh_token: 'expired-session-token' });
+    expect(result).toBeNull();
+    expect(mockClient.query).toHaveBeenCalledWith(
+      expect.stringContaining('UPDATE refresh_tokens SET revoked = true WHERE token_family = $1'),
+      ['fam-1']
+    );
+    expect(mockClient.query).toHaveBeenCalledWith('COMMIT');
+  });
+
+  it('rejects the session and revokes the family when the idle timeout is exceeded', async () => {
+    mockClient.query.mockImplementation((sql) => {
+      if (sql === 'BEGIN') return Promise.resolve({});
+      if (sql.includes('FOR UPDATE')) return Promise.resolve({ rows: [{ id: 10, user_id: 1, revoked: false, token_family: 'fam-1', session_id: 5 }] });
+      if (sql.includes('FROM users WHERE id')) return Promise.resolve({ rows: [{ id: 1, email: 'u@t.com', role: 'user', tenant_id: 'default', token_version: 0 }] });
+      if (sql.includes('SELECT token_version FROM refresh_tokens')) return Promise.resolve({ rows: [{ token_version: 0 }] });
+      if (sql.includes('FROM user_sessions')) return Promise.resolve({ rows: [{ id: 5, revoked_at: null, expires_at: new Date(Date.now() + 86400000).toISOString(), last_seen_at: new Date(Date.now() - 48 * 3600000).toISOString() }] });
+      if (sql === 'COMMIT') return Promise.resolve({});
+      return Promise.resolve({ rows: [] });
+    });
+
+    const { refreshToken } = await import('../../src/modules/auth/auth.service.js');
+    const result = await refreshToken({ refresh_token: 'idle-session-token' });
+    expect(result).toBeNull();
+    expect(mockClient.query).toHaveBeenCalledWith(
+      expect.stringContaining('UPDATE refresh_tokens SET revoked = true WHERE token_family = $1'),
+      ['fam-1']
+    );
+  });
+
+  it('rejects the session when it has been revoked', async () => {
+    mockClient.query.mockImplementation((sql) => {
+      if (sql === 'BEGIN') return Promise.resolve({});
+      if (sql.includes('FOR UPDATE')) return Promise.resolve({ rows: [{ id: 10, user_id: 1, revoked: false, token_family: 'fam-1', session_id: 5 }] });
+      if (sql.includes('FROM users WHERE id')) return Promise.resolve({ rows: [{ id: 1, email: 'u@t.com', role: 'user', tenant_id: 'default', token_version: 0 }] });
+      if (sql.includes('SELECT token_version FROM refresh_tokens')) return Promise.resolve({ rows: [{ token_version: 0 }] });
+      if (sql.includes('FROM user_sessions')) return Promise.resolve({ rows: [{ id: 5, revoked_at: new Date().toISOString(), expires_at: new Date(Date.now() + 86400000).toISOString(), last_seen_at: new Date().toISOString() }] });
+      if (sql === 'COMMIT') return Promise.resolve({});
+      return Promise.resolve({ rows: [] });
+    });
+
+    const { refreshToken } = await import('../../src/modules/auth/auth.service.js');
+    const result = await refreshToken({ refresh_token: 'revoked-session-token' });
+    expect(result).toBeNull();
+    expect(mockClient.query).toHaveBeenCalledWith(
+      expect.stringContaining('UPDATE user_sessions SET revoked_at = NOW() WHERE id = $1'),
+      [5]
+    );
+  });
+
+  it('rotates the freshest valid sibling instead of killing the family (multi-tab grace window)', async () => {
+    const now = Date.now();
+    mockClient.query.mockImplementation((sql) => {
+      if (sql === 'BEGIN') return Promise.resolve({});
+      if (sql.includes('FOR UPDATE')) return Promise.resolve({ rows: [{ id: 10, user_id: 1, revoked: true, token_family: 'fam-1', session_id: 5, token_version: 0 }] });
+      if (sql.includes('SELECT id, user_id, session_id, created_at, expires_at')) return Promise.resolve({ rows: [{ id: 20, user_id: 1, session_id: 5, created_at: new Date(now - 1000).toISOString(), expires_at: new Date(now + 86400000).toISOString() }] });
+      if (sql.includes('FROM users WHERE id')) return Promise.resolve({ rows: [{ id: 1, email: 'u@t.com', role: 'user', tenant_id: 'default', token_version: 0 }] });
+      if (sql.includes('SELECT token_version FROM refresh_tokens')) return Promise.resolve({ rows: [{ token_version: 0 }] });
+      if (sql.includes('FROM user_sessions')) return Promise.resolve({ rows: [{ id: 5, revoked_at: null, expires_at: new Date(now + 86400000).toISOString(), last_seen_at: new Date(now - 1000).toISOString() }] });
+      if (sql === 'COMMIT') return Promise.resolve({});
+      return Promise.resolve({ rows: [] });
+    });
+
+    const { refreshToken } = await import('../../src/modules/auth/auth.service.js');
+    const result = await refreshToken({ refresh_token: 'revoked-but-recent' });
+    expect(result).not.toBeNull();
+    expect(mockClient.query).not.toHaveBeenCalledWith(
+      expect.stringContaining('UPDATE refresh_tokens SET revoked = true WHERE token_family'),
       expect.anything()
     );
   });

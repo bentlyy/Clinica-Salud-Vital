@@ -11,8 +11,37 @@ let isRefreshing = false;
 let refreshSubscribers: ((token: string | null) => void)[] = [];
 let refreshPromise: Promise<AuthResponse> | null = null;
 
+// Guards signaling a logout across a burst of failing requests so the interceptor
+// does not spam toasts / navigations when several requests fail at the same time.
+let pendingUnauthorized = false;
+
+// Cross-tab coordination: whenever THIS tab obtains a new access token (login or
+// refresh rotation), broadcast it so sibling tabs stop using the now-revoked one.
+// This + the backend reuse grace window avoids spurious multi-tab logouts.
+let authChannel: BroadcastChannel | null = null;
+
+function initAuthChannel(): void {
+  if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+    authChannel = new BroadcastChannel('vitaria-auth');
+    authChannel.addEventListener('message', (event: MessageEvent) => {
+      const msg = (event.data || {}) as { type?: string; access_token?: string };
+      if (msg.type === 'auth_token' && typeof msg.access_token === 'string' && msg.access_token !== accessToken) {
+        accessToken = msg.access_token;
+      }
+    });
+  }
+}
+
+initAuthChannel();
+
 export function setAccessToken(token: string | null) {
   accessToken = token;
+  pendingUnauthorized = false;
+}
+
+export function announceAccessToken(token: string) {
+  setAccessToken(token);
+  authChannel?.postMessage({ type: 'auth_token', access_token: token });
 }
 
 export function getAccessToken(): string | null {
@@ -44,7 +73,7 @@ export function refreshSession(): Promise<AuthResponse> {
       },
     )
     .then(({ data }) => {
-      setAccessToken(data.access_token);
+      announceAccessToken(data.access_token);
       return data;
     })
     .finally(() => {
@@ -136,7 +165,16 @@ apiClient.interceptors.response.use(
         if (!isRefreshCall) toast.error(message || i18n.t('errors:badRequest'));
         break;
       case 401:
-        if (!isRefreshCall) toast.error(i18n.t('errors:sessionExpired'));
+        if (!isRefreshCall) {
+          // Arrived here only AFTER a refresh+retry failed (the first 401 is handled
+          // by the refresh branch above). The session is truly gone: signal a logout
+          // so the UI does not stay "logged in" while every request keeps failing.
+          if (!pendingUnauthorized) {
+            pendingUnauthorized = true;
+            toast.error(i18n.t('errors:sessionExpired'));
+            onUnauthorized?.();
+          }
+        }
         break;
       case 403:
         toast.error(i18n.t('errors:accessDenied'));
