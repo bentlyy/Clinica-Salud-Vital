@@ -490,15 +490,16 @@ function LandingPage() {
           <div>
             <div className="lp-footer-col-title">{t('footerLegal')}</div>
             <ul className="lp-footer-links">
-              <li><a href="#">{t('footerLegalPrivacy')}</a></li>
-              <li><a href="#">{t('footerLegalTerms')}</a></li>
+              <li><a href="/privacidad">{t('footerLegalPrivacy')}</a></li>
+              <li><a href="/terminos">{t('footerLegalTerms')}</a></li>
               <li><a href="#">{t('footerLegalHipaa')}</a></li>
-              <li><a href="#">{t('footerLegalCookies')}</a></li>
+              <li><a href="/privacidad">{t('footerLegalCookies')}</a></li>
             </ul>
           </div>
         </div>
         <div className="lp-footer-bottom">
           <span>© {new Date().getFullYear()} {t('brandName')}. {t('footerCopyright')}</span>
+          <span className="lp-footer-contact">{t('footerContactAddress')} · <a href={`mailto:${t('footerContactEmail')}`} className="lp-footer-mail">{t('footerContactEmail')}</a></span>
         </div>
       </footer>
 

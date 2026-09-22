@@ -1,4 +1,4 @@
-import { Suspense, lazy } from 'react';
+import { Suspense, lazy, useEffect } from 'react';
 import { Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '@/shared/providers/AuthProvider';
 import { useFeature } from '@/shared/hooks/useFeature';
@@ -7,6 +7,9 @@ import { DashboardLayout } from '@/shared/components/layout/DashboardLayout';
 
 import { LoadingState } from '@/shared/components/ui/LoadingState';
 import { PremiumLocked } from '@/shared/components/PremiumLocked';
+import { DocumentTitle } from '@/shared/components/DocumentTitle';
+import { ConsentBanner } from '@/shared/components/cookies/ConsentBanner';
+import { initAnalytics, trackPageView } from '@/shared/services/analytics';
 import type { ReactNode } from 'react';
 
 // Lazy loaded pages
@@ -111,8 +114,13 @@ const NotFoundPage = lazy(() => import('@/modules/auth/pages/NotFoundPage'));
 
 // Onboarding module
 const OnboardingContractPage = lazy(() => import('@/modules/onboarding/pages/OnboardingContractPage'));
+const ThankYouPage = lazy(() => import('@/modules/onboarding/pages/ThankYouPage'));
 const ClinicOnboardingPage = lazy(() => import('@/modules/onboarding/pages/ClinicOnboardingPage'));
 const SuperAdminOnboardingPage = lazy(() => import('@/modules/onboarding/pages/SuperAdminOnboardingPage'));
+
+// Legal module
+const PrivacyPolicyPage = lazy(() => import('@/modules/legal/pages/PrivacyPolicyPage'));
+const TermsPage = lazy(() => import('@/modules/legal/pages/TermsPage'));
 
 // SaaS subscription module
 const SaasPlanPage = lazy(() => import('@/modules/saas/pages/PlanPage'));
@@ -158,8 +166,20 @@ function UsersRoute() {
 }
 
 export function AppRouter() {
+  const location = useLocation();
+
+  useEffect(() => {
+    trackPageView(location.pathname);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    initAnalytics();
+  }, []);
+
   return (
     <Suspense fallback={<LoadingState />}>
+      <DocumentTitle />
+      <ConsentBanner />
       <Routes>
         {/* Dashboard routes (all roles with sidebar) */}
         <Route
@@ -385,6 +405,11 @@ export function AppRouter() {
 
         {/* Público: formulario de contratación de clínicas */}
         <Route path="/contratar" element={<OnboardingContractPage />} />
+        <Route path="/gracias" element={<ThankYouPage />} />
+
+        {/* Legal */}
+        <Route path="/privacidad" element={<PrivacyPolicyPage />} />
+        <Route path="/terminos" element={<TermsPage />} />
 
         {/* Public routes */}
         <Route path="/2fa" element={<TwoFAPage />} />

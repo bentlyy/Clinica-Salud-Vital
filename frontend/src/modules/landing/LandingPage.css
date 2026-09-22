@@ -510,6 +510,23 @@
   padding-top: 24px;
   border-top: 1px solid rgba(255,255,255,0.08);
   font-size: 13px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
+}
+
+.lp-footer-contact {
+  opacity: 0.85;
+}
+
+.lp-footer-mail {
+  color: #2ad4bf;
+  text-decoration: none;
+}
+
+.lp-footer-mail:hover {
+  text-decoration: underline;
 }
 
 /* --------------------------------------------------------------------------

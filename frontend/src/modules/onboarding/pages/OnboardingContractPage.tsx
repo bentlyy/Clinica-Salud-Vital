@@ -83,9 +83,9 @@ export default function OnboardingContractPage() {
   const [files, setFiles] = useState<FileRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldError, setFieldError] = useState<string | null>(null);
+  const [fieldErrorTarget, setFieldErrorTarget] = useState<string | null>(null);
   const [confirmPassword, setConfirmPassword] = useState('');
   const recaptchaRef = useRef<ReCAPTCHA | null>(null);
   const fileInputs = useRef<Record<number, HTMLInputElement | null>>({});
@@ -113,6 +113,7 @@ export default function OnboardingContractPage() {
 
   const validateStep = (): boolean => {
     const f = getValues();
+    setFieldErrorTarget(null);
     if (activeStep === 0) {
       if (!f.tenant_name || !f.domain || !f.admin_name || !f.admin_email || !f.admin_password || !f.country_code) {
         setFieldError(t('account.requiredFields'));
@@ -120,14 +121,17 @@ export default function OnboardingContractPage() {
       }
       if (!/^[a-z0-9-]+$/.test(f.domain)) {
         setFieldError(t('account.invalidDomain'));
+        setFieldErrorTarget('domain');
         return false;
       }
       if (!/^\S+@\S+\.\S+$/.test(f.admin_email)) {
         setFieldError(t('account.invalidEmail'));
+        setFieldErrorTarget('admin_email');
         return false;
       }
       if (f.admin_password.length < 8) {
         setFieldError(t('account.passwordMin'));
+        setFieldErrorTarget('admin_password');
         return false;
       }
     }
@@ -137,10 +141,14 @@ export default function OnboardingContractPage() {
 
   const next = () => {
     if (!validateStep()) return;
+    setFieldErrorTarget(null);
     setActiveStep((s) => Math.min(s + 1, steps.length - 1));
   };
 
-  const back = () => setActiveStep((s) => Math.max(s - 1, 0));
+  const back = () => {
+    setFieldErrorTarget(null);
+    setActiveStep((s) => Math.max(s - 1, 0));
+  };
 
   const onPickFile = (index: number) => (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] || null;
@@ -200,7 +208,7 @@ export default function OnboardingContractPage() {
         ...(token ? { captcha_token: token } : {}),
       };
       await onboardingService.onboardTenant(payload);
-      setDone(true);
+      navigate('/gracias', { replace: true });
     } catch (err) {
       recaptchaRef.current?.reset();
       setError((err as { response?: { data?: { error?: string } } })?.response?.data?.error || t('common.submitFailed'));
@@ -216,28 +224,14 @@ export default function OnboardingContractPage() {
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
       <Container maxWidth="md" sx={{ py: 4 }}>
-        {!done && (
-          <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Box component="span" sx={{ fontWeight: 700, fontSize: 20 }}>+ {t('brandName')}</Box>
-              <Typography variant="body2" color="text.secondary">{t('pageSubtitle')}</Typography>
-            </Box>
-            <Button onClick={() => navigate('/')} color="inherit" size="small">{t('common.backHome')}</Button>
+        <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Box component="span" sx={{ fontWeight: 700, fontSize: 20 }}>+ {t('brandName')}</Box>
+            <Typography variant="body2" color="text.secondary">{t('pageSubtitle')}</Typography>
           </Box>
-        )}
-        {done ? (
-          <Paper sx={{ p: 4, textAlign: 'center' }}>
-            <CheckCircleOutline color="success" sx={{ fontSize: 64, mb: 2 }} />
-            <Typography variant="h5" sx={{ mb: 1 }}>{t('success.title')}</Typography>
-            <Typography color="text.secondary" sx={{ mb: 1 }}>{t('success.description')}</Typography>
-            <Alert severity="info" sx={{ mb: 3, textAlign: 'left' }}>{t('success.credentials')}</Alert>
-            <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center' }}>
-              <Button variant="contained" onClick={() => navigate('/#cta')}>Ir al inicio</Button>
-            </Box>
-          </Paper>
-        ) : (
-          <>
-            <Paper sx={{ p: { xs: 2, md: 4 } }}>
+          <Button onClick={() => navigate('/')} color="inherit" size="small">{t('common.backHome')}</Button>
+        </Box>
+        <Paper sx={{ p: { xs: 2, md: 4 } }}>
               <Stepper activeStep={activeStep} sx={{ mb: 4 }}>
                 {steps.map((label) => (
                   <Step key={label}>
@@ -266,6 +260,8 @@ export default function OnboardingContractPage() {
                               label={t('account.tenantName')}
                               required
                               fullWidth
+                              error={fieldErrorTarget === 'tenant_name'}
+                              helperText={fieldErrorTarget === 'tenant_name' ? fieldError : undefined}
                               onChange={(e) => {
                                 field.onChange(e);
                                 if (!getValues('domain') || getValues('domain') === domainFromName(getValues('tenant_name'))) {
@@ -279,7 +275,14 @@ export default function OnboardingContractPage() {
                           control={control}
                           name="domain"
                           render={({ field }) => (
-                            <TextField {...field} label={t('account.domain')} required fullWidth helperText={t('account.domainHint')} />
+                            <TextField
+                              {...field}
+                              label={t('account.domain')}
+                              required
+                              fullWidth
+                              helperText={fieldErrorTarget === 'domain' ? fieldError : t('account.domainHint')}
+                              error={fieldErrorTarget === 'domain'}
+                            />
                           )}
                         />
                         <Controller
@@ -335,14 +338,34 @@ export default function OnboardingContractPage() {
                           <Controller
                             control={control}
                             name="admin_email"
-                            render={({ field }) => <TextField {...field} type="email" label={t('account.adminEmail')} required fullWidth />}
+                            render={({ field }) => (
+                              <TextField
+                                {...field}
+                                type="email"
+                                label={t('account.adminEmail')}
+                                required
+                                fullWidth
+                                error={fieldErrorTarget === 'admin_email'}
+                                helperText={fieldErrorTarget === 'admin_email' ? fieldError : undefined}
+                              />
+                            )}
                           />
                         </Box>
                         <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
                           <Controller
                             control={control}
                             name="admin_password"
-                            render={({ field }) => <TextField {...field} type="password" label={t('account.adminPassword')} required fullWidth />}
+                            render={({ field }) => (
+                              <TextField
+                                {...field}
+                                type="password"
+                                label={t('account.adminPassword')}
+                                required
+                                fullWidth
+                                error={fieldErrorTarget === 'admin_password'}
+                                helperText={fieldErrorTarget === 'admin_password' ? fieldError : undefined}
+                              />
+                            )}
                           />
                           <TextField
                             type="password"
@@ -494,8 +517,6 @@ export default function OnboardingContractPage() {
                 </Box>
               )}
             </Paper>
-          </>
-        )}
       </Container>
     </Box>
   );
