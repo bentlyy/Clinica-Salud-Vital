@@ -4,6 +4,7 @@ import { useTranslation, Trans } from 'react-i18next';
 import { LanguageSwitcher } from '@/shared/components/LanguageSwitcher';
 import ReCAPTCHA from 'react-google-recaptcha';
 import { useAuth } from '@/shared/providers/AuthProvider';
+import { DEMO_EMAIL, DEMO_PASSWORD, DEMO_TENANT_ID } from '@/shared/config/demo';
 import { getRedirectPath } from '@/shared/utils/role.utils';
 import { isTestCaptcha, RECAPTCHA_SITE_KEY } from '@/shared/utils/captcha';
 import { useSelectedCountry, useExchangeRates } from '@/shared/hooks/usePricing';
@@ -587,6 +588,30 @@ function LoginModal({ onClose }: { onClose: () => void }) {
     navigate('/booking', { replace: true });
   }, [navigate]);
 
+  const handleDemo = useCallback(async () => {
+    if (loading) return;
+    setError('');
+    setLoading(true);
+    try {
+      const res = await login(DEMO_EMAIL, DEMO_PASSWORD, undefined, undefined, DEMO_TENANT_ID);
+      if (res.requires_2fa) {
+        setPendingEmail(DEMO_EMAIL);
+        setPendingPassword(DEMO_PASSWORD);
+        setStep('2fa');
+        setLoading(false);
+        return;
+      }
+      navigate(getRedirectPath(res.user.role), { replace: true });
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { data?: { error?: string } } };
+      const msg = axiosErr?.response?.data?.error || t('loginErrorDefault');
+      setError(msg);
+      recaptchaRef.current?.reset();
+    } finally {
+      setLoading(false);
+    }
+  }, [loading, login, navigate, t]);
+
   return (
     <div className="lm-overlay" onClick={onClose} role="dialog" aria-modal="true" aria-labelledby="login-modal-title">
       <div className="lm-card" onClick={(e) => e.stopPropagation()}>
@@ -735,6 +760,15 @@ function LoginModal({ onClose }: { onClose: () => void }) {
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
             {t('loginGuestBooking')}
           </button>
+
+          <div className="lm-demo">
+            <div className="lm-demo-title">{t('loginDemoTitle')}</div>
+            <div className="lm-demo-creds">{DEMO_EMAIL} / {DEMO_PASSWORD}</div>
+            <button className="lm-demo-btn" type="button" onClick={handleDemo} disabled={loading}>
+              {loading && <span className="lm-spinner" />}
+              {t('loginDemoButton')}
+            </button>
+          </div>
 
           <p className="lm-signup">
             {t('loginNoAccount')} <a onClick={onClose}>{t('loginContactAdmin')}</a>

@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import { AppThemeProvider } from '@/shared/providers/ThemeProvider';
@@ -71,6 +71,13 @@ vi.mock('react-i18next', () => ({
         sessions_revoked: 'Sesiones cerradas correctamente',
         sessions_revoke_error: 'Error al cerrar sesiones',
         password_min_length: 'Mínimo 8 caracteres',
+        disable_2fa_title: 'Deshabilitar autenticación de dos factores',
+        disable_2fa_description: 'Para deshabilitar la autenticación ingresa tu contraseña y el código.',
+        disable_2fa_code: 'Código de 6 dígitos',
+        '2fa_password_required': 'La contraseña es requerida',
+        '2fa_code_required': 'Ingresa el código de 6 dígitos',
+        confirm_disable_2fa: 'Confirmar deshabilitación',
+        cancel: 'Cancelar',
       };
       return translations[key] ?? key;
     },
@@ -117,11 +124,21 @@ describe('SecurityTab', () => {
     expect(screen.getByRole('button', { name: 'Desactivar 2FA' })).toBeInTheDocument();
   });
 
-  it('disables 2FA when the disable button is clicked', () => {
+  it('disables 2FA via the confirmation dialog with password and code', async () => {
     twoFAStatusMock.data = { enabled: true };
     renderTab();
     fireEvent.click(screen.getByRole('button', { name: 'Desactivar 2FA' }));
-    expect(disableTwoFAMock.mutate).toHaveBeenCalled();
+    const dialog = within(screen.getByRole('dialog'));
+    expect(dialog.getByText('Deshabilitar autenticación de dos factores')).toBeInTheDocument();
+    fireEvent.change(dialog.getByLabelText('Contraseña actual'), { target: { value: 'secret-pass' } });
+    fireEvent.change(dialog.getByLabelText('Código de 6 dígitos'), { target: { value: '123456' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar deshabilitación' }));
+    await waitFor(() => {
+      expect(disableTwoFAMock.mutate).toHaveBeenCalledWith(
+        { password: 'secret-pass', totp_token: '123456' },
+        expect.any(Object),
+      );
+    });
   });
 
   it('shows the QR code after enabling 2FA', async () => {

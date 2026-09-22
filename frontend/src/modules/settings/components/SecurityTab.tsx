@@ -14,6 +14,11 @@ import {
   ListItemText,
   ListItemSecondaryAction,
   IconButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import Lock from '@mui/icons-material/Lock';
@@ -60,6 +65,9 @@ export function SecurityTab() {
 
   const [verifyCode, setVerifyCode] = useState('');
   const [showQR, setShowQR] = useState(false);
+  const [disable2FAOpen, setDisable2FAOpen] = useState(false);
+  const [disablePassword, setDisablePassword] = useState('');
+  const [disableTotp, setDisableTotp] = useState('');
   const [revokingSessions, setRevokingSessions] = useState(false);
   const [confirmRevokeAllOpen, setConfirmRevokeAllOpen] = useState(false);
 
@@ -97,7 +105,28 @@ export function SecurityTab() {
   };
 
   const handleDisable2FA = () => {
-    disableTwoFA.mutate();
+    setDisable2FAOpen(true);
+  };
+
+  const handleConfirmDisable2FA = () => {
+    if (!disablePassword) {
+      toast.error(t('2fa_password_required'));
+      return;
+    }
+    if (disableTotp.length !== 6) {
+      toast.error(t('2fa_code_required'));
+      return;
+    }
+    disableTwoFA.mutate(
+      { password: disablePassword, totp_token: disableTotp },
+      {
+        onSuccess: () => {
+          setDisable2FAOpen(false);
+          setDisablePassword('');
+          setDisableTotp('');
+        },
+      },
+    );
   };
 
   const handleRevokeAllSessions = async () => {
@@ -340,6 +369,53 @@ export function SecurityTab() {
           ))}
         </List>
       )}
+
+      <Dialog open={disable2FAOpen} onClose={() => !disableTwoFA.isPending && setDisable2FAOpen(false)} maxWidth="xs" fullWidth>
+        <DialogTitle sx={{ fontWeight: 600 }}>{t('disable_2fa_title')}</DialogTitle>
+        <DialogContent>
+          <DialogContentText sx={{ mb: 2, color: theme.palette.text.secondary }}>
+            {t('disable_2fa_description')}
+          </DialogContentText>
+          <TextField
+            fullWidth
+            type="password"
+            label={t('current_password')}
+            value={disablePassword}
+            onChange={(e) => setDisablePassword(e.target.value)}
+            sx={{ mb: 2 }}
+          />
+          <TextField
+            fullWidth
+            label={t('disable_2fa_code')}
+            value={disableTotp}
+            onChange={(e) => setDisableTotp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+            placeholder="000000"
+            inputProps={{
+              maxLength: 6,
+              style: { textAlign: 'center', letterSpacing: '0.3em', fontWeight: 600 },
+            }}
+          />
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2, gap: 1 }}>
+          <Button
+            onClick={() => setDisable2FAOpen(false)}
+            disabled={disableTwoFA.isPending}
+            variant="outlined"
+            sx={{ textTransform: 'none', color: theme.palette.text.secondary }}
+          >
+            {t('cancel')}
+          </Button>
+          <Button
+            onClick={handleConfirmDisable2FA}
+            disabled={disableTwoFA.isPending}
+            variant="contained"
+            color="error"
+            sx={{ textTransform: 'none', fontWeight: 600 }}
+          >
+            {disableTwoFA.isPending ? t('disabling') : t('confirm_disable_2fa')}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <ConfirmDialog
         open={confirmRevokeAllOpen}

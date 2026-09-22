@@ -77,6 +77,7 @@ const GuestBookingPage = lazy(() => import('@/modules/bookings/pages/GuestBookin
 // Auth module
 const TwoFAPage = lazy(() => import('@/modules/2fa/pages/TwoFAPage'));
 const ForgotPasswordPage = lazy(() => import('@/modules/auth/pages/ForgotPasswordPage'));
+const LoginPage = lazy(() => import('@/modules/auth/pages/LoginPage'));
 const RegisterPage = lazy(() => import('@/modules/auth/pages/RegisterPage'));
 
 // Bookings confirmation
@@ -413,6 +414,7 @@ export function AppRouter() {
 
         {/* Public routes */}
         <Route path="/2fa" element={<TwoFAPage />} />
+        <Route path="/login" element={<LoginPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/confirm/:token" element={<ConfirmPage />} />

@@ -1,0 +1,1266 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="description" content="Vitaria: plataforma de gestión para clínicas. Agenda, fichas clínicas, laboratorio, facturación y analíticas en un solo lugar." />
+<meta name="robots" content="index, follow" />
+<link rel="canonical" href="https://vitaria.app/" />
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="Vitaria" />
+<meta property="og:title" content="Vitaria | Plataforma de gestión para clínicas" />
+<meta property="og:description" content="Gestiona tu clínica desde un solo lugar: agenda, fichas clínicas, laboratorio, facturación y analíticas." />
+<meta property="og:url" content="https://vitaria.app/" />
+<meta name="twitter:card" content="summary" />
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230d9488'/%3E%3Cpath d='M16 8v16M8 16h16' stroke='white' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<title>Vitaria | Plataforma de gestión para clínicas</title>
+<style>
+:root{
+  --brand:#0d9488;
+  --brand-bright:#2ad4bf;
+  --brand-deep:#218c90;
+  --brand-grad:linear-gradient(135deg,#2ad4bf,#218c90);
+  --ink:#0d3d38;
+  --ink-2:#115e59;
+  --text:#1b2838;
+  --text-soft:#48606f;
+  --bg:#f6f8fb;
+  --surface:#ffffff;
+  --glass:rgba(255,255,255,.62);
+  --glass-strong:rgba(255,255,255,.82);
+  --glass-border:rgba(255,255,255,.7);
+  --glass-dark:rgba(13,61,56,.32);
+  --glass-dark-border:rgba(255,255,255,.22);
+  --ring:#0d9488;
+  --shadow-lg:0 24px 60px -28px rgba(13,61,56,.38);
+  --shadow-md:0 14px 34px -18px rgba(13,61,56,.3);
+  --radius:20px;
+  --radius-sm:14px;
+  --nav-h:72px;
+  font-size:16px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased}
+body{
+  margin:0;
+  font-family:"Plus Jakarta Sans",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+  color:var(--text);
+  background:
+    radial-gradient(1100px 520px at 12% -8%,rgba(42,212,191,.13),transparent 60%),
+    radial-gradient(900px 480px at 96% 6%,rgba(13,148,136,.12),transparent 55%),
+    var(--bg);
+  line-height:1.55;
+}
+img{max-width:100%}
+a{color:var(--brand-deep)}
+h1,h2,h3{line-height:1.15;margin:0 0 .5em;color:var(--text);font-weight:800}
+p{margin:0 0 1em}
+.container{width:min(1160px,92%);margin-inline:auto}
+
+:focus-visible{outline:2px solid var(--ring);outline-offset:2px;border-radius:4px}
+.skip-link{position:absolute;left:-999px;top:8px;z-index:200;background:var(--ink);color:#fff;padding:10px 16px;border-radius:8px}
+.skip-link:focus{left:8px}
+
+/* ---------- NAV ---------- */
+.lp-nav{
+  position:fixed;inset:0 0 auto 0;z-index:90;height:var(--nav-h);
+  background:var(--glass-strong);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  border-bottom:1px solid rgba(255,255,255,.65);
+  box-shadow:0 6px 24px -22px rgba(13,61,56,.5);
+}
+.lp-nav-inner{height:var(--nav-h);display:flex;align-items:center;gap:20px;justify-content:space-between}
+.lp-brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:1.12rem;color:var(--ink);text-decoration:none}
+.lp-brand-mark{width:34px;height:34px;border-radius:10px;background:var(--brand-grad);display:grid;place-items:center;color:#fff;flex:none}
+.lp-brand-mark svg{width:18px;height:18px}
+.lp-links{display:flex;align-items:center;gap:22px;list-style:none;margin:0;padding:0}
+.lp-links a{color:var(--text-soft);text-decoration:none;font-weight:600;font-size:.94rem}
+.lp-links a:hover{color:var(--brand)}
+.lp-nav-actions{display:flex;align-items:center;gap:10px}
+.lp-lang{position:relative}
+.lp-lang-btn{display:flex;align-items:center;gap:6px;background:rgba(13,148,136,.1);border:1px solid transparent;border-radius:10px;padding:8px 12px;font-weight:700;font-size:.85rem;color:var(--ink);cursor:pointer;min-height:44px}
+.lp-lang-btn:hover{border-color:rgba(13,148,136,.35)}
+.lp-lang-menu{
+  position:absolute;right:0;top:calc(100% + 8px);min-width:150px;z-index:95;
+  background:var(--glass-strong);backdrop-filter:blur(14px);border:1px solid var(--glass-border);
+  border-radius:14px;box-shadow:var(--shadow-md);padding:6px;display:none;flex-direction:column;gap:2px;
+}
+.lp-lang-menu.open{display:flex}
+.lp-lang-opt{background:none;border:0;text-align:left;padding:10px 12px;border-radius:9px;font-weight:600;cursor:pointer;font-size:.9rem;color:var(--text);min-height:40px}
+.lp-lang-opt:hover{background:rgba(13,148,136,.12)}
+.lp-lang-opt[aria-checked="true"]{background:rgba(13,148,136,.16);color:var(--brand-deep)}
+
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  border:0;cursor:pointer;text-decoration:none;font-weight:700;font-size:.95rem;
+  border-radius:12px;padding:12px 22px;min-height:46px;min-width:44px;
+  transition:transform .18s ease,box-shadow .18s ease,background .18s ease;
+}
+.btn:active{transform:translateY(1px) scale(.99)}
+.btn-primary{background:var(--brand-grad);color:#fff;box-shadow:0 12px 26px -14px rgba(33,140,144,.65)}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 16px 30px -14px rgba(33,140,144,.75)}
+.btn-ghost{background:transparent;color:var(--ink);border:1.5px solid rgba(13,109,102,.4)}
+.btn-ghost:hover{background:rgba(13,148,136,.06)}
+.btn-light{background:#fff;color:var(--ink)}
+.btn-light:hover{transform:translateY(-2px);box-shadow:var(--shadow-md)}
+.btn-block{width:100%}
+.btn[disabled]{opacity:.6;cursor:not-allowed;transform:none!important}
+
+/* ---------- HERO ---------- */
+.lp-hero{
+  position:relative;overflow:hidden;padding:calc(var(--nav-h) + 64px) 0 96px;
+  color:#fff;background:var(--ink);
+  background-image:linear-gradient(180deg,rgba(13,61,56,.88),rgba(13,61,56,.94)),url('clinicafoto.jpg');
+  background-size:cover;background-position:center;
+  isolation:isolate;
+}
+.lp-hero::before{
+  content:"";position:absolute;inset:0;z-index:-1;
+  background:radial-gradient(720px 420px at 84% 12%,rgba(42,212,191,.35),transparent 62%),
+             radial-gradient(560px 360px at 8% 90%,rgba(33,140,144,.4),transparent 60%);
+}
+.lp-hero-grid{position:relative;z-index:1;display:grid;gap:40px;align-items:center}
+.lp-hero-badge{
+  display:inline-flex;align-items:center;gap:8px;margin-bottom:18px;
+  background:var(--glass-dark);border:1px solid var(--glass-dark-border);
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  border-radius:999px;padding:8px 16px;font-weight:600;font-size:.86rem;color:#d2f5ee;
+}
+.lp-hero-badge svg{width:16px;height:16px;color:var(--brand-bright)}
+.lp-hero h1{color:#fff;font-size:clamp(2.1rem,5vw,3.6rem);letter-spacing:-.02em}
+.lp-hero h1 .grad{background:linear-gradient(90deg,#2ad4bf,#7dd3fc);-webkit-background-clip:text;background-clip:text;color:transparent}
+.lp-hero-sub{color:#c9e2dc;font-size:clamp(1rem,1.6vw,1.15rem);max-width:620px;margin-bottom:30px}
+.lp-hero-ctas{display:flex;gap:14px;flex-wrap:wrap}
+.lp-hero-stats{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:56px;
+}
+.lp-stat{
+  background:var(--glass-dark);border:1px solid var(--glass-dark-border);
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  border-radius:var(--radius);padding:20px;text-align:center;
+}
+.lp-stat-value{font-size:clamp(1.5rem,3vw,2.2rem);font-weight:800;color:#fff;font-variant-numeric:tabular-nums}
+.lp-stat-label{font-size:.9rem;color:#a8c9c2;margin-top:2px}
+
+/* ---------- SECTIONS ---------- */
+.lp-section{padding:88px 0}
+.lp-eyebrow{
+  display:inline-flex;align-items:center;gap:8px;text-transform:uppercase;letter-spacing:.12em;
+  font-weight:800;font-size:.78rem;color:var(--brand-deep);margin-bottom:12px;
+}
+.lp-head{max-width:680px;margin-bottom:48px}
+.lp-head h2{font-size:clamp(1.7rem,3.4vw,2.5rem);letter-spacing:-.02em}
+.lp-head p{color:var(--text-soft);font-size:1.05rem}
+
+/* Reveal on scroll */
+[data-reveal]{opacity:0;transform:translateY(22px);transition:opacity .7s cubic-bezier(.22,.61,.36,1),transform .7s cubic-bezier(.22,.61,.36,1)}
+[data-reveal].is-in{opacity:1;transform:none}
+[data-reveal][data-delay="1"]{transition-delay:.08s}
+[data-reveal][data-delay="2"]{transition-delay:.16s}
+[data-reveal][data-delay="3"]{transition-delay:.24s}
+[data-reveal][data-delay="4"]{transition-delay:.32s}
+[data-reveal][data-delay="5"]{transition-delay:.4s}
+
+/* Features */
+.lp-features-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+.lp-feature{
+  background:var(--glass);border:1px solid var(--glass-border);
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  border-radius:var(--radius);padding:28px;box-shadow:var(--shadow-md);
+  display:flex;flex-direction:column;gap:14px;
+}
+.lp-feature:hover{transform:translateY(-4px);box-shadow:var(--shadow-lg)}
+.lp-feature-icon{width:52px;height:52px;border-radius:14px;background:var(--brand-grad);color:#fff;display:grid;place-items:center;flex:none}
+.lp-feature-icon svg{width:24px;height:24px}
+.lp-feature h3{font-size:1.12rem;margin:0}
+.lp-feature p{color:var(--text-soft);font-size:.94rem;margin:0}
+
+/* Clients */
+.lp-clients-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.lp-client{
+  background:var(--glass);border:1px solid var(--glass-border);border-radius:var(--radius-sm);
+  padding:16px 18px;text-align:center;font-weight:700;color:var(--ink);font-size:.92rem;
+  box-shadow:var(--shadow-md);display:flex;align-items:center;justify-content:center;min-height:56px;
+}
+.lp-client::before{content:"●";color:var(--brand-bright);font-size:.55rem;margin-right:8px;opacity:.8}
+
+/* How it works */
+.lp-steps{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;counter-reset:step}
+.lp-step{position:relative;background:var(--glass);border:1px solid var(--glass-border);border-radius:var(--radius);padding:30px 26px;box-shadow:var(--shadow-md)}
+.lp-step-num{
+  counter-increment:step;font-weight:800;font-size:2.4rem;line-height:1;color:transparent;
+  -webkit-text-stroke:1.6px var(--brand-deep);margin-bottom:16px;display:block;
+}
+.lp-step h3{font-size:1.1rem;margin-bottom:8px}
+.lp-step p{color:var(--text-soft);font-size:.94rem;margin:0}
+
+/* Tech */
+.lp-tech-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+.lp-tech{
+  background:var(--glass);border:1px solid var(--glass-border);border-radius:var(--radius);
+  padding:24px;box-shadow:var(--shadow-md);
+}
+.lp-tech h3{font-size:1rem;display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.lp-tech-icon{width:38px;height:38px;border-radius:10px;background:var(--brand-grad);color:#fff;display:grid;place-items:center;flex:none}
+.lp-tech-icon svg{width:18px;height:18px}
+.lp-tech-list{display:flex;flex-wrap:wrap;gap:8px}
+.lp-tech-chip{background:#fff;border:1px solid rgba(13,61,56,.14);border-radius:999px;padding:6px 12px;font-size:.82rem;font-weight:600;color:var(--text)}
+
+/* Pricing */
+.lp-pricing-controls{display:flex;align-items:center;gap:18px;margin-bottom:34px;flex-wrap:wrap}
+.lp-country{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.lp-country label{font-weight:700;font-size:.92rem;color:var(--text-soft)}
+.lp-country select{
+  appearance:none;background:var(--glass-strong);border:1.5px solid rgba(13,61,56,.18);border-radius:12px;
+  padding:10px 38px 10px 14px;font-weight:700;font-family:inherit;font-size:.95rem;color:var(--ink);cursor:pointer;min-height:46px;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%230d9488' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 12px center;
+}
+.lp-rate-note{font-size:.84rem;color:var(--text-soft);display:flex;align-items:center;gap:8px}
+.lp-rate-note svg{width:15px;height:15px}
+.lp-plans{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;align-items:stretch}
+.lp-plan{
+  position:relative;display:flex;flex-direction:column;
+  background:var(--glass);border:1px solid var(--glass-border);border-radius:20px;
+  padding:30px 26px;box-shadow:var(--shadow-md);
+}
+.lp-plan.popular{
+  background:var(--glass-strong);border:2px solid var(--brand-bright);
+  box-shadow:0 26px 60px -30px rgba(13,148,136,.5);
+}
+.lp-plan-tag{
+  position:absolute;top:-13px;left:50%;transform:translateX(-50%);
+  background:var(--brand-grad);color:#fff;font-weight:800;font-size:.72rem;letter-spacing:.06em;
+  text-transform:uppercase;border-radius:999px;padding:6px 14px;white-space:nowrap;
+}
+.lp-plan-name{font-size:1.15rem;font-weight:800;color:var(--ink)}
+.lp-plan-desc{color:var(--text-soft);font-size:.9rem;margin-bottom:18px}
+.lp-plan-price{display:flex;align-items:baseline;gap:6px;margin-bottom:4px}
+.lp-plan-amount{font-size:2.3rem;font-weight:800;color:var(--text)}
+.lp-plan-currency{font-weight:800;color:var(--brand-deep);font-size:1.1rem}
+.lp-plan-period{color:var(--text-soft);font-size:.9rem}
+.lp-plan-base{font-size:.8rem;color:var(--text-soft);margin-bottom:20px}
+.lp-plan-list{list-style:none;margin:0 0 24px;padding:0;display:grid;gap:10px}
+.lp-plan-list li{display:flex;gap:10px;align-items:flex-start;font-size:.92rem;color:var(--text)}
+.lp-plan-check{flex:none;margin-top:2px;width:18px;height:18px;border-radius:50%;background:var(--brand-grad);color:#fff;display:grid;place-items:center}
+.lp-plan-check svg{width:11px;height:11px}
+.lp-plan-list li.disabled{color:#9aa7b2}
+.lp-plan-list li.disabled .lp-plan-check{background:rgba(13,61,56,.14);color:#9aa7b2}
+.lp-plan .btn{margin-top:auto}
+
+/* Testimonials */
+.lp-testi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+.lp-testi{
+  background:var(--glass);border:1px solid var(--glass-border);border-radius:var(--radius);
+  padding:26px;box-shadow:var(--shadow-md);display:flex;flex-direction:column;gap:16px;
+}
+.lp-stars{color:#f59e0b;letter-spacing:2px;font-size:1rem;line-height:1}
+.lp-testi p{color:var(--text);font-size:.95rem;margin:0;flex:1}
+.lp-testi-person{display:flex;align-items:center;gap:12px}
+.lp-testi-avatar{
+  width:42px;height:42px;border-radius:50%;color:#fff;font-weight:800;font-size:.85rem;
+  display:grid;place-items:center;flex:none;
+}
+.lp-testi-name{font-weight:800;font-size:.92rem;color:var(--ink)}
+.lp-testi-role{font-size:.82rem;color:var(--text-soft)}
+
+/* FAQ */
+.lp-faq{max-width:760px;margin-inline:auto;display:grid;gap:12px}
+.lp-faq-item{
+  background:var(--glass);border:1px solid var(--glass-border);border-radius:var(--radius-sm);
+  overflow:hidden;box-shadow:var(--shadow-md);
+}
+.lp-faq-q{
+  width:100%;display:flex;align-items:center;justify-content:space-between;gap:14px;text-align:left;
+  background:none;border:0;padding:18px 20px;font-weight:700;font-size:1rem;color:var(--text);cursor:pointer;font-family:inherit;min-height:48px;
+}
+.lp-faq-q .lp-faq-icon{flex:none;width:26px;height:26px;border-radius:8px;background:rgba(13,148,136,.14);color:var(--brand-deep);display:grid;place-items:center;transition:transform .25s ease}
+.lp-faq-q .lp-faq-icon svg{width:14px;height:14px}
+.lp-faq-item[data-open] .lp-faq-icon{transform:rotate(45deg)}
+.lp-faq-a{max-height:0;overflow:hidden;transition:max-height .3s ease}
+.lp-faq-a > p{padding:0 20px 18px;color:var(--text-soft);font-size:.94rem;margin:0}
+
+/* CTA band */
+.lp-cta{
+  position:relative;overflow:hidden;border-radius:24px;color:#fff;text-align:center;
+  background:var(--ink);padding:64px 28px;
+  background-image:linear-gradient(135deg,rgba(42,212,191,.28),transparent 55%);
+}
+.lp-cta h2{color:#fff;font-size:clamp(1.6rem,3.3vw,2.4rem);margin-bottom:.4em}
+.lp-cta p{color:#d2e6e0;max-width:560px;margin:0 auto 28px}
+.lp-cta .btn{margin:0 auto}
+
+/* Footer */
+.lp-foot{background:var(--ink);color:#c2d8d2;padding:64px 0 28px;margin-top:96px}
+.lp-foot-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:32px;margin-bottom:40px}
+.lp-foot h4{color:#fff;margin-bottom:14px;font-size:.98rem}
+.lp-foot p{color:#9db8b1;font-size:.9rem;margin:0 0 16px;max-width:280px}
+.lp-foot ul{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.lp-foot a{color:#c2d8d2;text-decoration:none;font-size:.9rem}
+.lp-foot a:hover{color:#2ad4bf}
+.lp-foot-bottom{border-top:1px solid rgba(255,255,255,.12);padding-top:22px;text-align:center;font-size:.84rem;color:#8fb0a8}
+.lp-foot-brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:1.15rem;color:#fff;margin-bottom:14px}
+
+/* ---------- LOGIN MODAL ---------- */
+.lm-overlay{
+  position:fixed;inset:0;z-index:120;display:none;place-items:center;padding:20px;
+  background:rgba(13,45,41,.55);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+}
+.lm-overlay.open{display:grid}
+.lm-card{
+  width:min(880px,100%);max-height:92vh;overflow:auto;display:grid;grid-template-columns:1.05fr 1fr;
+  border-radius:24px;background:rgba(246,248,251,.9);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  border:1px solid var(--glass-border);box-shadow:var(--shadow-lg);
+}
+.lm-visual{
+  position:relative;display:flex;flex-direction:column;justify-content:center;gap:12px;
+  padding:44px;color:#fff;border-radius:24px 0 0 24px;overflow:hidden;
+  background:radial-gradient(560px 380px at 88% 8%,rgba(42,212,191,.4),transparent 60%),radial-gradient(420px 300px at 6% 96%,rgba(33,140,144,.5),transparent 55%),var(--ink);
+}
+.lm-visual-icon{width:58px;height:58px;border-radius:16px;background:var(--brand-grad);display:grid;place-items:center;box-shadow:0 16px 30px -14px rgba(42,212,191,.8)}
+.lm-visual-icon svg{width:28px;height:28px}
+.lm-visual-title{font-size:1.7rem;font-weight:800;color:#fff;margin:0}
+.lm-visual-sub{color:#c9e2dc;font-size:.98rem}
+.lm-form-panel{position:relative;padding:44px;background:rgba(255,255,255,.86);border-radius:0 24px 24px 0}
+.lm-close{position:absolute;top:16px;right:16px;width:40px;height:40px;border-radius:10px;border:0;background:rgba(13,61,56,.08);color:var(--ink);cursor:pointer;display:grid;place-items:center}
+.lm-close:hover{background:rgba(13,61,56,.15)}
+.lm-close svg{width:18px;height:18px}
+.lm-brand{display:flex;align-items:center;gap:10px;font-weight:800;margin-bottom:18px;color:var(--ink)}
+.lm-brand-icon{width:30px;height:30px;border-radius:9px;background:var(--brand-grad);color:#fff;display:grid;place-items:center}
+.lm-brand-icon svg{width:15px;height:15px}
+.lm-title{font-size:1.5rem;color:var(--text);margin-bottom:.3em}
+.lm-subtitle{color:var(--text-soft);font-size:.94rem;margin-bottom:22px}
+.lm-field{display:grid;gap:6px;margin-bottom:14px}
+.lm-field label{font-weight:700;font-size:.86rem;color:var(--text)}
+.lm-field input,.lm-field textarea{
+  border:1.5px solid rgba(13,61,56,.18);border-radius:12px;padding:12px 14px;font-size:.95rem;
+  font-family:inherit;color:var(--text);background:#fff;width:100%;min-height:46px;
+}
+.lm-field input:focus{outline:2px solid var(--ring);outline-offset:0;border-color:transparent}
+.lm-row{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:.86rem;margin-bottom:16px}
+.lm-check{display:flex;align-items:center;gap:8px;font-weight:600;color:var(--text-soft);cursor:pointer}
+.lm-check input{width:16px;height:16px;accent-color:var(--brand)}
+.lm-error{background:rgba(220,38,38,.08);border:1px solid rgba(220,38,38,.3);color:#b91c1c;border-radius:10px;padding:10px 12px;font-size:.86rem;font-weight:600;margin-bottom:14px}
+.lm-divider{display:flex;align-items:center;gap:12px;color:#9aa7b2;font-weight:600;font-size:.82rem;margin:16px 0}
+.lm-divider::before,.lm-divider::after{content:"";flex:1;height:1px;background:rgba(13,61,56,.14)}
+.lm-ghost{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.lm-demo{margin:18px 0 0;border-top:1px dashed rgba(13,61,56,.18);padding-top:16px;text-align:center}
+.lm-demo-label{font-size:.86rem;font-weight:800;color:var(--text);margin-bottom:6px}
+.lm-demo-creds{font-size:.82rem;color:var(--text-soft);margin-bottom:12px;word-break:break-word}
+.lm-demo-creds span{font-weight:700;color:var(--brand-deep)}
+.lm-note{text-align:center;font-size:.86rem;color:var(--text-soft);margin-top:18px}
+.lm-back{background:none;border:0;color:var(--brand-deep);font-weight:700;cursor:pointer;font-size:.88rem;padding:4px;min-height:36px}
+
+/* reCAPTCHA */
+.lm-captcha{margin:0 0 14px}
+.g-recaptcha{transform-origin:left top}
+
+/* Toast */
+.vt-toast{
+  position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(20px);z-index:300;
+  background:var(--ink);color:#fff;padding:12px 20px;border-radius:12px;font-weight:600;font-size:.9rem;
+  opacity:0;transition:opacity .3s ease,transform .3s ease;box-shadow:var(--shadow-lg);pointer-events:none;
+}
+.vt-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+@media (max-width:1000px){
+  .lp-features-grid,.lp-tech-grid,.lp-plans,.lp-testi-grid{grid-template-columns:repeat(2,1fr)}
+  .lp-clients-grid{grid-template-columns:repeat(2,1fr)}
+  .lp-steps{grid-template-columns:1fr}
+  .lp-foot-grid{grid-template-columns:1fr 1fr}
+}
+@media (max-width:720px){
+  .lp-links{display:none}
+  .lp-nav-actions .btn{display:none}
+  .lp-hero-stats{grid-template-columns:1fr 1fr 1fr}
+  .lp-features-grid,.lp-tech-grid,.lp-plans,.lp-testi-grid{grid-template-columns:1fr}
+  .lp-foot-grid{grid-template-columns:1fr}
+  .lm-card{grid-template-columns:1fr}
+  .lm-visual{display:none}
+  .lm-form-panel{border-radius:24px}
+  .lm-ghost{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}
+  [data-reveal]{opacity:1;transform:none}
+}
+</style>
+</head>
+<body>
+<a class="skip-link" href="#main">Saltar al contenido</a>
+
+<!-- ======================= NAV ======================= -->
+<header class="lp-nav">
+  <div class="container lp-nav-inner">
+    <a class="lp-brand" href="#main">
+      <span class="lp-brand-mark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 3v18M3 12h18"/></svg>
+      </span>
+      <span data-i18n="brandName">Vitaria</span>
+    </a>
+
+    <ul class="lp-links">
+      <li><a href="#features" data-i18n="navFeatures">Funcionalidades</a></li>
+      <li><a href="#tech" data-i18n="navTech">Tech Stack</a></li>
+      <li><a href="#how" data-i18n="navHowItWorks">Como funciona</a></li>
+      <li><a href="#pricing" data-i18n="navPricing">Precios</a></li>
+      <li><a href="#testimonials" data-i18n="navTestimonials">Testimonios</a></li>
+      <li><a href="#faq" data-i18n="navFaq">FAQ</a></li>
+    </ul>
+
+    <div class="lp-nav-actions">
+      <div class="lp-lang">
+        <button class="lp-lang-btn" id="langBtn" aria-haspopup="menu" aria-expanded="false" aria-label="Language">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18 14 14 0 0 1 0-18"/></svg>
+          <span id="langLabel">ES</span>
+        </button>
+        <div class="lp-lang-menu" id="langMenu" role="menu">
+          <button class="lp-lang-opt" role="menuitemradio" data-lang="es" aria-checked="true">Español</button>
+          <button class="lp-lang-opt" role="menuitemradio" data-lang="en" aria-checked="false">English</button>
+          <button class="lp-lang-opt" role="menuitemradio" data-lang="pt" aria-checked="false">Português</button>
+          <button class="lp-lang-opt" role="menuitemradio" data-lang="fr" aria-checked="false">Français</button>
+        </div>
+      </div>
+      <button class="btn btn-ghost" data-open-login data-i18n="navLogin">Iniciar sesión</button>
+      <a class="btn btn-primary" href="/contratar" data-i18n="navCta">Comenzar ahora</a>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+<!-- ======================= HERO ======================= -->
+<section class="lp-hero">
+  <div class="container lp-hero-grid">
+    <div>
+      <span class="lp-hero-badge">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5.6v5.7c0 5 3.4 8.6 8 9.7 4.6-1.1 8-4.7 8-9.7V5.6z"/><path d="m9 12 2 2 4-4"/></svg>
+        <span data-i18n="tagline">Plataforma SaaS para Gestión de Centros Médicos</span>
+      </span>
+      <h1 data-i18n-html data-i18n="heroTitle">Gestiona tu clínica de manera <span class="grad">inteligente y moderna</span></h1>
+      <p class="lp-hero-sub" data-i18n="heroSubtitle">La plataforma todo-en-uno para gestión de citas, historial clínico, laboratorio, reportes y más. Multi-tenancy con seguridad de nivel empresarial.</p>
+      <div class="lp-hero-ctas">
+        <a class="btn btn-light" href="/contratar" data-i18n="heroCtaPrimary">Empezar gratis</a>
+        <button class="btn btn-ghost" style="border-color:rgba(255,255,255,.35);color:#fff" type="button" data-demo-login data-i18n="heroCtaDemo">Ver demo en vivo</button>
+        <button class="btn btn-ghost" style="border-color:rgba(255,255,255,.35);color:#fff" data-scroll="#features" data-i18n="heroCtaSecondary">Ver funcionalidades</button>
+      </div>
+    </div>
+  </div>
+  <div class="container">
+    <div class="lp-hero-stats">
+      <div class="lp-stat" data-reveal><div class="lp-stat-value" data-i18n="heroStat1Value">500+</div><div class="lp-stat-label" data-i18n="heroStat1Label">Clínicas activas</div></div>
+      <div class="lp-stat" data-reveal data-delay="1"><div class="lp-stat-value" data-i18n="heroStat2Value">50k+</div><div class="lp-stat-label" data-i18n="heroStat2Label">Citas gestionadas</div></div>
+      <div class="lp-stat" data-reveal data-delay="2"><div class="lp-stat-value" data-i18n="heroStat3Value">99.9%</div><div class="lp-stat-label" data-i18n="heroStat3Label">Uptime garantizado</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= FEATURES ======================= -->
+<section class="lp-section" id="features">
+  <div class="container">
+    <div class="lp-head" data-reveal>
+      <span class="lp-eyebrow" data-i18n="featuresLabel">Funcionalidades</span>
+      <h2 data-i18n="featuresTitle">Todo lo que necesitas en una sola plataforma</h2>
+      <p data-i18n="featuresDesc">Herramientas modernas diseñadas para optimizar la operación de tu centro médico.</p>
+    </div>
+    <div class="lp-features-grid">
+      <article class="lp-feature" data-reveal>
+        <span class="lp-feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4M3 9h18M8 13h.01M12 13h.01M16 13h.01M8 17h.01M12 17h.01"/></svg></span>
+        <h3 data-i18n="feature1Title">Gestión de Citas</h3>
+        <p data-i18n="feature1Desc">Agenda y administra citas con recordatorios automáticos y calendario inteligente.</p>
+      </article>
+      <article class="lp-feature" data-reveal data-delay="1">
+        <span class="lp-feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14"/><path d="M9 21v-6h6v6M9 10h.01M15 10h.01"/></svg></span>
+        <h3 data-i18n="feature2Title">Multi-tenancy</h3>
+        <p data-i18n="feature2Desc">Múltiples clínicas en una sola plataforma con datos completamente aislados.</p>
+      </article>
+      <article class="lp-feature" data-reveal data-delay="2">
+        <span class="lp-feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><path d="M9 8h7M9 12h5"/></svg></span>
+        <h3 data-i18n="feature3Title">Historial Clinico</h3>
+        <p data-i18n="feature3Desc">Registros médicos digitales con prescripciones, historial completo y laboratorio.</p>
+      </article>
+      <article class="lp-feature" data-reveal>
+        <span class="lp-feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6M10 3v4.5L4.5 19a2 2 0 0 0 1.8 3h11.4a2 2 0 0 0 1.8-3L14 7.5V3"/><path d="M7 15h10"/></svg></span>
+        <h3 data-i18n="feature4Title">Laboratorio</h3>
+        <p data-i18n="feature4Desc">Gestión de estudios de laboratorio con resultados y descarga de reportes.</p>
+      </article>
+      <article class="lp-feature" data-reveal data-delay="1">
+        <span class="lp-feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m7 14 4-4 3 3 5-6"/></svg></span>
+        <h3 data-i18n="feature5Title">Reportes y Análisis</h3>
+        <p data-i18n="feature5Desc">Dashboards con métricas en tiempo real, reportes de ingresos y pacientes.</p>
+      </article>
+      <article class="lp-feature" data-reveal data-delay="2">
+        <span class="lp-feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5.6v5.7c0 5 3.4 8.6 8 9.7 4.6-1.1 8-4.7 8-9.7V5.6z"/><path d="m9 12 2 2 4-4"/></svg></span>
+        <h3 data-i18n="feature6Title">Seguridad RBAC</h3>
+        <p data-i18n="feature6Desc">Autenticación JWT con 2FA, roles y permisos granulares por módulo.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= CLIENTS ======================= -->
+<section class="lp-section" id="clients" style="padding-top:0">
+  <div class="container">
+    <div class="lp-head" data-reveal>
+      <span class="lp-eyebrow" data-i18n="clientsLabel">Nuestros clientes</span>
+      <h2 data-i18n="clientsTitle">Clínicas que confían en nosotros</h2>
+    </div>
+    <div class="lp-clients-grid">
+      <div class="lp-client" data-reveal data-i18n="client1">Clínica Norte</div>
+      <div class="lp-client" data-reveal data-delay="1" data-i18n="client2">Hospital Sur</div>
+      <div class="lp-client" data-reveal data-delay="2" data-i18n="client3">Centro Médico</div>
+      <div class="lp-client" data-reveal data-delay="3" data-i18n="client4">Laboratorio Labs</div>
+      <div class="lp-client" data-reveal data-delay="1" data-i18n="client5">Dr. Garcia</div>
+      <div class="lp-client" data-reveal data-delay="2" data-i18n="client6">Dra. Lopez</div>
+      <div class="lp-client" data-reveal data-delay="3" data-i18n="client7">Salud Integral</div>
+      <div class="lp-client" data-reveal data-delay="4" data-i18n="client8">MediCenter</div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= HOW ======================= -->
+<section class="lp-section" id="how" style="padding-top:8px">
+  <div class="container">
+    <div class="lp-head" data-reveal>
+      <span class="lp-eyebrow" data-i18n="howLabel">Como funciona</span>
+      <h2 data-i18n="howTitle">En 3 pasos estás operando</h2>
+      <p data-i18n="howDesc">Configura tu clínica en minutos, no en semanas.</p>
+    </div>
+    <div class="lp-steps">
+      <div class="lp-step" data-reveal><span class="lp-step-num"></span><h3 data-i18n="step1Title">Crea tu cuenta</h3><p data-i18n="step1Desc">Regístrate gratis en 30 segundos. Sin tarjeta de crédito. Configura tu clínica básica.</p></div>
+      <div class="lp-step" data-reveal data-delay="1"><span class="lp-step-num"></span><h3 data-i18n="step2Title">Configura tu equipo</h3><p data-i18n="step2Desc">Invita doctores, personal de laboratorio y admin. Asigna especialidades y horarios.</p></div>
+      <div class="lp-step" data-reveal data-delay="2"><span class="lp-step-num"></span><h3 data-i18n="step3Title">Listo!</h3><p data-i18n="step3Desc">Comienza a agendar citas, gestionar pacientes y monitorear todo desde el dashboard.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= TECH ======================= -->
+<section class="lp-section" id="tech">
+  <div class="container">
+    <div class="lp-head" data-reveal>
+      <span class="lp-eyebrow" data-i18n="techLabel">Stack Tecnologico</span>
+      <h2 data-i18n="techTitle">Construido con tecnología de clase mundial</h2>
+      <p data-i18n="techDesc">Usamos las mejores herramientas del mercado para garantizar rendimiento, seguridad y escalabilidad.</p>
+    </div>
+    <div class="lp-tech-grid" id="techGrid"></div>
+  </div>
+</section>
+
+<!-- ======================= PRICING ======================= -->
+<section class="lp-section" id="pricing">
+  <div class="container">
+    <div class="lp-head" data-reveal>
+      <span class="lp-eyebrow" data-i18n="pricingLabel">Precios</span>
+      <h2 data-i18n="pricingTitle">Planes para cada clínica</h2>
+      <p data-i18n="pricingDesc">Precios transparentes. Sin costos ocultos. Cancela cuando quieras.</p>
+    </div>
+
+    <div class="lp-pricing-controls" data-reveal>
+      <div class="lp-country">
+        <label for="countrySel" data-i18n="pricingCountryLabel">Tu país</label>
+        <select id="countrySel" aria-label="Pais"></select>
+      </div>
+      <span class="lp-rate-note" id="rateNote"></span>
+    </div>
+
+    <div class="lp-plans" id="plans"></div>
+  </div>
+</section>
+
+<!-- ======================= TESTIMONIALS ======================= -->
+<section class="lp-section" id="testimonials">
+  <div class="container">
+    <div class="lp-head" data-reveal>
+      <span class="lp-eyebrow" data-i18n="testimonialsLabel">Testimonios</span>
+      <h2 data-i18n="testimonialsTitle">Lo que dicen nuestros clientes</h2>
+      <p data-i18n="testimonialsDesc">Más de 2,400 profesionales médicos ya confían en nosotros.</p>
+    </div>
+    <div class="lp-testi-grid">
+      <article class="lp-testi" data-reveal>
+        <div class="lp-stars">★★★★★</div>
+        <p data-i18n="testimonial1Text">Reducimos los no-shows en un 40% con los recordatorios automáticos. La gestión de laboratorio integrada nos ahorró 3 horas diarias.</p>
+        <div class="lp-testi-person">
+          <span class="lp-testi-avatar" style="background:linear-gradient(135deg,#2dd4bf,#0d9488)" data-i18n="testimonial1Initials">MG</span>
+          <div><div class="lp-testi-name" data-i18n="testimonial1Name">Dr. Manuel Garcia</div><div class="lp-testi-role" data-i18n="testimonial1Role">Director, Clínica Norte</div></div>
+        </div>
+      </article>
+      <article class="lp-testi" data-reveal data-delay="1">
+        <div class="lp-stars">★★★★★</div>
+        <p data-i18n="testimonial2Text">El panel de analytics predictivo nos ayudó a optimizar horarios y aumentar la capacidad un 25%. Increíble.</p>
+        <div class="lp-testi-person">
+          <span class="lp-testi-avatar" style="background:linear-gradient(135deg,#60a5fa,#3b82f6)" data-i18n="testimonial2Initials">SR</span>
+          <div><div class="lp-testi-name" data-i18n="testimonial2Name">Dra. Sofia Rodriguez</div><div class="lp-testi-role" data-i18n="testimonial2Role">Admin, Hospital Central</div></div>
+        </div>
+      </article>
+      <article class="lp-testi" data-reveal data-delay="2">
+        <div class="lp-stars">★★★★★</div>
+        <p data-i18n="testimonial3Text">Migramos de un sistema legacy en 2 semanas. El soporte fue excepcional. Ahora todo funciona desde el celular.</p>
+        <div class="lp-testi-person">
+          <span class="lp-testi-avatar" style="background:linear-gradient(135deg,#fbbf24,#f59e0b)" data-i18n="testimonial3Initials">AL</span>
+          <div><div class="lp-testi-name" data-i18n="testimonial3Name">Dr. Andres Lopez</div><div class="lp-testi-role" data-i18n="testimonial3Role">Socio Fundador, Médica Sur</div></div>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= FAQ ======================= -->
+<section class="lp-section" id="faq">
+  <div class="container">
+    <div class="lp-head" style="margin-inline:auto;text-align:center" data-reveal>
+      <span class="lp-eyebrow" data-i18n="faqLabel">Preguntas Frecuentes</span>
+      <h2 data-i18n="faqTitle">¿Tienes dudas?</h2>
+    </div>
+    <div class="lp-faq" id="faqList"></div>
+  </div>
+</section>
+
+<!-- ======================= CTA ======================= -->
+<section class="lp-section" id="cta" style="padding-bottom:40px">
+  <div class="container">
+    <div class="lp-cta" data-reveal>
+      <h2 data-i18n="ctaTitle">Empieza a gestionar tu clínica hoy</h2>
+      <p data-i18n="ctaDesc">Únete a cientos de clínicas que ya transformaron su operación con nuestra plataforma.</p>
+      <a class="btn btn-light btn-lg" href="/contratar" style="padding:14px 34px" data-i18n="ctaButton">Crear cuenta gratis</a>
+    </div>
+  </div>
+</section>
+</main>
+
+<!-- ======================= FOOTER ======================= -->
+<footer class="lp-foot">
+  <div class="container">
+    <div class="lp-foot-grid">
+      <div>
+        <div class="lp-foot-brand">
+          <span class="lp-brand-mark">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 3v18M3 12h18"/></svg>
+          </span>
+          <span data-i18n="brandName">Vitaria</span>
+        </div>
+        <p data-i18n="footerDesc">La plataforma SaaS líder en gestión médica para centros de salud en Latinoamérica.</p>
+        <p style="font-size:.86rem">📍 <span data-i18n="footerContactAddress">San Pablo 4050, Quinta Normal, Santiago, Chile</span></p>
+        <p style="font-size:.86rem">✉️ <a href="mailto:munozgaray@alejandrogmail.com" data-i18n="footerContactEmail">munozgaray@alejandrogmail.com</a></p>
+      </div>
+      <nav aria-label="Producto">
+        <h4 data-i18n="footerProduct">Producto</h4>
+        <ul>
+          <li><a href="#features" data-i18n="footerProductFeatures">Funcionalidades</a></li>
+          <li><a href="#pricing" data-i18n="footerProductPricing">Precios</a></li>
+          <li><a href="/api/docs" data-i18n="footerProductApi">API Docs</a></li>
+          <li><a href="#" data-i18n="footerProductChangelog">Changelog</a></li>
+        </ul>
+      </nav>
+      <nav aria-label="Empresa">
+        <h4 data-i18n="footerCompany">Empresa</h4>
+        <ul>
+          <li><a href="#" data-i18n="footerCompanyAbout">Sobre Nosotros</a></li>
+          <li><a href="#" data-i18n="footerCompanyBlog">Blog</a></li>
+          <li><a href="#" data-i18n="footerCompanyCareers">Careers</a></li>
+          <li><a href="#" data-i18n="footerCompanyContact">Contacto</a></li>
+        </ul>
+      </nav>
+      <nav aria-label="Legal">
+        <h4 data-i18n="footerLegal">Legal</h4>
+        <ul>
+          <li><a href="/privacidad" data-i18n="footerLegalPrivacy">Privacidad</a></li>
+          <li><a href="/terminos" data-i18n="footerLegalTerms">Terminos</a></li>
+          <li><a href="#" data-i18n="footerLegalHipaa">HIPAA</a></li>
+          <li><a href="#" data-i18n="footerLegalCookies">Cookies</a></li>
+        </ul>
+      </nav>
+    </div>
+    <div class="lp-foot-bottom">
+      © <span id="year"></span> Vitaria. <span data-i18n="footerCopyright">Todos los derechos reservados.</span>
+    </div>
+  </div>
+</footer>
+
+<!-- ======================= LOGIN MODAL ======================= -->
+<div class="lm-overlay" id="loginModal" role="dialog" aria-modal="true" aria-labelledby="loginModalTitle">
+  <div class="lm-card">
+    <div class="lm-visual">
+      <span class="lm-visual-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3v18M3 12h18"/></svg></span>
+      <h2 class="lm-visual-title" data-i18n="loginVisualTitle">Vitaria</h2>
+      <p class="lm-visual-sub" data-i18n="loginVisualSub">Plataforma moderna para la gestión integral de tu centro médico</p>
+    </div>
+    <div class="lm-form-panel">
+      <button class="lm-close" data-close-login aria-label="Cerrar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+      <div class="lm-brand">
+        <span class="lm-brand-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 3v18M3 12h18"/></svg></span>
+        <span data-i18n="loginBrandText">Vitaria</span>
+      </div>
+
+      <section id="loginStep">
+        <h1 class="lm-title" id="loginModalTitle" data-i18n="loginTitle">Iniciar sesión</h1>
+        <p class="lm-subtitle" data-i18n="loginSubtitle">Ingresa tus credenciales para acceder al panel.</p>
+        <form id="loginForm" novalidate>
+          <div class="lm-field">
+            <label for="loginEmail" data-i18n="loginEmailLabel">Email</label>
+            <input id="loginEmail" name="email" type="email" autocomplete="email" required />
+          </div>
+          <div class="lm-field">
+            <label for="loginPassword" data-i18n="loginPasswordLabel">Contraseña</label>
+            <input id="loginPassword" name="password" type="password" autocomplete="current-password" required />
+          </div>
+          <div class="lm-row">
+            <label class="lm-check"><input type="checkbox" id="rememberMe" checked /> <span data-i18n="loginRememberMe">Recordarme</span></label>
+            <a href="/forgot-password" data-i18n="loginForgotPassword">Olvidaste tu contraseña?</a>
+          </div>
+          <div class="lm-captcha" id="rcAnchor"></div>
+          <p class="lm-error" id="loginError" role="alert" hidden></p>
+          <button class="btn btn-primary btn-block" type="submit" id="loginSubmitBtn" data-i18n="loginSubmit">Iniciar sesión</button>
+        </form>
+        <div class="lm-divider" data-i18n="loginOr">o</div>
+        <div class="lm-ghost">
+          <button class="btn btn-ghost" type="button" data-guest-booking data-i18n="loginGuestBooking">Reservar como invitado</button>
+          <button class="btn btn-ghost" type="button" data-guest-dashboard data-i18n="loginGuestDashboard">Entrar como invitado</button>
+        </div>
+        <div class="lm-demo">
+          <p class="lm-demo-label" data-i18n="loginDemoTitle">Explora la plataforma con la demo</p>
+          <p class="lm-demo-creds"><span data-i18n="loginDemoCredsLabel">Credenciales demo:</span> admin@demo.clinic.com / DemoVitaria2026!</p>
+          <button class="btn btn-primary btn-block" type="button" id="loginDemoBtn" data-i18n="loginDemoButton">Entrar con la demo</button>
+        </div>
+        <p class="lm-note">
+          <span data-i18n="loginNoAccount">¿No tienes cuenta?</span>
+          <a href="/register" style="font-weight:700" data-i18n="loginContactAdmin">Contacta al administrador</a>
+        </p>
+      </section>
+
+      <section id="twofaStep" hidden>
+        <h1 class="lm-title" data-i18n="login2faTitle">Verificación en dos pasos</h1>
+        <p class="lm-subtitle" data-i18n="login2faSubtitle">Ingresa el código de 6 dígitos desde tu aplicación de autenticación.</p>
+        <form id="twofaForm" novalidate>
+          <div class="lm-field">
+            <label for="totpCode" data-i18n="login2faHint">Código de 6 digitos</label>
+            <input id="totpCode" name="totp" type="text" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" placeholder="000000" aria-label="Codigo 2FA" required />
+          </div>
+          <p class="lm-error" id="twofaError" role="alert" hidden></p>
+          <button class="btn btn-primary btn-block" type="submit" id="twofaSubmitBtn" data-i18n="loginVerify">Verificar</button>
+        </form>
+        <button class="lm-back" id="backToLogin" style="margin-top:14px" data-i18n="loginBackToLogin">Volver al login</button>
+      </section>
+    </div>
+  </div>
+</div>
+
+<div class="vt-toast" id="toast" role="status"></div>
+
+<script>
+'use strict';
+/* ==========================================================================
+   Vitaria — Landing standalone
+   Conexiones reales:
+   - Login:   POST {API_BASE}/auth/login  (CSRF: cookie csrf_token -> header X-CSRF-Token)
+   - 2FA:     el backend devuelve code=AUTH_2FA_REQUIRED si el usuario tiene 2FA -> re-POST con totp_token
+   - Redirect por rol: superadmin->/saas, admin|doctor|patient|user->/dashboard, lab_technician->/laboratory
+   - Pricing: GET {API_BASE}/currencies/rates (fallback offline), precios USD reales 29/79/199
+   - Rutas:   /contratar, /booking, /register, /forgot-password, /privacidad, /terminos
+   ========================================================================== */
+
+/* API base. Mismo origen por defecto (/api). Se puede sobreescribir con
+   ?api=https://host:puerto  para probar este archivo fuera del servidor. */
+var API_BASE = new URLSearchParams(location.search).get('api') || '/api';
+
+/* reCAPTCHA: opcional. Con la SITE_KEY vacia se omite el widget y el backend
+   acepta sin captcha (permite el modo dev/test del backend). */
+var RECAPTCHA_SITE_KEY = ''; // ej. '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI' (test)
+
+var FALLBACK_RATES = { USD:1, CLP:950, ARS:1200, BRL:5.4, MXN:18.5 };
+var COUNTRIES = [
+  { code:'CL', currency:'CLP', flag:'CL', decimals:0, key:'pricingCountryCL' },
+  { code:'AR', currency:'ARS', flag:'AR', decimals:0, key:'pricingCountryAR' },
+  { code:'BR', currency:'BRL', flag:'BR', decimals:2, key:'pricingCountryBR' },
+  { code:'MX', currency:'MXN', flag:'MX', decimals:2, key:'pricingCountryMX' },
+  { code:'US', currency:'USD', flag:'US', decimals:2, key:'pricingCountryUS' },
+];
+var CURRENCY_SYMBOL = { CLP:'$', ARS:'$', BRL:'R$', MXN:'$', USD:'$' };
+var PLANS = [
+  { key:'1', usd:29, popular:false, feats:[1,1,1,1,1,0,0] },
+  { key:'2', usd:79, popular:true,  feats:[1,1,1,1,1,1,1] },
+  { key:'3', usd:199,popular:false, feats:[1,1,1,1,1,1,1] },
+];
+
+var DEFAULT_COUNTRY = 'CL';
+var RATES = Object.assign({}, FALLBACK_RATES);
+var COUNTRY = (localStorage.getItem('vitaria_country') || DEFAULT_COUNTRY).toUpperCase();
+if (!COUNTRIES.some(function(c){return c.code===COUNTRY;})) COUNTRY = DEFAULT_COUNTRY;
+
+var state = { lang:'es', ratesLoaded:false };
+
+/* ------------------------- i18n ------------------------- */
+var I18N = {
+es:{brandName:"Vitaria",tagline:"Plataforma SaaS para Gestión de Centros Médicos",heroTitle:"Gestiona tu clínica de manera {1}inteligente y moderna{2}",heroSubtitle:"La plataforma todo-en-uno para la gestión de citas, historial clinico, laboratorio, reportes y mas. Multi-tenancy con seguridad de nivel empresarial.",heroCtaPrimary:"Empezar gratis",heroCtaSecondary:"Ver funcionalidades",heroStat1Value:"500+",heroStat1Label:"Clínicas activas",heroStat2Value:"50k+",heroStat2Label:"Citas gestionadas",heroStat3Value:"99.9%",heroStat3Label:"Uptime garantizado",navFeatures:"Funcionalidades",navTech:"Tech Stack",navHowItWorks:"Como funciona",navPricing:"Precios",navTestimonials:"Testimonios",navFaq:"FAQ",navLogin:"Iniciar sesión",navCta:"Comenzar ahora",heroCtaDemo:"Ver demo en vivo",loginDemoTitle:"Explora la plataforma con la demo",loginDemoCredsLabel:"Credenciales demo:",loginDemoButton:"Entrar con la demo",featuresLabel:"Funcionalidades",featuresTitle:"Todo lo que necesitas en una sola plataforma",featuresDesc:"Herramientas modernas disenadas para optimizar la operación de tu centro médico.",feature1Title:"Gestión de Citas",feature1Desc:"Agenda y administra citas con recordatorios automáticos y calendario inteligente.",feature2Title:"Multi-tenancy",feature2Desc:"Multiples clínicas en una sola plataforma con datos completamente aislados.",feature3Title:"Historial Clinico",feature3Desc:"Registros médicos digitales con prescripciones, historial completo y laboratorio.",feature4Title:"Laboratorio",feature4Desc:"Gestión de estudios de laboratorio con resultados y descarga de reportes.",feature5Title:"Reportes y Análisis",feature5Desc:"Dashboards con metricas en tiempo real, reportes de ingresos y pacientes.",feature6Title:"Seguridad RBAC",feature6Desc:"Autenticación JWT con 2FA, roles y permisos granulares por modulo.",clientsLabel:"Nuestros clientes",clientsTitle:"Clínicas que confian en nosotros",clientsDesc:"Miles de profesionales de la salud ya usan nuestra plataforma a diario.",client1:"Clínica Norte",client2:"Hospital Sur",client3:"Centro Médico",client4:"Laboratorio Labs",client5:"Dr. Garcia",client6:"Dra. Lopez",client7:"Salud Integral",client8:"MediCenter",howLabel:"Como funciona",howTitle:"En 3 pasos estas operando",howDesc:"Configura tu clínica en minutos, no en semanas.",step1Title:"Crea tu cuenta",step1Desc:"Registrate gratis en 30 segundos. Sin tarjeta de credito. Configura tu clínica básica.",step2Title:"Configura tu equipo",step2Desc:"Invita doctores, personal de laboratorio y admin. Asigna especialidades y horarios.",step3Title:"Listo!",step3Desc:"Comienza a agendar citas, gestionar pacientes y monitorear todo desde el dashboard.",pricingLabel:"Precios",pricingTitle:"Planes para cada clínica",pricingDesc:"Precios transparentes. Sin costos ocultos. Cancela cuando quieras.",pricingPeriod:"/mes",pricingMostPopular:"Mas Popular",pricingCta:"Empezar Gratis",pricingCountryLabel:"Tu país",pricingCountryCL:"Chile",pricingCountryAR:"Argentina",pricingCountryBR:"Brasil",pricingCountryMX:"México",pricingCountryUS:"Estados Unidos",pricingRateNote:"Tipo de cambio actualizado cada 6 horas",pricingBase:"Base",plan1Name:"Básico",plan1Desc:"Para clínicas pequenas",plan1Feature1:"Hasta 5 doctores",plan1Feature2:"200 pacientes",plan1Feature3:"Gestión de citas",plan1Feature4:"Historial clinico digital",plan1Feature5:"Soporte por email",plan1Feature6:"Laboratorio",plan1Feature7:"Analytics IA",plan2Name:"Profesional",plan2Desc:"Para clínicas en crecimiento",plan2Feature1:"Hasta 20 doctores",plan2Feature2:"1,000 pacientes",plan2Feature3:"Todo lo del plan Básico",plan2Feature4:"Laboratorio integrado",plan2Feature5:"Analytics con IA",plan2Feature6:"Multi-idioma (ES/EN/PT/FR)",plan2Feature7:"Soporte prioritario",plan3Name:"Enterprise",plan3Desc:"Para redes de clínicas",plan3Feature1:"Doctores ilimitados",plan3Feature2:"Pacientes ilimitados",plan3Feature3:"Todo lo del plan Pro",plan3Feature4:"Multi-tenant",plan3Feature5:"API REST completa",plan3Feature6:"SLA 99.97% uptime",plan3Feature7:"Soporte dedicado 24/7",testimonialsLabel:"Testimonios",testimonialsTitle:"Lo que dicen nuestros clientes",testimonialsDesc:"Mas de 2,400 profesionales médicos ya confian en nosotros.",testimonial1Text:"Reducimos los no-shows en un 40% con los recordatorios automáticos. La gestión de laboratorio integrada nos ahorro 3 horas diarias.",testimonial1Name:"Dr. Manuel Garcia",testimonial1Role:"Director, Clínica Norte",testimonial1Initials:"MG",testimonial2Text:"El panel de analytics predictivo nos ayudo a optimizar horarios y aumentar la capacidad un 25%. Increible.",testimonial2Name:"Dra. Sofia Rodriguez",testimonial2Role:"Admin, Hospital Central",testimonial2Initials:"SR",testimonial3Text:"Migramos de un sistema legacy en 2 semanas. El soporte fue excepcional. Ahora todo funciona desde el celular.",testimonial3Name:"Dr. Andres Lopez",testimonial3Role:"Socio Fundador, Médica Sur",testimonial3Initials:"AL",faqLabel:"Preguntas Frecuentes",faqTitle:"Tenes dudas?",faq1Q:"Necesito tarjeta de credito para empezar?",faq1A:"No. El plan de prueba de 14 dias es completamente gratuito y no requiere tarjeta de credito. Si decides quedarte, elegis el plan que mejor se adapte a tu clínica.",faq2Q:"Puedo migrar datos de otro sistema?",faq2A:"Si. Ofrecemos migración gratuita de datos para planes Profesional y Enterprise. Nuestro equipo se encarga del proceso completo sin interrumpir tus operaciones.",faq3Q:"Cumple con HIPAA y regulaciones de salud?",faq3A:"Si. Cumple con HIPAA, ISO 27001 y todas las regulaciones de protección de datos de salud. Ofrecemos encriptación end-to-end y auditoria completa.",faq4Q:"Cuantos usuarios puedo tener?",faq4A:"Depende del plan. El plan Básico permite hasta 5 doctores, Profesional hasta 20, y Enterprise es ilimitado. Todos los planes incluyen usuarios de laboratorio y admin.",faq5Q:"Ofrecen soporte en espanol?",faq5A:"Si. Todo nuestro soporte esta en espanol. Los planes Profesional y Enterprise incluyen soporte prioritario con tiempo de respuesta garantizado.",techLabel:"Stack Tecnologico",techTitle:"Construido con tecnologia de clase mundial",techDesc:"Usamos las mejores herramientas del mercado para garantizar rendimiento, seguridad y escalabilidad.",techCatBackend:"Backend",techCatFrontend:"Frontend",techCatSecurity:"Seguridad",techCatTesting:"Testing",techCatComms:"Comunicacion",techCatDevops:"DevOps",ctaTitle:"Empieza a gestionar tu clínica hoy",ctaDesc:"Unete a cientos de clínicas que ya transformaron su operación con nuestra plataforma.",ctaButton:"Crear cuenta gratis",footerDesc:"La plataforma SaaS lider en gestión médica para centros de salud en Latinoamerica.",footerProduct:"Producto",footerProductFeatures:"Funcionalidades",footerProductPricing:"Precios",footerProductApi:"API Docs",footerProductChangelog:"Changelog",footerCompany:"Empresa",footerCompanyAbout:"Sobre Nosotros",footerCompanyBlog:"Blog",footerCompanyCareers:"Careers",footerCompanyContact:"Contacto",footerLegal:"Legal",footerLegalPrivacy:"Privacidad",footerLegalTerms:"Terminos",footerLegalHipaa:"HIPAA",footerLegalCookies:"Cookies",footerCopyright:"Todos los derechos reservados.",loginVisualTitle:"Vitaria",loginVisualSub:"Plataforma moderna para la gestión integral de tu centro médico",loginClose:"Cerrar",loginBrandText:"Vitaria",loginTitle:"Iniciar sesión",loginSubtitle:"Ingresa tus credenciales para acceder al panel.",login2faTitle:"Verificación en dos pasos",login2faSubtitle:"Ingresa el código de 6 digitos desde tu aplicación de autenticación.",login2faHint:"Código de 6 digitos",login2faPlaceholder:"000000",loginBackToLogin:"Volver al login",loginEmailLabel:"Email",loginPasswordLabel:"Contraseña",loginPasswordPlaceholder:"Tu contraseña",loginRememberMe:"Recordarme",loginForgotPassword:"Olvidaste tu contraseña?",loginVerify:"Verificar",loginSubmit:"Iniciar sesión",loginOr:"o",loginGuestDashboard:"Entrar como invitado",loginGuestBooking:"Reservar como invitado",loginNoAccount:"No tienes cuenta?",loginContactAdmin:"Contacta al administrador",loginError2faCode:"Ingresa el código de 6 digitos",loginErrorCaptcha:"Completa el captcha",captchaTestBadge:"Captcha de prueba — modo desarrollo",loginError2faIncorrect:"Código incorrecto. Intenta de nuevo.",loginErrorCredentials:"Ingresa tu email y contraseña",loginErrorInvalid:"Código invalido",loginErrorDefault:"Credenciales incorrectas",footerContactAddress:"San Pablo 4050, Quinta Normal, Santiago, Chile",footerContactEmail:"munozgaray@alejandrogmail.com"},
+
+en:{brandName:"Vitaria",tagline:"SaaS Platform for Medical Center Management",heroTitle:"Manage your clinic {1}intelligently and modernly{2}",heroSubtitle:"The all-in-one platform for appointment management, medical records, laboratory, reports and more. Multi-tenancy with enterprise-level security.",heroCtaPrimary:"Start for free",heroCtaSecondary:"See features",heroStat1Value:"500+",heroStat1Label:"Active clinics",heroStat2Value:"50k+",heroStat2Label:"Appointments managed",heroStat3Value:"99.9%",heroStat3Label:"Uptime guaranteed",navFeatures:"Features",navTech:"Tech Stack",navHowItWorks:"How it works",navPricing:"Pricing",navTestimonials:"Testimonials",navFaq:"FAQ",navLogin:"Log in",navCta:"Get started now",heroCtaDemo:"See live demo",loginDemoTitle:"Explore the platform with the demo",loginDemoCredsLabel:"Demo credentials:",loginDemoButton:"Enter with the demo",featuresLabel:"Features",featuresTitle:"Everything you need in a single platform",featuresDesc:"Modern tools designed to optimize your medical center's operations.",feature1Title:"Appointment Management",feature1Desc:"Schedule and manage appointments with automatic reminders and smart calendar.",feature2Title:"Multi-tenancy",feature2Desc:"Multiple clinics on a single platform with completely isolated data.",feature3Title:"Medical Records",feature3Desc:"Digital medical records with prescriptions, complete history and laboratory.",feature4Title:"Laboratory",feature4Desc:"Laboratory study management with results and report downloads.",feature5Title:"Reports & Analytics",feature5Desc:"Dashboards with real-time metrics, revenue and patient reports.",feature6Title:"RBAC Security",feature6Desc:"JWT authentication with 2FA, roles and granular permissions by module.",clientsLabel:"Our clients",clientsTitle:"Clinics that trust us",clientsDesc:"Thousands of healthcare professionals already use our platform daily.",client1:"North Clinic",client2:"South Hospital",client3:"Medical Center",client4:"Lab Laboratories",client5:"Dr. Garcia",client6:"Dr. Lopez",client7:"Integral Health",client8:"MediCenter",howLabel:"How it works",howTitle:"Up and running in 3 steps",howDesc:"Set up your clinic in minutes, not weeks.",step1Title:"Create your account",step1Desc:"Sign up for free in 30 seconds. No credit card required. Set up your basic clinic.",step2Title:"Set up your team",step2Desc:"Invite doctors, lab staff and admins. Assign specialties and schedules.",step3Title:"Ready!",step3Desc:"Start scheduling appointments, managing patients and monitoring everything from the dashboard.",pricingLabel:"Pricing",pricingTitle:"Plans for every clinic",pricingDesc:"Transparent pricing. No hidden costs. Cancel anytime.",pricingPeriod:"/month",pricingMostPopular:"Most Popular",pricingCta:"Start for Free",pricingCountryLabel:"Your country",pricingCountryCL:"Chile",pricingCountryAR:"Argentina",pricingCountryBR:"Brazil",pricingCountryMX:"Mexico",pricingCountryUS:"United States",pricingRateNote:"Exchange rate updated every 6 hours",pricingBase:"Base",plan1Name:"Basic",plan1Desc:"For small clinics",plan1Feature1:"Up to 5 doctors",plan1Feature2:"200 patients",plan1Feature3:"Appointment management",plan1Feature4:"Digital medical records",plan1Feature5:"Email support",plan1Feature6:"Laboratory",plan1Feature7:"AI Analytics",plan2Name:"Professional",plan2Desc:"For growing clinics",plan2Feature1:"Up to 20 doctors",plan2Feature2:"1,000 patients",plan2Feature3:"Everything in Basic plan",plan2Feature4:"Integrated laboratory",plan2Feature5:"AI Analytics",plan2Feature6:"Multi-language (ES/EN/PT/FR)",plan2Feature7:"Priority support",plan3Name:"Enterprise",plan3Desc:"For clinic networks",plan3Feature1:"Unlimited doctors",plan3Feature2:"Unlimited patients",plan3Feature3:"Everything in Pro plan",plan3Feature4:"Multi-tenant",plan3Feature5:"Full REST API",plan3Feature6:"SLA 99.97% uptime",plan3Feature7:"Dedicated 24/7 support",testimonialsLabel:"Testimonials",testimonialsTitle:"What our clients say",testimonialsDesc:"Over 2,400 medical professionals already trust us.",testimonial1Text:"We reduced no-shows by 40% with automatic reminders. The integrated laboratory management saved us 3 hours daily.",testimonial1Name:"Dr. Manuel Garcia",testimonial1Role:"Director, North Clinic",testimonial1Initials:"MG",testimonial2Text:"The predictive analytics panel helped us optimize schedules and increase capacity by 25%. Incredible.",testimonial2Name:"Dr. Sofia Rodriguez",testimonial2Role:"Admin, Central Hospital",testimonial2Initials:"SR",testimonial3Text:"We migrated from a legacy system in 2 weeks. The support was exceptional. Now everything works from the phone.",testimonial3Name:"Dr. Andres Lopez",testimonial3Role:"Founding Partner, South Medical",testimonial3Initials:"AL",faqLabel:"Frequently Asked Questions",faqTitle:"Have questions?",faq1Q:"Do I need a credit card to get started?",faq1A:"No. The 14-day trial is completely free and requires no credit card. If you decide to stay, you choose the plan that best fits your clinic.",faq2Q:"Can I migrate data from another system?",faq2A:"Yes. We offer free data migration for Professional and Enterprise plans. Our team handles the complete process without interrupting your operations.",faq3Q:"Does it comply with HIPAA and health regulations?",faq3A:"Yes. It complies with HIPAA, ISO 27001 and all health data protection regulations. We offer end-to-end encryption and complete auditing.",faq4Q:"How many users can I have?",faq4A:"It depends on the plan. Basic allows up to 5 doctors, Professional up to 20, and Enterprise is unlimited. All plans include lab and admin users.",faq5Q:"Do you offer support in Spanish?",faq5A:"Yes. All our support is in Spanish. Professional and Enterprise plans include priority support with guaranteed response time.",techLabel:"Tech Stack",techTitle:"Built with world-class technology",techDesc:"We use the best tools in the market to guarantee performance, security and scalability.",techCatBackend:"Backend",techCatFrontend:"Frontend",techCatSecurity:"Security",techCatTesting:"Testing",techCatComms:"Communication",techCatDevops:"DevOps",ctaTitle:"Start managing your clinic today",ctaDesc:"Join hundreds of clinics that have already transformed their operations with our platform.",ctaButton:"Create free account",footerDesc:"The leading SaaS platform in medical management for healthcare centers in Latin America.",footerProduct:"Product",footerProductFeatures:"Features",footerProductPricing:"Pricing",footerProductApi:"API Docs",footerProductChangelog:"Changelog",footerCompany:"Company",footerCompanyAbout:"About Us",footerCompanyBlog:"Blog",footerCompanyCareers:"Careers",footerCompanyContact:"Contact",footerLegal:"Legal",footerLegalPrivacy:"Privacy",footerLegalTerms:"Terms",footerLegalHipaa:"HIPAA",footerLegalCookies:"Cookies",footerCopyright:"All rights reserved.",loginVisualTitle:"Vitaria",loginVisualSub:"Modern platform for comprehensive management of your medical center",loginClose:"Close",loginBrandText:"Vitaria",loginTitle:"Log in",loginSubtitle:"Enter your credentials to access the panel.",login2faTitle:"Two-step verification",login2faSubtitle:"Enter the 6-digit code from your authenticator app.",login2faHint:"6-digit code",login2faPlaceholder:"000000",loginBackToLogin:"Back to login",loginEmailLabel:"Email",loginPasswordLabel:"Password",loginPasswordPlaceholder:"Your password",loginRememberMe:"Remember me",loginForgotPassword:"Forgot your password?",loginVerify:"Verify",loginSubmit:"Log in",loginOr:"or",loginGuestDashboard:"Enter as guest",loginGuestBooking:"Book as guest",loginNoAccount:"Don't have an account?",loginContactAdmin:"Contact the administrator",loginError2faCode:"Enter the 6-digit code",loginErrorCaptcha:"Complete the captcha",captchaTestBadge:"Test captcha — development mode",loginError2faIncorrect:"Incorrect code. Try again.",loginErrorCredentials:"Enter your email and password",loginErrorInvalid:"Invalid code",loginErrorDefault:"Invalid credentials",footerContactAddress:"San Pablo 4050, Quinta Normal, Santiago, Chile",footerContactEmail:"munozgaray@alejandrogmail.com"},
+
+pt:{brandName:"Vitaria",tagline:"Plataforma SaaS para Gestão de Centros Médicos",heroTitle:"Gerencie sua clínica de forma {1}inteligente e moderna{2}",heroSubtitle:"A plataforma tudo-em-um para gestão de consultas, prontuários, laboratório, relatórios e muito mais. Multi-tenancy com segurança de nível empresarial.",heroCtaPrimary:"Comece grátis",heroCtaSecondary:"Ver funcionalidades",heroStat1Value:"500+",heroStat1Label:"Clínicas ativas",heroStat2Value:"50k+",heroStat2Label:"Consultas gerenciadas",heroStat3Value:"99.9%",heroStat3Label:"Uptime garantido",navFeatures:"Funcionalidades",navTech:"Tech Stack",navHowItWorks:"Como funciona",navPricing:"Preços",navTestimonials:"Depoimentos",navFaq:"FAQ",navLogin:"Entrar",navCta:"Comece agora",heroCtaDemo:"Ver demonstração ao vivo",loginDemoTitle:"Explore a plataforma com a demo",loginDemoCredsLabel:"Credenciais de demonstração:",loginDemoButton:"Entrar com a demo",featuresLabel:"Funcionalidades",featuresTitle:"Tudo que você precisa em uma única plataforma",featuresDesc:"Ferramentas modernas projetadas para otimizar as operações do seu centro médico.",feature1Title:"Gestão de Consultas",feature1Desc:"Agende e gerencie consultas com lembretes automáticos e calendário inteligente.",feature2Title:"Multi-tenancy",feature2Desc:"Várias clínicas em uma única plataforma com dados completamente isolados.",feature3Title:"Prontuários",feature3Desc:"Prontuários digitais com prescrições, histórico completo e laboratório.",feature4Title:"Laboratório",feature4Desc:"Gestão de exames laboratoriais com resultados e download de relatórios.",feature5Title:"Relatórios e Analytics",feature5Desc:"Painéis com métricas em tempo real, receita e relatórios de pacientes.",feature6Title:"Segurança RBAC",feature6Desc:"Autenticação JWT com 2FA, roles e permissões granulares por módulo.",clientsLabel:"Nossos clientes",clientsTitle:"Clínicas que confiam em nós",clientsDesc:"Milhares de profissionais de saúde já usam nossa plataforma diariamente.",client1:"Clínica Norte",client2:"Hospital Sul",client3:"Centro Médico",client4:"Laboratórios Lab",client5:"Dr. Garcia",client6:"Dr. Lopez",client7:"Saúde Integral",client8:"MediCentro",howLabel:"Como funciona",howTitle:"Pronto em 3 passos",howDesc:"Configure sua clínica em minutos, não semanas.",step1Title:"Crie sua conta",step1Desc:"Cadastre-se grátis em 30 segundos. Sem cartão de crédito. Configure sua clínica básica.",step2Title:"Configure sua equipe",step2Desc:"Convide médicos, laboratório e administradores. Atribua especialidades e horários.",step3Title:"Pronto!",step3Desc:"Comece a agendar consultas, gerenciar pacientes e monitorar tudo pelo painel.",pricingLabel:"Preços",pricingTitle:"Planos para cada clínica",pricingDesc:"Preços transparentes. Sem custos ocultos. Cancele a qualquer momento.",pricingPeriod:"/mês",pricingMostPopular:"Mais Popular",pricingCta:"Comece Grátis",pricingCountryLabel:"Seu país",pricingCountryCL:"Chile",pricingCountryAR:"Argentina",pricingCountryBR:"Brasil",pricingCountryMX:"México",pricingCountryUS:"Estados Unidos",pricingRateNote:"Câmbio atualizado a cada 6 horas",pricingBase:"Base",plan1Name:"Básico",plan1Desc:"Para clínicas pequenas",plan1Feature1:"Até 5 médicos",plan1Feature2:"200 pacientes",plan1Feature3:"Gestão de consultas",plan1Feature4:"Prontuário digital",plan1Feature5:"Suporte por e-mail",plan1Feature6:"Laboratório",plan1Feature7:"Analytics com IA",plan2Name:"Profissional",plan2Desc:"Para clínicas em crescimento",plan2Feature1:"Até 20 médicos",plan2Feature2:"1.000 pacientes",plan2Feature3:"Tudo do plano Básico",plan2Feature4:"Laboratório integrado",plan2Feature5:"Analytics com IA",plan2Feature6:"Multi-idioma (ES/EN/PT/FR)",plan2Feature7:"Suporte prioritário",plan3Name:"Empresarial",plan3Desc:"Para redes de clínicas",plan3Feature1:"Médicos ilimitados",plan3Feature2:"Pacientes ilimitados",plan3Feature3:"Tudo do plano Pro",plan3Feature4:"Multi-tenant",plan3Feature5:"API REST completa",plan3Feature6:"SLA 99,97% uptime",plan3Feature7:"Suporte dedicado 24/7",testimonialsLabel:"Depoimentos",testimonialsTitle:"O que nossos clientes dizem",testimonialsDesc:"Mais de 2.400 profissionais de saúde já confiam em nós.",testimonial1Text:"Reduzimos faltas em 40% com lembretes automáticos. A gestão integrada do laboratório nos economizou 3 horas diárias.",testimonial1Name:"Dr. Manuel Garcia",testimonial1Role:"Diretor, Clínica Norte",testimonial1Initials:"MG",testimonial2Text:"O painel de analytics preditivo nos ajudou a otimizar escalas e aumentar capacidade em 25%. Incrível.",testimonial2Name:"Dra. Sofia Rodriguez",testimonial2Role:"Administração, Hospital Central",testimonial2Initials:"SR",testimonial3Text:"Migramos de um sistema legado em 2 semanas. O suporte foi excepcional. Agora tudo funciona pelo celular.",testimonial3Name:"Dr. Andres Lopez",testimonial3Role:"Sócio Fundador, Médica Sur",testimonial3Initials:"AL",faqLabel:"Perguntas Frequentes",faqTitle:"Tem alguma dúvida?",faq1Q:"Preciso de cartão de crédito para começar?",faq1A:"Não. O teste de 14 dias é completamente gratuito e não requer cartão de crédito. Se decidir continuar, escolha o plano que melhor se adapta à sua clínica.",faq2Q:"Posso migrar dados de outro sistema?",faq2A:"Sim. Oferecemos migração gratuita de dados para os planos Profissional e Empresarial. Nossa equipe cuida de todo o processo sem interromper suas operações.",faq3Q:"Atende HIPAA e normas de saúde?",faq3A:"Sim. Atende HIPAA, ISO 27001 e todas as normas de proteção de dados de saúde. Oferecemos criptografia ponta a ponta e auditoria completa.",faq4Q:"Quantos usuários posso ter?",faq4A:"Depende do plano. Básico permite até 5 médicos, Profissional até 20, e Empresarial é ilimitado. Todos os planos incluem laboratório e usuários admin.",faq5Q:"Vocês oferecem suporte em português?",faq5A:"Sim. Todo o nosso suporte é em português. Os planos Profissional e Empresarial incluem suporte prioritário com tempo de resposta garantido.",techLabel:"Stack Tecnologico",techTitle:"Construido con tecnologia de clase mundial",techDesc:"Usamos as melhores ferramentas do mercado para garantir desempenho, segurança e escalabilidade.",techCatBackend:"Backend",techCatFrontend:"Frontend",techCatSecurity:"Segurança",techCatTesting:"Testes",techCatComms:"Comunicação",techCatDevops:"DevOps",ctaTitle:"Comece a gerenciar sua clínica hoje",ctaDesc:"Junte-se a centenas de clínicas que já transformaram suas operações com nossa plataforma.",ctaButton:"Criar conta grátis",footerDesc:"A plataforma líder em gestão médica SaaS para centros de saúde na América Latina.",footerProduct:"Produto",footerProductFeatures:"Funcionalidades",footerProductPricing:"Preços",footerProductApi:"Documentação API",footerProductChangelog:"Changelog",footerCompany:"Empresa",footerCompanyAbout:"Sobre Nós",footerCompanyBlog:"Blog",footerCompanyCareers:"Carreiras",footerCompanyContact:"Contato",footerLegal:"Jurídico",footerLegalPrivacy:"Privacidade",footerLegalTerms:"Termos",footerLegalHipaa:"HIPAA",footerLegalCookies:"Cookies",footerCopyright:"Todos os direitos reservados.",loginVisualTitle:"Vitaria",loginVisualSub:"Plataforma moderna para gestão integrada do seu centro médico",loginClose:"Fechar",loginBrandText:"Vitaria",loginTitle:"Entrar",loginSubtitle:"Insira suas credenciais para acessar o painel.",login2faTitle:"Verificação em duas etapas",login2faSubtitle:"Insira o código de 6 dígitos do seu aplicativo autenticador.",login2faHint:"Código de 6 dígitos",login2faPlaceholder:"000000",loginBackToLogin:"Voltar ao login",loginEmailLabel:"E-mail",loginPasswordLabel:"Senha",loginPasswordPlaceholder:"Sua senha",loginRememberMe:"Lembrar-me",loginForgotPassword:"Esqueceu sua senha?",loginVerify:"Verificar",loginSubmit:"Entrar",loginOr:"ou",loginGuestDashboard:"Entrar como convidado",loginGuestBooking:"Agendar como convidado",loginNoAccount:"Não tem uma conta?",loginContactAdmin:"Contatar o administrador",loginError2faCode:"Insira o código de 6 dígitos",loginErrorCaptcha:"Complete o captcha",captchaTestBadge:"Captcha de teste — modo desenvolvimento",loginError2faIncorrect:"Código incorreto. Tente novamente.",loginErrorCredentials:"Insira seu e-mail e senha",loginErrorInvalid:"Código inválido",loginErrorDefault:"Credenciais inválidas",footerContactAddress:"San Pablo 4050, Quinta Normal, Santiago, Chile",footerContactEmail:"munozgaray@alejandrogmail.com"},
+
+fr:{brandName:"Vitaria",tagline:"Plateforme SaaS de Gestion de Centres Médicaux",heroTitle:"Gérez votre clinique de manière {1}intelligente et moderne{2}",heroSubtitle:"La plateforme tout-en-un pour la gestion des rendez-vous, des dossiers médicaux, du laboratoire, des rapports et bien plus. Multi-tenancy avec sécurité de niveau entreprise.",heroCtaPrimary:"Commencer gratuitement",heroCtaSecondary:"Voir les fonctionnalités",heroStat1Value:"500+",heroStat1Label:"Cliniques actives",heroStat2Value:"50k+",heroStat2Label:"Rendez-vous gérés",heroStat3Value:"99,9%",heroStat3Label:"Uptime garanti",navFeatures:"Fonctionnalités",navTech:"Tech Stack",navHowItWorks:"Comment ça marche",navPricing:"Tarifs",navTestimonials:"Témoignages",navFaq:"FAQ",navLogin:"Se connecter",navCta:"Commencer maintenant",heroCtaDemo:"Voir la démo en direct",loginDemoTitle:"Explorez la plateforme avec la démo",loginDemoCredsLabel:"Identifiants de démo :",loginDemoButton:"Entrer avec la démo",featuresLabel:"Fonctionnalités",featuresTitle:"Tout ce dont vous avez besoin en une seule plateforme",featuresDesc:"Des outils modernes conçus pour optimiser les opérations de votre centre médical.",feature1Title:"Gestion des rendez-vous",feature1Desc:"Planifiez et gérez les rendez-vous avec rappels automatiques et calendrier intelligent.",feature2Title:"Multi-tenancy",feature2Desc:"Plusieurs cliniques sur une seule plateforme avec des données complètement isolées.",feature3Title:"Dossiers médicaux",feature3Desc:"Dossiers médicaux numériques avec ordonnances, historique complet et laboratoire.",feature4Title:"Laboratoire",feature4Desc:"Gestion des examens de laboratoire avec résultats et téléchargement de rapports.",feature5Title:"Rapports et Analytics",feature5Desc:"Tableaux de bord avec métriques en temps réel, revenus et rapports patients.",feature6Title:"Sécurité RBAC",feature6Desc:"Authentification JWT avec 2FA, rôles et permissions granulaires par module.",clientsLabel:"Nos clients",clientsTitle:"Les cliniques qui nous font confiance",clientsDesc:"Des milliers de professionnels de santé utilisent déjà notre plateforme quotidiennement.",client1:"Clinique Nord",client2:"Hôpital Sud",client3:"Centre Médical",client4:"Laboratoires Lab",client5:"Dr. Garcia",client6:"Dr. Lopez",client7:"Santé Intégrale",client8:"MediCentre",howLabel:"Comment ça marche",howTitle:"Prêt en 3 étapes",howDesc:"Configurez votre clinique en minutes, pas en semaines.",step1Title:"Créez votre compte",step1Desc:"Inscrivez-vous gratuitement en 30 secondes. Pas de carte de crédit. Configurez votre clinique de base.",step2Title:"Configurez votre équipe",step2Desc:"Invitez médecins, laboratoire et administrateurs. Attribuez des spécialités et des horaires.",step3Title:"C'est prêt !",step3Desc:"Commencez à planifier des rendez-vous, gérer des patients et tout suivre depuis le tableau de bord.",pricingLabel:"Tarifs",pricingTitle:"Des formules pour chaque clinique",pricingDesc:"Tarification transparente. Pas de coûts cachés. Annulez à tout moment.",pricingPeriod:"/mois",pricingMostPopular:"Le Plus Populaire",pricingCta:"Commencer Gratuitement",pricingCountryLabel:"Votre pays",pricingCountryCL:"Chili",pricingCountryAR:"Argentine",pricingCountryBR:"Brésil",pricingCountryMX:"Mexique",pricingCountryUS:"États-Unis",pricingRateNote:"Taux de change mis à jour toutes les 6 heures",pricingBase:"Base",plan1Name:"Basique",plan1Desc:"Pour les petites cliniques",plan1Feature1:"Jusqu'à 5 médecins",plan1Feature2:"200 patients",plan1Feature3:"Gestion des rendez-vous",plan1Feature4:"Dossier médical numérique",plan1Feature5:"Support par e-mail",plan1Feature6:"Laboratoire",plan1Feature7:"Analytics IA",plan2Name:"Professionnel",plan2Desc:"Pour les cliniques en croissance",plan2Feature1:"Jusqu'à 20 médecins",plan2Feature2:"1 000 patients",plan2Feature3:"Tout du forfait Basique",plan2Feature4:"Laboratoire intégré",plan2Feature5:"Analytics IA",plan2Feature6:"Multi-langue (ES/EN/PT/FR)",plan2Feature7:"Support prioritaire",plan3Name:"Entreprise",plan3Desc:"Pour les réseaux de cliniques",plan3Feature1:"Médecins illimités",plan3Feature2:"Patients illimités",plan3Feature3:"Tout du forfait Pro",plan3Feature4:"Multi-tenant",plan3Feature5:"API REST complète",plan3Feature6:"SLA 99,97% uptime",plan3Feature7:"Support dédié 24/7",testimonialsLabel:"Témoignages",testimonialsTitle:"Ce que disent nos clients",testimonialsDesc:"Plus de 2 400 professionnels de santé nous font déjà confiance.",testimonial1Text:"Nous avons réduit les absences de 40% avec des rappels automatiques. La gestion intégrée du laboratoire nous a fait gagner 3 heures par jour.",testimonial1Name:"Dr. Manuel Garcia",testimonial1Role:"Directeur, Clinique Nord",testimonial1Initials:"MG",testimonial2Text:"Le tableau de bord d'analyse prédictive nous a aidés à optimiser les plannings et augmenter la capacité de 25%. Incroyable.",testimonial2Name:"Dr. Sofia Rodriguez",testimonial2Role:"Administration, Hôpital Central",testimonial2Initials:"SR",testimonial3Text:"Nous avons migré d'un système existant en 2 semaines. Le support était exceptionnel. Maintenant tout fonctionne depuis le téléphone.",testimonial3Name:"Dr. Andres Lopez",testimonial3Role:"Co-fondateur, Médica Sur",testimonial3Initials:"AL",faqLabel:"Questions Fréquentes",faqTitle:"Vous avez des questions ?",faq1Q:"Ai-je besoin d'une carte de crédit pour commencer ?",faq1A:"Non. L'essai de 14 jours est entièrement gratuit et ne nécessite pas de carte de crédit. Si vous décidez de rester, choisissez le forfait qui correspond le mieux à votre clinique.",faq2Q:"Puis-je migrer les données d'un autre système ?",faq2A:"Oui. Nous offrons une migration de données gratuite pour les forfaits Professionnel et Entreprise. Notre équipe gère le processus complet sans interrompre vos opérations.",faq3Q:"Est conforme aux normes HIPAA et de santé ?",faq3A:"Oui. Conforme à HIPAA, ISO 27001 et à toutes les normes de protection des données de santé. Nous offrons un chiffrement de bout en bout et une auditabilité complète.",faq4Q:"Combien d'utilisateurs puis-je avoir ?",faq4A:"Cela dépend du forfait. Basique permet jusqu'à 5 médecins, Professionnel jusqu'à 20, et Entreprise est illimité. Tous les forfaits incluent le laboratoire et les utilisateurs admin.",faq5Q:"Offrez-vous un support en français ?",faq5A:"Oui. Tout notre support est en français. Les forfaits Professionnel et Entreprise incluent un support prioritaire avec temps de réponse garanti.",techLabel:"Stack Technologique",techTitle:"Construit avec une technologie de classe mondiale",techDesc:"Nous utilisons les meilleurs outils du marche pour garantir performance, securite et evolutivite.",techCatBackend:"Backend",techCatFrontend:"Frontend",techCatSecurity:"Securite",techCatTesting:"Tests",techCatComms:"Communication",techCatDevops:"DevOps",ctaTitle:"Commencez à gérer votre clinique aujourd'hui",ctaDesc:"Rejoignez des centaines de cliniques qui ont déjà transformé leurs opérations avec notre plateforme.",ctaButton:"Créer un compte gratuit",footerDesc:"La plateforme leader SaaS de gestion médicale pour les centres de santé en Amérique Latine.",footerProduct:"Produit",footerProductFeatures:"Fonctionnalités",footerProductPricing:"Tarifs",footerProductApi:"Documentation API",footerProductChangelog:"Changelog",footerCompany:"Entreprise",footerCompanyAbout:"À propos",footerCompanyBlog:"Blog",footerCompanyCareers:"Carrières",footerCompanyContact:"Contact",footerLegal:"Juridique",footerLegalPrivacy:"Confidentialité",footerLegalTerms:"Conditions",footerLegalHipaa:"HIPAA",footerLegalCookies:"Cookies",footerCopyright:"Tous droits réservés.",loginVisualTitle:"Vitaria",loginVisualSub:"Plateforme moderne pour la gestion intégrée de votre centre médical",loginClose:"Fermer",loginBrandText:"Vitaria",loginTitle:"Se connecter",loginSubtitle:"Entrez vos identifiants pour accéder au tableau de bord.",login2faTitle:"Vérification en deux étapes",login2faSubtitle:"Entrez le code à 6 chiffres de votre application d'authentification.",login2faHint:"Code à 6 chiffres",login2faPlaceholder:"000000",loginBackToLogin:"Retour à la connexion",loginEmailLabel:"E-mail",loginPasswordLabel:"Mot de passe",loginPasswordPlaceholder:"Votre mot de passe",loginRememberMe:"Se souvenir de moi",loginForgotPassword:"Mot de passe oublié ?",loginVerify:"Vérifier",loginSubmit:"Se connecter",loginOr:"ou",loginGuestDashboard:"Entrer en tant qu'invité",loginGuestBooking:"Réserver en tant qu'invité",loginNoAccount:"Vous n'avez pas de compte ?",loginContactAdmin:"Contacter l'administrateur",loginError2faCode:"Entrez le code à 6 chiffres",loginErrorCaptcha:"Complétez le captcha",captchaTestBadge:"Captcha de test — mode développement",loginError2faIncorrect:"Code incorrect. Réessayez.",loginErrorCredentials:"Entrez votre e-mail et mot de passe",loginErrorInvalid:"Code invalide",loginErrorDefault:"Identifiants invalides",footerContactAddress:"San Pablo 4050, Quinta Normal, Santiago, Chile",footerContactEmail:"munozgaray@alejandrogmail.com"}
+};
+
+function t(key){
+  var s = I18N[state.lang] || I18N.es;
+  return (s && s[key] != null) ? s[key] : (I18N.es[key] || key);
+}
+
+/* ------------------------- Render: tech / faq / plans ------------------------- */
+var TECH = [
+  { icon:'M12 4a7.5 7.5 0 0 0-7.5 7.5c0 1.9.7 3.6 1.9 4.9.5.5.7 1.1.7 1.8V19a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-.8c0-.7.2-1.3.7-1.8a7 7 0 0 0 1.9-4.9A7.5 7.5 0 0 0 12 4zM9 2h6', key:'techCatBackend', items:[['TypeScript','5.8'],['Node.js','20.x'],['Express','4.21'],['PostgreSQL','15'],['pg','8.18']] },
+  { icon:'M3 17l6-6 4 4 8-8M14 7h7v7', key:'techCatFrontend', items:[['React','19'],['Vite','6.0'],['MUI','6.4'],['React Router','7.1'],['Framer Motion','11.15']] },
+  { icon:'M12 2 4 5.6v5.7c0 5 3.4 8.6 8 9.7 4.6-1.1 8-4.7 8-9.7V5.6zM9 12l2 2 4-4', key:'techCatSecurity', items:[['JWT (HS256)',''],['bcrypt','6.0'],['Helmet','8.1'],['Rate Limiting',''],['reCAPTCHA',''],['AES-256-GCM','']] },
+  { icon:'M9 3h6M10 3v4.5L6 19a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2l-4-11.5V3', key:'techCatTesting', items:[['Vitest','4.1'],['Testing Library',''],['Supertest','7.2'],['Coverage V8','']] },
+  { icon:'M4 4h16v16H4zM4 9h16M9 4v16M22 9l-3 3-3-3', key:'techCatComms', items:[['SendGrid',''],['Nodemailer','8.0'],['Twilio',''],['node-cron','4.2']] },
+  { icon:'M3 16c3-6 6 3 9-3s3 6 6-3c1.5 1 3 2 3 2l-3 6H6c-2 0-3-3-3-3zM5 8h.01M9 5h.01M13 7h.01M17 5h.01', key:'techCatDevops', items:[['Docker',''],['Docker Compose',''],['GitHub Actions',''],['Render',''],['Sentry','10.56'],['Winston','3.19']] },
+];
+
+function svg(pathD, cls, sw){
+  return '<svg class="'+cls+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="'+ (sw||'2') +'" stroke-linecap="round" stroke-linejoin="round"><path opacity="1" d="'+pathD+'"/></svg>';
+}
+function checkIcon(){
+  return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"/></svg>';
+}
+function plusIcon(){
+  return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>';
+}
+
+function renderTech(){
+  var grid = document.getElementById('techGrid');
+  grid.innerHTML = TECH.map(function(cat, i){
+    return '<article class="lp-tech" data-reveal data-delay="'+(i%3)+'">'+
+      '<h3><span class="lp-tech-icon">'+svg(cat.icon,'','2')+'</span><span>'+t(cat.key)+'</span></h3>'+
+      '<div class="lp-tech-list">'+cat.items.map(function(it){
+        return '<span class="lp-tech-chip">'+it[0]+(it[1]?' '+it[1]:'')+'</span>';
+      }).join('')+'</div></article>';
+  }).join('');
+}
+
+function renderFaq(){
+  var el = document.getElementById('faqList');
+  el.innerHTML = [[1,'faq1Q','faq1A'],[2,'faq2Q','faq2A'],[3,'faq3Q','faq3A'],[4,'faq4Q','faq4A'],[5,'faq5Q','faq5A']].map(function(f){
+    return '<div class="lp-faq-item" data-reveal>'+
+      '<button class="lp-faq-q" aria-expanded="false">'+
+        '<span>'+t(f[1])+'</span>'+
+        '<span class="lp-faq-icon">'+plusIcon()+'</span>'+
+      '</button>'+
+      '<div class="lp-faq-a"><p>'+t(f[2])+'</p></div>'+
+    '</div>';
+  }).join('');
+}
+
+function convertUsd(usd, currency){
+  var rate = (RATES && RATES[currency]) || FALLBACK_RATES[currency] || 1;
+  var cur = COUNTRIES.find(function(c){return c.currency===currency;});
+  var dec = cur ? cur.decimals : 0;
+  var factor = Math.pow(10, dec);
+  return Math.round(usd*rate*factor)/factor;
+}
+function formatPrice(val, currency){
+  var cur = COUNTRIES.find(function(c){return c.currency===currency;});
+  var dec = cur ? cur.decimals : 0;
+  return new Intl.NumberFormat(undefined,{minimumFractionDigits:dec,maximumFractionDigits:dec}).format(val);
+}
+
+function renderCountrySelect(){
+  var sel = document.getElementById('countrySel');
+  sel.innerHTML = COUNTRIES.map(function(c){
+    return '<option value="'+c.code+'">'+c.code+' — '+t(c.key)+'</option>';
+  }).join('');
+  sel.value = COUNTRY;
+}
+
+function renderPlans(){
+  var cur = COUNTRIES.find(function(c){return c.code===COUNTRY;});
+  CURRENCY_SYMBOL[cur.currency];
+  var symbol = CURRENCY_SYMBOL[cur.currency] || '$';
+  var el = document.getElementById('plans');
+  var periodTxt = t('pricingPeriod');
+  void CURRENCY_SYMBOL;
+  el.innerHTML = PLANS.map(function(plan, idx){
+    var n0 = plan.usd; // 29 / 79 / 199
+    var local = convertUsd(n0, cur.currency);
+    var featsKeys = [];
+    for (var f=1; f<=7; f++) featsKeys.push('plan'+plan.key+'Feature'+f);
+    var popularTag = plan.popular ? '<span class="lp-plan-tag">'+t('pricingMostPopular')+'</span>' : '';
+    var lis = featsKeys.map(function(k, i){
+      var inc = plan.feats[i];
+      return '<li class="'+(inc?'':'disabled')+'"><span class="lp-plan-check">'+checkIcon()+'</span><span>'+t(k)+'</span></li>';
+    }).join('');
+    return '<article class="lp-plan'+(plan.popular?' popular':'')+'" data-reveal data-delay="'+idx+'">'+popularTag+
+      '<div class="lp-plan-name">'+t('plan'+plan.key+'Name')+'</div>'+
+      '<div class="lp-plan-desc">'+t('plan'+plan.key+'Desc')+'</div>'+
+      '<div class="lp-plan-price">'+
+        '<span class="lp-plan-currency">'+symbol+'</span>'+
+        '<span class="lp-plan-amount">'+formatPrice(local, cur.currency)+'</span>'+
+        '<span class="lp-plan-period">'+periodTxt+'</span>'+
+      '</div>'+
+      '<div class="lp-plan-base">'+t('pricingBase')+': '+formatPrice(n0,'USD')+' USD</div>'+
+      '<ul class="lp-plan-list">'+lis+'</ul>'+
+      '<a class="btn '+(plan.popular?'btn-primary':'btn-ghost')+'" href="/contratar">'+t('pricingCta')+'</a>'+
+    '</article>';
+  }).join('');
+  document.getElementById('rateNote').innerHTML =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s-7-4.6-7-11a7 7 0 0 1 14 0c0 6.4-7 11-7 11z"/><circle cx="12" cy="11" r="2.5"/></svg>'+
+    t('pricingRateNote');
+  observeReveal();
+}
+
+/* ------------------------- FX / rates ------------------------- */
+function fetchRates(){
+  return fetch(API_BASE+'/currencies/rates', { credentials:'include' })
+    .then(function(r){ if(!r.ok) throw new Error('rates'); return r.json(); })
+    .then(function(json){
+      var rates = json && json.data && json.data.rates;
+      if (rates && typeof rates.USD === 'number') RATES = rates;
+      state.ratesLoaded = true;
+    })
+    .catch(function(){
+      RATES = Object.assign({}, FALLBACK_RATES);
+      state.ratesLoaded = true;
+    });
+}
+
+/* ------------------------- CSRF ------------------------- */
+function getCookie(name){
+  var m = document.cookie.match(new RegExp('(?:^|;\\s*)'+name+'=([^;]+)'));
+  return m ? decodeURIComponent(m[1]) : null;
+}
+
+/* ------------------------- Login ------------------------- */
+function getRedirectPath(role){
+  switch(role){
+    case 'superadmin': return '/saas';
+    case 'lab_technician': return '/laboratory';
+    case 'admin': case 'doctor': case 'patient': case 'user': default: return '/dashboard';
+  }
+}
+function showLoginError(id, msg){
+  var el = document.getElementById(id);
+  el.textContent = msg;
+  el.hidden = false;
+}
+function hideLoginError(id){ document.getElementById(id).hidden = true; }
+
+var pendingEmail='', pendingPassword='';
+
+function postLogin(body){
+  var csrf = getCookie('csrf_token');
+  var headers = { 'Content-Type':'application/json' };
+  if (csrf) headers['X-CSRF-Token'] = csrf;
+  return fetch(API_BASE+'/auth/login', {
+    method:'POST',
+    credentials:'include',
+    headers:headers,
+    body: JSON.stringify(body),
+  }).then(function(r){
+    return r.json().then(function(json){ return { ok:r.ok, status:r.status, json:json }; });
+  });
+}
+
+function handleLoginSubmit(e){
+  e.preventDefault();
+  var email = document.getElementById('loginEmail').value.trim();
+  var password = document.getElementById('loginPassword').value;
+  var btn = document.getElementById('loginSubmitBtn');
+  if (!email || !password){ showLoginError('loginError', t('loginErrorCredentials')); return; }
+  hideLoginError('loginError');
+  btn.disabled = true;
+  var captcha_token = window.__captchaToken || undefined;
+  postLogin({ email:email, password:password, captcha_token:captcha_token })
+    .then(function(res){
+      var data = res.json || {};
+      /* 2FA requerido: backend responde 400 con code=AUTH_2FA_REQUIRED */
+      if (res.ok === false && (data.code === 'AUTH_2FA_REQUIRED' || /2fa|two.?factor/i.test(data.error||''))){
+        pendingEmail = email; pendingPassword = password;
+        document.getElementById('loginStep').hidden = true;
+        document.getElementById('twofaStep').hidden = false;
+        document.getElementById('totpCode').focus();
+        return;
+      }
+      if (!res.ok){
+        showLoginError('loginError', data.error || t('loginErrorDefault'));
+        if (window.__captchaReset) window.__captchaReset();
+        return;
+      }
+      /* Compatible con futura respuesta requires_2fa */
+      if (data.requires_2fa){
+        pendingEmail = email; pendingPassword = password;
+        document.getElementById('loginStep').hidden = true;
+        document.getElementById('twofaStep').hidden = false;
+        document.getElementById('totpCode').focus();
+        return;
+      }
+      if (data.access_token && data.user && data.user.role){
+        try { localStorage.setItem('auth_user', JSON.stringify(data.user)); } catch(_){}
+        try { sessionStorage.setItem('pending_auth_user', JSON.stringify(data.user)); } catch(_){}
+        closeLogin();
+        location.href = getRedirectPath(data.user.role);
+      } else {
+        showLoginError('loginError', t('loginErrorDefault'));
+      }
+    })
+    .catch(function(){ showLoginError('loginError', t('loginErrorDefault')); })
+    .finally(function(){ btn.disabled = false; });
+}
+
+function handleTwofaSubmit(e){
+  e.preventDefault();
+  var code = document.getElementById('totpCode').value.trim();
+  if (!/^[0-9]{6}$/.test(code)){ showLoginError('twofaError', t('loginError2faCode')); return; }
+  hideLoginError('twofaError');
+  var btn = document.getElementById('twofaSubmitBtn');
+  btn.disabled = true;
+  var captcha_token = window.__captchaToken || undefined;
+  postLogin({ email:pendingEmail, password:pendingPassword, totp_token:code, captcha_token:captcha_token })
+    .then(function(res){
+      var data = res.json || {};
+      if (!res.ok){
+        showLoginError('twofaError', data.error || t('loginError2faIncorrect'));
+        document.getElementById('totpCode').value='';
+        document.getElementById('totpCode').focus();
+        return;
+      }
+      if (data.access_token && data.user && data.user.role){
+        try { localStorage.setItem('auth_user', JSON.stringify(data.user)); } catch(_){}
+        location.href = getRedirectPath(data.user.role);
+      } else {
+        showLoginError('twofaError', t('loginErrorInvalid'));
+      }
+    })
+    .catch(function(){ showLoginError('twofaError', t('loginErrorInvalid')); })
+    .finally(function(){ btn.disabled = false; });
+}
+
+function handleDemoLogin(){
+  openLogin();
+  hideLoginError('loginError');
+  var btn = document.getElementById('loginDemoBtn');
+  if (btn) btn.disabled = true;
+  var captcha_token = window.__captchaToken || undefined;
+  postLogin({ email:'admin@demo.clinic.com', password:'DemoVitaria2026!', tenant_id:'clinica-demo', captcha_token:captcha_token })
+    .then(function(res){
+      var data = res.json || {};
+      if (res.ok === false && (data.code === 'AUTH_2FA_REQUIRED' || /2fa|two.?factor/i.test(data.error||''))){
+        pendingEmail = 'admin@demo.clinic.com'; pendingPassword = 'DemoVitaria2026!';
+        document.getElementById('loginStep').hidden = true;
+        document.getElementById('twofaStep').hidden = false;
+        document.getElementById('totpCode').focus();
+        return;
+      }
+      if (!res.ok){
+        showLoginError('loginError', data.error || t('loginErrorDefault'));
+        if (window.__captchaReset) window.__captchaReset();
+        return;
+      }
+      if (data.requires_2fa){
+        pendingEmail = 'admin@demo.clinic.com'; pendingPassword = 'DemoVitaria2026!';
+        document.getElementById('loginStep').hidden = true;
+        document.getElementById('twofaStep').hidden = false;
+        document.getElementById('totpCode').focus();
+        return;
+      }
+      if (data.access_token && data.user && data.user.role){
+        try { localStorage.setItem('auth_user', JSON.stringify(data.user)); } catch(_){}
+        try { sessionStorage.setItem('pending_auth_user', JSON.stringify(data.user)); } catch(_){}
+        closeLogin();
+        location.href = getRedirectPath(data.user.role);
+      } else {
+        showLoginError('loginError', t('loginErrorDefault'));
+      }
+    })
+    .catch(function(){ showLoginError('loginError', t('loginErrorDefault')); if (window.__captchaReset) window.__captchaReset(); })
+    .finally(function(){ if (btn) btn.disabled = false; });
+}
+
+function openLogin(){
+  hideLoginError('loginError'); hideLoginError('twofaError');
+  document.getElementById('loginStep').hidden = false;
+  document.getElementById('twofaStep').hidden = true;
+  document.getElementById('loginPassword').value='';
+  document.getElementById('totpCode').value='';
+  document.getElementById('loginModal').classList.add('open');
+  document.body.style.overflow='hidden';
+  if (RECAPTCHA_SITE_KEY) loadRecaptcha();
+  setTimeout(function(){ document.getElementById('loginEmail').focus(); }, 50);
+}
+function closeLogin(){
+  document.getElementById('loginModal').classList.remove('open');
+  document.body.style.overflow='';
+}
+
+function loadRecaptcha(){
+  var anchor = document.getElementById('rcAnchor');
+  if (anchor.getAttribute('data-loaded')) return;
+  anchor.setAttribute('data-loaded','1');
+  window.__captchaReset = function(){
+    if (window.grecaptcha) grecaptcha.reset();
+    window.__captchaToken = undefined;
+  };
+  window.__captchaCb = function(token){ window.__captchaToken = token; };
+  var s = document.createElement('script');
+  s.src = 'https://www.google.com/recaptcha/api.js?onload=vcCaptchaCb&render=explicit';
+  var r;
+  window.vcCaptchaCb = function(){
+    r = grecaptcha.render('rcAnchor', { sitekey:RECAPTCHA_SITE_KEY, callback:window.__captchaCb, expired_callback:window.__captchaReset });
+  };
+  document.head.appendChild(s);
+}
+
+/* ------------------------- i18n apply + state ------------------------- */
+function applyI18n(){
+  document.querySelectorAll('[data-i18n]').forEach(function(el){
+    var key = el.getAttribute('data-i18n');
+    el.textContent = t(key);
+  });
+  document.querySelectorAll('[data-i18n-html]').forEach(function(el){
+    var key = el.getAttribute('data-i18n');
+    el.innerHTML = t(key).replace('{1}','<span class="grad">').replace('{2}','</span>');
+  });
+  document.documentElement.lang = state.lang;
+  document.getElementById('langLabel').textContent = state.lang.toUpperCase();
+  document.querySelectorAll('#langMenu .lp-lang-opt').forEach(function(b){
+    b.setAttribute('aria-checked', String(b.getAttribute('data-lang')===state.lang));
+  });
+  renderCountrySelect();
+  renderPlans();
+  renderTech();
+  renderFaq();
+  observeReveal();
+}
+
+function setLang(l){
+  state.lang = l;
+  try { localStorage.setItem('vitaria_lang', l); } catch(_){}
+  applyI18n();
+}
+
+/* ------------------------- Reveal on scroll ------------------------- */
+var revealObs;
+function observeReveal(){
+  if (revealObs){ revealObs.disconnect(); revealObs = null; }
+  var els = document.querySelectorAll('[data-reveal]');
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches){
+    els.forEach(function(el){ el.classList.add('is-in'); });
+    return;
+  }
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(en){ if (en.isIntersecting){ en.target.classList.add('is-in'); io.unobserve(en.target); } });
+  }, { threshold:0.12 });
+  els.forEach(function(el){ io.observe(el); });
+  revealObs = io;
+}
+
+/* ------------------------- FAQ accordion ------------------------- */
+document.addEventListener('click', function(ev){
+  var q = ev.target.closest('.lp-faq-q');
+  if (q){
+    var item = q.closest('.lp-faq-item');
+    var panel = item.querySelector('.lp-faq-a');
+    var open = item.hasAttribute('data-open');
+    document.querySelectorAll('.lp-faq-item').forEach(function(it){
+      it.removeAttribute('data-open');
+      it.querySelector('.lp-faq-a').style.maxHeight = '0';
+      it.querySelector('.lp-faq-q').setAttribute('aria-expanded','false');
+    });
+    if (!open){
+      item.setAttribute('data-open','');
+      panel.style.maxHeight = panel.scrollHeight + 'px';
+      q.setAttribute('aria-expanded','true');
+    }
+  }
+  var b = ev.target.closest('#langBtn');
+  if (b){
+    var menu = document.getElementById('langMenu');
+    var open = menu.classList.contains('open');
+    menu.classList.toggle('open', !open);
+    b.setAttribute('aria-expanded', String(!open));
+  }
+  var opt = ev.target.closest('#langMenu .lp-lang-opt');
+  if (opt){ setLang(opt.getAttribute('data-lang')); document.getElementById('langMenu').classList.remove('open'); }
+  var openLoginEl = ev.target.closest('[data-open-login]');
+  if (openLoginEl){ ev.preventDefault(); openLogin(); }
+  var demoEl = ev.target.closest('[data-demo-login]');
+  if (demoEl){ ev.preventDefault(); handleDemoLogin(); }
+  var closeLoginEl = ev.target.closest('[data-close-login]');
+  if (closeLoginEl){ closeLogin(); }
+  if (ev.target.classList.contains('lm-overlay')) closeLogin();
+  var guestB = ev.target.closest('[data-guest-booking]');
+  if (guestB){ ev.preventDefault(); closeLogin(); location.href = '/booking'; }
+  var guestD = ev.target.closest('[data-guest-dashboard]');
+  if (guestD){ ev.preventDefault(); closeLogin(); location.href = '/booking'; }
+  var sc = ev.target.closest('[data-scroll]');
+  if (sc){
+    ev.preventDefault();
+    var sel = sc.getAttribute('data-scroll');
+    var target = document.querySelector(sel);
+    if (target) target.scrollIntoView({ behavior:'smooth' });
+  }
+});
+
+document.addEventListener('click', function(ev){
+  var menu = document.getElementById('langMenu');
+  if (!menu.classList.contains('open')) return;
+  if (!ev.target.closest('.lp-lang')) menu.classList.remove('open');
+});
+
+document.addEventListener('keydown', function(ev){
+  if (ev.key === 'Escape'){ closeLogin(); document.getElementById('langMenu').classList.remove('open'); }
+  if (ev.key === 'Tab' && document.getElementById('loginModal').classList.contains('open')){
+    var focusables = document.getElementById('loginModal').querySelectorAll('button, input, a[href], select');
+    if (focusables.length){
+      var first = focusables[0], last = focusables[focusables.length-1];
+      if (ev.shiftKey && document.activeElement === first){ ev.preventDefault(); last.focus(); }
+      else if (!ev.shiftKey && document.activeElement === last){ ev.preventDefault(); first.focus(); }
+    }
+  }
+});
+
+document.getElementById('loginForm').addEventListener('submit', handleLoginSubmit);
+document.getElementById('loginDemoBtn').addEventListener('click', handleDemoLogin);
+document.getElementById('twofaForm').addEventListener('submit', handleTwofaSubmit);
+document.getElementById('backToLogin').addEventListener('click', function(){
+  document.getElementById('twofaStep').hidden = true;
+  document.getElementById('loginStep').hidden = false;
+  hideLoginError('twofaError');
+  document.getElementById('loginPassword').focus();
+  if (window.__captchaReset) window.__captchaReset();
+});
+document.getElementById('countrySel').addEventListener('change', function(ev){
+  COUNTRY = ev.target.value;
+  try { localStorage.setItem('vitaria_country', COUNTRY); } catch(_){}
+  renderPlans();
+});
+
+/* ------------------------- Toast ------------------------- */
+var toastTimer;
+function showToast(msg){
+  var el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ el.classList.remove('show'); }, 3200);
+}
+
+/* ------------------------- Init ------------------------- */
+(function init(){
+  document.getElementById('year').textContent = String(new Date().getFullYear());
+  var savedLang = 'es';
+  try { savedLang = localStorage.getItem('vitaria_lang') || 'es'; } catch(_){}
+  if (!I18N[savedLang]) savedLang = 'es';
+  state.lang = savedLang;
+  renderCountrySelect();
+  renderPlans();
+  renderTech();
+  renderFaq();
+  applyI18n();
+  observeReveal();
+  fetchRates().then(renderPlans);
+  if (!RATES.USD) renderPlans();
+})();
+</script>
+</body>
+</html>

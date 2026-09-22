@@ -42,7 +42,7 @@ export function useDisableTwoFA() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: () => twoFAService.disable(),
+    mutationFn: (input: { password: string; totp_token?: string }) => twoFAService.disable(input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: twoFAKeys.status });
       toast.success(i18n.t('two_fa:disabled'));

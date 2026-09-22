@@ -89,9 +89,10 @@ describe('2fa hooks', () => {
     twoFAService.disable.mockResolvedValue({ message: 'ok' });
     const { result } = renderHook(() => useDisableTwoFA(), { wrapper: createWrapper() });
     act(() => {
-      result.current.mutate();
+      result.current.mutate({ password: 'secret-pass', totp_token: '123456' });
     });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(twoFAService.disable).toHaveBeenCalledWith({ password: 'secret-pass', totp_token: '123456' });
     expect(queryClient.invalidateQueries).toHaveBeenCalledWith({ queryKey: twoFAKeys.status });
     expect(toast.success).toHaveBeenCalledWith('two_fa:disabled');
   });

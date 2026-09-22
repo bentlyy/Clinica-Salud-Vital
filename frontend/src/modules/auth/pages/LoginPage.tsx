@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -21,6 +21,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/shared/providers/AuthProvider';
+import { DEMO_EMAIL, DEMO_PASSWORD, DEMO_TENANT_ID } from '@/shared/config/demo';
 
 type LoginForm = z.infer<ReturnType<typeof createLoginSchema>>;
 
@@ -50,22 +51,33 @@ export default function LoginPage() {
     resolver: zodResolver(loginSchema),
   });
 
-  const onSubmit = async (data: LoginForm) => {
-    setError(null);
-    setIsSubmitting(true);
-    try {
-      const response = await login(data.email, data.password);
-      if (response.requires_2fa) {
-        navigate('/2fa');
-      } else {
-        navigate('/dashboard');
+  const doLogin = useCallback(
+    async (email: string, password: string, tenant_id?: string) => {
+      setError(null);
+      setIsSubmitting(true);
+      try {
+        const response = await login(email, password, undefined, undefined, tenant_id);
+        if (response.requires_2fa) {
+          navigate('/2fa');
+        } else {
+          navigate('/dashboard');
+        }
+      } catch (err: unknown) {
+        const apiErr = err as { response?: { data?: { error?: string } } };
+        setError(apiErr.response?.data?.error || t('login_error'));
+      } finally {
+        setIsSubmitting(false);
       }
-    } catch (err: unknown) {
-      const apiErr = err as { response?: { data?: { error?: string } } };
-      setError(apiErr.response?.data?.error || t('login_error'));
-    } finally {
-      setIsSubmitting(false);
-    }
+    },
+    [login, navigate, t]
+  );
+
+  const onSubmit = async (data: LoginForm) => {
+    await doLogin(data.email, data.password);
+  };
+
+  const onDemoLogin = async () => {
+    await doLogin(DEMO_EMAIL, DEMO_PASSWORD, DEMO_TENANT_ID);
   };
 
   return (
@@ -208,6 +220,58 @@ export default function LoginPage() {
               }}
             >
               {isSubmitting ? <CircularProgress size={24} color="inherit" /> : t('login_button')}
+            </Button>
+          </Box>
+
+          <Box
+            sx={{
+              mt: 3,
+              p: 2,
+              borderRadius: '12px',
+              border: `1px dashed ${theme.palette.primary.main}`,
+              backgroundColor: theme.palette.custom.surface.muted,
+            }}
+          >
+            <Typography variant="subtitle2" sx={{ fontWeight: 700, color: theme.palette.text.primary, mb: 0.5 }}>
+              {t('demo_title')}
+            </Typography>
+            <Typography variant="body2" sx={{ color: theme.palette.text.secondary, mb: 1 }}>
+              {t('demo_body')}
+            </Typography>
+            <Typography
+              variant="caption"
+              component="p"
+              sx={{
+                color: theme.palette.text.secondary,
+                fontFamily: 'monospace',
+                mb: 2,
+                backgroundColor: theme.palette.background.paper,
+                border: `1px solid ${theme.palette.divider}`,
+                borderRadius: '8px',
+                p: 1,
+              }}
+            >
+              {t('demo_credentials_label')} {DEMO_EMAIL} / {DEMO_PASSWORD}
+            </Typography>
+            <Button
+              fullWidth
+              variant="outlined"
+              color="primary"
+              size="medium"
+              onClick={onDemoLogin}
+              disabled={isSubmitting}
+              sx={{
+                py: 1,
+                fontWeight: 600,
+                borderColor: theme.palette.primary.main,
+                color: theme.palette.primary.main,
+                '&:hover': {
+                  borderColor: theme.palette.primary.dark,
+                  backgroundColor: theme.palette.action.hover,
+                },
+              }}
+            >
+              {isSubmitting ? <CircularProgress size={20} color="inherit" /> : t('demo_button')}
             </Button>
           </Box>
         </Paper>

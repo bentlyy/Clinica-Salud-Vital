@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { register, login, refresh, logout, logoutAll, changePassword, enable2FA, verifyAndEnable2FA, disable2FA, inviteInfo, forgotPassword, resetPassword, getJWKS, resetAdmin, getMyProfile, getSessions, revokeSession } from './auth.controller.js';
+import { register, login, refresh, logout, logoutAll, changePassword, get2FAStatus, enable2FA, verifyAndEnable2FA, disable2FA, inviteInfo, forgotPassword, resetPassword, getJWKS, resetAdmin, getMyProfile, getSessions, revokeSession } from './auth.controller.js';
 import { validateZod } from '../../middlewares/validate.middleware.js';
 import { registerSchema, loginSchema, refreshSchema, changePasswordSchema, forgotPasswordSchema, resetPasswordSchema, resetAdminSchema } from './auth.schema.js';
 import { authMiddleware, authorize } from '../../middlewares/auth.middleware.js';
@@ -18,6 +18,7 @@ router.get('/sessions', authMiddleware, getSessions);
 router.delete('/sessions/:id', authMiddleware, revokeSession);
 router.post('/change-password', authMiddleware, validateZod(changePasswordSchema), changePassword);
 router.post('/2fa/enable', authMiddleware, enable2FA);
+router.get('/2fa/status', authMiddleware, get2FAStatus);
 router.post('/2fa/verify', authMiddleware, verifyAndEnable2FA);
 router.post('/2fa/disable', authMiddleware, disable2FA);
 router.post('/forgot-password', validateZod(forgotPasswordSchema), forgotPassword);
