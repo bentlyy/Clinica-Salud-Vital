@@ -13,7 +13,6 @@ import { sendEmail } from '../../shared/email.service.js';
 import { base32Encode, base32Decode } from '../../shared/base32.js';
 import {
   createUserSession,
-  touchUserSession,
   revokeAllUserSessions as revokeAllSessions,
 } from '../../shared/sessions.service.js';
 
@@ -68,6 +67,23 @@ interface User {
 const ACCESS_TOKEN_EXPIRY = '15m';
 const REFRESH_TOKEN_EXPIRY_DAYS = 30;
 
+interface SessionPolicy {
+  maxDays: number;
+  idleHours: number;
+  reuseGraceMs: number;
+}
+
+// Session hardening policy (env-configurable).
+// - SESSION_MAX_DAYS: absolute lifetime of a session; it dies even with activity.
+// - SESSION_IDLE_HOURS: max inactivity before the next refresh is forced to re-login.
+// - REUSE_GRACE_SECONDS: window in which a rotated-but-revoked token presented from
+//   another tab is treated as a benign multi-tab race instead of token theft.
+const getSessionPolicy = (): SessionPolicy => ({
+  maxDays: Number(process.env.SESSION_MAX_DAYS) > 0 ? Number(process.env.SESSION_MAX_DAYS) : 30,
+  idleHours: Number(process.env.SESSION_IDLE_HOURS) > 0 ? Number(process.env.SESSION_IDLE_HOURS) : 24,
+  reuseGraceMs: (Number(process.env.REUSE_GRACE_SECONDS) > 0 ? Number(process.env.REUSE_GRACE_SECONDS) : 30) * 1000,
+});
+
 // Moneda/país de facturación del tenant (afecta display y checkout).
 const getTenantBilling = async (tenantId: string): Promise<{ currency: string; country_code: string }> => {
   try {
@@ -86,9 +102,22 @@ const getTenantBilling = async (tenantId: string): Promise<{ currency: string; c
   }
 };
 
-const generateAccessToken = (user: { id: number; email: string; role: UserRole; tenant_id: string; token_version?: number }): string => {
+const generateAccessToken = (user: {
+  id: number;
+  email: string;
+  role: UserRole;
+  tenant_id: string;
+  token_version?: number;
+  sid?: number | null;
+}): string => {
   return jwtManager.sign(
-    { id: user.id, role: user.role || 'user', tenant_id: user.tenant_id, token_version: user.token_version || 0 },
+    {
+      id: user.id,
+      role: user.role || 'user',
+      tenant_id: user.tenant_id,
+      token_version: user.token_version || 0,
+      sid: user.sid ?? null,
+    },
     { expiresIn: ACCESS_TOKEN_EXPIRY }
   );
 };
@@ -295,19 +324,20 @@ export const login = async ({ email, password, totp_token, captcha_token, ip_add
     }
   }
 
-  const access_token = generateAccessToken({
-    id: user.id,
-    email: user.email,
-    role: user.role || 'user',
-    tenant_id: user.tenant_id || process.env.DEFAULT_TENANT_ID || 'default',
-    token_version: user.token_version || 0,
-  });
   const { sessionId } = await createUserSession(
     user.id,
     user.tenant_id || process.env.DEFAULT_TENANT_ID || 'default',
     ip_address,
     user_agent,
   );
+  const access_token = generateAccessToken({
+    id: user.id,
+    email: user.email,
+    role: user.role || 'user',
+    tenant_id: user.tenant_id || process.env.DEFAULT_TENANT_ID || 'default',
+    token_version: user.token_version || 0,
+    sid: sessionId,
+  });
   const refresh_token = await generateRefreshToken(user.id, sessionId);
 
   const billing = await getTenantBilling(user.tenant_id || process.env.DEFAULT_TENANT_ID || 'default');
@@ -331,6 +361,27 @@ export const login = async ({ email, password, totp_token, captcha_token, ip_add
   };
 };
 
+/** Revokes a token family and its parent session (used when a session must die). */
+const revokeFamilyForSession = async (
+  client: import('pg').PoolClient,
+  rotateTokenId: number,
+  tokenRecord: { token_family?: string | null; session_id?: number | null },
+): Promise<void> => {
+  await client.query('UPDATE refresh_tokens SET revoked = true WHERE id = $1', [rotateTokenId]);
+  if (tokenRecord.token_family) {
+    await client.query(
+      'UPDATE refresh_tokens SET revoked = true WHERE token_family = $1 AND revoked = false',
+      [tokenRecord.token_family]
+    );
+  }
+  if (tokenRecord.session_id != null) {
+    await client.query(
+      'UPDATE user_sessions SET revoked_at = NOW() WHERE id = $1 AND revoked_at IS NULL',
+      [tokenRecord.session_id]
+    );
+  }
+};
+
 export const refreshToken = async ({ refresh_token }: RefreshParams): Promise<{
   access_token: string;
   refresh_token: string;
@@ -351,25 +402,56 @@ export const refreshToken = async ({ refresh_token }: RefreshParams): Promise<{
       return null;
     }
 
+    const policy = getSessionPolicy();
+
+    // Decide which token to rotate. If the presented token was already revoked,
+    // distinguish a benign multi-tab race (rotate the freshest valid sibling)
+    // from real token reuse (kill the whole family + session).
+    let rotateTokenId = tokenRecord.id;
+    let tokenUserId = tokenRecord.user_id;
+    let tokenSessionId: number | null = tokenRecord.session_id ?? null;
+
     if (tokenRecord.revoked === true) {
-      // REUSE DETECTION: this token was already rotated/revoked.
-      // Attacker may have stolen it (or a second tab raced the rotation).
-      // Revoke the entire family so any stolen sibling becomes useless.
-      if (tokenRecord.token_family) {
-        await client.query(
-          'UPDATE refresh_tokens SET revoked = true WHERE token_family = $1 AND revoked = false',
-          [tokenRecord.token_family]
+      const family = tokenRecord.token_family;
+      const sessionId = tokenRecord.session_id ?? null;
+      let benignRace = false;
+
+      if (family && sessionId != null) {
+        const latestResult = await client.query(
+          `SELECT id, user_id, session_id, created_at, expires_at
+           FROM refresh_tokens
+           WHERE token_family = $1 AND session_id = $2 AND revoked = false
+           ORDER BY created_at DESC LIMIT 1`,
+          [family, sessionId]
         );
-        await client.query(
-          'UPDATE user_sessions SET revoked_at = NOW() WHERE id = $1 AND revoked_at IS NULL',
-          [tokenRecord.session_id]
-        );
+        const latest = latestResult.rows[0];
+        const freshCutoff = new Date(Date.now() - policy.reuseGraceMs);
+        if (
+          latest &&
+          latest.id !== tokenRecord.id &&
+          new Date(latest.created_at) > freshCutoff &&
+          new Date(latest.expires_at) > new Date()
+        ) {
+          // Second tab racing the rotation: rotate from the current valid token
+          // instead of invalidating every device.
+          benignRace = true;
+          rotateTokenId = latest.id;
+          tokenUserId = latest.user_id;
+          tokenSessionId = latest.session_id;
+        }
       }
-      await client.query('COMMIT');
-      return null;
+
+      if (!benignRace) {
+        // REUSE DETECTION: this token was rotated/revoked long ago (or a stolen
+        // sibling was replayed). Revoke the entire family so any stolen token
+        // becomes useless, and kill the session.
+        await revokeFamilyForSession(client, tokenRecord.id, tokenRecord);
+        await client.query('COMMIT');
+        return null;
+      }
     }
 
-    const userResult = await client.query<User>('SELECT id, email, name, rut, phone, role, password, password_changed, totp_enabled, totp_secret, tenant_id, active, last_activity_at, failed_attempts, locked_until, token_version FROM users WHERE id = $1 AND active = true', [tokenRecord.user_id]);
+    const userResult = await client.query<User>('SELECT id, email, name, rut, phone, role, password, password_changed, totp_enabled, totp_secret, tenant_id, active, last_activity_at, failed_attempts, locked_until, token_version FROM users WHERE id = $1 AND active = true', [tokenUserId]);
     const user = userResult.rows[0];
     if (!user) {
       await client.query('ROLLBACK');
@@ -377,11 +459,56 @@ export const refreshToken = async ({ refresh_token }: RefreshParams): Promise<{
     }
 
     const currentTokenVersion = user.token_version || 0;
-    const refreshTokenVersion = tokenRecord.token_version || 0;
+    const rotateTokenVersionResult = await client.query(
+      'SELECT token_version FROM refresh_tokens WHERE id = $1',
+      [rotateTokenId]
+    );
+    const refreshTokenVersion = rotateTokenVersionResult.rows[0]?.token_version ?? currentTokenVersion;
     if (currentTokenVersion !== refreshTokenVersion) {
-      await client.query('UPDATE refresh_tokens SET revoked = true WHERE id = $1', [tokenRecord.id]);
+      await client.query('UPDATE refresh_tokens SET revoked = true WHERE id = $1', [rotateTokenId]);
       await client.query('COMMIT');
       return null;
+    }
+
+    // --- Session policy enforcement: revoked / absolute expiry / idle timeout ---
+    if (tokenSessionId != null) {
+      const sessionResult = await client.query(
+        'SELECT id, revoked_at, expires_at, last_seen_at FROM user_sessions WHERE id = $1',
+        [tokenSessionId]
+      );
+      const session = sessionResult.rows[0];
+      if (!session) {
+        await client.query('ROLLBACK');
+        return null;
+      }
+
+      if (session.revoked_at != null) {
+        logger.info('Session rejected: revoked', { userId: user.id, sessionId: tokenSessionId });
+        await revokeFamilyForSession(client, rotateTokenId, tokenRecord);
+        await client.query('COMMIT');
+        return null;
+      }
+
+      if (session.expires_at && new Date(session.expires_at) <= new Date()) {
+        logger.info('Session rejected: absolute expiration reached', { userId: user.id, sessionId: tokenSessionId });
+        await revokeFamilyForSession(client, rotateTokenId, tokenRecord);
+        await client.query('COMMIT');
+        return null;
+      }
+
+      if (session.last_seen_at) {
+        const idleMs = Date.now() - new Date(session.last_seen_at).getTime();
+        if (idleMs > policy.idleHours * 60 * 60 * 1000) {
+          logger.info('Session rejected: idle timeout exceeded', {
+            userId: user.id,
+            sessionId: tokenSessionId,
+            idleHours: Math.round(idleMs / 3600000),
+          });
+          await revokeFamilyForSession(client, rotateTokenId, tokenRecord);
+          await client.query('COMMIT');
+          return null;
+        }
+      }
     }
 
     if (user.last_activity_at) {
@@ -391,9 +518,9 @@ export const refreshToken = async ({ refresh_token }: RefreshParams): Promise<{
       }
     }
 
-    await client.query('UPDATE refresh_tokens SET revoked = true WHERE token = $1', [tokenHash]);
+    await client.query('UPDATE refresh_tokens SET revoked = true WHERE id = $1', [rotateTokenId]);
     await client.query('UPDATE users SET last_activity_at = NOW() WHERE id = $1', [user.id]);
-    const sessionId = tokenRecord.session_id ?? null;
+    await client.query('UPDATE user_sessions SET last_seen_at = NOW() WHERE id = $1', [tokenSessionId]);
 
     const newAccessToken = generateAccessToken({
       id: user.id,
@@ -401,6 +528,7 @@ export const refreshToken = async ({ refresh_token }: RefreshParams): Promise<{
       role: user.role || 'user',
       tenant_id: user.tenant_id || process.env.DEFAULT_TENANT_ID || 'default',
       token_version: user.token_version || 0,
+      sid: tokenSessionId,
     });
 
     const newToken = crypto.randomBytes(40).toString('hex');
@@ -412,12 +540,10 @@ export const refreshToken = async ({ refresh_token }: RefreshParams): Promise<{
 
     await client.query(
       'INSERT INTO refresh_tokens (user_id, token, expires_at, token_version, session_id, tenant_id, token_family) VALUES ($1, $2, $3, $4, $5, $6, $7)',
-      [user.id, newTokenHash, expiresAt, user.token_version || 0, sessionId, user.tenant_id || 'default', family]
+      [user.id, newTokenHash, expiresAt, user.token_version || 0, tokenSessionId, user.tenant_id || 'default', family]
     );
 
     await client.query('COMMIT');
-
-    void touchUserSession(sessionId);
 
     const billing = await getTenantBilling(user.tenant_id || process.env.DEFAULT_TENANT_ID || 'default');
 

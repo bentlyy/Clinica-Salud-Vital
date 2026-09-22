@@ -11,6 +11,7 @@ export interface JwtUser {
   role: UserRole;
   tenant_id: string;
   token_version?: number;
+  sid?: number | null;
 }
 
 export type AuthRequest = Request & { user?: JwtUser };
@@ -34,6 +35,7 @@ const extractAndVerifyUser = (token: string, req: Request): JwtUser | null => {
     role: decoded.role as UserRole,
     tenant_id: decoded.tenant_id ?? process.env.DEFAULT_TENANT_ID ?? 'default',
     token_version: decoded.token_version || 0,
+    sid: decoded.sid ?? null,
   };
 };
 
@@ -74,15 +76,32 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
   }
 
   try {
-    const result = user.role === 'superadmin'
-      ? await readPool.query(
-          'SELECT token_version, active FROM users WHERE id = $1',
-          [user.id]
-        )
-      : await readPool.query(
-          'SELECT token_version, active FROM users WHERE id = $1 AND tenant_id = $2',
-          [user.id, user.tenant_id]
-        );
+    // Enforce session-level state on every protected request: a revoked session
+    // (logout, revoke device) or an expired one (absolute cap) rejects the token
+    // immediately instead of waiting for the access-token TTL or the refresh flow.
+    let query: string;
+    const params: unknown[] = [user.id];
+
+    if (user.sid != null) {
+      query = `SELECT u.token_version, u.active, s.revoked_at, s.expires_at
+               FROM users u
+               LEFT JOIN user_sessions s ON s.id = $2 AND s.user_id = u.id
+               WHERE u.id = $1`;
+      params.push(user.sid);
+    } else {
+      // Legacy token without a session claim: keep the old behaviour
+      // (token_version / active only) so existing sessions survive the rollout.
+      query = `SELECT u.token_version, u.active, NULL::timestamptz AS revoked_at, NULL::timestamptz AS expires_at
+               FROM users u
+               WHERE u.id = $1`;
+    }
+
+    if (user.role !== 'superadmin') {
+      query += ` AND u.tenant_id = $${params.length + 1}`;
+      params.push(user.tenant_id);
+    }
+
+    const result = await readPool.query(query, params);
     const rows = result?.rows;
     if (!rows || rows.length === 0) {
       next(new UnauthorizedError('User no longer exists'));
@@ -94,6 +113,14 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
     }
     if (rows[0].token_version !== user.token_version) {
       next(new UnauthorizedError('Token version mismatch — session invalidated'));
+      return;
+    }
+    if (rows[0].revoked_at != null) {
+      next(new UnauthorizedError('Session revoked'));
+      return;
+    }
+    if (rows[0].expires_at != null && new Date(rows[0].expires_at) <= new Date()) {
+      next(new UnauthorizedError('Session expired'));
       return;
     }
   } catch (err) {

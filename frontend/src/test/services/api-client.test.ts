@@ -244,6 +244,32 @@ describe('api-client response interceptor (errors)', () => {
     expect(state.mockAxiosPost).not.toHaveBeenCalled();
   });
 
+  it('calls the unauthorized handler on a post-retry 401', async () => {
+    const onUnauthorized = vi.fn();
+    setUnauthorizedHandler(onUnauthorized);
+    setAccessToken('tok');
+    const error = makeApiError(401, makeConfig({ _retry: true }));
+    await expect(responseInterceptor().err(error)).rejects.toBe(error);
+    expect(onUnauthorized).toHaveBeenCalledTimes(1);
+    expect(toastError()).toHaveBeenCalledWith('errors:sessionExpired');
+  });
+
+  it('does not double-fire the unauthorized handler for a burst of post-retry 401s', async () => {
+    const onUnauthorized = vi.fn();
+    setUnauthorizedHandler(onUnauthorized);
+    setAccessToken('tok');
+    const flushPending = async () => {
+      try {
+        await responseInterceptor().err(makeApiError(401, makeConfig({ _retry: true })));
+      } catch {
+        // expected — the interceptor rejects the original error
+      }
+    };
+    await Promise.all([flushPending(), flushPending()]);
+    expect(onUnauthorized).toHaveBeenCalledTimes(1);
+    expect(toastError().mock.calls.filter((c) => c[0] === 'errors:sessionExpired')).toHaveLength(1);
+  });
+
   it('exports the apiClient instance', () => {
     expect(apiClient).toBe(state.mockApi);
   });

@@ -125,7 +125,7 @@ describe('authMiddleware', () => {
 
     await authMiddleware(req, res, next);
 
-    expect(req.user).toEqual({ ...decoded, token_version: 0 });
+    expect(req.user).toEqual({ ...decoded, token_version: 0, sid: null });
     expect(next).toHaveBeenCalled();
   });
 });
@@ -151,7 +151,7 @@ describe('optionalAuth', () => {
 
     optionalAuth(req, res, next);
 
-    expect(req.user).toEqual({ ...decoded, token_version: 0 });
+    expect(req.user).toEqual({ ...decoded, token_version: 0, sid: null });
     expect(next).toHaveBeenCalled();
   });
 

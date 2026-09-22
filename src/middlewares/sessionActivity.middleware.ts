@@ -26,9 +26,16 @@ export const trackActivity = (req: Request, _res: Response, next: NextFunction):
     const last = lastActivityMap.get(userId);
     if (!last || now - last > THROTTLE_MS) {
       lastActivityMap.set(userId, now);
+      const sessionId = req.user.sid ?? null;
       setImmediate(() => {
         pool.query('UPDATE users SET last_activity_at = NOW() WHERE id = $1', [userId])
           .catch((err: Error) => logger.warn('[Session] Failed updating activity:', err.message));
+        if (sessionId != null) {
+          // Keep the *session-level* activity fresh so the idle-timeout policy
+          // in the refresh flow measures real usage on this device.
+          pool.query('UPDATE user_sessions SET last_seen_at = NOW() WHERE id = $1', [sessionId])
+            .catch((err: Error) => logger.warn('[Session] Failed updating session activity:', err.message));
+        }
       });
     }
   }

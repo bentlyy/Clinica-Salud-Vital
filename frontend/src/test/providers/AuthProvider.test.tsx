@@ -2,6 +2,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import { AuthProvider, useAuth } from '@/shared/providers/AuthProvider';
+import { refreshSession, setUnauthorizedHandler } from '@/shared/services/api-client';
 
 const mockPost = vi.hoisted(() => vi.fn());
 const mockAxiosPost = vi.hoisted(() => vi.fn());
@@ -20,6 +21,8 @@ vi.mock('@/shared/services/api-client', () => ({
   apiClient: { post: mockPost },
   setAccessToken: vi.fn(),
   setUnauthorizedHandler: vi.fn(),
+  refreshSession: vi.fn().mockRejectedValue(new Error('No session')),
+  announceAccessToken: vi.fn(),
 }));
 
 function TestConsumer() {
@@ -57,6 +60,8 @@ afterEach(() => {
   mockPost.mockReset();
   mockAxiosPost.mockReset();
   mockNavigate.mockReset();
+  refreshSession.mockReset();
+  refreshSession.mockRejectedValue(new Error('No session'));
   localStorage.clear();
 });
 
@@ -126,5 +131,43 @@ describe('AuthProvider', () => {
     await waitFor(() => {
       expect(screen.getByTestId('user').textContent).toBe('null');
     });
+  });
+
+  it('registers the unauthorized handler on mount', async () => {
+    renderWithProviders(<TestConsumer />);
+    await waitFor(() => {
+      expect(screen.getByTestId('loading').textContent).toBe('false');
+    });
+    expect(setUnauthorizedHandler).toHaveBeenCalled();
+  });
+
+  it('force-logouts at boot when a logout was left pending (no phantom re-login)', async () => {
+    localStorage.setItem('auth_logout_pending', '1');
+    localStorage.setItem('auth_user', JSON.stringify({ id: 1, role: 'admin' }));
+    refreshSession.mockResolvedValueOnce({ access_token: 'tok', user: { id: 1, role: 'admin' } });
+    mockPost.mockResolvedValue({ data: {} });
+    renderWithProviders(<TestConsumer />);
+    await waitFor(() => {
+      expect(screen.getByTestId('loading').textContent).toBe('false');
+    });
+    expect(mockPost).toHaveBeenCalledWith('/auth/logout');
+    expect(screen.getByTestId('user').textContent).toBe('null');
+    expect(localStorage.getItem('auth_logout_pending')).toBeNull();
+  });
+
+  it('logout retries when the server POST fails, then clears local state', async () => {
+    renderWithProviders(<TestConsumer />);
+    await waitFor(() => {
+      expect(screen.getByTestId('loading').textContent).toBe('false');
+    });
+    mockPost.mockRejectedValueOnce(new Error('network')).mockResolvedValueOnce({ data: {} });
+    const logoutBtn = screen.getByTestId('btn-logout');
+    await logoutBtn.click();
+    await waitFor(() => {
+      expect(mockPost).toHaveBeenCalledTimes(2);
+    });
+    expect(mockPost).toHaveBeenCalledWith('/auth/logout');
+    expect(localStorage.getItem('auth_logout_pending')).toBeNull();
+    expect(screen.getByTestId('user').textContent).toBe('null');
   });
 });
