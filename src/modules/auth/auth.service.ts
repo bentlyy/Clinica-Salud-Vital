@@ -1,5 +1,6 @@
 import { pool, readPool } from '../../shared/db.js';
 import bcrypt from 'bcrypt';
+import { DEMO_TENANT_ID, DEMO_ADMIN_EMAIL } from '../../seed/admin.seed.js';
 import { validateRut, cleanRut, formatRut } from '../../shared/rut.js';
 import { jwtManager } from '../../shared/jwt.service.js';
 import { verifyInviteToken } from '../doctor/doctor.service.js';
@@ -230,7 +231,15 @@ export const register = async ({ email, password, name, rut, phone, tenant_id, i
   }
 };
 
-const verifyCaptcha = async (token: string): Promise<boolean> => {
+const isDemoLogin = (email: string, tenantId: string): boolean =>
+  tenantId === DEMO_TENANT_ID &&
+  email.toLowerCase() === DEMO_ADMIN_EMAIL.toLowerCase();
+
+const verifyCaptcha = async (token: string, email: string, tenantId: string): Promise<boolean> => {
+  if (isDemoLogin(email, tenantId) && !token) {
+    logger.info('reCAPTCHA skipped: demo login (credenciales demo públicas). Rate limit sigue activo.');
+    return true;
+  }
   const secret = process.env.RECAPTCHA_SECRET_KEY;
   if (!secret) return true;
   if (secret === '6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe') {
@@ -265,7 +274,7 @@ export const login = async ({ email, password, totp_token, captcha_token, ip_add
 }> => {
   if (!email || !password) throw new BadRequestError(E.AUTH_EMAIL_REQUIRED);
 
-  if (!(await verifyCaptcha(captcha_token || ''))) {
+  if (!(await verifyCaptcha(captcha_token || '', email, tenantId))) {
     throw new BadRequestError('CAPTCHA verification failed');
   }
 
