@@ -1,20 +1,18 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const { mockQuery } = vi.hoisted(() => ({
-  mockQuery: vi.fn(),
-  mockConnect: vi.fn(() => ({
-    query: vi.fn(),
+const { mockQuery, mockConnect } = vi.hoisted(() => {
+  const mockQuery = vi.fn();
+  const mockConnect = vi.fn(() => ({
+    query: (...args) => mockQuery(...args),
     release: vi.fn(),
-  })),
-}));
+  }));
+  return { mockQuery, mockConnect };
+});
 
 vi.mock('../../src/shared/db.js', () => ({
   pool: {
     query: mockQuery,
-    connect: vi.fn(() => ({
-      query: vi.fn(),
-      release: vi.fn(),
-    })),
+    connect: mockConnect,
     on: vi.fn(),
   },
   readPool: { query: mockQuery },
@@ -162,12 +160,30 @@ describe('authService.register', () => {
 });
 
 describe('authService.login', () => {
+  const defaultLoginUser = {
+    id: 1,
+    email: 'test@test.com',
+    password: 'hashed',
+    role: 'user',
+    tenant_id: 'default',
+    active: true,
+  };
+
+  const mockLogin = (user) => {
+    mockQuery.mockImplementation((sql) => {
+      if (sql.includes('FROM users') && sql.includes('WHERE email')) return { rows: user ? [user] : [] };
+      if (sql.includes('user_sessions')) return { rows: [{ id: 1 }] };
+      if (sql.includes('FROM tenants')) return { rows: [{ currency: 'CLP', country_code: 'CL' }] };
+      return { rows: [] };
+    });
+  };
+
   it('throws if email or password missing', async () => {
     await expect(authService.login({})).rejects.toThrow('Email and password are required');
   });
 
   it('throws if user not found', async () => {
-    mockQuery.mockResolvedValueOnce({ rows: [] });
+    mockLogin(null);
     bcrypt.compare.mockResolvedValueOnce(false);
 
     await expect(authService.login({ email: 'noexist@test.com', password: validPassword, captcha_token: 'test-captcha' }))
@@ -175,9 +191,7 @@ describe('authService.login', () => {
   });
 
   it('throws if password incorrect', async () => {
-    mockQuery.mockResolvedValueOnce({
-      rows: [{ id: 1, email: 'test@test.com', password: 'hashed', role: 'user', tenant_id: 'default', active: true }],
-    });
+    mockLogin(defaultLoginUser);
     bcrypt.compare.mockResolvedValueOnce(false);
 
     await expect(authService.login({ email: 'test@test.com', password: 'WrongPass1!', captcha_token: 'test-captcha' }))
@@ -185,9 +199,7 @@ describe('authService.login', () => {
   });
 
   it('throws if user is inactive', async () => {
-    mockQuery.mockResolvedValueOnce({
-      rows: [{ id: 1, email: 'inactive@test.com', password: 'hashed', role: 'user', tenant_id: 'default', active: false }],
-    });
+    mockLogin({ ...defaultLoginUser, email: 'inactive@test.com', active: false });
     bcrypt.compare.mockResolvedValueOnce(true);
 
     await expect(authService.login({ email: 'inactive@test.com', password: validPassword, captcha_token: 'test-captcha' }))
@@ -195,9 +207,7 @@ describe('authService.login', () => {
   });
 
   it('returns token and user on success', async () => {
-    mockQuery.mockResolvedValueOnce({
-      rows: [{ id: 1, email: 'test@test.com', password: 'hashed', role: 'user', tenant_id: 'default', active: true }],
-    });
+    mockLogin(defaultLoginUser);
     bcrypt.compare.mockResolvedValueOnce(true);
 
     const result = await authService.login({ email: 'test@test.com', password: validPassword, captcha_token: 'test-captcha' });
@@ -209,9 +219,7 @@ describe('authService.login', () => {
   });
 
   it('defaults role to user if null', async () => {
-    mockQuery.mockResolvedValueOnce({
-      rows: [{ id: 1, email: 'test@test.com', password: 'hashed', role: null, tenant_id: 'default', active: true }],
-    });
+    mockLogin({ ...defaultLoginUser, role: null });
     bcrypt.compare.mockResolvedValueOnce(true);
 
     const result = await authService.login({ email: 'test@test.com', password: validPassword, captcha_token: 'test-captcha' });
@@ -220,9 +228,7 @@ describe('authService.login', () => {
   });
 
   it('throws if 2FA token required but not provided', async () => {
-    mockQuery.mockResolvedValueOnce({
-      rows: [{ id: 1, email: '2fa@test.com', password: 'hashed', role: 'user', tenant_id: 'default', totp_enabled: true, totp_secret: 'SECRET', active: true }],
-    });
+    mockLogin({ ...defaultLoginUser, email: '2fa@test.com', totp_enabled: true, totp_secret: 'SECRET' });
     bcrypt.compare.mockResolvedValueOnce(true);
 
     await expect(authService.login({ email: '2fa@test.com', password: validPassword, captcha_token: 'test-captcha' }))
@@ -230,9 +236,7 @@ describe('authService.login', () => {
   });
 
   it('defaults password_changed and totp_enabled when undefined in user', async () => {
-    mockQuery.mockResolvedValueOnce({
-      rows: [{ id: 1, email: 'partial@test.com', password: 'hashed', role: 'user', tenant_id: 'default', active: true }],
-    });
+    mockLogin({ ...defaultLoginUser, email: 'partial@test.com' });
     bcrypt.compare.mockResolvedValueOnce(true);
 
     const result = await authService.login({ email: 'partial@test.com', password: validPassword, captcha_token: 'test-captcha' });
@@ -242,9 +246,7 @@ describe('authService.login', () => {
   });
 
   it('defaults tenant_id when user tenant_id is null', async () => {
-    mockQuery.mockResolvedValueOnce({
-      rows: [{ id: 1, email: 'notenant@test.com', password: 'hashed', role: 'user', tenant_id: null, active: true }],
-    });
+    mockLogin({ ...defaultLoginUser, email: 'notenant@test.com', tenant_id: null });
     bcrypt.compare.mockResolvedValueOnce(true);
 
     const result = await authService.login({ email: 'notenant@test.com', password: validPassword, captcha_token: 'test-captcha' });

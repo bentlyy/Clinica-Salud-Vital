@@ -10,6 +10,7 @@ vi.mock('../../src/shared/db.js', () => ({
   setTenantContext: vi.fn().mockResolvedValue(undefined),
   verifyTenantContext: vi.fn().mockResolvedValue(true),
   tenantAls: { run: vi.fn((_store, fn) => fn()), getStore: vi.fn(() => null) },
+  tenantContext: { run: vi.fn((_store, fn) => fn()) },
   query: vi.fn().mockResolvedValue({ rows: [] }),
 }));
 

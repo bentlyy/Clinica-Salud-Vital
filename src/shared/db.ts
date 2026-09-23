@@ -1,4 +1,5 @@
 import pg from 'pg';
+import { AsyncLocalStorage } from 'node:async_hooks';
 import { logger } from '../utils/logger.js';
 // DB connection pool with SSL/TLS + custom CA verification
 // All 22 migrations registered in _migrations table
@@ -83,6 +84,62 @@ pool.on('error', (err: Error) => {
   logger.error('Unexpected error on idle client', err);
 });
 
+// Holds the tenant_id for the current HTTP request so that every query —
+// regardless of which pooled client serves it — runs under the correct
+// RLS context. Set by the tenant middleware for the whole request scope.
+export const tenantContext = new AsyncLocalStorage<string>();
+
+const defaultTenantId = (): string => process.env.DEFAULT_TENANT_ID || 'default';
+
+// pg Pool distributes each query to any idle client, so the session-scoped
+// app.tenant_id GUC set on ONE client leaks/misapplies to others. Instead we:
+//   1. lease a dedicated client per query,
+//   2. set app.tenant_id (session-scoped) on it from the request context,
+//   3. run the query, then reset the GUC back to default before release.
+// Multi-statement transactions using pool.connect() get the same context via
+// the wrapped connect() so their BEGIN/COMMIT run scoped too.
+// superAdminPool (BYPASSRLS) is intentionally NOT wrapped.
+const tagTenantAwarePool = (dbPool: pg.Pool): void => {
+  const rawConnect = dbPool.connect.bind(dbPool);
+
+  const scopedConnect = async (): Promise<pg.PoolClient> => {
+    const client = await rawConnect();
+    const tenantId = tenantContext.getStore();
+    if (tenantId) {
+      try {
+        await client.query('SELECT set_config($1, $2, false)', ['app.tenant_id', tenantId]);
+      } catch {
+        // GUC may be unsupported on managed PostgreSQL — non-fatal, RLS falls back
+      }
+    }
+    return client;
+  };
+
+  const scopedQuery = async (
+    config: string | { text: string; values?: unknown[] },
+    values?: unknown[],
+  ): Promise<pg.QueryResult> => {
+    const tenantId = tenantContext.getStore() || defaultTenantId();
+    const client = await rawConnect();
+    try {
+      await client.query('SELECT set_config($1, $2, false)', ['app.tenant_id', tenantId]);
+      return await client.query(config as string, values as string[]);
+    } finally {
+      try {
+        await client.query('SELECT set_config($1, $2, false)', ['app.tenant_id', defaultTenantId()]);
+      } catch {
+        // ignore — client still released
+      }
+      client.release();
+    }
+  };
+
+  dbPool.connect = scopedConnect as typeof dbPool.connect;
+  dbPool.query = scopedQuery as unknown as typeof dbPool.query;
+};
+
+tagTenantAwarePool(pool);
+
 export const query = pool.query.bind(pool);
 
 const readOnlyUrl = process.env.DATABASE_URL_READ_ONLY;
@@ -102,6 +159,7 @@ export const readPool = readOnlyUrl
 
 if (readOnlyUrl) {
   logger.info('📊 Read replica pool configured via DATABASE_URL_READ_ONLY');
+  tagTenantAwarePool(readPool as pg.Pool);
 }
 
 // Superadmin pool — uses a dedicated DB role with BYPASSRLS so the

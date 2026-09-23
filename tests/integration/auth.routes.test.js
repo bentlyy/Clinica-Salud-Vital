@@ -3,11 +3,12 @@ import request from 'supertest';
 import express from 'express';
 import bcrypt from 'bcrypt';
 
-const { mockQuery, mockClient, mockConnect } = vi.hoisted(() => ({
-  mockQuery: vi.fn(),
-  mockClient: { query: vi.fn(), release: vi.fn() },
-  mockConnect: vi.fn(),
-}));
+const { mockQuery, mockClient, mockConnect } = vi.hoisted(() => {
+  const mockQuery = vi.fn();
+  const mockClient = { query: mockQuery, release: vi.fn() };
+  const mockConnect = vi.fn();
+  return { mockQuery, mockClient, mockConnect };
+});
 
 vi.mock('../../src/shared/db.js', () => ({
   pool: {
@@ -117,11 +118,19 @@ describe('POST /api/auth/register', () => {
 });
 
 describe('POST /api/auth/login', () => {
+  const mockLogin = (user) => {
+    mockQuery.mockImplementation((query) => {
+      if (query.includes('FROM users') && query.includes('WHERE email')) return { rows: user ? [user] : [] };
+      if (query.includes('user_sessions')) return { rows: [{ id: 1 }] };
+      if (query.includes('token_version')) return { rows: [{ token_version: 0 }] };
+      if (query.includes('COUNT')) return { rows: [{ count: '0' }] };
+      return { rows: [] };
+    });
+  };
+
   it('returns 200 with valid credentials', async () => {
     bcrypt.compare.mockResolvedValueOnce(true);
-    mockQuery.mockResolvedValueOnce({
-      rows: [{ id: 1, email: 'test@test.com', password: 'hashed', role: 'user', tenant_id: 'default', active: true }],
-    });
+    mockLogin({ id: 1, email: 'test@test.com', password: 'hashed', role: 'user', tenant_id: 'default', active: true });
 
     const res = await request(app)
       .post('/api/auth/login')
@@ -133,9 +142,7 @@ describe('POST /api/auth/login', () => {
   });
 
   it('returns 400 if credentials invalid', async () => {
-    mockQuery.mockResolvedValueOnce({
-      rows: [{ id: 1, email: 'wrong@test.com', password: 'hashed', role: 'user', tenant_id: 'default', active: true }],
-    });
+    mockLogin({ id: 1, email: 'wrong@test.com', password: 'hashed', role: 'user', tenant_id: 'default', active: true });
     bcrypt.compare.mockResolvedValueOnce(false);
 
     const res = await request(app)
@@ -148,9 +155,7 @@ describe('POST /api/auth/login', () => {
 
   it('returns 401 if user is deactivated', async () => {
     bcrypt.compare.mockResolvedValueOnce(true);
-    mockQuery.mockResolvedValueOnce({
-      rows: [{ id: 1, email: 'disabled@test.com', password: 'hashed', role: 'user', tenant_id: 'default', active: false }],
-    });
+    mockLogin({ id: 1, email: 'disabled@test.com', password: 'hashed', role: 'user', tenant_id: 'default', active: false });
 
     const res = await request(app)
       .post('/api/auth/login')

@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { tenantService, loadTenantsFromDB } from '../shared/multi-tenant.service.js';
-import { pool } from '../shared/db.js';
+import { tenantContext } from '../shared/db.js';
 import { logger } from '../utils/logger.js';
 import { BadRequestError, NotFoundError } from '../utils/errors.js';
 
@@ -38,13 +38,8 @@ const getLocaleFromRequest = (req: Request): string => {
   return req.headers['accept-language']?.toString().slice(0, 2) || process.env.APP_LOCALE || 'es';
 };
 
-const setDbTenantContext = async (tenantId: string): Promise<void> => {
-  try {
-    await pool.query('SELECT set_tenant_id($1)', [tenantId]);
-  } catch {
-    // Managed PostgreSQL (Render/PgBouncer) may not support custom GUCs.
-    // RLS policies use COALESCE(current_setting(...), 'default') as fallback.
-  }
+const setDbTenantContext = (tenantId: string, next: NextFunction): void => {
+  tenantContext.run(tenantId, () => next());
 };
 
 export const tenantMiddleware = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -62,8 +57,7 @@ export const tenantMiddleware = async (req: Request, res: Response, next: NextFu
     }
     req.tenant_id = process.env.DEFAULT_TENANT_ID || 'default';
     req.locale = getLocaleFromRequest(req);
-    await setDbTenantContext(req.tenant_id);
-    next();
+    setDbTenantContext(req.tenant_id, next);
     return;
   }
 
@@ -85,8 +79,7 @@ export const tenantMiddleware = async (req: Request, res: Response, next: NextFu
       }
       req.tenant_id = rawTenantId;
       req.locale = getLocaleFromRequest(req);
-      await setDbTenantContext(req.tenant_id);
-      next();
+      setDbTenantContext(req.tenant_id, next);
       return;
     }
   }
@@ -94,6 +87,5 @@ export const tenantMiddleware = async (req: Request, res: Response, next: NextFu
   req.tenant_id = tenant.id;
   req.locale = tenant.locale;
   res.setHeader('X-Tenant-Id', req.tenant_id);
-  await setDbTenantContext(req.tenant_id);
-  next();
+  setDbTenantContext(req.tenant_id, next);
 };
