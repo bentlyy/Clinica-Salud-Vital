@@ -16,6 +16,7 @@ vi.mock('../../src/shared/db.js', () => ({
     on: vi.fn(),
   },
   readPool: { query: mockQuery },
+  superAdminPool: { query: mockQuery, connect: mockConnect },
 }));
 
 vi.mock('bcrypt', () => ({
@@ -252,5 +253,35 @@ describe('authService.login', () => {
     const result = await authService.login({ email: 'notenant@test.com', password: validPassword, captcha_token: 'test-captcha' });
 
     expect(result.user.tenant_id).toBe('default');
+  });
+
+  it('resolves tenant from email when tenant_id is not provided', async () => {
+    const demoUser = { ...defaultLoginUser, id: 3669, email: 'admin@demo.clinic.com', tenant_id: 'clinica-demo' };
+    mockQuery.mockImplementation((sql) => {
+      if (sql.includes('FROM users') && sql.includes('role =')) return { rows: [] };
+      if (sql.includes('FROM users') && sql.includes('active = true')) return { rows: [{ id: 3669, tenant_id: 'clinica-demo' }] };
+      if (sql.includes('FROM users') && sql.includes('WHERE id =')) return { rows: [demoUser] };
+      if (sql.includes('user_sessions')) return { rows: [{ id: 1 }] };
+      if (sql.includes('FROM tenants')) return { rows: [{ currency: 'CLP', country_code: 'CL' }] };
+      return { rows: [] };
+    });
+    bcrypt.compare.mockResolvedValueOnce(true);
+
+    const result = await authService.login({ email: 'admin@demo.clinic.com', password: validPassword, captcha_token: 'test-captcha' });
+
+    expect(result.user.id).toBe(3669);
+    expect(result.user.tenant_id).toBe('clinica-demo');
+  });
+
+  it('rejects if email exists in multiple tenants and tenant_id is not provided', async () => {
+    mockQuery.mockImplementation((sql) => {
+      if (sql.includes('FROM users') && sql.includes('role =')) return { rows: [] };
+      if (sql.includes('FROM users') && sql.includes('active = true')) return { rows: [{ id: 1 }, { id: 2 }] };
+      return { rows: [] };
+    });
+    bcrypt.compare.mockResolvedValueOnce(false);
+
+    await expect(authService.login({ email: 'ambiguous@test.com', password: validPassword, captcha_token: 'test-captcha' }))
+      .rejects.toThrow('Invalid credentials');
   });
 });

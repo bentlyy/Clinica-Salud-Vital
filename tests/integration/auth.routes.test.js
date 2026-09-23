@@ -17,6 +17,7 @@ vi.mock('../../src/shared/db.js', () => ({
     on: vi.fn(),
   },
   readPool: { query: mockQuery },
+  superAdminPool: { query: mockQuery, connect: mockConnect },
 }));
 
 vi.mock('bcrypt', () => ({
@@ -163,6 +164,26 @@ describe('POST /api/auth/login', () => {
 
     expect(res.status).toBe(401);
     expect(res.body.error).toBe('Account is deactivated. Contact an administrator.');
+  });
+
+  it('returns 200 logging into the user tenant when tenant_id is omitted', async () => {
+    bcrypt.compare.mockResolvedValueOnce(true);
+    mockQuery.mockImplementation((query) => {
+      if (query.includes('FROM users') && query.includes('role =')) return { rows: [] };
+      if (query.includes('FROM users') && query.includes('active = true')) return { rows: [{ id: 3669, tenant_id: 'clinica-demo' }] };
+      if (query.includes('FROM users') && query.includes('WHERE id =')) return { rows: [{ id: 3669, email: 'admin@demo.clinic.com', password: 'hashed', role: 'admin', tenant_id: 'clinica-demo', active: true }] };
+      if (query.includes('user_sessions')) return { rows: [{ id: 1 }] };
+      if (query.includes('token_version')) return { rows: [{ token_version: 0 }] };
+      return { rows: [] };
+    });
+
+    const res = await request(app)
+      .post('/api/auth/login')
+      .send({ email: 'admin@demo.clinic.com', password: 'Test1234!', captcha_token: 'test-captcha' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.user.id).toBe(3669);
+    expect(res.body.user.tenant_id).toBe('clinica-demo');
   });
 
   it('returns 400 if email missing', async () => {
