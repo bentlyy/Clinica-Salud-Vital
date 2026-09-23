@@ -1,4 +1,4 @@
-import { pool, readPool } from '../../shared/db.js';
+import { pool, readPool, superAdminPool } from '../../shared/db.js';
 import bcrypt from 'bcrypt';
 import { DEMO_TENANT_ID, DEMO_ADMIN_EMAIL } from '../../seed/admin.seed.js';
 import { validateRut, cleanRut, formatRut } from '../../shared/rut.js';
@@ -261,18 +261,48 @@ export const login = async ({ email, password, totp_token, captcha_token, ip_add
 
   const client = await pool.connect();
   let committed = false;
+  let effectiveTenant = tenantId;
   try {
     await client.query('BEGIN');
 
     await client.query("SELECT set_config('app.tenant_id', $1, true)", [tenantId]);
 
-    const { rows } = await client.query<User>(
-      `SELECT id, email, name, rut, phone, role, password, password_changed, totp_enabled, totp_secret, tenant_id, active, last_activity_at, failed_attempts, locked_until, token_version
-       FROM users
-       WHERE email = $1 AND (tenant_id = $2 OR (role = 'superadmin' AND tenant_id IS NULL))`,
-      [email, tenantId]
-    );
-    const user = rows[0];
+    // La búsqueda del usuario corre con el rol BYPASSRLS (superadmin) para que un
+    // usuario pueda entrar desde la landing sin conocer su tenant slug. Las escrituras
+    // siguen corriendo en el cliente tenant-scoped de más abajo (RLS se mantiene).
+    let user: User | undefined;
+    const lookupClient = await superAdminPool.connect();
+    try {
+      const { rows } = await lookupClient.query<User>(
+        `SELECT id, email, name, rut, phone, role, password, password_changed, totp_enabled, totp_secret, tenant_id, active, last_activity_at, failed_attempts, locked_until, token_version
+         FROM users
+         WHERE email = $1 AND (tenant_id = $2 OR (role = 'superadmin' AND tenant_id IS NULL))`,
+        [email, tenantId]
+      );
+      user = rows[0];
+
+      if (!user) {
+        const candidates = await lookupClient.query<{ id: number }>(
+          'SELECT id FROM users WHERE email = $1 AND active = true',
+          [email]
+        );
+        if (candidates.rows.length === 1) {
+          const full = await lookupClient.query<User>(
+            `SELECT id, email, name, rut, phone, role, password, password_changed, totp_enabled, totp_secret, tenant_id, active, last_activity_at, failed_attempts, locked_until, token_version
+             FROM users WHERE id = $1`,
+            [candidates.rows[0].id]
+          );
+          user = full.rows[0];
+        }
+      }
+    } finally {
+      lookupClient.release();
+    }
+
+    if (user?.tenant_id) {
+      effectiveTenant = user.tenant_id;
+      await client.query("SELECT set_config('app.tenant_id', $1, true)", [effectiveTenant]);
+    }
 
     if (!user) {
       const dummyHash = '$2b$12$LJ3m4ys3Lg3YOCwFfj5NOWJX0GqBiN3H0w5Cqx3z5Gq5X5z5P5Q5S';
@@ -324,8 +354,6 @@ export const login = async ({ email, password, totp_token, captcha_token, ip_add
         throw new BadRequestError(E.AUTH_2FA_INVALID_TOKEN);
       }
     }
-
-    const effectiveTenant = user.tenant_id || process.env.DEFAULT_TENANT_ID || 'default';
 
     const sessionToken = crypto.randomBytes(40).toString('hex');
     const sessionExpires = new Date();
