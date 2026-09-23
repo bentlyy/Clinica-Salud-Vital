@@ -12,10 +12,7 @@ import crypto from 'crypto';
 import { hashToken, encrypt, decrypt } from '../../shared/crypto.service.js';
 import { sendEmail } from '../../shared/email.service.js';
 import { base32Encode, base32Decode } from '../../shared/base32.js';
-import {
-  createUserSession,
-  revokeAllUserSessions as revokeAllSessions,
-} from '../../shared/sessions.service.js';
+import { revokeAllUserSessions as revokeAllSessions } from '../../shared/sessions.service.js';
 
 interface RegisterParams {
   email: string;
@@ -121,22 +118,6 @@ const generateAccessToken = (user: {
     },
     { expiresIn: ACCESS_TOKEN_EXPIRY }
   );
-};
-
-const generateRefreshToken = async (userId: number, sessionId?: number | null): Promise<string> => {
-  const token = crypto.randomBytes(40).toString('hex');
-  const tokenHash = hashToken(token);
-  const expiresAt = new Date();
-  expiresAt.setDate(expiresAt.getDate() + REFRESH_TOKEN_EXPIRY_DAYS);
-  const family = crypto.randomBytes(16).toString('hex');
-
-  await pool.query(
-    `INSERT INTO refresh_tokens (user_id, token, expires_at, token_version, session_id, tenant_id, token_family)
-     VALUES ($1, $2, $3, (SELECT COALESCE(token_version, 0) FROM users WHERE id = $4), $5, (SELECT COALESCE(tenant_id, 'default') FROM users WHERE id = $4), $6)`,
-    [userId, tokenHash, expiresAt, userId, sessionId ?? null, family]
-  );
-
-  return token;
 };
 
 const revokeAllUserRefreshTokens = async (userId: number): Promise<void> => {
@@ -278,96 +259,144 @@ export const login = async ({ email, password, totp_token, captcha_token, ip_add
     throw new BadRequestError('CAPTCHA verification failed');
   }
 
-  logger.debug('Login attempt', { email, tenantId });
+  const client = await pool.connect();
+  let committed = false;
+  try {
+    await client.query('BEGIN');
 
-  const result = await readPool.query<User>(
-    `SELECT id, email, name, rut, phone, role, password, password_changed, totp_enabled, totp_secret, tenant_id, active, last_activity_at, failed_attempts, locked_until, token_version
-     FROM users
-     WHERE email = $1 AND (tenant_id = $2 OR (role = 'superadmin' AND tenant_id IS NULL))`,
-    [email, tenantId]
-  );
-  const user = result.rows[0];
+    await client.query("SELECT set_config('app.tenant_id', $1, true)", [tenantId]);
 
-  if (!user) {
-    const dummyHash = '$2b$12$LJ3m4ys3Lg3YOCwFfj5NOWJX0GqBiN3H0w5Cqx3z5Gq5X5z5P5Q5S';
-    await bcrypt.compare(password, dummyHash);
-    logger.warn('Login failed: user not found', { email, tenantId });
-    throw new BadRequestError(E.AUTH_INVALID_CREDENTIALS);
-  }
+    const { rows } = await client.query<User>(
+      `SELECT id, email, name, rut, phone, role, password, password_changed, totp_enabled, totp_secret, tenant_id, active, last_activity_at, failed_attempts, locked_until, token_version
+       FROM users
+       WHERE email = $1 AND (tenant_id = $2 OR (role = 'superadmin' AND tenant_id IS NULL))`,
+      [email, tenantId]
+    );
+    const user = rows[0];
 
-  const isValid = await bcrypt.compare(password, user.password);
+    if (!user) {
+      const dummyHash = '$2b$12$LJ3m4ys3Lg3YOCwFfj5NOWJX0GqBiN3H0w5Cqx3z5Gq5X5z5P5Q5S';
+      await bcrypt.compare(password, dummyHash);
+      await client.query('ROLLBACK');
+      logger.warn('Login failed: user not found', { email, tenantId });
+      throw new BadRequestError(E.AUTH_INVALID_CREDENTIALS);
+    }
 
-  if (!isValid) {
-    await pool.query(
-      `UPDATE users SET
-        failed_attempts = COALESCE(failed_attempts, 0) + 1,
-        locked_until = CASE WHEN COALESCE(failed_attempts, 0) + 1 >= 5 THEN NOW() + INTERVAL '15 minutes' ELSE locked_until END
-      WHERE id = $1`,
+    const isValid = await bcrypt.compare(password, user.password);
+
+    if (!isValid) {
+      await client.query(
+        `UPDATE users SET
+          failed_attempts = COALESCE(failed_attempts, 0) + 1,
+          locked_until = CASE WHEN COALESCE(failed_attempts, 0) + 1 >= 5 THEN NOW() + INTERVAL '15 minutes' ELSE locked_until END
+        WHERE id = $1`,
+        [user.id]
+      );
+      await client.query('ROLLBACK');
+      logger.warn('Login failed: wrong password', { email, tenantId, userId: user.id });
+      throw new BadRequestError(E.AUTH_INVALID_CREDENTIALS);
+    }
+
+    if (!user.active) {
+      await client.query('ROLLBACK');
+      logger.warn('Login blocked - user inactive', { userId: user.id });
+      throw new UnauthorizedError(E.AUTH_USER_INACTIVE);
+    }
+
+    if (user.locked_until && new Date(user.locked_until) > new Date()) {
+      await client.query('ROLLBACK');
+      logger.warn('Login blocked - account locked', { userId: user.id });
+      throw new UnauthorizedError(E.AUTH_USER_LOCKED);
+    }
+
+    await client.query(
+      'UPDATE users SET failed_attempts = 0, locked_until = NULL, last_activity_at = NOW() WHERE id = $1',
       [user.id]
     );
-    logger.warn('Login failed: wrong password', { email, tenantId, userId: user.id });
-    throw new BadRequestError(E.AUTH_INVALID_CREDENTIALS);
-  }
 
-  if (!user.active) {
-    logger.warn('Login blocked - user inactive', { userId: user.id });
-    throw new UnauthorizedError(E.AUTH_USER_INACTIVE);
-  }
-
-  if (user.locked_until && new Date(user.locked_until) > new Date()) {
-    logger.warn('Login blocked - account locked', { userId: user.id });
-    throw new UnauthorizedError(E.AUTH_USER_LOCKED);
-  }
-
-  await pool.query(
-    'UPDATE users SET failed_attempts = 0, locked_until = NULL, last_activity_at = NOW() WHERE id = $1',
-    [user.id]
-  );
-
-  if (user.totp_enabled) {
-    if (!totp_token) {
-      throw new BadRequestError(E.AUTH_2FA_REQUIRED);
+    if (user.totp_enabled) {
+      if (!totp_token) {
+        await client.query('ROLLBACK');
+        throw new BadRequestError(E.AUTH_2FA_REQUIRED);
+      }
+      if (!user.totp_secret || !verifyToken(user.totp_secret, totp_token)) {
+        await client.query('ROLLBACK');
+        throw new BadRequestError(E.AUTH_2FA_INVALID_TOKEN);
+      }
     }
-    if (!user.totp_secret || !verifyToken(user.totp_secret, totp_token)) {
-      throw new BadRequestError(E.AUTH_2FA_INVALID_TOKEN);
-    }
-  }
 
-  const { sessionId } = await createUserSession(
-    user.id,
-    user.tenant_id || process.env.DEFAULT_TENANT_ID || 'default',
-    ip_address,
-    user_agent,
-  );
-  const access_token = generateAccessToken({
-    id: user.id,
-    email: user.email,
-    role: user.role || 'user',
-    tenant_id: user.tenant_id || process.env.DEFAULT_TENANT_ID || 'default',
-    token_version: user.token_version || 0,
-    sid: sessionId,
-  });
-  const refresh_token = await generateRefreshToken(user.id, sessionId);
+    const effectiveTenant = user.tenant_id || process.env.DEFAULT_TENANT_ID || 'default';
 
-  const billing = await getTenantBilling(user.tenant_id || process.env.DEFAULT_TENANT_ID || 'default');
+    const sessionToken = crypto.randomBytes(40).toString('hex');
+    const sessionExpires = new Date();
+    sessionExpires.setDate(sessionExpires.getDate() + 30);
+    const sessionInsert = await client.query(
+      `INSERT INTO user_sessions (user_id, tenant_id, session_token, ip_address, user_agent, expires_at)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       RETURNING id`,
+      [
+        user.id,
+        effectiveTenant,
+        hashToken(sessionToken),
+        ip_address ? String(ip_address).slice(0, 45) : null,
+        user_agent ? String(user_agent).slice(0, 500) : null,
+        sessionExpires,
+      ]
+    );
+    const sessionId = sessionInsert.rows[0].id as number;
 
-  return {
-    access_token,
-    refresh_token,
-    user: {
+    const refreshToken = crypto.randomBytes(40).toString('hex');
+    const refreshTokenHash = hashToken(refreshToken);
+    const refreshExpires = new Date();
+    refreshExpires.setDate(refreshExpires.getDate() + REFRESH_TOKEN_EXPIRY_DAYS);
+    const family = crypto.randomBytes(16).toString('hex');
+    await client.query(
+      `INSERT INTO refresh_tokens (user_id, token, expires_at, token_version, session_id, tenant_id, token_family)
+       VALUES ($1, $2, $3, (SELECT COALESCE(token_version, 0) FROM users WHERE id = $4), $5, (SELECT COALESCE(tenant_id, 'default') FROM users WHERE id = $4), $6)`,
+      [user.id, refreshTokenHash, refreshExpires, user.id, sessionId, family]
+    );
+
+    await client.query('COMMIT');
+    committed = true;
+
+    const access_token = generateAccessToken({
       id: user.id,
       email: user.email,
-      name: user.name || null,
       role: user.role || 'user',
-      rut: user.rut || null,
-      phone: user.phone || null,
-      password_changed: user.password_changed ?? false,
-      totp_enabled: user.totp_enabled ?? false,
-      tenant_id: user.tenant_id || process.env.DEFAULT_TENANT_ID || 'default',
-      currency: billing.currency,
-      country_code: billing.country_code,
-    },
-  };
+      tenant_id: effectiveTenant,
+      token_version: user.token_version || 0,
+      sid: sessionId,
+    });
+
+    const billing = await getTenantBilling(effectiveTenant);
+
+    return {
+      access_token,
+      refresh_token: refreshToken,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name || null,
+        role: user.role || 'user',
+        rut: user.rut || null,
+        phone: user.phone || null,
+        password_changed: user.password_changed ?? false,
+        totp_enabled: user.totp_enabled ?? false,
+        tenant_id: effectiveTenant,
+        currency: billing.currency,
+        country_code: billing.country_code,
+      },
+    };
+  } finally {
+    if (!committed) {
+      try {
+        await client.query('ROLLBACK');
+      } catch {
+        // Pool client released regardless of rollback outcome
+      }
+    }
+    client.release();
+  }
 };
 
 /** Revokes a token family and its parent session (used when a session must die). */
