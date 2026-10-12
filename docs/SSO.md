@@ -33,7 +33,7 @@ En el repo del Core (`bentlyy/SaaSs`, paquete `@amg/platform`):
 
 ```
 CORE_URL=https://desarrollo.amgdeveloper.cl
-APP_URL=https://<host-de-vitaria>            # debe coincidir con el app_url del Core
+APP_URL=https://vitaria.amgdeveloper.cl        # debe coincidir con el app_url del Core
 AMG_SSO_CLIENT_ID=vitaria
 AMG_SSO_CLIENT_SECRET=<secreto derivado en el paso 1.3>
 # Opcionales: AMG_CALLBACK_PATH=/auth/callback (def), AMG_SESSION_COOKIE=app_session (def),
@@ -79,12 +79,21 @@ enlaza por email en el primer ingreso (ver `localAccount.ts`).
 - **`client_secret` inválido** → secreto rotado en el Core; volver a copiar.
 - **Assets/CSS pidiendo login** → revisar `amgPublicPaths` en `src/sso/amgSso.ts`.
 
-## 6. Decisión de host (pendiente)
+## 6. Host (decidido: `vitaria.amgdeveloper.cl`)
 
-El Core modela cada producto como `https://<slug>.amgdeveloper.cl`. Dos caminos:
+El Core modela cada producto como `https://<slug>.amgdeveloper.cl`. Vitaria se
+expone en **`vitaria.amgdeveloper.cl`** (el app sigue en Render; no se migra).
 
-- **A (recomendado):** exponer Vitaria en `vitaria.amgdeveloper.cl` (DNS + nginx +
-  Cloudflare) delante del app en Render. El app no se migra; solo se le pone
-  subdominio. Encaja con el contrato del catálogo sin cambios.
-- **B:** mantener `clinica-salud-vital.onrender.com` y **relajar** el contrato del
-  catálogo del Core para admitir hosts externos (cambia `products.ts`/tests).
+Pasos de infra (ops):
+
+1. **Render**: agregar `vitaria.amgdeveloper.cl` como **custom domain** del
+   servicio (Render valida el host y emite el certificado).
+2. **Cloudflare** (zona `amgdeveloper.cl`): registro **CNAME** `vitaria` →
+   `clinica-salud-vital.onrender.com`, **proxied** (naranja). Igual que los demás
+   subdominios.
+3. `APP_URL=https://vitaria.amgdeveloper.cl` en Vitaria y `app_url` idéntico en el
+   Core (el `redirect_uri` se compara por igualdad exacta).
+
+Con esto no se relaja el contrato del catálogo. (La alternativa B —mantener
+`onrender.com` y relajar los tests del Core— queda descartada.)
+
