@@ -97,3 +97,31 @@ Pasos de infra (ops):
 Con esto no se relaja el contrato del catálogo. (La alternativa B —mantener
 `onrender.com` y relajar los tests del Core— queda descartada.)
 
+## 7. Pendientes (deuda registrada al cierre del SSO)
+
+Cosas que quedaron **explícitamente para el final** (decisión: no bloquean el SSO):
+
+- **Gates de cobertura del CI (preexistente, NO lo causó el SSO).** El job `CI`
+  ya lleva rojo desde ~22-sep-2026. Medido en `master` (`bafe7af`):
+  Lines 84.53 / Branches 75.42 / Funcs 83.21 / Stmts 83.41, contra los umbrales
+  de `vitest.config.js` (85/80/85/85). El **backend** además fallaba antes en
+  `npm audit --audit-level=critical` (ya corregido en esta rama con `npm audit fix`).
+  El **frontend** (`frontend/vitest.config.ts` + paso `Check coverage thresholds`)
+  también incumple sus umbrales en `master` y en este PR.
+  Decisión (12-oct-2026): **no tocar los umbrales ni perseguir la cobertura ahora**;
+  se retoma al final. Módulos con más hueco (para cuando se aborde): `shared/metrics.service.ts`
+  (~5% branch), `modules/saas/*onboarding*.service.ts` (~26% branch), `shared/currencies.ts`,
+  `shared/db.ts`, `shared/ownership.ts`, controllers de `attachments`/`calendar`, `modules/booking`.
+  Esta rama mejora levemente el global (branches 75.74) y retira código muerto de la purga
+  (`shared/base32.ts`, `encrypt/decrypt/hashToken` de `shared/crypto.service.ts`).
+- **Ops al desplegar (dependen del usuario):** (1) mergear `SaaSs#1` para registrar el
+  producto/cliente `vitaria` y derivar el secreto (`npm run sso:secret -w @amg/platform -- vitaria`);
+  (2) custom domain `vitaria.amgdeveloper.cl` en Render + CNAME proxied en Cloudflare;
+  (3) aplicar `db/migrations/032_amg_sso.sql` y **vincular `tenants.sso_org_id`** (fuera de banda,
+  BYPASSRLS: la app no puede crear/escribir `tenants` por FORCE RLS con `WITH CHECK(false)`).
+- **Precio placeholder:** el producto `vitaria` en el catálogo del Core usa `29900` CLP/mes como
+  placeholder; confirmar tarifa real antes de producción.
+- **`docs/db-architecture.html`** aún cita `packages/core/src/db/init.ts` (ruta inexistente);
+  requiere reescritura.
+
+
