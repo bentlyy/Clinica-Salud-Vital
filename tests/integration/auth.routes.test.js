@@ -75,6 +75,8 @@ beforeEach(() => {
   });
 });
 
+// NOTA SSO: el login local se retiró (lo maneja el Core). Solo queda el alta
+// por invitación, que es lo que se cubre acá.
 describe('POST /api/auth/register', () => {
   it('returns 201 with valid data', async () => {
     mockQuery.mockResolvedValueOnce({
@@ -115,92 +117,5 @@ describe('POST /api/auth/register', () => {
 
     expect(res.status).toBe(400);
     expect(res.body.error).toContain('Validation failed');
-  });
-});
-
-describe('POST /api/auth/login', () => {
-  const mockLogin = (user) => {
-    mockQuery.mockImplementation((query) => {
-      if (query.includes('FROM users') && query.includes('WHERE email')) return { rows: user ? [user] : [] };
-      if (query.includes('user_sessions')) return { rows: [{ id: 1 }] };
-      if (query.includes('token_version')) return { rows: [{ token_version: 0 }] };
-      if (query.includes('COUNT')) return { rows: [{ count: '0' }] };
-      return { rows: [] };
-    });
-  };
-
-  it('returns 200 with valid credentials', async () => {
-    bcrypt.compare.mockResolvedValueOnce(true);
-    mockLogin({ id: 1, email: 'test@test.com', password: 'hashed', role: 'user', tenant_id: 'default', active: true });
-
-    const res = await request(app)
-      .post('/api/auth/login')
-      .send({ email: 'test@test.com', password: 'Test1234!', captcha_token: 'test-captcha' });
-
-    expect(res.status).toBe(200);
-    expect(res.body.access_token).toBeDefined();
-    expect(res.body.user.id).toBe(1);
-  });
-
-  it('returns 400 if credentials invalid', async () => {
-    mockLogin({ id: 1, email: 'wrong@test.com', password: 'hashed', role: 'user', tenant_id: 'default', active: true });
-    bcrypt.compare.mockResolvedValueOnce(false);
-
-    const res = await request(app)
-      .post('/api/auth/login')
-      .send({ email: 'wrong@test.com', password: 'wrong', captcha_token: 'test-captcha' });
-
-    expect(res.status).toBe(400);
-    expect(res.body.error).toBe('Invalid credentials');
-  });
-
-  it('returns 401 if user is deactivated', async () => {
-    bcrypt.compare.mockResolvedValueOnce(true);
-    mockLogin({ id: 1, email: 'disabled@test.com', password: 'hashed', role: 'user', tenant_id: 'default', active: false });
-
-    const res = await request(app)
-      .post('/api/auth/login')
-      .send({ email: 'disabled@test.com', password: 'Test1234!', captcha_token: 'test-captcha' });
-
-    expect(res.status).toBe(401);
-    expect(res.body.error).toBe('Account is deactivated. Contact an administrator.');
-  });
-
-  it('returns 200 logging into the user tenant when tenant_id is omitted', async () => {
-    bcrypt.compare.mockResolvedValueOnce(true);
-    mockQuery.mockImplementation((query) => {
-      if (query.includes('FROM users') && query.includes('role =')) return { rows: [] };
-      if (query.includes('FROM users') && query.includes('active = true')) return { rows: [{ id: 3669, tenant_id: 'clinica-demo' }] };
-      if (query.includes('FROM users') && query.includes('WHERE id =')) return { rows: [{ id: 3669, email: 'admin@demo.clinic.com', password: 'hashed', role: 'admin', tenant_id: 'clinica-demo', active: true }] };
-      if (query.includes('user_sessions')) return { rows: [{ id: 1 }] };
-      if (query.includes('token_version')) return { rows: [{ token_version: 0 }] };
-      return { rows: [] };
-    });
-
-    const res = await request(app)
-      .post('/api/auth/login')
-      .send({ email: 'admin@demo.clinic.com', password: 'Test1234!', captcha_token: 'test-captcha' });
-
-    expect(res.status).toBe(200);
-    expect(res.body.user.id).toBe(3669);
-    expect(res.body.user.tenant_id).toBe('clinica-demo');
-  });
-
-  it('returns 400 if email missing', async () => {
-    const res = await request(app)
-      .post('/api/auth/login')
-      .send({ password: 'password123', captcha_token: 'test-captcha' });
-
-    expect(res.status).toBe(400);
-    expect(res.body.error).toContain('Validation failed');
-  });
-
-  it('blocks request when captcha is required but token is missing (fail-closed)', async () => {
-    const res = await request(app)
-      .post('/api/auth/login')
-      .send({ email: 'test@test.com', password: 'Test1234!' });
-
-    expect(res.status).toBe(400);
-    expect(res.body.error).toBe('CAPTCHA verification failed');
   });
 });

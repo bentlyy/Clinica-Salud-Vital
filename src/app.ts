@@ -18,6 +18,7 @@ import { runFullCleanup } from './shared/cleanup.service.js';
 import { securityMiddleware, validateEnvSecurity } from './middlewares/security.middleware.js';
 import { tenantMiddleware } from './middlewares/tenant.middleware.js';
 import { optionalAuth } from './middlewares/auth.middleware.js';
+import { amgRouter, mountAmgAuthMiddleware } from './sso/amgSso.js';
 import { validateEmailConfig } from './shared/email.service.js';
 import { requestLogger } from './middlewares/requestLogger.middleware.js';
 import { correlationIdMiddleware } from './middlewares/correlationId.middleware.js';
@@ -168,13 +169,13 @@ app.use(cors({
   maxAge: 86400,
 }));
 
+const frontendPath = resolve(__dirname, '../frontend/dist');
+const indexPath = resolve(frontendPath, 'index.html');
+
 if (process.env.NODE_ENV === 'production') {
-  const frontendPath = resolve(__dirname, '../frontend/dist');
-  const indexPath = resolve(frontendPath, 'index.html');
-  app.use(express.static(frontendPath));
-  app.get(/^\/(?!api\/)/, (_req, res) => {
-    res.sendFile(indexPath);
-  });
+  // Los assets del build quedan públicos; el shell SPA y las rutas de cliente
+  // pasan por el guard SSO (ver más abajo), por eso no servimos index.html acá.
+  app.use(express.static(frontendPath, { index: false }));
 }
 
 // COOKIE_SECRET must be set independently of JWT_SECRET; do not share secrets between mechanisms
@@ -185,6 +186,13 @@ app.use(express.json({
     req.rawBody = buf;
   },
 }));
+
+// Guard SSO del Core: valida la cookie `app_session` y deja `req.amg` (o redirige
+// al login central). Cubre el shell SPA y toda la API salvo `amgPublicPaths`.
+// Debe ir antes de las rutas y del catch-all del SPA.
+app.use(mountAmgAuthMiddleware());
+app.use('/api', amgRouter);
+
 app.use(csrfProtection);
 app.use(optionalAuth);
 app.use(tenantMiddleware);
@@ -224,22 +232,6 @@ const authLimiter = rateLimit({
   },
 });
 
-// Lax limiter for session endpoints (refresh/logout). A 429 here would leave the
-// refresh cookie alive server-side and cause a "phantom login" on the next boot,
-// or spuriously log the user out — so keep it generous and keyed by session/user.
-const sessionLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 60,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { error: 'Too many session requests, please try again later.' },
-  keyGenerator: (req: Request) => `session:${req.user?.id || req.ip || 'unknown'}`,
-  handler: (req: Request, res: Response) => {
-    logger.warn('Rate limit exceeded (session)', { ip: req.ip, userId: req.user?.id });
-    res.status(429).json({ error: 'Too many session requests, please try again later.' });
-  },
-});
-
 const phiWriteLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 30,
@@ -251,14 +243,9 @@ const phiWriteLimiter = rateLimit({
 
 app.use(globalLimiter);
 
-// Strict limiter only for credential-based (brute-force prone) endpoints:
-// refresh/logout MUST NOT share this budget or a 429 would leave sessions half-open.
-app.use('/api/auth/login', authLimiter);
+// Limiter for the only remaining credential-ish endpoint: el alta por invitación.
+// El login/refresh/logout locales se retiraron (los maneja el Core).
 app.use('/api/auth/register', authLimiter);
-app.use('/api/auth/forgot-password', authLimiter);
-app.use('/api/auth/reset-password', authLimiter);
-app.use('/api/auth/refresh', sessionLimiter);
-app.use('/api/auth/logout', sessionLimiter);
 
 const API_PREFIX = '/api';
 
@@ -289,6 +276,12 @@ app.use(`${API_PREFIX}/export`, dataPortabilityRoutes);
 app.use(`${API_PREFIX}/webhooks`, webhooksRoutes);
 app.use(`${API_PREFIX}/calendar`, calendarRoutes);
 app.use(`${API_PREFIX}/notifications`, notificationRoutes);
+
+if (process.env.NODE_ENV === 'production') {
+  app.get(/^\/(?!api\/)/, (_req, res) => {
+    res.sendFile(indexPath);
+  });
+}
 
 setupExpressErrorHandler(app);
 app.use(notFoundHandler);

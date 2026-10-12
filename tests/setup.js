@@ -9,6 +9,10 @@ process.env.EMAIL_PASS = 'test-pass';
 process.env.DATABASE_URL = 'postgresql://test:test@localhost:5432/test';
 process.env.RECAPTCHA_SECRET_KEY = 'test-recaptcha-key';
 process.env.AUDIT_HMAC_SECRET = 'test-secret-32-chars-minimum-length!!';
+process.env.CORE_URL = 'http://localhost:3008';
+process.env.APP_URL = 'http://localhost:5173';
+process.env.AMG_SSO_CLIENT_ID = 'vitaria';
+process.env.AMG_SSO_CLIENT_SECRET = 'test-sso-secret';
 
 global.fetch = vi.fn().mockResolvedValue({ json: async () => ({ success: true }) });
 

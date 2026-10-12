@@ -8,6 +8,8 @@ const passwordSchema = z.string()
   .regex(/[0-9]/, 'Password must contain at least one number')
   .regex(/[^A-Za-z0-9]/, 'Password must contain at least one special character');
 
+// SSO: solo queda el alta por invitación. Los schemas de login/refresh/2FA/
+// cambio y reset de contraseña se retiraron junto con sus endpoints locales.
 export const registerSchema = z.object({
   email: z.string().email('Invalid email format').min(1, 'Email is required').max(255),
   password: passwordSchema,
@@ -17,34 +19,3 @@ export const registerSchema = z.object({
   invite_token: z.string().optional(),
   tenant_id: z.string().optional(),
 }).strict();
-
-export const loginSchema = z.object({
-  email: z.string().email('Invalid email format'),
-  password: z.string().min(1, 'Password is required'),
-  totp_token: z.string().optional(),
-  captcha_token: z.string().optional(),
-  tenant_id: z.string().optional(),
-}).strict();
-
-export const refreshSchema = z.object({}).strict();
-
-export const changePasswordSchema = z.object({
-  current_password: z.string().min(1, 'Current password required'),
-  new_password: passwordSchema,
-}).strict();
-
-export const forgotPasswordSchema = z.object({
-  email: z.string().email('Invalid email format'),
-}).strict();
-
-export const resetPasswordSchema = z.object({
-  token: z.string().min(1, 'Reset token required'),
-  email: z.string().email('Invalid email format'),
-  password: passwordSchema,
-}).strict();
-
-export const resetAdminSchema = z.object({
-  current_password: z.string().min(1, 'Current password is required'),
-  new_password: passwordSchema,
-}).strict();
-

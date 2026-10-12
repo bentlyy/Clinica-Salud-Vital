@@ -4,6 +4,8 @@ import { UserRole } from '../types/index.js';
 import { UnauthorizedError, ForbiddenError, toError } from '../utils/errors.js';
 import { readPool } from '../shared/db.js';
 import { logger } from '../utils/logger.js';
+import { resolveLocalAccount, TenantNoVinculadoError } from '../sso/localAccount.js';
+import type { AmgIdentity } from '../sso/amgTypes.js';
 
 export interface JwtUser {
   id: number;
@@ -55,7 +57,68 @@ const extractToken = (req: Request): string | undefined => {
   return req.cookies?.access_token;
 };
 
+/**
+ * Deja en `req.user` la identidad de la sesión, venga de donde venga.
+ *
+ * Camino SSO (el de producción): `mountAmgAuth` ya validó la cookie del Core y
+ * dejó `req.amg`; acá se traduce a la cuenta local de Vitaria (tenant por
+ * `sso_org_id`, usuario por `sso_sub`).
+ *
+ * Camino legado (solo tests/integraciones): Bearer JWT. En producción es
+ * inalcanzable, porque el guard SSO global rechaza cualquier request sin sesión
+ * del Core antes de llegar a las rutas. Se conserva para no romper los tests de
+ * integración que montan los routers con un `express()` propio.
+ */
+export const optionalAuth = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  const amg = req.amg as AmgIdentity | undefined;
+
+  if (amg) {
+    try {
+      const cuenta = await resolveLocalAccount(amg);
+      req.user = {
+        id: cuenta.id,
+        email: cuenta.email,
+        role: cuenta.role as UserRole,
+        tenant_id: cuenta.tenantId,
+      };
+    } catch (err) {
+      if (err instanceof TenantNoVinculadoError) {
+        next(new ForbiddenError('La organización no tiene acceso a Vitaria'));
+        return;
+      }
+      logger.error('SSO: no se pudo resolver la cuenta local', {
+        error: toError(err).message,
+        userId: amg.userId,
+      });
+      next(err);
+      return;
+    }
+    next();
+    return;
+  }
+
+  const tokenStr = extractToken(req);
+  if (tokenStr) {
+    const user = extractAndVerifyUser(tokenStr, req);
+    if (user) req.user = user;
+  }
+
+  next();
+};
+
 export const authMiddleware = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  // Camino SSO: optionalAuth ya resolvió `req.user` desde `req.amg`.
+  if (req.user) {
+    const reqTenantId = req.tenant_id || process.env.DEFAULT_TENANT_ID || 'default';
+    if (reqTenantId && req.user.tenant_id !== reqTenantId && req.user.role !== 'superadmin') {
+      next(new UnauthorizedError('Tenant mismatch'));
+      return;
+    }
+    setSecurityHeaders(req, res, next);
+    return;
+  }
+
+  // Camino legado (JWT local): inalcanzable en producción (guard SSO primero).
   const tokenStr = extractToken(req);
 
   if (!tokenStr) {
@@ -131,17 +194,6 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
 
   req.user = user;
   setSecurityHeaders(req, res, next);
-};
-
-export const optionalAuth = (req: Request, res: Response, next: NextFunction): void => {
-  const tokenStr = extractToken(req);
-
-  if (tokenStr) {
-    const user = extractAndVerifyUser(tokenStr, req);
-    if (user) req.user = user;
-  }
-
-  next();
 };
 
 export const authMiddlewareNoCache = (req: Request, res: Response, next: NextFunction): void => {
