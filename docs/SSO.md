@@ -128,11 +128,20 @@ Cosas que quedaron **explícitamente para el final** (decisión: no bloquean el 
 
 Orden recomendado (los pasos 1-2 los hace ops/usuario; 3-5 son SQL/CLI):
 
-1. **Cloudflare** (zona `amgdeveloper.cl` → DNS):
+1. **Cloudflare** (zona `amgdeveloper.cl` → DNS). **Debe ser CNAME** (un subdominio
+   nunca usa A/IP; Cloudflare rechaza un hostname en un registro A con
+   «must be an IP»). Arrancar en **DNS only (nube gris)** para que Render valide y
+   emita el certificado; luego se puede pasar a Proxied:
 
-   | Tipo  | Nombre    | Destino                              | Proxy        | TTL  |
-   |-------|-----------|--------------------------------------|--------------|------|
-   | CNAME | `vitaria` | `clinica-salud-vital.onrender.com`   | Proxied (🟠) | Auto |
+   | Tipo  | Nombre    | Destino / Target                     | Proxy                  | TTL  |
+   |-------|-----------|--------------------------------------|------------------------|------|
+   | CNAME | `vitaria` | `clinica-salud-vital.onrender.com`   | **DNS only (gris)** ¹  | Auto |
+
+   ¹ Tras «Certificate issued» en Render, editar y poner **Proxied (🟠)** si se
+   quiere CDN/WAF. Requisitos: `SSL/TLS > Overview` en **Full** (no Flexible) y
+   **sin registros AAAA** para `vitaria`. (La IP `216.24.57.1` es el LB de Render
+   y es SOLO para el apex con registro A cuando el proveedor no soporta CNAME
+   flattening/ALIAS — no aplica a este subdominio.)
 
 2. **Render** (servicio de Vitaria → Settings → Custom Domains): agregar
    `vitaria.amgdeveloper.cl`. Render valida el host y emite el certificado (aunque
