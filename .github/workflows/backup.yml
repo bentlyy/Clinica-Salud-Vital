@@ -46,7 +46,7 @@ jobs:
       - name: Dump database (custom format)
         id: dump
         run: |
-          ./scripts/backup.sh "$RUNNER_TEMP/backup"
+          bash scripts/backup.sh "$RUNNER_TEMP/backup"
           echo "backup_file=$(ls -1t "$RUNNER_TEMP/backup"/clinic_backup_*.dump | head -1)" >> "$GITHUB_OUTPUT"
 
       - name: Restore & verify backup

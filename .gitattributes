@@ -1,0 +1,3 @@
+# Scripts de shell siempre con LF: este repo se edita tambien desde Windows
+# (con core.autocrlf) y un CRLF en un .sh lo rompe en CI y en el servidor.
+*.sh text eol=lf
