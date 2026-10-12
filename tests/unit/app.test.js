@@ -28,6 +28,10 @@ vi.mock('../../src/shared/queue.service.js', () => ({ registerWorkers: vi.fn() }
 vi.mock('../../src/middlewares/security.middleware.js', () => ({ securityMiddleware: [(_req, _res, next) => next()], validateEnvSecurity: vi.fn() }));
 vi.mock('../../src/middlewares/tenant.middleware.js', () => ({ tenantMiddleware: (_req, _res, next) => { _req.tenant_id = 'default'; next(); } }));
 vi.mock('../../src/middlewares/auth.middleware.js', () => ({ optionalAuth: (_req, _res, next) => next(), authMiddleware: (_req, _res, next) => next(), authorize: () => (_req, _res, next) => next() }));
+vi.mock('../../src/sso/amgSso.js', () => {
+  const noop = (_req, _res, next) => next();
+  return { mountAmgAuthMiddleware: () => noop, amgRouter: noop };
+});
 vi.mock('../../src/middlewares/errorHandler.middleware.js', () => ({ errorHandler: (err, _req, res, _next) => res.status(err.statusCode || 500).json({ error: err.message }), notFoundHandler: (_req, res) => res.status(404).json({ error: 'Not found' }) }));
 vi.mock('../../src/middlewares/requestLogger.middleware.js', () => ({ requestLogger: (_req, _res, next) => next() }));
 vi.mock('../../src/middlewares/sessionActivity.middleware.js', () => ({ trackActivity: (_req, _res, next) => next() }));
