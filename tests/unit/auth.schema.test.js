@@ -1,9 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { registerSchema, loginSchema, refreshSchema, changePasswordSchema, forgotPasswordSchema, resetPasswordSchema } from '../../src/modules/auth/auth.schema.js';
+import { registerSchema } from '../../src/modules/auth/auth.schema.js';
 
 const validPassword = 'Test1234!';
 const validEmail = 'test@example.com';
 
+// NOTA SSO: registerSchema es el único schema que queda (alta por invitación).
 describe('registerSchema', () => {
   it('accepts valid registration data', () => {
     const result = registerSchema.safeParse({
@@ -83,110 +84,6 @@ describe('registerSchema', () => {
 
   it('rejects empty name', () => {
     const result = registerSchema.safeParse({ email: validEmail, password: validPassword, name: '' });
-    expect(result.success).toBe(false);
-  });
-});
-
-describe('loginSchema', () => {
-  it('accepts valid login data', () => {
-    const result = loginSchema.safeParse({ email: validEmail, password: validPassword });
-    expect(result.success).toBe(true);
-  });
-
-  it('accepts login with totp_token', () => {
-    const result = loginSchema.safeParse({ email: validEmail, password: validPassword, totp_token: '123456' });
-    expect(result.success).toBe(true);
-  });
-
-  it('rejects missing email', () => {
-    const result = loginSchema.safeParse({ password: validPassword });
-    expect(result.success).toBe(false);
-  });
-
-  it('rejects invalid email format', () => {
-    const result = loginSchema.safeParse({ email: 'bad', password: validPassword });
-    expect(result.success).toBe(false);
-  });
-
-  it('rejects empty password', () => {
-    const result = loginSchema.safeParse({ email: validEmail, password: '' });
-    expect(result.success).toBe(false);
-  });
-
-  it('rejects extra fields due to .strict()', () => {
-    const result = loginSchema.safeParse({ email: validEmail, password: validPassword, extra: true });
-    expect(result.success).toBe(false);
-  });
-});
-
-describe('refreshSchema', () => {
-  it('rejects refresh_token in body (cookie-based refresh only)', () => {
-    const result = refreshSchema.safeParse({ refresh_token: 'some-refresh-token-value' });
-    expect(result.success).toBe(false);
-  });
-
-  it('accepts empty body (cookie-based refresh)', () => {
-    const result = refreshSchema.safeParse({});
-    expect(result.success).toBe(true);
-  });
-
-  it('rejects extra fields due to .strict()', () => {
-    const result = refreshSchema.safeParse({ refresh_token: '' });
-    expect(result.success).toBe(false);
-  });
-});
-
-describe('changePasswordSchema', () => {
-  it('accepts valid change password request', () => {
-    const result = changePasswordSchema.safeParse({ current_password: 'OldPass1!', new_password: validPassword });
-    expect(result.success).toBe(true);
-  });
-
-  it('rejects empty current_password', () => {
-    const result = changePasswordSchema.safeParse({ current_password: '', new_password: validPassword });
-    expect(result.success).toBe(false);
-  });
-
-  it('rejects weak new_password', () => {
-    const result = changePasswordSchema.safeParse({ current_password: 'OldPass1!', new_password: 'weak' });
-    expect(result.success).toBe(false);
-  });
-});
-
-describe('forgotPasswordSchema', () => {
-  it('accepts valid email', () => {
-    const result = forgotPasswordSchema.safeParse({ email: validEmail });
-    expect(result.success).toBe(true);
-  });
-
-  it('rejects invalid email', () => {
-    const result = forgotPasswordSchema.safeParse({ email: 'bad' });
-    expect(result.success).toBe(false);
-  });
-});
-
-describe('resetPasswordSchema', () => {
-  it('accepts valid reset password data', () => {
-    const result = resetPasswordSchema.safeParse({
-      token: 'reset-token-123',
-      email: validEmail,
-      password: validPassword,
-    });
-    expect(result.success).toBe(true);
-  });
-
-  it('rejects empty token', () => {
-    const result = resetPasswordSchema.safeParse({ token: '', email: validEmail, password: validPassword });
-    expect(result.success).toBe(false);
-  });
-
-  it('rejects invalid email', () => {
-    const result = resetPasswordSchema.safeParse({ token: 'token', email: 'bad', password: validPassword });
-    expect(result.success).toBe(false);
-  });
-
-  it('rejects weak password', () => {
-    const result = resetPasswordSchema.safeParse({ token: 'token', email: validEmail, password: 'weak' });
     expect(result.success).toBe(false);
   });
 });
