@@ -119,8 +119,8 @@ Cosas que quedaron **explícitamente para el final** (decisión: no bloquean el 
   (2) custom domain `vitaria.amgdeveloper.cl` en Render + CNAME proxied en Cloudflare;
   (3) aplicar `db/migrations/032_amg_sso.sql` y **vincular `tenants.sso_org_id`** (fuera de banda,
   BYPASSRLS: la app no puede crear/escribir `tenants` por FORCE RLS con `WITH CHECK(false)`).
-- **Precio placeholder:** el producto `vitaria` en el catálogo del Core usa `29900` CLP/mes como
-  placeholder; confirmar tarifa real antes de producción.
+- **Precio de `vitaria`:** `49990` CLP/mes (fijado 12-oct-2026, «por ahora»);
+  revisar la tarifa definitiva más adelante.
 - **`docs/db-architecture.html`** aún cita `packages/core/src/db/init.ts` (ruta inexistente);
   requiere reescritura.
 
