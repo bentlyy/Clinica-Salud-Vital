@@ -1,5 +1,15 @@
 name: Database Backup (Daily)
 
+# La base clinicdb vive en el host OCI y su pg_hba.conf SOLO acepta conexiones
+# locales (127.0.0.1, trust) y el bloque de salida de Render. Un runner de
+# GitHub no puede entrar por red: todo lo demas lo rechaza Postgres dentro del
+# contenedor. Por eso el dump se hace EN EL HOST, via SSH, con conexion local
+# al contenedor, y luego se trae el archivo al runner para verificarlo y
+# subirlo como artifact.
+#
+# Requiere el secret DEPLOY_SSH_KEY (misma llave que usa el deploy de la suite:
+# autorizada para opc@146.181.55.59).
+
 on:
   schedule:
     - cron: '0 2 * * *'
@@ -7,14 +17,13 @@ on:
 
 permissions:
   contents: read
-  actions: write
 
 env:
-  DATABASE_URL: ${{ secrets.DATABASE_URL }}
-  S3_BUCKET: ${{ secrets.S3_BUCKET }}
-  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-  AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+  SSH_HOST: 146.181.55.59
+  SSH_USER: opc
+  DB_CONTAINER: clinic-db
+  DB_NAME: clinicdb
+  DB_USER: clinic_admin
 
 jobs:
   backup-and-verify:
@@ -36,35 +45,53 @@ jobs:
           --health-retries 10
 
     steps:
-      - uses: actions/checkout@v4
-
       - name: Install PostgreSQL client
         run: |
           sudo apt-get update -qq
           sudo apt-get install -yqq --no-install-recommends postgresql-client
 
-      - name: Dump database (custom format)
+      - name: Preparar llave SSH
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+
+      - name: Dump de clinicdb en el host (conexion local)
         id: dump
         run: |
-          bash scripts/backup.sh "$RUNNER_TEMP/backup"
-          echo "backup_file=$(ls -1t "$RUNNER_TEMP/backup"/clinic_backup_*.dump | head -1)" >> "$GITHUB_OUTPUT"
+          set -euo pipefail
+          TS=$(date +%Y%m%d_%H%M%S)
+          FILE="$RUNNER_TEMP/clinic_backup_$TS.dump"
+          # pg_dump dentro del contenedor usa el socket local (pg_hba: local trust).
+          # El dump va por stdout; stderr se descarta para no corromper el archivo.
+          ssh -i ~/.ssh/deploy_key \
+            -o StrictHostKeyChecking=accept-new \
+            -o ServerAliveInterval=30 \
+            "$SSH_USER@$SSH_HOST" \
+            "docker exec $DB_CONTAINER pg_dump -U $DB_USER -Fc -b $DB_NAME 2>/dev/null" > "$FILE"
+          # Valida que sea un dump custom-format real antes de seguir.
+          pg_restore --list "$FILE" >/dev/null
+          ls -lh "$FILE"
+          echo "backup_file=$FILE" >> "$GITHUB_OUTPUT"
 
       - name: Restore & verify backup
         env:
           BACKUP_FILE: ${{ steps.dump.outputs.backup_file }}
         run: |
-          pg_restore -d postgresql://postgres:postgres@localhost:5432/verify "$BACKUP_FILE"
+          # --no-owner/--no-acl: el dump viene del host y referencia roles que no
+          # existen en esta base de verificacion; no nos importan para comprobar
+          # que los datos se pueden recuperar.
+          pg_restore --no-owner --no-acl \
+            -d postgresql://postgres:postgres@localhost:5432/verify "$BACKUP_FILE"
           TABLE_COUNT=$(psql -d postgresql://postgres:postgres@localhost:5432/verify -tA -c \
             "SELECT count(*) FROM information_schema.tables WHERE table_schema='public'")
-          MIGRATIONS=$(psql -d postgresql://postgres:postgres@localhost:5432/verify -tA -c \
-            "SELECT count(*) FROM _migrations" 2>/dev/null || echo 0)
-          echo "Verify: tables=$TABLE_COUNT migrations=$MIGRATIONS"
+          echo "Verify: tables=$TABLE_COUNT"
           test "${TABLE_COUNT:-0}" -gt 0
 
       - name: Upload backup artifact
         uses: actions/upload-artifact@v4
         with:
-          name: db-backup
+          name: clinic-db-backup
           path: ${{ steps.dump.outputs.backup_file }}
           retention-days: 30
           if-no-files-found: error
