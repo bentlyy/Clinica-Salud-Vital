@@ -124,4 +124,73 @@ Cosas que quedaron **explícitamente para el final** (decisión: no bloquean el 
 - **`docs/db-architecture.html`** aún cita `packages/core/src/db/init.ts` (ruta inexistente);
   requiere reescritura.
 
+## 8. Registro y puesta en marcha (ops) — valores exactos
+
+Orden recomendado (los pasos 1-2 los hace ops/usuario; 3-5 son SQL/CLI):
+
+1. **Cloudflare** (zona `amgdeveloper.cl` → DNS):
+
+   | Tipo  | Nombre    | Destino                              | Proxy        | TTL  |
+   |-------|-----------|--------------------------------------|--------------|------|
+   | CNAME | `vitaria` | `clinica-salud-vital.onrender.com`   | Proxied (🟠) | Auto |
+
+2. **Render** (servicio de Vitaria → Settings → Custom Domains): agregar
+   `vitaria.amgdeveloper.cl`. Render valida el host y emite el certificado (aunque
+   Cloudflare ya proxee).
+
+3. **Core (`SaaSs`)**: mergear el PR `SaaSs#1` (registra el producto `vitaria` con
+   `app_url=https://vitaria.amgdeveloper.cl`) y derivar el secreto SSO:
+   ```bash
+   npm run sso:secret -w @amg/platform -- vitaria
+   # imprime AMG_SSO_CLIENT_ID=vitaria, AMG_SSO_CLIENT_SECRET=<secreto> y el
+   # redirect_uri esperado: https://vitaria.amgdeveloper.cl/auth/callback
+   ```
+
+4. **Vitaria (Render → Environment)** — valores exactos:
+   ```dotenv
+   APP_URL=https://vitaria.amgdeveloper.cl
+   CORE_URL=https://desarrollo.amgdeveloper.cl
+   AMG_SSO_CLIENT_ID=vitaria
+   AMG_SSO_CLIENT_SECRET=<el del paso 3>
+   # opcionales (defaults entre paréntesis):
+   # AMG_CALLBACK_PATH=/auth/callback
+   # AMG_SESSION_COOKIE=app_session
+   # AMG_SESSION_DAYS=30
+   # AMG_SSO_INTROSPECT=1     (re-valida contra el Core en cada request)
+   ```
+
+5. **Base de datos**: aplicar `db/migrations/032_amg_sso.sql` (idempotente) y
+   **vincular el tenant** con el `org_id` del Core (paso 3 lo deja en
+   `organizations.id`). Fuera de banda, con rol BYPASSRLS:
+   ```bash
+   # Listar tenants y su vínculo:
+   DATABASE_URL_SUPERADMIN='postgres://...' ./scripts/sso-link-tenant.sh --check
+   # Vincular (por id o por domain del tenant):
+   DATABASE_URL_SUPERADMIN='postgres://...' ./scripts/sso-link-tenant.sh clinica-salud-vital org_xxxxx
+   ```
+
+   Obtener el `org_id` del Core (SQLite; `CORE_DB_PATH` = `./data/core/core.sqlite`):
+   ```bash
+   # Por correo del cliente:
+   sqlite3 ./data/core/core.sqlite \
+     "SELECT o.id, o.slug, o.name
+        FROM organizations o
+        JOIN memberships m ON m.organization_id = o.id
+        JOIN users u ON u.id = m.user_id
+       WHERE lower(u.email) = lower('cliente@correo.cl');"
+
+   # O por suscripción activa al producto vitaria:
+   sqlite3 ./data/core/core.sqlite \
+     "SELECT s.organization_id, o.slug, s.status
+        FROM subscriptions s
+        JOIN organizations o ON o.id = s.organization_id
+        JOIN products p ON p.id = s.product_id
+       WHERE p.slug = 'vitaria'
+         AND s.status IN ('active','pending','past_due');"
+   ```
+
+Tras el paso 5, el primer ingreso crea/enlaza la fila en `users` (por `sso_sub` o
+por email dentro del tenant) — sin intervención manual. Si la org aún no está
+vinculada, el login se rechaza con `TenantNoVinculadoError` (ver §5).
+
 
