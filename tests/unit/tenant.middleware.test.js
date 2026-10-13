@@ -101,6 +101,31 @@ describe('tenant.middleware', () => {
     expect(next).toHaveBeenCalledWith(expect.objectContaining({ message: 'Tenant not found or inactive' }));
   });
 
+  it('rejects an unknown tenant even on a public path (no orphan rows)', async () => {
+    const { tenantMiddleware } = await import('../../src/middlewares/tenant.middleware.js');
+    const req = { headers: { 'x-tenant-id': 'evil-tenant' }, path: '/api/auth/register' };
+    const res = { setHeader: vi.fn() };
+    const next = vi.fn();
+
+    await tenantMiddleware(req, res, next);
+
+    expect(next).toHaveBeenCalledWith(expect.objectContaining({ message: 'Tenant not found or inactive' }));
+    expect(req.tenant_id).toBeUndefined();
+  });
+
+  it('accepts an existing tenant on a public path', async () => {
+    tenantService.register({ id: 'real-tenant', name: 'Real', locale: 'es', timezone: 'UTC', config: {}, active: true });
+    const { tenantMiddleware } = await import('../../src/middlewares/tenant.middleware.js');
+    const req = { headers: { 'x-tenant-id': 'real-tenant' }, path: '/api/guest/booking' };
+    const res = { setHeader: vi.fn() };
+    const next = vi.fn();
+
+    await tenantMiddleware(req, res, next);
+
+    expect(req.tenant_id).toBe('real-tenant');
+    expect(next).toHaveBeenCalledWith();
+  });
+
   it('uses default tenant when no X-Tenant-Id header in non-production', async () => {
     delete process.env.NODE_ENV;
     const { tenantMiddleware } = await import('../../src/middlewares/tenant.middleware.js');

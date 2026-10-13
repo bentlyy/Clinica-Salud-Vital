@@ -1,5 +1,6 @@
 import { pool } from '../shared/db.js';
 import bcrypt from 'bcrypt';
+import crypto from 'crypto';
 import { logger } from '../utils/logger.js';
 import { toError } from '../utils/errors.js';
 import { deriveSeedPassword } from './seed-credentials.js';
@@ -26,7 +27,7 @@ const getHash = async (email: string): Promise<string> => {
 };
 
 const generateRut = (): string => {
-  const body = Math.floor(1000000 + Math.random() * 9000000).toString();
+  const body = crypto.randomInt(1000000, 10000000).toString();
   let sum = 0;
   let multiplier = 2;
   for (let i = body.length - 1; i >= 0; i--) {
@@ -53,7 +54,7 @@ const addDays = (date: Date, days: number): Date => {
 };
 
 const randomInt = (min: number, max: number): number =>
-  Math.floor(Math.random() * (max - min + 1)) + min;
+  crypto.randomInt(min, max + 1);
 
 const pick = <T>(arr: T[]): T => arr[randomInt(0, arr.length - 1)];
 

@@ -118,4 +118,15 @@ describe('stripSensitiveFields', () => {
     expect(Array.isArray(result.items)).toBe(true);
     expect(result.items[0]).toEqual({ password: 'secret' });
   });
+
+  it('drops dangerous keys that could cause prototype pollution', () => {
+    const payload = JSON.parse('{"__proto__": {"polluted": true}, "constructor": {"x": 1}, "prototype": {"y": 2}, "name": "John"}');
+    const result = stripSensitiveFields(payload);
+    expect(result.name).toBe('John');
+    expect(Object.prototype.hasOwnProperty.call(result, '__proto__')).toBe(false);
+    expect(Object.prototype.hasOwnProperty.call(result, 'constructor')).toBe(false);
+    expect(Object.prototype.hasOwnProperty.call(result, 'prototype')).toBe(false);
+    // El prototipo global no debe haberse contaminado
+    expect(({}).polluted).toBeUndefined();
+  });
 });

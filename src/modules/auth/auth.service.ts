@@ -4,6 +4,7 @@ import { validateRut, cleanRut, formatRut } from '../../shared/rut.js';
 import { verifyInviteToken } from '../doctor/doctor.service.js';
 import { BadRequestError } from '../../utils/errors.js';
 import { E } from '../../utils/error-codes.js';
+import { isValidEmail } from '../../shared/validation.js';
 
 // SSO: este servicio solo cubre el alta de cuentas locales por invitación
 // (doctores, laboratorio). El login, refresh, 2FA, cambio/reset de contraseña y
@@ -38,7 +39,7 @@ const validatePassword = (password: string): void => {
 
 export const register = async ({ email, password, name, rut, phone, tenant_id, invite_token }: RegisterParams): Promise<RegisteredUser> => {
   if (!email || !password) throw new BadRequestError(E.AUTH_EMAIL_REQUIRED);
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new BadRequestError(E.AUTH_INVALID_EMAIL_FORMAT);
+  if (!isValidEmail(email)) throw new BadRequestError(E.AUTH_INVALID_EMAIL_FORMAT);
   validatePassword(password);
 
   let role: string = 'patient';

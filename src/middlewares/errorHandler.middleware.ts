@@ -5,6 +5,10 @@ import { notifyCritical } from '../shared/alerts.service.js';
 
 const isInternalError = (statusCode: number): boolean => statusCode >= 500;
 
+// No logueamos el query string: puede contener PHI o tokens (p. ej. enlaces de
+// invitación/reset). Solo se registra el path.
+const safeUrl = (url: string | undefined): string => (url ? url.split('?')[0] : '');
+
 export const errorHandler = (
   err: AppError & { stack?: string },
   req: Request,
@@ -13,16 +17,17 @@ export const errorHandler = (
 ): void => {
   const statusCode = err.statusCode || 500;
   const requestId = (req.headers?.['x-request-id'] as string | undefined) ?? undefined;
+  const url = safeUrl(req.originalUrl);
 
   if (isInternalError(statusCode)) {
-    logger.error('Unhandled error', { error: err.message, stack: err.stack, url: req.originalUrl, method: req.method, requestId });
+    logger.error('Unhandled error', { error: err.message, stack: err.stack, url, method: req.method, requestId });
     notifyCritical({
-      title: `HTTP ${statusCode} ${req.method} ${req.originalUrl}`,
+      title: `HTTP ${statusCode} ${req.method} ${url}`,
       message: err.message,
-      meta: { stack: err.stack, url: req.originalUrl, method: req.method, requestId, code: err.code },
+      meta: { stack: err.stack, url, method: req.method, requestId, code: err.code },
     });
   } else {
-    logger.warn('Client error', { error: err.message, statusCode, url: req.originalUrl, method: req.method, requestId });
+    logger.warn('Client error', { error: err.message, statusCode, url, method: req.method, requestId });
   }
 
   const isDev = process.env.NODE_ENV !== 'production';
@@ -35,6 +40,6 @@ export const errorHandler = (
 };
 
 export const notFoundHandler = (req: Request, res: Response, next: NextFunction): void => {
-  logger.warn('Route not found', { url: req.originalUrl, method: req.method });
+  logger.warn('Route not found', { url: safeUrl(req.originalUrl), method: req.method });
   next(new NotFoundError('Route not found'));
 };

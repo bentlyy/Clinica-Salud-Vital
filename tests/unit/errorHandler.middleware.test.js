@@ -122,6 +122,34 @@ describe('errorHandler', () => {
       expect.objectContaining({ error: 'Internal server error' })
     );
   });
+
+  it('does not log the query string (PHI/token leakage)', () => {
+    const err = new Error('Bad request');
+    err.statusCode = 400;
+    const req = mockReq('/api/patients?token=secret-jwt&rut=12345678-9', 'GET');
+    const res = mockRes();
+    const next = vi.fn();
+
+    errorHandler(err, req, res, next);
+
+    const meta = mockLogger.warn.mock.calls[0][1];
+    expect(meta.url).toBe('/api/patients');
+    expect(JSON.stringify(mockLogger.warn.mock.calls)).not.toContain('secret-jwt');
+  });
+
+  it('does not log the query string for server errors', () => {
+    const err = new Error('Boom');
+    err.statusCode = 500;
+    const req = mockReq('/api/bookings/confirm?token=abc.def.ghi', 'GET');
+    const res = mockRes();
+    const next = vi.fn();
+
+    errorHandler(err, req, res, next);
+
+    const meta = mockLogger.error.mock.calls[0][1];
+    expect(meta.url).toBe('/api/bookings/confirm');
+    expect(JSON.stringify(mockLogger.error.mock.calls)).not.toContain('abc.def.ghi');
+  });
 });
 
 describe('notFoundHandler', () => {
@@ -135,5 +163,16 @@ describe('notFoundHandler', () => {
     expect(next).toHaveBeenCalledWith(
       expect.objectContaining({ message: expect.stringContaining('not found'), statusCode: 404 })
     );
+  });
+
+  it('does not log the query string', () => {
+    const req = mockReq('/nonexistent?token=secret', 'GET');
+    const res = mockRes();
+    const next = vi.fn();
+
+    notFoundHandler(req, res, next);
+
+    const meta = mockLogger.warn.mock.calls[0][1];
+    expect(meta.url).toBe('/nonexistent');
   });
 });
