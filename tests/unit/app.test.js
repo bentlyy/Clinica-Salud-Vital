@@ -111,6 +111,23 @@ describe('CORS configuration', () => {
       .set('Access-Control-Request-Method', 'GET');
     expect(res.status).toBe(500);
   });
+
+  it('allows the APP_URL origin (dominio propio)', async () => {
+    vi.resetModules();
+    const prevAppUrl = process.env.APP_URL;
+    process.env.APP_URL = 'https://vitaria.amgdeveloper.cl';
+    try {
+      const { app: freshApp } = await import('../../src/app.js');
+      const res = await request(freshApp)
+        .options('/api/specialties')
+        .set('Origin', 'https://vitaria.amgdeveloper.cl')
+        .set('Access-Control-Request-Method', 'GET');
+      expect(res.headers['access-control-allow-origin']).toBe('https://vitaria.amgdeveloper.cl');
+    } finally {
+      process.env.APP_URL = prevAppUrl;
+      vi.resetModules();
+    }
+  });
 });
 
 describe('Rate limiting', () => {
