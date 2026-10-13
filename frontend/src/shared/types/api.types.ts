@@ -5,7 +5,7 @@ export interface JwtUser {
   email: string;
   name: string;
   role: UserRole;
-  tenant_id: number;
+  tenant_id: string | number;
   tenant_name: string;
   tenant_slug: string;
   currency?: string;
@@ -20,6 +20,36 @@ export interface AuthResponse {
   refresh_token?: string;
   user: JwtUser;
   requires_2fa?: boolean;
+}
+
+/** Cuenta local ligada a la organización del Core (GET /auth/inicio). */
+export interface InicioUsuario {
+  id: number;
+  email: string;
+  name: string;
+  role: UserRole;
+  tenantId: string;
+}
+
+export interface InicioOrganizacion {
+  id: string;
+  slug: string;
+  nombre: string;
+}
+
+export interface InicioHerramienta {
+  slug: string;
+  name: string;
+  url: string;
+}
+
+/** Respuesta del shell SSO: identidad + organización + herramientas. */
+export interface InicioResponse {
+  usuario: InicioUsuario;
+  organizacion: InicioOrganizacion;
+  rol: string;
+  herramienta: string;
+  herramientas: InicioHerramienta[];
 }
 
 export interface PaginatedResponse<T> {

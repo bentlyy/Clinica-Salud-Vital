@@ -9,7 +9,6 @@ const state = vi.hoisted(() => {
 
   const mockApi = vi.fn() as unknown as Record<string, unknown> & (() => unknown);
   mockApi.get = vi.fn();
-  mockApi.post = vi.fn();
   mockApi.interceptors = {
     request: { use: (fn: (config: Record<string, unknown>) => Record<string, unknown>) => requestInterceptors.push(fn) },
     response: {
@@ -21,15 +20,12 @@ const state = vi.hoisted(() => {
   };
   mockApi.defaults = {};
 
-  const mockAxiosPost = vi.fn();
-
-  return { requestInterceptors, responseInterceptors, mockApi, mockAxiosPost };
+  return { requestInterceptors, responseInterceptors, mockApi };
 });
 
 vi.mock('axios', () => ({
   default: {
     create: () => state.mockApi,
-    post: state.mockAxiosPost,
     isCancel: (error: { code?: string } | null | undefined) => error?.code === 'ERR_CANCELED',
   },
 }));
@@ -43,12 +39,7 @@ vi.mock('@/i18n/i18n', () => ({
 }));
 
 import toast from 'react-hot-toast';
-import {
-  apiClient,
-  getAccessToken,
-  setAccessToken,
-  setUnauthorizedHandler,
-} from '@/shared/services/api-client';
+import { apiClient, setUnauthorizedHandler, CORE_LOGIN_URL } from '@/shared/services/api-client';
 
 const requestInterceptor = () => state.requestInterceptors[0];
 const responseInterceptor = () => state.responseInterceptors[0];
@@ -65,26 +56,6 @@ function makeApiError(status: number, config: Record<string, unknown>, data: Rec
 describe('api-client request interceptor', () => {
   beforeEach(() => {
     localStorage.clear();
-    setAccessToken(null);
-  });
-
-  it('adds the Authorization header when a token is set', () => {
-    setAccessToken('token-abc');
-    const config = makeConfig();
-    const result = requestInterceptor()(config);
-    expect(result.headers).toMatchObject({ Authorization: 'Bearer token-abc' });
-  });
-
-  it('does not add Authorization when no token is set', () => {
-    const config = makeConfig();
-    const result = requestInterceptor()(config);
-    expect((result.headers as Record<string, string>).Authorization).toBeUndefined();
-  });
-
-  it('does not add the tenant id header (derived from the JWT on the server)', () => {
-    localStorage.setItem('tenant_id', 'tenant-9');
-    const result = requestInterceptor()(makeConfig());
-    expect((result.headers as Record<string, string>)['X-Tenant-Id']).toBeUndefined();
   });
 
   it('adds the CSRF token only for non-safe methods', () => {
@@ -104,35 +75,30 @@ describe('api-client request interceptor', () => {
     expect(postConfig.headers).toMatchObject({ 'X-CSRF-Token': 'cookie-csrf' });
     document.cookie = 'csrf_token=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';
   });
+
+  it('does not attach any Authorization header (SSO uses the cookie)', () => {
+    localStorage.setItem('access_token', 'legacy-token');
+    const result = requestInterceptor()(makeConfig());
+    expect((result.headers as Record<string, string>).Authorization).toBeUndefined();
+  });
 });
 
 describe('api-client response interceptor (success)', () => {
-  beforeEach(() => {
-    localStorage.clear();
-  });
-
-  it('does not persist the CSRF token returned by the server', () => {
-    responseInterceptor().ok({ headers: { 'x-csrf-token': 'csrf-server' } });
-    expect(localStorage.getItem('csrf_token')).toBeNull();
-  });
-
-  it('does not persist the tenant id returned by the server', () => {
-    responseInterceptor().ok({ headers: { 'x-tenant-id': 'tenant-server' } });
-    expect(localStorage.getItem('tenant_id')).toBeNull();
-  });
-
   it('passes the response through unchanged', () => {
     const response = { data: { ok: true }, headers: {} };
     expect(responseInterceptor().ok(response)).toBe(response);
+  });
+
+  it('does not persist server-issued headers in storage', () => {
+    localStorage.clear();
+    responseInterceptor().ok({ headers: { 'x-tenant-id': 'tenant-server' } });
+    expect(localStorage.getItem('tenant_id')).toBeNull();
   });
 });
 
 describe('api-client response interceptor (errors)', () => {
   beforeEach(() => {
-    setAccessToken(null);
     setUnauthorizedHandler(null);
-    state.mockApi.mockClear();
-    state.mockAxiosPost.mockReset();
     toastError().mockClear();
     localStorage.clear();
   });
@@ -155,17 +121,28 @@ describe('api-client response interceptor (errors)', () => {
     expect(toastError()).toHaveBeenCalledWith('errors:badRequest');
   });
 
-  it('shows a session-expired toast on 401 for a retried request', async () => {
-    const error = makeApiError(401, makeConfig({ _retry: true }));
+  it('redirects to the Core login and warns once on 401', async () => {
+    const onUnauthorized = vi.fn();
+    setUnauthorizedHandler(onUnauthorized);
+    const error = makeApiError(401, makeConfig());
     await expect(responseInterceptor().err(error)).rejects.toBe(error);
+    expect(onUnauthorized).toHaveBeenCalledTimes(1);
     expect(toastError()).toHaveBeenCalledWith('errors:sessionExpired');
   });
 
-  it('does not show a toast for failed refresh calls', async () => {
-    const error = makeApiError(401, makeConfig({ url: '/api/auth/refresh' }));
-    await expect(responseInterceptor().err(error)).rejects.toBe(error);
-    expect(toastError()).not.toHaveBeenCalled();
-    expect(state.mockAxiosPost).not.toHaveBeenCalled();
+  it('does not double-fire the unauthorized handler for a burst of 401s', async () => {
+    const onUnauthorized = vi.fn();
+    setUnauthorizedHandler(onUnauthorized);
+    const flush = async () => {
+      try {
+        await responseInterceptor().err(makeApiError(401, makeConfig()));
+      } catch {
+        // expected — the interceptor rejects the original error
+      }
+    };
+    await Promise.all([flush(), flush()]);
+    expect(onUnauthorized).toHaveBeenCalledTimes(1);
+    expect(toastError().mock.calls.filter((c) => c[0] === 'errors:sessionExpired')).toHaveLength(1);
   });
 
   it('shows an access-denied toast on 403', async () => {
@@ -204,73 +181,8 @@ describe('api-client response interceptor (errors)', () => {
     expect(toastError()).toHaveBeenCalledWith('errors:networkError');
   });
 
-  it('refreshes the session on 401 and retries the original request', async () => {
-    setAccessToken('expired-token');
-    state.mockAxiosPost.mockResolvedValue({ data: { access_token: 'new-token', user: {} } });
-
-    const originalRequest = { url: '/bookings', headers: {}, _retry: false } as Record<string, unknown>;
-    const error = { response: { status: 401 }, config: originalRequest };
-
-    await responseInterceptor().err(error);
-
-    expect(state.mockAxiosPost).toHaveBeenCalledWith(
-      '/api/auth/refresh',
-      {},
-      expect.objectContaining({ withCredentials: true }),
-    );
-    expect(originalRequest.headers).toMatchObject({ Authorization: 'Bearer new-token' });
-    expect(state.mockApi).toHaveBeenCalledWith(originalRequest);
-    expect(getAccessToken()).toBe('new-token');
-  });
-
-  it('calls the unauthorized handler and clears the token when refresh fails', async () => {
-    const onUnauthorized = vi.fn();
-    setUnauthorizedHandler(onUnauthorized);
-    state.mockAxiosPost.mockRejectedValue(new Error('refresh failed'));
-
-    const originalRequest = { url: '/bookings', headers: {} } as Record<string, unknown>;
-    const error = { response: { status: 401 }, config: originalRequest };
-
-    await expect(responseInterceptor().err(error)).rejects.toBe(error);
-    expect(onUnauthorized).toHaveBeenCalledTimes(1);
-    expect(getAccessToken()).toBeNull();
-  });
-
-  it('does not retry a request that already retried once', async () => {
-    const originalRequest = { url: '/bookings', headers: {}, _retry: true } as Record<string, unknown>;
-    const error = { response: { status: 401 }, config: originalRequest };
-
-    await expect(responseInterceptor().err(error)).rejects.toBe(error);
-    expect(state.mockAxiosPost).not.toHaveBeenCalled();
-  });
-
-  it('calls the unauthorized handler on a post-retry 401', async () => {
-    const onUnauthorized = vi.fn();
-    setUnauthorizedHandler(onUnauthorized);
-    setAccessToken('tok');
-    const error = makeApiError(401, makeConfig({ _retry: true }));
-    await expect(responseInterceptor().err(error)).rejects.toBe(error);
-    expect(onUnauthorized).toHaveBeenCalledTimes(1);
-    expect(toastError()).toHaveBeenCalledWith('errors:sessionExpired');
-  });
-
-  it('does not double-fire the unauthorized handler for a burst of post-retry 401s', async () => {
-    const onUnauthorized = vi.fn();
-    setUnauthorizedHandler(onUnauthorized);
-    setAccessToken('tok');
-    const flushPending = async () => {
-      try {
-        await responseInterceptor().err(makeApiError(401, makeConfig({ _retry: true })));
-      } catch {
-        // expected — the interceptor rejects the original error
-      }
-    };
-    await Promise.all([flushPending(), flushPending()]);
-    expect(onUnauthorized).toHaveBeenCalledTimes(1);
-    expect(toastError().mock.calls.filter((c) => c[0] === 'errors:sessionExpired')).toHaveLength(1);
-  });
-
-  it('exports the apiClient instance', () => {
+  it('exports the apiClient instance and the Core login URL', () => {
     expect(apiClient).toBe(state.mockApi);
+    expect(CORE_LOGIN_URL).toBe('/api/auth/login');
   });
 });

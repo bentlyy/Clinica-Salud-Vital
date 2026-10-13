@@ -1,281 +1,62 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-  Box,
-  Paper,
-  Typography,
-  TextField,
-  Button,
-  Alert,
-  InputAdornment,
-  IconButton,
-  CircularProgress,
-} from '@mui/material';
-import { useTheme } from '@mui/material/styles';
-import Visibility from '@mui/icons-material/Visibility';
-import VisibilityOff from '@mui/icons-material/VisibilityOff';
-import Email from '@mui/icons-material/Email';
-import Lock from '@mui/icons-material/Lock';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { useTranslation } from 'react-i18next';
+import { Box, Card, CardContent, Typography, CircularProgress, Link } from '@mui/material';
+import LocalHospital from '@mui/icons-material/LocalHospital';
 import { useAuth } from '@/shared/providers/AuthProvider';
-import { DEMO_EMAIL, DEMO_PASSWORD, DEMO_TENANT_ID } from '@/shared/config/demo';
+import { getRedirectPath } from '@/shared/utils/role.utils';
 
-type LoginForm = z.infer<ReturnType<typeof createLoginSchema>>;
-
-function createLoginSchema(t: (key: string) => string) {
-  return z.object({
-    email: z.string().email(t('email_invalid')),
-    password: z.string().min(6, t('password_min_length')),
-  });
-}
-
+/**
+ * La autenticación la gestiona el Core (SSO). Esta página ya no pide
+ * credenciales: redirige al login central y, si la sesión ya existe, entra
+ * directo al panel correspondiente al rol.
+ */
 export default function LoginPage() {
-  const theme = useTheme();
-  const { t } = useTranslation('login');
-  const { login } = useAuth();
+  const { login, user, isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
-  const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const loginSchema = useMemo(() => createLoginSchema(t), [t]);
-
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<LoginForm>({
-    resolver: zodResolver(loginSchema),
-  });
-
-  const doLogin = useCallback(
-    async (email: string, password: string, tenant_id?: string) => {
-      setError(null);
-      setIsSubmitting(true);
-      try {
-        const response = await login(email, password, undefined, undefined, tenant_id);
-        if (response.requires_2fa) {
-          navigate('/2fa');
-        } else {
-          navigate('/dashboard');
-        }
-      } catch (err: unknown) {
-        const apiErr = err as { response?: { data?: { error?: string } } };
-        setError(apiErr.response?.data?.error || t('login_error'));
-      } finally {
-        setIsSubmitting(false);
-      }
-    },
-    [login, navigate, t]
-  );
-
-  const onSubmit = async (data: LoginForm) => {
-    await doLogin(data.email, data.password);
-  };
-
-  const onDemoLogin = async () => {
-    await doLogin(DEMO_EMAIL, DEMO_PASSWORD, DEMO_TENANT_ID);
-  };
+  useEffect(() => {
+    if (isLoading) return;
+    if (isAuthenticated && user) {
+      navigate(getRedirectPath(user.role), { replace: true });
+      return;
+    }
+    login();
+  }, [isLoading, isAuthenticated, user, login, navigate]);
 
   return (
     <Box
-      sx={{
-        minHeight: '100vh',
-        display: 'flex',
-      }}
+      minHeight="100vh"
+      display="flex"
+      alignItems="center"
+      justifyContent="center"
+      bgcolor="background.default"
+      p={2}
     >
-      <Box
-        sx={{
-          flex: 1,
-          display: { xs: 'none', md: 'flex' },
-          backgroundImage: 'url(/login.jpg)',
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backgroundRepeat: 'no-repeat',
-          backgroundColor: theme.palette.primary.dark,
-        }}
-      />
+      <Card sx={{ width: 420, maxWidth: '90vw' }}>
+        <CardContent sx={{ p: 4, textAlign: 'center' }}>
+          <LocalHospital sx={{ fontSize: 48, color: 'primary.main', mb: 1 }} />
+          <Typography variant="h5" fontWeight={700} color="primary.main">
+            Vitaria
+          </Typography>
+          <Typography variant="body2" color="text.secondary" gutterBottom>
+            Plataforma de gestión para clínicas
+          </Typography>
 
-      <Box
-        sx={{
-          flex: 1,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          backgroundColor: theme.palette.custom.surface.muted,
-          p: 2,
-        }}
-      >
-        <Paper
-          elevation={0}
-          sx={{
-            width: '100%',
-            maxWidth: 420,
-            p: 4,
-            borderRadius: '16px',
-            border: `1px solid ${theme.palette.divider}`,
-          }}
-        >
-          <Box sx={{ textAlign: 'center', mb: 4 }}>
-            <Box
-              sx={{
-                width: 48,
-                height: 48,
-                borderRadius: '12px',
-                background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.main} 100%)`,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: theme.palette.background.paper,
-                fontWeight: 700,
-                fontSize: '1.25rem',
-                mx: 'auto',
-                mb: 2,
-              }}
-            >
-              V
-            </Box>
-            <Typography variant="h4" component="h1" sx={{ fontWeight: 700, color: theme.palette.text.primary }}>
-              {t('title')}
-            </Typography>
-            <Typography variant="body2" sx={{ color: theme.palette.text.secondary, mt: 0.5 }}>
-              {t('subtitle')}
+          <Box display="flex" flexDirection="column" alignItems="center" gap={2} py={3}>
+            <CircularProgress />
+            <Typography variant="body2" color="text.secondary">
+              Redirigiendo al acceso central…
             </Typography>
           </Box>
 
-          {error && (
-            <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }}>
-              {error}
-            </Alert>
-          )}
-
-          <Box component="form" onSubmit={handleSubmit(onSubmit)} noValidate>
-            <TextField
-              {...register('email')}
-              fullWidth
-              label={t('email_label')}
-              type="email"
-              error={!!errors.email}
-              helperText={errors.email?.message}
-              slotProps={{
-                input: {
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <Email sx={{ color: theme.palette.text.secondary, fontSize: 20 }} />
-                    </InputAdornment>
-                  ),
-                },
-              }}
-              sx={{ mb: 2 }}
-            />
-
-            <TextField
-              {...register('password')}
-              fullWidth
-              label={t('password_label')}
-              type={showPassword ? 'text' : 'password'}
-              error={!!errors.password}
-              helperText={errors.password?.message}
-              slotProps={{
-                input: {
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <Lock sx={{ color: theme.palette.text.secondary, fontSize: 20 }} />
-                    </InputAdornment>
-                  ),
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton
-                        onClick={() => setShowPassword(!showPassword)}
-                        edge="end"
-                        size="small"
-                        aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-                      >
-                        {showPassword ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                },
-              }}
-              sx={{ mb: 3 }}
-            />
-
-            <Button
-              type="submit"
-              fullWidth
-              variant="contained"
-              size="large"
-              disabled={isSubmitting}
-              sx={{
-                py: 1.5,
-                fontSize: '0.9375rem',
-                fontWeight: 600,
-                background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
-                '&:hover': {
-                  background: `linear-gradient(135deg, ${theme.palette.primary.dark} 0%, ${theme.palette.custom.brand.darker} 100%)`,
-                },
-              }}
-            >
-              {isSubmitting ? <CircularProgress size={24} color="inherit" /> : t('login_button')}
-            </Button>
-          </Box>
-
-          <Box
-            sx={{
-              mt: 3,
-              p: 2,
-              borderRadius: '12px',
-              border: `1px dashed ${theme.palette.primary.main}`,
-              backgroundColor: theme.palette.custom.surface.muted,
-            }}
-          >
-            <Typography variant="subtitle2" sx={{ fontWeight: 700, color: theme.palette.text.primary, mb: 0.5 }}>
-              {t('demo_title')}
-            </Typography>
-            <Typography variant="body2" sx={{ color: theme.palette.text.secondary, mb: 1 }}>
-              {t('demo_body')}
-            </Typography>
-            <Typography
-              variant="caption"
-              component="p"
-              sx={{
-                color: theme.palette.text.secondary,
-                fontFamily: 'monospace',
-                mb: 2,
-                backgroundColor: theme.palette.background.paper,
-                border: `1px solid ${theme.palette.divider}`,
-                borderRadius: '8px',
-                p: 1,
-              }}
-            >
-              {t('demo_credentials_label')} {DEMO_EMAIL} / {DEMO_PASSWORD}
-            </Typography>
-            <Button
-              fullWidth
-              variant="outlined"
-              color="primary"
-              size="medium"
-              onClick={onDemoLogin}
-              disabled={isSubmitting}
-              sx={{
-                py: 1,
-                fontWeight: 600,
-                borderColor: theme.palette.primary.main,
-                color: theme.palette.primary.main,
-                '&:hover': {
-                  borderColor: theme.palette.primary.dark,
-                  backgroundColor: theme.palette.action.hover,
-                },
-              }}
-            >
-              {isSubmitting ? <CircularProgress size={20} color="inherit" /> : t('demo_button')}
-            </Button>
-          </Box>
-        </Paper>
-      </Box>
+          <Typography variant="caption" color="text.secondary" display="block" mt={3}>
+            El acceso lo gestiona tu cuenta AMG.{' '}
+            <Link component="button" type="button" onClick={login} underline="hover">
+              Reintentar
+            </Link>
+          </Typography>
+        </CardContent>
+      </Card>
     </Box>
   );
 }

@@ -1,64 +1,48 @@
-import { useState } from 'react';
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Box, Paper, Typography, TextField, Button, Alert, CircularProgress } from '@mui/material';
+import { Box, Paper, Typography, CircularProgress, Link } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import { useTranslation } from 'react-i18next';
 import ShieldIcon from '@mui/icons-material/Shield';
 import { useAuth } from '@/shared/providers/AuthProvider';
+import { getRedirectPath } from '@/shared/utils/role.utils';
 
+/**
+ * El segundo factor lo gestiona el Core durante su login (SSO). Esta ruta se
+ * conserva solo como puente: si ya hay sesión entra al panel, si no, manda al
+ * login central.
+ */
 export default function TwoFAPage() {
   const theme = useTheme();
-  const { t } = useTranslation();
   const navigate = useNavigate();
-  const { login } = useAuth();
-  const [code, setCode] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const { login, user, isAuthenticated, isLoading } = useAuth();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (code.length !== 6) return;
-    setLoading(true);
-    setError('');
-    try {
-      await login('', '', code);
-      navigate('/dashboard');
-    } catch {
-      setError(t('two_fa:invalid_code', 'Código inválido. Intenta de nuevo.'));
-    } finally {
-      setLoading(false);
+  useEffect(() => {
+    if (isLoading) return;
+    if (isAuthenticated && user) {
+      navigate(getRedirectPath(user.role), { replace: true });
+      return;
     }
-  };
+    login();
+  }, [isLoading, isAuthenticated, user, login, navigate]);
 
   return (
     <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh" bgcolor="background.default">
       <Paper elevation={3} sx={{ p: 4, maxWidth: 400, textAlign: 'center', borderRadius: 2 }}>
         <ShieldIcon sx={{ fontSize: 64, color: theme.palette.primary.main, mb: 2 }} />
         <Typography variant="h5" gutterBottom fontWeight="bold">
-          {t('two_fa:title', 'Verificación en Dos Pasos')}
+          Verificación en Dos Pasos
         </Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-          {t('two_fa:description', 'Ingresa el código de 6 dígitos de tu aplicación de autenticación.')}
+          La verificación la gestiona tu cuenta central AMG.
         </Typography>
-        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-        <form onSubmit={handleSubmit}>
-          <TextField
-            fullWidth
-            value={code}
-            onChange={(e) => { setCode(e.target.value.replace(/\D/g, '').slice(0, 6)); }}
-            placeholder="000000"
-            aria-label={t('two_fa:enter_6_digit_code', 'Código de verificación de 6 dígitos')}
-            slotProps={{ htmlInput: { maxLength: 6, style: { textAlign: 'center', fontSize: '1.5rem', letterSpacing: '0.5em', fontFamily: 'monospace' } } }}
-            sx={{ mb: 3 }}
-            autoFocus
-          />
-          <Button type="submit" fullWidth variant="contained" size="large" disabled={loading || code.length !== 6}>
-            {loading ? <CircularProgress size={24} color="inherit" /> : t('two_fa:verify', 'Verificar')}
-          </Button>
-        </form>
-        <Button fullWidth sx={{ mt: 2 }} onClick={() => navigate('/')}>
-          {t('two_fa:back', 'Volver')}
-        </Button>
+        <Box display="flex" flexDirection="column" alignItems="center" gap={2}>
+          <CircularProgress />
+        </Box>
+        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 2 }}>
+          <Link component="button" type="button" onClick={login} underline="hover">
+            Reintentar
+          </Link>
+        </Typography>
       </Paper>
     </Box>
   );
