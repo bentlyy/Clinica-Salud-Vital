@@ -6,6 +6,38 @@ import { BadRequestError, NotFoundError, ForbiddenError } from '../../utils/erro
 
 const UPLOAD_ROOT = path.resolve(process.env.UPLOAD_DIR || path.join(process.cwd(), 'uploads'));
 
+// ── Filesystem safety helpers ───────────────────────────────────────
+// tenantId puede venir de la cabecera X-Tenant-Id y stored_name de la DB:
+// ambos deben validarse y todo acceso a disco debe quedar confinado a UPLOAD_ROOT.
+const TENANT_ID_RE = /^[A-Za-z0-9][A-Za-z0-9_-]{0,62}$/;
+const STORED_NAME_RE = /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/;
+
+const assertSafeTenantId = (tenantId: string): void => {
+  if (typeof tenantId !== 'string' || !TENANT_ID_RE.test(tenantId)) {
+    throw new BadRequestError('Invalid tenant identifier');
+  }
+};
+
+const assertSafeStoredName = (storedName: string): void => {
+  if (typeof storedName !== 'string' || !STORED_NAME_RE.test(storedName) || storedName.includes('..')) {
+    throw new BadRequestError('Invalid stored file name');
+  }
+};
+
+const sanitizeExtension = (ext: string): string => {
+  const cleaned = ext.replace(/[^A-Za-z0-9]/g, '').slice(0, 12);
+  return cleaned ? `.${cleaned}` : '';
+};
+
+const resolveUploadPath = (...segments: string[]): string => {
+  const target = path.resolve(UPLOAD_ROOT, ...segments);
+  const rootPrefix = UPLOAD_ROOT.endsWith(path.sep) ? UPLOAD_ROOT : UPLOAD_ROOT + path.sep;
+  if (target !== UPLOAD_ROOT && !target.startsWith(rootPrefix)) {
+    throw new BadRequestError('Invalid storage path');
+  }
+  return target;
+};
+
 // ── Ownership verification helpers ──────────────────────────────────
 // Prevents IDOR: a patient must only access their own clinical data.
 
@@ -188,12 +220,13 @@ export const uploadAttachment = async (
     throw new BadRequestError('El archivo excede el tamaño máximo permitido (10MB)');
   }
 
-  const tenantDir = path.join(UPLOAD_ROOT, tenantId);
+  assertSafeTenantId(tenantId);
+  const tenantDir = resolveUploadPath(tenantId);
   await fs.mkdir(tenantDir, { recursive: true });
 
-  const ext = path.extname(file_name || '').slice(0, 12);
+  const ext = sanitizeExtension(path.extname(file_name || ''));
   const storedName = `${crypto.randomBytes(16).toString('hex')}${ext}`;
-  await fs.writeFile(path.join(tenantDir, storedName), buffer);
+  await fs.writeFile(resolveUploadPath(tenantId, storedName), buffer);
 
   const result = await pool.query(
     `INSERT INTO attachments (tenant_id, entity_type, entity_id, original_name, stored_name, mime_type, size_bytes, uploaded_by)
@@ -243,7 +276,9 @@ export const getAttachment = async (
   const ownership = await getEntityOwnership(record.entity_type, record.entity_id, tenantId);
   assertOwnership(ownership, record.entity_type, record.entity_id, userId, userRole, userDoctorId);
 
-  const filePath = path.join(UPLOAD_ROOT, tenantId, record.stored_name);
+  assertSafeTenantId(tenantId);
+  assertSafeStoredName(record.stored_name);
+  const filePath = resolveUploadPath(tenantId, record.stored_name);
   return { record, filePath };
 };
 
@@ -270,8 +305,10 @@ export const deleteAttachment = async (
   }
 
   await pool.query('DELETE FROM attachments WHERE id = $1 AND tenant_id = $2', [id, tenantId]);
+  assertSafeTenantId(tenantId);
+  assertSafeStoredName(row.stored_name);
   try {
-    await fs.unlink(path.join(UPLOAD_ROOT, tenantId, row.stored_name));
+    await fs.unlink(resolveUploadPath(tenantId, row.stored_name));
   } catch {
     /* file may already be missing */
   }

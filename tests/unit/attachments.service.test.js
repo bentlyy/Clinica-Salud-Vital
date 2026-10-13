@@ -91,6 +91,22 @@ describe('uploadAttachment', () => {
       ['t', 'clinical_record', 4, 'file', expect.any(String), 'application/pdf', 5, 3]
     );
   });
+
+  it('rejects a path-traversal tenant id before touching the disk', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [ownershipRow] });
+    await expect(uploadAttachment(3, '../evil', validInput, 'patient')).rejects.toThrow(BadRequestError);
+    expect(mockMkdir).not.toHaveBeenCalled();
+    expect(mockWriteFile).not.toHaveBeenCalled();
+  });
+
+  it('sanitizes a malicious file extension into a safe stored name', async () => {
+    mockQuery
+      .mockResolvedValueOnce({ rows: [ownershipRow] })
+      .mockResolvedValueOnce({ rows: [recordRow] });
+    await uploadAttachment(3, 't', { ...validInput, file_name: 'report.p!d#f' }, 'patient');
+    const insertArgs = mockQuery.mock.calls[1][1];
+    expect(insertArgs[4]).toMatch(/^[a-f0-9]{32}\.[A-Za-z0-9]{1,12}$/);
+  });
 });
 
 describe('listAttachments', () => {
@@ -121,6 +137,13 @@ describe('getAttachment', () => {
     const { record, filePath } = await getAttachment(1, 't', 3, 'patient');
     expect(record.id).toBe(1);
     expect(filePath).toContain('abc123.pdf');
+  });
+
+  it('rejects a stored_name containing path traversal', async () => {
+    mockQuery
+      .mockResolvedValueOnce({ rows: [{ ...recordRow, stored_name: '../secret' }] })
+      .mockResolvedValueOnce({ rows: [ownershipRow] });
+    await expect(getAttachment(1, 't', 3, 'patient')).rejects.toThrow(BadRequestError);
   });
 });
 

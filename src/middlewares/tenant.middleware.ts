@@ -13,6 +13,8 @@ declare global {
   }
 }
 
+const TENANT_ID_RE = /^[A-Za-z0-9][A-Za-z0-9_-]{0,62}$/;
+
 const PUBLIC_PATHS = new Set([
   '/',
   '/health',
@@ -48,6 +50,12 @@ export const tenantMiddleware = async (req: Request, res: Response, next: NextFu
   const isPublicPath = PUBLIC_PATHS.has(req.path) || PUBLIC_PATH_PREFIXES.some(p => req.path.startsWith(p));
 
   const rawTenantId = userTenantId || headerTenantId;
+
+  if (rawTenantId && !TENANT_ID_RE.test(rawTenantId)) {
+    logger.warn('Request rejected: invalid tenant id format', { path: req.path, method: req.method });
+    next(new BadRequestError('Invalid X-Tenant-Id format'));
+    return;
+  }
 
   if (!rawTenantId) {
     if (process.env.NODE_ENV === 'production' && !isPublicPath) {

@@ -2,14 +2,22 @@
 
 > Cifrado, sanitización y headers de seguridad.
 
-## Cifrado de Datos PHI
+## Protección de Datos PHI
 
-Los datos clínicos sensibles (PHI) se cifran con AES-256-GCM:
+Los datos clínicos sensibles (PHI) **no se cifran a nivel de aplicación** (no
+existe cifrado de campos en `src/`). Su protección se apoya en capas:
 
-- **Clave maestra**: `PHI_MASTER_KEY` (64 caracteres hex = 32 bytes)
-- **Algoritmo**: AES-256-GCM (autenticado)
-- **Implementación**: `src/shared/crypto.service.ts`
-- **Alcance**: Contenido de registros clínicos, datos personales
+- **Aislamiento por tenant**: Row-Level Security con `ENABLE` + `FORCE` en todas
+  las tablas con PHI (`db/security.sql`, `db/migrations/033_rls_hardening.sql`).
+- **Cifrado en reposo**: cifrado del volumen/DB de PostgreSQL gestionado (fuera
+  de la aplicación).
+- **Sanitización**: `sanitize-html` sobre campos clínicos (`sanitizeTextStrict`).
+- **Auditoría**: triggers `security_audit` / `phi_audit` + cadena HMAC
+  (`AUDIT_HMAC_SECRET`, obligatoria en producción).
+- **Límite de escritura**: rate limiting específico para `/clinical-records`.
+
+> La variable `PHI_MASTER_KEY` fue retirada: se declaraba pero no tenía uso en
+> `src/`, por lo que daba una falsa sensación de cifrado en la aplicación.
 
 ## Sanitización
 
