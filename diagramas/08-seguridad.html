@@ -488,9 +488,9 @@
         <rect x="1208" y="552" width="188" height="196" rx="10" data-id="tool22" class="box-main" fill="#ffffff" stroke="#4f5d75" stroke-width="1.2" />
         <rect x="1216" y="560" width="72" height="16" rx="3" fill="rgba(79,93,117,0.10)"/>
         <text x="1252" y="572" fill="#4f5d75" font-size="7.5" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.12em">SISTEMA 15</text>
-        <text x="1224" y="602" fill="#2d3142" font-size="13" font-weight="600" font-family="'Geist', sans-serif">Cifrado PHI at-rest</text>
-        <text x="1224" y="621" fill="#4f5d75" font-size="9.5" font-family="'Geist', sans-serif">ENCRYPTION_KEY · PHI_MASTER</text>
-        <text x="1224" y="637" fill="#4f5d75" font-size="9.5" font-family="'Geist', sans-serif">cifrado de campos sensibles</text>
+        <text x="1224" y="602" fill="#2d3142" font-size="13" font-weight="600" font-family="'Geist', sans-serif">Cifrado en reposo (PHI)</text>
+        <text x="1224" y="621" fill="#4f5d75" font-size="9.5" font-family="'Geist', sans-serif">Postgres gestionado · volumen</text>
+        <text x="1224" y="637" fill="#4f5d75" font-size="9.5" font-family="'Geist', sans-serif">sin cifrado de campos en app</text>
         <text x="1224" y="668" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif">Audit chain HMAC</text>
         <text x="1224" y="686" fill="#4f5d75" font-size="9" font-family="'Geist', sans-serif">security_audit · integrity job</text>
         <text x="1224" y="720" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif">Logging</text>
@@ -787,12 +787,12 @@
       },
       tool22: {
         tag: 'SISTEMA 15 · PostgreSQL',
-        title: 'Cifrado PHI + Audit triggers',
-        chips: ['ENCRYPTION_KEY', 'PHI_MASTER_KEY', 'phi_audit'],
-        desc: 'Campos clínicos sensibles cifrados y disparadores de auditoría sobre la PHI.',
-        foot: 'Herramienta: AES en app + triggers · crypto.service.ts',
+        title: 'Auditoría PHI + Cifrado en reposo',
+        chips: ['encryption-at-rest', 'phi_audit', 'HMAC'],
+        desc: 'Disparadores de auditoría sobre la PHI y cifrado en reposo del Postgres gestionado.',
+        foot: 'Herramienta: cifrado del volumen + triggers · db/security.sql',
         wh: 'El cifrado en reposo protege los datos aunque alguien acceda físicamente al almacenamiento: sin la clave, los datos cifrados son ilegibles. Conviene cifrar especialmente la PHI (datos clínicos identificables). Los disparadores (triggers) de auditoría, por su lado, se ejecutan automáticamente dentro de la base cada vez que alguien lee o toca datos sensibles, dejando constancia.',
-        applied: 'Los campos clínicos sensibles se cifran en la aplicación con claves separadas (ENCRYPTION_KEY y PHI_MASTER_KEY). Los triggers security_audit y phi_audit registran el acceso a PHI para alimentar la cadena de auditoría.'
+        applied: 'La PHI se protege con cifrado en reposo del Postgres gestionado, RLS por tenant (FORCE), sanitización y rate limiting; NO hay cifrado de campos a nivel de aplicación. Los triggers security_audit y phi_audit registran los cambios sobre PHI para alimentar la cadena de auditoría HMAC.'
       },
       tool23: {
         tag: 'SISTEMA 16 · PostgreSQL',

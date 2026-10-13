@@ -124,4 +124,16 @@ describe('tenant.middleware', () => {
 
     expect(next).toHaveBeenCalledWith(expect.objectContaining({ message: 'Tenant not found or inactive' }));
   });
+
+  it('rejects an invalid X-Tenant-Id format (path traversal)', async () => {
+    const { tenantMiddleware } = await import('../../src/middlewares/tenant.middleware.js');
+    const req = { headers: { 'x-tenant-id': '../../etc/passwd' }, path: '/api/bookings' };
+    const res = { setHeader: vi.fn() };
+    const next = vi.fn();
+
+    await tenantMiddleware(req, res, next);
+
+    expect(next).toHaveBeenCalledWith(expect.objectContaining({ message: 'Invalid X-Tenant-Id format' }));
+    expect(req.tenant_id).toBeUndefined();
+  });
 });
