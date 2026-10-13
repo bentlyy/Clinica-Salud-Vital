@@ -115,6 +115,8 @@ describe('resolveLocalAccount', () => {
     expect(insertCall).toBeTruthy();
     // email, placeholder password, name, role, tenant_id, sso_sub
     expect(insertCall[1][0]).toBe('doc@test.com');
+    // el CHECK users_password_min_length exige >= 60 (los hashes bcrypt miden 60)
+    expect(String(insertCall[1][1]).length).toBeGreaterThanOrEqual(60);
     expect(insertCall[1][3]).toBe('admin');
     expect(insertCall[1][4]).toBe('tenant-a');
     expect(insertCall[1][5]).toBe('core-user-1');

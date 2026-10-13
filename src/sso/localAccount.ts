@@ -42,6 +42,16 @@ export class TenantNoVinculadoError extends Error {
  */
 const rolLocalPara = (rolCore: AmgRole): string => (rolCore === 'member' ? 'user' : 'admin');
 
+/**
+ * Contraseña local inutilizable para cuentas que solo entran por SSO.
+ *
+ * `users.password` es NOT NULL y la constraint `users_password_min_length`
+ * (db/security.sql) exige >= 60 caracteres porque los hashes bcrypt miden 60.
+ * Como con SSO nadie inicia sesión localmente, sembramos un valor aleatorio largo
+ * que nunca coincide con ningún hash bcrypt.
+ */
+const passwordInutilizable = (): string => `sso-${randomUUID()}-${randomUUID()}`;
+
 interface TenantRow {
   id: string;
 }
@@ -105,7 +115,7 @@ async function resolverUsuario(identity: AmgIdentity, tenantId: string): Promise
      RETURNING id, email, name, role, tenant_id`,
     [
       identity.email || `sso-${identity.userId}@vitaria.local`,
-      randomUUID(),
+      passwordInutilizable(),
       identity.name || identity.email || 'Usuario',
       rolLocalPara(identity.role),
       tenantId,
