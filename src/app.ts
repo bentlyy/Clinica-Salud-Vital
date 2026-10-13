@@ -145,11 +145,14 @@ app.get('/api/metrics', metricsHandler);
 const isProduction = process.env.NODE_ENV === 'production';
 
 const frontendUrl = process.env.FRONTEND_URL || process.env.RENDER_EXTERNAL_URL || 'http://localhost:5173';
+const stripTrailingSlash = (value: string): string => value.replace(/\/+$/, '');
 const allowedOrigins = [
   'http://localhost:5173',
   frontendUrl,
+  process.env.APP_URL,
+  process.env.PUBLIC_URL,
   process.env.RENDER_EXTERNAL_URL,
-].filter((origin): origin is string => Boolean(origin));
+].filter((origin): origin is string => Boolean(origin)).map(stripTrailingSlash);
 
 app.use(cors({
   origin: (origin, callback) => {
