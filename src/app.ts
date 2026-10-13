@@ -134,13 +134,24 @@ const livenessHandler = (_req: Request, res: Response) => {
   });
 };
 
-app.get('/health', healthHandler);
-app.get('/api/health', healthHandler);
-app.get('/health/live', livenessHandler);
-app.get('/api/health/live', livenessHandler);
+// Los endpoints de salud se registran antes del globalLimiter, por lo que no
+// quedan cubiertos por él. Les damos una cota propia, generosa, para no afectar
+// los probes de Render ni el scraping de métricas.
+const healthLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 120,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests' },
+});
 
-app.get('/metrics', metricsHandler);
-app.get('/api/metrics', metricsHandler);
+app.get('/health', healthLimiter, healthHandler);
+app.get('/api/health', healthLimiter, healthHandler);
+app.get('/health/live', healthLimiter, livenessHandler);
+app.get('/api/health/live', healthLimiter, livenessHandler);
+
+app.get('/metrics', healthLimiter, metricsHandler);
+app.get('/api/metrics', healthLimiter, metricsHandler);
 
 const isProduction = process.env.NODE_ENV === 'production';
 

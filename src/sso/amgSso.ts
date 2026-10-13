@@ -6,7 +6,6 @@ import { resolveLocalAccount } from './localAccount';
 // `@amg/auth-client` es ESM; Vitaria es CommonJS/Node 20. `require` resuelve el
 // build CJS (condición "require" del paquete) y evita arrastrar sus tipos de
 // Express 4, tipados localmente en ./amgTypes.
-// eslint-disable-next-line @typescript-eslint/no-var-requires
 const { buildLoginUrl, identity: amgIdentity, loadConfig, mountAmgAuth } = require('@amg/auth-client') as AmgAuthClient;
 
 export { buildLoginUrl };

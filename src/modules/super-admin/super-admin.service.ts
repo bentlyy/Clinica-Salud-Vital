@@ -473,7 +473,9 @@ export const getTenantHealthScores = async (tenantId?: string): Promise<Record<s
       GROUP BY t.id, t.name, t.active, t.created_at
     ),
     extended AS (
-      SELECT *,
+      SELECT
+        id, name, active, created_at, last_booking, bookings_30d, bookings_prev_30d,
+        unique_patients_30d, cancellations_30d, modules_used,
         GREATEST(0, 20 - COALESCE(EXTRACT(DAY FROM NOW() - last_booking)::int, 999)) AS score_activity,
         CASE
           WHEN COALESCE(bookings_prev_30d, 0) = 0 THEN GREATEST(0, 20 - COALESCE(EXTRACT(DAY FROM NOW() - last_booking)::int, 999) / 2)
@@ -487,7 +489,10 @@ export const getTenantHealthScores = async (tenantId?: string): Promise<Record<s
         LEAST(20, modules_used * 5) AS score_modules
       FROM tenant_activity
     )
-    SELECT *,
+    SELECT
+      id, name, active, created_at, last_booking, bookings_30d, bookings_prev_30d,
+      unique_patients_30d, cancellations_30d, modules_used,
+      score_activity, score_trend, score_patients, score_cancellation, score_modules,
       score_activity + score_trend + score_patients + score_cancellation + score_modules AS health_total
     FROM extended
     ORDER BY health_total ASC

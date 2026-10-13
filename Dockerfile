@@ -19,8 +19,10 @@ COPY package.json package-lock.json ./
 RUN npm ci --omit=dev && npm cache clean --force
 
 COPY --from=builder /app/dist/ dist/
+# La SPA se sirve desde el static site / imagen nginx de `frontend`; este
+# contenedor es sólo API. Se deja el directorio para que express.static tenga
+# una ruta válida.
 RUN mkdir -p frontend/dist
-COPY frontend/dist/ frontend/dist/ || true
 
 USER appuser
 

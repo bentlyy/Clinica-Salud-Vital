@@ -48,10 +48,15 @@ const SENSITIVE_FIELDS = [
   'guest_data', 'guest_rut', 'guest_name', 'guest_email', 'guest_phone',
 ];
 
+// Claves que nunca deben copiarse desde el payload del cliente: evitan
+// inyección de propiedades (prototype pollution) al reconstruir el objeto.
+const DANGEROUS_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+
 export const stripSensitiveFields = (body: Record<string, unknown>): Record<string, unknown> => {
   if (!body || typeof body !== 'object') return body;
   const clean: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(body)) {
+    if (DANGEROUS_KEYS.has(key)) continue;
     if (SENSITIVE_FIELDS.includes(key.toLowerCase())) {
       clean[key] = '[REDACTED]';
     } else if (typeof value === 'object' && value !== null && !Array.isArray(value)) {

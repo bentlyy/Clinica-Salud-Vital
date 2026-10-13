@@ -31,7 +31,7 @@ interface BulkAvailabilityInput {
 
 export const getAvailabilityByDoctor = async (doctor_id: number, tenantId: string): Promise<unknown[]> => {
   const result = await pool.query(
-    `SELECT * FROM doctor_availability
+    `SELECT id, doctor_id, day_of_week, start_time, end_time, tenant_id, active FROM doctor_availability
      WHERE doctor_id = $1 AND tenant_id = $2
      ORDER BY day_of_week, start_time`,
     [doctor_id, tenantId]
@@ -149,7 +149,7 @@ export const deleteAvailability = async (availability_id: number, doctor_id: num
 
 export const getExceptionsByDoctor = async (doctor_id: number, tenantId: string): Promise<unknown[]> => {
   const result = await pool.query(
-    `SELECT * FROM doctor_exceptions WHERE doctor_id = $1 AND tenant_id = $2 ORDER BY date`,
+    `SELECT id, doctor_id, date, start_time, end_time, is_full_day, tenant_id FROM doctor_exceptions WHERE doctor_id = $1 AND tenant_id = $2 ORDER BY date`,
     [doctor_id, tenantId]
   );
   return result.rows;

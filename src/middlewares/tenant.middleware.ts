@@ -80,14 +80,12 @@ export const tenantMiddleware = async (req: Request, res: Response, next: NextFu
     }
 
     if (!tenant) {
-      logger.warn('Tenant not found', { tenantId: rawTenantId });
-      if (!isPublicPath) {
-        next(new NotFoundError('Tenant not found or inactive'));
-        return;
-      }
-      req.tenant_id = rawTenantId;
-      req.locale = getLocaleFromRequest(req);
-      setDbTenantContext(req.tenant_id, next);
+      // Un tenant bien formado pero inexistente/inactivo nunca se confía, ni
+      // siquiera en rutas públicas: aceptarlo permitiría crear filas huérfanas
+      // bajo un tenant arbitrario (p. ej. en /api/auth/register o reservas de
+      // invitado). El frontend no envía X-Tenant-Id, así que rechazar es seguro.
+      logger.warn('Tenant not found', { tenantId: rawTenantId, publicPath: isPublicPath });
+      next(new NotFoundError('Tenant not found or inactive'));
       return;
     }
   }

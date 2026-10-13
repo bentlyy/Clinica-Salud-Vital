@@ -1,5 +1,6 @@
 import { pool, superAdminPool } from '../shared/db.js';
 import bcrypt from 'bcrypt';
+import crypto from 'crypto';
 import { logger } from '../utils/logger.js';
 import { deriveSeedPassword } from './seed-credentials.js';
 import { convertFromUsd } from '../shared/currencies.js';
@@ -28,7 +29,7 @@ const formatDate = (d: Date): string => {
 };
 
 const randomInt = (min: number, max: number): number =>
-  Math.floor(Math.random() * (max - min + 1)) + min;
+  crypto.randomInt(min, max + 1);
 
 const pick = <T>(arr: T[]): T => arr[randomInt(0, arr.length - 1)];
 

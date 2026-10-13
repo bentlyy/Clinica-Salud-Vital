@@ -87,7 +87,9 @@ const initSMTP = (): boolean => {
 };
 
 export const validateEmailConfig = (): void => {
-  initSendGrid() || initSMTP();
+  if (!initSendGrid()) {
+    initSMTP();
+  }
 
   if (provider === 'smtp' && transporter) {
     transporter.verify((err: Error | null) => {

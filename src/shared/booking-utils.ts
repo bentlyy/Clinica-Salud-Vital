@@ -74,7 +74,7 @@ export const checkDoctorExceptions = async (
   tenantId: string
 ): Promise<void> => {
   const exceptions = await db.query(
-    'SELECT * FROM doctor_exceptions WHERE doctor_id = $1 AND date = $2 AND tenant_id = $3',
+    'SELECT id, doctor_id, date, start_time, end_time, is_full_day, tenant_id FROM doctor_exceptions WHERE doctor_id = $1 AND date = $2 AND tenant_id = $3',
     [doctorId, date, tenantId]
   );
 

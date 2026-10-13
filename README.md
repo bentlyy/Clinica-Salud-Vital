@@ -18,8 +18,8 @@ Vitaria es una plataforma SaaS orientada a centros de salud, consultas y profesi
 [![Render](https://img.shields.io/badge/Render-46E3B7?logo=render&logoColor=white)](https://render.com/)
 [![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
 [![CI](https://img.shields.io/github/actions/workflow/status/bentlyy/Clinica-Salud-Vital/ci.yml?branch=master&label=CI&logo=githubactions)](https://github.com/bentlyy/Clinica-Salud-Vital/actions)
-[![Tests](https://img.shields.io/badge/tests-2730%20passing-2ea043)](#-testing)
-[![Coverage](https://img.shields.io/badge/coverage-~89%25-2ea043)](#-testing)
+[![Tests](https://img.shields.io/badge/tests-2748%20passing-2ea043)](#-testing)
+[![Coverage](https://img.shields.io/badge/coverage-~79%25-2ea043)](#-testing)
 
 <br>
 

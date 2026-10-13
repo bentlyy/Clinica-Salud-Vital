@@ -8,6 +8,7 @@ import { E } from '../../utils/error-codes.js';
 import { logger } from '../../utils/logger.js';
 import crypto from 'crypto';
 import { cleanRut, validateRut, formatRut } from '../../shared/rut.js';
+import { isValidEmail } from '../../shared/validation.js';
 import { ensureSpecialty } from '../specialties/specialties.service.js';
 
 const MAX_PAGE_LIMIT = 100;
@@ -64,8 +65,7 @@ export const registerDoctor = async ({ name, specialty, email, rut, phone }: Doc
   try {
     await client.query('BEGIN');
     await ensureSpecialty(specialty);
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) throw new BadRequestError(E.DOCTOR_INVALID_EMAIL);
+    if (!isValidEmail(email)) throw new BadRequestError(E.DOCTOR_INVALID_EMAIL);
 
     let formattedRut: string | null = null;
     if (rut) {
@@ -209,7 +209,7 @@ export const createDoctor = async ({ name, specialty, email, user_id }: CreateDo
 
 export const getDoctorById = async (id: number, tenantId: string): Promise<Doctor | null> => {
   const result = await readPool.query<Doctor>(
-    'SELECT * FROM doctors WHERE id = $1 AND tenant_id = $2',
+    'SELECT id, name, specialty, email, user_id, slot_duration, tenant_id FROM doctors WHERE id = $1 AND tenant_id = $2',
     [id, tenantId]
   );
 
@@ -218,7 +218,7 @@ export const getDoctorById = async (id: number, tenantId: string): Promise<Docto
 
 export const getDoctorByUserId = async (user_id: number, tenantId: string): Promise<Doctor | null> => {
   const result = await readPool.query<Doctor>(
-    'SELECT * FROM doctors WHERE user_id = $1 AND tenant_id = $2',
+    'SELECT id, name, specialty, email, user_id, slot_duration, tenant_id FROM doctors WHERE user_id = $1 AND tenant_id = $2',
     [user_id, tenantId]
   );
 
@@ -227,7 +227,7 @@ export const getDoctorByUserId = async (user_id: number, tenantId: string): Prom
 
 export const updateDoctor = async (id: number, input: { name?: string; specialty?: string }, tenantId: string): Promise<Doctor> => {
   const existing = await readPool.query<Doctor>(
-    'SELECT * FROM doctors WHERE id = $1 AND tenant_id = $2',
+    'SELECT id, name, specialty, email, user_id, slot_duration, tenant_id FROM doctors WHERE id = $1 AND tenant_id = $2',
     [id, tenantId]
   );
 
@@ -257,8 +257,7 @@ export const invitePerson = async (input: InvitePersonInput, tenantId: string): 
   let { email, name, role, specialty } = input;
 
   if (!email) throw new BadRequestError(E.DOCTOR_EMAIL_REQUIRED);
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(email)) throw new BadRequestError(E.DOCTOR_INVALID_EMAIL);
+  if (!isValidEmail(email)) throw new BadRequestError(E.DOCTOR_INVALID_EMAIL);
 
   if (role === 'doctor' && !specialty) throw new BadRequestError(E.DOCTOR_SPECIALTY_REQUIRED);
   if (role === 'lab_technician') specialty = undefined;
