@@ -1,53 +1,25 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import { AppThemeProvider } from '@/shared/providers/ThemeProvider';
 import LoginPage from '@/modules/auth/pages/LoginPage';
 
-const mockLogin = vi.hoisted(() => vi.fn());
+const auth = vi.hoisted(() => ({
+  login: vi.fn(),
+  state: { user: null as Record<string, unknown> | null, isAuthenticated: false, isLoading: false },
+}));
 const mockNavigate = vi.hoisted(() => vi.fn());
 
 vi.mock('@/shared/providers/AuthProvider', () => ({
-  useAuth: () => ({
-    login: mockLogin,
-    user: null,
-    isAuthenticated: false,
-    isLoading: false,
-    logout: vi.fn(),
-    logoutAll: vi.fn(),
-    hasPermission: vi.fn(),
-  }),
+  useAuth: () => ({ login: auth.login, ...auth.state }),
 }));
 
 vi.mock('react-router-dom', async () => {
-  const actual = await vi.importActual('react-router-dom');
+  const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom');
   return { ...actual, useNavigate: () => mockNavigate };
 });
 
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    t: (key: string) => {
-      const translations: Record<string, string> = {
-        title: 'Iniciar Sesion',
-        subtitle: 'Accede a tu panel de clinica',
-        email_label: 'Email',
-        password_label: 'Contrasena',
-        login_button: 'Iniciar Sesion',
-        email_invalid: 'Ingresa un email valido',
-        password_min_length: 'La contrasena debe tener al menos 6 caracteres',
-        login_error: 'Error al iniciar sesion',
-        demo_title: 'Quieres explorar la demo?',
-        demo_body: 'Accede con un tenant de demostracion con datos de ejemplo.',
-        demo_credentials_label: 'Credenciales demo:',
-        demo_button: 'Probar la demo',
-      };
-      return translations[key] ?? key;
-    },
-    i18n: { language: 'es' },
-  }),
-}));
-
-function renderLoginPage() {
+function renderPage() {
   return render(
     <MemoryRouter>
       <AppThemeProvider>
@@ -60,138 +32,44 @@ function renderLoginPage() {
 describe('LoginPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    auth.state = { user: null, isAuthenticated: false, isLoading: false };
   });
 
-  it('renders the login form with email, password, and submit button', () => {
-    renderLoginPage();
-    expect(screen.getByRole('heading', { name: 'Iniciar Sesion' })).toBeInTheDocument();
-    expect(screen.getByText('Accede a tu panel de clinica')).toBeInTheDocument();
-    expect(screen.getByLabelText('Email')).toBeInTheDocument();
-    expect(screen.getByLabelText('Contrasena')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /iniciar sesion/i })).toBeInTheDocument();
+  it('renders the SSO handoff screen', () => {
+    renderPage();
+    expect(screen.getByText('Vitaria')).toBeInTheDocument();
+    expect(screen.getByText(/Redirigiendo al acceso central/)).toBeInTheDocument();
   });
 
-  it('shows validation error when email is empty', async () => {
-    renderLoginPage();
-    fireEvent.click(screen.getByRole('button', { name: /iniciar sesion/i }));
+  it('redirects to the Core login when there is no session', async () => {
+    renderPage();
     await waitFor(() => {
-      expect(screen.getByText('Ingresa un email valido')).toBeInTheDocument();
+      expect(auth.login).toHaveBeenCalled();
     });
+    expect(mockNavigate).not.toHaveBeenCalled();
   });
 
-  it('shows validation error for invalid email format', async () => {
-    renderLoginPage();
-    fireEvent.input(screen.getByLabelText('Email'), { target: { value: 'notanemail' } });
-    fireEvent.click(screen.getByRole('button', { name: /iniciar sesion/i }));
+  it('enters the dashboard when an admin session already exists', async () => {
+    auth.state = { user: { role: 'admin' }, isAuthenticated: true, isLoading: false };
+    renderPage();
     await waitFor(() => {
-      expect(screen.getByText('Ingresa un email valido')).toBeInTheDocument();
+      expect(mockNavigate).toHaveBeenCalledWith('/dashboard', { replace: true });
     });
+    expect(auth.login).not.toHaveBeenCalled();
   });
 
-  it('shows validation error when password is too short', async () => {
-    renderLoginPage();
-    fireEvent.input(screen.getByLabelText('Email'), { target: { value: 'test@example.com' } });
-    fireEvent.input(screen.getByLabelText('Contrasena'), { target: { value: '123' } });
-    fireEvent.click(screen.getByRole('button', { name: /iniciar sesion/i }));
+  it('enters the SaaS console for a superadmin session', async () => {
+    auth.state = { user: { role: 'superadmin' }, isAuthenticated: true, isLoading: false };
+    renderPage();
     await waitFor(() => {
-      expect(screen.getByText('La contrasena debe tener al menos 6 caracteres')).toBeInTheDocument();
+      expect(mockNavigate).toHaveBeenCalledWith('/saas', { replace: true });
     });
   });
 
-  it('calls login with email and password on valid submission', async () => {
-    mockLogin.mockResolvedValue({ requires_2fa: false });
-    renderLoginPage();
-    fireEvent.input(screen.getByLabelText('Email'), { target: { value: 'admin@clinic.com' } });
-    fireEvent.input(screen.getByLabelText('Contrasena'), { target: { value: 'password123' } });
-    fireEvent.click(screen.getByRole('button', { name: /iniciar sesion/i }));
-    await waitFor(() => {
-      expect(mockLogin).toHaveBeenCalledWith('admin@clinic.com', 'password123', undefined, undefined, undefined);
-    });
-  });
-
-  it('navigates to /dashboard after successful login', async () => {
-    mockLogin.mockResolvedValue({ requires_2fa: false });
-    renderLoginPage();
-    fireEvent.input(screen.getByLabelText('Email'), { target: { value: 'admin@clinic.com' } });
-    fireEvent.input(screen.getByLabelText('Contrasena'), { target: { value: 'password123' } });
-    fireEvent.click(screen.getByRole('button', { name: /iniciar sesion/i }));
-    await waitFor(() => {
-      expect(mockNavigate).toHaveBeenCalledWith('/dashboard');
-    });
-  });
-
-  it('navigates to /2fa when login requires two-factor auth', async () => {
-    mockLogin.mockResolvedValue({ requires_2fa: true });
-    renderLoginPage();
-    fireEvent.input(screen.getByLabelText('Email'), { target: { value: 'admin@clinic.com' } });
-    fireEvent.input(screen.getByLabelText('Contrasena'), { target: { value: 'password123' } });
-    fireEvent.click(screen.getByRole('button', { name: /iniciar sesion/i }));
-    await waitFor(() => {
-      expect(mockNavigate).toHaveBeenCalledWith('/2fa');
-    });
-  });
-
-  it('displays error message when login fails with API error', async () => {
-    mockLogin.mockRejectedValue({
-      response: { data: { error: 'Credenciales incorrectas' } },
-    });
-    renderLoginPage();
-    fireEvent.input(screen.getByLabelText('Email'), { target: { value: 'admin@clinic.com' } });
-    fireEvent.input(screen.getByLabelText('Contrasena'), { target: { value: 'password123' } });
-    fireEvent.click(screen.getByRole('button', { name: /iniciar sesion/i }));
-    await waitFor(() => {
-      expect(screen.getByText('Credenciales incorrectas')).toBeInTheDocument();
-    });
-  });
-
-  it('displays generic error message when error has no response data', async () => {
-    mockLogin.mockRejectedValue(new Error('Network error'));
-    renderLoginPage();
-    fireEvent.input(screen.getByLabelText('Email'), { target: { value: 'admin@clinic.com' } });
-    fireEvent.input(screen.getByLabelText('Contrasena'), { target: { value: 'password123' } });
-    fireEvent.click(screen.getByRole('button', { name: /iniciar sesion/i }));
-    await waitFor(() => {
-      expect(screen.getByText('Error al iniciar sesion')).toBeInTheDocument();
-    });
-  });
-
-  it('disables the submit button while submitting', async () => {
-    mockLogin.mockImplementation(() => new Promise(() => {}));
-    const { container } = renderLoginPage();
-    fireEvent.input(screen.getByLabelText('Email'), { target: { value: 'admin@clinic.com' } });
-    fireEvent.input(screen.getByLabelText('Contrasena'), { target: { value: 'password123' } });
-    fireEvent.click(screen.getByRole('button', { name: /iniciar sesion/i }));
-    await waitFor(() => {
-      const submitButton = container.querySelector('button[type="submit"]');
-      expect(submitButton).toBeDisabled();
-    });
-  });
-
-  it('toggles password visibility when eye icon is clicked', () => {
-    renderLoginPage();
-    const passwordInput = screen.getByLabelText('Contrasena');
-    expect(passwordInput).toHaveAttribute('type', 'password');
-    const toggleButton = screen.getByRole('button', { name: /mostrar contraseña/i });
-    fireEvent.click(toggleButton);
-    expect(screen.getByLabelText('Contrasena')).toHaveAttribute('type', 'text');
-  });
-
-  it('renders the demo login block with credentials', () => {
-    renderLoginPage();
-    expect(screen.getByText('Quieres explorar la demo?')).toBeInTheDocument();
-    expect(screen.getByText(/admin@demo\.clinic\.com/)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Probar la demo' })).toBeInTheDocument();
-  });
-
-  it('logs in with demo credentials and tenant_id on demo button click', async () => {
-    mockLogin.mockResolvedValue({ requires_2fa: false });
-    renderLoginPage();
-    fireEvent.click(screen.getByRole('button', { name: 'Probar la demo' }));
-    await waitFor(() => {
-      expect(mockLogin).toHaveBeenCalledWith('admin@demo.clinic.com', 'DemoVitaria2026!', undefined, undefined, 'clinica-demo');
-    });
-    await waitFor(() => {
-      expect(mockNavigate).toHaveBeenCalledWith('/dashboard');
-    });
+  it('waits while the session is still loading', () => {
+    auth.state = { user: null, isAuthenticated: false, isLoading: true };
+    renderPage();
+    expect(auth.login).not.toHaveBeenCalled();
+    expect(mockNavigate).not.toHaveBeenCalled();
   });
 });

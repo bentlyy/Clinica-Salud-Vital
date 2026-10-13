@@ -122,27 +122,16 @@ describe('LandingPage', () => {
     expect(document.querySelector('.lp-faq-item.lp-faq-open')).toBeNull();
   });
 
-  it('opens the login modal when clicking the hero CTA', () => {
+  it('sends the visitor to the Core login when clicking the hero CTA', () => {
     renderPage();
-    expect(screen.queryByText('Inicia sesión en tu cuenta')).not.toBeInTheDocument();
     fireEvent.click(screen.getByText('Crear cuenta gratis'));
-    expect(screen.getByText('Inicia sesión en tu cuenta')).toBeInTheDocument();
-    expect(screen.getByText('Correo electrónico')).toBeInTheDocument();
-    expect(screen.getByText('Contraseña')).toBeInTheDocument();
+    expect(mockLogin).toHaveBeenCalled();
   });
 
-  it('closes the login modal when clicking the close button', () => {
+  it('sends the visitor to the Core login from the nav button', () => {
     renderPage();
-    fireEvent.click(screen.getByText('Crear cuenta gratis'));
-    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
-    expect(screen.queryByText('Inicia sesión en tu cuenta')).not.toBeInTheDocument();
-  });
-
-  it('navigates to /booking when the guest booking button is clicked', () => {
-    renderPage();
-    fireEvent.click(screen.getByText('Crear cuenta gratis'));
-    fireEvent.click(screen.getByText('Reservar como invitado'));
-    expect(mockNavigate).toHaveBeenCalledWith('/booking');
+    fireEvent.click(screen.getByText('Iniciar sesión'));
+    expect(mockLogin).toHaveBeenCalled();
   });
 
   it('renders the problem section with 4 pain cards', () => {

@@ -1,14 +1,12 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback } from 'react';
 import type { FormEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { useTranslation, Trans } from 'react-i18next';
 import { LanguageSwitcher } from '@/shared/components/LanguageSwitcher';
-import ReCAPTCHA from 'react-google-recaptcha';
 import { useAuth } from '@/shared/providers/AuthProvider';
-import { DEMO_EMAIL, DEMO_PASSWORD, DEMO_TENANT_ID } from '@/shared/config/demo';
 import { getRedirectPath } from '@/shared/utils/role.utils';
-import { isTestCaptcha, RECAPTCHA_SITE_KEY } from '@/shared/utils/captcha';
 import { useSelectedCountry, useExchangeRates } from '@/shared/hooks/usePricing';
+import { LoadingState } from '@/shared/components/ui/LoadingState';
 import {
   SUPPORTED_COUNTRIES,
   getCountryByCode,
@@ -17,8 +15,6 @@ import {
   getCurrencySymbol,
 } from '@/shared/utils/pricing';
 import './LandingPage.css';
-
-const hasCaptcha = Boolean(RECAPTCHA_SITE_KEY);
 
 /* ——— Data arrays use translation keys as values ——— */
 
@@ -320,14 +316,17 @@ function DemoRequestSection() {
 function LandingPage() {
   const { t } = useTranslation('landing');
   const navigate = useNavigate();
-  const [loginOpen, setLoginOpen] = useState(false);
+  const { login, user, isAuthenticated, isLoading } = useAuth();
   const [openFaq, setOpenFaq] = useState<number | null>(null);
-  const openLogin = useCallback(() => setLoginOpen(true), []);
-  const closeLogin = useCallback(() => setLoginOpen(false), []);
   const [countryCode, setCountryCode] = useSelectedCountry();
   const { rates } = useExchangeRates();
   const pricingCountry = getCountryByCode(countryCode);
   const pricingCurrency = pricingCountry.currency;
+
+  const openLogin = useCallback(() => login(), [login]);
+
+  if (isLoading) return <LoadingState />;
+  if (isAuthenticated && user) return <Navigate to={getRedirectPath(user.role)} replace />;
 
   return (
     <div>
@@ -715,282 +714,6 @@ function LandingPage() {
           <span className="lp-footer-contact">{t('footerContactAddress')} · <a href={`mailto:${t('footerContactEmail')}`} className="lp-footer-mail">{t('footerContactEmail')}</a></span>
         </div>
       </footer>
-
-      {/* ---------- LOGIN MODAL ---------- */}
-      {loginOpen && <LoginModal onClose={closeLogin} />}
-    </div>
-  );
-}
-
-/* ==========================================================================
-   Login Modal — Option 7 Teal Aqua
-   ========================================================================== */
-
-function LoginModal({ onClose }: { onClose: () => void }) {
-  const { t } = useTranslation('landing');
-  const { login } = useAuth();
-  const navigate = useNavigate();
-  const recaptchaRef = useRef<ReCAPTCHA | null>(null);
-
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-
-  const [step, setStep] = useState<'login' | '2fa'>('login');
-  const [totp, setTotp] = useState('');
-  const [pendingEmail, setPendingEmail] = useState('');
-  const [pendingPassword, setPendingPassword] = useState('');
-
-  const handleSubmit = useCallback(async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (loading) return;
-
-    if (step === '2fa') {
-      if (totp.length < 6) { setError(t('loginError2faCode')); return; }
-      const captcha_token = hasCaptcha ? recaptchaRef.current?.getValue() ?? undefined : undefined;
-      if (hasCaptcha && !captcha_token) { setError(t('loginErrorCaptcha')); return; }
-      setLoading(true);
-      setError('');
-      try {
-        const res = await login(pendingEmail, pendingPassword, totp, captcha_token);
-        if (res.requires_2fa) { setError(t('loginError2faIncorrect')); setLoading(false); return; }
-        navigate(getRedirectPath(res.user.role), { replace: true });
-      } catch (err: unknown) {
-        const axiosErr = err as { response?: { data?: { error?: string } } };
-        const msg = axiosErr?.response?.data?.error || t('loginErrorInvalid');
-        setError(msg);
-      } finally {
-        setLoading(false);
-      }
-      return;
-    }
-
-    if (!email.trim() || !password.trim()) { setError(t('loginErrorCredentials')); return; }
-    const captcha_token = hasCaptcha ? recaptchaRef.current?.getValue() ?? undefined : undefined;
-    if (hasCaptcha && !captcha_token) { setError(t('loginErrorCaptcha')); return; }
-    setLoading(true);
-    setError('');
-    try {
-      const res = await login(email, password, undefined, captcha_token);
-      if (res.requires_2fa) {
-        setPendingEmail(email);
-        setPendingPassword(password);
-        setStep('2fa');
-        setLoading(false);
-        return;
-      }
-      navigate(getRedirectPath(res.user.role), { replace: true });
-    } catch (err: unknown) {
-      const axiosErr = err as { response?: { data?: { error?: string } } };
-      const msg = axiosErr?.response?.data?.error || t('loginErrorDefault');
-      setError(msg);
-      recaptchaRef.current?.reset();
-    } finally {
-      setLoading(false);
-    }
-  }, [email, password, loading, step, totp, pendingEmail, pendingPassword, login, navigate, t]);
-
-  const handleGuest = useCallback(() => {
-    navigate('/booking');
-  }, [navigate]);
-
-  const handleGuestDashboard = useCallback(() => {
-    navigate('/booking', { replace: true });
-  }, [navigate]);
-
-  const handleDemo = useCallback(async () => {
-    if (loading) return;
-    setError('');
-    setLoading(true);
-    try {
-      const res = await login(DEMO_EMAIL, DEMO_PASSWORD, undefined, undefined, DEMO_TENANT_ID);
-      if (res.requires_2fa) {
-        setPendingEmail(DEMO_EMAIL);
-        setPendingPassword(DEMO_PASSWORD);
-        setStep('2fa');
-        setLoading(false);
-        return;
-      }
-      navigate(getRedirectPath(res.user.role), { replace: true });
-    } catch (err: unknown) {
-      const axiosErr = err as { response?: { data?: { error?: string } } };
-      const msg = axiosErr?.response?.data?.error || t('loginErrorDefault');
-      setError(msg);
-      recaptchaRef.current?.reset();
-    } finally {
-      setLoading(false);
-    }
-  }, [loading, login, navigate, t]);
-
-  return (
-    <div className="lm-overlay" onClick={onClose} role="dialog" aria-modal="true" aria-labelledby="login-modal-title">
-      <div className="lm-card" onClick={(e) => e.stopPropagation()}>
-        {/* Left visual panel */}
-        <div className="lm-visual">
-          <div className="lm-visual-content">
-            <div className="lm-visual-icon">🩺</div>
-            <h2 className="lm-visual-title">{t('loginVisualTitle')}</h2>
-            <p className="lm-visual-sub">
-              {t('loginVisualSub')}
-            </p>
-          </div>
-
-          <div className="lm-visual-footer">
-            <div className="lm-demo">
-              <div className="lm-demo-title">{t('loginDemoTitle')}</div>
-              <div className="lm-demo-creds">{DEMO_EMAIL} / {DEMO_PASSWORD}</div>
-              <button className="lm-demo-btn" type="button" onClick={handleDemo} disabled={loading}>
-                {loading && <span className="lm-spinner" />}
-                {t('loginDemoButton')}
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Right form panel */}
-        <div className="lm-form-panel">
-          <button className="lm-close" onClick={onClose} aria-label={t('common:close', 'Close')}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
-          </button>
-
-          <div className="lm-brand">
-            <span className="lm-brand-icon">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v20M2 12h20"/></svg>
-            </span>
-            <span className="lm-brand-text">{t('loginBrandText')}</span>
-          </div>
-
-          {step === '2fa' ? (
-            <>
-              <h1 className="lm-title" id="login-modal-title">{t('login2faTitle')}</h1>
-              <p className="lm-subtitle">{t('login2faSubtitle')}</p>
-              <button className="lm-back" onClick={() => { setStep('login'); setTotp(''); setError(''); }}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-                {t('loginBackToLogin')}
-              </button>
-            </>
-          ) : (
-            <>
-              <h1 className="lm-title" id="login-modal-title">{t('loginTitle')}</h1>
-              <p className="lm-subtitle">{t('loginSubtitle')}</p>
-            </>
-          )}
-
-          {error && (
-            <div className="lm-error">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
-              <span>{error}</span>
-            </div>
-          )}
-
-          <form className="lm-form" onSubmit={handleSubmit}>
-            {step === '2fa' ? (
-              <div className="lm-field lm-field-2fa">
-                <input
-                  className="lm-input lm-input-2fa"
-                  type="text"
-                  inputMode="numeric"
-                  maxLength={6}
-                  placeholder="000000"
-                  value={totp}
-                  onChange={(e) => setTotp(e.target.value.replace(/\D/g, ''))}
-                  autoFocus
-                />
-                <p className="lm-2fa-hint">{t('login2faHint')}</p>
-              </div>
-            ) : (
-              <>
-                <div className="lm-field">
-                  <label className="lm-label" htmlFor="lm-email">{t('loginEmailLabel')}</label>
-                  <div className="lm-input-wrapper">
-                    <svg className="lm-input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
-                    <input
-                      id="lm-email"
-                      className="lm-input"
-                      type="email"
-                      placeholder="tu@email.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      autoFocus
-                    />
-                  </div>
-                </div>
-
-                <div className="lm-field">
-                  <label className="lm-label" htmlFor="lm-password">{t('loginPasswordLabel')}</label>
-                  <div className="lm-input-wrapper">
-                    <svg className="lm-input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                    <input
-                      id="lm-password"
-                      className="lm-input lm-input-has-toggle"
-                      type={showPassword ? 'text' : 'password'}
-                      placeholder={t('loginPasswordPlaceholder')}
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                    />
-                    <button
-                      type="button"
-                      className="lm-toggle-pw"
-                      onClick={() => setShowPassword(!showPassword)}
-                      tabIndex={-1}
-                    >
-                      {showPassword ? (
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-                      ) : (
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                      )}
-                    </button>
-                  </div>
-                </div>
-              </>
-            )}
-
-            {step === 'login' && hasCaptcha && (
-              <div className="lm-field lm-field-recaptcha">
-                {isTestCaptcha && (
-                  <div className="lm-captcha-test">
-                    <span className="lm-captcha-test-badge">{t('captchaTestBadge')}</span>
-                  </div>
-                )}
-                <ReCAPTCHA ref={recaptchaRef} sitekey={RECAPTCHA_SITE_KEY!} />
-              </div>
-            )}
-
-            {step === 'login' && (
-              <div className="lm-options">
-                <a href="/forgot-password" className="lm-forgot">{t('loginForgotPassword')}</a>
-              </div>
-            )}
-
-            <button className="lm-submit" type="submit" disabled={loading}>
-              {loading && <span className="lm-spinner" />}
-              {step === '2fa' ? t('loginVerify') : t('loginSubmit')}
-            </button>
-          </form>
-
-          <div className="lm-divider">
-            <span className="lm-divider-line" />
-            <span className="lm-divider-text">{t('loginOr')}</span>
-            <span className="lm-divider-line" />
-          </div>
-
-          <button className="lm-guest" type="button" onClick={handleGuestDashboard}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M13.8 12H3"/></svg>
-            {t('loginGuestDashboard')}
-          </button>
-
-          <button className="lm-guest lm-guest-secondary" type="button" onClick={handleGuest}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-            {t('loginGuestBooking')}
-          </button>
-
-          <p className="lm-signup">
-            {t('loginNoAccount')} <a onClick={onClose}>{t('loginContactAdmin')}</a>
-          </p>
-        </div>
-      </div>
     </div>
   );
 }

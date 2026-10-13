@@ -1,28 +1,16 @@
 import { render, screen, waitFor } from '@testing-library/react';
-import { describe, it, expect, vi, afterEach } from 'vitest';
-import { MemoryRouter } from 'react-router-dom';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { AuthProvider, useAuth } from '@/shared/providers/AuthProvider';
-import { refreshSession, setUnauthorizedHandler } from '@/shared/services/api-client';
 
-const mockPost = vi.hoisted(() => vi.fn());
-const mockAxiosPost = vi.hoisted(() => vi.fn());
-const mockNavigate = vi.fn();
-
-vi.mock('react-router-dom', async () => {
-  const actual = await vi.importActual('react-router-dom');
-  return { ...actual, useNavigate: () => mockNavigate };
-});
-
-vi.mock('axios', () => ({
-  default: { post: mockAxiosPost },
+const mocks = vi.hoisted(() => ({
+  get: vi.fn(),
+  setUnauthorizedHandler: vi.fn(),
 }));
 
 vi.mock('@/shared/services/api-client', () => ({
-  apiClient: { post: mockPost },
-  setAccessToken: vi.fn(),
-  setUnauthorizedHandler: vi.fn(),
-  refreshSession: vi.fn().mockRejectedValue(new Error('No session')),
-  announceAccessToken: vi.fn(),
+  apiClient: { get: mocks.get },
+  setUnauthorizedHandler: mocks.setUnauthorizedHandler,
+  CORE_LOGIN_URL: '/api/auth/login',
 }));
 
 function TestConsumer() {
@@ -32,142 +20,103 @@ function TestConsumer() {
       <span data-testid="loading">{String(ctx.isLoading)}</span>
       <span data-testid="user">{ctx.user ? JSON.stringify(ctx.user) : 'null'}</span>
       <span data-testid="is-authenticated">{String(ctx.isAuthenticated)}</span>
-      <button
-        data-testid="btn-login"
-        onClick={() => ctx.login('a@b.com', 'pass')}
-      >
+      <button data-testid="btn-login" onClick={() => ctx.login()}>
         login
       </button>
-      <button
-        data-testid="btn-logout"
-        onClick={() => ctx.logout()}
-      >
+      <button data-testid="btn-logout" onClick={() => void ctx.logout()}>
         logout
       </button>
     </div>
   );
 }
 
-function renderWithProviders(ui: React.ReactNode) {
-  return render(
-    <MemoryRouter>
-      <AuthProvider>{ui}</AuthProvider>
-    </MemoryRouter>
-  );
+const inicio = {
+  usuario: { id: 7, email: 'ana@clinica.com', name: 'Ana', role: 'admin', tenantId: 'org_1' },
+  organizacion: { id: 'org_1', slug: 'clinica-norte', nombre: 'Clínica Norte' },
+  rol: 'admin',
+  herramienta: 'vitaria',
+  herramientas: [],
+};
+
+function renderWithProvider(ui: React.ReactNode) {
+  return render(<AuthProvider>{ui}</AuthProvider>);
 }
 
 afterEach(() => {
-  mockPost.mockReset();
-  mockAxiosPost.mockReset();
-  mockNavigate.mockReset();
-  refreshSession.mockReset();
-  refreshSession.mockRejectedValue(new Error('No session'));
+  mocks.get.mockReset();
+  mocks.setUnauthorizedHandler.mockReset();
   localStorage.clear();
 });
 
+beforeEach(() => {
+  mocks.get.mockResolvedValue({ data: inicio });
+});
+
 describe('AuthProvider', () => {
-  it('renders with loading false and user null when no saved session and refresh fails', async () => {
-    mockAxiosPost.mockRejectedValue(new Error('No session'));
-    renderWithProviders(<TestConsumer />);
+  it('bootstraps the session from GET /auth/inicio', async () => {
+    renderWithProvider(<TestConsumer />);
     await waitFor(() => {
       expect(screen.getByTestId('loading').textContent).toBe('false');
-      expect(screen.getByTestId('user').textContent).toBe('null');
+    });
+    expect(mocks.get).toHaveBeenCalledWith('/auth/inicio');
+    expect(screen.getByTestId('is-authenticated').textContent).toBe('true');
+    const user = JSON.parse(screen.getByTestId('user').textContent as string);
+    expect(user).toMatchObject({
+      id: 7,
+      email: 'ana@clinica.com',
+      name: 'Ana',
+      role: 'admin',
+      tenant_id: 'org_1',
+      tenant_name: 'Clínica Norte',
+      tenant_slug: 'clinica-norte',
     });
   });
 
-  it('does not trust stale localStorage on refresh network failure (no phantom session)', async () => {
-    const savedUser = { id: 1, role: 'admin' };
-    localStorage.setItem('auth_user', JSON.stringify(savedUser));
-    mockAxiosPost.mockRejectedValue(new Error('No session'));
-    renderWithProviders(<TestConsumer />);
+  it('normalizes the local "user" role into "patient"', async () => {
+    mocks.get.mockResolvedValueOnce({
+      data: { ...inicio, usuario: { ...inicio.usuario, role: 'user' } },
+    });
+    renderWithProvider(<TestConsumer />);
+    await waitFor(() => {
+      expect(screen.getByTestId('loading').textContent).toBe('false');
+    });
+    expect(JSON.parse(screen.getByTestId('user').textContent as string).role).toBe('patient');
+  });
+
+  it('falls back to no user when the bootstrap request fails', async () => {
+    mocks.get.mockRejectedValueOnce(new Error('No session'));
+    renderWithProvider(<TestConsumer />);
     await waitFor(() => {
       expect(screen.getByTestId('loading').textContent).toBe('false');
       expect(screen.getByTestId('user').textContent).toBe('null');
-    });
-  });
-
-  it('handles invalid JSON in localStorage gracefully', async () => {
-    localStorage.setItem('auth_user', '{invalid}');
-    mockAxiosPost.mockRejectedValue(new Error('No session'));
-    renderWithProviders(<TestConsumer />);
-    await waitFor(() => {
-      expect(screen.getByTestId('loading').textContent).toBe('false');
-      expect(screen.getByTestId('user').textContent).toBe('null');
-    });
-  });
-
-  it('login calls api and updates user', async () => {
-    const userData = { id: 1, role: 'admin' };
-    mockPost.mockResolvedValueOnce({ data: { requires_2fa: false, access_token: 'tok', user: userData } });
-    renderWithProviders(<TestConsumer />);
-    await waitFor(() => {
-      expect(screen.getByTestId('loading').textContent).toBe('false');
-    });
-    const loginBtn = screen.getByTestId('btn-login');
-    await loginBtn.click();
-    expect(mockPost).toHaveBeenCalledWith('/auth/login', {
-      email: 'a@b.com',
-      password: 'pass',
-      totp_token: undefined,
-      captcha_token: undefined,
-    });
-    await waitFor(() => {
-      expect(screen.getByTestId('user').textContent).toContain('"role":"admin"');
-    });
-  });
-
-  it('logout clears user and calls api', async () => {
-    const savedUser = { id: 1, role: 'admin' };
-    localStorage.setItem('auth_user', JSON.stringify(savedUser));
-    mockAxiosPost.mockRejectedValueOnce(new Error('No session'));
-    renderWithProviders(<TestConsumer />);
-    await waitFor(() => {
-      expect(screen.getByTestId('loading').textContent).toBe('false');
-    });
-    mockPost.mockResolvedValueOnce({ data: {} });
-    const logoutBtn = screen.getByTestId('btn-logout');
-    await logoutBtn.click();
-    expect(mockPost).toHaveBeenCalledWith('/auth/logout');
-    await waitFor(() => {
-      expect(screen.getByTestId('user').textContent).toBe('null');
+      expect(screen.getByTestId('is-authenticated').textContent).toBe('false');
     });
   });
 
   it('registers the unauthorized handler on mount', async () => {
-    renderWithProviders(<TestConsumer />);
+    renderWithProvider(<TestConsumer />);
     await waitFor(() => {
       expect(screen.getByTestId('loading').textContent).toBe('false');
     });
-    expect(setUnauthorizedHandler).toHaveBeenCalled();
+    expect(mocks.setUnauthorizedHandler).toHaveBeenCalled();
   });
 
-  it('force-logouts at boot when a logout was left pending (no phantom re-login)', async () => {
-    localStorage.setItem('auth_logout_pending', '1');
-    localStorage.setItem('auth_user', JSON.stringify({ id: 1, role: 'admin' }));
-    refreshSession.mockResolvedValueOnce({ access_token: 'tok', user: { id: 1, role: 'admin' } });
-    mockPost.mockResolvedValue({ data: {} });
-    renderWithProviders(<TestConsumer />);
+  it('redirects to the Core login when login() is invoked', async () => {
+    const setter = vi.fn();
+    Object.defineProperty(window, 'location', {
+      configurable: true,
+      value: {
+        href: 'http://localhost/',
+        set href(value: string) {
+          setter(value);
+        },
+      },
+    });
+    renderWithProvider(<TestConsumer />);
     await waitFor(() => {
       expect(screen.getByTestId('loading').textContent).toBe('false');
     });
-    expect(mockPost).toHaveBeenCalledWith('/auth/logout');
-    expect(screen.getByTestId('user').textContent).toBe('null');
-    expect(localStorage.getItem('auth_logout_pending')).toBeNull();
-  });
-
-  it('logout retries when the server POST fails, then clears local state', async () => {
-    renderWithProviders(<TestConsumer />);
-    await waitFor(() => {
-      expect(screen.getByTestId('loading').textContent).toBe('false');
-    });
-    mockPost.mockRejectedValueOnce(new Error('network')).mockResolvedValueOnce({ data: {} });
-    const logoutBtn = screen.getByTestId('btn-logout');
-    await logoutBtn.click();
-    await waitFor(() => {
-      expect(mockPost).toHaveBeenCalledTimes(2);
-    });
-    expect(mockPost).toHaveBeenCalledWith('/auth/logout');
-    expect(localStorage.getItem('auth_logout_pending')).toBeNull();
-    expect(screen.getByTestId('user').textContent).toBe('null');
+    screen.getByTestId('btn-login').click();
+    expect(setter).toHaveBeenCalledWith('/api/auth/login');
   });
 });
