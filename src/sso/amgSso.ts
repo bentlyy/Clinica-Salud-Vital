@@ -45,7 +45,7 @@ export const amgPublicPaths: (string | RegExp)[] = [
   '/metrics',
   '/api/metrics',
   '/favicon.ico',
-  '/vite.svg',
+  '/favicon.svg',
   '/robots.txt',
   '/manifest.webmanifest',
   /^\/assets\//,
