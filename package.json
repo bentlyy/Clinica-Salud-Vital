@@ -13,6 +13,7 @@
     "build:frontend": "cd frontend && npm install --include=dev && npm run build",
     "build": "npm run build:backend && npm run build:frontend",
     "typecheck": "tsc --noEmit",
+    "lint": "eslint src",
     "test": "vitest run --coverage",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage --reporter=html"
@@ -56,11 +57,15 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.5",
     "@types/supertest": "^6.0.2",
     "@vitest/coverage-v8": "^4.1.11",
+    "eslint": "^9.39.5",
+    "globals": "^17.13.0",
     "supertest": "^7.2.2",
     "tsx": "^4.19.0",
     "typescript": "^5.8.3",
+    "typescript-eslint": "^8.71.2",
     "vitest": "^4.1.11"
   },
   "overrides": {

@@ -209,7 +209,7 @@ export const createDoctor = async ({ name, specialty, email, user_id }: CreateDo
 
 export const getDoctorById = async (id: number, tenantId: string): Promise<Doctor | null> => {
   const result = await readPool.query<Doctor>(
-    'SELECT * FROM doctors WHERE id = $1 AND tenant_id = $2',
+    'SELECT id, name, specialty, email, user_id, slot_duration, tenant_id FROM doctors WHERE id = $1 AND tenant_id = $2',
     [id, tenantId]
   );
 
@@ -218,7 +218,7 @@ export const getDoctorById = async (id: number, tenantId: string): Promise<Docto
 
 export const getDoctorByUserId = async (user_id: number, tenantId: string): Promise<Doctor | null> => {
   const result = await readPool.query<Doctor>(
-    'SELECT * FROM doctors WHERE user_id = $1 AND tenant_id = $2',
+    'SELECT id, name, specialty, email, user_id, slot_duration, tenant_id FROM doctors WHERE user_id = $1 AND tenant_id = $2',
     [user_id, tenantId]
   );
 
@@ -227,7 +227,7 @@ export const getDoctorByUserId = async (user_id: number, tenantId: string): Prom
 
 export const updateDoctor = async (id: number, input: { name?: string; specialty?: string }, tenantId: string): Promise<Doctor> => {
   const existing = await readPool.query<Doctor>(
-    'SELECT * FROM doctors WHERE id = $1 AND tenant_id = $2',
+    'SELECT id, name, specialty, email, user_id, slot_duration, tenant_id FROM doctors WHERE id = $1 AND tenant_id = $2',
     [id, tenantId]
   );
 
