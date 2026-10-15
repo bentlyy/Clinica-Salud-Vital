@@ -37,15 +37,12 @@ import {
   getSamples,
   getSampleById,
   createSample,
-  updateSample,
   receiveSample,
   verifySample,
   rejectSample,
   getResultHistory,
   getQCRecords,
   createQCRecord,
-  updateQCRecord,
-  approveQCRecord,
   getEquipment,
   createEquipment,
   updateEquipment,
@@ -58,7 +55,6 @@ import {
   getLabAnalyticsByDoctor,
   getLabNotifications,
   acknowledgeNotification,
-  acknowledgeAllNotifications,
   subscribeToLabSSE,
   getStatusLabel,
   getPriorityLabel,
@@ -129,7 +125,7 @@ describe('lab.service request CRUD', () => {
 
   it('getLabRequests passes pagination/filter params', async () => {
     apiClient.get.mockResolvedValue({ data: { data: [], total: 0 } });
-    const params = { page: 2, limit: 25, status: 'pending', area_id: 3 };
+    const params = { page: 2, limit: 25, status: 'pending' as const, area_id: 3 };
     const result = await getLabRequests(params, { signal });
     expect(apiClient.get).toHaveBeenCalledWith('/laboratory', { params, signal });
     expect(result).toEqual({ data: [], total: 0 });
@@ -211,12 +207,22 @@ describe('lab.service request items & results', () => {
     expect(apiClient.delete).toHaveBeenCalledWith('/laboratory/items/3', { signal });
   });
 
-  it('enterResult patches /laboratory/items/:itemId/result', async () => {
-    const input = { result_value: '12.5', unit: 'mg/dL' };
+  it('enterResult patches /laboratory/items/:itemId/result mapping notes to result_notes', async () => {
+    const input = { result_value: '12.5', unit: 'mg/dL', notes: 'ayunas' };
     apiClient.patch.mockResolvedValue({ data: { id: 3, result_value: '12.5' } });
     const result = await enterResult(12, 3, input, { signal });
-    expect(apiClient.patch).toHaveBeenCalledWith('/laboratory/items/3/result', input, { signal });
+    expect(apiClient.patch).toHaveBeenCalledWith(
+      '/laboratory/items/3/result',
+      { result_value: '12.5', result_notes: 'ayunas' },
+      { signal },
+    );
     expect(result.result_value).toBe('12.5');
+  });
+
+  it('enterResult omits result_notes when no notes are provided', async () => {
+    apiClient.patch.mockResolvedValue({ data: { id: 3, result_value: '12.5' } });
+    await enterResult(12, 3, { result_value: '12.5', unit: 'mg/dL' }, { signal });
+    expect(apiClient.patch).toHaveBeenCalledWith('/laboratory/items/3/result', { result_value: '12.5' }, { signal });
   });
 
   it('updateResult patches /laboratory/items/:itemId/result', async () => {
@@ -275,12 +281,6 @@ describe('lab.service samples', () => {
     expect(apiClient.post).toHaveBeenCalledWith('/laboratory/samples', input, { signal });
   });
 
-  it('updateSample patches /laboratory/samples/:id', async () => {
-    apiClient.patch.mockResolvedValue({ data: { id: 8 } });
-    await updateSample(8, { storage_location: 'R1' }, { signal });
-    expect(apiClient.patch).toHaveBeenCalledWith('/laboratory/samples/8', { storage_location: 'R1' }, { signal });
-  });
-
   it('receiveSample patches /laboratory/samples/:id/receive', async () => {
     apiClient.patch.mockResolvedValue({ data: { status: 'received' } });
     const result = await receiveSample(8, { signal });
@@ -297,7 +297,7 @@ describe('lab.service samples', () => {
   it('rejectSample patches /laboratory/samples/:id/reject', async () => {
     apiClient.patch.mockResolvedValue({ data: { status: 'rejected' } });
     await rejectSample(8, 'hemolizada', { signal });
-    expect(apiClient.patch).toHaveBeenCalledWith('/laboratory/samples/8/reject', { reason: 'hemolizada' }, { signal });
+    expect(apiClient.patch).toHaveBeenCalledWith('/laboratory/samples/8/reject', { rejection_reason: 'hemolizada' }, { signal });
   });
 });
 
@@ -322,18 +322,6 @@ describe('lab.service history, QC, equipment, reagents', () => {
     apiClient.post.mockResolvedValue({ data: { id: 1 } });
     await createQCRecord({ control_name: 'C1' }, { signal });
     expect(apiClient.post).toHaveBeenCalledWith('/laboratory/qc', { control_name: 'C1' }, { signal });
-  });
-
-  it('updateQCRecord puts /laboratory/qc/:id', async () => {
-    apiClient.put.mockResolvedValue({ data: {} });
-    await updateQCRecord(1, { notes: 'x' }, { signal });
-    expect(apiClient.put).toHaveBeenCalledWith('/laboratory/qc/1', { notes: 'x' }, { signal });
-  });
-
-  it('approveQCRecord posts to /laboratory/qc/:id/approve', async () => {
-    apiClient.post.mockResolvedValue({ data: { status: 'passed' } });
-    await approveQCRecord(1, { signal });
-    expect(apiClient.post).toHaveBeenCalledWith('/laboratory/qc/1/approve', undefined, { signal });
   });
 
   it('getEquipment passes params', async () => {
@@ -368,8 +356,8 @@ describe('lab.service history, QC, equipment, reagents', () => {
 
   it('updateReagent patches /laboratory/reagents/:id/stock', async () => {
     apiClient.patch.mockResolvedValue({ data: {} });
-    await updateReagent(3, { current_stock: 10 }, { signal });
-    expect(apiClient.patch).toHaveBeenCalledWith('/laboratory/reagents/3/stock', { current_stock: 10 }, { signal });
+    await updateReagent(3, { quantity: 10 }, { signal });
+    expect(apiClient.patch).toHaveBeenCalledWith('/laboratory/reagents/3/stock', { quantity: 10 }, { signal });
   });
 });
 
@@ -417,18 +405,12 @@ describe('lab.service areas, tests, analytics, notifications', () => {
     await acknowledgeNotification(4, { signal });
     expect(apiClient.patch).toHaveBeenCalledWith('/laboratory/notifications/4/ack', undefined, { signal });
   });
-
-  it('acknowledgeAllNotifications posts to acknowledge-all', async () => {
-    apiClient.post.mockResolvedValue({});
-    await acknowledgeAllNotifications({ signal });
-    expect(apiClient.post).toHaveBeenCalledWith('/laboratory/notifications/acknowledge-all', undefined, { signal });
-  });
 });
 
 describe('lab.service SSE', () => {
   const EventSourceMock = vi.hoisted(() =>
-    vi.fn(function (this: { url: string; onmessage: unknown; onerror: unknown }) {
-      this.url = arguments[0];
+    vi.fn(function (this: { url: string; onmessage: unknown; onerror: unknown }, url: string) {
+      this.url = url;
       this.onmessage = null;
       this.onerror = null;
     }),
@@ -452,8 +434,9 @@ describe('lab.service SSE', () => {
 
     expect(es).toBeInstanceOf(EventSourceMock);
     expect(EventSourceMock).toHaveBeenCalledTimes(1);
-    expect(EventSourceMock.mock.calls[0][0]).toContain('/laboratory/events');
-    expect(EventSourceMock.mock.calls[0][0]).not.toContain('token=');
+    const firstCall = EventSourceMock.mock.calls[0] as any;
+    expect(firstCall?.[0]).toContain('/laboratory/events');
+    expect(firstCall?.[0]).not.toContain('token=');
     expect(es.onmessage).toBe(onMessage);
   });
 
@@ -462,7 +445,8 @@ describe('lab.service SSE', () => {
     vi.stubGlobal('EventSource', EventSourceMock as unknown as typeof EventSource);
 
     subscribeToLabSSE(vi.fn());
-    expect(EventSourceMock.mock.calls[0][0]).not.toContain('token=');
+    const firstCall = EventSourceMock.mock.calls[0] as any;
+    expect(firstCall?.[0]).not.toContain('token=');
   });
 });
 

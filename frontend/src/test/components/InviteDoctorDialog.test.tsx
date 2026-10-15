@@ -5,11 +5,12 @@ import { InviteDoctorDialog } from '@/modules/doctors/components/InviteDoctorDia
 import type { Doctor } from '@/modules/doctors/types/doctor.types';
 
 const doctor: Doctor = {
-  id: 3,
-  user_id: 30,
+  id: 1,
+  user_id: 10,
   name: 'Juan Perez',
   email: 'juan@clinic.com',
-  is_active: true,
+  specialty: 'Cardiología',
+  license_number: 'LIC-123',
   created_at: '2026-01-01T00:00:00Z',
 };
 
@@ -52,7 +53,7 @@ describe('InviteDoctorDialog', () => {
     fireEvent.click(screen.getByRole('button', { name: /Enviar/ }));
 
     await waitFor(() => {
-      expect(onSubmit).toHaveBeenCalledWith({ id: 3, email: 'juan@clinic.com' });
+      expect(onSubmit).toHaveBeenCalledWith({ id: 1, email: 'juan@clinic.com' });
     });
   });
 

@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vitaria · Multi-tenancy</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Plus+Jakarta+Sans:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --color-paper:  #f6f8fb;
+      --color-ink:    #0d3d38;
+      --color-muted:  #48606f;
+      --color-accent: #0d9488;
+      --font-sans:    'Plus Jakarta Sans', system-ui, sans-serif;
+      --font-serif:   'Instrument Serif', serif;
+      --font-mono:    'Geist Mono', ui-monospace, monospace;
+    }
+    body {
+      font-family: var(--font-sans);
+      background: var(--color-paper);
+      color: var(--color-ink);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem 2rem;
+    }
+    .frame { max-width: 1200px; width: 100%; }
+    .eyebrow {
+      font-family: var(--font-mono);
+      font-size: 0.66rem;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--color-muted);
+      margin-bottom: 0.5rem;
+    }
+    h1 {
+      font-family: var(--font-serif);
+      font-size: clamp(1.5rem, 2.4vw + 0.75rem, 2rem);
+      font-weight: 400;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+      color: var(--color-ink);
+      margin-bottom: 1.5rem;
+    }
+    svg { width: 100%; min-width: 900px; display: block; }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <p class="eyebrow">Architecture · Multi-tenancy</p>
+    <h1>Cómo una sola base de datos sirve a todas las clínicas sin mezclar datos</h1>
+
+    <svg viewBox="0 0 1000 560" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="sub-03-multitenancy-title sub-03-multitenancy-desc">
+      <title id="sub-03-multitenancy-title">Aislamiento multi-tenant de Vitaria</title>
+      <desc id="sub-03-multitenancy-desc">El token lleva el tenant_id, un middleware lo resuelve contra la tabla tenants, fija app.tenant_id en la conexión de PostgreSQL y las políticas RLS restringen cada consulta a las filas del tenant.</desc>
+      <defs>
+        <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#48606f"/></marker>
+        <marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#0d9488"/></marker>
+      </defs>
+
+      <rect width="100%" height="100%" fill="#f6f8fb"/>
+
+      <!-- ZONES -->
+      <rect x="40" y="144" width="240" height="136" rx="8" fill="rgba(13,61,56,0.02)" stroke="rgba(13,61,56,0.10)" stroke-width="0.8"/>
+      <rect x="56" y="148" width="64" height="12" rx="2" fill="#f6f8fb"/>
+      <text x="88" y="157" fill="rgba(13,61,56,0.45)" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.14em">PETICIÓN</text>
+
+      <rect x="320" y="144" width="240" height="136" rx="8" fill="rgba(13,61,56,0.02)" stroke="rgba(13,61,56,0.10)" stroke-width="0.8"/>
+      <rect x="336" y="148" width="80" height="12" rx="2" fill="#f6f8fb"/>
+      <text x="376" y="157" fill="rgba(13,61,56,0.45)" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.14em">RESOLUCIÓN</text>
+
+      <rect x="600" y="144" width="360" height="136" rx="8" fill="rgba(13,61,56,0.02)" stroke="rgba(13,61,56,0.10)" stroke-width="0.8"/>
+      <rect x="616" y="148" width="72" height="12" rx="2" fill="#f6f8fb"/>
+      <text x="652" y="157" fill="rgba(13,61,56,0.45)" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.14em">SESIÓN BD</text>
+
+      <!-- ARROWS -->
+      <line x1="200" y1="188" x2="336" y2="188" stroke="#2f6f8e" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <line x1="280" y1="240" x2="400" y2="240" stroke="#48606f" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <line x1="480" y1="188" x2="616" y2="188" stroke="#0d9488" stroke-width="1.2" marker-end="url(#arrow-accent)"/>
+      <line x1="760" y1="188" x2="800" y2="188" stroke="#0d9488" stroke-width="1.2" marker-end="url(#arrow-accent)"/>
+
+      <!-- ARROW LABELS -->
+      <rect x="240" y="168" width="56" height="12" rx="2" fill="#f6f8fb"/>
+      <text x="268" y="178" fill="#2f6f8e" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">claim</text>
+
+      <rect x="316" y="220" width="88" height="12" rx="2" fill="#f6f8fb"/>
+      <text x="360" y="230" fill="#48606f" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">verifica estado</text>
+
+      <rect x="520" y="168" width="76" height="12" rx="2" fill="#f6f8fb"/>
+      <text x="558" y="178" fill="#0d9488" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">SET tenant</text>
+
+      <!-- NODES -->
+      <rect x="56" y="172" width="144" height="48" rx="6" fill="rgba(72,96,111,0.10)" stroke="#7c93a1" stroke-width="1"/>
+      <text x="128" y="192" fill="#0d3d38" font-size="12" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">Access token</text>
+      <text x="128" y="208" fill="#48606f" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">tenant_id · rol</text>
+
+      <rect x="56" y="228" width="144" height="40" rx="6" fill="rgba(13,61,56,0.05)" stroke="#48606f" stroke-width="1"/>
+      <text x="128" y="247" fill="#0d3d38" font-size="11" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">tabla tenants</text>
+      <text x="128" y="261" fill="#48606f" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">slug · plan · estado</text>
+
+      <rect x="336" y="164" width="144" height="48" rx="6" fill="rgba(13,148,136,0.10)" stroke="#0d9488" stroke-width="1"/>
+      <text x="408" y="184" fill="#0d3d38" font-size="12" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">Middleware tenant</text>
+      <text x="408" y="200" fill="#48606f" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">resuelve y adjunta</text>
+
+      <rect x="616" y="164" width="144" height="48" rx="6" fill="#f6f8fb"/>
+      <rect x="616" y="164" width="144" height="48" rx="6" fill="#ffffff" stroke="#0d3d38" stroke-width="1"/>
+      <text x="688" y="184" fill="#0d3d38" font-size="12" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">pg pool</text>
+      <text x="688" y="200" fill="#48606f" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">SET app.tenant_id</text>
+
+      <rect x="800" y="164" width="144" height="48" rx="6" fill="rgba(13,148,136,0.10)" stroke="#0d9488" stroke-width="1"/>
+      <text x="872" y="184" fill="#0d3d38" font-size="12" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">Política RLS</text>
+      <text x="872" y="200" fill="#48606f" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">current_setting</text>
+
+      <rect x="616" y="228" width="328" height="40" rx="6" fill="rgba(13,61,56,0.05)" stroke="#48606f" stroke-width="1"/>
+      <text x="780" y="247" fill="#0d3d38" font-size="11" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">Tablas de negocio (49) — cada fila lleva tenant_id</text>
+      <text x="780" y="261" fill="#48606f" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">pacientes · citas · historia · facturas …</text>
+
+      <!-- CALLOUT -->
+      <line x1="40" y1="320" x2="960" y2="320" stroke="rgba(13,61,56,0.10)" stroke-width="0.8"/>
+      <text x="40" y="344" fill="#0d3d38" font-size="12" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif">El aislamiento no vive en la aplicación: vive en la base de datos.</text>
+      <text x="40" y="368" fill="#48606f" font-size="11" font-family="'Plus Jakarta Sans', sans-serif">Aunque una consulta olvide filtrar por clínica, PostgreSQL devuelve solo las filas del tenant activo.</text>
+
+      <rect x="40" y="400" width="440" height="112" rx="8" fill="rgba(13,61,56,0.02)" stroke="rgba(13,61,56,0.10)" stroke-width="0.8"/>
+      <text x="56" y="424" fill="#0d9488" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.16em">GARANTÍAS</text>
+      <text x="56" y="448" fill="#0d3d38" font-size="10" font-family="'Plus Jakarta Sans', sans-serif">· Aislamiento por fila (RLS) en 49 tablas</text>
+      <text x="56" y="468" fill="#0d3d38" font-size="10" font-family="'Plus Jakarta Sans', sans-serif">· El tenant viaja firmado en el JWT</text>
+      <text x="56" y="488" fill="#0d3d38" font-size="10" font-family="'Plus Jakarta Sans', sans-serif">· Un tenant desactivado no resuelve sesión</text>
+
+      <rect x="520" y="400" width="440" height="112" rx="8" fill="rgba(13,61,56,0.02)" stroke="rgba(13,61,56,0.10)" stroke-width="0.8"/>
+      <text x="536" y="424" fill="#7c93a1" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.16em">A VERIFICAR</text>
+      <text x="536" y="448" fill="#0d3d38" font-size="10" font-family="'Plus Jakarta Sans', sans-serif">· RLS real en producción (Render / PgBouncer)</text>
+      <text x="536" y="468" fill="#0d3d38" font-size="10" font-family="'Plus Jakarta Sans', sans-serif">· Comportamiento con pooling en modo transacción</text>
+      <text x="536" y="488" fill="#0d3d38" font-size="10" font-family="'Plus Jakarta Sans', sans-serif">· Cobertura de políticas por tabla</text>
+    </svg>
+  </div>
+</body>
+</html>

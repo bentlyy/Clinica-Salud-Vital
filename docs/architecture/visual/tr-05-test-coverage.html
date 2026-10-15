@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vitaria · Cobertura de tests</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Plus+Jakarta+Sans:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --color-paper:  #f6f8fb;
+      --color-ink:    #0d3d38;
+      --color-muted:  #48606f;
+      --color-accent: #0d9488;
+      --font-sans:    'Plus Jakarta Sans', system-ui, sans-serif;
+      --font-serif:   'Instrument Serif', serif;
+      --font-mono:    'Geist Mono', ui-monospace, monospace;
+    }
+    body {
+      font-family: var(--font-sans);
+      background: var(--color-paper);
+      color: var(--color-ink);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem 2rem;
+    }
+    .frame { max-width: 1200px; width: 100%; }
+    .eyebrow {
+      font-family: var(--font-mono);
+      font-size: 0.66rem;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--color-muted);
+      margin-bottom: 0.5rem;
+    }
+    h1 {
+      font-family: var(--font-serif);
+      font-size: clamp(1.5rem, 2.4vw + 0.75rem, 2rem);
+      font-weight: 400;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+      color: var(--color-ink);
+      margin-bottom: 1.5rem;
+    }
+    svg { width: 100%; min-width: 900px; display: block; }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <p class="eyebrow">Bar · Cobertura de tests</p>
+    <h1>299 archivos de test inventariados, ninguna ejecución verificada</h1>
+
+    <svg viewBox="0 0 1000 680" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="tr-05-test-coverage-title tr-05-test-coverage-desc">
+      <title id="tr-05-test-coverage-title">Inventario estático de tests y umbrales de cobertura</title>
+      <desc id="tr-05-test-coverage-desc">Inventario estático de archivos de test por área: 105 unitarios y 10 de integración en backend, 184 en frontend. A la derecha, los umbrales declarados de cobertura para backend y frontend. La suite no se ejecutó, por lo que la cobertura real no está verificada.</desc>
+      <defs>
+        <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#48606f"/></marker>
+      </defs>
+
+      <rect width="100%" height="100%" fill="#f6f8fb"/>
+
+      <!-- PANEL 1 -->
+      <rect x="40" y="120" width="520" height="440" rx="8" fill="rgba(13,61,56,0.02)" stroke="rgba(13,61,56,0.10)" stroke-width="0.8"/>
+      <text x="56" y="146" fill="#7c93a1" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.16em">INVENTARIO ESTÁTICO DE ARCHIVOS</text>
+
+      <text x="56" y="200" fill="#0d3d38" font-size="30" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif">299</text>
+      <text x="130" y="186" fill="#48606f" font-size="9" font-family="'Geist Mono', monospace">archivos de test</text>
+      <text x="130" y="202" fill="#48606f" font-size="8" font-family="'Geist Mono', monospace">backend 115 · frontend 184</text>
+
+      <text x="192" y="254" fill="#0d3d38" font-size="10" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="end">Backend · unit</text>
+      <rect x="204" y="236" width="184" height="26" rx="4" fill="rgba(72,96,111,0.35)"/>
+      <text x="396" y="254" fill="#0d3d38" font-size="10" font-weight="600" font-family="'Geist Mono', monospace">105</text>
+
+      <text x="192" y="310" fill="#0d3d38" font-size="10" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="end">Backend · integración</text>
+      <rect x="204" y="292" width="18" height="26" rx="4" fill="rgba(72,96,111,0.35)"/>
+      <text x="230" y="310" fill="#0d3d38" font-size="10" font-weight="600" font-family="'Geist Mono', monospace">10</text>
+
+      <text x="192" y="366" fill="#0d3d38" font-size="10" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="end">Frontend</text>
+      <rect x="204" y="348" width="322" height="26" rx="4" fill="#0d9488"/>
+      <text x="534" y="366" fill="#0d3d38" font-size="10" font-weight="600" font-family="'Geist Mono', monospace">184</text>
+
+      <text x="192" y="422" fill="#0d3d38" font-size="10" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="end">Backend · helpers</text>
+      <rect x="204" y="404" width="3" height="26" rx="1.5" fill="rgba(72,96,111,0.35)"/>
+      <text x="215" y="422" fill="#0d3d38" font-size="10" font-weight="600" font-family="'Geist Mono', monospace">1</text>
+
+      <line x1="56" y1="456" x2="544" y2="456" stroke="rgba(13,61,56,0.10)" stroke-width="0.8"/>
+      <text x="56" y="480" fill="#0d3d38" font-size="10" font-family="'Plus Jakarta Sans', sans-serif">Inventario estático — la suite no se ejecutó.</text>
+      <text x="56" y="500" fill="#7c93a1" font-size="8" font-family="'Geist Mono', monospace">105 unit + 10 integración + 1 helper · 184 frontend</text>
+      <text x="56" y="520" fill="#7c93a1" font-size="8" font-family="'Geist Mono', monospace">integration: auth · booking · clinical · doctor · analytics ·</text>
+      <text x="56" y="534" fill="#7c93a1" font-size="8" font-family="'Geist Mono', monospace">audit · saas · super-admin · guest · rls-isolation</text>
+
+      <!-- PANEL 2 -->
+      <rect x="580" y="120" width="380" height="440" rx="8" fill="rgba(13,61,56,0.02)" stroke="rgba(13,61,56,0.10)" stroke-width="0.8"/>
+      <text x="596" y="146" fill="#7c93a1" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.16em">UMBRALES DECLARADOS</text>
+
+      <text x="596" y="176" fill="#0d9488" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.10em">BACKEND · vitest.config.js</text>
+
+      <text x="596" y="203" fill="#0d3d38" font-size="9" font-family="'Geist Mono', monospace">lines</text>
+      <rect x="676" y="190" width="170" height="16" rx="3" fill="rgba(72,96,111,0.35)"/>
+      <text x="854" y="203" fill="#0d3d38" font-size="9" font-weight="600" font-family="'Geist Mono', monospace">85</text>
+
+      <text x="596" y="233" fill="#0d3d38" font-size="9" font-family="'Geist Mono', monospace">branches</text>
+      <rect x="676" y="220" width="160" height="16" rx="3" fill="rgba(72,96,111,0.35)"/>
+      <text x="844" y="233" fill="#0d3d38" font-size="9" font-weight="600" font-family="'Geist Mono', monospace">80</text>
+
+      <text x="596" y="263" fill="#0d3d38" font-size="9" font-family="'Geist Mono', monospace">functions</text>
+      <rect x="676" y="250" width="170" height="16" rx="3" fill="rgba(72,96,111,0.35)"/>
+      <text x="854" y="263" fill="#0d3d38" font-size="9" font-weight="600" font-family="'Geist Mono', monospace">85</text>
+
+      <text x="596" y="293" fill="#0d3d38" font-size="9" font-family="'Geist Mono', monospace">statements</text>
+      <rect x="676" y="280" width="170" height="16" rx="3" fill="rgba(72,96,111,0.35)"/>
+      <text x="854" y="293" fill="#0d3d38" font-size="9" font-weight="600" font-family="'Geist Mono', monospace">85</text>
+
+      <line x1="596" y1="316" x2="944" y2="316" stroke="rgba(13,61,56,0.10)" stroke-width="0.8"/>
+
+      <text x="596" y="344" fill="#0d9488" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.10em">FRONTEND · vitest.config.ts</text>
+
+      <text x="596" y="371" fill="#0d3d38" font-size="9" font-family="'Geist Mono', monospace">lines</text>
+      <rect x="676" y="358" width="160" height="16" rx="3" fill="rgba(72,96,111,0.35)"/>
+      <text x="844" y="371" fill="#0d3d38" font-size="9" font-weight="600" font-family="'Geist Mono', monospace">80</text>
+
+      <text x="596" y="401" fill="#0d3d38" font-size="9" font-family="'Geist Mono', monospace">branches</text>
+      <rect x="676" y="388" width="140" height="16" rx="3" fill="rgba(72,96,111,0.35)"/>
+      <text x="824" y="401" fill="#0d3d38" font-size="9" font-weight="600" font-family="'Geist Mono', monospace">70</text>
+
+      <text x="596" y="431" fill="#0d3d38" font-size="9" font-family="'Geist Mono', monospace">functions</text>
+      <rect x="676" y="418" width="140" height="16" rx="3" fill="rgba(72,96,111,0.35)"/>
+      <text x="824" y="431" fill="#0d3d38" font-size="9" font-weight="600" font-family="'Geist Mono', monospace">70</text>
+
+      <text x="596" y="461" fill="#0d3d38" font-size="9" font-family="'Geist Mono', monospace">statements</text>
+      <rect x="676" y="448" width="160" height="16" rx="3" fill="rgba(72,96,111,0.35)"/>
+      <text x="844" y="461" fill="#0d3d38" font-size="9" font-weight="600" font-family="'Geist Mono', monospace">80</text>
+
+      <line x1="596" y1="484" x2="944" y2="484" stroke="rgba(13,61,56,0.10)" stroke-width="0.8"/>
+      <text x="596" y="508" fill="#0d3d38" font-size="10" font-family="'Plus Jakarta Sans', sans-serif">Umbrales declarados en config.</text>
+      <text x="596" y="528" fill="#7c93a1" font-size="8" font-family="'Geist Mono', monospace">Su cumplimiento NO VERIFICADO.</text>
+
+      <!-- CALLOUT -->
+      <rect x="40" y="576" width="920" height="80" rx="8" fill="rgba(13,61,56,0.02)" stroke="rgba(13,61,56,0.10)" stroke-width="0.8"/>
+      <text x="60" y="604" fill="#0d3d38" font-size="12" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif">El README afirma ~2730 tests y ~89 % de cobertura — NO VERIFICADO.</text>
+      <text x="60" y="626" fill="#0d3d38" font-size="11" font-family="'Plus Jakarta Sans', sans-serif">La suite no se ejecutó: backend y frontend requieren PostgreSQL y servicios externos.</text>
+      <text x="60" y="646" fill="#7c93a1" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.06em">06-test-coverage.md · gaps G1–G7 · sin tests e2e (Playwright / Cypress no instalados)</text>
+    </svg>
+  </div>
+</body>
+</html>

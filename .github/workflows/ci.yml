@@ -58,6 +58,62 @@ jobs:
       - name: Build
         run: npm run build:backend
 
+  rls-isolation:
+    name: RLS Isolation (real Postgres)
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: clinic
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d clinic"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Bootstrap schema + RLS
+        env:
+          PGPASSWORD: postgres
+        run: |
+          set -euo pipefail
+          PSQL="psql -h localhost -U postgres -d clinic -v ON_ERROR_STOP=1 -q"
+          echo "== init.sql =="
+          $PSQL -f db/init.sql
+          echo "== migrations =="
+          for f in $(ls db/migrations/*.sql | sort); do
+            echo "  -> $f"
+            $PSQL -f "$f"
+          done
+          echo "== bootstrap RLS (enable + role + grants) =="
+          $PSQL -f db/ci-rls-bootstrap.sql
+          echo "== seed (2 tenants) =="
+          $PSQL -f db/ci-seed-rls.sql
+          $PSQL -c "ALTER ROLE clinic_app WITH LOGIN PASSWORD 'ci-pass';"
+
+      - name: Run RLS isolation test
+        env:
+          RLS_TEST_DATABASE_URL: postgresql://clinic_app:ci-pass@localhost:5432/clinic
+          RLS_TEST_TENANTS: ci-alpha,ci-beta
+        run: npx vitest run tests/integration/rls-isolation.test.js --reporter=verbose
+
   frontend:
     name: Frontend Tests
     runs-on: ubuntu-latest
@@ -76,7 +132,11 @@ jobs:
         run: npm ci
         working-directory: frontend
 
-      - name: Typecheck
+      - name: Lint
+        run: npm run lint
+        working-directory: frontend
+
+      - name: Typecheck (app + tests)
         run: npm run type-check
         working-directory: frontend
 

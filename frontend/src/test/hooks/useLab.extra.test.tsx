@@ -30,15 +30,12 @@ const labService = vi.hoisted(() => ({
   getSamples: vi.fn(),
   getSampleById: vi.fn(),
   createSample: vi.fn(),
-  updateSample: vi.fn(),
   receiveSample: vi.fn(),
   verifySample: vi.fn(),
   rejectSample: vi.fn(),
   getResultHistory: vi.fn(),
   getQCRecords: vi.fn(),
   createQCRecord: vi.fn(),
-  updateQCRecord: vi.fn(),
-  approveQCRecord: vi.fn(),
   getEquipment: vi.fn(),
   createEquipment: vi.fn(),
   updateEquipment: vi.fn(),
@@ -51,7 +48,6 @@ const labService = vi.hoisted(() => ({
   getLabAnalyticsByDoctor: vi.fn(),
   getLabNotifications: vi.fn(),
   acknowledgeNotification: vi.fn(),
-  acknowledgeAllNotifications: vi.fn(),
   subscribeToLabSSE: vi.fn(),
 }));
 
@@ -81,14 +77,12 @@ import {
   useSamples,
   useSampleDetail,
   useCreateSample,
-  useUpdateSample,
   useReceiveSample,
   useVerifySample,
   useRejectSample,
   useResultHistory,
   useQCRecords,
   useCreateQCRecord,
-  useApproveQCRecord,
   useLabEquipment,
   useCreateEquipment,
   useUpdateEquipment,
@@ -419,20 +413,6 @@ describe('useLab extra mutation hooks', () => {
     await waitFor(() => expect(toast.success).toHaveBeenCalledWith('lab:sampleCreated'));
   });
 
-  it('useUpdateSample updates a sample and toasts', async () => {
-    labService.updateSample.mockResolvedValue({ id: 8 });
-    const { result } = renderLabHook(() => useUpdateSample());
-
-    act(() => {
-      result.current.mutate({ id: 8, input: { storage_location: 'R1' } });
-    });
-
-    await waitFor(() =>
-      expect(labService.updateSample).toHaveBeenCalledWith(8, { storage_location: 'R1' }),
-    );
-    await waitFor(() => expect(toast.success).toHaveBeenCalledWith('lab:sampleUpdated'));
-  });
-
   it('useReceiveSample receives a sample and toasts', async () => {
     labService.receiveSample.mockResolvedValue({ id: 8, status: 'received' });
     const { result } = renderLabHook(() => useReceiveSample());
@@ -483,18 +463,6 @@ describe('useLab extra mutation hooks', () => {
     await waitFor(() => expect(toast.success).toHaveBeenCalledWith('lab:qcCreated'));
   });
 
-  it('useApproveQCRecord approves a QC record and toasts', async () => {
-    labService.approveQCRecord.mockResolvedValue({ id: 1, status: 'passed' });
-    const { result } = renderLabHook(() => useApproveQCRecord());
-
-    act(() => {
-      result.current.mutate(1);
-    });
-
-    await waitFor(() => expect(labService.approveQCRecord).toHaveBeenCalledWith(1));
-    await waitFor(() => expect(toast.success).toHaveBeenCalledWith('lab:qcApproved'));
-  });
-
   it('useCreateEquipment registers equipment and toasts', async () => {
     labService.createEquipment.mockResolvedValue({ id: 2 });
     const { result } = renderLabHook(() => useCreateEquipment());
@@ -542,11 +510,11 @@ describe('useLab extra mutation hooks', () => {
     const { result } = renderLabHook(() => useUpdateReagent());
 
     act(() => {
-      result.current.mutate({ id: 4, input: { current_stock: 10 } });
+      result.current.mutate({ id: 4, quantity: 10 });
     });
 
     await waitFor(() =>
-      expect(labService.updateReagent).toHaveBeenCalledWith(4, { current_stock: 10 }),
+      expect(labService.updateReagent).toHaveBeenCalledWith(4, { quantity: 10 }),
     );
     await waitFor(() => expect(toast.success).toHaveBeenCalledWith('lab:reagentUpdated'));
   });

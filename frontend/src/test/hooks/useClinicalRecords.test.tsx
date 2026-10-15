@@ -39,7 +39,7 @@ const record: ClinicalRecord = {
   doctor_id: 5,
   chief_complaint: 'Dolor de cabeza',
   diagnosis: 'Migraña',
-  treatment: 'Reposo',
+  treatment_plan: 'Reposo',
   patient_name: 'Maria Garcia',
   doctor_name: 'Dr. Perez',
   created_at: '2026-08-01T10:00:00Z',
@@ -109,7 +109,7 @@ describe('useClinicalRecords hooks', () => {
       patient_id: 10,
       chief_complaint: 'Dolor de cabeza',
       diagnosis: 'Migraña',
-      treatment: 'Reposo',
+      treatment_plan: 'Reposo',
     };
     result.current.mutate(input);
     await waitFor(() => expect(result.current.isSuccess).toBe(true));

@@ -4,18 +4,44 @@ import crypto from 'crypto';
 const mockQuery = vi.hoisted(() => vi.fn());
 const mockLogger = vi.hoisted(() => ({ info: vi.fn(), error: vi.fn(), warn: vi.fn(), debug: vi.fn() }));
 
-vi.mock('../../src/shared/db.js', () => ({ pool: { query: mockQuery }, readPool: { query: mockQuery } }));
+vi.mock('../../src/shared/db.js', () => ({
+  pool: { query: mockQuery },
+  readPool: { query: mockQuery },
+  superAdminPool: { query: mockQuery, connect: vi.fn() },
+}));
 vi.mock('../../src/utils/logger.js', () => ({ logger: mockLogger }));
 
-function computeHash(previousHash, action, tenantId) {
-  const canonical = [previousHash || '', action, tenantId || ''].join('|');
-  return crypto.createHmac('sha256', process.env.AUDIT_HMAC_SECRET).update(canonical).digest('hex');
+// Réplica de auditCanonical (src/modules/audit/audit.service.ts)
+function canonical(row) {
+  const stable = (value) =>
+    value === null || value === undefined
+      ? ''
+      : typeof value !== 'object'
+        ? String(value)
+        : JSON.stringify(value, Object.keys(value).sort());
+  return [
+    row.previous_hash || '',
+    row.action,
+    row.resource_type || '',
+    row.resource_id === null || row.resource_id === undefined ? '' : String(row.resource_id),
+    stable(row.old_values),
+    stable(row.new_values),
+    row.ip_address || '',
+    row.user_id === null || row.user_id === undefined ? '' : String(row.user_id),
+    row.tenant_id || '',
+  ].join('|');
+}
+
+function computeHash(row) {
+  return crypto.createHmac('sha256', process.env.AUDIT_HMAC_SECRET).update(canonical(row)).digest('hex');
 }
 
 const SECRET = process.env.AUDIT_HMAC_SECRET || 'test-hmac-secret-for-testing-32chars!';
 if (!process.env.AUDIT_HMAC_SECRET) process.env.AUDIT_HMAC_SECRET = SECRET;
 
 import { verifyAuditChain } from '../../src/jobs/audit-integrity.job.js';
+
+const NO_RECHAIN = { rechain: false };
 
 describe('verifyAuditChain', () => {
   beforeEach(() => {
@@ -24,9 +50,9 @@ describe('verifyAuditChain', () => {
   });
 
   it('returns valid=true when chain is intact', async () => {
-    const hash1 = computeHash(null, 'user_login', 'default');
-    const hash2 = computeHash(hash1, 'booking_created', 'default');
-    const hash3 = computeHash(hash2, 'clinical_record_created', 'default');
+    const hash1 = computeHash({ previous_hash: null, action: 'user_login', tenant_id: 'default' });
+    const hash2 = computeHash({ previous_hash: hash1, action: 'booking_created', tenant_id: 'default' });
+    const hash3 = computeHash({ previous_hash: hash2, action: 'clinical_record_created', tenant_id: 'default' });
 
     mockQuery.mockResolvedValueOnce({
       rows: [
@@ -36,15 +62,15 @@ describe('verifyAuditChain', () => {
       ],
     });
 
-    const result = await verifyAuditChain();
+    const result = await verifyAuditChain(undefined, NO_RECHAIN);
     expect(result.valid).toBe(true);
     expect(result.brokenLinks).toBe(0);
     expect(result.checked).toBe(3);
   });
 
   it('detects broken previous_hash chain', async () => {
-    const hash1 = computeHash(null, 'user_login', 'default');
-    const wrongHash = computeHash('wrongprevious', 'booking_created', 'default');
+    const hash1 = computeHash({ previous_hash: null, action: 'user_login', tenant_id: 'default' });
+    const wrongHash = computeHash({ previous_hash: 'wrongprevious', action: 'booking_created', tenant_id: 'default' });
 
     mockQuery.mockResolvedValueOnce({
       rows: [
@@ -53,7 +79,7 @@ describe('verifyAuditChain', () => {
       ],
     });
 
-    const result = await verifyAuditChain();
+    const result = await verifyAuditChain(undefined, NO_RECHAIN);
     expect(result.valid).toBe(false);
     expect(result.brokenLinks).toBeGreaterThanOrEqual(1);
     expect(result.checked).toBe(2);
@@ -63,8 +89,8 @@ describe('verifyAuditChain', () => {
   });
 
   it('detects hash mismatch (tampered action)', async () => {
-    const hash1 = computeHash(null, 'user_login', 'default');
-    const tamperedHash = computeHash(hash1, 'booking_created_TAMPERED', 'default');
+    const hash1 = computeHash({ previous_hash: null, action: 'user_login', tenant_id: 'default' });
+    const tamperedHash = computeHash({ previous_hash: hash1, action: 'booking_created_TAMPERED', tenant_id: 'default' });
 
     mockQuery.mockResolvedValueOnce({
       rows: [
@@ -73,13 +99,13 @@ describe('verifyAuditChain', () => {
       ],
     });
 
-    const result = await verifyAuditChain();
+    const result = await verifyAuditChain(undefined, NO_RECHAIN);
     expect(result.valid).toBe(false);
     expect(result.brokenLinks).toBeGreaterThanOrEqual(1);
   });
 
   it('returns valid=true for single row chain', async () => {
-    const hash1 = computeHash(null, 'user_login', 'default');
+    const hash1 = computeHash({ previous_hash: null, action: 'user_login', tenant_id: 'default' });
 
     mockQuery.mockResolvedValueOnce({
       rows: [
@@ -87,7 +113,7 @@ describe('verifyAuditChain', () => {
       ],
     });
 
-    const result = await verifyAuditChain();
+    const result = await verifyAuditChain(undefined, NO_RECHAIN);
     expect(result.valid).toBe(true);
     expect(result.brokenLinks).toBe(0);
     expect(result.checked).toBe(1);
@@ -96,7 +122,7 @@ describe('verifyAuditChain', () => {
   it('returns valid=true for empty chain', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [] });
 
-    const result = await verifyAuditChain();
+    const result = await verifyAuditChain(undefined, NO_RECHAIN);
     expect(result.valid).toBe(true);
     expect(result.brokenLinks).toBe(0);
     expect(result.checked).toBe(0);
@@ -105,7 +131,7 @@ describe('verifyAuditChain', () => {
   it('filters by tenant_id when provided', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [] });
 
-    await verifyAuditChain('tenant-1');
+    await verifyAuditChain('tenant-1', NO_RECHAIN);
     expect(mockQuery).toHaveBeenCalledWith(
       expect.stringContaining('AND tenant_id = $1'),
       ['tenant-1']
@@ -115,7 +141,7 @@ describe('verifyAuditChain', () => {
   it('does not filter by tenant_id when not provided', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [] });
 
-    await verifyAuditChain();
+    await verifyAuditChain(undefined, NO_RECHAIN);
     expect(mockQuery).toHaveBeenCalledWith(
       expect.not.stringContaining('AND tenant_id'),
       []
@@ -123,7 +149,7 @@ describe('verifyAuditChain', () => {
   });
 
   it('handles null previous_hash correctly for first entry', async () => {
-    const hash1 = computeHash(null, 'first_action', 'default');
+    const hash1 = computeHash({ previous_hash: null, action: 'first_action', tenant_id: 'default' });
 
     mockQuery.mockResolvedValueOnce({
       rows: [
@@ -131,7 +157,7 @@ describe('verifyAuditChain', () => {
       ],
     });
 
-    const result = await verifyAuditChain();
+    const result = await verifyAuditChain(undefined, NO_RECHAIN);
     expect(result.valid).toBe(true);
   });
 
@@ -144,7 +170,7 @@ describe('verifyAuditChain', () => {
       ],
     });
 
-    const result = await verifyAuditChain();
+    const result = await verifyAuditChain(undefined, NO_RECHAIN);
     expect(result.valid).toBe(false);
     expect(result.brokenLinks).toBe(3);
     expect(result.checked).toBe(3);
@@ -158,15 +184,15 @@ describe('verifyAuditChain', () => {
     delete process.env.AUDIT_HMAC_SECRET;
 
     try {
-      await expect(verifyAuditChain()).rejects.toThrow('AUDIT_HMAC_SECRET');
+      await expect(verifyAuditChain(undefined, NO_RECHAIN)).rejects.toThrow('AUDIT_HMAC_SECRET');
     } finally {
       process.env.AUDIT_HMAC_SECRET = originalSecret;
     }
   });
 
   it('includes tenant_id in canonical hash computation', async () => {
-    const hash1 = computeHash(null, 'user_login', 'tenant-A');
-    const hash2 = computeHash(hash1, 'booking_created', 'tenant-A');
+    const hash1 = computeHash({ previous_hash: null, action: 'user_login', tenant_id: 'tenant-A' });
+    const hash2 = computeHash({ previous_hash: hash1, action: 'booking_created', tenant_id: 'tenant-A' });
 
     mockQuery.mockResolvedValueOnce({
       rows: [
@@ -175,14 +201,13 @@ describe('verifyAuditChain', () => {
       ],
     });
 
-    // Different tenant should produce different hashes
-    const hash1b = computeHash(null, 'user_login', 'tenant-B');
-    const hash2b = computeHash(hash1b, 'booking_created', 'tenant-B');
+    const hash1b = computeHash({ previous_hash: null, action: 'user_login', tenant_id: 'tenant-B' });
+    const hash2b = computeHash({ previous_hash: hash1b, action: 'booking_created', tenant_id: 'tenant-B' });
 
     expect(hash1).not.toBe(hash1b);
     expect(hash2).not.toBe(hash2b);
 
-    const result = await verifyAuditChain('tenant-A');
+    const result = await verifyAuditChain('tenant-A', NO_RECHAIN);
     expect(result.valid).toBe(true);
   });
 });

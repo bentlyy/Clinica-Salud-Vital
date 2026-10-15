@@ -19,14 +19,15 @@ const invoice: Invoice = {
   patient_id: 10,
   invoice_number: 'INV-001',
   amount: 100,
-  tax: 19,
-  total: 119,
+  tax_amount: 19,
+  discount_amount: 0,
+  total_amount: 119,
   status: 'pending',
   due_date: '2026-08-15',
   items: [{ description: 'Consulta', quantity: 1, unit_price: 100, total: 100 }],
   created_at: '2026-08-01T10:00:00Z',
   patient_name: 'Maria Garcia',
-};
+} as any;
 
 describe('billingService', () => {
   beforeEach(() => {
@@ -61,10 +62,10 @@ describe('billingService', () => {
 
   it('create: POSTs /billing with the input', async () => {
     apiClient.post.mockResolvedValue({ data: invoice });
-    const input = {
+    const input: any = {
       patient_id: 10,
       items: invoice.items,
-      tax: 19,
+      tax_amount: 19,
       due_date: '2026-08-15',
       notes: 'n/a',
     };
@@ -95,19 +96,13 @@ describe('billingService', () => {
 
   it('getStats: GETs /billing/stats', async () => {
     const stats: BillingStats = {
-      total_invoices: 5,
-      pending_invoices: 2,
-      paid_invoices: 3,
+      total_outstanding: 200,
+      total_paid: 300,
       overdue_invoices: 1,
-      total_revenue: 500,
-      pending_amount: 200,
-      paid_amount: 300,
-      overdue_amount: 50,
-      invoices_last_30_days: 4,
-    };
+    } as any;
     apiClient.get.mockResolvedValue({ data: stats });
     const result = await billingService.getStats();
     expect(apiClient.get).toHaveBeenCalledWith('/billing/stats', { signal: undefined });
-    expect(result.total_revenue).toBe(500);
+    expect((result as any).total_paid).toBe(300);
   });
 });

@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { authMiddleware, authorize } from '../../middlewares/auth.middleware.js';
 import { validateZod } from '../../middlewares/validate.middleware.js';
 import * as superAdminController from './super-admin.controller.js';
-import { updateTenantSchema, adminCreateTenantSchema } from './super-admin.schema.js';
+import { updateTenantSchema, adminCreateTenantSchema, userIdParamSchema, toggleUserActiveSchema } from './super-admin.schema.js';
 
 const router = Router();
 
@@ -23,7 +23,7 @@ router.patch('/tenants/:id', authorize('superadmin'), validateZod(updateTenantSc
 router.delete('/tenants/:id', authorize('superadmin'), superAdminController.deleteTenant);
 
 router.get('/users', authorize('superadmin'), superAdminController.listUsers);
-router.patch('/users/:userId/active', authorize('superadmin'), superAdminController.toggleUserActive);
+router.patch('/users/:userId/active', authorize('superadmin'), validateZod(userIdParamSchema, 'params'), validateZod(toggleUserActiveSchema), superAdminController.toggleUserActive);
 
 router.get('/billing', authorize('superadmin'), superAdminController.getBillingSummary);
 

@@ -9,6 +9,14 @@ export const updateTenantSchema = z.object({
   config: z.record(z.string(), z.unknown()).optional(),
 }).strict();
 
+export const userIdParamSchema = z.object({
+  userId: z.coerce.number().int().positive(),
+});
+
+export const toggleUserActiveSchema = z.object({
+  active: z.boolean().optional(),
+}).strict();
+
 export const adminCreateTenantSchema = z.object({
   id: z.string().max(255)
     .regex(/^[a-z0-9-]+$/, 'ID must be lowercase alphanumeric with hyphens')

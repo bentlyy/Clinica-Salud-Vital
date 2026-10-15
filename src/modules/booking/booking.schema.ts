@@ -16,6 +16,10 @@ export const bookingIdSchema = z.object({
   id: z.coerce.number().int().positive(),
 }).strict();
 
+export const bookingConfirmationTokenSchema = z.object({
+  token: z.string().min(1).max(4096),
+}).strict();
+
 export const cancelBookingSchema = z.object({
   reason: z.string().trim().max(255).optional(),
 }).strict();

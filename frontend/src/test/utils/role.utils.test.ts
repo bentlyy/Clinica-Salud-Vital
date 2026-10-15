@@ -81,7 +81,7 @@ describe('getRoleLabel', () => {
     'common:roles.guest': 'Invitado',
     'common:roles.user': 'Usuario',
   };
-  const t = (key: string) => esDict[key] ?? key;
+  const t = ((key: string) => esDict[key] ?? key) as unknown as import('i18next').TFunction;
 
   it('returns a human-readable label for each role', () => {
     expect(getRoleLabel('superadmin', t)).toBe('Super Admin');

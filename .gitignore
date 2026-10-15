@@ -81,6 +81,9 @@ temp/
 # Test output files
 test-output*.txt
 
+# Prospección de leads (datos de contacto de terceros - no commitear)
+scripts/prospeccion/out/
+
 # Dev test scripts (may contain hardcoded credentials - never commit)
 api-test*.js
 dbtest*.js

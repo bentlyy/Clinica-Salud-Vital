@@ -157,7 +157,9 @@ describe('LandingPage', () => {
     Object.defineProperty(window, 'location', {
       configurable: true,
       value: {
-        href: 'http://localhost/',
+        get href() {
+          return 'http://localhost/';
+        },
         set href(value: string) {
           locationSetter(value);
         },

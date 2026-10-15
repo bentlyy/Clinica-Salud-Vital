@@ -63,7 +63,7 @@ function renderCalendar(overrides: { bookings?: Booking[]; onEventClick?: (b: Bo
 
 function getCalendarProps() {
   const calls = vi.mocked(FullCalendar).mock.calls;
-  return calls[calls.length - 1][0] as {
+  return calls[calls.length - 1][0] as unknown as {
     events: {
       id: string;
       title: string;

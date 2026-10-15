@@ -1,5 +1,6 @@
 import { Counter, Gauge, Histogram, Registry, collectDefaultMetrics } from 'prom-client';
 import type { Request, Response } from 'express';
+import crypto from 'crypto';
 import os from 'os';
 import fs from 'fs';
 import { pool } from './db.js';
@@ -159,9 +160,23 @@ export const refreshDbMetrics = async (): Promise<void> => {
 
 export const metricsHandler = async (req: Request, res: Response): Promise<void> => {
   const token = process.env.METRICS_TOKEN;
-  if (token) {
+
+  if (!token) {
+    // Fail-closed: en producción, sin METRICS_TOKEN el endpoint no se expone.
+    // Antes quedaba público por defecto (rutas, códigos HTTP, tamaño de BD,
+    // conexiones del pool, queries lentas, disco) y cada scrape forzaba trabajo
+    // de BD. En desarrollo/test se mantiene abierto para no romper el flujo local.
+    if (process.env.NODE_ENV === 'production') {
+      res.status(404).json({ error: 'Not found' });
+      return;
+    }
+  } else {
     const auth = req.get('authorization') ?? '';
-    if (auth !== `Bearer ${token}`) {
+    const provided = auth.startsWith('Bearer ') ? auth.slice(7) : '';
+    // Comparación en tiempo constante para no filtrar el token por timing.
+    const expected = Buffer.from(token);
+    const got = Buffer.from(provided);
+    if (expected.length !== got.length || !crypto.timingSafeEqual(expected, got)) {
       res.status(401).json({ error: 'Unauthorized' });
       return;
     }
