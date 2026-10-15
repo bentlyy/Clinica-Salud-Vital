@@ -105,6 +105,7 @@ const exception: AvailabilityException = {
   date: '2026-09-01',
   start_time: null,
   end_time: null,
+  is_full_day: false,
   reason: 'Vacaciones',
   created_at: '2026-08-01T10:00:00Z',
 };

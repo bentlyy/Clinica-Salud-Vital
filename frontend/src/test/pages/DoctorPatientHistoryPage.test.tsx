@@ -6,7 +6,7 @@ import { AppThemeProvider } from '@/shared/providers/ThemeProvider';
 import DoctorPatientHistoryPage from '@/modules/doctors/pages/DoctorPatientHistoryPage';
 
 const apiClient = vi.hoisted(() => ({ get: vi.fn() }));
-const searchParamsMock = vi.hoisted(() => ({ get: vi.fn(() => null) }));
+const searchParamsMock = vi.hoisted(() => ({ get: vi.fn<(key: string) => string | null>(() => null) }));
 
 vi.mock('@/shared/services/api-client', () => ({ apiClient }));
 

@@ -136,23 +136,37 @@ export async function removeLabRequestItem(_requestId: number, itemId: number, o
 
 // ── Result Entry ─────────────────────────────────────────────────────────────
 
+export type ResultEntryInput = {
+  result_value: string;
+  unit?: string;
+  notes?: string;
+  results?: Record<string, unknown>;
+};
+
+function toResultPayload(input: ResultEntryInput): { result_value: string; result_notes?: string } {
+  return {
+    result_value: input.result_value,
+    ...(input.notes ? { result_notes: input.notes } : {}),
+  };
+}
+
 export async function enterResult(
   _requestId: number,
   itemId: number,
-  input: { result_value: string; unit?: string; notes?: string; results?: Record<string, unknown> },
+  input: ResultEntryInput,
   opts?: { signal?: AbortSignal },
 ): Promise<LabRequestItem> {
-  const { data } = await apiClient.patch<LabRequestItem>(`${BASE}/items/${itemId}/result`, input, { signal: opts?.signal });
+  const { data } = await apiClient.patch<LabRequestItem>(`${BASE}/items/${itemId}/result`, toResultPayload(input), { signal: opts?.signal });
   return data;
 }
 
 export async function updateResult(
   _requestId: number,
   itemId: number,
-  input: { result_value: string; unit?: string; notes?: string; results?: Record<string, unknown> },
+  input: ResultEntryInput,
   opts?: { signal?: AbortSignal },
 ): Promise<LabRequestItem> {
-  const { data } = await apiClient.patch<LabRequestItem>(`${BASE}/items/${itemId}/result`, input, { signal: opts?.signal });
+  const { data } = await apiClient.patch<LabRequestItem>(`${BASE}/items/${itemId}/result`, toResultPayload(input), { signal: opts?.signal });
   return data;
 }
 
@@ -221,11 +235,6 @@ export async function createSample(
   return data;
 }
 
-export async function updateSample(id: number, input: Partial<LabSample>, opts?: { signal?: AbortSignal }): Promise<LabSample> {
-  const { data } = await apiClient.patch<LabSample>(`${BASE}/samples/${id}`, input, { signal: opts?.signal });
-  return data;
-}
-
 export async function receiveSample(id: number, opts?: { signal?: AbortSignal }): Promise<LabSample> {
   const { data } = await apiClient.patch<LabSample>(`${BASE}/samples/${id}/receive`, undefined, { signal: opts?.signal });
   return data;
@@ -237,7 +246,7 @@ export async function verifySample(id: number, opts?: { signal?: AbortSignal }):
 }
 
 export async function rejectSample(id: number, reason: string, opts?: { signal?: AbortSignal }): Promise<LabSample> {
-  const { data } = await apiClient.patch<LabSample>(`${BASE}/samples/${id}/reject`, { reason }, { signal: opts?.signal });
+  const { data } = await apiClient.patch<LabSample>(`${BASE}/samples/${id}/reject`, { rejection_reason: reason }, { signal: opts?.signal });
   return data;
 }
 
@@ -265,16 +274,6 @@ export async function getQCRecords(params?: {
 
 export async function createQCRecord(input: Partial<LabQCRecord>, opts?: { signal?: AbortSignal }): Promise<LabQCRecord> {
   const { data } = await apiClient.post<LabQCRecord>(`${BASE}/qc`, input, { signal: opts?.signal });
-  return data;
-}
-
-export async function updateQCRecord(id: number, input: Partial<LabQCRecord>, opts?: { signal?: AbortSignal }): Promise<LabQCRecord> {
-  const { data } = await apiClient.put<LabQCRecord>(`${BASE}/qc/${id}`, input, { signal: opts?.signal });
-  return data;
-}
-
-export async function approveQCRecord(id: number, opts?: { signal?: AbortSignal }): Promise<LabQCRecord> {
-  const { data } = await apiClient.post<LabQCRecord>(`${BASE}/qc/${id}/approve`, undefined, { signal: opts?.signal });
   return data;
 }
 
@@ -307,7 +306,7 @@ export async function createReagent(input: Partial<LabReagent>, opts?: { signal?
   return data;
 }
 
-export async function updateReagent(id: number, input: Partial<LabReagent>, opts?: { signal?: AbortSignal }): Promise<LabReagent> {
+export async function updateReagent(id: number, input: { quantity: number }, opts?: { signal?: AbortSignal }): Promise<LabReagent> {
   const { data } = await apiClient.patch<LabReagent>(`${BASE}/reagents/${id}/stock`, input, { signal: opts?.signal });
   return data;
 }
@@ -353,10 +352,6 @@ export async function getLabNotifications(opts?: { signal?: AbortSignal }): Prom
 export async function acknowledgeNotification(id: number, opts?: { signal?: AbortSignal }): Promise<LabNotification> {
   const { data } = await apiClient.patch<LabNotification>(`${BASE}/notifications/${id}/ack`, undefined, { signal: opts?.signal });
   return data;
-}
-
-export async function acknowledgeAllNotifications(opts?: { signal?: AbortSignal }): Promise<void> {
-  await apiClient.post(`${BASE}/notifications/acknowledge-all`, undefined, { signal: opts?.signal });
 }
 
 // ── SSE ──────────────────────────────────────────────────────────────────────

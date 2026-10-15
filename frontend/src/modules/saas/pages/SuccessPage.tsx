@@ -20,12 +20,12 @@ export default function SuccessPage() {
   const { data: plans, isLoading: plansLoading } = usePlans();
   const { data: subData, isLoading: subLoading, error: subError } = useMySubscription();
 
-  if (plansLoading || subLoading) return <LoadingState />;
-  if (subError) return <ErrorState />;
-
   const brandMain = theme.palette.custom?.brand?.main || theme.palette.primary.main;
   const selectedPlan = plans?.find((p) => p.code === planCode) ?? subData?.subscription?.plan;
   const price = useConvertedPrice(selectedPlan?.price_monthly ?? 0);
+
+  if (plansLoading || subLoading) return <LoadingState />;
+  if (subError) return <ErrorState />;
 
   return (
     <Box>

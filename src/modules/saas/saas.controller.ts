@@ -5,6 +5,7 @@ import * as onboardingService from './onboarding.service.js';
 import { BadRequestError, NotFoundError } from '../../utils/errors.js';
 import { E } from '../../utils/error-codes.js';
 import { logger } from '../../utils/logger.js';
+import { verifyRecaptcha } from '../../shared/captcha.service.js';
 import { convertFromUsd } from '../../shared/currencies.js';
 import {
   createCheckoutPreference,
@@ -155,30 +156,7 @@ export const getUsageSummary = asyncHandler(async (req: Request, res: Response) 
   res.json({ summary });
 });
 
-const verifyCaptchaOnboard = async (token: string): Promise<boolean> => {
-  const secret = process.env.RECAPTCHA_SECRET_KEY;
-  if (!secret) return true;
-  if (secret === '6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe') {
-    logger.warn('reCAPTCHA TEST key en uso — captcha aceptado siempre (modo prueba)');
-    return true;
-  }
-  if (!token) {
-    logger.warn('reCAPTCHA secret configured but no token provided — blocking request');
-    return false;
-  }
-  try {
-    const params = new URLSearchParams({ secret, response: token });
-    const res = await fetch('https://www.google.com/recaptcha/api/siteverify', {
-      method: 'POST',
-      body: params,
-      signal: AbortSignal.timeout(5000),
-    });
-    const data = await res.json() as { success: boolean };
-    return data.success === true;
-  } catch {
-    return false;
-  }
-};
+const verifyCaptchaOnboard = (token: string): Promise<boolean> => verifyRecaptcha(token, 'saas-onboard');
 
 export const onboardTenant = asyncHandler(async (req: Request, res: Response) => {
   if (!(await verifyCaptchaOnboard(req.body.captcha_token || ''))) {

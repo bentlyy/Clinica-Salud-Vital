@@ -12,9 +12,9 @@ beforeEach(() => {
 });
 
 describe('csrf middleware', () => {
-  it('sets the csrf cookie when missing and continues', async () => {
+  it('sets the csrf cookie on safe methods when missing and continues', async () => {
     const { csrfProtection } = await import('../../src/middlewares/csrf.middleware.js');
-    const req = { cookies: {}, method: 'POST' };
+    const req = { cookies: {}, method: 'GET' };
     const res = { cookie: vi.fn() };
     const next = vi.fn();
 
@@ -26,6 +26,19 @@ describe('csrf middleware', () => {
       path: '/',
     }));
     expect(next).toHaveBeenCalled();
+  });
+
+  it('rejects a mutating request when no csrf cookie exists yet', async () => {
+    const { csrfProtection } = await import('../../src/middlewares/csrf.middleware.js');
+    const req = { cookies: {}, method: 'POST', headers: {} };
+    const res = { cookie: vi.fn() };
+    const next = vi.fn();
+
+    csrfProtection(req, res, next);
+
+    expect(res.cookie).not.toHaveBeenCalled();
+    expect(mockForbiddenError).toHaveBeenCalledWith('CSRF token missing');
+    expect(next).toHaveBeenCalledWith(expect.objectContaining({ name: 'ForbiddenError' }));
   });
 
   it('skips validation for safe methods', async () => {

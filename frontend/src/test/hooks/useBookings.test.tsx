@@ -105,11 +105,11 @@ describe('useBookings hooks', () => {
     await waitFor(() => expect(result.current.fetchStatus).toBe('idle'));
     expect(bookingService.getAvailableSlots).not.toHaveBeenCalled();
 
-    rerender({ doctorId: 5, date: '2026-08-01' });
+    rerender({ doctorId: 5 as any, date: '2026-08-01' as any });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(bookingService.getAvailableSlots).toHaveBeenCalledWith(
-      5,
-      '2026-08-01',
+      5 as any,
+      '2026-08-01' as any,
       { signal: expect.any(AbortSignal) },
     );
   });

@@ -15,12 +15,12 @@ import {
 } from './booking.controller.js';
 import { authMiddleware, authorize } from '../../middlewares/auth.middleware.js';
 import { validateZod } from '../../middlewares/validate.middleware.js';
-import { createBookingSchema, availableSlotsSchema, bookingIdSchema, cancelBookingSchema, rescheduleBookingSchema, createBookingSeriesSchema } from './booking.schema.js';
+import { createBookingSchema, availableSlotsSchema, bookingIdSchema, cancelBookingSchema, rescheduleBookingSchema, createBookingSeriesSchema, bookingConfirmationTokenSchema } from './booking.schema.js';
 
 const router = Router();
 
 router.post('/', authMiddleware, validateZod(createBookingSchema), createBooking);
-router.post('/confirm/:token', confirmBooking);
+router.post('/confirm/:token', validateZod(bookingConfirmationTokenSchema, 'params'), confirmBooking);
 router.get('/me', authMiddleware, getMyBookings);
 router.patch('/:id/cancel', authMiddleware, validateZod(bookingIdSchema, 'params'), validateZod(cancelBookingSchema, 'body'), cancelBooking);
 router.patch('/:id/reschedule', authMiddleware, validateZod(bookingIdSchema, 'params'), validateZod(rescheduleBookingSchema, 'body'), rescheduleBooking);

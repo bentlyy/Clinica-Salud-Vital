@@ -10,7 +10,14 @@ const DEFAULT_TENANT_ID = process.env.DEFAULT_TENANT_ID || 'default';
 
 export const DEMO_TENANT_ID = 'clinica-demo';
 export const DEMO_ADMIN_EMAIL = 'admin@demo.clinic.com';
-export const DEMO_ADMIN_PASSWORD = 'DemoVitaria2026!';
+// La contraseña demo NO debe ser un literal adivinable en producción. Se toma
+// de `DEMO_ADMIN_PASSWORD`; en producción, si no está definida, se deja vacía
+// para que el admin demo caiga en la derivación aleatoria (seed-credentials) y
+// quede inutilizable hasta asignarle una nueva. El fallback literal sólo aplica
+// en desarrollo.
+export const DEMO_ADMIN_PASSWORD =
+  process.env.DEMO_ADMIN_PASSWORD ||
+  (process.env.NODE_ENV === 'production' ? '' : 'DemoVitaria2026!');
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 

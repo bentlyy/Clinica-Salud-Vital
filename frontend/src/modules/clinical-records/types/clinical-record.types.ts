@@ -37,7 +37,7 @@ export interface CreateClinicalRecordInput {
   vitals?: Record<string, string>;
 }
 
-export interface UpdateClinicalRecordInput extends Partial<CreateClinicalRecordInput> {}
+export type UpdateClinicalRecordInput = Partial<CreateClinicalRecordInput>;
 
 export interface ClinicalRecordListParams {
   page?: number;

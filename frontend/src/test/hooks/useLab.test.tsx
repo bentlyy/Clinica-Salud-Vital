@@ -30,15 +30,12 @@ const labService = vi.hoisted(() => ({
   getSamples: vi.fn(),
   getSampleById: vi.fn(),
   createSample: vi.fn(),
-  updateSample: vi.fn(),
   receiveSample: vi.fn(),
   verifySample: vi.fn(),
   rejectSample: vi.fn(),
   getResultHistory: vi.fn(),
   getQCRecords: vi.fn(),
   createQCRecord: vi.fn(),
-  updateQCRecord: vi.fn(),
-  approveQCRecord: vi.fn(),
   getEquipment: vi.fn(),
   createEquipment: vi.fn(),
   updateEquipment: vi.fn(),
@@ -51,7 +48,6 @@ const labService = vi.hoisted(() => ({
   getLabAnalyticsByDoctor: vi.fn(),
   getLabNotifications: vi.fn(),
   acknowledgeNotification: vi.fn(),
-  acknowledgeAllNotifications: vi.fn(),
   subscribeToLabSSE: vi.fn(),
 }));
 
@@ -70,7 +66,6 @@ import {
   useDeleteLabRequest,
   useUpdateLabRequest,
   useCancelLabRequest,
-  useAcknowledgeAllNotifications,
   useLabFilters,
   useLabSSE,
   useEnterResult,
@@ -197,18 +192,6 @@ describe('useLab mutation hooks', () => {
       expect(labService.cancelLabRequest).toHaveBeenCalledWith(7, 'sin muestra'),
     );
     await waitFor(() => expect(toast.success).toHaveBeenCalledWith('lab:requestCancelled'));
-  });
-
-  it('useAcknowledgeAllNotifications toasts success after resolving', async () => {
-    labService.acknowledgeAllNotifications.mockResolvedValue(undefined);
-    const { result } = renderLabHook(() => useAcknowledgeAllNotifications());
-
-    act(() => {
-      result.current.mutate();
-    });
-
-    await waitFor(() => expect(labService.acknowledgeAllNotifications).toHaveBeenCalled());
-    await waitFor(() => expect(toast.success).toHaveBeenCalledWith('lab:notificationsRead'));
   });
 
   it('useEnterResult sends result input to the service', async () => {

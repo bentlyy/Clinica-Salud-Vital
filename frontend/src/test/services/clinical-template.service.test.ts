@@ -28,11 +28,11 @@ describe('clinicalTemplateService', () => {
   });
 
   it('list: GETs /clinical-templates with signal', async () => {
-    apiClient.get.mockResolvedValue({ data: { items: [template], total: 1 } });
+    apiClient.get.mockResolvedValue({ data: { data: [template], total: 1, page: 1, limit: 10, totalPages: 1 } });
     const signal = new AbortController().signal;
     const result = await clinicalTemplateService.list({ signal });
     expect(apiClient.get).toHaveBeenCalledWith('/clinical-templates', { signal });
-    expect(result.items).toEqual([template]);
+    expect(result.data).toEqual([template]);
   });
 
   it('getById: GETs /clinical-templates/:id', async () => {

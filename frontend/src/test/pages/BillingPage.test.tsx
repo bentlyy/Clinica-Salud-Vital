@@ -68,7 +68,7 @@ vi.mock('react-i18next', () => ({
     };
     return {
       t: (key: string, opts?: string | Record<string, unknown>) => {
-        let value = translations[key] ?? (typeof opts === 'string' ? opts : key);
+        const value = translations[key] ?? (typeof opts === 'string' ? opts : key);
         if (opts && typeof opts === 'object') {
           return value.replace(/\{\{(\w+)\}\}/g, (_, name: string) => String(opts[name]));
         }

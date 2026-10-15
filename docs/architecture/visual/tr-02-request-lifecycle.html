@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vitaria · Ciclo de una petición</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Plus+Jakarta+Sans:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --color-paper:  #f6f8fb;
+      --color-ink:    #0d3d38;
+      --color-muted:  #48606f;
+      --color-accent: #0d9488;
+      --font-sans:    'Plus Jakarta Sans', system-ui, sans-serif;
+      --font-serif:   'Instrument Serif', serif;
+      --font-mono:    'Geist Mono', ui-monospace, monospace;
+    }
+    body {
+      font-family: var(--font-sans);
+      background: var(--color-paper);
+      color: var(--color-ink);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem 2rem;
+    }
+    .frame { max-width: 1200px; width: 100%; }
+    .eyebrow {
+      font-family: var(--font-mono);
+      font-size: 0.66rem;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--color-muted);
+      margin-bottom: 0.5rem;
+    }
+    h1 {
+      font-family: var(--font-serif);
+      font-size: clamp(1.5rem, 2.4vw + 0.75rem, 2rem);
+      font-weight: 400;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+      color: var(--color-ink);
+      margin-bottom: 1.5rem;
+    }
+    svg { width: 100%; min-width: 900px; display: block; }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <p class="eyebrow">Flowchart · Transversal</p>
+    <h1>El viaje de una petición por la cadena de middlewares</h1>
+
+    <svg viewBox="0 0 1000 760" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="tr-02-request-lifecycle-title tr-02-request-lifecycle-desc">
+      <title id="tr-02-request-lifecycle-title">Ciclo de vida de una petición en Vitaria</title>
+      <desc id="tr-02-request-lifecycle-desc">Cadena de middlewares de Express: correlation id, logger, blindaje (helmet, cors, hpp, sanitize, rate limit), parseo, routers /api, auth JWT, tenant RLS, autorización por rol, validación Zod, handler y respuesta; con rama de error hacia el errorHandler.</desc>
+      <defs>
+        <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#48606f"/></marker>
+        <marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#0d9488"/></marker>
+      </defs>
+
+      <rect width="100%" height="100%" fill="#f6f8fb"/>
+
+      <!-- MAIN CHAIN -->
+      <rect x="280" y="144" width="440" height="44" rx="6" fill="rgba(72,96,111,0.10)" stroke="#7c93a1" stroke-width="1"/>
+      <text x="500" y="163" fill="#0d3d38" font-size="12" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">Petición HTTP entrante</text>
+      <text x="500" y="178" fill="#48606f" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">GET /api/… · cookie · CSRF</text>
+
+      <rect x="280" y="200" width="440" height="44" rx="6" fill="#f6f8fb"/>
+      <rect x="280" y="200" width="440" height="44" rx="6" fill="#ffffff" stroke="#0d3d38" stroke-width="1"/>
+      <text x="500" y="219" fill="#0d3d38" font-size="12" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">Observabilidad</text>
+      <text x="500" y="234" fill="#48606f" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">correlationId · requestLogger · metrics</text>
+
+      <rect x="280" y="256" width="440" height="44" rx="6" fill="#f6f8fb"/>
+      <rect x="280" y="256" width="440" height="44" rx="6" fill="#ffffff" stroke="#0d3d38" stroke-width="1"/>
+      <text x="500" y="275" fill="#0d3d38" font-size="12" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">Blindaje</text>
+      <text x="500" y="290" fill="#48606f" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">helmet · cors · hpp · sanitize-html · rate limit</text>
+
+      <rect x="280" y="312" width="440" height="44" rx="6" fill="#f6f8fb"/>
+      <rect x="280" y="312" width="440" height="44" rx="6" fill="#ffffff" stroke="#0d3d38" stroke-width="1"/>
+      <text x="500" y="331" fill="#0d3d38" font-size="12" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">Parseo</text>
+      <text x="500" y="346" fill="#48606f" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">express.json · envelope · prefijo /api</text>
+
+      <rect x="280" y="368" width="440" height="44" rx="6" fill="rgba(13,148,136,0.10)" stroke="#0d9488" stroke-width="1"/>
+      <text x="500" y="387" fill="#0d3d38" font-size="12" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">Auth · JWT</text>
+      <text x="500" y="402" fill="#48606f" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">verifica access token · sesión</text>
+
+      <rect x="280" y="424" width="440" height="44" rx="6" fill="rgba(13,148,136,0.10)" stroke="#0d9488" stroke-width="1"/>
+      <text x="500" y="443" fill="#0d3d38" font-size="12" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">Tenant · RLS</text>
+      <text x="500" y="458" fill="#48606f" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">fija app.tenant_id en la conexión</text>
+
+      <rect x="280" y="480" width="440" height="44" rx="6" fill="#ffffff" stroke="#0d3d38" stroke-width="1"/>
+      <text x="500" y="499" fill="#0d3d38" font-size="12" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">Autorización por rol</text>
+      <text x="500" y="514" fill="#48606f" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">capacidades · RBAC</text>
+
+      <rect x="280" y="536" width="440" height="44" rx="6" fill="#f6f8fb"/>
+      <rect x="280" y="536" width="440" height="44" rx="6" fill="#ffffff" stroke="#0d3d38" stroke-width="1"/>
+      <text x="500" y="555" fill="#0d3d38" font-size="12" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">Validación · Zod</text>
+      <text x="500" y="570" fill="#48606f" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">cobertura parcial: 80 / 219 endpoints</text>
+
+      <rect x="280" y="592" width="440" height="44" rx="6" fill="#ffffff" stroke="#0d3d38" stroke-width="1"/>
+      <text x="500" y="611" fill="#0d3d38" font-size="12" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">Handler</text>
+      <text x="500" y="626" fill="#48606f" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">controller → service → repositorio → pg pool</text>
+
+      <rect x="280" y="648" width="440" height="44" rx="6" fill="rgba(13,148,136,0.10)" stroke="#0d9488" stroke-width="1"/>
+      <text x="500" y="667" fill="#0d3d38" font-size="12" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">Respuesta</text>
+      <text x="500" y="682" fill="#48606f" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">JSON · paginación · código HTTP</text>
+
+      <!-- CHAIN CONNECTORS -->
+      <line x1="500" y1="188" x2="500" y2="200" stroke="#48606f" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <line x1="500" y1="244" x2="500" y2="256" stroke="#48606f" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <line x1="500" y1="300" x2="500" y2="312" stroke="#48606f" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <line x1="500" y1="356" x2="500" y2="368" stroke="#48606f" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <line x1="500" y1="412" x2="500" y2="424" stroke="#48606f" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <line x1="500" y1="468" x2="500" y2="480" stroke="#48606f" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <line x1="500" y1="524" x2="500" y2="536" stroke="#48606f" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <line x1="500" y1="580" x2="500" y2="592" stroke="#48606f" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <line x1="500" y1="636" x2="500" y2="648" stroke="#0d9488" stroke-width="1.2" marker-end="url(#arrow-accent)"/>
+
+      <!-- ERROR BRANCH -->
+      <rect x="804" y="256" width="156" height="64" rx="6" fill="rgba(13,61,56,0.03)" stroke="rgba(13,61,56,0.30)" stroke-width="1" stroke-dasharray="4,3"/>
+      <text x="882" y="280" fill="#0d3d38" font-size="12" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">errorHandler</text>
+      <text x="882" y="296" fill="#48606f" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">único · error-codes</text>
+      <text x="882" y="310" fill="#48606f" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">loguea con correlationId</text>
+
+      <path d="M720,278 H768 Q776,278 776,286 H804" fill="none" stroke="#48606f" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arrow)"/>
+      <path d="M720,558 H788 V302 H804" fill="none" stroke="#48606f" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arrow)"/>
+
+      <rect x="736" y="392" width="88" height="12" rx="2" fill="#f6f8fb"/>
+      <text x="780" y="402" fill="#48606f" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">on throw</text>
+
+      <!-- CALLOUT -->
+      <line x1="40" y1="716" x2="960" y2="716" stroke="rgba(13,61,56,0.10)" stroke-width="0.8"/>
+      <text x="40" y="736" fill="#48606f" font-size="11" font-style="italic" font-family="'Instrument Serif', serif">Cualquier fallo de la cadena cae en un único errorHandler que responde con un código tipado y preserva el correlationId.</text>
+      <text x="40" y="754" fill="#7c93a1" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.06em">FND-T1: 139/219 endpoints sin validación Zod · FND-T6: el envelope de éxito no es uniforme</text>
+    </svg>
+  </div>
+</body>
+</html>

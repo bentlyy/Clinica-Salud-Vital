@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vitaria · Semillas y arranque</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Plus+Jakarta+Sans:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --color-paper:  #f6f8fb;
+      --color-ink:    #0d3d38;
+      --color-muted:  #48606f;
+      --color-accent: #0d9488;
+      --font-sans:    'Plus Jakarta Sans', system-ui, sans-serif;
+      --font-serif:   'Instrument Serif', serif;
+      --font-mono:    'Geist Mono', ui-monospace, monospace;
+    }
+    body {
+      font-family: var(--font-sans);
+      background: var(--color-paper);
+      color: var(--color-ink);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem 2rem;
+    }
+    .frame { max-width: 1200px; width: 100%; }
+    .eyebrow {
+      font-family: var(--font-mono);
+      font-size: 0.66rem;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--color-muted);
+      margin-bottom: 0.5rem;
+    }
+    h1 {
+      font-family: var(--font-serif);
+      font-size: clamp(1.5rem, 2.4vw + 0.75rem, 2rem);
+      font-weight: 400;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+      color: var(--color-ink);
+      margin-bottom: 1.5rem;
+    }
+    svg { width: 100%; min-width: 900px; display: block; }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <p class="eyebrow">Flowchart · Semillas</p>
+    <h1>El arranque decide si la base se puebla o solo se migra</h1>
+
+    <svg viewBox="0 0 1000 800" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="sub-18-seeds-title sub-18-seeds-desc">
+      <title id="sub-18-seeds-title">Semillas y arranque de datos en Vitaria</title>
+      <desc id="sub-18-seeds-desc">Secuencia de arranque de la aplicación: se registran workers, se carga el tenant, y si las semillas están habilitadas se ejecutan seeds y backfills idempotentes que también crean el admin y el superadmin iniciales.</desc>
+      <defs>
+        <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#48606f"/></marker>
+        <marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#0d9488"/></marker>
+      </defs>
+
+      <rect width="100%" height="100%" fill="#f6f8fb"/>
+
+      <!-- SPINE -->
+      <text x="100" y="76" fill="#7c93a1" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.16em">ARRANQUE · src/app.ts</text>
+
+      <rect x="100" y="88" width="300" height="52" rx="6" fill="rgba(72,96,111,0.10)" stroke="#7c93a1" stroke-width="1"/>
+      <text x="250" y="112" fill="#0d3d38" font-size="11" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">registerWorkers() → startQueueProcessor()</text>
+      <text x="250" y="128" fill="#48606f" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">procesadores de cola en marcha</text>
+
+      <rect x="100" y="160" width="300" height="52" rx="6" fill="#ffffff" stroke="#0d3d38" stroke-width="1"/>
+      <text x="250" y="184" fill="#0d3d38" font-size="11" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">tenantService.loadFromDB()</text>
+      <text x="250" y="200" fill="#48606f" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">set_tenant_id('default')</text>
+
+      <polygon points="250,300 362,356 250,412 138,356" fill="rgba(13,61,56,0.05)" stroke="#48606f" stroke-width="1"/>
+      <text x="250" y="352" fill="#0d3d38" font-size="10" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">¿seeds</text>
+      <text x="250" y="366" fill="#0d3d38" font-size="10" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">habilitadas?</text>
+
+      <text x="40" y="440" fill="#7c93a1" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.04em">NODE_ENV ≠ 'production'  ‖  RUN_SEEDS = 'true'</text>
+
+      <line x1="250" y1="140" x2="250" y2="160" stroke="#48606f" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <line x1="250" y1="212" x2="250" y2="300" stroke="#48606f" stroke-width="1.2" marker-end="url(#arrow)"/>
+
+      <!-- SÍ BRANCH -->
+      <path d="M362,356 H470 V112 H560" fill="none" stroke="#0d9488" stroke-width="1.2" marker-end="url(#arrow-accent)"/>
+      <rect x="392" y="336" width="34" height="12" rx="2" fill="#f6f8fb"/>
+      <text x="409" y="346" fill="#0d9488" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">sí</text>
+
+      <rect x="560" y="88" width="280" height="48" rx="6" fill="#ffffff" stroke="#0d3d38" stroke-width="1"/>
+      <text x="700" y="118" fill="#0d3d38" font-size="11" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">seedDefaultTenant()</text>
+
+      <rect x="560" y="152" width="280" height="48" rx="6" fill="#ffffff" stroke="#0d3d38" stroke-width="1"/>
+      <text x="700" y="182" fill="#0d3d38" font-size="11" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">seedSuperAdmin()</text>
+
+      <rect x="560" y="216" width="280" height="48" rx="6" fill="#ffffff" stroke="#0d3d38" stroke-width="1"/>
+      <text x="700" y="246" fill="#0d3d38" font-size="11" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">seedTestTenants()</text>
+
+      <rect x="560" y="280" width="280" height="48" rx="6" fill="#ffffff" stroke="#0d3d38" stroke-width="1"/>
+      <text x="700" y="304" fill="#0d3d38" font-size="11" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">seed()</text>
+      <text x="700" y="320" fill="#48606f" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">gate propio SEED_ON_STARTUP</text>
+
+      <rect x="560" y="344" width="280" height="48" rx="6" fill="#ffffff" stroke="#0d3d38" stroke-width="1"/>
+      <text x="700" y="368" fill="#0d3d38" font-size="11" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">backfills()</text>
+      <text x="700" y="384" fill="#48606f" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">facturas · historia · lab · user1</text>
+
+      <rect x="560" y="408" width="280" height="48" rx="6" fill="#ffffff" stroke="#0d3d38" stroke-width="1"/>
+      <text x="700" y="438" fill="#0d3d38" font-size="11" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">spreadSeedDates()</text>
+
+      <rect x="560" y="472" width="280" height="48" rx="6" fill="rgba(13,148,136,0.10)" stroke="#0d9488" stroke-width="1"/>
+      <text x="700" y="502" fill="#0d3d38" font-size="11" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">markSeedComplete()</text>
+
+      <line x1="700" y1="136" x2="700" y2="152" stroke="#48606f" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <line x1="700" y1="200" x2="700" y2="216" stroke="#48606f" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <line x1="700" y1="264" x2="700" y2="280" stroke="#48606f" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <line x1="700" y1="328" x2="700" y2="344" stroke="#48606f" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <line x1="700" y1="392" x2="700" y2="408" stroke="#48606f" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <line x1="700" y1="456" x2="700" y2="472" stroke="#48606f" stroke-width="1.2" marker-end="url(#arrow)"/>
+
+      <!-- NO BRANCH -->
+      <path d="M250,412 V560 H560" fill="none" stroke="#48606f" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <rect x="292" y="474" width="34" height="12" rx="2" fill="#f6f8fb"/>
+      <text x="309" y="484" fill="#48606f" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">no</text>
+
+      <rect x="560" y="536" width="280" height="48" rx="6" fill="rgba(13,61,56,0.02)" stroke="rgba(13,61,56,0.20)" stroke-width="1" stroke-dasharray="4,3"/>
+      <text x="700" y="566" fill="#0d3d38" font-size="11" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">markSeedComplete()</text>
+
+      <!-- JOIN -->
+      <path d="M700,520 V612" fill="none" stroke="#48606f" stroke-width="1.2"/>
+      <path d="M700,584 V612" fill="none" stroke="#48606f" stroke-width="1.2"/>
+      <line x1="700" y1="612" x2="700" y2="624" stroke="#48606f" stroke-width="1.2" marker-end="url(#arrow)"/>
+
+      <rect x="540" y="624" width="320" height="48" rx="6" fill="rgba(13,61,56,0.05)" stroke="#48606f" stroke-width="1"/>
+      <text x="700" y="644" fill="#0d3d38" font-size="11" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">startReminderJob() · refreshRates() · crons</text>
+      <text x="700" y="660" fill="#48606f" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">6 h tasas · 6 h auditoría · 03:00 limpieza</text>
+
+      <!-- NOTES -->
+      <rect x="40" y="700" width="440" height="72" rx="8" fill="rgba(13,61,56,0.02)" stroke="rgba(13,61,56,0.10)" stroke-width="0.8"/>
+      <text x="58" y="722" fill="#7c93a1" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.16em">EFECTOS LATERALES EN RUNTIME</text>
+      <text x="58" y="742" fill="#0d3d38" font-size="10" font-family="'Plus Jakarta Sans', sans-serif">CREATE UNIQUE INDEX · ADD COLUMN token_version</text>
+      <text x="58" y="760" fill="#0d3d38" font-size="10" font-family="'Plus Jakarta Sans', sans-serif">DROP/ADD CONSTRAINT check_future_date NOT VALID</text>
+
+      <rect x="500" y="700" width="460" height="72" rx="8" fill="rgba(13,61,56,0.02)" stroke="rgba(13,61,56,0.10)" stroke-width="0.8"/>
+      <text x="518" y="722" fill="#7c93a1" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.16em">CREDENCIALES DE SEMILLA</text>
+      <text x="518" y="742" fill="#0d3d38" font-size="10" font-family="'Plus Jakarta Sans', sans-serif">ADMIN_PASSWORD · SUPERADMIN_PASSWORD · deriveSeedPassword()</text>
+      <text x="518" y="760" fill="#0d3d38" font-size="10" font-family="'Plus Jakarta Sans', sans-serif">DEMO_ADMIN_PASSWORD hardcodeado · FND-P1 / FND-P2</text>
+    </svg>
+  </div>
+</body>
+</html>

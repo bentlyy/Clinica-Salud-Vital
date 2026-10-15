@@ -40,25 +40,20 @@ const invoice: Invoice = {
   patient_id: 10,
   invoice_number: 'INV-001',
   amount: 100,
-  tax: 19,
-  total: 119,
+  tax_amount: 19,
+  discount_amount: 0,
+  total_amount: 119,
   status: 'pending',
   due_date: '2026-08-15',
   items: [],
   created_at: '2026-08-01T10:00:00Z',
-};
+} as any;
 
 const stats: BillingStats = {
-  total_invoices: 5,
-  pending_invoices: 2,
-  paid_invoices: 3,
+  total_outstanding: 200,
+  total_paid: 300,
   overdue_invoices: 1,
-  total_revenue: 500,
-  pending_amount: 200,
-  paid_amount: 300,
-  overdue_amount: 50,
-  invoices_last_30_days: 4,
-};
+} as any;
 
 function createWrapper() {
   const queryClient = new QueryClient({
@@ -115,9 +110,8 @@ describe('useBilling hooks', () => {
     const input: CreateInvoiceInput = {
       patient_id: 10,
       items: [{ description: 'Consulta', quantity: 1, unit_price: 100, total: 100 }],
-      tax: 19,
       due_date: '2026-08-15',
-    };
+    } as any;
     result.current.mutate(input);
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 

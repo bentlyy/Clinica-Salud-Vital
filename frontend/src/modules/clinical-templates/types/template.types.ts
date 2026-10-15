@@ -22,4 +22,4 @@ export interface CreateTemplateInput {
   fields: TemplateField[];
 }
 
-export interface UpdateTemplateInput extends Partial<CreateTemplateInput> {}
+export type UpdateTemplateInput = Partial<CreateTemplateInput>;

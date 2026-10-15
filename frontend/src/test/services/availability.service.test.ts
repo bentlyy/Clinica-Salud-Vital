@@ -28,6 +28,7 @@ const exception: AvailabilityException = {
   date: '2026-09-01',
   start_time: null,
   end_time: null,
+  is_full_day: true,
   reason: 'Vacaciones',
   created_at: '2026-08-01T10:00:00Z',
 };
@@ -67,7 +68,7 @@ describe('availabilityService', () => {
 
   it('createException: POSTs /availability-exceptions', async () => {
     apiClient.post.mockResolvedValue({ data: exception });
-    const input = { date: '2026-09-01', reason: 'Vacaciones' };
+    const input = { date: '2026-09-01', reason: 'Vacaciones', is_full_day: true } as any;
     const result = await availabilityService.createException(input);
     expect(apiClient.post).toHaveBeenCalledWith('/availability-exceptions', input, { signal: undefined });
     expect(result.reason).toBe('Vacaciones');

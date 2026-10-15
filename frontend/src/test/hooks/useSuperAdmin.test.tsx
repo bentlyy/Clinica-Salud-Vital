@@ -81,7 +81,14 @@ describe('super-admin query hooks', () => {
   });
 
   it('useSuperAdminDashboard fetches and maps the dashboard data', async () => {
-    mockedService.getDashboardData.mockResolvedValue({ total_tenants: 2, tenants_by_plan: [] });
+    mockedService.getDashboardData.mockResolvedValue({
+      total_tenants: 2,
+      active_tenants: 2,
+      total_users: 10,
+      total_revenue: 0,
+      tenants_by_plan: [],
+      growth_by_month: [],
+    });
     const { result } = renderHook(() => useSuperAdminDashboard(), { wrapper: createWrapper() });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(mockedService.getDashboardData).toHaveBeenCalledWith({ signal: expect.anything() });
@@ -89,7 +96,22 @@ describe('super-admin query hooks', () => {
   });
 
   it('useHealthScores fetches the health scores', async () => {
-    mockedService.getHealthScores.mockResolvedValue([{ id: 't1', name: 'X', active: true, health_score: 80 }]);
+    mockedService.getHealthScores.mockResolvedValue([
+      {
+        id: 't1',
+        name: 'X',
+        active: true,
+        health_score: 80,
+        score_activity: 80,
+        score_trend: 80,
+        score_patients: 80,
+        score_cancellation: 80,
+        score_modules: 80,
+        last_booking: null,
+        bookings_30d: 0,
+        bookings_prev_30d: 0,
+      },
+    ]);
     const { result } = renderHook(() => useHealthScores(), { wrapper: createWrapper() });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(mockedService.getHealthScores).toHaveBeenCalledWith({ signal: expect.anything() });
@@ -113,7 +135,16 @@ describe('super-admin query hooks', () => {
   });
 
   it('useTenantDetail fetches the tenant by id', async () => {
-    mockedService.getTenantById.mockResolvedValue({ ...tenant, plan_name: 'Pro' });
+    mockedService.getTenantById.mockResolvedValue({
+      ...tenant,
+      plan_name: 'Pro',
+      locale: 'es-CL',
+      timezone: 'America/Santiago',
+      total_patients: 0,
+      confirmed_bookings: 0,
+      invoice_count: 0,
+      lab_request_count: 0,
+    });
     const { result } = renderHook(() => useTenantDetail('t1'), { wrapper: createWrapper() });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(mockedService.getTenantById).toHaveBeenCalledWith('t1', { signal: expect.anything() });

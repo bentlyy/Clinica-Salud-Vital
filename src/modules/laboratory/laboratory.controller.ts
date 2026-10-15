@@ -180,21 +180,26 @@ export const sendLabResultsEmailCtrl = asyncHandler(async (req, res) => {
   const lab_request_id = req.body?.lab_request_id ?? req.params.id;
   if (!lab_request_id) throw new BadRequestError('lab_request_id is required');
 
-  let email = req.body?.email;
-  if (!email) {
-    const results = await labResultEmailService.getLabResultsByRequest(lab_request_id, req.tenant_id);
-    email = results.patient_email;
-    if (!email) throw new BadRequestError('Patient email not found');
+  // Los resultados (PHI) solo pueden enviarse al email del paciente registrado
+  // en la solicitud. Un `email` arbitrario del body NO se acepta: evita exfiltrar
+  // datos clínicos a un destinatario cualquiera.
+  const results = await labResultEmailService.getLabResultsByRequest(lab_request_id, req.tenant_id);
+  const patientEmail = results.patient_email as string | undefined;
+  if (!patientEmail) throw new BadRequestError('Patient email not found');
+
+  const requestedEmail = typeof req.body?.email === 'string' ? req.body.email.trim() : '';
+  if (requestedEmail && requestedEmail.toLowerCase() !== patientEmail.toLowerCase()) {
+    throw new BadRequestError(E.LAB_EMAIL_NOT_ALLOWED);
   }
 
-  const result = await labResultEmailService.sendLabResultsByEmail(lab_request_id, email, req.tenant_id);
+  const result = await labResultEmailService.sendLabResultsByEmail(lab_request_id, patientEmail, req.tenant_id);
   res.json(result);
 });
 
 export const getLabResultsByTokenCtrl = asyncHandler(async (req, res) => {
-  const qToken = req.query.token;
-  const queryToken = typeof qToken === 'string' ? qToken : Array.isArray(qToken) ? String(qToken[0] ?? '') : '';
-  const token: string = String(req.params.token || '') || queryToken;
+  // El token viaja solo en el path: aceptarlo por query lo filtraría a logs,
+  // historial y cabeceras Referer. El endpoint es público y está rate-limited.
+  const token = String(req.params.token || '');
   const data = await labResultEmailService.getLabResultsByToken(token);
   res.json(data);
 });

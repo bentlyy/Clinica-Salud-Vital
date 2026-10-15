@@ -3,7 +3,7 @@ import rateLimit from 'express-rate-limit';
 import { authMiddleware, authorize } from '../../middlewares/auth.middleware.js';
 import { validateZod } from '../../middlewares/validate.middleware.js';
 import * as saasController from './saas.controller.js';
-import { onboardSchema, checkoutSchema, changePlanSchema } from './saas.schema.js';
+import { onboardSchema, checkoutSchema, changePlanSchema, updateTenantConfigSchema } from './saas.schema.js';
 import {
   updateOnboardingProfileSchema,
   onboardingDocumentSchema,
@@ -38,7 +38,7 @@ router.get('/usage', authorize('admin', 'superadmin'), saasController.getUsage);
 router.get('/usage/summary', authorize('admin', 'superadmin'), saasController.getUsageSummary);
 router.get('/limits', authorize('admin', 'superadmin'), saasController.getLimits);
 router.get('/features', saasController.getFeatures);
-router.patch('/tenant', authorize('admin', 'superadmin'), saasController.updateTenantConfig);
+router.patch('/tenant', authorize('admin', 'superadmin'), validateZod(updateTenantConfigSchema), saasController.updateTenantConfig);
 
 // ── Onboarding: perfil y documentos (clínica autenticada) ─
 router.get('/onboarding', authorize('admin', 'superadmin'), saasController.getMyOnboarding);

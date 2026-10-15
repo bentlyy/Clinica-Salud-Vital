@@ -11,9 +11,18 @@ import { validateBookingSlot } from '../../shared/booking-utils.js';
 import { recordBookingStatusChange } from '../../shared/booking-history.js';
 import { notifyWaitlistForSlot } from '../waitlist/waitlist.service.js';
 import { createNotification } from '../notifications/notification.service.js';
+import { dispatchEvent } from '../webhooks/webhooks.service.js';
 import { PaginationParams, PaginatedResponse } from '../../types/index.js';
 
 const MAX_PAGE_LIMIT = 100;
+
+// Dispara los webhooks salientes del tenant de forma "fire-and-forget": un fallo
+// al encolar NO debe romper la operación principal (crear/cancelar/reprogramar).
+const dispatchTenantEvent = (event: string, payload: Record<string, unknown>, tenantId: string): void => {
+  void dispatchEvent(event, payload, tenantId).catch((err) => {
+    logger.error(`Error despachando webhook ${event}:`, { error: toError(err).message });
+  });
+};
 
 interface BookingInput {
   doctor_id: number;
@@ -435,6 +444,16 @@ export const createBooking = async ({ doctor_id, user_id, date, time, duration =
 
     await client.query('COMMIT');
 
+    dispatchTenantEvent('booking.created', {
+      id: booking.id,
+      doctor_id,
+      user_id,
+      date,
+      time,
+      duration,
+      tenant_id: tenantId,
+    }, tenantId);
+
     enqueueJob('email:send', {
       type: 'booking-confirmation',
       to: user.email,
@@ -560,6 +579,15 @@ export const cancelBooking = async (booking_id: number, user_id: number, tenantI
     });
   }
 
+  dispatchTenantEvent('booking.cancelled', {
+    id: booking_id,
+    doctor_id: doctorId,
+    user_id,
+    date: bookingDate,
+    reason: reason || null,
+    tenant_id: tenantId,
+  }, tenantId);
+
   notifyUserInApp(tenantId, user_id, {
     type: 'warning',
     title: 'Cita cancelada',
@@ -672,6 +700,18 @@ export const rescheduleBooking = async (
         logger.error('Error notificando waitlist tras reprogramación:', { error: toError(err).message });
       });
     }
+
+    dispatchTenantEvent('booking.updated', {
+      id: booking.id,
+      doctor_id: booking.doctor_id,
+      user_id,
+      old_date: booking.date,
+      old_time: booking.time,
+      date,
+      time,
+      duration,
+      tenant_id: tenantId,
+    }, tenantId);
 
     notifyUserInApp(tenantId, user_id, {
       type: 'info',

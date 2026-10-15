@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vitaria · Historia clínica</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Plus+Jakarta+Sans:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --color-paper:  #f6f8fb;
+      --color-ink:    #0d3d38;
+      --color-muted:  #48606f;
+      --color-accent: #0d9488;
+      --font-sans:    'Plus Jakarta Sans', system-ui, sans-serif;
+      --font-serif:   'Instrument Serif', serif;
+      --font-mono:    'Geist Mono', ui-monospace, monospace;
+    }
+    body {
+      font-family: var(--font-sans);
+      background: var(--color-paper);
+      color: var(--color-ink);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem 2rem;
+    }
+    .frame { max-width: 1200px; width: 100%; }
+    .eyebrow {
+      font-family: var(--font-mono);
+      font-size: 0.66rem;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--color-muted);
+      margin-bottom: 0.5rem;
+    }
+    h1 {
+      font-family: var(--font-serif);
+      font-size: clamp(1.5rem, 2.4vw + 0.75rem, 2rem);
+      font-weight: 400;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+      color: var(--color-ink);
+      margin-bottom: 1.5rem;
+    }
+    svg { width: 100%; min-width: 900px; display: block; }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <p class="eyebrow">State · Historia clínica</p>
+    <h1>Cómo se escribe y se cierra un registro clínico inalterable</h1>
+
+    <svg viewBox="0 0 1000 500" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="sub-07-clinical-title sub-07-clinical-desc">
+      <title id="sub-07-clinical-title">Ciclo de vida de un registro clínico en Vitaria</title>
+      <desc id="sub-07-clinical-desc">Un encuentro nace como borrador editable, pasa a firmado o bloqueado cuando el profesional lo cierra y solo puede corregirse mediante un addendum que deja rastro, sin sobrescribir el original.</desc>
+      <defs>
+        <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#48606f"/></marker>
+        <marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#0d9488"/></marker>
+      </defs>
+
+      <rect width="100%" height="100%" fill="#f6f8fb"/>
+
+      <circle cx="52" cy="228" r="8" fill="#0d3d38"/>
+      <line x1="60" y1="228" x2="96" y2="228" stroke="#48606f" stroke-width="1.2" marker-end="url(#arrow)"/>
+
+      <rect x="96" y="200" width="180" height="56" rx="8" fill="rgba(72,96,111,0.10)" stroke="#7c93a1" stroke-width="1"/>
+      <text x="186" y="224" fill="#0d3d38" font-size="12" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">Borrador</text>
+      <text x="186" y="241" fill="#48606f" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">editable · sin firma</text>
+
+      <rect x="356" y="200" width="180" height="56" rx="8" fill="rgba(13,148,136,0.10)" stroke="#0d9488" stroke-width="1"/>
+      <text x="446" y="224" fill="#0d3d38" font-size="12" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">Firmado</text>
+      <text x="446" y="241" fill="#48606f" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">bloqueado · inmutable</text>
+
+      <rect x="616" y="200" width="180" height="56" rx="8" fill="#ffffff" stroke="#0d3d38" stroke-width="1"/>
+      <text x="706" y="224" fill="#0d3d38" font-size="12" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">Addendum</text>
+      <text x="706" y="241" fill="#48606f" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">enmienda trazable</text>
+
+      <rect x="360" y="320" width="172" height="56" rx="8" fill="rgba(13,61,56,0.05)" stroke="#48606f" stroke-width="1"/>
+      <text x="446" y="344" fill="#0d3d38" font-size="12" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">Descartado</text>
+      <text x="446" y="361" fill="#48606f" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">solo en borrador</text>
+
+      <line x1="276" y1="228" x2="356" y2="228" stroke="#0d9488" stroke-width="1.2" marker-end="url(#arrow-accent)"/>
+      <line x1="536" y1="228" x2="616" y2="228" stroke="#0d9488" stroke-width="1.2" marker-end="url(#arrow-accent)"/>
+      <path d="M186,256 V348 Q186,356 194,356 H360" fill="none" stroke="#48606f" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arrow)"/>
+      <path d="M706,256 V348 Q706,356 698,356 H552" fill="none" stroke="#48606f" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arrow)"/>
+
+      <rect x="288" y="208" width="60" height="12" rx="2" fill="#f6f8fb"/>
+      <text x="318" y="218" fill="#0d9488" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">firmar</text>
+      <rect x="548" y="208" width="60" height="12" rx="2" fill="#f6f8fb"/>
+      <text x="578" y="218" fill="#0d9488" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">rectificar</text>
+
+      <rect x="196" y="288" width="56" height="12" rx="2" fill="#f6f8fb"/>
+      <text x="224" y="298" fill="#48606f" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">descartar</text>
+      <rect x="612" y="288" width="56" height="12" rx="2" fill="#f6f8fb"/>
+      <text x="640" y="298" fill="#48606f" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">descartar</text>
+
+      <rect x="820" y="200" width="140" height="136" rx="8" fill="rgba(13,61,56,0.02)" stroke="rgba(13,61,56,0.10)" stroke-width="0.8"/>
+      <text x="836" y="224" fill="#7c93a1" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.16em">REGLA</text>
+      <text x="836" y="252" fill="#0d3d38" font-size="10" font-family="'Plus Jakarta Sans', sans-serif">Firmado = inmutable</text>
+      <text x="836" y="272" fill="#0d3d38" font-size="10" font-family="'Plus Jakarta Sans', sans-serif">Nunca se borra</text>
+      <text x="836" y="292" fill="#0d3d38" font-size="10" font-family="'Plus Jakarta Sans', sans-serif">Se corrige con</text>
+      <text x="836" y="310" fill="#0d3d38" font-size="10" font-family="'Plus Jakarta Sans', sans-serif">nuevo addendum</text>
+
+      <line x1="40" y1="440" x2="960" y2="440" stroke="rgba(13,61,56,0.10)" stroke-width="0.8"/>
+      <text x="40" y="462" fill="#0d3d38" font-size="12" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif">El foco está en FIRMADO: es el punto donde el dato deja de ser editable y pasa a ser evidencia.</text>
+      <text x="40" y="482" fill="#7c93a1" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.06em">Cada cambio de estado queda en el log de auditoría con autor y sello de tiempo</text>
+    </svg>
+  </div>
+</body>
+</html>

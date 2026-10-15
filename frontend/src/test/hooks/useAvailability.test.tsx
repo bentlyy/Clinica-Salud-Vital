@@ -47,6 +47,7 @@ const exception: AvailabilityException = {
   date: '2026-09-01',
   start_time: null,
   end_time: null,
+  is_full_day: true,
   reason: 'Vacaciones',
   created_at: '2026-08-01T10:00:00Z',
 };
@@ -117,10 +118,10 @@ describe('useAvailability hooks', () => {
     availabilityService.createException.mockResolvedValue(exception);
     const { result } = renderHook(() => useCreateAvailabilityException(), { wrapper: createWrapper() });
 
-    result.current.mutate({ date: '2026-09-01', reason: 'Vacaciones' });
+    result.current.mutate({ date: '2026-09-01', reason: 'Vacaciones', is_full_day: true });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    expect(availabilityService.createException).toHaveBeenCalledWith({ date: '2026-09-01', reason: 'Vacaciones' });
+    expect(availabilityService.createException).toHaveBeenCalledWith({ date: '2026-09-01', reason: 'Vacaciones', is_full_day: true });
     expect(toast.success).toHaveBeenCalledWith('[availability:exceptionCreated]');
   });
 

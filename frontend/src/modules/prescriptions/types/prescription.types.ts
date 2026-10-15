@@ -26,7 +26,7 @@ export interface CreatePrescriptionInput {
   notes?: string;
 }
 
-export interface UpdatePrescriptionInput extends Partial<CreatePrescriptionInput> {}
+export type UpdatePrescriptionInput = Partial<CreatePrescriptionInput>;
 
 export interface PrescriptionListParams {
   page?: number;

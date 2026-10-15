@@ -1,4 +1,4 @@
-import { pool } from '../../shared/db.js';
+import { pool, superAdminPool } from '../../shared/db.js';
 import { BadRequestError } from '../../utils/errors.js';
 import { E } from '../../utils/error-codes.js';
 
@@ -28,19 +28,27 @@ const parseSpecialty = (row: Record<string, unknown>): Specialty => ({
   procedures: typeof row.procedures === 'string' ? JSON.parse(row.procedures) : row.procedures || [],
 });
 
-export const getAllSpecialties = async (tenantId?: string): Promise<Specialty[]> => {
+export interface SpecialtyQueryOptions {
+  /** Lectura multi-tenant (superadmin): usa el pool BYPASSRLS. */
+  crossTenant?: boolean;
+}
+
+export const getAllSpecialties = async (tenantId?: string, opts: SpecialtyQueryOptions = {}): Promise<Specialty[]> => {
+  // crossTenant=true se usa para el panel superadmin (lee varios tenants);
+  // el pool BYPASSRLS evita que la RLS (FORCE) recorte la vista del superadmin.
+  const db = opts.crossTenant ? superAdminPool : pool;
   const tenantFilter = tenantId ? `WHERE tenant_id = $1` : '';
   const tenantParams = tenantId ? [tenantId] : [];
 
   const [specResult, docResult] = await Promise.all([
-    pool.query(
+    db.query(
       `SELECT ${SPECIALTY_COLUMNS}
        FROM specialties
        ${tenantFilter}
        ORDER BY name`,
       tenantParams
     ),
-    pool.query(
+    db.query(
       `SELECT id, name, email, specialty, tenant_id FROM doctors${tenantId ? ` WHERE tenant_id = $1` : ''}`,
       tenantParams
     ),
@@ -92,8 +100,9 @@ export const createSpecialty = async (
   return parseSpecialty(result.rows[0]);
 };
 
-export const getSpecialtyById = async (id: number, tenantId: string = 'default'): Promise<Specialty> => {
-  const result = await pool.query(
+export const getSpecialtyById = async (id: number, tenantId: string = 'default', opts: SpecialtyQueryOptions = {}): Promise<Specialty> => {
+  const db = opts.crossTenant ? superAdminPool : pool;
+  const result = await db.query(
     `SELECT ${SPECIALTY_COLUMNS}
      FROM specialties WHERE id = $1 AND tenant_id = $2`,
     [id, tenantId]

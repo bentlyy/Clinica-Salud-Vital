@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vitaria · Portabilidad de datos</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Plus+Jakarta+Sans:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --color-paper:  #f6f8fb;
+      --color-ink:    #0d3d38;
+      --color-muted:  #48606f;
+      --color-accent: #0d9488;
+      --font-sans:    'Plus Jakarta Sans', system-ui, sans-serif;
+      --font-serif:   'Instrument Serif', serif;
+      --font-mono:    'Geist Mono', ui-monospace, monospace;
+    }
+    body {
+      font-family: var(--font-sans);
+      background: var(--color-paper);
+      color: var(--color-ink);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem 2rem;
+    }
+    .frame { max-width: 1200px; width: 100%; }
+    .eyebrow {
+      font-family: var(--font-mono);
+      font-size: 0.66rem;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--color-muted);
+      margin-bottom: 0.5rem;
+    }
+    h1 {
+      font-family: var(--font-serif);
+      font-size: clamp(1.5rem, 2.4vw + 0.75rem, 2rem);
+      font-weight: 400;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+      color: var(--color-ink);
+      margin-bottom: 1.5rem;
+    }
+    svg { width: 100%; min-width: 900px; display: block; }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <p class="eyebrow">Architecture · Portabilidad</p>
+    <h1>Sacar, meter y borrar datos: los tres derechos que el sistema debe cumplir</h1>
+
+    <svg viewBox="0 0 1000 560" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="sub-14-portability-title sub-14-portability-desc">
+      <title id="sub-14-portability-title">Portabilidad y derechos de datos en Vitaria</title>
+      <desc id="sub-14-portability-desc">Tres flujos de portabilidad: exportación de los datos de un tenant a JSON/CSV y empaquetado, importación con validación transaccional e informe de errores, y borrado por anonimización con traza de auditoría.</desc>
+      <defs>
+        <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#48606f"/></marker>
+        <marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#0d9488"/></marker>
+      </defs>
+
+      <rect width="100%" height="100%" fill="#f6f8fb"/>
+
+      <!-- EXPORT LANE -->
+      <text x="40" y="120" fill="#0d9488" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.16em">EXPORTAR</text>
+      <rect x="40" y="136" width="140" height="56" rx="6" fill="rgba(72,96,111,0.10)" stroke="#7c93a1" stroke-width="1"/>
+      <text x="110" y="160" fill="#0d3d38" font-size="11" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">Solicitud</text>
+      <text x="110" y="177" fill="#48606f" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">admin del tenant</text>
+
+      <rect x="228" y="136" width="140" height="56" rx="6" fill="#ffffff" stroke="#0d3d38" stroke-width="1"/>
+      <text x="298" y="160" fill="#0d3d38" font-size="11" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">Trabajo en cola</text>
+      <text x="298" y="177" fill="#48606f" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">no bloquea la UI</text>
+
+      <rect x="416" y="136" width="140" height="56" rx="6" fill="#ffffff" stroke="#0d3d38" stroke-width="1"/>
+      <text x="486" y="160" fill="#0d3d38" font-size="11" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">Serializar</text>
+      <text x="486" y="177" fill="#48606f" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">JSON · CSV por entidad</text>
+
+      <rect x="604" y="136" width="140" height="56" rx="6" fill="rgba(13,148,136,0.10)" stroke="#0d9488" stroke-width="1"/>
+      <text x="674" y="160" fill="#0d3d38" font-size="11" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">Empaquetar</text>
+      <text x="674" y="177" fill="#48606f" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">ZIP · temporal</text>
+
+      <rect x="792" y="136" width="168" height="56" rx="6" fill="rgba(13,61,56,0.03)" stroke="rgba(13,61,56,0.30)" stroke-width="1"/>
+      <text x="876" y="160" fill="#0d3d38" font-size="11" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">Entrega firmada</text>
+      <text x="876" y="177" fill="#48606f" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">enlace con caducidad</text>
+
+      <line x1="180" y1="164" x2="228" y2="164" stroke="#48606f" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <line x1="368" y1="164" x2="416" y2="164" stroke="#48606f" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <line x1="556" y1="164" x2="604" y2="164" stroke="#48606f" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <line x1="744" y1="164" x2="792" y2="164" stroke="#0d9488" stroke-width="1.2" marker-end="url(#arrow-accent)"/>
+
+      <!-- IMPORT LANE -->
+      <text x="40" y="264" fill="#7c93a1" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.16em">IMPORTAR</text>
+      <rect x="40" y="280" width="200" height="56" rx="6" fill="rgba(72,96,111,0.10)" stroke="#7c93a1" stroke-width="1"/>
+      <text x="140" y="304" fill="#0d3d38" font-size="11" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">Archivo entregado</text>
+      <text x="140" y="321" fill="#48606f" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">formato esperado</text>
+
+      <rect x="288" y="280" width="200" height="56" rx="6" fill="#ffffff" stroke="#0d3d38" stroke-width="1"/>
+      <text x="388" y="304" fill="#0d3d38" font-size="11" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">Validación de esquema</text>
+      <text x="388" y="321" fill="#48606f" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">filas buenas vs. rechazadas</text>
+
+      <rect x="536" y="280" width="200" height="56" rx="6" fill="#ffffff" stroke="#0d3d38" stroke-width="1"/>
+      <text x="636" y="304" fill="#0d3d38" font-size="11" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">Transacción</text>
+      <text x="636" y="321" fill="#48606f" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">todo o nada</text>
+
+      <rect x="784" y="280" width="176" height="56" rx="6" fill="#f6f8fb"/>
+      <rect x="784" y="280" width="176" height="56" rx="6" fill="rgba(13,61,56,0.05)" stroke="#48606f" stroke-width="1"/>
+      <text x="872" y="304" fill="#0d3d38" font-size="11" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">Informe</text>
+      <text x="872" y="321" fill="#48606f" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">insertadas · errores</text>
+
+      <line x1="240" y1="308" x2="288" y2="308" stroke="#48606f" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <line x1="488" y1="308" x2="536" y2="308" stroke="#48606f" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <line x1="736" y1="308" x2="784" y2="308" stroke="#48606f" stroke-width="1.2" marker-end="url(#arrow)"/>
+
+      <!-- ERASE LANE -->
+      <text x="40" y="408" fill="#7c93a1" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.16em">BORRAR / ANONIMIZAR</text>
+      <rect x="40" y="424" width="216" height="56" rx="6" fill="rgba(72,96,111,0.10)" stroke="#7c93a1" stroke-width="1"/>
+      <text x="148" y="448" fill="#0d3d38" font-size="11" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">Solicitud del titular</text>
+      <text x="148" y="465" fill="#48606f" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">derecho de supresión</text>
+
+      <rect x="304" y="424" width="216" height="56" rx="6" fill="#ffffff" stroke="#0d3d38" stroke-width="1"/>
+      <text x="412" y="448" fill="#0d3d38" font-size="11" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">Anonimizar</text>
+      <text x="412" y="465" fill="#48606f" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">datos personales fuera, historia intacta</text>
+
+      <rect x="568" y="424" width="216" height="56" rx="6" fill="rgba(13,61,56,0.05)" stroke="#48606f" stroke-width="1"/>
+      <text x="676" y="448" fill="#0d3d38" font-size="11" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">Traza de auditoría</text>
+      <text x="676" y="465" fill="#48606f" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">queda el hecho, no el dato</text>
+
+      <line x1="256" y1="452" x2="304" y2="452" stroke="#48606f" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <line x1="520" y1="452" x2="568" y2="452" stroke="#48606f" stroke-width="1.2" marker-end="url(#arrow)"/>
+
+      <line x1="40" y1="520" x2="960" y2="520" stroke="rgba(13,61,56,0.10)" stroke-width="0.8"/>
+      <text x="40" y="542" fill="#7c93a1" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.06em">A verificar: alcance real de export/import · política de retención · quién autoriza un borrado</text>
+    </svg>
+  </div>
+</body>
+</html>

@@ -33,20 +33,24 @@ Object.defineProperty(window, 'matchMedia', {
 });
 
 const localStorageStore = new Map<string, string>();
-const localStorageMock = {
-  getItem: vi.fn((key: string) => (localStorageStore.has(key) ? localStorageStore.get(key) : null)),
-  setItem: vi.fn((key: string, value: string) => { localStorageStore.set(key, value); }),
-  removeItem: vi.fn((key: string) => { localStorageStore.delete(key); }),
-  clear: vi.fn(() => { localStorageStore.clear(); }),
+const localStorageMock: Storage = {
+  getItem: vi.fn((key: string): string | null => localStorageStore.get(key) ?? null),
+  setItem: vi.fn((key: string, value: string): void => { localStorageStore.set(key, value); }),
+  removeItem: vi.fn((key: string): void => { localStorageStore.delete(key); }),
+  clear: vi.fn((): void => { localStorageStore.clear(); }),
+  key: vi.fn((index: number): string | null => Array.from(localStorageStore.keys())[index] ?? null),
+  get length(): number { return localStorageStore.size; },
 };
 global.localStorage = localStorageMock;
 
 const sessionStorageStore = new Map<string, string>();
-const sessionStorageMock = {
-  getItem: vi.fn((key: string) => (sessionStorageStore.has(key) ? sessionStorageStore.get(key) : null)),
-  setItem: vi.fn((key: string, value: string) => { sessionStorageStore.set(key, value); }),
-  removeItem: vi.fn((key: string) => { sessionStorageStore.delete(key); }),
-  clear: vi.fn(() => { sessionStorageStore.clear(); }),
+const sessionStorageMock: Storage = {
+  getItem: vi.fn((key: string): string | null => sessionStorageStore.get(key) ?? null),
+  setItem: vi.fn((key: string, value: string): void => { sessionStorageStore.set(key, value); }),
+  removeItem: vi.fn((key: string): void => { sessionStorageStore.delete(key); }),
+  clear: vi.fn((): void => { sessionStorageStore.clear(); }),
+  key: vi.fn((index: number): string | null => Array.from(sessionStorageStore.keys())[index] ?? null),
+  get length(): number { return sessionStorageStore.size; },
 };
 global.sessionStorage = sessionStorageMock;
 

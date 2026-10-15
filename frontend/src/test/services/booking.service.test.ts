@@ -152,7 +152,7 @@ describe('bookingService', () => {
       apiClient.patch.mockResolvedValue({ data: rawBooking(1, { status: 'cancelled' }) });
       const result = await bookingService.cancel(1, 'motivo');
       expect(apiClient.patch).toHaveBeenCalledWith('/bookings/1/cancel', { reason: 'motivo' }, undefined);
-      expect(result.status).toBe('cancelled');
+      expect((result as any).status).toBe('cancelled');
     });
 
     it('sends an undefined body when no reason is provided', async () => {

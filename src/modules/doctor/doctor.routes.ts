@@ -12,7 +12,7 @@ import {
 } from './doctor.controller.js';
 import { authMiddleware, authorize } from '../../middlewares/auth.middleware.js';
 import { validateZod } from '../../middlewares/validate.middleware.js';
-import { registerDoctorSchema, createDoctorSchema, updateDoctorSchema, invitePersonSchema } from './doctor.schema.js';
+import { registerDoctorSchema, createDoctorSchema, updateDoctorSchema, invitePersonSchema, userIdParamSchema } from './doctor.schema.js';
 
 const router = Router();
 
@@ -33,7 +33,7 @@ router.patch('/:id', authMiddleware, authorize('admin', 'superadmin'), validateZ
 router.get('/me', authMiddleware, authorize('doctor'), getMyDoctorProfile);
 
 router.get('/users', authMiddleware, authorize('admin', 'superadmin', 'doctor'), listUsers);
-router.patch('/users/:userId/active', authMiddleware, authorize('admin', 'superadmin'), toggleUserActive);
+router.patch('/users/:userId/active', authMiddleware, authorize('admin', 'superadmin'), validateZod(userIdParamSchema, 'params'), toggleUserActive);
 
 export default router;
 

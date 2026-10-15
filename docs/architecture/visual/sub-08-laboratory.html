@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vitaria · Laboratorio</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Plus+Jakarta+Sans:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --color-paper:  #f6f8fb;
+      --color-ink:    #0d3d38;
+      --color-muted:  #48606f;
+      --color-accent: #0d9488;
+      --font-sans:    'Plus Jakarta Sans', system-ui, sans-serif;
+      --font-serif:   'Instrument Serif', serif;
+      --font-mono:    'Geist Mono', ui-monospace, monospace;
+    }
+    body {
+      font-family: var(--font-sans);
+      background: var(--color-paper);
+      color: var(--color-ink);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem 2rem;
+    }
+    .frame { max-width: 1200px; width: 100%; }
+    .eyebrow {
+      font-family: var(--font-mono);
+      font-size: 0.66rem;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--color-muted);
+      margin-bottom: 0.5rem;
+    }
+    h1 {
+      font-family: var(--font-serif);
+      font-size: clamp(1.5rem, 2.4vw + 0.75rem, 2rem);
+      font-weight: 400;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+      color: var(--color-ink);
+      margin-bottom: 1.5rem;
+    }
+    svg { width: 100%; min-width: 900px; display: block; }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <p class="eyebrow">Flowchart · Laboratorio</p>
+    <h1>De la orden médica al resultado liberado (o a la alerta crítica)</h1>
+
+    <svg viewBox="0 0 1000 560" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="sub-08-laboratory-title sub-08-laboratory-desc">
+      <title id="sub-08-laboratory-title">Flujo de una orden de laboratorio en Vitaria</title>
+      <desc id="sub-08-laboratory-desc">Flujo de laboratorio: se emite la orden, se toma la muestra, se captura el resultado, se valida y se libera al paciente. Si el resultado es crítico se dispara una alerta inmediata al profesional.</desc>
+      <defs>
+        <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#48606f"/></marker>
+        <marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#0d9488"/></marker>
+      </defs>
+
+      <rect width="100%" height="100%" fill="#f6f8fb"/>
+
+      <!-- MAIN COLUMN (vertical) -->
+      <rect x="120" y="96" width="280" height="52" rx="6" fill="rgba(72,96,111,0.10)" stroke="#7c93a1" stroke-width="1"/>
+      <text x="260" y="118" fill="#0d3d38" font-size="12" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">Orden médica</text>
+      <text x="260" y="134" fill="#48606f" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">creada por el profesional</text>
+
+      <rect x="120" y="172" width="280" height="52" rx="6" fill="#ffffff" stroke="#0d3d38" stroke-width="1"/>
+      <text x="260" y="194" fill="#0d3d38" font-size="12" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">Toma de muestra</text>
+      <text x="260" y="210" fill="#48606f" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">etiquetado · custodio</text>
+
+      <rect x="120" y="248" width="280" height="52" rx="6" fill="#ffffff" stroke="#0d3d38" stroke-width="1"/>
+      <text x="260" y="270" fill="#0d3d38" font-size="12" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">Resultado capturado</text>
+      <text x="260" y="286" fill="#48606f" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">analista o laboratorio externo</text>
+
+      <rect x="120" y="324" width="280" height="52" rx="6" fill="#ffffff" stroke="#0d3d38" stroke-width="1"/>
+      <text x="260" y="346" fill="#0d3d38" font-size="12" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">Validación</text>
+      <text x="260" y="362" fill="#48606f" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">revisión y firma técnica</text>
+
+      <rect x="120" y="400" width="280" height="52" rx="6" fill="rgba(13,148,136,0.10)" stroke="#0d9488" stroke-width="1"/>
+      <text x="260" y="422" fill="#0d3d38" font-size="12" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">Liberado</text>
+      <text x="260" y="438" fill="#48606f" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">visible para el paciente</text>
+
+      <line x1="260" y1="148" x2="260" y2="172" stroke="#48606f" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <line x1="260" y1="224" x2="260" y2="248" stroke="#48606f" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <line x1="260" y1="300" x2="260" y2="324" stroke="#48606f" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <line x1="260" y1="376" x2="260" y2="400" stroke="#0d9488" stroke-width="1.2" marker-end="url(#arrow-accent)"/>
+
+      <!-- DECISION -->
+      <path d="M560,324 L660,374 L560,424 L460,374 Z" fill="rgba(13,148,136,0.10)" stroke="#0d9488" stroke-width="1.2"/>
+      <text x="560" y="370" fill="#0d3d38" font-size="11" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">¿Resultado</text>
+      <text x="560" y="386" fill="#0d3d38" font-size="11" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">crítico?</text>
+
+      <path d="M400,350 H440 Q448,350 452,357 L460,374" fill="none" stroke="#48606f" stroke-width="1.2" marker-end="url(#arrow)"/>
+
+      <!-- ALERT -->
+      <rect x="720" y="348" width="200" height="52" rx="6" fill="rgba(13,61,56,0.05)" stroke="#48606f" stroke-width="1"/>
+      <text x="820" y="370" fill="#0d3d38" font-size="12" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">Alerta al profesional</text>
+      <text x="820" y="386" fill="#48606f" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">notificación inmediata</text>
+
+      <line x1="660" y1="374" x2="720" y2="374" stroke="#0d9488" stroke-width="1.2" marker-end="url(#arrow-accent)"/>
+
+      <!-- EXTERNAL LAB -->
+      <rect x="720" y="248" width="200" height="52" rx="6" fill="rgba(13,61,56,0.03)" stroke="rgba(13,61,56,0.30)" stroke-width="1"/>
+      <text x="820" y="270" fill="#0d3d38" font-size="12" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">Laboratorio externo</text>
+      <text x="820" y="286" fill="#48606f" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">integración / carga manual</text>
+
+      <path d="M400,274 H660 Q668,274 668,282 V240" fill="none" stroke="#48606f" stroke-width="1" stroke-dasharray="4,3"/>
+
+      <rect x="600" y="228" width="52" height="12" rx="2" fill="#f6f8fb"/>
+      <text x="626" y="238" fill="#48606f" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">según caso</text>
+      <rect x="664" y="348" width="32" height="12" rx="2" fill="#f6f8fb"/>
+      <text x="680" y="358" fill="#0d9488" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">sí</text>
+
+      <line x1="40" y1="492" x2="960" y2="492" stroke="rgba(13,61,56,0.10)" stroke-width="0.8"/>
+      <text x="40" y="514" fill="#0d3d38" font-size="12" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif">El paciente nunca ve un resultado sin pasar por validación; un valor crítico abre una vía paralela.</text>
+      <text x="40" y="536" fill="#7c93a1" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.06em">Verificar: umbral de criticidad por prueba · canal de alerta (email, push, panel)</text>
+    </svg>
+  </div>
+</body>
+</html>

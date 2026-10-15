@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vitaria · Arquitectura visual</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --color-paper:   #f6f8fb;
+      --color-surface: #ffffff;
+      --color-ink:     #0d3d38;
+      --color-muted:   #48606f;
+      --color-soft:    #7c93a1;
+      --color-accent:  #0d9488;
+      --color-rule:    rgba(13,61,56,0.10);
+      --color-rule-solid: rgba(13,61,56,0.30);
+      --font-sans:     'Plus Jakarta Sans', system-ui, sans-serif;
+      --font-serif:    'Instrument Serif', serif;
+      --font-mono:     'Geist Mono', ui-monospace, monospace;
+    }
+    body {
+      font-family: var(--font-sans);
+      background: var(--color-paper);
+      color: var(--color-ink);
+      min-height: 100vh;
+      padding: 4rem 2rem 5rem;
+      display: flex;
+      justify-content: center;
+    }
+    .frame { max-width: 1180px; width: 100%; }
+    .eyebrow {
+      font-family: var(--font-mono);
+      font-size: 0.66rem;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--color-muted);
+      margin-bottom: 0.5rem;
+    }
+    h1 {
+      font-family: var(--font-serif);
+      font-size: clamp(1.8rem, 3vw + 0.75rem, 2.6rem);
+      font-weight: 400;
+      letter-spacing: -0.02em;
+      line-height: 1.12;
+      margin-bottom: 0.75rem;
+    }
+    .lede {
+      font-size: 1rem;
+      color: var(--color-muted);
+      max-width: 68ch;
+      line-height: 1.6;
+      margin-bottom: 2.5rem;
+    }
+    h2 {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--color-soft);
+      margin: 2.5rem 0 1rem;
+      padding-bottom: 0.6rem;
+      border-bottom: 1px solid var(--color-rule);
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 0.9rem;
+    }
+    .card {
+      display: block;
+      background: var(--color-surface);
+      border: 1px solid var(--color-rule);
+      border-radius: 12px;
+      padding: 1rem 1.15rem 1.1rem;
+      text-decoration: none;
+      color: inherit;
+      transition: border-color 150ms ease, transform 150ms ease;
+    }
+    .card:hover { border-color: var(--color-rule-solid); transform: translateY(-1px); }
+    .card .id {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 0.45rem;
+    }
+    .card .slug {
+      font-family: var(--font-mono);
+      font-size: 0.66rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      color: var(--color-accent);
+      text-transform: uppercase;
+    }
+    .card .type {
+      font-family: var(--font-mono);
+      font-size: 0.6rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--color-soft);
+    }
+    .card .title {
+      font-size: 0.95rem;
+      font-weight: 600;
+      line-height: 1.4;
+      color: var(--color-ink);
+    }
+    .card .note {
+      margin-top: 0.35rem;
+      font-size: 0.82rem;
+      line-height: 1.5;
+      color: var(--color-muted);
+    }
+    footer {
+      margin-top: 3rem;
+      padding-top: 1.25rem;
+      border-top: 1px solid var(--color-rule);
+      font-size: 0.82rem;
+      line-height: 1.7;
+      color: var(--color-muted);
+    }
+    footer .mono {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      letter-spacing: 0.04em;
+      color: var(--color-soft);
+      display: block;
+      margin-top: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <p class="eyebrow">Vitaria · Arquitectura visual</p>
+    <h1>Mapa visual del sistema</h1>
+    <p class="lede">24 diagramas editoriales que explican la auditoría de Vitaria: cinco transversales —visión general, petición, riesgo, dependencias y tests— y diecinueve que recorren cada subsistema, del frontend al onboarding. Todos son HTML con SVG autocontenido, sin Mermaid, dibujados con la marca de Vitaria.</p>
+
+    <h2>Transversales</h2>
+    <div class="grid">
+      <a class="card" href="tr-01-system-overview.html">
+        <span class="id"><span class="slug">tr-01</span><span class="type">Architecture</span></span>
+        <span class="title">Vista general del sistema</span>
+        <span class="note">Cliente, API, datos, workers y servicios externos en una sola mirada.</span>
+      </a>
+      <a class="card" href="tr-02-request-lifecycle.html">
+        <span class="id"><span class="slug">tr-02</span><span class="type">Flowchart</span></span>
+        <span class="title">Ciclo de vida de una petición</span>
+        <span class="note">De la seguridad al errorHandler, paso a paso, con su rama de fallo.</span>
+      </a>
+      <a class="card" href="tr-03-risk-quadrant.html">
+        <span class="id"><span class="slug">tr-03</span><span class="type">Quadrant</span></span>
+        <span class="title">Mapa de riesgo de los hallazgos</span>
+        <span class="note">Probabilidad frente a impacto de los 177 hallazgos de la auditoría.</span>
+      </a>
+      <a class="card" href="tr-04-dependency-graph.html">
+        <span class="id"><span class="slug">tr-04</span><span class="type">Dependency</span></span>
+        <span class="title">Grafo de dependencias</span>
+        <span class="note">El arranque en capas y <em>doctor</em> como hub más acoplado.</span>
+      </a>
+      <a class="card" href="tr-05-test-coverage.html">
+        <span class="id"><span class="slug">tr-05</span><span class="type">Bar</span></span>
+        <span class="title">Inventario de tests y umbrales</span>
+        <span class="note">299 archivos inventariados y umbrales declarados, sin ejecución verificada.</span>
+      </a>
+    </div>
+
+    <h2>Subsistemas</h2>
+    <div class="grid">
+      <a class="card" href="sub-01-frontend.html">
+        <span class="id"><span class="slug">sub-01</span><span class="type">Architecture</span></span>
+        <span class="title">Frontend · SPA</span>
+        <span class="note">Estructura de módulos, estado y capa de API.</span>
+      </a>
+      <a class="card" href="sub-02-auth.html">
+        <span class="id"><span class="slug">sub-02</span><span class="type">Sequence</span></span>
+        <span class="title">Autenticación y sesiones</span>
+        <span class="note">Login, captcha, bcrypt, cookies y 2FA.</span>
+      </a>
+      <a class="card" href="sub-03-multitenancy.html">
+        <span class="id"><span class="slug">sub-03</span><span class="type">Architecture</span></span>
+        <span class="title">Multi-tenancy y aislamiento</span>
+        <span class="note">Del JWT a las políticas RLS sobre el pool.</span>
+      </a>
+      <a class="card" href="sub-04-security.html">
+        <span class="id"><span class="slug">sub-04</span><span class="type">Flowchart</span></span>
+        <span class="title">Seguridad en profundidad</span>
+        <span class="note">Siete capas defensivas y la caja de auditoría.</span>
+      </a>
+      <a class="card" href="sub-05-users.html">
+        <span class="id"><span class="slug">sub-05</span><span class="type">Flowchart</span></span>
+        <span class="title">Usuarios, roles y doctores</span>
+        <span class="note">Alta, invitación, rol y baja entre ocho roles.</span>
+      </a>
+      <a class="card" href="sub-06-booking.html">
+        <span class="id"><span class="slug">sub-06</span><span class="type">State</span></span>
+        <span class="title">Ciclo de vida de una cita</span>
+        <span class="note">De solicitada a completada, con cancelación y no-show.</span>
+      </a>
+      <a class="card" href="sub-07-clinical.html">
+        <span class="id"><span class="slug">sub-07</span><span class="type">State</span></span>
+        <span class="title">Historia clínica y firma</span>
+        <span class="note">Borrador, firma, addendum y descarte.</span>
+      </a>
+      <a class="card" href="sub-08-laboratory.html">
+        <span class="id"><span class="slug">sub-08</span><span class="type">Flowchart</span></span>
+        <span class="title">Laboratorio de punta a punta</span>
+        <span class="note">Orden, muestra, resultado, validación y liberación.</span>
+      </a>
+      <a class="card" href="sub-09-attachments.html">
+        <span class="id"><span class="slug">sub-09</span><span class="type">Sequence</span></span>
+        <span class="title">Adjuntos y PDF</span>
+        <span class="note">Subida multipart y descarga en streaming.</span>
+      </a>
+      <a class="card" href="sub-10-notifications.html">
+        <span class="id"><span class="slug">sub-10</span><span class="type">Sequence</span></span>
+        <span class="title">Notificaciones y recordatorios</span>
+        <span class="note">Cola, cron y entrega por correo.</span>
+      </a>
+      <a class="card" href="sub-11-billing.html">
+        <span class="id"><span class="slug">sub-11</span><span class="type">Sequence</span></span>
+        <span class="title">Facturación y pagos</span>
+        <span class="note">MercadoPago y el webhook como fuente de verdad.</span>
+      </a>
+      <a class="card" href="sub-12-analytics.html">
+        <span class="id"><span class="slug">sub-12</span><span class="type">Data flow</span></span>
+        <span class="title">Analítica y reportes</span>
+        <span class="note">Origen, transformación y consumo de métricas.</span>
+      </a>
+      <a class="card" href="sub-13-audit.html">
+        <span class="id"><span class="slug">sub-13</span><span class="type">Sequence</span></span>
+        <span class="title">Auditoría inmutable</span>
+        <span class="note">Cómo cada acción sensible deja huella.</span>
+      </a>
+      <a class="card" href="sub-14-portability.html">
+        <span class="id"><span class="slug">sub-14</span><span class="type">Architecture</span></span>
+        <span class="title">Portabilidad de datos</span>
+        <span class="note">Exportar, importar y anonimizar.</span>
+      </a>
+      <a class="card" href="sub-15-database.html">
+        <span class="id"><span class="slug">sub-15</span><span class="type">DB schema</span></span>
+        <span class="title">Modelo de datos</span>
+        <span class="note">El paciente como eje de 49 tablas con RLS.</span>
+      </a>
+      <a class="card" href="sub-16-infrastructure.html">
+        <span class="id"><span class="slug">sub-16</span><span class="type">Deployment</span></span>
+        <span class="title">Infraestructura y despliegue</span>
+        <span class="note">CI, contenedor, hosting y configuración.</span>
+      </a>
+      <a class="card" href="sub-17-specialties.html">
+        <span class="id"><span class="slug">sub-17</span><span class="type">Flowchart</span></span>
+        <span class="title">Especialidades y monedas</span>
+        <span class="note">Catálogo público, escritura admin y tasas.</span>
+      </a>
+      <a class="card" href="sub-18-seeds.html">
+        <span class="id"><span class="slug">sub-18</span><span class="type">Flowchart</span></span>
+        <span class="title">Semillas y arranque</span>
+        <span class="note">Cuándo la base se puebla y cuándo solo se migra.</span>
+      </a>
+      <a class="card" href="sub-19-onboarding.html">
+        <span class="id"><span class="slug">sub-19</span><span class="type">Flowchart</span></span>
+        <span class="title">Onboarding de clínicas</span>
+        <span class="note">El embudo que crea una clínica en una transacción.</span>
+      </a>
+    </div>
+
+    <footer>
+      Diagramas generados a partir de la auditoría en <strong>docs/architecture/</strong> (19 subsistemas, 177 hallazgos) con la marca de Vitaria onboardeada mediante perfil local.
+      <span class="mono">perfil: vitaria · paleta cool paper #f6f8fb · accent #0d9488 · Instrument Serif + Plus Jakarta Sans + Geist Mono</span>
+      <span class="mono">Validación: self_check.py · verify-geometry.py · lint-skin.py (verificación visual no ejecutada)</span>
+    </footer>
+  </div>
+</body>
+</html>

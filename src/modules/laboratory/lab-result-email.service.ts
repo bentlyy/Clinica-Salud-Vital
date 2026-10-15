@@ -1,8 +1,10 @@
 import { pool } from '../../shared/db.js';
 import { NotFoundError, BadRequestError } from '../../utils/errors.js';
+import { logger } from '../../utils/logger.js';
 import { E } from '../../utils/error-codes.js';
 import { jwtManager } from '../../shared/jwt.service.js';
 import { enqueueJob } from '../../shared/queue.service.js';
+import { dispatchEvent } from '../webhooks/webhooks.service.js';
 
 export interface LabResultPayload {
   scope?: string;
@@ -122,6 +124,18 @@ export const sendLabResultsByEmail = async (labRequestId: number | string, patie
     html,
     tenantId,
   });
+
+  try {
+    await dispatchEvent('result.ready', {
+      lab_request_id: labRequestId,
+      request_number: results.request_number,
+      patient_email: patientEmail,
+      tenant_id: tenantId,
+    }, tenantId);
+  } catch (err) {
+    // El email ya fue encolado: un fallo al disparar webhooks no debe romperlo.
+    logger.error('Error despachando webhook result.ready:', { error: String(err) });
+  }
 
   return { sent: true, message: 'Lab results sent to email' };
 };

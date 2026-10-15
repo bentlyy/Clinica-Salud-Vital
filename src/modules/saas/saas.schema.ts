@@ -1,5 +1,14 @@
 import { z } from 'zod';
 
+export const updateTenantConfigSchema = z.object({
+  name: z.string().trim().min(1, 'Name is required').max(255).optional(),
+  locale: z.enum(['es', 'en', 'pt', 'fr']).optional(),
+  timezone: z.string().trim().min(1).max(64).optional(),
+  currency: z.string().trim().regex(/^[A-Za-z]{3}$/, 'Invalid currency code').optional(),
+  country_code: z.string().trim().regex(/^[A-Za-z]{2}$/, 'Invalid country code').optional(),
+  config: z.record(z.string(), z.unknown()).optional(),
+}).strict();
+
 export const checkoutSchema = z.object({
   plan_code: z.string().min(1, 'Plan code is required'),
 }).strict();

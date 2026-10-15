@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vitaria · Mapa de riesgo</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Plus+Jakarta+Sans:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --color-paper:  #f6f8fb;
+      --color-ink:    #0d3d38;
+      --color-muted:  #48606f;
+      --color-accent: #0d9488;
+      --font-sans:    'Plus Jakarta Sans', system-ui, sans-serif;
+      --font-serif:   'Instrument Serif', serif;
+      --font-mono:    'Geist Mono', ui-monospace, monospace;
+    }
+    body {
+      font-family: var(--font-sans);
+      background: var(--color-paper);
+      color: var(--color-ink);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem 2rem;
+    }
+    .frame { max-width: 1200px; width: 100%; }
+    .eyebrow {
+      font-family: var(--font-mono);
+      font-size: 0.66rem;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--color-muted);
+      margin-bottom: 0.5rem;
+    }
+    h1 {
+      font-family: var(--font-serif);
+      font-size: clamp(1.5rem, 2.4vw + 0.75rem, 2rem);
+      font-weight: 400;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+      color: var(--color-ink);
+      margin-bottom: 1.5rem;
+    }
+    svg { width: 100%; min-width: 900px; display: block; }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <p class="eyebrow">Quadrant · Transversal</p>
+    <h1>Dónde duele más: impacto frente a probabilidad de los hallazgos</h1>
+
+    <svg viewBox="0 0 1000 660" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="tr-03-risk-quadrant-title tr-03-risk-quadrant-desc">
+      <title id="tr-03-risk-quadrant-title">Matriz de riesgo de los hallazgos de Vitaria</title>
+      <desc id="tr-03-risk-quadrant-desc">Cuadrante de riesgo con eje X probabilidad y eje Y impacto. Los hallazgos de criticidad alta se marcan en acento: RLS multi-tenant y ciclo de vida de tokens. Los medios y bajos usan tratamientos atenuados.</desc>
+      <defs>
+        <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#48606f"/></marker>
+      </defs>
+
+      <rect width="100%" height="100%" fill="#f6f8fb"/>
+
+      <!-- PLOT FRAME -->
+      <rect x="160" y="120" width="680" height="440" rx="8" fill="rgba(13,61,56,0.02)" stroke="rgba(13,61,56,0.10)" stroke-width="0.8"/>
+
+      <!-- QUADRANT SPLIT -->
+      <line x1="500" y1="120" x2="500" y2="560" stroke="rgba(13,61,56,0.20)" stroke-width="1" stroke-dasharray="4,4"/>
+      <line x1="160" y1="340" x2="840" y2="340" stroke="rgba(13,61,56,0.20)" stroke-width="1" stroke-dasharray="4,4"/>
+
+      <!-- QUADRANT LABELS -->
+      <text x="184" y="144" fill="#7c93a1" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.14em">VIGILAR</text>
+      <text x="524" y="144" fill="#0d9488" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.14em">RIESGO CRÍTICO</text>
+      <text x="184" y="552" fill="#7c93a1" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.14em">BAJO</text>
+      <text x="524" y="552" fill="#7c93a1" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.14em">RUIDO</text>
+
+      <!-- AXES -->
+      <line x1="160" y1="576" x2="840" y2="576" stroke="#48606f" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <line x1="140" y1="560" x2="140" y2="120" stroke="#48606f" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <text x="840" y="596" fill="#48606f" font-size="8" font-family="'Geist Mono', monospace" text-anchor="end" letter-spacing="0.10em">PROBABILIDAD →</text>
+      <text x="132" y="120" fill="#48606f" font-size="8" font-family="'Geist Mono', monospace" text-anchor="start" letter-spacing="0.10em" transform="rotate(-90 132,120)">IMPACTO →</text>
+
+      <!-- HIGH (focal) -->
+      <circle cx="740" cy="200" r="9" fill="rgba(13,148,136,0.10)" stroke="#0d9488" stroke-width="1.2"/>
+      <text x="740" y="182" fill="#0d3d38" font-size="9" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">RLS multi-tenant</text>
+
+      <circle cx="700" cy="248" r="9" fill="rgba(13,148,136,0.10)" stroke="#0d9488" stroke-width="1.2"/>
+      <text x="700" y="230" fill="#0d3d38" font-size="9" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">Ciclo de tokens</text>
+
+      <circle cx="640" cy="290" r="9" fill="rgba(13,148,136,0.10)" stroke="#0d9488" stroke-width="1.2"/>
+      <text x="640" y="272" fill="#0d3d38" font-size="9" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">Validación Zod (T1)</text>
+
+      <!-- MEDIUM (store) -->
+      <circle cx="720" cy="372" r="8" fill="rgba(13,61,56,0.05)" stroke="#48606f" stroke-width="1"/>
+      <text x="720" y="356" fill="#0d3d38" font-size="9" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">Logs efímeros (T2)</text>
+
+      <circle cx="560" cy="400" r="8" fill="rgba(13,61,56,0.05)" stroke="#48606f" stroke-width="1"/>
+      <text x="560" y="384" fill="#0d3d38" font-size="9" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">Config sin esquema (T5)</text>
+
+      <circle cx="620" cy="470" r="8" fill="rgba(13,61,56,0.05)" stroke="#48606f" stroke-width="1"/>
+      <text x="620" y="454" fill="#0d3d38" font-size="9" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">i18n desalineado (T3)</text>
+
+      <!-- LOW (external) -->
+      <circle cx="360" cy="470" r="7" fill="rgba(13,61,56,0.03)" stroke="rgba(13,61,56,0.30)" stroke-width="1"/>
+      <text x="360" y="454" fill="#0d3d38" font-size="9" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">Zona horaria (T4)</text>
+
+      <circle cx="500" cy="510" r="7" fill="rgba(13,61,56,0.03)" stroke="rgba(13,61,56,0.30)" stroke-width="1"/>
+      <text x="500" y="494" fill="#0d3d38" font-size="9" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">Envelope (T6)</text>
+
+      <!-- LEGEND -->
+      <line x1="40" y1="618" x2="960" y2="618" stroke="rgba(13,61,56,0.10)" stroke-width="0.8"/>
+      <circle cx="46" cy="636" r="7" fill="rgba(13,148,136,0.10)" stroke="#0d9488" stroke-width="1.2"/>
+      <text x="62" y="640" fill="#48606f" font-size="9" font-family="'Plus Jakarta Sans', sans-serif">🔴 Alta — corregir ya</text>
+      <circle cx="240" cy="636" r="6" fill="rgba(13,61,56,0.05)" stroke="#48606f" stroke-width="1"/>
+      <text x="256" y="640" fill="#48606f" font-size="9" font-family="'Plus Jakarta Sans', sans-serif">🟡 Media — planificar</text>
+      <circle cx="430" cy="636" r="5" fill="rgba(13,61,56,0.03)" stroke="rgba(13,61,56,0.30)" stroke-width="1"/>
+      <text x="446" y="640" fill="#48606f" font-size="9" font-family="'Plus Jakarta Sans', sans-serif">🟢 Baja — deuda asumida</text>
+      <text x="960" y="640" fill="#7c93a1" font-size="8" font-family="'Geist Mono', monospace" text-anchor="end">177 hallazgos en total</text>
+    </svg>
+  </div>
+</body>
+</html>

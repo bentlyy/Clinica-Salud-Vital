@@ -89,6 +89,11 @@ pool.on('error', (err: Error) => {
 // RLS context. Set by the tenant middleware for the whole request scope.
 export const tenantContext = new AsyncLocalStorage<string>();
 
+// Holds the authenticated user id for the current request so the DB audit
+// triggers can stamp audit_logs.user_id (instead of always NULL). Set by the
+// auth middleware for the whole request scope.
+export const userContext = new AsyncLocalStorage<number>();
+
 const defaultTenantId = (): string => process.env.DEFAULT_TENANT_ID || 'default';
 
 // pg Pool distributes each query to any idle client, so the session-scoped
@@ -102,16 +107,35 @@ const defaultTenantId = (): string => process.env.DEFAULT_TENANT_ID || 'default'
 const tagTenantAwarePool = (dbPool: pg.Pool): void => {
   const rawConnect = dbPool.connect.bind(dbPool);
 
-  const scopedConnect = async (): Promise<pg.PoolClient> => {
-    const client = await rawConnect();
-    const tenantId = tenantContext.getStore();
-    if (tenantId) {
-      try {
-        await client.query('SELECT set_config($1, $2, false)', ['app.tenant_id', tenantId]);
-      } catch {
-        // GUC may be unsupported on managed PostgreSQL — non-fatal, RLS falls back
+  // Se loguea UNA sola vez si el GUC app.tenant_id no puede setearse. Las
+  // políticas RLS usan COALESCE(current_setting('app.tenant_id', true),
+  // 'default') (compat Render/PgBouncer), así que sin GUC las queries del pool
+  // normal caerían al tenant 'default' en vez del del request. Este warning
+  // permite detectar el problema en prod (fuga hacia 'default').
+  let gucFailureLogged = false;
+
+  const setScopedConfig = async (client: pg.PoolClient): Promise<void> => {
+    const tenantId = tenantContext.getStore() || defaultTenantId();
+    const userId = userContext.getStore();
+    try {
+      await client.query('SELECT set_config($1, $2, false)', ['app.tenant_id', tenantId]);
+      await client.query('SELECT set_config($1, $2, false)', ['app.user_id', userId != null ? String(userId) : '']);
+    } catch (err) {
+      // GUC no soportado (managed PostgreSQL/PgBouncer): con el fallback
+      // COALESCE(...) de las políticas, las queries usarían el tenant
+      // 'default' en vez del del request, por eso se alerta explícitamente.
+      if (!gucFailureLogged) {
+        gucFailureLogged = true;
+        logger.error('No se pudo setear app.tenant_id — las queries del pool normal caerían al tenant por defecto', {
+          error: (err as Error).message,
+        });
       }
     }
+  };
+
+  const scopedConnect = async (): Promise<pg.PoolClient> => {
+    const client = await rawConnect();
+    await setScopedConfig(client);
     return client;
   };
 
@@ -119,14 +143,14 @@ const tagTenantAwarePool = (dbPool: pg.Pool): void => {
     config: string | { text: string; values?: unknown[] },
     values?: unknown[],
   ): Promise<pg.QueryResult> => {
-    const tenantId = tenantContext.getStore() || defaultTenantId();
     const client = await rawConnect();
     try {
-      await client.query('SELECT set_config($1, $2, false)', ['app.tenant_id', tenantId]);
+      await setScopedConfig(client);
       return await client.query(config as string, values as string[]);
     } finally {
       try {
         await client.query('SELECT set_config($1, $2, false)', ['app.tenant_id', defaultTenantId()]);
+        await client.query('SELECT set_config($1, $2, false)', ['app.user_id', '']);
       } catch {
         // ignore — client still released
       }

@@ -8,7 +8,7 @@ const mockNavigate = vi.hoisted(() => vi.fn());
 const mockApiGet = vi.hoisted(() => vi.fn());
 const mockApiPost = vi.hoisted(() => vi.fn());
 const mockSearchParams = vi.hoisted(() => ({
-  get: vi.fn(() => null),
+  get: vi.fn<(key: string) => string | null>(() => null),
 }));
 
 vi.mock('@/shared/services/api-client', () => ({

@@ -12,6 +12,7 @@ export const E = {
   AUTH_EMAIL_REQUIRED:          'AUTH_EMAIL_REQUIRED',
   AUTH_PASSWORD_REQUIRED:       'AUTH_PASSWORD_REQUIRED',
   AUTH_INVALID_EMAIL_FORMAT:    'AUTH_INVALID_EMAIL_FORMAT',
+  AUTH_CAPTCHA_FAILED:          'AUTH_CAPTCHA_FAILED',
   AUTH_INVALID_CREDENTIALS:     'AUTH_INVALID_CREDENTIALS',
   AUTH_EMAIL_ALREADY_EXISTS:    'AUTH_EMAIL_ALREADY_EXISTS',
   AUTH_RUT_ALREADY_EXISTS:      'AUTH_RUT_ALREADY_EXISTS',
@@ -48,6 +49,10 @@ export const E = {
   AUTH_RESET_TOKEN_INVALID:     'AUTH_RESET_TOKEN_INVALID',
   AUTH_RESET_EMAIL_MISMATCH:    'AUTH_RESET_EMAIL_MISMATCH',
   AUTH_ADMIN_NOT_FOUND:         'AUTH_ADMIN_NOT_FOUND',
+
+  // Setup password (enlace de bienvenida de doctor)
+  AUTH_SETUP_TOKEN_INVALID:     'AUTH_SETUP_TOKEN_INVALID',
+  AUTH_SETUP_TOKEN_USED:        'AUTH_SETUP_TOKEN_USED',
 
   // ── Booking ─────────────────────────────────────────────────────
   BOOKING_MISSING_FIELDS:       'BOOKING_MISSING_FIELDS',
@@ -109,6 +114,7 @@ export const E = {
   LAB_TESTS_NOT_FOUND:          'LAB_TESTS_NOT_FOUND',
   LAB_INVALID_TYPE:             'LAB_INVALID_TYPE',
   LAB_ACCESS_DENIED:            'LAB_ACCESS_DENIED',
+  LAB_EMAIL_NOT_ALLOWED:        'LAB_EMAIL_NOT_ALLOWED',
   LAB_ITEM_INVALID_STATUS:      'LAB_ITEM_INVALID_STATUS',
   LAB_ITEM_MUST_TECH_FIRST:     'LAB_ITEM_MUST_TECH_FIRST',
   LAB_ITEM_MUST_DOCTOR_FIRST:   'LAB_ITEM_MUST_DOCTOR_FIRST',
@@ -245,6 +251,7 @@ export const ERROR_MESSAGES: Record<ErrorCode, string> = {
   [E.AUTH_EMAIL_REQUIRED]:          'Email and password are required',
   [E.AUTH_PASSWORD_REQUIRED]:       'Password is required',
   [E.AUTH_INVALID_EMAIL_FORMAT]:    'Invalid email format',
+  [E.AUTH_CAPTCHA_FAILED]:          'CAPTCHA verification failed',
   [E.AUTH_INVALID_CREDENTIALS]:     'Invalid credentials',
   [E.AUTH_EMAIL_ALREADY_EXISTS]:    'Email or RUT already registered',
   [E.AUTH_RUT_ALREADY_EXISTS]:      'Email or RUT already registered',
@@ -276,6 +283,8 @@ export const ERROR_MESSAGES: Record<ErrorCode, string> = {
 
   [E.AUTH_RESET_TOKEN_INVALID]:     'Invalid or expired reset token',
   [E.AUTH_RESET_EMAIL_MISMATCH]:    'Email does not match reset token',
+  [E.AUTH_SETUP_TOKEN_INVALID]:     'Invalid or expired setup token',
+  [E.AUTH_SETUP_TOKEN_USED]:        'This password setup link has already been used',
   [E.AUTH_ADMIN_NOT_FOUND]:         'Admin user not found',
 
   // Booking
@@ -337,6 +346,7 @@ export const ERROR_MESSAGES: Record<ErrorCode, string> = {
   [E.LAB_TESTS_NOT_FOUND]:          'Lab tests not found or inactive',
   [E.LAB_INVALID_TYPE]:             'lab_type must be "internal" or "external"',
   [E.LAB_ACCESS_DENIED]:            'Access denied',
+  [E.LAB_EMAIL_NOT_ALLOWED]:        'Lab results can only be sent to the patient email on file',
   [E.LAB_ITEM_INVALID_STATUS]:      'Item not found or invalid status for tech validation',
   [E.LAB_ITEM_MUST_TECH_FIRST]:     'Item not found or must be validated by tech first',
   [E.LAB_ITEM_MUST_DOCTOR_FIRST]:   'Item not found or must be validated by doctor first',

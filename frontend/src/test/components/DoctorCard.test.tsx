@@ -11,7 +11,6 @@ const doctor: Doctor = {
   email: 'juan@clinic.com',
   specialty: 'Cardiología',
   license_number: 'LIC-123',
-  is_active: true,
   created_at: '2026-01-01T00:00:00Z',
 };
 
@@ -20,7 +19,6 @@ const doctorWithoutUser: Doctor = {
   user_id: 0,
   name: 'Ana Torres',
   email: 'ana@clinic.com',
-  is_active: true,
   created_at: '2026-01-01T00:00:00Z',
 };
 
