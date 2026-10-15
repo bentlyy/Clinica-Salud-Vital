@@ -1,5 +1,5 @@
 import cron from 'node-cron';
-import { pool } from '../shared/db.js';
+import { superAdminPool } from '../shared/db.js';
 import { sendEmail } from '../shared/email.service.js';
 import { escapeHtml } from '../shared/escape.js';
 import { logger } from '../utils/logger.js';
@@ -38,7 +38,10 @@ export const sendReminders = async (intervalStart: string, intervalEnd: string, 
     throw new BadRequestError(`Invalid sentField: ${sentField}`);
   }
 
-  const result = await pool.query(`
+  // Job programado cross-tenant (corre fuera de una request HTTP, sin contexto
+  // de tenant): debe usar el pool BYPASSRLS para ver TODOS los tenants, no solo
+  // el 'default'. El UPDATE de marcado usa el mismo pool por consistencia.
+  const result = await superAdminPool.query(`
     SELECT b.id, b.date, b.time,
            COALESCE(u.email, b.guest_email) AS email,
            COALESCE(u.id, 0) AS user_id,
@@ -78,7 +81,7 @@ export const sendReminders = async (intervalStart: string, intervalEnd: string, 
         `,
       });
 
-      await pool.query(
+      await superAdminPool.query(
         `UPDATE bookings SET ${sentField} = TRUE WHERE id = $1`,
         [booking.id]
       );

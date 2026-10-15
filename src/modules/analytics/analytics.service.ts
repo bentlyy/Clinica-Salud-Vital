@@ -212,18 +212,9 @@ export const getOptimalSchedules = async (tenantId: string) => {
     });
   } catch (err) {
     logger.error('[Analytics] Error getting optimal schedules:', err);
-    const days = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'];
-    const bestTimes = ['10:00', '14:00', '09:00', '15:00', '11:00'];
-    const hoursList = ['09:00', '10:00', '11:00', '14:00', '15:00', '16:00'];
-    return days.map((day, i) => ({
-      day,
-      bestTime: bestTimes[i],
-      occupancy: 50 + Math.floor(Math.random() * 30),
-      hours: hoursList.map(time => ({
-        time,
-        score: 40 + Math.floor(Math.random() * 60),
-      })),
-    }));
+    // No se fabrican datos: si la consulta falla se devuelve vacío para que la
+    // UI muestre "sin datos" en vez de resultados aleatorios presentados como reales.
+    return [];
   }
 };
 

@@ -1,0 +1,45 @@
+origin,target,symbol,dep_type,evidence,status
+src/app.ts,src/modules/auth/auth.routes.ts,default(functional import),static,src/app.ts:43,confirmado
+src/app.ts,router /api/auth,mount,static,src/app.ts:265,confirmado
+src/modules/auth/auth.routes.ts,src/modules/auth/auth.controller.ts,18 handlers,static,auth.routes.ts:2,confirmado
+src/modules/auth/auth.routes.ts,src/modules/auth/auth.schema.ts,7 schemas,static,auth.routes.ts:4,confirmado
+src/modules/auth/auth.routes.ts,src/middlewares/validate.middleware.ts,validateZod,static,auth.routes.ts:3,confirmado
+src/modules/auth/auth.routes.ts,src/middlewares/auth.middleware.ts,authMiddleware/authorize,static,auth.routes.ts:5,confirmado
+src/modules/auth/auth.controller.ts,src/modules/auth/auth.service.ts,authService.*,runtime,auth.controller.ts:2,confirmado
+src/modules/auth/auth.controller.ts,src/shared/db.ts,pool,infrastructure,auth.controller.ts:4,confirmado
+src/modules/auth/auth.controller.ts,src/modules/doctor/doctor.service.ts,verifyInviteToken,runtime,auth.controller.ts:5,confirmado
+src/modules/auth/auth.controller.ts,src/shared/seed-status.ts,waitForSeed,runtime,auth.controller.ts:6,confirmado
+src/modules/auth/auth.controller.ts,src/shared/sessions.service.ts,listUserSessions/revokeUserSession,runtime,auth.controller.ts:10,confirmado
+src/modules/auth/auth.service.ts,src/shared/jwt.service.ts,jwtManager,runtime,auth.service.ts:5,confirmado
+src/modules/auth/auth.service.ts,src/shared/crypto.service.ts,hashToken/encrypt/decrypt,runtime,auth.service.ts:12,confirmado
+src/modules/auth/auth.service.ts,src/shared/sessions.service.ts,revokeAllUserSessions,runtime,auth.service.ts:15,confirmado
+src/modules/auth/auth.service.ts,src/shared/email.service.ts,sendEmail,runtime,auth.service.ts:13,confirmado
+src/modules/auth/auth.service.ts,src/shared/base32.ts,base32Encode/Decode,runtime,auth.service.ts:14,confirmado
+src/modules/auth/auth.service.ts,src/shared/rut.ts,validateRut/cleanRut/formatRut,runtime,auth.service.ts:4,confirmado
+src/modules/auth/auth.service.ts,src/shared/db.ts,"pool/readPool/superAdminPool",infrastructure,auth.service.ts:1,confirmado
+src/modules/auth/auth.service.ts,src/seed/admin.seed.ts,DEMO_TENANT_ID/EMAIL,data,auth.service.ts:3,confirmado
+src/middlewares/auth.middleware.ts,src/shared/jwt.service.ts,jwtManager.verify,runtime,auth.middleware.ts:2,confirmado
+src/middlewares/auth.middleware.ts,src/shared/db.ts,readPool,infrastructure,auth.middleware.ts:5,confirmado
+frontend/src/shared/providers/AuthProvider.tsx,frontend/src/shared/services/api-client.ts,apiClient/refreshSession,runtime,AuthProvider.tsx:11,confirmado
+frontend/src/shared/providers/AuthProvider.tsx,frontend/src/shared/utils/role.utils.ts,hasPermission,import,AuthProvider.tsx:13,confirmado
+frontend/src/shared/services/api-client.ts,backend /api/auth/refresh,axios POST,contract,api-client.ts:66-74,confirmado
+src/modules/doctor/doctor.service.ts,src/modules/auth/auth.service.ts,(ausente),no-ciclo,sin import de auth.service en doctor/,confirmado
+src/middlewares/tenant.middleware.ts,src/shared/multi-tenant.service.ts,tenantService/loadTenantsFromDB,runtime,tenant.middleware.ts:64,confirmado
+src/middlewares/tenant.middleware.ts,src/shared/db.ts,tenantContext.run,infrastructure,tenant.middleware.ts:42,confirmado
+src/middlewares/feature.middleware.ts,src/modules/saas/saas.service.ts,checkFeatureAccess,runtime,feature.middleware.ts:7,confirmado
+src/modules/saas/saas.service.ts,src/shared/db.ts,pool/superAdminPool,infrastructure,saas.service.ts:1,confirmado
+src/modules/saas/saas.service.ts,src/modules/saas/onboarding.service.ts,insertOnboarding/insertOnboardingDocuments,runtime,saas.service.ts:6,confirmado
+src/modules/saas/saas.service.ts,src/shared/currencies.ts,convertFromUsd/SUPPORTED_COUNTRIES,runtime,saas.service.ts:5,confirmado
+src/shared/ownership.ts,src/shared/db.ts,pool,infrastructure,ownership.ts:1,confirmado
+src/shared/multi-tenant.service.ts,src/shared/db.ts,pool,infrastructure,multi-tenant.service.ts:1,confirmado
+src/shared/db.ts,node:async_hooks,AsyncLocalStorage,infrastructure,db.ts:2,confirmado
+tests/integration/rls-isolation.test.js,src/shared/db.ts,(indirecto) pool/RLS,test,tests/integration/rls-isolation.test.js:1,confirmado
+src/modules/saas/saas.controller.ts,src/modules/saas/saas.service.ts,saasService.*,runtime,saas.controller.ts:3,confirmado
+src/modules/saas/saas.controller.ts,src/shared/mercadopago.service.ts,createCheckoutPreference/fetchPayment/isMercadoPagoConfigured,runtime,saas.controller.ts:9-13,confirmado
+src/modules/saas/saas.controller.ts,src/modules/saas/onboarding.service.ts,onboardingService.*,runtime,saas.controller.ts:4,confirmado
+src/modules/saas/saas.service.ts,src/shared/multi-tenant.service.ts,tenantService.loadFromDB,runtime,saas.service.ts:561,confirmado
+src/modules/billing/billing.controller.ts,src/modules/billing/billing.service.ts,billingService.*,runtime,billing.controller.ts:1,confirmado
+src/modules/billing/billing.controller.ts,src/modules/doctor/doctor.service.ts,getDoctorByUserId,runtime,billing.controller.ts:2,confirmado
+src/modules/billing/billing.service.ts,src/shared/db.ts,pool/readPool,infrastructure,billing.service.ts:1,confirmado
+src/modules/super-admin/super-admin.routes.ts,src/modules/super-admin/super-admin.controller.ts,*Controller,static,super-admin.routes.ts:4,confirmado
+src/modules/currencies/currencies.controller.ts,src/shared/currencies.ts,getRates,runtime,currencies.controller.ts:3,confirmado

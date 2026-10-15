@@ -282,7 +282,9 @@ export const cancelSubscription = async (tenantId: string): Promise<{ message: s
 // ─── Grace Period & Past Due ─────────────────────────────
 
 export const handlePastDueSubscriptions = async (): Promise<void> => {
-  const result = await pool.query(
+  // Job programado cross-tenant: corre fuera de una request HTTP (sin contexto
+  // de tenant). Debe usar el pool BYPASSRLS para ver TODOS los tenants.
+  const result = await superAdminPool.query(
     `SELECT s.id, s.tenant_id, s.current_period_end, p.code as plan_code
      FROM subscriptions s
      JOIN plans p ON p.id = s.plan_id
@@ -587,7 +589,9 @@ const findSubscriptionByMpPaymentId = async (
   mpPaymentId: string
 ): Promise<{ id: number; tenant_id: string; plan_id: number } | null> => {
   if (!mpPaymentId) return null;
-  const result = await pool.query(
+  // Lookup cross-tenant SIN contexto de tenant (el webhook no pertenece a
+  // ningún tenant): debe usar el pool con BYPASSRLS, no el pool scoped.
+  const result = await superAdminPool.query(
     `SELECT id, tenant_id, plan_id FROM subscriptions WHERE mercadopago_payment_id = $1`,
     [mpPaymentId]
   );

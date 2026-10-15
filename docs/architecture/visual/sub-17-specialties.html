@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vitaria · Especialidades y catálogos</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Plus+Jakarta+Sans:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --color-paper:  #f6f8fb;
+      --color-ink:    #0d3d38;
+      --color-muted:  #48606f;
+      --color-accent: #0d9488;
+      --font-sans:    'Plus Jakarta Sans', system-ui, sans-serif;
+      --font-serif:   'Instrument Serif', serif;
+      --font-mono:    'Geist Mono', ui-monospace, monospace;
+    }
+    body {
+      font-family: var(--font-sans);
+      background: var(--color-paper);
+      color: var(--color-ink);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem 2rem;
+    }
+    .frame { max-width: 1200px; width: 100%; }
+    .eyebrow {
+      font-family: var(--font-mono);
+      font-size: 0.66rem;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--color-muted);
+      margin-bottom: 0.5rem;
+    }
+    h1 {
+      font-family: var(--font-serif);
+      font-size: clamp(1.5rem, 2.4vw + 0.75rem, 2rem);
+      font-weight: 400;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+      color: var(--color-ink);
+      margin-bottom: 1.5rem;
+    }
+    svg { width: 100%; min-width: 900px; display: block; }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <p class="eyebrow">Flowchart · Especialidades</p>
+    <h1>Catálogos que se leen sin sesión y se escriben solo con permiso</h1>
+
+    <svg viewBox="0 0 1000 720" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="sub-17-specialties-title sub-17-specialties-desc">
+      <title id="sub-17-specialties-title">Especialidades y monedas en Vitaria</title>
+      <desc id="sub-17-specialties-desc">Lectura pública del catálogo de especialidades resuelto por cabecera de tenant, escritura restringida a admin por un get-or-create idempotente, y el catálogo de monedas refrescado con caché y fallback.</desc>
+      <defs>
+        <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#48606f"/></marker>
+        <marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#0d9488"/></marker>
+      </defs>
+
+      <rect width="100%" height="100%" fill="#f6f8fb"/>
+
+      <!-- BAND 1 -->
+      <text x="40" y="110" fill="#0d9488" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.16em">LECTURA PÚBLICA</text>
+
+      <rect x="40" y="124" width="176" height="56" rx="6" fill="rgba(72,96,111,0.10)" stroke="#7c93a1" stroke-width="1"/>
+      <text x="128" y="148" fill="#0d3d38" font-size="11" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">GET /specialties</text>
+      <text x="128" y="165" fill="#48606f" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">ruta pública</text>
+
+      <rect x="248" y="124" width="176" height="56" rx="6" fill="#ffffff" stroke="#0d3d38" stroke-width="1"/>
+      <text x="336" y="148" fill="#0d3d38" font-size="11" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">tenantMiddleware</text>
+      <text x="336" y="165" fill="#48606f" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">x-tenant-id sin sesión</text>
+
+      <rect x="456" y="124" width="176" height="56" rx="6" fill="#ffffff" stroke="#0d3d38" stroke-width="1"/>
+      <text x="544" y="148" fill="#0d3d38" font-size="11" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">SELECT por tenant_id</text>
+      <text x="544" y="165" fill="#48606f" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">sin filtro de rol</text>
+
+      <rect x="664" y="124" width="296" height="56" rx="6" fill="rgba(13,148,136,0.10)" stroke="#0d9488" stroke-width="1"/>
+      <text x="812" y="148" fill="#0d3d38" font-size="11" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">Catálogo servido sin sesión</text>
+      <text x="812" y="165" fill="#48606f" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">incluye nombre y email de los doctores · FND-O1</text>
+
+      <line x1="216" y1="152" x2="248" y2="152" stroke="#48606f" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <line x1="424" y1="152" x2="456" y2="152" stroke="#48606f" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <line x1="632" y1="152" x2="664" y2="152" stroke="#0d9488" stroke-width="1.2" marker-end="url(#arrow-accent)"/>
+
+      <!-- BAND 2 -->
+      <text x="40" y="270" fill="#7c93a1" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.16em">ESCRITURA RESTRINGIDA</text>
+
+      <rect x="40" y="284" width="176" height="56" rx="6" fill="rgba(72,96,111,0.10)" stroke="#7c93a1" stroke-width="1"/>
+      <text x="128" y="308" fill="#0d3d38" font-size="11" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">POST · PUT · DELETE</text>
+      <text x="128" y="325" fill="#48606f" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">/api/specialties</text>
+
+      <rect x="248" y="284" width="176" height="56" rx="6" fill="#ffffff" stroke="#0d3d38" stroke-width="1"/>
+      <text x="336" y="308" fill="#0d3d38" font-size="11" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">auth + authorize</text>
+      <text x="336" y="325" fill="#48606f" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">admin · superadmin</text>
+
+      <polygon points="600,260 676,312 600,364 524,312" fill="rgba(13,61,56,0.05)" stroke="#48606f" stroke-width="1"/>
+      <text x="600" y="308" fill="#0d3d38" font-size="10" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">¿existe ya</text>
+      <text x="600" y="322" fill="#0d3d38" font-size="10" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">(tenant, name)?</text>
+
+      <rect x="776" y="268" width="184" height="56" rx="6" fill="#ffffff" stroke="#0d3d38" stroke-width="1"/>
+      <text x="868" y="292" fill="#0d3d38" font-size="11" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">Devuelve la existente</text>
+      <text x="868" y="309" fill="#48606f" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">200 · create idempotente</text>
+
+      <rect x="776" y="352" width="184" height="56" rx="6" fill="#ffffff" stroke="#0d3d38" stroke-width="1"/>
+      <text x="868" y="376" fill="#0d3d38" font-size="11" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">Crea 201</text>
+      <text x="868" y="393" fill="#48606f" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">get-or-create por UNIQUE</text>
+
+      <rect x="248" y="366" width="176" height="44" rx="6" fill="rgba(13,61,56,0.02)" stroke="rgba(13,61,56,0.20)" stroke-width="1" stroke-dasharray="4,3"/>
+      <text x="336" y="386" fill="#0d3d38" font-size="10" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">ensureSpecialty()</text>
+      <text x="336" y="400" fill="#48606f" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">invocada por doctor.service</text>
+
+      <line x1="216" y1="312" x2="248" y2="312" stroke="#48606f" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <line x1="424" y1="312" x2="524" y2="312" stroke="#48606f" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <path d="M676,312 H726 V296 H776" fill="none" stroke="#48606f" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <path d="M676,312 H726 V380 H776" fill="none" stroke="#48606f" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <path d="M336,340 V366" fill="none" stroke="#48606f" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arrow)"/>
+      <rect x="690" y="288" width="34" height="12" rx="2" fill="#f6f8fb"/>
+      <text x="707" y="298" fill="#48606f" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">sí</text>
+      <rect x="690" y="372" width="34" height="12" rx="2" fill="#f6f8fb"/>
+      <text x="707" y="382" fill="#48606f" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">no</text>
+
+      <!-- BAND 3 -->
+      <text x="40" y="450" fill="#7c93a1" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.16em">CATÁLOGO DE MONEDAS</text>
+
+      <rect x="40" y="464" width="176" height="56" rx="6" fill="rgba(72,96,111,0.10)" stroke="#7c93a1" stroke-width="1"/>
+      <text x="128" y="488" fill="#0d3d38" font-size="11" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">Arranque + cron 6 h</text>
+      <text x="128" y="505" fill="#48606f" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">refreshRates()</text>
+
+      <rect x="248" y="464" width="176" height="56" rx="6" fill="#ffffff" stroke="#0d3d38" stroke-width="1"/>
+      <text x="336" y="488" fill="#0d3d38" font-size="11" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">open.er-api.com</text>
+      <text x="336" y="505" fill="#48606f" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">fetch · timeout 8 s</text>
+
+      <polygon points="600,440 676,492 600,544 524,492" fill="rgba(13,61,56,0.05)" stroke="#48606f" stroke-width="1"/>
+      <text x="600" y="488" fill="#0d3d38" font-size="10" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">¿responde</text>
+      <text x="600" y="502" fill="#0d3d38" font-size="10" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">la fuente?</text>
+
+      <rect x="776" y="448" width="184" height="56" rx="6" fill="#ffffff" stroke="#0d3d38" stroke-width="1"/>
+      <text x="868" y="472" fill="#0d3d38" font-size="11" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">Caché de tasas</text>
+      <text x="868" y="489" fill="#48606f" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">fuente en vivo</text>
+
+      <rect x="776" y="532" width="184" height="56" rx="6" fill="rgba(13,61,56,0.03)" stroke="rgba(13,61,56,0.30)" stroke-width="1"/>
+      <text x="868" y="556" fill="#0d3d38" font-size="11" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">Fallback hardcodeado</text>
+      <text x="868" y="573" fill="#48606f" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">si la fuente falla</text>
+
+      <rect x="700" y="624" width="260" height="48" rx="6" fill="#ffffff" stroke="#0d3d38" stroke-width="1"/>
+      <text x="830" y="653" fill="#0d3d38" font-size="11" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">GET /currencies/rates · público</text>
+
+      <line x1="216" y1="492" x2="248" y2="492" stroke="#48606f" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <line x1="424" y1="492" x2="524" y2="492" stroke="#48606f" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <path d="M676,492 H726 V476 H776" fill="none" stroke="#48606f" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <path d="M676,492 H726 V560 H776" fill="none" stroke="#48606f" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <path d="M868,504 V624" fill="none" stroke="#48606f" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <path d="M868,588 V606 H790 V624" fill="none" stroke="#48606f" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <rect x="690" y="470" width="34" height="12" rx="2" fill="#f6f8fb"/>
+      <text x="707" y="480" fill="#48606f" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">sí</text>
+      <rect x="690" y="552" width="34" height="12" rx="2" fill="#f6f8fb"/>
+      <text x="707" y="562" fill="#48606f" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">no</text>
+
+      <text x="40" y="700" fill="#7c93a1" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.06em">A verificar: quién consume el catálogo público · frescura real de las tasas en producción · dependencia del color/icono sembrado por la migración 001</text>
+    </svg>
+  </div>
+</body>
+</html>

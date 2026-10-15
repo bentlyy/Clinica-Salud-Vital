@@ -42,6 +42,14 @@ vi.mock('../../src/utils/errors.js', async () => {
         this.name = 'BadRequestError';
       }
     },
+    NotFoundError: class NotFoundError extends Error {
+      constructor(msg) {
+        const resolved = (typeof msg === 'string' && msg in ERROR_MESSAGES) ? ERROR_MESSAGES[msg] : msg;
+        super(resolved);
+        this.name = 'NotFoundError';
+      }
+    },
+    toError: (err) => (err instanceof Error ? err : new Error(String(err))),
   };
 });
 

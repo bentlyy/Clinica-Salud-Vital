@@ -1,7 +1,8 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, type Mock } from 'vitest';
 import { AppThemeProvider } from '@/shared/providers/ThemeProvider';
 import { CreateBookingDialog } from '@/modules/bookings/components/CreateBookingDialog';
+import type { CreateBookingInput } from '@/modules/bookings/types/booking.types';
 
 vi.mock('@/modules/bookings/hooks/useBookings', () => ({
   useAvailableSlots: () => ({ data: ['09:00', '09:30'], isLoading: false }),
@@ -20,13 +21,13 @@ function renderDialog(overrides: {
   open?: boolean;
   isSubmitting?: boolean;
   isAuthenticated?: boolean;
-  onSubmit?: (d: unknown) => void;
+  onSubmit?: Mock<(data: CreateBookingInput) => void>;
 } = {}) {
   const {
     open = true,
     isSubmitting = false,
     isAuthenticated = false,
-    onSubmit = vi.fn(),
+    onSubmit = vi.fn<(data: CreateBookingInput) => void>(),
   } = overrides;
   render(
     <AppThemeProvider>

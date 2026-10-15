@@ -402,18 +402,6 @@ export function useCreateSample() {
   });
 }
 
-export function useUpdateSample() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, input }: { id: number; input: Partial<Record<string, unknown>> }) =>
-      labService.updateSample(id, input),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: labKeys.all });
-      toast.success(i18n.t('lab:sampleUpdated'));
-    },
-  });
-}
-
 export function useReceiveSample() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -479,17 +467,6 @@ export function useCreateQCRecord() {
   });
 }
 
-export function useApproveQCRecord() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: number) => labService.approveQCRecord(id),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: labKeys.all });
-      toast.success(i18n.t('lab:qcApproved'));
-    },
-  });
-}
-
 // ── Equipment ────────────────────────────────────────────────────────────────
 
 export function useLabEquipment(params?: { areaId?: number }) {
@@ -547,8 +524,8 @@ export function useCreateReagent() {
 export function useUpdateReagent() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, input }: { id: number; input: Partial<Record<string, unknown>> }) =>
-      labService.updateReagent(id, input),
+    mutationFn: ({ id, quantity }: { id: number; quantity: number }) =>
+      labService.updateReagent(id, { quantity }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: labKeys.all });
       toast.success(i18n.t('lab:reagentUpdated'));
@@ -604,17 +581,6 @@ export function useAcknowledgeNotification() {
     mutationFn: (id: number) => labService.acknowledgeNotification(id),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: labKeys.notifications() });
-    },
-  });
-}
-
-export function useAcknowledgeAllNotifications() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: labService.acknowledgeAllNotifications,
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: labKeys.notifications() });
-      toast.success(i18n.t('lab:notificationsRead'));
     },
   });
 }

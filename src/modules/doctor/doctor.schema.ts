@@ -33,3 +33,7 @@ export const invitePersonSchema = z.object({
   specialty: z.string().optional(),
 }).strict();
 
+export const userIdParamSchema = z.object({
+  userId: z.coerce.number().int().positive(),
+});
+

@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vitaria · Frontend</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Plus+Jakarta+Sans:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --color-paper:  #f6f8fb;
+      --color-ink:    #0d3d38;
+      --color-muted:  #48606f;
+      --color-accent: #0d9488;
+      --font-sans:    'Plus Jakarta Sans', system-ui, sans-serif;
+      --font-serif:   'Instrument Serif', serif;
+      --font-mono:    'Geist Mono', ui-monospace, monospace;
+    }
+    body {
+      font-family: var(--font-sans);
+      background: var(--color-paper);
+      color: var(--color-ink);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem 2rem;
+    }
+    .frame { max-width: 1200px; width: 100%; }
+    .eyebrow {
+      font-family: var(--font-mono);
+      font-size: 0.66rem;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--color-muted);
+      margin-bottom: 0.5rem;
+    }
+    h1 {
+      font-family: var(--font-serif);
+      font-size: clamp(1.5rem, 2.4vw + 0.75rem, 2rem);
+      font-weight: 400;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+      color: var(--color-ink);
+      margin-bottom: 1.5rem;
+    }
+    svg { width: 100%; min-width: 900px; display: block; }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <p class="eyebrow">Architecture · Frontend</p>
+    <h1>Cómo está armada la SPA: de <span style="font-family:var(--font-mono);font-size:0.8em">main.tsx</span> a la llamada a la API</h1>
+
+    <svg viewBox="0 0 1000 620" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="sub-01-frontend-title sub-01-frontend-desc">
+      <title id="sub-01-frontend-title">Arquitectura del frontend de Vitaria</title>
+      <desc id="sub-01-frontend-desc">Capas del frontend: entrada main.tsx, providers de React Query/Auth/i18n/Tema, router con rutas protegidas por rol, AppShell, 19 módulos de feature, componentes compartidos y una capa API con axios e interceptores.</desc>
+      <defs>
+        <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#48606f"/></marker>
+        <marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#0d9488"/></marker>
+      </defs>
+
+      <rect width="100%" height="100%" fill="#f6f8fb"/>
+
+      <!-- CONNECTOR SPINE -->
+      <line x1="500" y1="188" x2="500" y2="200" stroke="#48606f" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <line x1="500" y1="244" x2="500" y2="256" stroke="#48606f" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <line x1="500" y1="300" x2="500" y2="312" stroke="#48606f" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <line x1="500" y1="356" x2="500" y2="368" stroke="#48606f" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <line x1="500" y1="412" x2="500" y2="424" stroke="#48606f" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <line x1="500" y1="468" x2="500" y2="480" stroke="#48606f" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <line x1="500" y1="524" x2="500" y2="536" stroke="#0d9488" stroke-width="1.2" marker-end="url(#arrow-accent)"/>
+
+      <!-- LAYER LABELS -->
+      <text x="40" y="170" fill="#7c93a1" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.16em">ENTRADA</text>
+      <text x="40" y="226" fill="#7c93a1" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.16em">PROVIDERS</text>
+      <text x="40" y="282" fill="#7c93a1" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.16em">ENRUTADO</text>
+      <text x="40" y="338" fill="#7c93a1" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.16em">SHELL</text>
+      <text x="40" y="394" fill="#7c93a1" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.16em">MÓDULOS</text>
+      <text x="40" y="450" fill="#7c93a1" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.16em">COMPARTIDO</text>
+      <text x="40" y="506" fill="#7c93a1" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.16em">API LAYER</text>
+      <text x="40" y="562" fill="#7c93a1" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.16em">BACKEND</text>
+
+      <!-- BANDS -->
+      <rect x="200" y="144" width="600" height="44" rx="6" fill="rgba(72,96,111,0.10)" stroke="#7c93a1" stroke-width="1"/>
+      <text x="500" y="163" fill="#0d3d38" font-size="12" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">main.tsx</text>
+      <text x="500" y="178" fill="#48606f" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">bootstrap · StrictMode</text>
+
+      <rect x="200" y="200" width="600" height="44" rx="6" fill="#f6f8fb"/>
+      <rect x="200" y="200" width="600" height="44" rx="6" fill="#ffffff" stroke="#0d3d38" stroke-width="1"/>
+      <text x="500" y="219" fill="#0d3d38" font-size="12" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">Providers</text>
+      <text x="500" y="234" fill="#48606f" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">React Query · AuthContext · i18n · Tema claro/oscuro</text>
+
+      <rect x="200" y="256" width="600" height="44" rx="6" fill="rgba(13,148,136,0.10)" stroke="#0d9488" stroke-width="1"/>
+      <text x="500" y="275" fill="#0d3d38" font-size="12" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">Router</text>
+      <text x="500" y="290" fill="#48606f" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">react-router · rutas protegidas por rol</text>
+
+      <rect x="200" y="312" width="600" height="44" rx="6" fill="#f6f8fb"/>
+      <rect x="200" y="312" width="600" height="44" rx="6" fill="#ffffff" stroke="#0d3d38" stroke-width="1"/>
+      <text x="500" y="331" fill="#0d3d38" font-size="12" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">AppShell</text>
+      <text x="500" y="346" fill="#48606f" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">layout · sidebar por capacidades · header</text>
+
+      <rect x="200" y="368" width="600" height="44" rx="6" fill="rgba(13,61,56,0.05)" stroke="#48606f" stroke-width="1"/>
+      <text x="500" y="387" fill="#0d3d38" font-size="12" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">19 módulos de feature</text>
+      <text x="500" y="402" fill="#48606f" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">agenda · clínica · laboratorio · facturación · admin…</text>
+
+      <rect x="200" y="424" width="600" height="44" rx="6" fill="#f6f8fb"/>
+      <rect x="200" y="424" width="600" height="44" rx="6" fill="#ffffff" stroke="#0d3d38" stroke-width="1"/>
+      <text x="500" y="443" fill="#0d3d38" font-size="12" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">Componentes compartidos</text>
+      <text x="500" y="458" fill="#48606f" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">LoadingState · ErrorState · EmptyState · tablas</text>
+
+      <rect x="200" y="480" width="600" height="44" rx="6" fill="rgba(13,148,136,0.10)" stroke="#0d9488" stroke-width="1"/>
+      <text x="500" y="499" fill="#0d3d38" font-size="12" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">API layer</text>
+      <text x="500" y="514" fill="#48606f" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">axios · interceptores 401→refresh · errores→toast</text>
+
+      <rect x="200" y="536" width="600" height="44" rx="6" fill="#f6f8fb"/>
+      <rect x="200" y="536" width="600" height="44" rx="6" fill="rgba(13,61,56,0.03)" stroke="rgba(13,61,56,0.30)" stroke-width="1"/>
+      <text x="500" y="555" fill="#0d3d38" font-size="12" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">API Express · /api</text>
+      <text x="500" y="570" fill="#48606f" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">JSON · cookie httpOnly · CSRF</text>
+
+      <!-- RIGHT ANNOTATIONS -->
+      <text x="820" y="170" fill="#48606f" font-size="8" font-family="'Geist Mono', monospace">React 19 · Vite 6</text>
+      <text x="820" y="226" fill="#48606f" font-size="8" font-family="'Geist Mono', monospace">estado global en Context</text>
+      <text x="820" y="282" fill="#0d9488" font-size="8" font-family="'Geist Mono', monospace">2 focos: router + API</text>
+      <text x="820" y="338" fill="#48606f" font-size="8" font-family="'Geist Mono', monospace">MUI 6 + Emotion</text>
+      <text x="820" y="394" fill="#48606f" font-size="8" font-family="'Geist Mono', monospace">i18n: es · en · pt · fr</text>
+      <text x="820" y="450" fill="#48606f" font-size="8" font-family="'Geist Mono', monospace">sin Error Boundary global</text>
+      <text x="820" y="506" fill="#48606f" font-size="8" font-family="'Geist Mono', monospace">refresh silencioso</text>
+      <text x="820" y="562" fill="#48606f" font-size="8" font-family="'Geist Mono', monospace">envelope no uniforme</text>
+
+      <line x1="200" y1="608" x2="800" y2="608" stroke="rgba(13,61,56,0.10)" stroke-width="0.8"/>
+    </svg>
+  </div>
+</body>
+</html>

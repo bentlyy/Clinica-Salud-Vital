@@ -8,7 +8,10 @@ describe('useLabKeyboard', () => {
   });
 
   afterEach(() => {
-    document.removeEventListener('keydown', (window as unknown as { __kbHandler?: EventListener }).__kbHandler);
+    const handler = (window as unknown as { __kbHandler?: EventListener }).__kbHandler;
+    if (handler) {
+      document.removeEventListener('keydown', handler);
+    }
     delete (window as unknown as { __kbHandler?: EventListener }).__kbHandler;
   });
 
@@ -69,7 +72,7 @@ describe('useLabKeyboard', () => {
   it('matches by lowercase regardless of keyboard case', () => {
     const handler = vi.fn();
     renderHook(() =>
-      useLabKeyboard([{ key: 'f', ctrl: true, handler }]),
+      useLabKeyboard([{ key: 'f', ctrl: true, description: 'Buscar', handler }]),
     );
 
     fireKey('F', { ctrl: true });
@@ -102,8 +105,8 @@ describe('useLabKeyboard', () => {
     const second = vi.fn();
     renderHook(() =>
       useLabKeyboard([
-        { key: 'n', ctrl: true, handler: first },
-        { key: 'n', ctrl: true, handler: second },
+        { key: 'n', ctrl: true, description: 'Primera', handler: first },
+        { key: 'n', ctrl: true, description: 'Segunda', handler: second },
       ]),
     );
 

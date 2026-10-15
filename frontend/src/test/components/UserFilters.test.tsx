@@ -9,6 +9,14 @@ vi.mock('@/i18n/i18n', () => ({
 
 vi.mock('react-i18next', () => ({
   useTranslation: (ns?: string) => {
+    const roleLabels: Record<string, string> = {
+      all: 'Todos',
+      admin: 'Administrador',
+      doctor: 'Doctor',
+      lab_technician: 'Técnico',
+      patient: 'Paciente',
+      user: 'Usuario',
+    };
     const translations: Record<string, string> = {
       searchPlaceholder: 'Buscar por nombre o email',
       role: 'Rol',
@@ -16,14 +24,6 @@ vi.mock('react-i18next', () => ({
       status_active: 'Activo',
       status_inactive: 'Inactivo',
       clearFilters: 'Limpiar filtros',
-      roleLabels: {
-        all: 'Todos',
-        admin: 'Administrador',
-        doctor: 'Doctor',
-        lab_technician: 'Técnico',
-        patient: 'Paciente',
-        user: 'Usuario',
-      },
     };
     const common: Record<string, string> = {
       search: 'Buscar',
@@ -32,7 +32,7 @@ vi.mock('react-i18next', () => ({
       if (ns === 'common') return common[key] ?? key;
       if (key.startsWith('roleLabels.')) {
         const sub = key.split('.')[1];
-        return (translations.roleLabels as Record<string, string>)[sub] ?? key;
+        return roleLabels[sub] ?? key;
       }
       return translations[key] ?? key;
     };

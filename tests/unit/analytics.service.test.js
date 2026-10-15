@@ -280,14 +280,13 @@ describe('analytics.service', () => {
       expect(result[0].hours).toBeDefined();
     });
 
-    it('falls back on error', async () => {
+    it('devuelve vacío en error (no fabrica datos aleatorios)', async () => {
       mockQuery.mockRejectedValue(new Error('DB error'));
 
       const analytics = await import('../../src/modules/analytics/analytics.service.js');
       const result = await analytics.getOptimalSchedules();
 
-      expect(result).toHaveLength(5);
-      expect(result[0].day).toBe('Lunes');
+      expect(result).toEqual([]);
     });
   });
 

@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vitaria · Auditoría</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Plus+Jakarta+Sans:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --color-paper:  #f6f8fb;
+      --color-ink:    #0d3d38;
+      --color-muted:  #48606f;
+      --color-accent: #0d9488;
+      --font-sans:    'Plus Jakarta Sans', system-ui, sans-serif;
+      --font-serif:   'Instrument Serif', serif;
+      --font-mono:    'Geist Mono', ui-monospace, monospace;
+    }
+    body {
+      font-family: var(--font-sans);
+      background: var(--color-paper);
+      color: var(--color-ink);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem 2rem;
+    }
+    .frame { max-width: 1200px; width: 100%; }
+    .eyebrow {
+      font-family: var(--font-mono);
+      font-size: 0.66rem;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--color-muted);
+      margin-bottom: 0.5rem;
+    }
+    h1 {
+      font-family: var(--font-serif);
+      font-size: clamp(1.5rem, 2.4vw + 0.75rem, 2rem);
+      font-weight: 400;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+      color: var(--color-ink);
+      margin-bottom: 1.5rem;
+    }
+    svg { width: 100%; min-width: 900px; display: block; }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <p class="eyebrow">Sequence · Auditoría</p>
+    <h1>Toda acción sensible deja una huella que nadie puede reescribir</h1>
+
+    <svg viewBox="0 0 1000 600" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="sub-13-audit-title sub-13-audit-desc">
+      <title id="sub-13-audit-title">Secuencia de auditoría en Vitaria</title>
+      <desc id="sub-13-audit-desc">Un middleware captura actor, tenant, acción y payload de cada operación sensible y escribe una fila inmutable en audit_log. La lectura del registro está restringida a administradores.</desc>
+      <defs>
+        <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#48606f"/></marker>
+        <marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#0d9488"/></marker>
+        <marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2f6f8e"/></marker>
+      </defs>
+
+      <rect width="100%" height="100%" fill="#f6f8fb"/>
+
+      <line x1="140" y1="128" x2="140" y2="530" stroke="rgba(13,61,56,0.10)" stroke-width="1" stroke-dasharray="4,4"/>
+      <line x1="380" y1="128" x2="380" y2="530" stroke="rgba(13,61,56,0.10)" stroke-width="1" stroke-dasharray="4,4"/>
+      <line x1="620" y1="128" x2="620" y2="530" stroke="rgba(13,61,56,0.10)" stroke-width="1" stroke-dasharray="4,4"/>
+      <line x1="860" y1="128" x2="860" y2="530" stroke="rgba(13,61,56,0.10)" stroke-width="1" stroke-dasharray="4,4"/>
+
+      <line x1="140" y1="176" x2="380" y2="176" stroke="#2f6f8e" stroke-width="1.2" marker-end="url(#arrow-link)"/>
+      <path d="M380,216 H436 Q444,216 444,224 V232 Q444,240 436,240 H380" fill="none" stroke="#0d9488" stroke-width="1.2" marker-end="url(#arrow-accent)"/>
+      <line x1="380" y1="280" x2="860" y2="280" stroke="#48606f" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <line x1="380" y1="320" x2="140" y2="320" stroke="#0d9488" stroke-width="1.2" stroke-dasharray="4,3" marker-end="url(#arrow-accent)"/>
+      <line x1="140" y1="392" x2="380" y2="392" stroke="#2f6f8e" stroke-width="1.2" marker-end="url(#arrow-link)"/>
+      <line x1="380" y1="432" x2="860" y2="432" stroke="#48606f" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <line x1="860" y1="472" x2="380" y2="472" stroke="#48606f" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arrow)"/>
+      <line x1="380" y1="496" x2="140" y2="496" stroke="#48606f" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arrow)"/>
+
+      <rect x="172" y="156" width="176" height="12" rx="2" fill="#f6f8fb"/>
+      <text x="260" y="166" fill="#2f6f8e" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">acción sensible (POST/PUT)</text>
+
+      <rect x="452" y="224" width="144" height="12" rx="2" fill="#f6f8fb"/>
+      <text x="524" y="234" fill="#0d9488" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">captura contexto</text>
+
+      <rect x="576" y="260" width="160" height="12" rx="2" fill="#f6f8fb"/>
+      <text x="656" y="270" fill="#48606f" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">INSERT audit_log (append-only)</text>
+
+      <rect x="172" y="300" width="144" height="12" rx="2" fill="#f6f8fb"/>
+      <text x="244" y="310" fill="#0d9488" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">respuesta normal</text>
+
+      <rect x="172" y="372" width="176" height="12" rx="2" fill="#f6f8fb"/>
+      <text x="260" y="382" fill="#2f6f8e" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">GET /audit (solo admin)</text>
+
+      <rect x="576" y="412" width="160" height="12" rx="2" fill="#f6f8fb"/>
+      <text x="656" y="422" fill="#48606f" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">SELECT filtrado por tenant</text>
+
+      <rect x="172" y="476" width="144" height="12" rx="2" fill="#f6f8fb"/>
+      <text x="244" y="486" fill="#48606f" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">bitácora paginada</text>
+
+      <rect x="70" y="88" width="140" height="40" rx="6" fill="rgba(72,96,111,0.10)" stroke="#7c93a1" stroke-width="1"/>
+      <text x="140" y="106" fill="#0d3d38" font-size="12" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">Actor</text>
+      <text x="140" y="120" fill="#48606f" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">usuario · rol</text>
+
+      <rect x="310" y="88" width="140" height="40" rx="6" fill="rgba(13,148,136,0.10)" stroke="#0d9488" stroke-width="1"/>
+      <text x="380" y="106" fill="#0d3d38" font-size="12" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">API + middleware</text>
+      <text x="380" y="120" fill="#48606f" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">audit hook</text>
+
+      <rect x="550" y="88" width="140" height="40" rx="6" fill="#f6f8fb"/>
+      <rect x="550" y="88" width="140" height="40" rx="6" fill="rgba(13,61,56,0.05)" stroke="#48606f" stroke-width="1"/>
+      <text x="620" y="106" fill="#0d3d38" font-size="12" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">Servicio de auditoría</text>
+      <text x="620" y="120" fill="#48606f" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">serializa el hecho</text>
+
+      <rect x="790" y="88" width="140" height="40" rx="6" fill="#f6f8fb"/>
+      <rect x="790" y="88" width="140" height="40" rx="6" fill="rgba(13,61,56,0.05)" stroke="#48606f" stroke-width="1"/>
+      <text x="860" y="106" fill="#0d3d38" font-size="12" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">PostgreSQL</text>
+      <text x="860" y="120" fill="#48606f" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">audit_log</text>
+
+      <line x1="40" y1="556" x2="960" y2="556" stroke="rgba(13,61,56,0.10)" stroke-width="0.8"/>
+      <text x="40" y="578" fill="#0d3d38" font-size="12" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif">El registro se escribe en el camino de la petición, pero nunca se modifica ni se borra.</text>
+      <text x="40" y="598" fill="#7c93a1" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.06em">Verificar: cobertura de acciones auditadas · retención y exportación del log · quién puede leerlo</text>
+    </svg>
+  </div>
+</body>
+</html>

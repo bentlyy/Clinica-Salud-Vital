@@ -49,7 +49,15 @@ const mockSchema = Object.fromEntries([
   'createInvoiceSchema', 'updateInvoiceStatusSchema', 'invoiceIdSchema',
   'createExceptionSchema', 'exceptionIdSchema',
   'createLabRequestSchema', 'labRequestIdSchema',
-  'checkoutSchema', 'changePlanSchema', 'onboardSchema',
+  'labItemIdParamSchema', 'labRequestStatusSchema', 'labItemStatusSchema',
+  'labTypeSchema', 'labItemResultSchema', 'labDeliverSchema',
+  'labRejectSampleSchema', 'labReagentStockSchema',
+  'labTestCreateSchema', 'labTestUpdateSchema', 'labAreaCreateSchema',
+  'labEquipmentCreateSchema', 'labEquipmentUpdateSchema', 'labReagentCreateSchema',
+  'labSampleCreateSchema', 'labQcCreateSchema',
+  'labSampleReceiveSchema', 'labSampleAssignSchema', 'labSampleQcSchema',
+  'labResultsEmailSchema',
+  'checkoutSchema', 'changePlanSchema', 'onboardSchema', 'updateTenantConfigSchema',
 
   'createWebhookSchema', 'updateWebhookSchema',
 ].map(k => [k, {}]));

@@ -20,7 +20,7 @@ export interface CreateMedicalHistoryInput {
   notes?: string;
 }
 
-export interface UpdateMedicalHistoryInput extends Partial<CreateMedicalHistoryInput> {}
+export type UpdateMedicalHistoryInput = Partial<CreateMedicalHistoryInput>;
 
 export interface MedicalHistoryListParams {
   page?: number;
