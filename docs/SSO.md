@@ -32,7 +32,7 @@ En el repo del Core (`bentlyy/SaaSs`, paquete `@amg/platform`):
 ## 2. Variables de entorno de Vitaria
 
 ```
-CORE_URL=https://desarrollo.amgdeveloper.cl
+CORE_URL=https://amgdeveloper.cl
 APP_URL=https://vitaria.amgdeveloper.cl        # debe coincidir con el app_url del Core
 AMG_SSO_CLIENT_ID=vitaria
 AMG_SSO_CLIENT_SECRET=<secreto derivado en el paso 1.3>
@@ -161,7 +161,7 @@ Orden recomendado (los pasos 1-2 los hace ops/usuario; 3-5 son SQL/CLI):
 4. **Vitaria (Render → Environment)** — valores exactos:
    ```dotenv
    APP_URL=https://vitaria.amgdeveloper.cl
-   CORE_URL=https://desarrollo.amgdeveloper.cl
+   CORE_URL=https://amgdeveloper.cl
    AMG_SSO_CLIENT_ID=vitaria
    AMG_SSO_CLIENT_SECRET=<el del paso 3>
    # opcionales (defaults entre paréntesis):
