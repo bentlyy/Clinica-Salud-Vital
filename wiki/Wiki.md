@@ -42,4 +42,5 @@ Setup local, convenciones, buenas prácticas y guías de contribución.
 
 ---
 
-> **Versión del proyecto:** 1.0.0 | **Stack:** Node.js 20 + Express 4 + React 19 + Vite 6 + TypeScript 5.8/5.7 + PostgreSQL 15
+> **Versión del proyecto:** 1.0.0 | **Stack:** Node.js 20 + Express 4.22 + React 19 + Vite 6 + TypeScript 5.8/5.7 + PostgreSQL 15
+> **Autenticación:** SSO con el Core AMG | **Última sincronización:** 2026-11-02

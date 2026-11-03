@@ -1,72 +1,79 @@
 # Autenticación
 
-> JWT, refresh tokens y 2FA.
+> SSO con el Core AMG. Sincronizado: 2026-11-02.
 
-## Flujo de Tokens
+## Modelo actual
+
+Vitaria **no autentica usuarios**: delega la identidad al **Core AMG** mediante el paquete `@amg/auth-client`.
 
 ```mermaid
 sequenceDiagram
-    participant C as Cliente
-    participant A as API
-    participant DB as PostgreSQL
+    participant U as Usuario
+    participant V as Vitaria (SPA + API)
+    participant C as Core AMG
 
-    C->>A: POST /api/auth/login
-    A->>DB: SELECT usuario
-    A->>A: bcrypt.compare
-    A->>A: Generar access_token (15min) + refresh_token (30d)
-    A->>DB: INSERT refresh_token
-    A-->>C: { access_token, refresh_token, user }
-
-    Note over C,A: Cuando access_token expira
-    C->>A: POST /api/auth/refresh
-    A->>DB: Revocar refresh_token anterior
-    A->>A: Generar nuevo par
-    A->>DB: INSERT nuevo refresh_token
-    A-->>C: { access_token, refresh_token }
+    U->>V: GET /api/auth/login
+    V-->>U: 302 al login del Core
+    U->>C: Login (credenciales / 2FA / reCAPTCHA)
+    C-->>U: 302 /auth/callback?code=...
+    U->>V: GET /auth/callback (mountAmgAuth)
+    V->>C: Canjea código
+    C-->>V: Identidad + cookie app_session
+    V-->>U: Set-Cookie app_session + SPA
+    U->>V: GET /api/auth/inicio
+    V->>V: resolveLocalAccount(identity)
+    V-->>U: { usuario, organizacion, rol, herramienta, herramientas }
 ```
 
-## Access Token
+## Componentes
 
-```json
-{
-  "id": 1,
-  "email": "doctor@clinic.com",
-  "role": "doctor",
-  "tenant_id": "default",
-  "iat": 1680000000,
-  "exp": 1680000900
-}
-```
+| Componente | Archivo | Función |
+|------------|---------|---------|
+| Config SSO | `src/sso/amgSso.ts` | `loadConfig(process.env, 'vitaria')`; fail-fast si falta el secreto |
+| Guard | `src/sso/amgSso.ts` | `mountAmgAuthMiddleware()` valida `app_session` y deja `req.amg` |
+| Rutas | `src/sso/amgSso.ts` | `/api/auth/login`, `/api/auth/me`, `/api/auth/inicio` |
+| Cuenta local | `src/sso/localAccount.ts` | `resolveLocalAccount(identity)` → usuario + organización |
+| Auth local | `src/modules/auth/` | Solo `register` (invitación) e `invite-info` |
 
-- Algoritmo: HS256
-- Expiración: 15 minutos
-- Secreto: `JWT_SECRET` (≥ 32 caracteres)
+## Variables de Entorno
 
-## Refresh Token
+| Variable | Uso |
+|----------|-----|
+| `CORE_URL` | URL base del Core AMG |
+| `APP_URL` | URL pública de Vitaria (return_to / callback) |
+| `AMG_SSO_CLIENT_ID` | Client ID registrado en el Core |
+| `AMG_SSO_CLIENT_SECRET` | Secreto del cliente SSO |
+| `COOKIE_SECRET` | Firma de cookies (independiente de `JWT_SECRET`) |
+| `INVITE_JWT_SECRET` | Tokens de invitación de personal |
 
-- Expiración: 30 días
-- Almacenado en tabla `refresh_tokens`
-- Rotación: Cada refresh revoca el anterior
-- Revocación manual posible
+## Rutas Públicas (sin sesión)
 
-## 2FA (TOTP)
+`amgPublicPaths` en `src/sso/amgSso.ts`: health, métricas, favicon, assets, `/api/auth/login`, `/api/auth/register`, `/api/auth/invite-info`, planes SaaS, webhooks de Mercado Pago, tipos de cambio, doctores públicos, especialidades, slots disponibles, guest booking y confirmación.
 
-- RFC 6238, paso 30s, tolerancia ±1 paso
-- Secreto: 20 bytes aleatorios en base32
-- Almacenado cifrado (AES-256-GCM) en `users.totp_secret`
-- Compatible con Google Authenticator, Authy
+## Alta por Invitación
 
-## Política de Contraseñas
+1. `GET /api/auth/invite-info` valida el token de invitación.
+2. `POST /api/auth/register` crea la cuenta local (doctor/laboratorio).
+3. El usuario inicia sesión después por SSO con el Core.
+4. Rate limit: 10 req / 15 min.
 
-| Regla | Valor |
-|-------|-------|
-| Largo mínimo | 8 caracteres |
-| Mayúscula | ≥ 1 |
-| Minúscula | ≥ 1 |
-| Dígito | ≥ 1 |
-| Carácter especial | ≥ 1 |
-| Hash | bcrypt 12 rounds |
+## CSRF
+
+- Double-submit: cookie `csrf_token` + header `X-CSRF-Token`.
+- El cliente Axios inyecta el header en métodos distintos de GET/HEAD/OPTIONS.
+- `withCredentials: true` y CORS restringido a orígenes autorizados.
+
+## Sesiones y Actividad
+
+- La sesión real la mantiene el Core (`app_session`).
+- Vitaria registra actividad local (`user_sessions`, `trackActivity` con throttle de 5 min).
+- Un `401` en el SPA limpia el usuario y redirige una sola vez al login del Core.
+
+## 2FA / reCAPTCHA
+
+- Gestionados por el Core durante el login.
+- Se conservan `crypto.service.ts` y `captcha.service.ts` para flujos internos y verificación server-side.
 
 ---
 
-Tags: #seguridad #autenticacion #jwt #2fa
+Tags: #seguridad #autenticacion #sso #core

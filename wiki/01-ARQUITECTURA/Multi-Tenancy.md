@@ -4,17 +4,17 @@
 
 ## Modelo
 
-Base de datos compartida con columna `tenant_id` en todas las tablas. Aislamiento lógico vía cláusulas `WHERE tenant_id = ?`.
+Base de datos compartida con columna `tenant_id` en todas las tablas. Aislamiento lógico vía **Row-Level Security (RLS FORCE)** por sesión PostgreSQL (`app.tenant_id`) más cláusulas `WHERE tenant_id = ?`.
 
 ## Resolución del Tenant
 
 El tenant se resuelve en este orden:
 
-1. Header `X-Tenant-Id` en la petición
-2. Desde el JWT del usuario (`req.user.tenant_id`)
+1. Organización de la identidad SSO del Core (`req.amg.organizationId`)
+2. Header `X-Tenant-Id` en la petición (contextos administrativos)
 3. Valor por defecto: `default`
 
-El middleware `tenant.middleware.ts` inyecta `req.tenant_id` y `req.locale` antes de llegar a los controladores.
+El middleware `tenant.middleware.ts` inyecta `req.tenant_id` y `req.locale`, ejecuta `set_tenant_id()` y dispara RLS antes de llegar a los controladores.
 
 ## Tabla `tenants`
 

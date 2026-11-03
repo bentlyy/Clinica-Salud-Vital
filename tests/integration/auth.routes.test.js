@@ -118,4 +118,19 @@ describe('POST /api/auth/register', () => {
     expect(res.status).toBe(400);
     expect(res.body.error).toContain('Validation failed');
   });
+
+  it('rejects a client-supplied tenant_id (no cross-tenant registration)', async () => {
+    const res = await request(app)
+      .post('/api/auth/register')
+      .send({
+        name: 'Attacker',
+        email: 'attacker@test.com',
+        password: 'Test1234!',
+        tenant_id: 'victim-tenant',
+      });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toContain('Validation failed');
+    expect(mockQuery).not.toHaveBeenCalled();
+  });
 });

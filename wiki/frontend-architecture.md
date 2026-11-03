@@ -1,5 +1,16 @@
 # Frontend Architecture — Vitaria
 
+> ⚠️ **DOCUMENTO HISTÓRICO / PARCIALMENTE OBSOLETO (revisado 2026-11-02).**
+> El catálogo de endpoints y el modelo de auth de este archivo corresponden a una versión anterior.
+> Cambios mayores no reflejados aquí: **migración a SSO con el Core AMG** (sin JWT/refresh propios),
+> **24 módulos backend**, **34 migraciones**, **49 tablas** y **4 idiomas con 72 namespaces**.
+> Para información vigente usar:
+> - [[00-INICIO/Resumen-Completo-Sistema|Resumen Completo del Sistema]]
+> - [[02-BACKEND/Arquitectura-Backend|Arquitectura Backend]]
+> - [[03-FRONTEND/Arquitectura-Frontend|Arquitectura Frontend]]
+> - [[07-SEGURIDAD/Autenticacion|Autenticación]]
+> - [[04-BASE-DE-DATOS/Migraciones|Migraciones]]
+
 > Generated from exhaustive backend analysis. 14 modules, 111 endpoints, 32 tables, 62 indexes.
 
 ---
