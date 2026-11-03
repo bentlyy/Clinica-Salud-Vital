@@ -86,4 +86,14 @@ describe('registerSchema', () => {
     const result = registerSchema.safeParse({ email: validEmail, password: validPassword, name: '' });
     expect(result.success).toBe(false);
   });
+
+  it('rejects client-supplied tenant_id (tenant comes from invite or server default)', () => {
+    const result = registerSchema.safeParse({
+      email: validEmail,
+      password: validPassword,
+      name: 'John',
+      tenant_id: 'other-tenant',
+    });
+    expect(result.success).toBe(false);
+  });
 });

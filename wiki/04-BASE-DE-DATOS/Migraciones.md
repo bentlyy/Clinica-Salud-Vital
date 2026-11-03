@@ -1,6 +1,6 @@
 # Migraciones
 
-> Historial de cambios en el esquema de base de datos (23 migraciones).
+> Historial de cambios en el esquema de base de datos (**34 migraciones**, 001–032 + 035–036). Sincronizado: 2026-11-02.
 
 ## Estrategia
 
@@ -36,10 +36,21 @@
 | 021 | `021_fix_rls_for_render.sql` | Fix de políticas RLS para el entorno Render |
 | 022 | `022_fix_rls_superadmin_check.sql` | Ajusta política RLS para el superadmin cross-tenant |
 | 023 | `023_fix_audit_rls.sql` | Política `audit_write` en `audit_logs` (INSERT permite `'system'`/tenant de sesión; SELECT aislado) |
+| 024 | `024_token_family_and_cleanup_indexes.sql` | Familia de tokens + índices de limpieza |
+| 025 | `025_create_superadmin_role.sql` | Rol `superadmin` cross-tenant |
+| 026 | `026_add_tenant_onboarding.sql` | Tablas `tenant_onboarding` y `onboarding_documents` |
+| 027 | `027_performance_indexes.sql` | Índices de rendimiento |
+| 028 | `028_lab_analytics_indexes.sql` | Índices de laboratorio/analytics |
+| 029 | `029_drop_duplicate_indexes.sql` | Elimina índices duplicados |
+| 030 | `030_mercadopago.sql` | Campos Mercado Pago en `plans`, `subscriptions`, `subscription_invoices` |
+| 031 | `031_multicurrency.sql` | `currency` y `country_code` en `tenants` |
+| 032 | `032_amg_sso.sql` | Soporte de identidad SSO (Core AMG) |
+| 035 | `035_rls_saas_isolation_and_audit_user.sql` | Aislamiento RLS de SaaS + usuario de auditoría |
+| 036 | `036_rls_tenant_isolation_standard.sql` | Estandariza la política RLS de aislamiento por tenant |
 
 ## Schema Inicial
 
-El archivo `db/init.sql` contiene el schema completo con **47 tablas**, índices compuestos, triggers `updated_at` y seguridad RLS FORCE, más seed data (CIE-10 26 códigos, lab tests 9, specialties 12, plans 4).
+El archivo `db/init.sql` contiene el schema completo con **49 tablas**, índices compuestos, triggers `updated_at` y seguridad RLS FORCE, más seed data (CIE-10, lab tests, specialties, plans).
 
 ## Convenciones
 

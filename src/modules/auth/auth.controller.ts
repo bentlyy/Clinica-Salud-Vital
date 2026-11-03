@@ -20,6 +20,8 @@ export const inviteInfo = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export const register = asyncHandler(async (req: Request, res: Response) => {
-  const user = await authService.register({ ...req.body, tenant_id: req.body.tenant_id || req.tenant_id });
+  // El tenant NUNCA se toma del cliente (body/header): lo resuelve el token de
+  // invitación firmado o, en su defecto, el tenant por defecto del servidor.
+  const user = await authService.register({ ...req.body });
   res.status(201).json(user);
 });
