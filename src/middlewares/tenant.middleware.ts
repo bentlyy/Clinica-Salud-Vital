@@ -47,7 +47,19 @@ const setDbTenantContext = (tenantId: string, next: NextFunction): void => {
 export const tenantMiddleware = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   const headerTenantId = req.headers['x-tenant-id'] as string | undefined;
   const userTenantId = req.user?.tenant_id;
+  const isSuperAdmin = req.user?.role === 'superadmin';
   const isPublicPath = PUBLIC_PATHS.has(req.path) || PUBLIC_PATH_PREFIXES.some(p => req.path.startsWith(p));
+
+  // Un superadmin no tiene tenant propio (tenant_id NULL) y sus vistas
+  // globales (super-admin, notificaciones) no mandan X-Tenant-Id. Antes de
+  // esta rama caían en el 400 "X-Tenant-Id header is required". Usamos el
+  // tenant por defecto como contexto seguro; si manda el header, ese gana.
+  if (isSuperAdmin && !userTenantId && !headerTenantId) {
+    req.tenant_id = process.env.DEFAULT_TENANT_ID || 'default';
+    req.locale = getLocaleFromRequest(req);
+    setDbTenantContext(req.tenant_id, next);
+    return;
+  }
 
   const rawTenantId = userTenantId || headerTenantId;
 
