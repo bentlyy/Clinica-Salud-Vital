@@ -114,6 +114,23 @@ describe('tenant.middleware', () => {
     expect(next).toHaveBeenCalled();
   });
 
+  it('uses default tenant for a superadmin without tenant header in production', async () => {
+    process.env.NODE_ENV = 'production';
+    const { tenantMiddleware } = await import('../../src/middlewares/tenant.middleware.js');
+    const req = {
+      headers: {},
+      user: { role: 'superadmin', tenant_id: null },
+      path: '/api/super-admin/analytics/dashboard',
+    };
+    const res = { setHeader: vi.fn() };
+    const next = vi.fn();
+
+    await tenantMiddleware(req, res, next);
+
+    expect(req.tenant_id).toBe('default');
+    expect(next).toHaveBeenCalledWith();
+  });
+
   it('rejects when loadTenantsFromDB fails and tenant not cached', async () => {
     const { tenantMiddleware } = await import('../../src/middlewares/tenant.middleware.js');
     const req = { headers: { 'x-tenant-id': 'unknown-tenant' }, path: '/api/bookings' };
