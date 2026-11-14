@@ -49,7 +49,6 @@ services:
 | `DATABASE_URL` | secreta | Connection string PostgreSQL (externo, con SSL + `DB_CA_CERT`) |
 | `JWT_SECRET` / `JWT_PRIVATE_KEY` / `JWT_PUBLIC_KEY` | secretas | Firma JWT |
 | `FRONTEND_URL` | secreta | Origen CORS permitido |
-| `PHI_MASTER_KEY` | secreta | Cifrado de datos PHI |
 | `AUDIT_HMAC_SECRET` | secreta | Cadena HMAC de auditoría (obligatoria en prod) |
 | `ENCRYPTION_KEY` | secreta | Secrets 2FA (AES-256-GCM) |
 | `INVITE_JWT_SECRET` | secreta | Tokens de invitación |

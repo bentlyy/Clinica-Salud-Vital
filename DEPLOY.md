@@ -52,7 +52,6 @@ Set these in the Render dashboard under each service:
 DATABASE_URL=postgresql://user:password@your-rds-host:5432/clinic
 JWT_SECRET=<your-production-secret>
 FRONTEND_URL=https://yourdomain.com
-PHI_MASTER_KEY=<64-hex-chars>
 AUDIT_HMAC_SECRET=<32+ chars>
 ENCRYPTION_KEY=<32-hex-chars>
 INVITE_JWT_SECRET=<32+ chars>

@@ -35,8 +35,6 @@ services:
         value: es
       - key: LOG_LEVEL
         value: info
-      - key: PHI_MASTER_KEY
-        sync: false
       - key: AUDIT_HMAC_SECRET
         sync: false
       - key: ENCRYPTION_KEY

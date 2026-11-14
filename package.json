@@ -47,7 +47,7 @@
     "hpp": "^0.2.3",
     "jsonwebtoken": "^9.0.3",
     "node-cron": "^4.2.1",
-    "nodemailer": "^9.1.1",
+    "nodemailer": "^10.1.0",
     "pdfkit": "^0.18.0",
     "pg": "^8.18.0",
     "prom-client": "^15.1.3",
